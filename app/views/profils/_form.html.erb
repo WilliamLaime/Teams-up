@@ -52,8 +52,8 @@
     <%= f.text_field :role, class: "form-control", placeholder: "Ex: Attaquant, Gardien..." %>
   </div>
 
-  <%# Photo de profil %>
-  <div class="col-12">
+  <%# Photo de profil — le data-controller connecte le Stimulus controller avatar-preview %>
+  <div class="col-12" data-controller="avatar-preview">
     <%= f.label :avatar, "Photo de profil", class: "form-label" %>
 
     <%# Aperçu de la photo actuelle si elle existe déjà %>
@@ -64,30 +64,27 @@
       </div>
     <% end %>
 
-    <%# Champ de sélection du fichier — accepte uniquement les images %>
-    <%= f.file_field :avatar, class: "form-control", accept: "image/*", id: "avatar_input" %>
+    <%#
+      data-avatar-preview-target="input" : cible déclarée dans le controller JS
+      data-action : déclenche la méthode preview() au changement de fichier
+    %>
+    <%= f.file_field :avatar,
+        class: "form-control",
+        accept: "image/*",
+        data: {
+          "avatar-preview-target": "input",
+          action: "change->avatar-preview#preview"
+        } %>
     <div class="form-text">JPG, PNG ou GIF. Max 5 Mo.</div>
 
-    <%# Prévisualisation JS de la nouvelle image avant envoi %>
-    <div id="avatar_preview" class="mt-2" style="display:none;">
-      <img id="avatar_preview_img" alt="Aperçu de ta photo de profil" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;">
+    <%# Zone d'aperçu — cachée par défaut, affichée par le controller JS %>
+    <div data-avatar-preview-target="preview" class="mt-2" style="display:none;">
+      <img data-avatar-preview-target="image"
+           alt="Aperçu de ta photo de profil"
+           class="rounded-circle"
+           style="width:80px;height:80px;object-fit:cover;">
       <small class="text-muted ms-2">Aperçu</small>
     </div>
-
-    <script>
-      // Affiche un aperçu de l'image sélectionnée avant l'upload
-      document.getElementById('avatar_input').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          document.getElementById('avatar_preview_img').src = event.target.result;
-          document.getElementById('avatar_preview').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-      });
-    </script>
   </div>
 
   <%# Bouton de soumission %>
