@@ -39,6 +39,9 @@ gem "thruster", require: false
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 
+# Upload de fichiers vers Cloudinary via Active Storage
+gem "cloudinary"
+
 gem "sprockets-rails"
 gem "bootstrap", "~> 5.3"
 gem "devise"

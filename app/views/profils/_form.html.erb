@@ -1,7 +1,8 @@
 <%# Formulaire partagé pour modifier le profil %>
 <%# La variable @profil est passée automatiquement par le controller %>
 
-<%= form_with model: @profil, url: profil_path, method: :patch, class: "row g-3" do |f| %>
+<%# multipart: true est obligatoire pour les formulaires avec upload de fichier %>
+<%= form_with model: @profil, url: profil_path, method: :patch, class: "row g-3", multipart: true do |f| %>
 
   <%# Affiche les erreurs de validation si le formulaire est invalide %>
   <% if @profil.errors.any? %>
@@ -49,6 +50,44 @@
   <div class="col-md-6">
     <%= f.label :role, "Rôle préféré", class: "form-label" %>
     <%= f.text_field :role, class: "form-control", placeholder: "Ex: Attaquant, Gardien..." %>
+  </div>
+
+  <%# Photo de profil %>
+  <div class="col-12">
+    <%= f.label :avatar, "Photo de profil", class: "form-label" %>
+
+    <%# Aperçu de la photo actuelle si elle existe déjà %>
+    <% if @profil.avatar.attached? %>
+      <div class="mb-2">
+        <%= image_tag @profil.avatar, class: "rounded-circle", style: "width:80px;height:80px;object-fit:cover;" %>
+        <small class="text-muted ms-2">Photo actuelle</small>
+      </div>
+    <% end %>
+
+    <%# Champ de sélection du fichier — accepte uniquement les images %>
+    <%= f.file_field :avatar, class: "form-control", accept: "image/*", id: "avatar_input" %>
+    <div class="form-text">JPG, PNG ou GIF. Max 5 Mo.</div>
+
+    <%# Prévisualisation JS de la nouvelle image avant envoi %>
+    <div id="avatar_preview" class="mt-2" style="display:none;">
+      <img id="avatar_preview_img" alt="Aperçu de ta photo de profil" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;">
+      <small class="text-muted ms-2">Aperçu</small>
+    </div>
+
+    <script>
+      // Affiche un aperçu de l'image sélectionnée avant l'upload
+      document.getElementById('avatar_input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          document.getElementById('avatar_preview_img').src = event.target.result;
+          document.getElementById('avatar_preview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+    </script>
   </div>
 
   <%# Bouton de soumission %>
