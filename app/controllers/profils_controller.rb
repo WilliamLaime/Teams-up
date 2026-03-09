@@ -32,6 +32,9 @@ class ProfilsController < ApplicationController
 
   # Liste blanche des paramètres autorisés pour modifier le profil
   def profil_params
-    params.require(:profil).permit(:name, :address, :description, :level, :phone, :role, :localisation, :time_available)
+    # :avatar est le champ Active Storage pour la photo de profil
+    params.require(:profil).permit(
+      :name, :address, :description, :level, :phone, :role, :localisation, :time_available, :avatar
+    )
   end
 end

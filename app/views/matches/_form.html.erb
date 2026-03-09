@@ -56,6 +56,51 @@
     <%= f.number_field :player_left, class: "form-control", min: 1, placeholder: "Ex: 5" %>
   </div>
 
+  <%# Mode de validation des joueurs — toggle Bootstrap %>
+  <div class="col-12">
+    <label class="form-label d-block">Validation des joueurs</label>
+
+    <%# Champ caché envoyé par défaut quand le toggle est OFF (automatique) %>
+    <%= f.hidden_field :validation_mode, value: "automatic" %>
+
+    <div class="form-check form-switch">
+      <%#
+        La checkbox envoie "manual" quand elle est cochée (toggle ON).
+        Quand elle est décochée, le hidden_field au-dessus envoie "automatic".
+        checked: true si le match est déjà en mode manuel (utile pour l'édition)
+      %>
+      <%= check_box_tag :validation_mode_toggle,
+          "manual",
+          @match.manual_validation?,
+          class: "form-check-input",
+          id: "validation_toggle",
+          role: "switch",
+          onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'manual' : 'automatic'" %>
+      <label class="form-check-label" for="validation_toggle">
+        Validation manuelle
+      </label>
+    </div>
+
+    <%# Texte d'aide qui change selon l'état du toggle %>
+    <div class="form-text" id="validation_help">
+      <% if @match.manual_validation? %>
+        Tu valides toi-même chaque joueur.
+      <% else %>
+        Les joueurs sont acceptés immédiatement.
+      <% end %>
+    </div>
+
+    <%# Script pour mettre à jour le texte d'aide en temps réel %>
+    <script>
+      document.getElementById('validation_toggle').addEventListener('change', function() {
+        const help = document.getElementById('validation_help');
+        help.textContent = this.checked
+          ? 'Tu valides toi-même chaque joueur.'
+          : 'Les joueurs sont acceptés immédiatement.';
+      });
+    </script>
+  </div>
+
   <%# Bouton de soumission %>
   <div class="col-12">
     <%= f.submit class: "btn btn-primary" %>

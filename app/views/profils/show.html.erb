@@ -9,10 +9,28 @@
 
           <%# En-tête du profil %>
           <div class="d-flex justify-content-between align-items-start mb-4">
-            <div>
-              <h2 class="mb-1"><%= @profil.name || current_user.email %></h2>
-              <p class="text-muted mb-0"><%= current_user.email %></p>
+            <div class="d-flex align-items-center gap-3">
+
+              <%# Photo de profil — affiche l'avatar ou une icône par défaut %>
+              <% if @profil.avatar.attached? %>
+                <%= image_tag @profil.avatar,
+                    class: "rounded-circle",
+                    style: "width:80px;height:80px;object-fit:cover;",
+                    alt: "Photo de profil de #{@profil.name || current_user.email}" %>
+              <% else %>
+                <%# Pas encore de photo — icône générique Lucide %>
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                     style="width:80px;height:80px;">
+                  <i data-lucide="user-round" style="width:40px;height:40px;" class="text-muted"></i>
+                </div>
+              <% end %>
+
+              <div>
+                <h2 class="mb-1"><%= @profil.name || current_user.email %></h2>
+                <p class="text-muted mb-0"><%= current_user.email %></p>
+              </div>
             </div>
+
             <%# Bouton pour modifier le profil %>
             <%= link_to "Modifier mon profil", edit_profil_path, class: "btn btn-outline-primary" %>
           </div>

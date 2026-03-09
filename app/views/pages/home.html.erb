@@ -11,18 +11,16 @@
   <%# Boutons d'appel à l'action %>
   <div class="d-flex justify-content-center gap-3 mb-5">
     <% if user_signed_in? %>
-      <%# Si connecté, on va directement aux matchs %>
       <%= link_to "Voir les matchs", matches_path, class: "btn btn-primary btn-lg" %>
       <%= link_to "Créer un match", new_match_path, class: "btn btn-outline-primary btn-lg" %>
     <% else %>
-      <%# Si visiteur, on invite à s'inscrire %>
       <%= link_to "Commencer", new_user_registration_path, class: "btn btn-primary btn-lg" %>
       <%= link_to "Se connecter", new_user_session_path, class: "btn btn-outline-primary btn-lg" %>
     <% end %>
   </div>
 
   <%# Section "Comment ça marche" %>
-  <div class="row justify-content-center g-4 mt-3">
+  <div class="row justify-content-center g-4">
 
     <div class="col-md-4">
       <div class="card h-100 border-0 shadow-sm p-3">
@@ -55,4 +53,77 @@
     </div>
 
   </div>
+</div>
+
+<%# Section matchs à venir %>
+<div class="container my-5">
+
+  <%# Titre de section %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0">Matchs à venir</h2>
+    <%= link_to matches_path, class: "btn btn-outline-primary d-flex align-items-center gap-1" do %>
+      <i data-lucide="arrow-right" style="width:16px;height:16px;"></i> Voir plus
+    <% end %>
+  </div>
+
+  <% if @matches.any? %>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      <% @matches.each do |match| %>
+        <div class="col">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+
+              <%# Titre et badge niveau %>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="card-title mb-0"><%= match.title %></h5>
+                <span class="badge <%= match.level == 'Débutant' ? 'bg-success' : match.level == 'Intermédiaire' ? 'bg-warning text-dark' : 'bg-danger' %>">
+                  <%= match.level %>
+                </span>
+              </div>
+
+              <%# Description courte %>
+              <p class="card-text text-muted small"><%= truncate(match.description, length: 80) %></p>
+
+              <%# Infos clés du match %>
+              <ul class="list-unstyled small mb-0">
+                <li class="d-flex align-items-center gap-2 mb-1">
+                  <i data-lucide="calendar" style="width:14px;height:14px;" class="text-muted"></i>
+                  <%= match.date&.strftime("%d/%m/%Y") || "Date non définie" %>
+                </li>
+                <li class="d-flex align-items-center gap-2 mb-1">
+                  <i data-lucide="clock" style="width:14px;height:14px;" class="text-muted"></i>
+                  <%= match.time&.strftime("%H:%M") || "Heure non définie" %>
+                </li>
+                <li class="d-flex align-items-center gap-2 mb-1">
+                  <i data-lucide="map-pin" style="width:14px;height:14px;" class="text-muted"></i>
+                  <%= match.place || "Lieu non défini" %>
+                </li>
+                <li class="d-flex align-items-center gap-2">
+                  <i data-lucide="users" style="width:14px;height:14px;" class="text-muted"></i>
+                  <%= match.player_left || 0 %> place(s) disponible(s)
+                </li>
+              </ul>
+
+            </div>
+
+            <%# Bouton voir le match %>
+            <div class="card-footer bg-transparent">
+              <%= link_to "Voir le match", match_path(match), class: "btn btn-outline-primary btn-sm w-100" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+  <% else %>
+    <%# Aucun match disponible %>
+    <div class="text-center text-muted py-5">
+      <i data-lucide="calendar-x" style="width:48px;height:48px;"></i>
+      <p class="mt-3">Aucun match disponible pour le moment.</p>
+      <% if user_signed_in? %>
+        <%= link_to "Créer le premier match", new_match_path, class: "btn btn-primary mt-2" %>
+      <% end %>
+    </div>
+  <% end %>
+
 </div>

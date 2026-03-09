@@ -21,11 +21,19 @@
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+
+    <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
+    <%# Doc : https://lucide.dev/icons/ — utilisation : <i data-lucide="nom-icone"></i> %>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
 
   <body><%= render "shared/navbar" %>
 <%= render "shared/flashes" %>
 
     <%= yield %>
+
+    <%# Initialise toutes les icônes Lucide présentes dans la page %>
+    <%# Appelé en bas de body pour que le DOM soit chargé %>
+    <script>lucide.createIcons();</script>
   </body>
 </html>

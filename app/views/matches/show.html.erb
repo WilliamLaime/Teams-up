@@ -37,7 +37,17 @@
               <strong>📍 Lieu :</strong> <%= @match.place || "Non défini" %>
             </div>
             <div class="col-6">
+              <%# player_left est mis à jour automatiquement quand quelqu'un rejoint/quitte %>
               <strong>👥 Places restantes :</strong> <%= @match.player_left || 0 %>
+            </div>
+            <div class="col-6">
+              <%# Affiche le mode de validation choisi par l'organisateur %>
+              <strong>✅ Validation :</strong>
+              <% if @match.manual_validation? %>
+                <span class="badge bg-warning text-dark">Manuelle</span>
+              <% else %>
+                <span class="badge bg-success">Automatique</span>
+              <% end %>
             </div>
           </div>
 
@@ -47,16 +57,33 @@
       <%# Actions — rejoindre ou quitter le match (uniquement si connecté) %>
       <% if user_signed_in? %>
         <% if @current_match_user %>
-          <%# L'utilisateur est déjà inscrit — bouton pour quitter %>
-          <div class="alert alert-success d-flex justify-content-between align-items-center">
-            <span>✅ Tu es inscrit à ce match !</span>
-            <%# Envoie une requête DELETE pour quitter le match %>
-            <%= button_to "Quitter le match",
-                match_match_user_path(@match, @current_match_user),
-                method: :delete,
-                class: "btn btn-outline-danger btn-sm",
-                data: { turbo_confirm: "Es-tu sûr de vouloir quitter ce match ?" } %>
-          </div>
+
+          <%# Affiche un message selon le statut de l'inscription %>
+          <% if @current_match_user.role == "organisateur" %>
+            <%# L'utilisateur est l'organisateur, pas besoin de rejoindre %>
+          <% elsif @current_match_user.approved? %>
+            <div class="alert alert-success d-flex justify-content-between align-items-center">
+              <span>✅ Tu es inscrit à ce match !</span>
+              <%= button_to "Quitter le match",
+                  match_match_user_path(@match, @current_match_user),
+                  method: :delete,
+                  class: "btn btn-outline-danger btn-sm",
+                  data: { turbo_confirm: "Es-tu sûr de vouloir quitter ce match ?" } %>
+            </div>
+          <% elsif @current_match_user.pending? %>
+            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+              <span>⏳ Ta demande est en attente de validation par l'organisateur.</span>
+              <%= button_to "Annuler ma demande",
+                  match_match_user_path(@match, @current_match_user),
+                  method: :delete,
+                  class: "btn btn-outline-secondary btn-sm" %>
+            </div>
+          <% elsif @current_match_user.rejected? %>
+            <div class="alert alert-danger">
+              ❌ Ta demande a été refusée par l'organisateur.
+            </div>
+          <% end %>
+
         <% else %>
           <%# L'utilisateur n'est pas encore inscrit — bouton pour rejoindre %>
           <%= button_to "Rejoindre le match",
@@ -68,33 +95,67 @@
 
       <%# Boutons modifier/supprimer (visibles seulement si organisateur) %>
       <% if @current_match_user&.role == "organisateur" %>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 mt-3">
           <%= link_to "Modifier", edit_match_path(@match), class: "btn btn-warning" %>
           <%= button_to "Supprimer", match_path(@match),
               method: :delete,
               class: "btn btn-danger",
               data: { turbo_confirm: "Es-tu sûr de vouloir supprimer ce match ?" } %>
         </div>
+
+        <%# Section de validation manuelle — visible seulement si mode manuel et organisateur %>
+        <% if @match.manual_validation? %>
+          <%# Récupère les joueurs en attente %>
+          <% pending_users = @match_users.select(&:pending?) %>
+          <% if pending_users.any? %>
+            <div class="card shadow-sm mt-4">
+              <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">⏳ Demandes en attente (<%= pending_users.count %>)</h5>
+              </div>
+              <ul class="list-group list-group-flush">
+                <% pending_users.each do |match_user| %>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <%= match_user.user.email %>
+                    <div class="d-flex gap-2">
+                      <%# Bouton pour approuver le joueur %>
+                      <%= button_to "✅ Accepter",
+                          approve_match_match_user_path(@match, match_user),
+                          method: :patch,
+                          class: "btn btn-success btn-sm" %>
+                      <%# Bouton pour rejeter le joueur %>
+                      <%= button_to "❌ Refuser",
+                          reject_match_match_user_path(@match, match_user),
+                          method: :patch,
+                          class: "btn btn-danger btn-sm" %>
+                    </div>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+        <% end %>
+
       <% end %>
     </div>
 
-    <%# Colonne secondaire — liste des participants %>
+    <%# Colonne secondaire — liste des participants approuvés %>
     <div class="col-md-4">
       <div class="card shadow-sm">
         <div class="card-header">
-          <h5 class="mb-0">👥 Participants (<%= @match_users.count %>)</h5>
+          <%# N'affiche que les joueurs approuvés dans le compteur %>
+          <% approved_count = @match_users.count(&:approved?) %>
+          <h5 class="mb-0">👥 Participants (<%= approved_count %>)</h5>
         </div>
         <ul class="list-group list-group-flush">
-          <% if @match_users.any? %>
-            <% @match_users.each do |match_user| %>
+          <% approved_users = @match_users.select { |mu| mu.approved? || mu.role == "organisateur" } %>
+          <% if approved_users.any? %>
+            <% approved_users.each do |match_user| %>
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                <%# Nom ou email de l'utilisateur %>
                 <%= match_user.user.email %>
-                <%# Badge pour l'organisateur %>
                 <% if match_user.role == "organisateur" %>
                   <span class="badge bg-primary">Organisateur</span>
                 <% else %>
-                  <span class="badge bg-secondary">Joueur</span>
+                  <span class="badge bg-success">Joueur</span>
                 <% end %>
               </li>
             <% end %>
