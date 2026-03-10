@@ -22,13 +22,25 @@
           <div class="card h-100 shadow-sm">
             <div class="card-body">
 
-              <%# Titre et niveau du match %>
+              <%# Ligne titre + badges %>
               <div class="d-flex justify-content-between align-items-start mb-2">
-                <h5 class="card-title"><%= match.title %></h5>
-                <%# Badge coloré selon le niveau %>
-                <span class="badge <%= match.level == 'Débutant' ? 'bg-success' : match.level == 'Intermédiaire' ? 'bg-warning text-dark' : 'bg-danger' %>">
-                  <%= match.level %>
-                </span>
+                <h5 class="card-title me-2"><%= match.title %></h5>
+                <div class="d-flex flex-wrap gap-1 justify-content-end">
+                  <%# Badge "Urgent" si le match commence dans moins de 2h %>
+                  <% if match.urgent? %>
+                    <span class="badge bg-danger">🔥 Urgent</span>
+                  <% end %>
+                  <%# Badge niveau — couleur selon le niveau %>
+                  <%
+                    level_class = case match.level
+                      when "Débutant"      then "bg-success"
+                      when "Intermédiaire" then "bg-warning text-dark"
+                      when "Avancé"        then "bg-danger"
+                      else "bg-info text-dark"
+                    end
+                  %>
+                  <span class="badge <%= level_class %>"><%= match.level %></span>
+                </div>
               </div>
 
               <%# Description courte (tronquée à 100 caractères) %>
@@ -39,7 +51,14 @@
                 <li>📅 <%= match.date&.strftime("%d/%m/%Y") || "Date non définie" %></li>
                 <li>🕐 <%= match.time&.strftime("%H:%M") || "Heure non définie" %></li>
                 <li>📍 <%= match.place || "Lieu non défini" %></li>
-                <li>👥 <%= match.player_left || 0 %> place(s) disponible(s)</li>
+                <%# Affiche "Complet" si plus aucune place %>
+                <li>
+                  <% if match.full? %>
+                    <span class="text-danger fw-semibold">🔴 Complet</span>
+                  <% else %>
+                    👥 <%= match.player_left %> place(s) disponible(s)
+                  <% end %>
+                </li>
               </ul>
 
             </div>

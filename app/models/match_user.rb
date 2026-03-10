@@ -3,7 +3,8 @@ class MatchUser < ApplicationRecord
   belongs_to :match
 
   # Statuts possibles pour une inscription
-  STATUSES = ["pending", "approved", "rejected"].freeze
+  # "waiting" = en file d'attente (match complet)
+  STATUSES = ["pending", "approved", "rejected", "waiting"].freeze
 
   # Helpers pour vérifier le statut facilement
   def approved?
@@ -16,5 +17,10 @@ class MatchUser < ApplicationRecord
 
   def rejected?
     status == "rejected"
+  end
+
+  # Retourne vrai si le joueur est en file d'attente (match complet)
+  def waiting?
+    status == "waiting"
   end
 end

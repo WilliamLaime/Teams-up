@@ -100,9 +100,20 @@
           </li>
           <%# ====== FIN CLOCHE ====== %>
 
-          <%# Dropdown avatar — affiche la vraie photo ou un placeholder %>
+          <%# Dropdown avatar + nom de l'utilisateur %>
           <li class="nav-item dropdown">
-            <a href="#" class="avatar" id="navbarDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <%#
+              On affiche le Prénom Nom à côté de l'avatar si le profil existe
+              &. = opérateur "safe navigation" : évite une erreur si profil est nil
+            %>
+            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none" id="navbarDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <%# Affiche Prénom Nom uniquement si le profil a au moins un nom renseigné %>
+              <% display_name = current_user.profil && [current_user.profil.first_name, current_user.profil.last_name].compact.join(" ").presence %>
+              <% if display_name %>
+                <span class="small fw-semibold text-dark d-none d-sm-inline">
+                  <%= display_name %>
+                </span>
+              <% end %>
               <% if current_user.profil&.avatar&.attached? %>
                 <%= image_tag current_user.profil.avatar,
                     class: "avatar",

@@ -12,12 +12,26 @@
       <div class="card shadow-sm mb-4">
         <div class="card-body">
 
-          <%# Titre et badge niveau %>
+          <%# Titre et badges (niveau, urgent, complet) %>
           <div class="d-flex justify-content-between align-items-start mb-3">
-            <h2 class="card-title"><%= @match.title %></h2>
-            <span class="badge <%= @match.level == 'Débutant' ? 'bg-success' : @match.level == 'Intermédiaire' ? 'bg-warning text-dark' : 'bg-danger' %> fs-6">
-              <%= @match.level %>
-            </span>
+            <h2 class="card-title me-2"><%= @match.title %></h2>
+            <div class="d-flex flex-wrap gap-1 justify-content-end">
+              <% if @match.urgent? %>
+                <span class="badge bg-danger fs-6">🔥 Urgent</span>
+              <% end %>
+              <% if @match.full? %>
+                <span class="badge bg-secondary fs-6">🔴 Complet</span>
+              <% end %>
+              <%
+                level_class = case @match.level
+                  when "Débutant"      then "bg-success"
+                  when "Intermédiaire" then "bg-warning text-dark"
+                  when "Avancé"        then "bg-danger"
+                  else "bg-info text-dark"
+                end
+              %>
+              <span class="badge <%= level_class %> fs-6"><%= @match.level %></span>
+            </div>
           </div>
 
           <%# Description %>
@@ -37,8 +51,12 @@
               <strong>📍 Lieu :</strong> <%= @match.place || "Non défini" %>
             </div>
             <div class="col-6">
-              <%# player_left est mis à jour automatiquement quand quelqu'un rejoint/quitte %>
-              <strong>👥 Places restantes :</strong> <%= @match.player_left || 0 %>
+              <strong>👥 Places restantes :</strong>
+              <% if @match.full? %>
+                <span class="text-danger fw-semibold">Complet</span>
+              <% else %>
+                <%= @match.player_left %>
+              <% end %>
             </div>
             <div class="col-6">
               <%# Affiche le mode de validation choisi par l'organisateur %>
@@ -78,6 +96,15 @@
                   method: :delete,
                   class: "btn btn-outline-secondary btn-sm" %>
             </div>
+          <% elsif @current_match_user.waiting? %>
+            <%# L'utilisateur est en file d'attente (match était complet quand il a rejoint) %>
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+              <span>📋 Tu es en file d'attente. Tu seras notifié automatiquement si une place se libère.</span>
+              <%= button_to "Quitter la file d'attente",
+                  match_match_user_path(@match, @current_match_user),
+                  method: :delete,
+                  class: "btn btn-outline-secondary btn-sm" %>
+            </div>
           <% elsif @current_match_user.rejected? %>
             <div class="alert alert-danger">
               ❌ Ta demande a été refusée par l'organisateur.
@@ -85,11 +112,23 @@
           <% end %>
 
         <% else %>
-          <%# L'utilisateur n'est pas encore inscrit — bouton pour rejoindre %>
-          <%= button_to "Rejoindre le match",
-              match_match_users_path(@match),
-              method: :post,
-              class: "btn btn-primary w-100 mb-3" %>
+          <%# L'utilisateur n'est pas encore inscrit %>
+          <% if @match.full? %>
+            <%# Match complet : bouton file d'attente (différent du bouton "Rejoindre") %>
+            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+              <span>🔴 Ce match est complet.</span>
+              <%= button_to "📋 Rejoindre la file d'attente",
+                  match_match_users_path(@match),
+                  method: :post,
+                  class: "btn btn-outline-warning btn-sm" %>
+            </div>
+          <% else %>
+            <%# Places disponibles : bouton normal pour rejoindre %>
+            <%= button_to "Rejoindre le match",
+                match_match_users_path(@match),
+                method: :post,
+                class: "btn btn-primary w-100 mb-3" %>
+          <% end %>
         <% end %>
       <% end %>
 

@@ -3,10 +3,11 @@ class MatchesController < ApplicationController
   before_action :set_match, only: [:show, :edit, :update, :destroy]
 
   # GET /matches
-  # Affiche la liste de tous les matchs
+  # Affiche uniquement les matchs à venir (passés exclus), triés par date puis heure
   def index
-    # policy_scope filtre les matchs selon les règles de MatchPolicy::Scope
-    @matches = policy_scope(Match).order(date: :asc)
+    @matches = policy_scope(Match)
+      .where("(date + time) > ?", Time.current)
+      .order(date: :asc, time: :asc)
   end
 
   # GET /matches/:id
@@ -21,10 +22,24 @@ class MatchesController < ApplicationController
   end
 
   # GET /matches/new
-  # Affiche le formulaire de création d'un match
+  # Affiche le formulaire de création avec des valeurs par défaut intelligentes
   def new
     @match = Match.new
     authorize @match
+
+    # Date par défaut : aujourd'hui
+    @match.date = Date.today
+
+    # Heure par défaut : maintenant + 30 min, arrondie au prochain quart d'heure (00/15/30/45)
+    future = Time.current + 30.minutes
+    rounded_minutes = (future.min / 15.0).ceil * 15
+
+    if rounded_minutes >= 60
+      # Si le résultat dépasse 59 min, on passe à l'heure suivante
+      @match.time = future.change(hour: future.hour + 1, min: 0, sec: 0)
+    else
+      @match.time = future.change(min: rounded_minutes, sec: 0)
+    end
   end
 
   # POST /matches

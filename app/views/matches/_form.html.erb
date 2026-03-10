@@ -31,24 +31,68 @@
   <%# Date et heure sur la même ligne %>
   <div class="col-md-6">
     <%= f.label :date, "Date", class: "form-label" %>
-    <%= f.date_field :date, class: "form-control" %>
+    <%# La valeur par défaut (aujourd'hui) est définie dans le controller #new %>
+    <%= f.date_field :date, class: "form-control", value: @match.date %>
   </div>
 
   <div class="col-md-6">
     <%= f.label :time, "Heure", class: "form-label" %>
-    <%= f.time_field :time, class: "form-control" %>
+    <%#
+      time_select génère deux <select> séparés :
+        - un pour les heures (0 à 23)
+        - un pour les minutes (uniquement 00, 15, 30, 45 grâce à minute_step: 15)
+      Rails combine automatiquement les deux valeurs en un objet Time lors de la soumission.
+    %>
+    <div class="d-flex gap-2">
+      <%= f.time_select :time,
+          { minute_step: 15, default: @match.time, prompt: { hour: "Heure", minute: "Min" } },
+          { class: "form-select" } %>
+    </div>
   </div>
 
-  <%# Lieu %>
-  <div class="col-12">
+  <%#
+    Lieu avec barre de recherche dynamique (Stimulus controller "place-search")
+    L'utilisateur tape, des suggestions apparaissent en dessous via l'API Nominatim
+  %>
+  <div class="col-12" data-controller="place-search">
     <%= f.label :place, "Lieu", class: "form-label" %>
-    <%= f.text_field :place, class: "form-control", placeholder: "Ex: Stade Jean Bouin, Paris" %>
+
+    <div class="position-relative">
+      <%#
+        Champ principal — sa valeur est soumise avec le formulaire
+        data-place-search-target="input" : Stimulus surveille ce champ
+        data-action="input->place-search#search" : lance la recherche à chaque frappe
+      %>
+      <%= f.text_field :place,
+          class: "form-control",
+          placeholder: "Rechercher un lieu... ex: 4Padel Bordeaux",
+          autocomplete: "off",
+          data: {
+            "place-search-target": "input",
+            "action": "input->place-search#search"
+          } %>
+
+      <%# Dropdown des résultats — affiché/caché dynamiquement par Stimulus %>
+      <div data-place-search-target="dropdown"
+           class="dropdown-menu w-100 shadow"
+           style="display:none; position:absolute; top:100%; left:0; z-index:1050; max-height:250px; overflow-y:auto;">
+      </div>
+    </div>
   </div>
 
   <%# Niveau et nombre de joueurs sur la même ligne %>
   <div class="col-md-6">
     <%= f.label :level, "Niveau", class: "form-label" %>
-    <%= f.select :level, ["Débutant", "Intermédiaire", "Avancé"], { include_blank: "Choisir un niveau" }, class: "form-select" %>
+    <%#
+      Match::LEVELS = ["Tout niveau", "Débutant", "Intermédiaire", "Avancé"]
+      prompt: affiche "Choisir un niveau" en premier (non sélectionnable)
+      required: true → le navigateur bloque la soumission si vide
+    %>
+    <%= f.select :level,
+        Match::LEVELS,
+        { prompt: "Choisir un niveau" },
+        class: "form-select",
+        required: true %>
   </div>
 
   <div class="col-md-6">

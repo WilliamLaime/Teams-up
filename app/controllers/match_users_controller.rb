@@ -5,37 +5,41 @@ class MatchUsersController < ApplicationController
   before_action :set_match_user, only: [:destroy, :approve, :reject]
 
   # POST /matches/:match_id/match_users
-  # Rejoindre un match
+  # Rejoindre un match (ou rejoindre la file d'attente si le match est complet)
   def create
     @match_user = @match.match_users.new(user: current_user, role: "joueur")
-    # Vérifie avec Pundit que l'utilisateur a le droit de rejoindre
     authorize @match_user
 
-    # Vérifie si l'utilisateur est déjà inscrit à ce match
+    # Vérifie si l'utilisateur est déjà inscrit (peu importe le statut)
     if @match.match_users.exists?(user: current_user)
       redirect_to @match, alert: "Tu es déjà inscrit à ce match."
       return
     end
 
+    # Si le match est complet, on met l'utilisateur en file d'attente
+    if @match.full?
+      @match_user.status = "waiting"
+      if @match_user.save
+        notify_organizer("#{current_user.display_name} s'est inscrit en file d'attente pour \"#{@match.title}\"")
+        redirect_to @match, notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
+      else
+        redirect_to @match, alert: "Impossible de rejoindre la file d'attente."
+      end
+      return
+    end
+
     if @match.manual_validation?
-      # Mode manuel : le joueur est en attente de validation par l'organisateur
+      # Mode manuel : en attente de validation par l'organisateur
       @match_user.status = "pending"
       @match_user.save
-
-      # Notifie l'organisateur qu'un joueur veut rejoindre
       notify_organizer("#{current_user.display_name} veut rejoindre votre match \"#{@match.title}\"")
-
       redirect_to @match, notice: "Ta demande a été envoyée à l'organisateur !"
     else
-      # Mode automatique : le joueur est accepté immédiatement
+      # Mode automatique : accepté immédiatement
       @match_user.status = "approved"
       if @match_user.save
-        # Décrémente le nombre de places disponibles
         @match.decrement!(:player_left)
-
-        # Notifie l'organisateur qu'un joueur a rejoint
         notify_organizer("#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
-
         redirect_to @match, notice: "Tu as rejoint le match !"
       else
         redirect_to @match, alert: "Impossible de rejoindre le match."
@@ -44,14 +48,23 @@ class MatchUsersController < ApplicationController
   end
 
   # DELETE /matches/:match_id/match_users/:id
-  # Quitter un match
+  # Quitter un match — si quelqu'un est en file d'attente, il est promu automatiquement
   def destroy
-    # Pundit vérifie que l'utilisateur ne peut quitter que sa propre inscription
     authorize @match_user
 
-    # Si le joueur était approuvé, on lui restitue sa place
     if @match_user.approved?
-      @match.increment!(:player_left)
+      # Cherche le premier joueur en file d'attente (le plus ancien en premier)
+      next_in_line = @match.match_users.where(status: "waiting").order(created_at: :asc).first
+
+      if next_in_line
+        # Promeut automatiquement le joueur en file d'attente
+        next_in_line.update(status: "approved")
+        notify_player(next_in_line.user, "🎉 Une place s'est libérée ! Tu as été automatiquement inscrit au match \"#{@match.title}\".")
+        # player_left reste à 0 car la place est immédiatement reprise
+      else
+        # Personne en attente : on rend la place disponible
+        @match.increment!(:player_left)
+      end
     end
 
     @match_user.destroy

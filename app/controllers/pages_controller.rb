@@ -7,7 +7,10 @@ class PagesController < ApplicationController
   skip_after_action :verify_policy_scoped
 
   def home
-    # Récupère les 3 prochains matchs à venir, triés par date
-    @matches = Match.order(date: :asc).limit(3)
+    # Récupère les 3 prochains matchs à venir (passés exclus), triés par date puis heure
+    @matches = Match
+      .where("(date + time) > ?", Time.current)
+      .order(date: :asc, time: :asc)
+      .limit(3)
   end
 end

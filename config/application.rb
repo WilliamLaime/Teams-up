@@ -26,7 +26,13 @@ module TeamUp
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # Fuseau horaire de l'application : France (Paris)
+    # Time.current retournera l'heure française au lieu de l'heure UTC
+    config.time_zone = "Paris"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Langue par défaut de l'application : français
+    # Utilisé par time_ago_in_words, les messages d'erreur, etc.
+    config.i18n.default_locale = :fr
   end
 end
