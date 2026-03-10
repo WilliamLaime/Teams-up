@@ -87,6 +87,7 @@ test:
 production:
   primary: &primary_production
     <<: *default
+    url: <%= ENV["DATABASE_URL"] %>
     database: team_up_production
     username: team_up
     password: <%= ENV["TEAM_UP_DATABASE_PASSWORD"] %>
