@@ -1,6 +1,5 @@
 // Define variables for your color scheme
 
-// For example:
 $red: #FD1015;
 $blue: #0D6EFD;
 $yellow: #FFC65A;
@@ -8,3 +7,10 @@ $orange: #E67E22;
 $green: #1EDD88;
 $gray: #0E0000;
 $light-gray: #F4F4F4;
+
+// Thème sombre (navbar, hero, footer)
+$dark-bg: #111111;         // Fond très sombre (presque noir)
+$dark-card-bg: #1a1c1a;   // Fond des cartes sombres
+$dark-surface: #242624;   // Surface légèrement plus claire
+$dark-text: #f0f0f0;      // Texte clair sur fond sombre
+$dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre

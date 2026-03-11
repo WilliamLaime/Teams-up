@@ -1,0 +1,57 @@
+<%# =====================================================
+    FOOTER — Pied de page sombre
+    Logo + liens + copyright + réseaux sociaux
+    ===================================================== %>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="row align-items-start g-4">
+
+      <%# ── Logo + tagline ── %>
+      <div class="col-md-4">
+        <%= link_to root_path, class: "footer-logo" do %>
+          <%= image_tag "logo_teams-up_logo_vert.png", alt: "Teams-Up", height: 26 %>
+        <% end %>
+      </div>
+
+      <%# ── Liens navigation ── %>
+      <div class="col-md-4">
+        <ul class="footer-links">
+          <%# "#" = lien temporaire, à remplacer quand les pages seront créées %>
+          <li><%= link_to "Confidentialité", "#" %></li>
+          <li><%= link_to "Conditions", "#" %></li>
+          <li><%= link_to "Contact", "#" %></li>
+        </ul>
+      </div>
+
+      <%# ── Réseaux sociaux ── %>
+      <div class="col-md-4 d-flex justify-content-md-end">
+        <%# Font Awesome pour les réseaux sociaux (Lucide n'a pas TikTok) %>
+        <div class="footer-social d-flex gap-3">
+          <a href="#" aria-label="Instagram">
+            <i class="fa-brands fa-instagram fa-lg"></i>
+          </a>
+          <a href="#" aria-label="TikTok">
+            <i class="fa-brands fa-tiktok fa-lg"></i>
+          </a>
+          <a href="#" aria-label="YouTube">
+            <i class="fa-brands fa-youtube fa-lg"></i>
+          </a>
+          <a href="#" aria-label="Twitch">
+            <i class="fa-brands fa-twitch fa-lg"></i>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <%# Séparateur %>
+    <hr class="footer-divider">
+
+    <%# Copyright %>
+    <div class="footer-bottom text-center">
+      &copy; <%= Time.current.year %> Team-Up. Tous droits réservés.
+    </div>
+
+  </div>
+</footer>

@@ -1,12 +1,133 @@
-.navbar-lewagon {
-  justify-content: space-between;
-  background: white;
+// =====================================================
+// NAVBAR — Thème sombre avec accents verts
+// =====================================================
+
+// Fond sombre + texte clair pour toute la navbar
+.navbar-dark-custom {
+  background-color: $dark-bg;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0.75rem 0;
 }
 
-.navbar-lewagon .navbar-collapse {
-  flex-grow: 0;
+// Logo image dans la navbar
+.navbar-dark-custom .navbar-brand {
+  display: flex;
+  align-items: center;
+  padding: 0;
+
+  img {
+    height: 30px;
+    width: auto;
+  }
 }
 
-.navbar-lewagon .navbar-brand img {
-  width: 40px;
+// Liens de navigation : blancs, légers au survol
+.navbar-dark-custom .nav-link {
+  color: rgba(255,255,255,0.8) !important;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem !important;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+
+  &:hover {
+    color: #fff !important;
+    background: rgba(255,255,255,0.07);
+  }
+}
+
+// Bouton toggler (hamburger mobile) en blanc
+.navbar-dark-custom .navbar-toggler {
+  border-color: rgba(255,255,255,0.3);
+
+  .navbar-toggler-icon {
+    // On surcharge le SVG Bootstrap par un blanc
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  }
+}
+
+// Avatar dans la navbar
+.navbar-dark-custom .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.15);
+}
+
+// Nom d'utilisateur en blanc
+.navbar-dark-custom .navbar-user-name {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+// Dropdown : fond sombre + bords légers
+.navbar-dark-custom .dropdown-menu {
+  background-color: $dark-surface;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  border-radius: 10px;
+  padding: 0.5rem;
+  min-width: 200px;
+}
+
+.navbar-dark-custom .dropdown-item {
+  color: rgba(255,255,255,0.8);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: background 0.15s;
+
+  &:hover {
+    background-color: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+
+  &.text-danger {
+    color: #ff6b6b !important;
+    &:hover { background-color: rgba(255,100,100,0.1); }
+  }
+}
+
+.navbar-dark-custom .dropdown-divider {
+  border-color: rgba(255,255,255,0.1);
+}
+
+// Dropdown des notifications — fond sombre
+.navbar-dark-custom .notif-dropdown {
+  min-width: 300px;
+  padding: 0;
+
+  .notif-header {
+    background: $dark-surface;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px 10px 0 0;
+  }
+
+  .notif-item {
+    background: transparent;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.8);
+    font-size: 0.82rem;
+
+    &.unread {
+      background: rgba($green, 0.07);
+    }
+
+    &:hover {
+      background: rgba(255,255,255,0.06);
+    }
+  }
+
+  .notif-footer {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0 0 10px 10px;
+    background: $dark-surface;
+  }
+
+  a.notif-see-all {
+    color: $green !important;
+    font-size: 0.82rem;
+  }
 }

@@ -27,10 +27,14 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
 
-  <body><%= render "shared/navbar" %>
-<%= render "shared/flashes" %>
+  <body>
+    <%= render "shared/navbar" %>
+    <%= render "shared/flashes" %>
 
     <%= yield %>
+
+    <%# Pied de page commun à toutes les pages %>
+    <%= render "shared/footer" %>
 
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>

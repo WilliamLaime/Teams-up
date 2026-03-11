@@ -1,146 +1,407 @@
-<%# Page d'accueil de Team Up %>
+<%# =====================================================
+    PAGE D'ACCUEIL — Team Up
+    4 sections : Hero / Matchs / Comment ça marche / CTA
+    ===================================================== %>
 
-<div class="container my-5 text-center">
 
-  <%# Section hero %>
-  <h1 class="display-4 fw-bold mb-3">Bienvenue sur Team Up ⚽</h1>
-  <p class="lead text-muted mb-4">
-    Trouve des joueurs, organise des matchs, joue ensemble.
-  </p>
+<%# ══════════════════════════════════════════════════
+    1. HERO — Section principale sombre
+       Titre + description + CTA + image terrain
+    ══════════════════════════════════════════════════ %>
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
 
-  <%# Boutons d'appel à l'action %>
-  <div class="d-flex justify-content-center gap-3 mb-5">
-    <% if user_signed_in? %>
-      <%= link_to "Voir les matchs", matches_path, class: "btn btn-primary btn-lg" %>
-      <%= link_to "Créer un match", new_match_path, class: "btn btn-outline-primary btn-lg" %>
-    <% else %>
-      <%= link_to "Commencer", new_user_registration_path, class: "btn btn-primary btn-lg" %>
-      <%= link_to "Se connecter", new_user_session_path, class: "btn btn-outline-primary btn-lg" %>
-    <% end %>
-  </div>
+      <%# ── Colonne gauche : texte ── %>
+      <div class="col-lg-6">
 
-  <%# Section "Comment ça marche" %>
-  <div class="row justify-content-center g-4">
-
-    <div class="col-md-4">
-      <div class="card h-100 border-0 shadow-sm p-3">
-        <div class="card-body text-center">
-          <div class="display-5 mb-3">📋</div>
-          <h5 class="card-title">Crée un match</h5>
-          <p class="card-text text-muted">Définis la date, le lieu, le niveau et le nombre de joueurs.</p>
+        <%# Badge avec point animé %>
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <%= @matches.count %> match<%= @matches.count > 1 ? "s" : "" %> disponible<%= @matches.count > 1 ? "s" : "" %>
         </div>
-      </div>
-    </div>
 
-    <div class="col-md-4">
-      <div class="card h-100 border-0 shadow-sm p-3">
-        <div class="card-body text-center">
-          <div class="display-5 mb-3">🤝</div>
-          <h5 class="card-title">Rejoins un match</h5>
-          <p class="card-text text-muted">Parcours les matchs disponibles et inscris-toi en un clic.</p>
+        <%# Titre principal sur 2 lignes %>
+        <h1 class="hero-title">
+          Créer un match<br>
+          <span class="hero-title-accent">en 30 secondes.</span>
+        </h1>
+
+        <%# Sous-titre %>
+        <p class="hero-description">
+          Le moyen le plus rapide pour compléter votre cinq ou rejoindre
+          une équipe de passionnés. Plus d'excuses pour ne pas jouer.
+        </p>
+
+        <%# Boutons CTA :
+            - Utilisateur connecté   → "Créer un match" (primaire) + "Voir les matchs" (secondaire)
+            - Utilisateur non connecté → "Créer un match" (primaire) → redirige vers inscription
+        %>
+        <div class="d-flex flex-wrap gap-3">
+          <% if user_signed_in? %>
+            <%# Bouton primaire (vert) %>
+            <%= link_to new_match_path, class: "btn btn-primary btn-lg px-4" do %>
+              <i data-lucide="plus" style="width:17px;height:17px;margin-right:5px;"></i>
+              Créer un match
+            <% end %>
+            <%# Bouton secondaire (outline sombre) %>
+            <%= link_to matches_path, class: "btn btn-lg btn-hero-secondary px-4" do %>
+              Voir les matchs
+            <% end %>
+          <% else %>
+            <%# Bouton primaire → inscription %>
+            <%= link_to new_user_registration_path, class: "btn btn-primary btn-lg px-4" do %>
+              <i data-lucide="plus" style="width:17px;height:17px;margin-right:5px;"></i>
+              Créer un match
+            <% end %>
+            <%# Bouton secondaire → liste des matchs %>
+            <%= link_to matches_path, class: "btn btn-lg btn-hero-secondary px-4" do %>
+              Voir les matchs
+            <% end %>
+          <% end %>
         </div>
+
       </div>
-    </div>
 
-    <div class="col-md-4">
-      <div class="card h-100 border-0 shadow-sm p-3">
-        <div class="card-body text-center">
-          <div class="display-5 mb-3">⚽</div>
-          <h5 class="card-title">Joue !</h5>
-          <p class="card-text text-muted">Retrouve tes coéquipiers sur le terrain et profite du match.</p>
-        </div>
-      </div>
-    </div>
+      <%# ── Colonne droite : image + overlay ── %>
+      <div class="col-lg-6 d-none d-lg-block">
+        <div class="hero-image-wrapper">
 
-  </div>
-</div>
+          <%# Image de terrain (placeholder sportif) %>
+          <img
+            src="https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=700&q=80"
+            alt="Terrain de sport"
+            class="hero-img"
+          >
 
-<%# Section matchs à venir %>
-<div class="container my-5">
-
-  <%# Titre de section %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold mb-0">Matchs à venir</h2>
-    <%= link_to matches_path, class: "btn btn-outline-primary d-flex align-items-center gap-1" do %>
-      <i data-lucide="arrow-right" style="width:16px;height:16px;"></i> Voir plus
-    <% end %>
-  </div>
-
-  <% if @matches.any? %>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-      <% @matches.each do |match| %>
-        <div class="col">
-          <div class="card h-100 shadow-sm">
-            <div class="card-body">
-
-              <%# Ligne titre + badges %>
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <h5 class="card-title mb-0 me-2"><%= match.title %></h5>
-                <div class="d-flex flex-wrap gap-1 justify-content-end">
-                  <%# Badge "Urgent" si le match commence dans moins de 2h %>
-                  <% if match.urgent? %>
-                    <span class="badge bg-danger">🔥 Urgent</span>
-                  <% end %>
+          <%# Carte overlay : affiche le prochain match disponible %>
+          <% if @matches.any? %>
+            <% next_match = @matches.first %>
+            <div class="hero-match-card">
+              <div class="d-flex align-items-start justify-content-between gap-2">
+                <div>
+                  <%# Badge niveau du match %>
                   <%
-                    level_class = case match.level
-                      when "Débutant"      then "bg-success"
-                      when "Intermédiaire" then "bg-warning text-dark"
-                      when "Avancé"        then "bg-danger"
-                      else "bg-info text-dark"
+                    level_css = case next_match.level
+                      when "Débutant"      then "level-debutant"
+                      when "Intermédiaire" then "level-intermediaire"
+                      when "Avancé"        then "level-avance"
+                      else                      "level-tout"
                     end
                   %>
-                  <span class="badge <%= level_class %>"><%= match.level %></span>
+                  <span class="match-badge-level <%= level_css %> mb-1 d-inline-block">
+                    <%= next_match.level %>
+                  </span>
+                  <%# Titre du match %>
+                  <div class="fw-bold text-white small mt-1"><%= next_match.title %></div>
+                  <%# Lieu %>
+                  <div class="d-flex align-items-center gap-1 mt-1" style="color:rgba(255,255,255,0.5);font-size:0.78rem;">
+                    <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+                    <%= next_match.place || "Lieu à définir" %>
+                  </div>
+                </div>
+                <%# Nombre de places restantes %>
+                <div class="text-end">
+                  <% if next_match.full? %>
+                    <span class="badge" style="background:rgba(255,100,100,0.15);color:#ff6b6b;font-size:0.7rem;">Complet</span>
+                  <% else %>
+                    <span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">
+                      <%= next_match.player_left %> place<%= next_match.player_left > 1 ? "s" : "" %>
+                    </span>
+                  <% end %>
                 </div>
               </div>
-
-              <%# Description courte %>
-              <p class="card-text text-muted small"><%= truncate(match.description, length: 80) %></p>
-
-              <%# Infos clés du match %>
-              <ul class="list-unstyled small mb-0">
-                <li class="d-flex align-items-center gap-2 mb-1">
-                  <i data-lucide="calendar" style="width:14px;height:14px;" class="text-muted"></i>
-                  <%= match.date&.strftime("%d/%m/%Y") || "Date non définie" %>
-                </li>
-                <li class="d-flex align-items-center gap-2 mb-1">
-                  <i data-lucide="clock" style="width:14px;height:14px;" class="text-muted"></i>
-                  <%= match.time&.strftime("%H:%M") || "Heure non définie" %>
-                </li>
-                <li class="d-flex align-items-center gap-2 mb-1">
-                  <i data-lucide="map-pin" style="width:14px;height:14px;" class="text-muted"></i>
-                  <%= match.place || "Lieu non défini" %>
-                </li>
-                <%# Affiche "Complet" si plus aucune place %>
-                <li class="d-flex align-items-center gap-2">
-                  <i data-lucide="users" style="width:14px;height:14px;" class="text-muted"></i>
-                  <% if match.full? %>
-                    <span class="text-danger fw-semibold">Complet</span>
-                  <% else %>
-                    <%= match.player_left %> place(s) disponible(s)
-                  <% end %>
-                </li>
-              </ul>
-
             </div>
+          <% end %>
 
-            <%# Bouton voir le match %>
-            <div class="card-footer bg-transparent">
-              <%= link_to "Voir le match", match_path(match), class: "btn btn-outline-primary btn-sm w-100" %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<%# ══════════════════════════════════════════════════
+    2. MATCHS À PROXIMITÉ — Section claire
+       Affiche les 3 prochains matchs de la BDD
+    ══════════════════════════════════════════════════ %>
+<section class="matches-section">
+  <div class="container">
+
+    <%# En-tête de section %>
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h2 class="matches-section-title">Matchs à proximité</h2>
+        <p class="matches-section-subtitle mb-0">
+          Les prochaines séances disponibles près de vous.
+        </p>
+      </div>
+      <%= link_to matches_path, class: "matches-see-all mt-1" do %>
+        Tout voir
+        <i data-lucide="arrow-right" style="width:15px;height:15px;"></i>
+      <% end %>
+    </div>
+
+    <% if @matches.any? %>
+      <div class="row row-cols-1 row-cols-md-3 g-4">
+        <% @matches.each do |match| %>
+          <div class="col">
+            <div class="match-card">
+
+              <%# Image de terrain (placeholder différent pour chaque carte) %>
+              <img
+                src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=500&q=75"
+                alt="Terrain <%= match.title %>"
+                class="match-card-img"
+              >
+
+              <%# Corps de la carte %>
+              <div class="match-card-body">
+
+                <%# Badges niveau + urgent %>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  <% if match.urgent? %>
+                    <span class="match-badge-urgent">🔥 Urgent</span>
+                  <% end %>
+                  <%
+                    level_css = case match.level
+                      when "Débutant"      then "level-debutant"
+                      when "Intermédiaire" then "level-intermediaire"
+                      when "Avancé"        then "level-avance"
+                      else                      "level-tout"
+                    end
+                  %>
+                  <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
+                </div>
+
+                <%# Date et heure %>
+                <div class="match-info-line">
+                  <i data-lucide="calendar" style="width:13px;height:13px;"></i>
+                  <%= match.date&.strftime("%A %d, %H:%M") || "Date non définie" %>
+                </div>
+
+                <%# Titre du match %>
+                <div class="match-card-title"><%= match.title %></div>
+
+                <%# Lieu %>
+                <div class="match-info-line">
+                  <i data-lucide="map-pin" style="width:13px;height:13px;"></i>
+                  <%= match.place || "Lieu non défini" %>
+                </div>
+
+                <%# Joueurs manquants %>
+                <div class="match-info-line">
+                  <i data-lucide="users" style="width:13px;height:13px;"></i>
+                  <% if match.full? %>
+                    <span style="color:#dc3545;font-weight:600;">Complet</span>
+                  <% else %>
+                    <%= match.player_left %> joueur<%= match.player_left > 1 ? "s" : "" %> manquant<%= match.player_left > 1 ? "s" : "" %>
+                  <% end %>
+                </div>
+
+              </div>
+
+              <%# Pied de carte : bouton Rejoindre %>
+              <div class="match-card-footer">
+                <% if user_signed_in? %>
+                  <%# Utilisateur connecté : bouton plein vert %>
+                  <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100" do %>
+                    Rejoindre
+                  <% end %>
+                <% else %>
+                  <%# Non connecté : redirige vers inscription %>
+                  <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100" do %>
+                    Rejoindre
+                  <% end %>
+                <% end %>
+              </div>
+
             </div>
           </div>
+        <% end %>
+      </div>
+
+    <% else %>
+      <%# Aucun match disponible %>
+      <div class="matches-empty">
+        <i data-lucide="calendar-x" style="width:40px;height:40px;color:#ccc;"></i>
+        <p class="mt-3 mb-2">Aucun match disponible pour le moment.</p>
+        <% if user_signed_in? %>
+          <%= link_to "Créer le premier match", new_match_path, class: "btn btn-primary" %>
+        <% end %>
+      </div>
+    <% end %>
+
+  </div>
+</section>
+
+
+<%# ══════════════════════════════════════════════════
+    3. COMMENT ÇA MARCHE — Section claire
+       3 étapes : Propose / Notifie / Équipe complète
+    ══════════════════════════════════════════════════ %>
+<section class="how-it-works-section" id="how-it-works">
+  <div class="container">
+
+    <h2 class="hiw-title">Jouez plus, organisez moins.</h2>
+    <p class="hiw-subtitle">
+      Team-Up simplifie la logistique pour que vous restiez concentré sur le terrain.
+    </p>
+
+    <div class="row justify-content-center g-4">
+
+      <%# Étape 1 : Proposer un match %>
+      <div class="col-md-4">
+        <div class="hiw-item">
+          <div class="hiw-icon-circle">
+            <i data-lucide="calendar-plus" style="width:26px;height:26px;"></i>
+          </div>
+          <div class="hiw-item-title">Propose un match</div>
+          <p class="hiw-item-text">
+            Indique l'heure, le lieu et le nombre de joueurs souhaités en moins d'une minute, sans solution.
+          </p>
         </div>
-      <% end %>
-    </div>
+      </div>
 
-  <% else %>
-    <%# Aucun match disponible %>
-    <div class="text-center text-muted py-5">
-      <i data-lucide="calendar-x" style="width:48px;height:48px;"></i>
-      <p class="mt-3">Aucun match disponible pour le moment.</p>
-      <% if user_signed_in? %>
-        <%= link_to "Créer le premier match", new_match_path, class: "btn btn-primary mt-2" %>
-      <% end %>
-    </div>
-  <% end %>
+      <%# Étape 2 : On notifie les joueurs %>
+      <div class="col-md-4">
+        <div class="hiw-item">
+          <div class="hiw-icon-circle">
+            <i data-lucide="bell-ring" style="width:26px;height:26px;"></i>
+          </div>
+          <div class="hiw-item-title">On notifie les joueurs</div>
+          <p class="hiw-item-text">
+            Notre algorithme alerte les joueurs disponibles à proximité automatiquement.
+          </p>
+        </div>
+      </div>
 
-</div>
+      <%# Étape 3 : Équipe complète %>
+      <div class="col-md-4">
+        <div class="hiw-item">
+          <div class="hiw-icon-circle">
+            <i data-lucide="check-circle-2" style="width:26px;height:26px;"></i>
+          </div>
+          <div class="hiw-item-title">Ton équipe est complète</div>
+          <p class="hiw-item-text">
+            Reçois une notification dès que ton match est plein et retrouve tes coéquipiers sur le terrain.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<%# ══════════════════════════════════════════════════
+    4. CTA SOMBRE — "Dites adieu aux groupes WhatsApp"
+       Section sombre avec mockup de conversation
+    ══════════════════════════════════════════════════ %>
+<section class="cta-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+
+      <%# ── Colonne gauche : texte + liste ── %>
+      <div class="col-lg-6">
+
+        <h2 class="cta-title">
+          Dites adieu aux groupes whatsApp<br>
+          <span class="cta-title-accent">bordéliques.</span>
+        </h2>
+
+        <p class="cta-description">
+          Gérez tout au même endroit : validation des joueurs, sécurité,
+          et bien plus. Plus de déplacements à la dernière minute sans solution.
+        </p>
+
+        <%# Liste des avantages avec coches vertes %>
+        <ul class="cta-feature-list">
+          <li>
+            <span class="cta-check">
+              <i data-lucide="check" style="width:11px;height:11px;"></i>
+            </span>
+            Canal de discussion privé par match
+          </li>
+          <li>
+            <span class="cta-check">
+              <i data-lucide="check" style="width:11px;height:11px;"></i>
+            </span>
+            Partage de localisation rapide
+          </li>
+          <li>
+            <span class="cta-check">
+              <i data-lucide="check" style="width:11px;height:11px;"></i>
+            </span>
+            Notifications push pour les messages importants
+          </li>
+        </ul>
+      </div>
+
+      <%# ── Colonne droite : mockup de chat ── %>
+      <div class="col-lg-6 d-flex justify-content-center">
+        <div class="cta-chat-mockup">
+
+          <%# En-tête du groupe %>
+          <div class="chat-header">
+            <div class="chat-group-icon">
+              <i data-lucide="users" style="width:18px;height:18px;"></i>
+            </div>
+            <div>
+              <div class="chat-group-name">Groupe Match #405</div>
+              <%# "TEAM COMPLÈTE" en vert via text-primary %>
+              <div class="chat-group-sub text-primary fw-bold" style="font-size:0.72rem;letter-spacing:0.05em;">TEAM COMPLÈTE</div>
+            </div>
+          </div>
+
+          <%# Messages fictifs — les messages entrants ont un avatar à gauche %>
+
+          <%# Message entrant d'Alex avec son avatar %>
+          <div class="chat-message-row">
+            <img src="https://i.pravatar.cc/28?img=11" class="chat-avatar" alt="Alex">
+            <div class="chat-message incoming">
+              <div class="msg-sender">Alex</div>
+              <span class="msg-text">On est 9, il manque encore quelqu'un pour demain ?</span>
+              <span class="msg-time">18:42</span>
+            </div>
+          </div>
+
+          <div class="chat-message notification">
+            ✅ Un nouveau joueur a rejoint le match !
+          </div>
+
+          <%# Message entrant de Julie avec son avatar %>
+          <div class="chat-message-row">
+            <img src="https://i.pravatar.cc/28?img=47" class="chat-avatar" alt="Julie">
+            <div class="chat-message incoming">
+              <div class="msg-sender">Julie</div>
+              <span class="msg-text">C'est à quelle heure le terrain ?</span>
+              <span class="msg-time">18:55</span>
+            </div>
+          </div>
+
+          <%# Message sortant (pas d'avatar, c'est "moi") %>
+          <div class="chat-message outgoing">
+            <span class="msg-text">On se retrouve à 19h devant le terrain 🤝</span>
+            <span class="msg-time">19:00</span>
+          </div>
+
+          <div class="chat-message notification">
+            🏆 Ton équipe est complète — bonne chance !
+          </div>
+
+          <%# Faux champ de saisie — purement décoratif, non fonctionnel %>
+          <div class="chat-input-bar">
+            <span class="chat-input-placeholder">Écrire un message...</span>
+            <button class="chat-send-btn" disabled aria-label="Envoyer">
+              <i data-lucide="send" style="width:15px;height:15px;"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>

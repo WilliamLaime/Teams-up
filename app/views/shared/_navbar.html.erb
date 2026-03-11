@@ -1,63 +1,81 @@
-<nav class="navbar navbar-expand-sm navbar-light navbar-lewagon">
-  <div class="container-fluid">
+<%# =====================================================
+    NAVBAR — Thème sombre avec accents verts
+    - Utilisateur non connecté : liens + "Se connecter" + "S'inscrire"
+    - Utilisateur connecté     : liens + "Créer un match" + cloche + avatar
+    ===================================================== %>
 
-    <%# Logo qui renvoie vers la page d'accueil %>
+<nav class="navbar navbar-expand-lg navbar-dark-custom">
+  <div class="container">
+
+    <%# ── Logo ── %>
     <%= link_to root_path, class: "navbar-brand" do %>
-      <%= image_tag "https://raw.githubusercontent.com/lewagon/fullstack-images/master/uikit/logo.png" %>
+      <%= image_tag "logo_teams-up_logo_vert.png", alt: "Teams-Up", height: 30 %>
     <% end %>
 
-    <%# Bouton hamburger pour mobile %>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <%# ── Bouton hamburger (mobile) ── %>
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse" data-bs-target="#navbarMain"
+            aria-controls="navbarMain" aria-expanded="false" aria-label="Menu">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <div class="collapse navbar-collapse" id="navbarMain">
 
-      <%# Liens de navigation à gauche %>
-      <ul class="navbar-nav me-auto">
-        <% if user_signed_in? %>
-          <li class="nav-item">
-            <%= link_to matches_path, class: "nav-link d-flex align-items-center gap-1" do %>
-              <i data-lucide="calendar-days" style="width:16px;height:16px;"></i> Les matchs
-            <% end %>
-          </li>
-          <li class="nav-item">
-            <%= link_to new_match_path, class: "nav-link d-flex align-items-center gap-1" do %>
-              <i data-lucide="plus-circle" style="width:16px;height:16px;"></i> Créer un match
-            <% end %>
-          </li>
-        <% end %>
+      <%# ── Liens du centre ── %>
+      <ul class="navbar-nav mx-auto gap-1">
+        <li class="nav-item">
+          <%= link_to matches_path, class: "nav-link d-flex align-items-center gap-1" do %>
+            <i data-lucide="search" style="width:15px;height:15px;"></i>
+            Trouver un match
+          <% end %>
+        </li>
+        <li class="nav-item">
+          <%# Lien vers la section "Comment ça marche" de la homepage %>
+          <%= link_to "#how-it-works", class: "nav-link" do %>
+            Qui sommes-nous ?
+          <% end %>
+        </li>
       </ul>
 
-      <%# Menu utilisateur à droite %>
-      <ul class="navbar-nav ms-auto align-items-center gap-2">
+      <%# ── Actions à droite ── %>
+      <ul class="navbar-nav align-items-center gap-2">
+
         <% if user_signed_in? %>
 
-          <%# ====== CLOCHE DE NOTIFICATIONS ====== %>
+          <%# Bouton principal : Créer un match (vert) %>
+          <li class="nav-item">
+            <%= link_to new_match_path, class: "btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" do %>
+              <i data-lucide="plus" style="width:15px;height:15px;"></i>
+              Créer un match
+            <% end %>
+          </li>
+
+          <%# ── Cloche notifications ── %>
           <% unread_count = current_user.notifications.unread.count %>
           <li class="nav-item dropdown">
-
-            <%# Bouton cloche — badge rouge si notifications non lues %>
             <a class="nav-link position-relative px-2" href="#"
                id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              <i data-lucide="bell" style="width:20px;height:20px;"></i>
+              <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
               <% if unread_count > 0 %>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;">
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                      style="font-size:0.6rem;">
                   <%= unread_count %>
                 </span>
               <% end %>
             </a>
 
-            <%# Dropdown des dernières notifications %>
-            <div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notifDropdown" style="min-width:300px;">
+            <%# Dropdown des notifications %>
+            <div class="dropdown-menu dropdown-menu-end notif-dropdown"
+                 aria-labelledby="notifDropdown">
 
-              <%# En-tête du dropdown %>
-              <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                <strong class="small">Notifications</strong>
+              <%# En-tête %>
+              <div class="notif-header d-flex justify-content-between align-items-center px-3 py-2">
+                <strong class="small text-white">Notifications</strong>
                 <% if unread_count > 0 %>
+                  <%# Bouton "Tout lire" — text-primary prend la couleur verte %>
                   <%= button_to "Tout lire", mark_all_read_notifications_path,
                       method: :patch,
-                      class: "btn btn-link btn-sm p-0 text-decoration-none text-muted small" %>
+                      class: "btn btn-link btn-sm p-0 text-decoration-none text-primary small" %>
                 <% end %>
               </div>
 
@@ -65,89 +83,100 @@
               <% recent_notifs = current_user.notifications.recent.limit(5) %>
               <% if recent_notifs.any? %>
                 <% recent_notifs.each do |notif| %>
-                  <%# Cliquer marque la notif comme lue et redirige vers le match %>
                   <%= button_to mark_read_notification_path(notif), method: :patch,
-                      class: "w-100 text-start border-0 p-0",
-                      style: "background: #{notif.read? ? 'white' : '#f0f7ff'};" do %>
+                      class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}" do %>
                     <div class="d-flex align-items-start gap-2 px-3 py-2">
                       <% if notif.read? %>
-                        <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-muted"></i>
+                        <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:rgba(255,255,255,0.4);"></i>
                       <% else %>
                         <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary"></i>
                       <% end %>
                       <div>
-                        <div class="<%= notif.read? ? 'text-muted' : 'fw-semibold' %>" style="font-size:0.82rem;white-space:normal;line-height:1.3;">
+                        <div class="<%= notif.read? ? 'text-muted' : 'fw-semibold text-white' %>"
+                             style="font-size:0.82rem;white-space:normal;line-height:1.3;">
                           <%= notif.message %>
                         </div>
-                        <small class="text-muted"><%= time_ago_in_words(notif.created_at) %></small>
+                        <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+                          <%= time_ago_in_words(notif.created_at) %>
+                        </small>
                       </div>
                     </div>
                   <% end %>
                 <% end %>
               <% else %>
-                <div class="text-center text-muted py-3">
+                <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
                   <i data-lucide="inbox" style="width:22px;height:22px;"></i>
                   <div class="small mt-1">Aucune notification</div>
                 </div>
               <% end %>
 
-              <%# Lien vers toutes les notifications %>
-              <div class="border-top text-center">
-                <%= link_to "Voir tout", notifications_path, class: "dropdown-item text-primary small py-2" %>
+              <%# Lien "Voir tout" %>
+              <div class="notif-footer text-center py-1">
+                <%= link_to "Voir toutes les notifications", notifications_path,
+                    class: "dropdown-item notif-see-all text-center small py-2" %>
               </div>
 
             </div>
           </li>
-          <%# ====== FIN CLOCHE ====== %>
+          <%# ── Fin cloche ── %>
 
-          <%# Dropdown avatar + nom de l'utilisateur %>
+          <%# ── Avatar + dropdown utilisateur ── %>
           <li class="nav-item dropdown">
-            <%#
-              On affiche le Prénom Nom à côté de l'avatar si le profil existe
-              &. = opérateur "safe navigation" : évite une erreur si profil est nil
-            %>
-            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none" id="navbarDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <%# Affiche Prénom Nom uniquement si le profil a au moins un nom renseigné %>
-              <% display_name = current_user.profil && [current_user.profil.first_name, current_user.profil.last_name].compact.join(" ").presence %>
+            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none"
+               id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <% display_name = current_user.profil &&
+                  [current_user.profil.first_name, current_user.profil.last_name]
+                    .compact.join(" ").presence %>
               <% if display_name %>
-                <span class="small fw-semibold text-dark d-none d-sm-inline">
-                  <%= display_name %>
-                </span>
+                <span class="navbar-user-name d-none d-sm-inline"><%= display_name %></span>
               <% end %>
               <% if current_user.profil&.avatar&.attached? %>
-                <%= image_tag current_user.profil.avatar,
-                    class: "avatar",
-                    alt: "Photo de #{[current_user.profil.first_name, current_user.profil.last_name].compact.join(' ').presence || current_user.email}",
+                <%= image_tag current_user.profil.avatar, class: "avatar",
+                    alt: display_name || current_user.email,
                     style: "object-fit:cover;" %>
               <% else %>
-                <%= image_tag "https://kitt.lewagon.com/placeholder/users/ssaunier", class: "avatar", alt: "menu utilisateur" %>
+                <%= image_tag "https://kitt.lewagon.com/placeholder/users/ssaunier",
+                    class: "avatar", alt: "avatar" %>
               <% end %>
             </a>
-            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
               <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
                 <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
               <% end %>
-              <%= link_to edit_user_registration_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <%= link_to edit_user_registration_path,
+                  class: "dropdown-item d-flex align-items-center gap-2" do %>
                 <i data-lucide="settings" style="width:14px;height:14px;"></i> Mon compte
               <% end %>
               <div class="dropdown-divider"></div>
-              <%= link_to destroy_user_session_path, data: { turbo_method: :delete }, class: "dropdown-item d-flex align-items-center gap-2 text-danger" do %>
+              <%= link_to destroy_user_session_path,
+                  data: { turbo_method: :delete },
+                  class: "dropdown-item text-danger d-flex align-items-center gap-2" do %>
                 <i data-lucide="log-out" style="width:14px;height:14px;"></i> Se déconnecter
               <% end %>
             </div>
           </li>
 
         <% else %>
+          <%# Utilisateur non connecté %>
+
+          <%# Bouton secondaire : Se connecter (outline) %>
           <li class="nav-item">
-            <%= link_to new_user_session_path, class: "nav-link d-flex align-items-center gap-1" do %>
-              <i data-lucide="log-in" style="width:16px;height:16px;"></i> Se connecter
+            <%= link_to new_user_session_path,
+                class: "btn btn-outline-secondary btn-sm px-3 d-flex align-items-center gap-1",
+                style: "color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.25);" do %>
+              Se connecter
             <% end %>
           </li>
+
+          <%# Bouton primaire : S'inscrire (vert) %>
           <li class="nav-item">
-            <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm d-flex align-items-center gap-1" do %>
-              <i data-lucide="user-plus" style="width:16px;height:16px;"></i> S'inscrire
+            <%= link_to new_user_registration_path,
+                class: "btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" do %>
+              S'inscrire
             <% end %>
           </li>
+
         <% end %>
       </ul>
 

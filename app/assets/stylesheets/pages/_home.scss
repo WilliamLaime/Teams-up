@@ -1,1 +1,603 @@
-// Specific CSS for your home-page
+// =====================================================
+// HOME — Styles de la page d'accueil
+// =====================================================
+
+
+// ── 1. HERO ────────────────────────────────────────
+// Section principale sombre avec fond de terrain
+
+.hero-section {
+  background-color: $dark-bg;
+  color: $dark-text;
+  padding: 80px 0 60px;
+  overflow: hidden;
+  position: relative;
+
+  // Badge "XX matchs disponibles" vert en haut
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba($green, 0.15);
+    color: $green;
+    border: 1px solid rgba($green, 0.3);
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+
+    // Point clignotant
+    .hero-badge-dot {
+      width: 7px;
+      height: 7px;
+      background: $green;
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+  }
+
+  // Titre principal
+  .hero-title {
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    font-weight: 800;
+    line-height: 1.1;
+    color: #fff;
+    margin-bottom: 1rem;
+
+    // La partie verte du titre
+    .hero-title-accent {
+      color: $green;
+    }
+  }
+
+  // Description sous le titre
+  .hero-description {
+    color: $dark-muted;
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 440px;
+    margin-bottom: 2rem;
+  }
+
+  // Bouton secondaire adapté au fond sombre
+  .btn-hero-secondary {
+    background: transparent;
+    color: rgba(255,255,255,0.85);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: $border-radius;
+
+    &:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border-color: rgba(255,255,255,0.5);
+    }
+  }
+
+  // ── Image droite du hero ──
+  .hero-image-wrapper {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    max-height: 380px;
+
+    img.hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 16px;
+      display: block;
+    }
+
+    // Gradient sombre en bas de l'image pour lisibilité
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba($dark-bg, 0.7), transparent);
+      border-radius: 0 0 16px 16px;
+    }
+  }
+
+  // Petite carte "match" en overlay sur l'image
+  .hero-match-card {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    background: rgba($dark-card-bg, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    z-index: 2;
+    color: $dark-text;
+  }
+}
+
+// Animation du point clignotant dans le badge
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
+}
+
+
+// ── 2. MATCHS À PROXIMITÉ ──────────────────────────
+// Section claire avec cartes de matchs
+
+.matches-section {
+  background-color: #fff;
+  padding: 72px 0;
+
+  .matches-section-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #111;
+  }
+
+  .matches-section-subtitle {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+  }
+
+  // Lien "Tout voir →"
+  .matches-see-all {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: gap 0.2s;
+
+    &:hover { gap: 0.5rem; }
+  }
+
+  // Carte individuelle d'un match
+  .match-card {
+    border: 1px solid #eee;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    transition: box-shadow 0.2s, transform 0.2s;
+    height: 100%;
+
+    &:hover {
+      box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+      transform: translateY(-2px);
+    }
+
+    // Image en haut de la carte
+    .match-card-img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+
+    // Badge de niveau coloré
+    .match-badge-level {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+
+      &.level-debutant      { background: #d1fae5; color: #065f46; }
+      &.level-intermediaire { background: #fef9c3; color: #854d0e; }
+      &.level-avance        { background: #fee2e2; color: #991b1b; }
+      &.level-tout          { background: #e0e7ff; color: #3730a3; }
+    }
+
+    // Badge "Urgent" rouge
+    .match-badge-urgent {
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: #fee2e2;
+      color: #991b1b;
+      border-radius: 999px;
+      padding: 0.25rem 0.6rem;
+    }
+
+    // Corps de la carte
+    .match-card-body {
+      padding: 1rem 1.1rem 0.75rem;
+
+      .match-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111;
+        margin-bottom: 0.5rem;
+      }
+
+      // Ligne d'info (icône + texte)
+      .match-info-line {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.82rem;
+        color: #555;
+        margin-bottom: 0.3rem;
+
+        i { flex-shrink: 0; color: #999; }
+      }
+    }
+
+    // Pied de carte avec bouton
+    .match-card-footer {
+      padding: 0.75rem 1.1rem;
+      border-top: 1px solid #f0f0f0;
+      background: #fff;
+    }
+  }
+
+  // État vide : aucun match
+  .matches-empty {
+    text-align: center;
+    padding: 3rem 0;
+    color: #888;
+  }
+}
+
+
+// ── 3. COMMENT ÇA MARCHE ──────────────────────────
+// Section "Jouez plus, organisez moins"
+
+.how-it-works-section {
+  background-color: #f8f9fa;
+  padding: 72px 0;
+
+  .hiw-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #111;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .hiw-subtitle {
+    text-align: center;
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 3rem;
+  }
+
+  // Chaque fonctionnalité
+  .hiw-item {
+    text-align: center;
+    padding: 0 1rem;
+
+    // Cercle avec icône verte
+    .hiw-icon-circle {
+      width: 60px;
+      height: 60px;
+      background: rgba($green, 0.12);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+
+      i { color: $green; }
+    }
+
+    .hiw-item-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 0.4rem;
+    }
+
+    .hiw-item-text {
+      font-size: 0.875rem;
+      color: #666;
+      line-height: 1.5;
+    }
+  }
+}
+
+
+// ── 4. CTA SOMBRE — "Dites adieu aux groupes WhatsApp" ──
+// Section sombre avec mockup de chat
+
+.cta-section {
+  background-color: $dark-bg;
+  color: $dark-text;
+  padding: 80px 0;
+  overflow: hidden;
+
+  .cta-title {
+    font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.2;
+    color: #fff;
+    margin-bottom: 1rem;
+
+    // Partie colorée en orange (comme dans le template)
+    .cta-title-accent {
+      color: $orange;
+    }
+  }
+
+  .cta-description {
+    color: $dark-muted;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.75rem;
+  }
+
+  // Liste des fonctionnalités avec coche verte
+  .cta-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+
+      .cta-check {
+        width: 20px;
+        height: 20px;
+        min-width: 20px;
+        background: rgba($green, 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1px;
+        i { color: $green; }
+      }
+    }
+  }
+
+  // Mockup de chat (côté droit)
+  .cta-chat-mockup {
+    background: $dark-surface;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 18px;
+    padding: 1.25rem;
+    max-width: 400px;
+    margin: 0 auto;
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 0.75rem;
+
+      .chat-group-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba($green, 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        i { color: $green; }
+      }
+
+      .chat-group-name {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #fff;
+      }
+
+      .chat-group-sub {
+        font-size: 0.75rem;
+        color: $dark-muted;
+      }
+    }
+
+    // Ligne avatar + bulle (messages entrants uniquement)
+    .chat-message-row {
+      display: flex;
+      align-items: flex-start; // avatar aligné en HAUT de la bulle
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+
+      // La bulle dans cette ligne n'a plus de margin-bottom propre
+      .chat-message { margin-bottom: 0; }
+    }
+
+    // Avatar rond à gauche des messages entrants
+    .chat-avatar {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    // Bulle de message
+    .chat-message {
+      border-radius: 12px;
+      padding: 0.5rem 0.75rem 0.35rem; // padding réduit en bas pour laisser place au timestamp
+      font-size: 0.82rem;
+      margin-bottom: 0.75rem;
+      max-width: 85%;
+      line-height: 1.4;
+
+      // Texte du message + timestamp dans une même bulle, style WhatsApp
+      .msg-text {
+        display: block;
+        margin-bottom: 0.2rem;
+      }
+
+      // Timestamp en bas à droite, grisé, petit
+      .msg-time {
+        display: block;
+        text-align: right;
+        font-size: 0.65rem;
+        opacity: 0.55;
+        margin-top: 0.1rem;
+      }
+
+      &.incoming {
+        background: rgba(255,255,255,0.07);
+        color: rgba(255,255,255,0.85);
+        border-radius: 0px 12px 12px 12px; // coin sup gauche plat = base de la queue
+        margin-right: auto;
+        position: relative; // nécessaire pour positionner le ::before
+
+        // Queue triangulaire qui part du coin supérieur gauche vers l'avatar
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -7px;
+          width: 0;
+          height: 0;
+          // Triangle CSS : bord droit coloré = bulle, bord bas transparent = forme diagonale
+          border-top: 7px solid rgba(255,255,255,0.07);
+          border-left: 7px solid transparent;
+        }
+
+        .msg-sender {
+          font-size: 0.7rem;
+          color: $green;
+          font-weight: 700;
+          margin-bottom: 0.25rem;
+        }
+      }
+
+      &.outgoing {
+        background: $green;
+        color: $dark-bg;
+        font-weight: 600;
+        border-radius: 12px 0px 12px 12px; // coin sup droit plat = base de la queue
+        margin-left: auto;
+        position: relative; // nécessaire pour positionner le ::after
+
+        // Queue triangulaire côté droit (message envoyé)
+        &::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          right: -7px;
+          width: 0;
+          height: 0;
+          border-top: 7px solid $green;
+          border-right: 7px solid transparent;
+        }
+
+        // Timestamp plus sombre sur fond vert
+        .msg-time { opacity: 0.5; }
+      }
+
+      &.notification {
+        background: rgba($green, 0.12);
+        color: $green;
+        border-radius: 8px;
+        text-align: center;
+        font-size: 0.78rem;
+        margin: 1rem auto;
+        max-width: 100%;
+        border: 1px solid rgba($green, 0.25);
+      }
+    }
+
+    // Barre de saisie fictive en bas du chat
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 0.55rem 0.75rem;
+      margin-top: 0.75rem;
+
+      // Texte placeholder grisé
+      .chat-input-placeholder {
+        flex: 1;
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.3);
+      }
+
+      // Bouton "Envoyer" vert rond
+      .chat-send-btn {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        background: $green;
+        color: black;
+        border: none;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: default;
+
+        i { color: $dark-bg; }
+      }
+    }
+  }
+}
+
+
+// ── 5. FOOTER ─────────────────────────────────────
+
+.site-footer {
+  background-color: $dark-bg;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  color: $dark-muted;
+  padding: 40px 0 28px;
+
+  .footer-logo {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: $green;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+
+    li a {
+      color: $dark-muted;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.15s;
+
+      &:hover { color: #fff; }
+    }
+  }
+
+  .footer-divider {
+    border-color: rgba(255,255,255,0.07);
+    margin: 1.5rem 0 1rem;
+  }
+
+  .footer-bottom {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.3);
+  }
+
+  // Icônes réseaux sociaux
+  .footer-social a {
+    color: $dark-muted;
+    transition: color 0.15s;
+    &:hover { color: $green; }
+  }
+}
