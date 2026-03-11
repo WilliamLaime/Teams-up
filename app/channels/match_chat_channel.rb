@@ -20,7 +20,7 @@ class MatchChatChannel < ApplicationCable::Channel
 
   # Appelé quand l'utilisateur envoie un signal "typing" depuis le JS
   # Diffuse le nom de l'expéditeur à tous les autres abonnés
-  def typing(data)
+  def typing(_data)
     # Guard : si @match ou current_user est nil, on ne fait rien
     return unless @match && current_user
 
@@ -28,7 +28,7 @@ class MatchChatChannel < ApplicationCable::Channel
       "match_chat_typing_#{@match.id}",
       {
         user_name: current_user.display_name,
-        user_id:   current_user.id
+        user_id: current_user.id
       }
     )
   end
