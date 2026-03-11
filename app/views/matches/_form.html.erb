@@ -16,10 +16,13 @@
     </div>
   <% end %>
 
-  <%# Titre du match %>
+  <%# Titre du match — obligatoire %>
   <div class="col-12">
-    <%= f.label :title, "Titre", class: "form-label" %>
-    <%= f.text_field :title, class: "form-control", placeholder: "Ex: Match foot samedi matin" %>
+    <%# La * rouge indique que le champ est obligatoire %>
+    <%= f.label :title, class: "form-label" do %>
+      Titre <span class="text-danger">*</span>
+    <% end %>
+    <%= f.text_field :title, class: "form-control", placeholder: "Ex: Match foot samedi matin", required: true %>
   </div>
 
   <%# Description %>
@@ -30,13 +33,19 @@
 
   <%# Date et heure sur la même ligne %>
   <div class="col-md-6">
-    <%= f.label :date, "Date", class: "form-label" %>
+    <%# La * rouge indique que le champ est obligatoire %>
+    <%= f.label :date, class: "form-label" do %>
+      Date <span class="text-danger">*</span>
+    <% end %>
     <%# La valeur par défaut (aujourd'hui) est définie dans le controller #new %>
-    <%= f.date_field :date, class: "form-control", value: @match.date %>
+    <%= f.date_field :date, class: "form-control", value: @match.date, required: true %>
   </div>
 
   <div class="col-md-6">
-    <%= f.label :time, "Heure", class: "form-label" %>
+    <%# La * rouge indique que le champ est obligatoire %>
+    <%= f.label :time, class: "form-label" do %>
+      Heure <span class="text-danger">*</span>
+    <% end %>
     <%#
       time_select génère deux <select> séparés :
         - un pour les heures (0 à 23)
@@ -55,7 +64,10 @@
     L'utilisateur tape, des suggestions apparaissent en dessous via l'API Nominatim
   %>
   <div class="col-12" data-controller="place-search">
-    <%= f.label :place, "Lieu", class: "form-label" %>
+    <%# La * rouge indique que le champ est obligatoire %>
+    <%= f.label :place, class: "form-label" do %>
+      Lieu <span class="text-danger">*</span>
+    <% end %>
 
     <div class="position-relative">
       <%#
@@ -67,6 +79,7 @@
           class: "form-control",
           placeholder: "Rechercher un lieu... ex: 4Padel Bordeaux",
           autocomplete: "off",
+          required: true,
           data: {
             "place-search-target": "input",
             "action": "input->place-search#search"
@@ -82,7 +95,10 @@
 
   <%# Niveau et nombre de joueurs sur la même ligne %>
   <div class="col-md-6">
-    <%= f.label :level, "Niveau", class: "form-label" %>
+    <%# La * rouge indique que le champ est obligatoire %>
+    <%= f.label :level, class: "form-label" do %>
+      Niveau <span class="text-danger">*</span>
+    <% end %>
     <%#
       Match::LEVELS = ["Tout niveau", "Débutant", "Intermédiaire", "Avancé"]
       prompt: affiche "Choisir un niveau" en premier (non sélectionnable)
@@ -96,8 +112,11 @@
   </div>
 
   <div class="col-md-6">
-    <%= f.label :player_left, "Places disponibles", class: "form-label" %>
-    <%= f.number_field :player_left, class: "form-control", min: 1, placeholder: "Ex: 5" %>
+    <%# La * rouge indique que le champ est obligatoire %>
+    <%= f.label :player_left, class: "form-label" do %>
+      Places disponibles <span class="text-danger">*</span>
+    <% end %>
+    <%= f.number_field :player_left, class: "form-control", min: 1, placeholder: "Ex: 5", required: true %>
   </div>
 
   <%# Mode de validation des joueurs — toggle Bootstrap %>
@@ -143,6 +162,11 @@
           : 'Les joueurs sont acceptés immédiatement.';
       });
     </script>
+  </div>
+
+  <%# Légende des champs obligatoires %>
+  <div class="col-12">
+    <small class="text-muted"><span class="text-danger">*</span> Champs obligatoires</small>
   </div>
 
   <%# Bouton de soumission %>
