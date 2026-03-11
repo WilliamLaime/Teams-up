@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_10_102618) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_11_131143) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,6 +68,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_102618) do
     t.index ["user_id"], name: "index_matches_on_user_id"
   end
 
+  create_table "messages", force: :cascade do |t|
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.bigint "match_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["match_id"], name: "index_messages_on_match_id"
+    t.index ["user_id"], name: "index_messages_on_user_id"
+  end
+
   create_table "notifications", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "link"
@@ -111,6 +121,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_10_102618) do
   add_foreign_key "match_users", "matches"
   add_foreign_key "match_users", "users"
   add_foreign_key "matches", "users"
+  add_foreign_key "messages", "matches"
+  add_foreign_key "messages", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "profils", "users"
 end

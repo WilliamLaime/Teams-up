@@ -1,0 +1,345 @@
+// ── Styles du chat de match ───────────────────────────────────────────────────
+
+// ── Carte de prévisualisation (version compacte sur la page show) ─────────────
+
+.chat-preview-card {
+  background-color: $dark-card-bg;
+  border: 1px solid $dark-surface;
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: $dark-text;
+}
+
+.chat-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  strong {
+    font-size: 1rem;
+    color: $dark-text;
+  }
+}
+
+// Lien "Accéder au chat complet"
+.chat-preview-open {
+  font-size: 0.85rem;
+  color: $green !important;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Liste des aperçus de messages
+.chat-preview-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid $dark-surface;
+  padding-top: 12px;
+}
+
+// Un aperçu de message (avatar + texte)
+.chat-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// Avatar minuscule pour la preview
+.chat-preview-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.chat-preview-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // évite le débordement sur les textes longs
+}
+
+.chat-preview-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $dark-text;
+}
+
+.chat-preview-text {
+  font-size: 0.8rem;
+  color: $dark-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-preview-empty {
+  font-size: 0.85rem;
+  color: $dark-muted;
+  margin: 0;
+  border-top: 1px solid $dark-surface;
+  padding-top: 12px;
+}
+
+// ── Modal du chat complet ─────────────────────────────────────────────────────
+
+.chat-modal-content {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: $dark-card-bg;
+
+  // Pied du modal (formulaire) sur fond sombre
+  .modal-footer {
+    background-color: $dark-card-bg;
+    border-color: $dark-surface;
+  }
+}
+
+// ── Indicateur "X est en train d'écrire..." ───────────────────────────────────
+
+.chat-typing-indicator {
+  display: flex;           // flex pour aligner les points + texte
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background-color: $dark-card-bg;
+  font-size: 0.8rem;
+  color: $dark-muted;
+  border-top: 1px solid $dark-surface;
+}
+
+.chat-typing-name {
+  font-weight: 700;
+  color: $green;
+}
+
+// Les trois points animés (style iMessage/WhatsApp)
+.chat-typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  span {
+    width: 6px;
+    height: 6px;
+    background-color: $green;
+    border-radius: 50%;
+    animation: typing-bounce 1.2s infinite ease-in-out;
+
+    // Décale l'animation de chaque point pour l'effet "vague"
+    &:nth-child(1) { animation-delay: 0s; }
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+}
+
+// Animation des points
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%           { transform: translateY(-4px); opacity: 1; }
+}
+
+
+// Carte principale du chat
+.chat-card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+// En-tête du chat (fond sombre, style "groupe")
+.chat-header {
+  background-color: $dark-bg;
+  color: $dark-text;
+  padding: 12px 16px;
+  border-bottom: 1px solid $dark-surface;
+
+  .chat-header-icon {
+    font-size: 1.4rem;
+  }
+
+  .chat-header-title {
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .chat-header-subtitle {
+    font-size: 0.75rem;
+    color: $green; // vert pour indiquer "actif"
+    font-weight: 500;
+  }
+}
+
+// Zone scrollable des messages
+.chat-messages {
+  height: 400px;          // hauteur fixe
+  overflow-y: auto;       // scroll vertical
+  padding: 16px;
+  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column; // les messages s'empilent du haut vers le bas
+
+  // Scrollbar discrète (navigateurs Webkit)
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+}
+
+// Un message (conteneur de la bulle + avatar + nom)
+.chat-message {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 75%;
+
+  // Message d'un autre joueur : aligné à gauche
+  &--theirs {
+    align-self: flex-start;
+
+    .chat-bubble {
+      background-color: #ffffff;
+      color: #1a1a1a;
+      border: 1px solid #e0e0e0;
+      border-radius: 0 12px 12px 12px; // coin supérieur gauche plat
+    }
+
+    .chat-bubble-wrapper {
+      align-items: flex-start;
+    }
+
+    .chat-time {
+      text-align: left;
+    }
+  }
+
+  // Mon message : aligné à droite, bulle verte
+  &--mine {
+    align-self: flex-end;
+    flex-direction: row-reverse; // avatar à droite
+
+    .chat-bubble {
+      background-color: $green;
+      color: #111;
+      border-radius: 12px 0 12px 12px; // coin supérieur droit plat
+      font-weight: 500;
+    }
+
+    .chat-bubble-wrapper {
+      align-items: flex-end;
+    }
+
+    .chat-time {
+      text-align: right;
+    }
+  }
+}
+
+// Wrapper de la bulle (contient nom, bulle, heure)
+.chat-bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// Nom de l'expéditeur (au-dessus de la bulle)
+.chat-sender-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #555;
+  padding-left: 2px;
+}
+
+// La bulle du message
+.chat-bubble {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-break: break-word; // évite le débordement sur les longs mots
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+// Heure d'envoi
+.chat-time {
+  font-size: 0.65rem;
+  color: #999;
+  padding: 0 2px;
+}
+
+// Avatar rond avec initiales
+.chat-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0; // ne rétrécit pas
+  text-transform: uppercase;
+}
+
+// Message d'état vide (aucun message dans le chat)
+.chat-empty {
+  flex: 1; // prend toute la hauteur disponible
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+// Formulaire d'envoi en bas du chat
+.chat-form {
+  align-items: center;
+
+  .form-control {
+    border-radius: 20px; // champ arrondi
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+
+    &:focus {
+      border-color: $green;
+      box-shadow: 0 0 0 0.2rem rgba(30, 221, 136, 0.25);
+    }
+  }
+
+  // Bouton d'envoi rond
+  .btn-success {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: $green;
+    border-color: $green;
+    color: #111;
+    font-size: 1rem;
+
+    &:hover {
+      background-color: darken($green, 8%);
+      border-color: darken($green, 8%);
+    }
+  }
+}

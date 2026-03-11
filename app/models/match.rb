@@ -4,6 +4,9 @@ class Match < ApplicationRecord
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 
+  # Un match a plusieurs messages dans son chat de groupe
+  has_many :messages, dependent: :destroy
+
   # ── ActionCable : mises à jour en temps réel ─────────────────────────────
   # Diffuse automatiquement sur le canal "matches" :
   #   - création  → ajoute la carte en bas de la liste (append)

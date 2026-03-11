@@ -1,0 +1,39 @@
+<%# Partielle affichant un seul message dans le chat %>
+<%# Reçoit la variable `message` (objet Message) %>
+<%# IMPORTANT : on n'utilise pas current_user ici car cette partielle est aussi rendue %>
+<%# par le broadcast ActionCable (hors contexte de requête HTTP, sans Devise disponible) %>
+
+<%# Initiales de l'expéditeur (ex: "MC" pour "Marvin Cohen") %>
+<% sender_name = message.user.display_name %>
+<% initials = sender_name.split.map(&:first).join.upcase.first(2) %>
+
+<%# Couleur de fond de l'avatar basée sur l'ID utilisateur (stable, pas aléatoire) %>
+<% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C #37474F] %>
+<% avatar_color = avatar_colors[message.user_id % avatar_colors.length] %>
+
+<%#
+  data-user-id : utilisé par le Stimulus controller (chat_controller.js) pour savoir
+  si ce message m'appartient et appliquer la classe CSS chat-message--mine dynamiquement
+%>
+<div class="chat-message chat-message--theirs mb-3"
+     data-user-id="<%= message.user_id %>">
+
+  <%# Avatar initiales (à gauche par défaut, Stimulus le déplace à droite si c'est le mien) %>
+  <div class="chat-avatar chat-avatar--left" style="background-color: <%= avatar_color %>;">
+    <%= initials %>
+  </div>
+
+  <div class="chat-bubble-wrapper">
+    <%# Nom de l'expéditeur (masqué si c'est mon message, via CSS) %>
+    <div class="chat-sender-name"><%= sender_name %></div>
+
+    <%# Bulle du message %>
+    <div class="chat-bubble">
+      <%= message.content %>
+    </div>
+
+    <%# Heure d'envoi du message %>
+    <div class="chat-time"><%= message.created_at.strftime("%H:%M") %></div>
+  </div>
+
+</div>

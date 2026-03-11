@@ -13,6 +13,10 @@ Rails.application.routes.draw do
     # DELETE /matches/:match_id/match_users/:id      => quitter
     # PATCH  /matches/:match_id/match_users/:id/approve => approuver (organisateur)
     # PATCH  /matches/:match_id/match_users/:id/reject  => rejeter (organisateur)
+    # Route pour envoyer un message dans le chat du match
+    # POST /matches/:match_id/messages => crée un message
+    resources :messages, only: [:create]
+
     resources :match_users, only: [:create, :destroy] do
       member do
         patch :approve
