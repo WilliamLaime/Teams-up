@@ -25,6 +25,15 @@
   <%= form_with url: matches_path, method: :get, local: true, class: "mb-4" do |f| %>
     <div class="row g-2 align-items-end">
 
+      <%# Barre de recherche libre — cherche dans titre, ville, description et email du créateur %>
+      <div class="col-12 col-md-4">
+        <%= f.label :query, "Recherche", class: "form-label small fw-semibold mb-1" %>
+        <%= f.text_field :query,
+            value: params[:query],
+            placeholder: "Titre, ville, description...",
+            class: "form-control form-control-sm" %>
+      </div>
+
       <%# Filtre : Date (impossible de choisir une date déjà passée) %>
       <div class="col-12 col-md-2">
         <%= f.label :date, "Date", class: "form-label small fw-semibold mb-1" %>
@@ -33,6 +42,7 @@
             min: Date.today,
             class: "form-control form-control-sm" %>
       </div>
+
 
       <%# Filtre : Heure minimum — uniquement les créneaux toutes les 15 minutes %>
       <div class="col-12 col-md-2">

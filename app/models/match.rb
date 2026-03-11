@@ -1,8 +1,24 @@
 class Match < ApplicationRecord
+  # Permet la recherche full-text avec pg_search
+  include PgSearch::Model
+
+  # Scope de recherche : cherche dans title, place, description du match
+  # et dans l'email de l'utilisateur créateur (via la relation belongs_to :user)
+  # prefix: true → trouve aussi les mots partiels (ex: "Pari" trouve "Paris")
+  pg_search_scope :search_by_title_place_and_creator,
+    against: [:title, :place, :description],
+    associated_against: {
+      profil: [:first_name, :last_name]  # Cherche aussi par prénom/nom du créateur via user → profil
+    },
+    using: { tsearch: { prefix: true } }
+
   # Le créateur du match (organisateur)
   belongs_to :user, optional: true
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
+
+  # Accès direct au profil du créateur (via user) — utilisé par pg_search
+  has_one :profil, through: :user
 
   # ── ActionCable : mises à jour en temps réel ─────────────────────────────
   # Diffuse automatiquement sur le canal "matches" :
