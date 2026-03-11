@@ -1,7 +1,7 @@
 class Match < ApplicationRecord
   # Le créateur du match (organisateur)
   belongs_to :user, optional: true
-  has_many :match_users
+  has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 
   # Modes de validation disponibles pour l'organisateur
