@@ -1,331 +1,653 @@
-<%# Page de détail d'un match %>
+<%# =====================================================
+    PAGE DÉTAIL D'UN MATCH — /matches/:id
+    Structure :
+      1. Banner pleine largeur (image + overlay)
+      2. Colonne gauche : organisateur / map / joueurs
+      3. Colonne droite : rejoindre / chat
+      4. Modal "Rejoindre ce match ?"
+      5. Modal chat complet (participants seulement)
+    ===================================================== %>
 
-<div class="container my-4">
+<%# ── Données calculées une seule fois en haut ── %>
+<%
+  # Organisateur du match
+  organizer_mu   = @match_users.find { |mu| mu.role == "organisateur" }
+  organizer      = organizer_mu&.user
 
-  <%# Bouton retour %>
-  <%= link_to "← Retour aux matchs", matches_path, class: "btn btn-outline-secondary mb-4" %>
+  # Joueurs approuvés (organisateur inclus)
+  approved_users = @match_users.select { |mu| mu.approved? || mu.role == "organisateur" }
 
-  <div class="row">
+  # L'utilisateur connecté est-il participant accepté (ou organisateur) ?
+  is_participant = @current_match_user &&
+                   (@current_match_user.approved? || @current_match_user.role == "organisateur")
 
-    <%# Colonne principale — infos du match %>
-    <div class="col-md-8">
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
+  # Classe CSS du badge niveau
+  level_css = case @match.level
+    when "Débutant"      then "level-debutant"
+    when "Intermédiaire" then "level-intermediaire"
+    when "Avancé"        then "level-avance"
+    else                      "level-tout"
+  end
 
-          <%# Titre et badges (niveau, urgent, complet) %>
-          <div class="d-flex justify-content-between align-items-start mb-3">
-            <h2 class="card-title me-2"><%= @match.title %></h2>
-            <div class="d-flex flex-wrap gap-1 justify-content-end">
-              <% if @match.urgent? %>
-                <span class="badge bg-danger fs-6">🔥 Urgent</span>
-              <% end %>
-              <% if @match.full? %>
-                <span class="badge bg-secondary fs-6">🔴 Complet</span>
-              <% end %>
-              <%
-                level_class = case @match.level
-                  when "Débutant"      then "bg-success"
-                  when "Intermédiaire" then "bg-warning text-dark"
-                  when "Avancé"        then "bg-danger"
-                  else "bg-info text-dark"
-                end
-              %>
-              <span class="badge <%= level_class %> fs-6"><%= @match.level %></span>
-            </div>
-          </div>
+  # Jours et mois en français
+  fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
+  fr_months = %w[jan fév mar avr mai jui juil aoû sep oct nov déc]
+%>
 
-          <%# Description %>
-          <p class="card-text"><%= @match.description %></p>
 
-          <hr>
+<%# ══════════════════════════════════════════════════
+    1. BANNER — fond d'image + overlay sombre
+    ══════════════════════════════════════════════════ %>
+<section class="match-banner">
 
-          <%# Détails du match %>
-          <div class="row g-2">
-            <div class="col-6">
-              <strong>📅 Date :</strong> <%= @match.date&.strftime("%d/%m/%Y") || "Non définie" %>
-            </div>
-            <div class="col-6">
-              <strong>🕐 Heure :</strong> <%= @match.time&.strftime("%H:%M") || "Non définie" %>
-            </div>
-            <div class="col-6">
-              <strong>📍 Lieu :</strong> <%= @match.place || "Non défini" %>
-            </div>
-            <div class="col-6">
-              <strong>👥 Places restantes :</strong>
-              <% if @match.full? %>
-                <span class="text-danger fw-semibold">Complet</span>
-              <% else %>
-                <%= @match.player_left %>
-              <% end %>
-            </div>
-            <div class="col-6">
-              <%# Affiche le mode de validation choisi par l'organisateur %>
-              <strong>✅ Validation :</strong>
-              <% if @match.manual_validation? %>
-                <span class="badge bg-warning text-dark">Manuelle</span>
-              <% else %>
-                <span class="badge bg-success">Automatique</span>
-              <% end %>
-            </div>
-          </div>
-
-          <%# ── Actions — rejoindre / quitter (dans la card, sans alerte) ── %>
-          <% if user_signed_in? %>
-            <hr>
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-
-              <% if @current_match_user %>
-                <% if @current_match_user.role == "organisateur" %>
-                  <%# L'organisateur n'a pas besoin de bouton pour rejoindre %>
-                  <span class="text-muted small">Tu es l'organisateur de ce match.</span>
-
-                <% elsif @current_match_user.approved? %>
-                  <%# Joueur inscrit — bouton pour quitter %>
-                  <span class="text-success small fw-semibold">✅ Tu es inscrit</span>
-                  <%= button_to "Quitter le match",
-                      match_match_user_path(@match, @current_match_user),
-                      method: :delete,
-                      class: "btn btn-outline-danger btn-sm",
-                      data: { turbo_confirm: "Es-tu sûr de vouloir quitter ce match ?" } %>
-
-                <% elsif @current_match_user.pending? %>
-                  <%# En attente de validation manuelle %>
-                  <span class="text-warning small fw-semibold">⏳ Demande en attente</span>
-                  <%= button_to "Annuler ma demande",
-                      match_match_user_path(@match, @current_match_user),
-                      method: :delete,
-                      class: "btn btn-outline-secondary btn-sm" %>
-
-                <% elsif @current_match_user.waiting? %>
-                  <%# En file d'attente %>
-                  <span class="text-info small fw-semibold">📋 File d'attente</span>
-                  <%= button_to "Quitter la file",
-                      match_match_user_path(@match, @current_match_user),
-                      method: :delete,
-                      class: "btn btn-outline-secondary btn-sm" %>
-
-                <% elsif @current_match_user.rejected? %>
-                  <%# Demande refusée %>
-                  <span class="text-danger small fw-semibold">❌ Demande refusée</span>
-                <% end %>
-
-              <% else %>
-                <%# L'utilisateur n'est pas encore inscrit %>
-                <% if @match.full? %>
-                  <%= button_to "📋 Rejoindre la file d'attente",
-                      match_match_users_path(@match),
-                      method: :post,
-                      class: "btn btn-outline-warning btn-sm" %>
-                <% else %>
-                  <%= button_to "Rejoindre le match",
-                      match_match_users_path(@match),
-                      method: :post,
-                      class: "btn btn-primary" %>
-                <% end %>
-              <% end %>
-
-            </div>
-          <% end %>
-
-        </div>
-      </div>
-
-      <%# Boutons modifier/supprimer (visibles seulement si organisateur) %>
-      <% if @current_match_user&.role == "organisateur" %>
-        <div class="d-flex gap-2 mt-3">
-          <%= link_to "Modifier", edit_match_path(@match), class: "btn btn-warning" %>
-          <%= button_to "Supprimer", match_path(@match),
-              method: :delete,
-              class: "btn btn-danger",
-              data: { turbo_confirm: "Es-tu sûr de vouloir supprimer ce match ?" } %>
-        </div>
-
-        <%# Section de validation manuelle — visible seulement si mode manuel et organisateur %>
-        <% if @match.manual_validation? %>
-          <%# Récupère les joueurs en attente %>
-          <% pending_users = @match_users.select(&:pending?) %>
-          <% if pending_users.any? %>
-            <div class="card shadow-sm mt-4">
-              <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0">⏳ Demandes en attente (<%= pending_users.count %>)</h5>
-              </div>
-              <ul class="list-group list-group-flush">
-                <% pending_users.each do |match_user| %>
-                  <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <%= match_user.user.display_name %>
-                    <div class="d-flex gap-2">
-                      <%# Bouton pour approuver le joueur %>
-                      <%= button_to "✅ Accepter",
-                          approve_match_match_user_path(@match, match_user),
-                          method: :patch,
-                          class: "btn btn-success btn-sm" %>
-                      <%# Bouton pour rejeter le joueur %>
-                      <%= button_to "❌ Refuser",
-                          reject_match_match_user_path(@match, match_user),
-                          method: :patch,
-                          class: "btn btn-danger btn-sm" %>
-                    </div>
-                  </li>
-                <% end %>
-              </ul>
-            </div>
-          <% end %>
-        <% end %>
-
-      <% end %>
-    </div>
-
-    <%# Colonne secondaire — liste des participants approuvés %>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-header">
-          <%# N'affiche que les joueurs approuvés dans le compteur %>
-          <% approved_count = @match_users.count(&:approved?) %>
-          <h5 class="mb-0">👥 Participants (<%= approved_count %>)</h5>
-        </div>
-        <ul class="list-group list-group-flush">
-          <% approved_users = @match_users.select { |mu| mu.approved? || mu.role == "organisateur" } %>
-          <% if approved_users.any? %>
-            <% approved_users.each do |match_user| %>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <%= match_user.user.display_name %>
-                <% if match_user.role == "organisateur" %>
-                  <span class="badge bg-primary">Organisateur</span>
-                <% else %>
-                  <span class="badge bg-success">Joueur</span>
-                <% end %>
-              </li>
-            <% end %>
-          <% else %>
-            <li class="list-group-item text-muted">Aucun participant pour le moment.</li>
-          <% end %>
-        </ul>
-      </div>
-    </div>
-
+  <%# Image de fond (placeholder terrain — pas encore de champ image en BDD) %>
+  <div class="match-banner-bg"
+       style="background-image: url('https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1400&q=80')">
   </div>
 
-  <%# ── Section Chat de groupe ──────────────────────────────────────────────── %>
-  <%# Visible uniquement pour les participants approuvés et l'organisateur %>
-  <% is_participant = @current_match_user && (@current_match_user.approved? || @current_match_user.role == "organisateur") %>
+  <%# Calque sombre semi-transparent pour lisibilité du texte %>
+  <div class="match-banner-overlay"></div>
 
-  <% if user_signed_in? && is_participant %>
-    <%# Abonnement Turbo Stream — reçoit les nouveaux messages en temps réel %>
-    <%# (fonctionne même quand le modal est fermé, la div #chat-messages est dans le DOM) %>
-    <%= turbo_stream_from "match_chat_#{@match.id}" %>
+  <div class="container match-banner-container">
 
-    <%# Wrapper principal — data-controller sur ce div pour tout englober (preview + modal) %>
-    <%# Les deux values doivent être sur le même élément que data-controller %>
-    <div data-controller="chat"
-         data-chat-current-user-id-value="<%= current_user.id %>"
-         data-chat-match-id-value="<%= @match.id %>">
+    <%# Bouton retour %>
+    <%= link_to matches_path, class: "match-banner-back" do %>
+      <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+      Retour
+    <% end %>
 
-      <%# ── Carte de prévisualisation du chat ────────────────────────────── %>
-      <div class="row mt-4">
-        <div class="col-12">
-          <div class="chat-preview-card">
+    <div class="match-banner-content">
 
-            <%# En-tête : icône + titre + bouton ouvrir %>
-            <div class="chat-preview-header">
-              <div class="d-flex align-items-center gap-2">
-                <span>💬</span>
-                <strong>Match Chat</strong>
+      <%# ── Gauche : badges / titre / description / date ── %>
+      <div class="match-banner-left">
+
+        <%# Badges %>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <% if @match.urgent? %>
+            <span class="match-badge-urgent">🔥 Urgent</span>
+          <% end %>
+          <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
+          <% if @match.full? %>
+            <span class="match-badge-level" style="background:rgba(255,100,100,0.18);color:#ff6b6b;">Complet</span>
+          <% end %>
+        </div>
+
+        <%# Titre %>
+        <h1 class="match-banner-title"><%= @match.title %></h1>
+
+        <%# Description %>
+        <% if @match.description.present? %>
+          <p class="match-banner-desc"><%= @match.description %></p>
+        <% end %>
+
+        <%# Date & heure %>
+        <%
+          d = @match.date
+          t = @match.time
+          date_str = d ? "#{fr_days[d.wday]} #{d.day} #{fr_months[d.month - 1]}" : "Date à définir"
+          time_str = t ? t.strftime('%H:%M') : "—"
+        %>
+        <div class="match-banner-datetime">
+          <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+          <%= date_str %> · <%= time_str %>
+        </div>
+
+      </div>
+
+      <%# ── Droite : bouton partage ── %>
+      <div class="match-banner-right">
+        <button class="match-banner-share-btn" title="Partager ce match">
+          <i data-lucide="share-2" style="width:17px;height:17px;"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<%# ══════════════════════════════════════════════════
+    2. CONTENU PRINCIPAL — 2 colonnes Bootstrap
+    ══════════════════════════════════════════════════ %>
+<div class="match-show-wrapper">
+  <div class="container">
+    <div class="row g-4">
+
+      <%# ════════════════════════════════════════
+          COLONNE GAUCHE (8 / 12)
+          ════════════════════════════════════════ %>
+      <div class="col-lg-8">
+
+
+        <%# ──────────────────────────────────────
+            BLOC ORGANISATEUR (Capitaine)
+            ────────────────────────────────────── %>
+        <div class="match-block">
+
+          <h5 class="match-block-title">
+            <i data-lucide="shield" style="width:15px;height:15px;"></i>
+            Capitaine
+          </h5>
+
+          <div class="d-flex align-items-center justify-content-between gap-3">
+
+            <%# Identité %>
+            <div class="d-flex align-items-center gap-3">
+              <%# Avatar de l'organisateur %>
+              <% if organizer&.profil&.avatar&.attached? %>
+                <%= image_tag organizer.profil.avatar,
+                    class: "match-organizer-avatar", alt: "Avatar organisateur" %>
+              <% else %>
+                <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
+                     class="match-organizer-avatar" alt="avatar">
+              <% end %>
+
+              <div>
+                <%# Nom complet ou email si pas de profil %>
+                <div class="match-organizer-name">
+                  <% if organizer&.profil %>
+                    <%= [organizer.profil.first_name, organizer.profil.last_name]
+                          .compact.join(" ").presence || organizer.email %>
+                  <% else %>
+                    <%= organizer&.email || "Organisateur" %>
+                  <% end %>
+                </div>
+                <div class="match-organizer-tag">Organisateur</div>
               </div>
-              <%# Bouton qui ouvre le modal Bootstrap %>
-              <button class="btn btn-link chat-preview-open p-0"
+            </div>
+
+            <%# Bouton voir profil %>
+            <%= link_to profil_path, class: "btn btn-sm match-profile-btn" do %>
+              <i data-lucide="user" style="width:13px;height:13px;"></i>
+              Voir profil
+            <% end %>
+
+          </div>
+        </div>
+
+
+        <%# ──────────────────────────────────────
+            BLOC MAP — centré sur le lieu
+            ────────────────────────────────────── %>
+        <div class="match-block">
+
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="match-block-title mb-0">
+              <i data-lucide="map-pin" style="width:15px;height:15px;"></i>
+              Lieu du match
+            </h5>
+          </div>
+
+          <%# Iframe Google Maps centré sur l'adresse %>
+          <% if @match.place.present? %>
+            <div class="match-map-wrapper">
+              <iframe
+                src="https://maps.google.com/maps?q=<%= URI.encode_www_form_component(@match.place) %>&output=embed"
+                width="100%"
+                height="220"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+              </iframe>
+            </div>
+          <% end %>
+
+          <%# Rappel de l'adresse sous la carte %>
+          <div class="match-map-address-row">
+            <i data-lucide="map-pin" style="width:13px;height:13px;"></i>
+            <span><%= @match.place || "Adresse non définie" %></span>
+          </div>
+
+        </div>
+
+
+        <%# ──────────────────────────────────────
+            BLOC JOUEURS INSCRITS
+            ────────────────────────────────────── %>
+        <div class="match-block">
+
+          <h5 class="match-block-title">
+            <i data-lucide="users" style="width:15px;height:15px;"></i>
+            Joueurs inscrits (<%= approved_users.count %>)
+          </h5>
+
+          <div class="match-players-grid">
+
+            <%# Un item par joueur approuvé %>
+            <% approved_users.each do |mu| %>
+              <div class="match-player-item">
+
+                <%# Avatar du joueur %>
+                <% if mu.user.profil&.avatar&.attached? %>
+                  <%= image_tag mu.user.profil.avatar,
+                      class: "match-player-avatar", alt: "Avatar joueur" %>
+                <% else %>
+                  <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
+                       class="match-player-avatar" alt="joueur">
+                <% end %>
+
+                <%# Prénom + 1ère lettre du Nom suivi d'un point
+                    Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
+                <%
+                  first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                  last_letter = mu.user.profil&.last_name.presence&.first&.upcase
+                  display     = last_letter ? "#{first} #{last_letter}." : first
+                %>
+                <span class="match-player-name"><%= display %></span>
+
+              </div>
+            <% end %>
+
+            <%# Slot vide cliquable si l'utilisateur connecté n'est pas encore inscrit %>
+            <% if user_signed_in? && !@current_match_user && !@match.full? %>
+              <div class="match-player-item match-player-empty"
+                   data-bs-toggle="modal"
+                   data-bs-target="#joinModal"
+                   role="button"
+                   title="Rejoindre le match">
+                <div class="match-player-avatar-empty">
+                  <i data-lucide="plus" style="width:20px;height:20px;"></i>
+                </div>
+                <span class="match-player-name">Rejoindre</span>
+              </div>
+            <% end %>
+
+          </div>
+        </div>
+
+
+        <%# ──────────────────────────────────────
+            BLOC GESTION (organisateur seulement)
+            ────────────────────────────────────── %>
+        <% if @current_match_user&.role == "organisateur" %>
+          <div class="match-block match-block-organizer">
+
+            <h5 class="match-block-title">
+              <i data-lucide="settings" style="width:15px;height:15px;"></i>
+              Gestion du match
+            </h5>
+
+            <div class="d-flex gap-2 flex-wrap">
+              <%= link_to edit_match_path(@match), class: "btn btn-sm btn-primary" do %>
+                <i data-lucide="edit-2" style="width:13px;height:13px;"></i>
+                Modifier
+              <% end %>
+              <%= button_to match_path(@match),
+                  method: :delete,
+                  class: "btn btn-sm btn-danger",
+                  data: { turbo_confirm: "Supprimer définitivement ce match ?" } do %>
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+                Supprimer
+              <% end %>
+            </div>
+
+            <%# Demandes en attente (mode manuel uniquement) %>
+            <% if @match.manual_validation? %>
+              <% pending_users = @match_users.select(&:pending?) %>
+              <% if pending_users.any? %>
+                <div class="mt-3">
+                  <h6 style="color:#FFC65A;" class="mb-2">
+                    ⏳ Demandes en attente (<%= pending_users.count %>)
+                  </h6>
+                  <% pending_users.each do |mu| %>
+                    <div class="d-flex justify-content-between align-items-center py-2"
+                         style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                      <span class="text-white small"><%= mu.user.display_name %></span>
+                      <div class="d-flex gap-2">
+                        <%= button_to approve_match_match_user_path(@match, mu),
+                            method: :patch, class: "btn btn-success btn-sm" do %>
+                          Accepter
+                        <% end %>
+                        <%= button_to reject_match_match_user_path(@match, mu),
+                            method: :patch, class: "btn btn-danger btn-sm" do %>
+                          Refuser
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+
+          </div>
+        <% end %>
+
+
+      </div>
+      <%# ── Fin colonne gauche ── %>
+
+
+      <%# ════════════════════════════════════════
+          COLONNE DROITE (4 / 12) — sticky
+          ════════════════════════════════════════ %>
+      <div class="col-lg-4">
+
+        <%# ──────────────────────────────────────
+            BLOC REJOINDRE — places + bouton + validation
+            ────────────────────────────────────── %>
+        <div class="match-block match-block-join">
+
+          <%# Compteur de places %>
+          <div class="match-spots-display">
+            <div class="match-spots-fraction">
+              <%= approved_users.count %>
+              <span class="match-spots-sep">/</span>
+              <%= approved_users.count + @match.player_left.to_i %>
+            </div>
+            <div class="match-spots-label">
+              <% if @match.full? %>
+                <span style="color:#ff6b6b;">Complet</span>
+              <% else %>
+                <%= @match.player_left %>
+                place<%= @match.player_left > 1 ? "s" : "" %>
+                libre<%= @match.player_left > 1 ? "s" : "" %>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Action selon le statut de l'utilisateur %>
+          <% if user_signed_in? %>
+
+            <% if @current_match_user %>
+
+              <% if @current_match_user.role == "organisateur" %>
+                <%# Organisateur %>
+                <div class="match-join-status match-join-status--organizer">
+                  <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                  Tu es l'organisateur
+                </div>
+
+              <% elsif @current_match_user.approved? %>
+                <%# Inscrit et approuvé %>
+                <div class="match-join-status match-join-status--approved">
+                  <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+                  Tu es inscrit
+                </div>
+                <%= button_to match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    class: "btn btn-outline-danger btn-sm w-100 mt-2",
+                    data: { turbo_confirm: "Quitter ce match ?" } do %>
+                  Quitter le match
+                <% end %>
+
+              <% elsif @current_match_user.pending? %>
+                <%# Demande en attente %>
+                <div class="match-join-status match-join-status--pending">
+                  <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                  Demande en attente
+                </div>
+                <%= button_to match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    class: "btn btn-outline-secondary btn-sm w-100 mt-2" do %>
+                  Annuler la demande
+                <% end %>
+
+              <% elsif @current_match_user.waiting? %>
+                <%# File d'attente %>
+                <div class="match-join-status match-join-status--waiting">
+                  <i data-lucide="list" style="width:14px;height:14px;"></i>
+                  En file d'attente
+                </div>
+
+              <% elsif @current_match_user.rejected? %>
+                <%# Refusé %>
+                <div class="match-join-status match-join-status--rejected">
+                  <i data-lucide="x-circle" style="width:14px;height:14px;"></i>
+                  Demande refusée
+                </div>
+
+              <% end %>
+
+            <% else %>
+              <%# Pas encore inscrit → bouton ouvre la modal de confirmation %>
+              <% if @match.full? %>
+                <button class="btn btn-warning w-100 match-join-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#joinModal">
+                  <i data-lucide="list" style="width:15px;height:15px;"></i>
+                  Rejoindre la file
+                </button>
+              <% else %>
+                <button class="btn btn-primary w-100 match-join-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#joinModal">
+                  Rejoindre le match
+                </button>
+              <% end %>
+            <% end %>
+
+          <% else %>
+            <%# Non connecté → vers inscription %>
+            <%= link_to new_user_registration_path, class: "btn btn-primary w-100 match-join-btn" do %>
+              Rejoindre le match
+            <% end %>
+          <% end %>
+
+          <%# Mode de validation choisi par l'organisateur %>
+          <div class="match-validation-badge">
+            <% if @match.manual_validation? %>
+              <i data-lucide="user-check" style="width:13px;height:13px;"></i>
+              Sélection manuelle par l'organisateur
+            <% else %>
+              <i data-lucide="zap" style="width:13px;height:13px;"></i>
+              Inscription automatique
+            <% end %>
+          </div>
+
+        </div>
+        <%# ── Fin bloc rejoindre ── %>
+
+
+        <%# ──────────────────────────────────────
+            BLOC CHAT — prévisualisation inline
+            ────────────────────────────────────── %>
+        <div class="match-block match-chat-block">
+
+          <%# En-tête %>
+          <div class="match-chat-header">
+            <div class="d-flex align-items-center gap-2">
+              <i data-lucide="message-circle" style="width:16px;height:16px;color:#1EDD88;"></i>
+              <strong style="color:#fff;">Match Chat</strong>
+            </div>
+            <% if is_participant %>
+              <span class="match-chat-online-dot">Connecté</span>
+            <% end %>
+          </div>
+
+          <% if is_participant %>
+
+            <%# Abonnement Turbo Stream pour les nouveaux messages en temps réel %>
+            <%= turbo_stream_from "match_chat_#{@match.id}" %>
+
+            <%# Wrapper Stimulus (scroll automatique + typing indicator) %>
+            <div data-controller="chat"
+                 data-chat-current-user-id-value="<%= current_user.id %>"
+                 data-chat-match-id-value="<%= @match.id %>">
+
+              <%# Aperçu des 2 derniers messages %>
+              <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
+              <% if preview_messages.any? %>
+                <div class="match-chat-preview-list">
+                  <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
+                  <% preview_messages.each do |msg| %>
+                    <div class="match-chat-preview-item">
+                      <%# Bulle avec initiales colorées %>
+                      <div class="match-chat-preview-avatar"
+                           style="background-color:<%= avatar_colors[msg.user_id % avatar_colors.length] %>;">
+                        <%= msg.user.display_name.split.map(&:first).join.upcase.first(2) %>
+                      </div>
+                      <div class="match-chat-preview-content">
+                        <span class="match-chat-preview-name"><%= msg.user.display_name %></span>
+                        <span class="match-chat-preview-text">
+                          <%= truncate(msg.content, length: 55) %>
+                        </span>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <p class="match-chat-empty-hint">Aucun message. Brise la glace !</p>
+              <% end %>
+
+              <%# Séparateur et lien vers le chat complet (ouvre la modal) %>
+              <div class="match-chat-divider"></div>
+              <button class="match-chat-open-btn"
                       data-bs-toggle="modal"
                       data-bs-target="#chatModal">
                 Accéder au chat complet →
               </button>
+
             </div>
 
-            <%# Aperçu des 2 derniers messages %>
-            <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
-            <% if preview_messages.any? %>
-              <div class="chat-preview-messages">
-                <% preview_messages.each do |msg| %>
-                  <div class="chat-preview-item">
-                    <%# Avatar initiales %>
-                    <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C #37474F] %>
-                    <div class="chat-preview-avatar" style="background-color: <%= avatar_colors[msg.user_id % avatar_colors.length] %>;">
-                      <%= msg.user.display_name.split.map(&:first).join.upcase.first(2) %>
-                    </div>
-                    <div class="chat-preview-content">
-                      <span class="chat-preview-name"><%= msg.user.display_name %></span>
-                      <span class="chat-preview-text"><%= truncate(msg.content, length: 60) %></span>
-                    </div>
-                  </div>
-                <% end %>
-              </div>
-            <% else %>
-              <p class="chat-preview-empty">Aucun message pour l'instant. Brise la glace !</p>
+          <% else %>
+            <%# Chat verrouillé pour les non-participants %>
+            <div class="match-chat-locked">
+              <i data-lucide="lock" style="width:26px;height:26px;"></i>
+              <p>Le chat est réservé aux joueurs acceptés dans ce match.</p>
+            </div>
+
+            <% if user_signed_in? && !@current_match_user %>
+              <%# Bouton qui déclenche aussi la modal de rejoindre %>
+              <button class="btn btn-primary w-100 mt-3"
+                      data-bs-toggle="modal"
+                      data-bs-target="#joinModal">
+                Accéder au chat
+              </button>
+            <% elsif !user_signed_in? %>
+              <%= link_to "Se connecter pour rejoindre",
+                  new_user_session_path,
+                  class: "btn btn-outline-secondary w-100 mt-3" %>
             <% end %>
+          <% end %>
 
-          </div>
         </div>
+        <%# ── Fin bloc chat ── %>
+
       </div>
-
-      <%# ── Modal chat complet ────────────────────────────────────────────── %>
-      <%# data-action : quand Bootstrap affiche le modal, Stimulus appelle onModalOpen %>
-      <div class="modal fade"
-           id="chatModal"
-           tabindex="-1"
-           data-action="shown.bs.modal->chat#onModalOpen">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-          <div class="modal-content chat-modal-content">
-
-            <%# En-tête du modal %>
-            <div class="modal-header chat-header">
-              <div class="d-flex align-items-center gap-2">
-                <span class="chat-header-icon">💬</span>
-                <div>
-                  <div class="chat-header-title">Chat du match</div>
-                  <% approved_count = @match_users.count { |mu| mu.approved? || mu.role == "organisateur" } %>
-                  <div class="chat-header-subtitle"><%= approved_count %> participant<%= approved_count > 1 ? "s" : "" %></div>
-                </div>
-              </div>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-
-            <%# Zone des messages — scrollable %>
-            <div class="modal-body p-0">
-              <div class="chat-messages"
-                   id="chat-messages"
-                   data-chat-target="messages">
-                <% if @match.messages.any? %>
-                  <%= render @match.messages.includes(:user).order(:created_at) %>
-                <% else %>
-                  <div class="chat-empty text-center text-muted py-5">
-                    <div class="mb-2" style="font-size: 2rem;">💬</div>
-                    <p>Personne n'a encore écrit. Brise la glace !</p>
-                  </div>
-                <% end %>
-              </div>
-            </div>
-
-            <%# Indicateur "X est en train d'écrire..." — masqué par défaut %>
-            <%# Affiché/masqué dynamiquement par chat_controller.js %>
-            <div class="chat-typing-indicator"
-                 id="chat-typing"
-                 data-chat-target="typing"
-                 style="display: none;">
-              <span class="chat-typing-dots">
-                <span></span><span></span><span></span>
-              </span>
-              <span class="chat-typing-name" data-chat-target="typingName"></span>
-              est en train d'écrire...
-            </div>
-
-            <%# Formulaire d'envoi %>
-            <div class="modal-footer p-2 border-top" id="chat-form">
-              <%= render "messages/form", match: @match, message: Message.new %>
-            </div>
-
-          </div>
-        </div>
-      </div>
+      <%# ── Fin colonne droite ── %>
 
     </div>
-  <% end %>
-
+  </div>
 </div>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "REJOINDRE CE MATCH ?"
+    Déclenché par 3 points d'entrée :
+      1. Bouton "Rejoindre le match" (colonne droite)
+      2. Slot vide dans la grille joueurs
+      3. Bouton "Accéder au chat" (chat verrouillé)
+    ══════════════════════════════════════════════════ %>
+<% if user_signed_in? && !@current_match_user %>
+  <div class="modal fade" id="joinModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content join-modal-content">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="join-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône et titre %>
+        <div class="join-modal-icon">
+          <i data-lucide="users" style="width:28px;height:28px;"></i>
+        </div>
+        <div class="join-modal-title">Rejoindre ce match ?</div>
+        <p class="join-modal-subtitle"><%= @match.title %></p>
+
+        <%# Formulaire caché — le bouton "Oui" le soumet via form= %>
+        <%# Pas de champs visibles, juste l'action POST %>
+        <%= form_with url: match_match_users_path(@match),
+            method: :post,
+            id: "join-form",
+            class: "d-none" do |f| %>
+        <% end %>
+
+        <%# Boutons Oui / Non %>
+        <div class="d-flex gap-3 mt-4">
+          <%# Non → ferme la modal sans soumettre %>
+          <button type="button"
+                  class="btn btn-outline-secondary flex-fill join-modal-btn-no"
+                  data-bs-dismiss="modal">
+            Non
+          </button>
+          <%# Oui → soumet le formulaire caché %>
+          <button type="submit"
+                  form="join-form"
+                  class="btn btn-primary flex-fill join-modal-btn-yes">
+            Oui
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL CHAT COMPLET — participants et organisateur
+    ══════════════════════════════════════════════════ %>
+<% if is_participant %>
+  <div class="modal fade"
+       id="chatModal"
+       tabindex="-1"
+       data-action="shown.bs.modal->chat#onModalOpen">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content chat-modal-content">
+
+        <%# En-tête du chat %>
+        <div class="modal-header chat-header">
+          <div class="d-flex align-items-center gap-2">
+            <span class="chat-header-icon">💬</span>
+            <div>
+              <div class="chat-header-title">Chat du match</div>
+              <div class="chat-header-subtitle">
+                <%= approved_users.count %> participant<%= approved_users.count > 1 ? "s" : "" %>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <%# Zone scrollable des messages %>
+        <div class="modal-body p-0">
+          <div class="chat-messages"
+               id="chat-messages"
+               data-chat-target="messages">
+            <% if @match.messages.any? %>
+              <%= render @match.messages.includes(:user).order(:created_at) %>
+            <% else %>
+              <div class="chat-empty text-center text-muted py-5">
+                <div class="mb-2" style="font-size: 2rem;">💬</div>
+                <p>Personne n'a encore écrit. Brise la glace !</p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Indicateur "X est en train d'écrire..." %>
+        <div class="chat-typing-indicator"
+             id="chat-typing"
+             data-chat-target="typing"
+             style="display: none;">
+          <span class="chat-typing-dots">
+            <span></span><span></span><span></span>
+          </span>
+          <span class="chat-typing-name" data-chat-target="typingName"></span>
+          est en train d'écrire...
+        </div>
+
+        <%# Formulaire d'envoi de message %>
+        <div class="modal-footer p-2 border-top" id="chat-form">
+          <%= render "messages/form", match: @match, message: Message.new %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
