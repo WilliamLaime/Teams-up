@@ -1,0 +1,609 @@
+// ══════════════════════════════════════════════════════════════
+// Styles pour les pages MATCH : création, modification, détail
+// ══════════════════════════════════════════════════════════════
+
+
+// ══════════════════════════════════════════════════════════════
+// BANNER — Page show du match (bande sombre en haut)
+// ══════════════════════════════════════════════════════════════
+// Pour personnaliser la banner tu peux :
+//   → Changer background-color par une image :
+//     background: url("...") center/cover no-repeat;
+//     + ajouter un overlay semi-transparent
+//   → Modifier la hauteur via padding-top/padding-bottom
+//   → Changer les couleurs des textes et boutons
+
+.match-show-banner {
+  background-color: $dark-bg;      // Fond très sombre (même que navbar/footer)
+  padding: 2rem 0 2.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07); // Séparateur discret
+}
+
+// Bouton "← Retour aux matchs"
+.match-show-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: $dark-muted;             // Gris clair discret
+  font-size: 0.875rem;
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: $dark-text;            // Blanc au survol
+  }
+}
+
+// Ligne "Titre + Badges"
+.match-show-banner-header {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+// Titre principal du match
+.match-show-banner-title {
+  font-size: clamp(1.5rem, 4vw, 2.25rem); // Taille fluide selon la largeur d'écran
+  font-weight: 800;
+  color: $dark-text;
+  margin: 0;
+  font-family: $headers-font;    // Nunito
+  line-height: 1.2;
+}
+
+// Conteneur des badges (Urgent, Complet, Niveau)
+.match-show-banner-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  padding-top: 0.3rem; // Alignement visuel avec le titre
+}
+
+// Ligne d'infos rapides (date | heure | lieu | places)
+.match-show-banner-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+// Un élément d'info (icône + texte)
+.match-show-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: $dark-muted;            // Texte secondaire grisé
+  font-size: 0.9rem;
+
+  svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+}
+
+// Zone du bouton d'action (Rejoindre, Quitter, Modifier...)
+.match-show-banner-action {
+  display: flex;
+  align-items: center;
+}
+
+// ── Boutons d'action dans la banner ──────────────────────────
+
+// Bouton principal vert "Rejoindre le match"
+.match-show-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.5rem;
+  border-radius: 0.6rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 2px solid transparent;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  // Variante verte (action principale)
+  &--primary {
+    background-color: $green;    // #1EDD88
+    color: $dark-bg;
+    border-color: $green;
+
+    &:hover {
+      background-color: darken($green, 8%);
+      color: $dark-bg;
+    }
+  }
+
+  // Variante contour (action secondaire)
+  &--outline {
+    background-color: transparent;
+    color: $dark-text;
+    border-color: rgba(255, 255, 255, 0.3);
+
+    &:hover {
+      border-color: $dark-text;
+      color: $dark-text;
+    }
+  }
+
+  // Variante danger (supprimer)
+  &--danger {
+    background-color: transparent;
+    color: #FD1015;
+    border-color: rgba(#FD1015, 0.5);
+
+    &:hover {
+      background-color: rgba(#FD1015, 0.1);
+      border-color: #FD1015;
+    }
+  }
+}
+
+// Badges de statut textuels (ex: "✅ Tu es inscrit")
+.match-show-status {
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  &--success { color: $green; }
+  &--warning { color: $yellow; }
+  &--info    { color: #17a2b8; }
+  &--danger  { color: $red; }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// BANNER — Page new match (en-tête "Créer un match")
+// ══════════════════════════════════════════════════════════════
+// Pour personnaliser :
+//   → Changer la couleur de fond : background-color
+//   → Ajouter une image de fond : background: url("...") center/cover
+//   → Modifier la hauteur : padding-top / padding-bottom
+//   → Changer le titre/sous-titre directement dans new.html.erb
+
+.match-new-banner {
+  // Image de fond + aplat noir très léger par-dessus pour l'assombrir légèrement
+  // → image-url()     : charge abstract_perso.png depuis app/assets/images/
+  // Pour changer l'opacité de l'aplat, modifie le chiffre dans rgba(0,0,0, X)
+  // Pour enlever l'image, remplace tout par : background-color: $dark-bg;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
+    image-url("herbe.jpg") center 25% / cover no-repeat;
+  padding: 2rem 0 2.25rem;
+  // Séparateur subtil entre la banner et le formulaire
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+// Bouton "← Retour aux matchs"
+.match-new-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: $dark-muted;          // Gris clair, discret
+  font-size: 0.85rem;
+  text-decoration: none;
+  margin-bottom: 1.25rem;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: $dark-text;         // Blanc au survol
+  }
+}
+
+// Titre "Créer un match"
+.match-new-banner-title {
+  font-family: $headers-font;  // Nunito
+  font-size: clamp(1.75rem, 4vw, 2.5rem); // Taille fluide
+  font-weight: 800;
+  color: $dark-text;
+  margin: 0 0 0.5rem;
+  line-height: 1.2;
+}
+
+// Sous-titre / description
+.match-new-banner-subtitle {
+  color: $dark-muted;          // Texte secondaire grisé
+  font-size: 1rem;
+  margin: 0;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// Styles pour la page de création / modification d'un match
+// ══════════════════════════════════════════════════════════════
+// Ce fichier utilise les variables définies dans config/_colors.scss :
+//   $dark-bg        → #111111  (fond très sombre)
+//   $dark-card-bg   → #1a1c1a  (fond des cartes)
+//   $dark-surface   → #242624  (fond des inputs)
+//   $dark-text      → #f0f0f0  (texte principal clair)
+//   $dark-muted     → rgba(255,255,255,0.55) (texte secondaire)
+//   $green          → #1EDD88  (couleur principale verte)
+// ══════════════════════════════════════════════════════════════
+
+
+// ── Fond général de la page ────────────────────────────────
+// Donne un fond sombre à toute la page de création
+.match-create-page {
+  background-color: $dark-bg; // Presque noir → cohérent avec le hero et la navbar
+  min-height: 100vh;
+  padding-bottom: 4rem; // Espace en bas pour ne pas coller au footer
+}
+
+
+// ══════════════════════════════════════════════════════════
+// SECTION : Carte numérotée (contient les champs du formulaire)
+// ══════════════════════════════════════════════════════════
+
+// Chaque section du formulaire (Descriptif, Lieu, Quand, Détails) est une carte
+.match-form-section {
+  background-color: $dark-card-bg; // #1a1c1a → légèrement plus clair que le fond
+  border-radius: 1rem;
+  padding: 1.75rem;
+  margin-bottom: 1.25rem;
+  color: $dark-text; // Texte clair sur fond sombre
+}
+
+// En-tête d'une section : badge numéro + titre côte à côte
+.match-form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;       // Espace entre le badge et le titre
+  margin-bottom: 1.5rem;
+}
+
+// Badge rond avec le numéro de l'étape (1, 2, 3, 4)
+.match-form-step-badge {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;            // Empêche le badge de rétrécir si le titre est long
+  background-color: $green;   // #1EDD88 → vert de l'app
+  border-radius: 50%;         // Cercle parfait
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: $dark-bg;            // Chiffre sombre sur fond vert
+}
+
+// Titre de la section ("Descriptif", "Où se déroule le match ?", etc.)
+.match-form-section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: $dark-text;
+  margin: 0;
+  font-family: $headers-font; // Police "Nunito" définie dans config/_fonts.scss
+}
+
+
+// ══════════════════════════════════════════════════════════
+// INPUTS : surcharges Bootstrap pour le thème sombre
+// On cible .match-create-page pour ne pas affecter les
+// autres formulaires de l'application
+// ══════════════════════════════════════════════════════════
+
+.match-create-page {
+
+  // Labels des champs
+  .form-label {
+    color: $dark-text;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  // Champs texte, textarea, date, select
+  .form-control,
+  .form-select {
+    background-color: $dark-surface; // #242624 → légèrement plus clair que la carte
+    border: 1px solid rgba(255, 255, 255, 0.12); // Bordure subtile
+    color: $dark-text;
+    border-radius: 0.5rem;
+
+    // Texte de placeholder en gris
+    &::placeholder {
+      color: $dark-muted;
+    }
+
+    // Quand le champ est sélectionné : bordure verte + halo vert
+    &:focus {
+      background-color: $dark-surface;
+      border-color: $green;
+      color: $dark-text;
+      box-shadow: 0 0 0 3px rgba($green, 0.18);
+    }
+
+    // Options des <select> (menu déroulant)
+    option {
+      background-color: $dark-surface;
+      color: $dark-text;
+    }
+  }
+
+  // Dropdown de l'autocomplete lieu (style sombre)
+  .dropdown-menu {
+    background-color: $dark-surface;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    // Chaque suggestion
+    .dropdown-item {
+      color: $dark-text;
+
+      &:hover,
+      &:focus {
+        background-color: rgba($green, 0.1);
+        color: $dark-text;
+      }
+    }
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// COMPTEUR JOUEURS : boutons − et + autour d'un chiffre
+// ══════════════════════════════════════════════════════════
+
+.match-player-counter {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem; // Espace entre le bouton, le chiffre et l'autre bouton
+
+  // Chiffre affiché au centre (ex : "4")
+  .counter-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $dark-text;
+    min-width: 2rem;     // Largeur fixe pour ne pas bouger quand le chiffre change
+    text-align: center;
+  }
+
+  // Style commun aux deux boutons − et +
+  .counter-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 0.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.2); // Bordure grise par défaut
+    background: transparent;
+    color: $dark-text;
+    font-size: 1.3rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+
+    // Au survol : bordure et texte verts
+    &:hover {
+      border-color: $green;
+      color: $green;
+    }
+
+    // Le bouton "+" a une bordure verte par défaut (plus mis en avant)
+    &.counter-btn-plus {
+      border-color: $green;
+      color: $green;
+    }
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// BOUTONS DE NIVEAU : groupe de boutons radio stylisés
+// (Débutant | Intermédiaire | Avancé | Tout niveau)
+// ══════════════════════════════════════════════════════════
+
+// Conteneur des boutons de niveau
+.match-level-buttons {
+  display: flex;
+  flex-wrap: wrap; // Passe à la ligne sur mobile
+  gap: 0.625rem;
+}
+
+// Chaque bouton individuel
+.match-level-btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.5rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.2); // Bordure grise par défaut
+  background: transparent;
+  color: $dark-muted;                            // Texte grisé par défaut
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+
+  // Au survol : mise en évidence
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: $dark-text;
+  }
+
+  // Quand ce niveau est sélectionné (classe .active ajoutée par Stimulus)
+  &.active {
+    border-color: $green;
+    background-color: rgba($green, 0.12); // Fond vert très transparent
+    color: $green;
+    font-weight: 600;
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// TOGGLE VALIDATION : "Manuel ◉ Automatique"
+// ══════════════════════════════════════════════════════════
+
+.match-validation-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  // Les labels "Manuel" et "Automatique" de chaque côté du toggle
+  .toggle-label {
+    font-size: 0.95rem;
+    color: $dark-muted; // Grisé par défaut
+    transition: color 0.15s ease;
+
+    // Le label actif (côté sélectionné) est vert
+    &.active-label {
+      color: $green;
+      font-weight: 600;
+    }
+  }
+
+  // Surcharge Bootstrap : le switch en position ON → fond vert
+  .form-check-input:checked {
+    background-color: $green;
+    border-color: $green;
+  }
+
+  // En position OFF → bordure grise
+  .form-check-input:not(:checked) {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
+// RÉCAPITULATIF : colonne droite (sticky)
+// ══════════════════════════════════════════════════════════
+
+// Carte principale du récapitulatif
+.match-recap-card {
+  background-color: $dark-card-bg; // #1a1c1a → même que les sections du formulaire
+  border-radius: 1rem;
+  padding: 1.5rem;
+  color: $dark-text;
+
+  // Sticky : reste visible pendant que l'utilisateur scrolle
+  // top: 80px → laisse de la place pour la navbar (~70px)
+  position: sticky;
+  top: 80px;
+}
+
+// En-tête "📊 Récapitulatif"
+.match-recap-header {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: $dark-text;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+
+  // Icône à gauche (Lucide) en vert
+  svg {
+    color: $green;
+    flex-shrink: 0;
+  }
+}
+
+// Titre principal du match dans le récap
+.match-recap-main-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: $dark-text;
+  margin-bottom: 0.375rem;
+  font-family: $headers-font; // Nunito
+  // Coupe le texte s'il est trop long
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+// Description courte dans le récap
+.match-recap-description {
+  font-size: 0.85rem;
+  color: $dark-muted;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+// Ligne d'info (ex: "Lieu → 4Padel")
+.match-recap-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07); // Séparateur très discret
+
+  &:last-of-type {
+    border-bottom: none; // Pas de séparateur sur la dernière ligne
+  }
+
+  // Label à gauche ("Lieu", "Date", etc.) → grisé
+  .recap-label {
+    color: $dark-muted;
+    font-size: 0.875rem;
+  }
+
+  // Valeur à droite (ex: "4Padel") → vert
+  .recap-value {
+    color: $green;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: right;
+    max-width: 55%; // Évite que la valeur déborde sur le label
+  }
+
+  // Valeur en blanc+gras pour les infos importantes (ex: prix)
+  .recap-value-white {
+    color: $dark-text;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-align: right;
+  }
+}
+
+// Bouton "PUBLIER LE MATCH" (ou "ENREGISTRER")
+// On surcharge .btn pour avoir le style custom
+.match-publish-btn {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  background-color: $green;    // Fond vert
+  color: $dark-bg !important;  // Texte sombre sur fond vert
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-top: 1.25rem;
+  text-align: center;
+  text-decoration: none; // Si c'est un <a>
+
+  &:hover {
+    background-color: darken($green, 8%); // Vert un peu plus foncé au survol
+    transform: translateY(-1px);           // Léger effet de soulèvement
+    color: $dark-bg !important;
+  }
+
+  &:active {
+    transform: translateY(0); // Revient en place au clic
+  }
+}
+
+// Petit texte légal sous le bouton "Publier"
+.match-publish-legal {
+  font-size: 0.75rem;
+  color: $dark-muted;
+  text-align: center;
+  margin-top: 0.75rem;
+  line-height: 1.5;
+}
