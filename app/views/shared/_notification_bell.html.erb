@@ -1,12 +1,7 @@
 <%#
-  Partial de la cloche de notifications dans la navbar.
-  Ce partial est mis à jour en temps réel via ActionCable :
-  quand une nouvelle notification est créée, Turbo Stream remplace ce fragment
-  sans recharger la page.
-
-  Utilisé dans :
-    - _navbar.html.erb (via turbo_frame_tag "notification_bell")
-    - broadcasts ActionCable (Notification model → after_create_commit)
+  Partial de la cloche de notifications — thème sombre.
+  Mis à jour en temps réel via ActionCable/Turbo Stream.
+  Utilisé dans _navbar.html.erb via turbo_frame_tag "notification_bell".
 %>
 
 <% unread_count = current_user.notifications.unread.count %>
@@ -14,24 +9,27 @@
 <%# Bouton cloche — badge rouge si notifications non lues %>
 <a class="nav-link position-relative px-2" href="#"
    id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-  <i data-lucide="bell" style="width:20px;height:20px;"></i>
+  <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
   <% if unread_count > 0 %>
-    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;">
+    <%# Badge rouge avec le nombre de notifications non lues %>
+    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+          style="font-size:0.6rem;">
       <%= unread_count %>
     </span>
   <% end %>
 </a>
 
-<%# Dropdown des dernières notifications %>
-<div class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notifDropdown" style="min-width:300px;">
+<%# Dropdown — classe notif-dropdown pour le style sombre défini dans _navbar.scss %>
+<div class="dropdown-menu dropdown-menu-end notif-dropdown" aria-labelledby="notifDropdown">
 
-  <%# En-tête du dropdown %>
-  <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-    <strong class="small">Notifications</strong>
+  <%# En-tête : titre + bouton "Tout lire" si nécessaire %>
+  <div class="notif-header d-flex justify-content-between align-items-center px-3 py-2">
+    <strong class="small text-white">Notifications</strong>
     <% if unread_count > 0 %>
+      <%# text-primary = couleur verte (Bootstrap $primary overridé) %>
       <%= button_to "Tout lire", mark_all_read_notifications_path,
           method: :patch,
-          class: "btn btn-link btn-sm p-0 text-decoration-none text-muted small" %>
+          class: "btn btn-link btn-sm p-0 text-decoration-none text-primary small" %>
     <% end %>
   </div>
 
@@ -39,35 +37,41 @@
   <% recent_notifs = current_user.notifications.recent.limit(5) %>
   <% if recent_notifs.any? %>
     <% recent_notifs.each do |notif| %>
-      <%# Cliquer marque la notif comme lue et redirige vers le match %>
+      <%# Cliquer marque la notif comme lue — classe "unread" = fond vert léger %>
       <%= button_to mark_read_notification_path(notif), method: :patch,
-          class: "w-100 text-start border-0 p-0",
-          style: "background: #{notif.read? ? 'white' : '#f0f7ff'};" do %>
+          class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}" do %>
         <div class="d-flex align-items-start gap-2 px-3 py-2">
+          <%# Icône : check grisé si lue, cloche verte si non lue %>
           <% if notif.read? %>
-            <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-muted"></i>
+            <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:rgba(255,255,255,0.4);"></i>
           <% else %>
             <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary"></i>
           <% end %>
           <div>
-            <div class="<%= notif.read? ? 'text-muted' : 'fw-semibold' %>" style="font-size:0.82rem;white-space:normal;line-height:1.3;">
+            <%# Texte : grisé si lue, blanc gras si non lue %>
+            <div class="<%= notif.read? ? 'text-muted' : 'fw-semibold text-white' %>"
+                 style="font-size:0.82rem;white-space:normal;line-height:1.3;">
               <%= notif.message %>
             </div>
-            <small class="text-muted"><%= time_ago_in_words(notif.created_at) %></small>
+            <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+              <%= time_ago_in_words(notif.created_at) %>
+            </small>
           </div>
         </div>
       <% end %>
     <% end %>
   <% else %>
-    <div class="text-center text-muted py-3">
+    <%# État vide — aucune notification %>
+    <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
       <i data-lucide="inbox" style="width:22px;height:22px;"></i>
       <div class="small mt-1">Aucune notification</div>
     </div>
   <% end %>
 
-  <%# Lien vers toutes les notifications %>
-  <div class="border-top text-center">
-    <%= link_to "Voir tout", notifications_path, class: "dropdown-item text-primary small py-2" %>
+  <%# Pied de dropdown : lien vers toutes les notifications %>
+  <div class="notif-footer text-center py-1">
+    <%= link_to "Voir toutes les notifications", notifications_path,
+        class: "dropdown-item notif-see-all text-center small py-2" %>
   </div>
 
 </div>

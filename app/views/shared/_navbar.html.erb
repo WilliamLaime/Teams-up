@@ -50,86 +50,17 @@
             <% end %>
           </li>
 
-          <%# ── Cloche notifications ── %>
-          <% unread_count = current_user.notifications.unread.count %>
-          <li class="nav-item dropdown">
-            <a class="nav-link position-relative px-2" href="#"
-               id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
-              <% if unread_count > 0 %>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                      style="font-size:0.6rem;">
-                  <%= unread_count %>
-                </span>
-              <% end %>
-            </a>
-
-            <%# Dropdown des notifications %>
-            <div class="dropdown-menu dropdown-menu-end notif-dropdown"
-                 aria-labelledby="notifDropdown">
-
-              <%# En-tête %>
-              <div class="notif-header d-flex justify-content-between align-items-center px-3 py-2">
-                <strong class="small text-white">Notifications</strong>
-                <% if unread_count > 0 %>
-                  <%# Bouton "Tout lire" — text-primary prend la couleur verte %>
-                  <%= button_to "Tout lire", mark_all_read_notifications_path,
-                      method: :patch,
-                      class: "btn btn-link btn-sm p-0 text-decoration-none text-primary small" %>
-                <% end %>
-              </div>
-
-              <%# Liste des 5 dernières notifications %>
-              <% recent_notifs = current_user.notifications.recent.limit(5) %>
-              <% if recent_notifs.any? %>
-                <% recent_notifs.each do |notif| %>
-                  <%= button_to mark_read_notification_path(notif), method: :patch,
-                      class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}" do %>
-                    <div class="d-flex align-items-start gap-2 px-3 py-2">
-                      <% if notif.read? %>
-                        <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:rgba(255,255,255,0.4);"></i>
-                      <% else %>
-                        <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary"></i>
-                      <% end %>
-                      <div>
-                        <div class="<%= notif.read? ? 'text-muted' : 'fw-semibold text-white' %>"
-                             style="font-size:0.82rem;white-space:normal;line-height:1.3;">
-                          <%= notif.message %>
-                        </div>
-                        <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
-                          <%= time_ago_in_words(notif.created_at) %>
-                        </small>
-                      </div>
-                    </div>
-                  <% end %>
-                <% end %>
-              <% else %>
-                <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
-                  <i data-lucide="inbox" style="width:22px;height:22px;"></i>
-                  <div class="small mt-1">Aucune notification</div>
-                </div>
-              <% end %>
-
-              <%# Lien "Voir tout" %>
-              <div class="notif-footer text-center py-1">
-                <%= link_to "Voir toutes les notifications", notifications_path,
-                    class: "dropdown-item notif-see-all text-center small py-2" %>
-              </div>
-
-            </div>
-          <%# ====== CLOCHE DE NOTIFICATIONS ====== %>
+          <%# ── Cloche notifications (temps réel via Turbo) ── %>
           <%#
-            turbo_stream_from : s'abonne au canal ActionCable personnel de l'utilisateur.
-            Canal unique : [current_user, :notifications] → "notifications_user_42"
-            Quand une notification est créée, Turbo remplace automatiquement
-            le turbo_frame "notification_bell" ci-dessous.
+            turbo_stream_from : s'abonne au canal ActionCable de l'utilisateur.
+            Canal : [current_user, :notifications] → "notifications_user_42"
+            Quand une notif est créée, Turbo remplace le turbo_frame ci-dessous.
           %>
           <%= turbo_stream_from current_user, :notifications %>
 
           <%#
-            turbo_frame_tag "notification_bell" : le seul fragment remplacé en temps réel.
-            Contenu = partial _notification_bell.html.erb
-            À chaque nouvelle notif, Turbo remplace uniquement ce <turbo-frame> sans rechargement.
+            turbo_frame_tag : seul ce fragment est remplacé à chaque nouvelle notif.
+            Le contenu (cloche + dropdown) vit dans _notification_bell.html.erb
           %>
           <li class="nav-item dropdown">
             <%= turbo_frame_tag "notification_bell" do %>
