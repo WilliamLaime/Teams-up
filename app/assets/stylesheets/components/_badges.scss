@@ -1,0 +1,61 @@
+// =====================================================
+// BADGES NIVEAUX & URGENT — Composant partagé
+// Utilisé sur la homepage et la liste des matchs
+// =====================================================
+
+// Animation de clignotement — 0.7 = phase claire, pas trop sombre
+@keyframes blink-urgent {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+// ── Badge niveau : pill coloré ──────────────────────
+.match-badge-level {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+
+  // Débutant → vert
+  &.level-debutant {
+    background: rgba($green, 0.18);
+    color: $green;
+  }
+
+  // Intermédiaire → jaune
+  &.level-intermediaire {
+    background: rgba($yellow, 0.18);
+    color: $yellow;
+  }
+
+  // Avancé → rouge (doux, moins intense qu'Urgent)
+  &.level-avance {
+    background: rgba(#f87171, 0.18);
+    color: #f87171;
+  }
+
+  // Tout niveau → bleu
+  &.level-tout {
+    background: rgba($blue, 0.18);
+    color: lighten($blue, 25%);
+  }
+}
+
+// ── Badge urgent : rouge intense + majuscules + clignotant ─
+.match-badge-urgent {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;    // majuscules comme les autres badges
+  letter-spacing: 0.04em;
+  background: rgba($red, 0.12); // fond plus léger (0.12 au lieu de 0.25)
+  color: $red;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+
+  // Clignotement : la phase sombre passe à 0.5 (moins prononcé)
+  animation: blink-urgent 1.2s ease-in-out infinite;
+}

@@ -4,7 +4,7 @@ class MatchesController < ApplicationController
 
   # GET /matches
   # Affiche uniquement les matchs à venir (passés exclus), triés par date puis heure
-  # Accepte des paramètres de filtre : level, place, date, time, player_left
+  # Accepte des paramètres de filtre : level, place, date, time, player_left, mine
   def index
     @matches = policy_scope(Match)
       .where("(date + time) > ?", Time.current)
@@ -12,6 +12,8 @@ class MatchesController < ApplicationController
 
     # Recherche full-text — titre, ville, description ou email du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
+    # Filtre "Mes matchs" — seulement les matchs créés par l'utilisateur connecté
+    @matches = @matches.where(user: current_user) if params[:mine].present? && user_signed_in?
 
     # Filtre par niveau (ex: "Débutant", "Intermédiaire", "Avancé")
     @matches = @matches.where(level: params[:level]) if params[:level].present?

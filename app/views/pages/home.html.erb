@@ -41,7 +41,7 @@
           <% if user_signed_in? %>
             <%# Bouton primaire (vert) %>
             <%= link_to new_match_path, class: "btn btn-primary btn-lg px-4" do %>
-              <i data-lucide="plus" style="width:17px;height:17px;margin-right:5px;"></i>
+              <i style="width:17px;height:17px;margin-right:5px;"></i>
               Créer un match
             <% end %>
             <%# Bouton secondaire (outline sombre) %>
@@ -51,7 +51,7 @@
           <% else %>
             <%# Bouton primaire → inscription %>
             <%= link_to new_user_registration_path, class: "btn btn-primary btn-lg px-4" do %>
-              <i data-lucide="plus" style="width:17px;height:17px;margin-right:5px;"></i>
+              <i style="width:17px;height:17px;margin-right:5px;"></i>
               Créer un match
             <% end %>
             <%# Bouton secondaire → liste des matchs %>
@@ -74,43 +74,41 @@
             class="hero-img"
           >
 
-          <%# Carte overlay : affiche le prochain match disponible %>
+          <%# Carte overlay : affiche le prochain match urgent ou le premier dispo %>
           <% if @matches.any? %>
-            <% next_match = @matches.first %>
+            <%# Préférer un match urgent, sinon prendre le premier %>
+            <% next_match = @matches.find(&:urgent?) || @matches.first %>
             <div class="hero-match-card">
-              <div class="d-flex align-items-start justify-content-between gap-2">
-                <div>
-                  <%# Badge niveau du match %>
-                  <%
-                    level_css = case next_match.level
-                      when "Débutant"      then "level-debutant"
-                      when "Intermédiaire" then "level-intermediaire"
-                      when "Avancé"        then "level-avance"
-                      else                      "level-tout"
-                    end
-                  %>
-                  <span class="match-badge-level <%= level_css %> mb-1 d-inline-block">
-                    <%= next_match.level %>
-                  </span>
-                  <%# Titre du match %>
-                  <div class="fw-bold text-white small mt-1"><%= next_match.title %></div>
-                  <%# Lieu %>
-                  <div class="d-flex align-items-center gap-1 mt-1" style="color:rgba(255,255,255,0.5);font-size:0.78rem;">
-                    <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
-                    <%= next_match.place || "Lieu à définir" %>
-                  </div>
+
+              <%# Ligne haute : icône ronde + label + titre %>
+              <div class="d-flex align-items-center gap-3">
+                <%# Icône orange avec éclair %>
+                <div class="hero-match-icon">
+                  <i data-lucide="zap" style="width:18px;height:18px;"></i>
                 </div>
-                <%# Nombre de places restantes %>
-                <div class="text-end">
-                  <% if next_match.full? %>
-                    <span class="badge" style="background:rgba(255,100,100,0.15);color:#ff6b6b;font-size:0.7rem;">Complet</span>
-                  <% else %>
-                    <span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">
-                      <%= next_match.player_left %> place<%= next_match.player_left > 1 ? "s" : "" %>
-                    </span>
-                  <% end %>
+                <%# Infos principales %>
+                <div class="flex-grow-1 overflow-hidden">
+                  <div class="hero-match-label">
+                    <%= next_match.urgent? ? "Match Urgent" : next_match.level %>
+                  </div>
+                  <div class="hero-match-title"><%= next_match.title %></div>
                 </div>
               </div>
+
+              <%# Ligne basse : heure à gauche, places à droite %>
+              <div class="d-flex justify-content-between align-items-center hero-match-footer">
+                <span class="hero-match-time">
+                  <%= next_match.time&.strftime('%H:%M') %> · Ce soir
+                </span>
+                <% if next_match.full? %>
+                  <span class="hero-match-spots" style="color:#ff6b6b;">Complet</span>
+                <% else %>
+                  <span class="hero-match-spots">
+                    <%= next_match.player_left %> place<%= next_match.player_left > 1 ? "s" : "" %>
+                  </span>
+                <% end %>
+              </div>
+
             </div>
           <% end %>
 
@@ -159,59 +157,80 @@
               <%# Corps de la carte %>
               <div class="match-card-body">
 
-                <%# Badges niveau + urgent %>
-                <div class="d-flex flex-wrap gap-1 mb-2">
-                  <% if match.urgent? %>
-                    <span class="match-badge-urgent">🔥 Urgent</span>
-                  <% end %>
+                <%# Ligne 1 : Badge niveau + Date sur la même ligne (comme le template) %>
+                <%
+                  level_css = case match.level
+                    when "Débutant"      then "level-debutant"
+                    when "Intermédiaire" then "level-intermediaire"
+                    when "Avancé"        then "level-avance"
+                    else                      "level-tout"
+                  end
+                %>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="d-flex gap-1">
+                    <% if match.urgent? %>
+                      <span class="match-badge-urgent">🔥 Urgent</span>
+                    <% end %>
+                    <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
+                  </div>
+                  <%# Date courte à droite du badge — jour en français %>
                   <%
-                    level_css = case match.level
-                      when "Débutant"      then "level-debutant"
-                      when "Intermédiaire" then "level-intermediaire"
-                      when "Avancé"        then "level-avance"
-                      else                      "level-tout"
+                    fr_days = %w[Dim Lun Mar Mer Jeu Ven Sam]
+                    date_str = if match.date
+                      day = fr_days[match.date.wday]
+                      time_part = match.time ? ", #{match.time.strftime('%H:%M')}" : ""
+                      "#{day} #{match.date.strftime('%d')}#{time_part}"
+                    else
+                      "—"
                     end
                   %>
-                  <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
-                </div>
-
-                <%# Date et heure %>
-                <div class="match-info-line">
-                  <i data-lucide="calendar" style="width:13px;height:13px;"></i>
-                  <%= match.date&.strftime("%A %d, %H:%M") || "Date non définie" %>
+                  <span class="match-card-date">
+                    <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+                    <%= date_str %>
+                  </span>
                 </div>
 
                 <%# Titre du match %>
                 <div class="match-card-title"><%= match.title %></div>
 
-                <%# Lieu %>
+                <%# Lieu — texte dans un <span> pour que le line-clamp fonctionne %>
                 <div class="match-info-line">
                   <i data-lucide="map-pin" style="width:13px;height:13px;"></i>
-                  <%= match.place || "Lieu non défini" %>
+                  <span><%= match.place || "Lieu non défini" %></span>
                 </div>
 
-                <%# Joueurs manquants %>
-                <div class="match-info-line">
-                  <i data-lucide="users" style="width:13px;height:13px;"></i>
-                  <% if match.full? %>
-                    <span style="color:#dc3545;font-weight:600;">Complet</span>
-                  <% else %>
-                    <%= match.player_left %> joueur<%= match.player_left > 1 ? "s" : "" %> manquant<%= match.player_left > 1 ? "s" : "" %>
-                  <% end %>
+                <%# Avatars des joueurs déjà inscrits + places manquantes %>
+                <div class="match-players-row">
+                  <%# Affiche les 3 premiers avatars en pile %>
+                  <div class="match-avatars">
+                    <% match.users.first(3).each do |player| %>
+                      <% if player.profil&.avatar&.attached? %>
+                        <%= image_tag player.profil.avatar, class: "match-avatar", alt: player.email %>
+                      <% else %>
+                        <img src="https://kitt.lewagon.com/placeholder/users/ssaunier" class="match-avatar" alt="joueur">
+                      <% end %>
+                    <% end %>
+                  </div>
+                  <%# Texte joueurs manquants %>
+                  <span class="match-players-text">
+                    <% if match.full? %>
+                      <span class="text-danger fw-semibold">Complet</span>
+                    <% else %>
+                      <%= match.player_left %> joueur<%= match.player_left > 1 ? "s" : "" %> manquant<%= match.player_left > 1 ? "s" : "" %>
+                    <% end %>
+                  </span>
                 </div>
 
               </div>
 
-              <%# Pied de carte : bouton Rejoindre %>
+              <%# Pied de carte : bouton Rejoindre pill plein vert %>
               <div class="match-card-footer">
                 <% if user_signed_in? %>
-                  <%# Utilisateur connecté : bouton plein vert %>
-                  <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100" do %>
+                  <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
                     Rejoindre
                   <% end %>
                 <% else %>
-                  <%# Non connecté : redirige vers inscription %>
-                  <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100" do %>
+                  <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
                     Rejoindre
                   <% end %>
                 <% end %>

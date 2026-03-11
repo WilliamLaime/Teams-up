@@ -19,6 +19,8 @@ class Match < ApplicationRecord
 
   # Accès direct au profil du créateur (via user) — utilisé par pg_search
   has_one :profil, through: :user
+  # Un match a plusieurs messages dans son chat de groupe
+  has_many :messages, dependent: :destroy
 
   # ── ActionCable : mises à jour en temps réel ─────────────────────────────
   # Diffuse automatiquement sur le canal "matches" :

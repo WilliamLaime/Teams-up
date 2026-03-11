@@ -1,0 +1,20 @@
+<%# Formulaire d'envoi de message — réinitialisé après chaque envoi via Turbo Stream %>
+<%# Pas de data-controller ici — on utilise celui de la carte parente (chat_controller.js) %>
+<%= form_with model: [match, message], class: "chat-form d-flex gap-2", data: { chat_target: "form" } do |f| %>
+  <%# Champ texte pour écrire le message %>
+  <%= f.text_field :content,
+      placeholder: "Écrire un message...",
+      class: "form-control",
+      autocomplete: "off",
+      data: {
+        chat_target: "input",
+        # keydown : envoyer avec Entrée
+        # input   : signaler aux autres qu'on est en train d'écrire
+        action: "keydown->chat#handleKeydown input->chat#onTyping"
+      } %>
+
+  <%# Bouton d'envoi %>
+  <%= f.submit "➤",
+      class: "btn btn-success px-3",
+      data: { chat_target: "submit" } %>
+<% end %>
