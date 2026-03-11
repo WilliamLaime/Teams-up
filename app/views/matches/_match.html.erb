@@ -17,20 +17,20 @@
       <div class="d-flex justify-content-between align-items-start mb-2">
         <h5 class="card-title me-2"><%= match.title %></h5>
         <div class="d-flex flex-wrap gap-1 justify-content-end">
-          <%# Badge "Urgent" si le match commence dans moins de 2h %>
+          <%# Badge "Urgent" — clignote (voir components/_badges.scss) %>
           <% if match.urgent? %>
-            <span class="badge bg-danger">🔥 Urgent</span>
+            <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
-          <%# Badge niveau — couleur selon le niveau %>
+          <%# Badge niveau — classes partagées dans components/_badges.scss %>
           <%
-            level_class = case match.level
-              when "Débutant"      then "bg-success"
-              when "Intermédiaire" then "bg-warning text-dark"
-              when "Avancé"        then "bg-danger"
-              else "bg-info text-dark"
+            level_css = case match.level
+              when "Débutant"      then "level-debutant"
+              when "Intermédiaire" then "level-intermediaire"
+              when "Avancé"        then "level-avance"
+              else                      "level-tout"
             end
           %>
-          <span class="badge <%= level_class %>"><%= match.level %></span>
+          <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
         </div>
       </div>
 

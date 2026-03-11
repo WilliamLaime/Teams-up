@@ -28,7 +28,10 @@
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
 
-    <%= yield %>
+    <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
+    <main>
+      <%= yield %>
+    </main>
 
     <%# Pied de page commun à toutes les pages %>
     <%= render "shared/footer" %>

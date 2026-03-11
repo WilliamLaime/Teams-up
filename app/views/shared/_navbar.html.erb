@@ -25,10 +25,19 @@
       <ul class="navbar-nav mx-auto gap-1">
         <li class="nav-item">
           <%= link_to matches_path, class: "nav-link d-flex align-items-center gap-1" do %>
-            <i data-lucide="search" style="width:15px;height:15px;"></i>
+            <i style="width:15px;height:15px;"></i>
             Trouver un match
           <% end %>
         </li>
+        <% if user_signed_in? %>
+          <%# "Mes matchs" visible uniquement pour les utilisateurs connectés %>
+          <li class="nav-item">
+            <%= link_to matches_path(mine: true), class: "nav-link d-flex align-items-center gap-1" do %>
+              <i style="width:15px;height:15px;"></i>
+              Mes matchs
+            <% end %>
+          </li>
+        <% end %>
         <li class="nav-item">
           <%# Lien vers la section "Comment ça marche" de la homepage %>
           <%= link_to "#how-it-works", class: "nav-link" do %>
@@ -45,7 +54,7 @@
           <%# Bouton principal : Créer un match (vert) %>
           <li class="nav-item">
             <%= link_to new_match_path, class: "btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" do %>
-              <i data-lucide="plus" style="width:15px;height:15px;"></i>
+              <i style="height:15px;"></i>
               Créer un match
             <% end %>
           </li>

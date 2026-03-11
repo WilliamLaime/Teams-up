@@ -4,11 +4,14 @@ class MatchesController < ApplicationController
 
   # GET /matches
   # Affiche uniquement les matchs à venir (passés exclus), triés par date puis heure
-  # Accepte des paramètres de filtre : level, place, date, time, player_left
+  # Accepte des paramètres de filtre : level, place, date, time, player_left, mine
   def index
     @matches = policy_scope(Match)
       .where("(date + time) > ?", Time.current)
       .order(date: :asc, time: :asc)
+
+    # Filtre "Mes matchs" — seulement les matchs créés par l'utilisateur connecté
+    @matches = @matches.where(user: current_user) if params[:mine].present? && user_signed_in?
 
     # Filtre par niveau (ex: "Débutant", "Intermédiaire", "Avancé")
     @matches = @matches.where(level: params[:level]) if params[:level].present?

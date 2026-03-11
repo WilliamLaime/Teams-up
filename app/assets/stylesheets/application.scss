@@ -10,3 +10,14 @@
 // Your CSS partials
 @import "components/index";
 @import "pages/index";
+
+// ── Sticky footer ───────────────────────────────────
+// body en colonne flex → main prend tout l'espace libre
+// → footer toujours collé en bas, même sur les pages courtes
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  main { flex: 1; }
+}
