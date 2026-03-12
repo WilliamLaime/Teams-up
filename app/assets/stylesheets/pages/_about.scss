@@ -1,0 +1,391 @@
+// ═══════════════════════════════════════════════════
+//  PAGE "QUI SOMMES-NOUS ?" — _about.scss
+//  Route : GET /about
+// ═══════════════════════════════════════════════════
+
+.about-page {
+
+  // ── Banner / Hero ────────────────────────────────
+  // Image abstract_perso en fond avec aplat noir léger par-dessus
+  .about-banner {
+    background:
+      linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.70)), // aplat sombre pour lisibilité
+      image-url("Img_illu_foot/herbe.jpg") center center / cover no-repeat;
+    padding: 100px 0;
+    text-align: center;
+
+    // Titre principal
+    .about-banner-title {
+      font-family: $display-font;  // Bebas Neue — même typo que les titres de sections
+      font-size: clamp(calc(2rem + 10px), 5vw, calc(3.5rem + 10px));
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    // Sous-titre accroche
+    .about-banner-subtitle {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.7);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+  }
+
+  // ── Sections de contenu ──────────────────────────
+  // Deux variantes qui alternent pour aérer la page
+
+  .about-section {
+    padding: 72px 0;
+
+    // Fond très sombre (comme la navbar)
+    &--dark    { background-color: $dark-bg; }
+
+    // Fond légèrement plus clair
+    &--surface { background-color: $dark-surface; }
+
+    // Photo fragmenter en arrière-plan (section 1 - le problème)
+    &--fragmenter {
+      background:
+        linear-gradient(rgba(0,0,0,0.95), rgba(0,0,0,0.95)), // aplat très fort — 5% image visible
+        image-url("Img_illu_foot/fragmenter.jpg") center center / cover no-repeat;
+    }
+
+    // Photo vestiaire abandonné en arrière-plan (section 2 - frustration)
+    &--vestiaire {
+      min-height: 100vh;        // occupe toute la hauteur de l'écran
+      display: flex;
+      align-items: center;      // centre le contenu verticalement
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 100%), // haut foncé → bas plus transparent
+        image-url("Img_illu_foot/vestiaire_abandon.jpg") center center / cover no-repeat;
+    }
+
+    // Photo connexion en arrière-plan très transparent (section 3)
+    &--mission {
+      background:
+        linear-gradient(rgba(17,17,17,0.72), rgba(17,17,17,0.72)), // aplat opaque — 28% de l'image visible
+        image-url("Img_illu_foot/connexion.jpg") center center / cover no-repeat;
+    }
+
+    // Contenu centré horizontalement (section 1)
+    &--center {
+      text-align: center;
+
+      .about-section-title,
+      .about-section-text {
+        margin-left: auto;   // centre le bloc en poussant des deux côtés
+        margin-right: auto;
+      }
+    }
+
+    // Texte aligné à droite (utilisé sur "Notre mission")
+    &--right {
+      text-align: right;
+
+      // Le titre et les paragraphes s'alignent à droite
+      // max-width reste actif mais on pousse le bloc à droite
+      .about-section-title,
+      .about-section-text {
+        margin-left: auto;  // pousse le bloc vers la droite
+        margin-right: 0;
+      }
+    }
+  }
+
+  // Titre de chaque section — Bebas Neue pour le côté anguleux style Futura
+  .about-section-title {
+    font-family: $display-font;      // Bebas Neue
+    font-size: clamp(2.2rem, 4vw, 3.2rem); // plus grand qu'avant
+    font-weight: 400;                // Bebas Neue n'a qu'un seul weight
+    letter-spacing: 0.04em;          // légère ouverture des lettres
+    color: $dark-text;
+    margin-bottom: 1.5rem;
+    max-width: 720px;
+    // Interlignage fixe en px → identique quelle que soit la taille de chaque span
+    line-height: 1.15;
+  }
+
+  // Paragraphes
+  .about-section-text {
+    color: $dark-muted;
+    font-size: 1rem;
+    line-height: 1.8;
+    max-width: 640px;
+    margin-bottom: 1rem;
+
+    // Variante : texte plus mis en avant
+    &--strong {
+      color: $dark-text;
+      font-weight: 500;
+    }
+  }
+
+  // ── Logo blanc dans la section "Origine" ─────────
+  .about-origin-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem; // espace entre le logo et le titre en dessous
+  }
+
+  .about-origin-logo-img {
+    height: 36px;        // ajuste selon le rendu
+    width: auto;
+    display: block;
+    filter: brightness(0) invert(1); // rend le SVG blanc
+  }
+
+  // "Notre mission :" en vert dans le titre de la section mission
+  .about-mission-label {
+    color: $green;
+
+    // Variante bloc : force le retour à la ligne sans <br>
+    // line-height: inherit → espace identique aux autres lignes du titre
+    &--block {
+      display: block;
+      line-height: inherit; // hérite du 1.15 du h2 → interlignage cohérent
+    }
+  }
+
+  // Mot/phrase clé en vert — affiché en bloc pour forcer le texte suivant à la ligne
+  .about-accent {
+    display: block;    // occupe toute la largeur → le texte suivant descend en dessous
+    color: $green;
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin-bottom: 0.3rem; // petit espace entre l'accent et le texte en dessous
+  }
+
+  // ── Conteneur SVG + liste : centré dans la section ──
+  .about-values-row {
+    gap: 1.2rem;               // même espace que le padding-left des items
+    justify-content: center;   // centre le groupe SVG + liste horizontalement
+  }
+
+  // ── SVG "Ce qui nous guide" à gauche ─────────────
+  .about-values-svg-wrap {
+    flex-shrink: 0;    // ne rétrécit pas
+    display: flex;
+    align-items: center; // centre le SVG verticalement dans la colonne
+  }
+
+  .about-values-svg {
+    width: 150px;      // réduit par rapport à 200px
+    height: auto;
+    display: block;
+  }
+
+  // ── Liste des valeurs à droite ────────────────────
+  // justify-content: space-between répartit les 3 items
+  // sur toute la hauteur du SVG pour un alignement parfait
+  .about-values-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; // les 3 items s'étalent sur toute la hauteur du SVG
+    // pas de flex-grow pour que le groupe reste compact et centrable
+
+    li {
+      color: $dark-text;
+      font-size: 1rem;
+      line-height: 1.7;
+      padding-left: 1.2rem;
+      border-left: 2px solid $green;
+    }
+  }
+
+  // ── Animation "pluie" sur la section Valeurs ─────
+  // Adaptation de l'effet CSS rain (shenanigans.shoghisimon.ca)
+  // On utilise .about-rain-bg au lieu de .container pour ne pas
+  // écraser la classe Bootstrap .container
+  .about-rain-bg {
+    position: relative;
+    width: 100%;
+    overflow: hidden;         // empêche les gouttes de déborder
+    display: flex;            // active le centrage
+    align-items: center;      // centre verticalement
+    justify-content: center;  // centre horizontalement
+    min-height: 400px;        // hauteur minimale pour que le centrage vertical soit visible
+    --c: #1EDD88;             // couleur verte de l'app (au lieu du cyan original)
+    background-color: #000;
+    background-image:
+      radial-gradient(4px 100px at 0px 235px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 235px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 117.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 252px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 252px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 126px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 150px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 150px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 75px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 253px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 253px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 126.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 204px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 204px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 102px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 134px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 134px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 67px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 179px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 179px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 89.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 299px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 299px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 149.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 215px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 215px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 107.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 281px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 281px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 140.5px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 158px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 158px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 79px, var(--c) 100%, #0000 150%),
+      radial-gradient(4px 100px at 0px 210px, var(--c), #0000),
+      radial-gradient(4px 100px at 300px 210px, var(--c), #0000),
+      radial-gradient(1.5px 1.5px at 150px 105px, var(--c) 100%, #0000 150%);
+    background-size:
+      300px 235px, 300px 235px, 300px 235px,
+      300px 252px, 300px 252px, 300px 252px,
+      300px 150px, 300px 150px, 300px 150px,
+      300px 253px, 300px 253px, 300px 253px,
+      300px 204px, 300px 204px, 300px 204px,
+      300px 134px, 300px 134px, 300px 134px,
+      300px 179px, 300px 179px, 300px 179px,
+      300px 299px, 300px 299px, 300px 299px,
+      300px 215px, 300px 215px, 300px 215px,
+      300px 281px, 300px 281px, 300px 281px,
+      300px 158px, 300px 158px, 300px 158px,
+      300px 210px, 300px 210px, 300px 210px;
+    animation: about-rain 150s linear infinite;
+
+    // Le contenu texte : centrage et z-index pour passer au-dessus de ::after
+    .about-rain-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center; // centre horizontalement le .about-values-row
+      align-items: center;     // centre verticalement
+    }
+
+    // Overlay : grille de points par-dessus la pluie, sous le contenu texte
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;   // au-dessus de la pluie (z-index: 0), sous le contenu (z-index: 2)
+      background-image: radial-gradient(
+        circle at 50% 50%,
+        #0000 0,
+        #0000 2px,
+        #0a0a0a 2px
+      );
+      background-size: 8px 8px;
+      background-color: rgba(0, 0, 0, 0.55); // aplat noir pour assombrir — augmenter pour plus d'opacité
+      // blur + brightness amplifie la lueur verte des gouttes — pas de hue-rotate
+      // pour rester uniquement dans le vert
+      backdrop-filter: blur(1em) brightness(6);
+    }
+  }
+
+  // Animation principale : les gouttes tombent
+  @keyframes about-rain {
+    0% {
+      background-position:
+        0px 220px, 3px 220px, 151.5px 337.5px,
+        25px 24px, 28px 24px, 176.5px 150px,
+        50px 16px, 53px 16px, 201.5px 91px,
+        75px 224px, 78px 224px, 226.5px 350.5px,
+        100px 19px, 103px 19px, 251.5px 121px,
+        125px 120px, 128px 120px, 276.5px 187px,
+        150px 31px, 153px 31px, 301.5px 120.5px,
+        175px 235px, 178px 235px, 326.5px 384.5px,
+        200px 121px, 203px 121px, 351.5px 228.5px,
+        225px 224px, 228px 224px, 376.5px 364.5px,
+        250px 26px, 253px 26px, 401.5px 105px,
+        275px 75px, 278px 75px, 426.5px 180px;
+    }
+    to {
+      background-position:
+        0px 6800px, 3px 6800px, 151.5px 6917.5px,
+        25px 13632px, 28px 13632px, 176.5px 13758px,
+        50px 5416px, 53px 5416px, 201.5px 5491px,
+        75px 17175px, 78px 17175px, 226.5px 17301.5px,
+        100px 5119px, 103px 5119px, 251.5px 5221px,
+        125px 8428px, 128px 8428px, 276.5px 8495px,
+        150px 9876px, 153px 9876px, 301.5px 9965.5px,
+        175px 13391px, 178px 13391px, 326.5px 13540.5px,
+        200px 14741px, 203px 14741px, 351.5px 14848.5px,
+        225px 18770px, 228px 18770px, 376.5px 18910.5px,
+        250px 5082px, 253px 5082px, 401.5px 5161px,
+        275px 6375px, 278px 6375px, 426.5px 6480px;
+    }
+  }
+
+  // ── SVG typo "joueurs pas spectateurs" ───────────────
+  .about-players-typo {
+    width: 100%;         // prend la largeur disponible
+    max-width: 600px;    // limite la taille max — ajuste selon le SVG
+    height: auto;
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+
+  // ── Section "Joueurs pas spectateurs" — fond photo ───
+  // Gradient sombre par-dessus pour garder le texte lisible
+  .about-section-players {
+    padding: 72px 0;
+    display: flex;          // active le centrage flex
+    align-items: center;    // centre verticalement dans la hauteur de la section
+    justify-content: center; // centre horizontalement
+    background:
+      linear-gradient(to top, rgba(8, 100, 58, 0.97) 0%, rgba(8, 100, 58, 0.82) 100%),  // bas quasi-opaque → haut laisse deviner l'image (18% visible)
+      image-url("Img_illu_foot/players_waiting.png") center 90% / cover no-repeat;
+  }
+
+  // ── CTA final ────────────────────────────────────
+  .about-cta {
+    background-color: $dark-bg;
+    padding: 60px 0;
+  }
+
+  // ── Bouton CTA avec effet glow vert ───────────────
+  // Inspiré du style "neon glow" — vert à la place du bleu
+  .about-cta-btn {
+    display: inline-block;
+    padding: 12px 32px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    color: $green;                      // texte vert au repos
+    background: transparent;
+    cursor: pointer;
+    border: 1px solid $green;           // contour vert au repos
+    transition: 0.5s ease;
+    user-select: none;
+
+    // Au hover : texte blanc, fond vert, glow vert
+    &:hover,
+    &:focus {
+      color: #ffffff;
+      background: $green;
+      border: 1px solid $green;
+      text-shadow:
+        0 0 5px #ffffff,
+        0 0 10px #ffffff;
+      box-shadow:
+        0 0 5px $green,
+        0 0 20px $green,
+        0 0 50px $green,
+        0 0 100px $green;
+    }
+  }
+}

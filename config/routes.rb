@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   # Page d'accueil
   root to: "pages#home"
 
+  # Page "Qui sommes-nous ?"
+  get "about", to: "pages#about", as: :about
+
   # Routes pour les matchs (CRUD complet)
   # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.
   resources :matches do

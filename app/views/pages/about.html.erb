@@ -1,0 +1,136 @@
+<%# =====================================================
+    Page "Qui sommes-nous ?" — about.html.erb
+    Route : GET /about → pages#about
+    ===================================================== %>
+
+<div class="about-page">
+
+  <%# ── BANNER / HERO ─────────────────────────────────────────────────────── %>
+  <%# Fond sombre avec image abstract_perso en arrière-plan %>
+  <section class="about-banner">
+    <div class="container">
+      <h1 class="about-banner-title">Qui sommes-nous ?</h1>
+      <p class="about-banner-subtitle">
+        Une équipe qui en avait marre <br> de chercher un remplaçant à la dernière minute.
+      </p>
+    </div>
+  </section>
+
+  <%# ── SECTION 1 : Le problème ────────────────────────────────────────────── %>
+  <section class="about-section about-section--dark about-section--center about-section--fragmenter">
+    <div class="container">
+      <h2 class="about-section-title">Le sport <span class="about-mission-label">amateur</span> est fragmenté.</h2>
+      <p class="about-section-text">
+        Un groupe WhatsApp par équipe. Un canal Discord pour les amis. Un post Instagram pour trouver quelqu'un.
+        Et au final — <span class="about-mission-label">terrain vide, match annulé.</span>
+      </p>
+      <p class="about-section-text">
+        <span class="about-mission-label">On a tous vécu ça.</span><br>
+        Trop de canaux, pas assez de joueurs au bon moment, au bon endroit.
+      </p>
+    </div>
+  </section>
+
+  <%# ── SECTION 2 : L'origine ──────────────────────────────────────────────── %>
+  <section class="about-section about-section--surface about-section--vestiaire">
+    <div class="container">
+      <%# Logo blanc à la place du texte "TeamUP" %>
+      <div class="about-origin-logo">
+        <%= image_tag "img_footer/teamsup_picto.svg", alt: "Teams-Up", class: "about-origin-logo-img" %>
+        <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", class: "about-origin-logo-img" %>
+      </div>
+      <h2 class="about-section-title">est né d'une <span class="about-mission-label">frustration.</span></h2>
+      <p class="about-section-text">
+        On voulait jouer. On avait le terrain, les crampons, la motivation.<br>
+        Il manquait juste deux joueurs.
+      </p>
+      <p class="about-section-text">
+        Deux heures de messages dans tous les sens. Résultat : match annulé.<br>
+        On s'est dit qu'il devait y avoir une meilleure façon de faire.
+      </p>
+    </div>
+  </section>
+
+  <%# ── SECTION 3 : La mission ─────────────────────────────────────────────── %>
+  <section class="about-section about-section--dark about-section--right about-section--mission">
+    <div class="container">
+      <%# Accent vert sur le mot clé %>
+      <h2 class="about-section-title">
+        <%# "Notre mission :" en vert, le reste en blanc %>
+        <span class="about-mission-label about-mission-label--block">Notre mission :</span>
+        <span style="font-size: calc(1em - 20px);">connecter les joueurs qui veulent</span> <span class="about-mission-label" style="white-space: nowrap;">jouer, maintenant.</span>
+      </h2>
+      <p class="about-section-text">
+        Pas demain. Pas la semaine prochaine.<br>
+        Aujourd'hui, quand il manque quelqu'un sur le terrain.
+      </p>
+      <p class="about-section-text about-section-text--strong">
+        Teams-UP, c'est la solution de remplacement la plus rapide.
+      </p>
+    </div>
+  </section>
+
+  <%# ── SECTION 4 : Les valeurs ────────────────────────────────────────────── %>
+  <%# about-rain-bg : wrapper qui porte l'animation CSS "pluie" de gouttes %>
+  <section class="about-section about-rain-bg">
+    <%# z-index: 10 pour être bien au-dessus de l'overlay ::after (z-index: 1) %>
+    <div class="container about-rain-content">
+
+      <%# align-items: stretch → les deux colonnes prennent la même hauteur %>
+      <div class="d-flex align-items-stretch flex-wrap about-values-row">
+
+        <%# SVG "Ce qui nous guide" à gauche %>
+        <div class="about-values-svg-wrap">
+          <%= image_tag "elements_graphiques/cequinousguide.svg",
+              alt: "Ce qui nous guide",
+              class: "about-values-svg" %>
+        </div>
+
+        <%# Liste des valeurs à droite %>
+        <ul class="about-values-list flex-grow-1">
+          <li>
+            <span class="about-accent">Le jeu avant tout.</span>
+            On facilite le terrain, pas les bureaucraties.
+          </li>
+          <li>
+            <span class="about-accent">La réactivité.</span>
+            Chaque minute compte quand le coup d'envoi approche.
+          </li>
+          <li>
+            <span class="about-accent">La communauté.</span>
+            Chaque joueur ajouté renforce tout le réseau.
+          </li>
+        </ul>
+
+      </div>
+    </div>
+  </section>
+
+  <%# ── SECTION 5 : L'équipe — fond players_waiting avec gradient ────────── %>
+  <section class="about-section about-section-players">
+    <div class="container">
+      <%# SVG typographique remplace le h2 texte %>
+      <%= image_tag "elements_graphiques/joueurs_typo.svg",
+          alt: "On est des joueurs, pas des spectateurs.",
+          class: "about-players-typo" %>
+      <p class="about-section-text">
+        Une équipe fondatrice passionnée de sport et convaincue que la technologie
+        <br>doit servir le terrain et pas l'inverse.
+      </p>
+      <p class="about-section-text about-section-text--strong">
+        On construit Teams-UP parce qu'on en avait besoin.
+      </p>
+    </div>
+  </section>
+
+  <%# ── CTA final ──────────────────────────────────────────────────────────── %>
+  <section class="about-cta">
+    <div class="container text-center">
+      <%# Bouton avec effet glow vert au hover %>
+      <%= link_to matches_path, class: "about-cta-btn" do %>
+        TROUVER UN MATCH
+      <% end %>
+    </div>
+  </section>
+
+</div>
