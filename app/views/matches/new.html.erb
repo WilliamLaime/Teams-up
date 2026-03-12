@@ -1,19 +1,50 @@
-<%# Page de création d'un nouveau match %>
+<%# ══════════════════════════════════════════════════════════════
+    Page de création d'un nouveau match
+    ══════════════════════════════════════════════════════════════
+    Structure :
+    ┌─────────────────────────────────────────────────────────┐
+    │  BANNER (fond sombre pleine largeur)                    │
+    │  → Titre "Créer un match" + sous-titre                  │
+    ├─────────────────────────────────────────────────────────┤
+    │  FORMULAIRE (2 colonnes : sections + récapitulatif)     │
+    │  → géré par _form.html.erb + _match_form.scss           │
+    └─────────────────────────────────────────────────────────┘
+    ══════════════════════════════════════════════════════════════ %>
 
-<div class="container my-4">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
+<div class="match-create-page">
 
-      <h1 class="mb-4">Créer un match</h1>
+  <%# ══════════════════════════════════════════════════════════
+      BANNER — En-tête de la page de création
+      ══════════════════════════════════════════════════════════
+      Pour modifier cette banner :
+        → Styles dans app/assets/stylesheets/pages/_match_form.scss
+          (section "BANNER - Page new match")
+        → Tu peux changer le titre, le sous-titre, ajouter une
+          image de fond, des icônes, etc.
+      ══════════════════════════════════════════════════════════ %>
+  <div class="match-new-banner">
+    <div class="container">
 
-      <%# On appelle le formulaire partagé _form.html.erb %>
-      <%= render "form" %>
+      <%# Lien retour vers la liste des matchs %>
+      <%= link_to matches_path, class: "match-new-back-btn" do %>
+        <i data-lucide="arrow-left" style="width:15px; height:15px;"></i>
+        Retour aux matchs
+      <% end %>
 
-      <%# Lien retour %>
-      <div class="mt-3">
-        <%= link_to "Annuler", matches_path, class: "btn btn-outline-secondary" %>
-      </div>
+      <%# Titre principal de la page %>
+      <h1 class="match-new-banner-title">
+        Créer un match
+      </h1>
+
+      <%# Sous-titre / description courte %>
+      <p class="match-new-banner-subtitle">
+        Remplis les informations ci-dessous et publie ton match en quelques secondes.
+      </p>
 
     </div>
-  </div>
-</div>
+  </div><%# fin .match-new-banner %>
+
+  <%# Formulaire 2 colonnes (sections + récapitulatif sticky) %>
+  <%= render "form" %>
+
+</div><%# fin .match-create-page %>

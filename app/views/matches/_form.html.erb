@@ -1,177 +1,416 @@
-<%# Partial réutilisé par new.html.erb et edit.html.erb %>
-<%# La variable @match est passée automatiquement par le controller %>
+<%# ═══════════════════════════════════════════════════════════════
+    Formulaire partagé : _form.html.erb
+    Utilisé par : new.html.erb (créer) et edit.html.erb (modifier)
+    ═══════════════════════════════════════════════════════════════
 
-<%= form_with model: @match, class: "row g-3" do |f| %>
+    Structure HTML :
+    ┌──────────────────────────────────────────────────────┐
+    │  form (data-controller="match-form")                 │
+    │  └── .container                                      │
+    │       └── .row                                       │
+    │            ├── col-lg-7 : les 4 sections de champs   │
+    │            └── col-lg-5 : récapitulatif sticky       │
+    └──────────────────────────────────────────────────────┘
 
-  <%# Affiche les erreurs de validation si le formulaire est invalide %>
-  <% if @match.errors.any? %>
-    <div class="col-12">
-      <div class="alert alert-danger">
-        <ul class="mb-0">
-          <% @match.errors.full_messages.each do |msg| %>
-            <li><%= msg %></li>
-          <% end %>
-        </ul>
+    Le contrôleur Stimulus "match-form" (match_form_controller.js)
+    lit les valeurs des champs (data-match-form-target="xxxInput")
+    et les affiche en temps réel dans le récap (data-match-form-target="recapXxx").
+    ═══════════════════════════════════════════════════════════════ %>
+
+<%# Détermine le chemin du bouton Annuler selon qu'on crée ou modifie un match %>
+<% cancel_path = @match.persisted? ? match_path(@match) : matches_path %>
+
+<%# form_with génère la balise <form> et la configure automatiquement :
+    - @match nouveau     → action="/matches"        method="POST"
+    - @match existant    → action="/matches/:id"    method="PATCH"
+    data-controller="match-form" → connecte le contrôleur Stimulus %>
+<%= form_with model: @match,
+    data: { controller: "match-form" } do |f| %>
+
+  <div class="container py-4">
+
+    <%# Affiche les erreurs de validation si le formulaire a été soumis et est invalide %>
+    <% if @match.errors.any? %>
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              <% @match.errors.full_messages.each do |msg| %>
+                <li><%= msg %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
       </div>
-    </div>
-  <% end %>
-
-  <%# Titre du match — obligatoire %>
-  <div class="col-12">
-    <%# La * rouge indique que le champ est obligatoire %>
-    <%= f.label :title, class: "form-label" do %>
-      Titre <span class="text-danger">*</span>
-    <% end %>
-    <%= f.text_field :title, class: "form-control", placeholder: "Ex: Match foot samedi matin", required: true %>
-  </div>
-
-  <%# Description %>
-  <div class="col-12">
-    <%= f.label :description, "Description", class: "form-label" %>
-    <%= f.text_area :description, class: "form-control", rows: 3, placeholder: "Décris ton match..." %>
-  </div>
-
-  <%# Date et heure sur la même ligne %>
-  <div class="col-md-6">
-    <%# La * rouge indique que le champ est obligatoire %>
-    <%= f.label :date, class: "form-label" do %>
-      Date <span class="text-danger">*</span>
-    <% end %>
-    <%# La valeur par défaut (aujourd'hui) est définie dans le controller #new %>
-    <%= f.date_field :date, class: "form-control", value: @match.date, required: true %>
-  </div>
-
-  <div class="col-md-6">
-    <%# La * rouge indique que le champ est obligatoire %>
-    <%= f.label :time, class: "form-label" do %>
-      Heure <span class="text-danger">*</span>
-    <% end %>
-    <%#
-      time_select génère deux <select> séparés :
-        - un pour les heures (0 à 23)
-        - un pour les minutes (uniquement 00, 15, 30, 45 grâce à minute_step: 15)
-      Rails combine automatiquement les deux valeurs en un objet Time lors de la soumission.
-    %>
-    <div class="d-flex gap-2">
-      <%= f.time_select :time,
-          { minute_step: 15, default: @match.time, prompt: { hour: "Heure", minute: "Min" } },
-          { class: "form-select" } %>
-    </div>
-  </div>
-
-  <%#
-    Lieu avec barre de recherche dynamique (Stimulus controller "place-search")
-    L'utilisateur tape, des suggestions apparaissent en dessous via l'API Nominatim
-  %>
-  <div class="col-12" data-controller="place-search">
-    <%# La * rouge indique que le champ est obligatoire %>
-    <%= f.label :place, class: "form-label" do %>
-      Lieu <span class="text-danger">*</span>
     <% end %>
 
-    <div class="position-relative">
-      <%#
-        Champ principal — sa valeur est soumise avec le formulaire
-        data-place-search-target="input" : Stimulus surveille ce champ
-        data-action="input->place-search#search" : lance la recherche à chaque frappe
-      %>
-      <%= f.text_field :place,
-          class: "form-control",
-          placeholder: "Rechercher un lieu... ex: 4Padel Bordeaux",
-          autocomplete: "off",
-          required: true,
-          data: {
-            "place-search-target": "input",
-            "action": "input->place-search#search"
-          } %>
+    <div class="row g-4 align-items-start">
 
-      <%# Dropdown des résultats — affiché/caché dynamiquement par Stimulus %>
-      <div data-place-search-target="dropdown"
-           class="dropdown-menu w-100 shadow"
-           style="display:none; position:absolute; top:100%; left:0; z-index:1050; max-height:250px; overflow-y:auto;">
-      </div>
-    </div>
-  </div>
+      <%# ════════════════════════════════════════════════════
+          COLONNE GAUCHE : les 4 sections du formulaire
+          ════════════════════════════════════════════════════ %>
+      <div class="col-lg-7">
 
-  <%# Niveau et nombre de joueurs sur la même ligne %>
-  <div class="col-md-6">
-    <%# La * rouge indique que le champ est obligatoire %>
-    <%= f.label :level, class: "form-label" do %>
-      Niveau <span class="text-danger">*</span>
-    <% end %>
-    <%#
-      Match::LEVELS = ["Tout niveau", "Débutant", "Intermédiaire", "Avancé"]
-      prompt: affiche "Choisir un niveau" en premier (non sélectionnable)
-      required: true → le navigateur bloque la soumission si vide
-    %>
-    <%= f.select :level,
-        Match::LEVELS,
-        { prompt: "Choisir un niveau" },
-        class: "form-select",
-        required: true %>
-  </div>
 
-  <div class="col-md-6">
-    <%# La * rouge indique que le champ est obligatoire %>
-    <%= f.label :player_left, class: "form-label" do %>
-      Places disponibles <span class="text-danger">*</span>
-    <% end %>
-    <%= f.number_field :player_left, class: "form-control", min: 1, placeholder: "Ex: 5", required: true %>
-  </div>
+        <%# ────────────────────────────────────────────────
+            SECTION 1 : Descriptif
+            Champs : Titre + Description
+            ──────────────────────────────────────────────── %>
+        <div class="match-form-section">
 
-  <%# Mode de validation des joueurs — toggle Bootstrap %>
-  <div class="col-12">
-    <label class="form-label d-block">Validation des joueurs</label>
+          <%# En-tête de la section : badge "1" + titre %>
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">1</div>
+            <h2 class="match-form-section-title">Descriptif</h2>
+          </div>
 
-    <%# Champ caché envoyé par défaut quand le toggle est OFF (automatique) %>
-    <%= f.hidden_field :validation_mode, value: "automatic" %>
+          <%# Champ Titre — obligatoire
+              data-match-form-target="titleInput" : Stimulus surveille ce champ
+              data-action="input->match-form#updateTitle" : met à jour le récap à chaque frappe %>
+          <div class="mb-3">
+            <%= f.label :title, "Titre", class: "form-label" %>
+            <%= f.text_field :title,
+                class: "form-control",
+                placeholder: "Ex: Match foot samedi matin",
+                required: true,
+                data: {
+                  "match-form-target": "titleInput",
+                  "action": "input->match-form#updateTitle"
+                } %>
+          </div>
 
-    <div class="form-check form-switch">
-      <%#
-        La checkbox envoie "manual" quand elle est cochée (toggle ON).
-        Quand elle est décochée, le hidden_field au-dessus envoie "automatic".
-        checked: true si le match est déjà en mode manuel (utile pour l'édition)
-      %>
-      <%= check_box_tag :validation_mode_toggle,
-          "manual",
-          @match.manual_validation?,
-          class: "form-check-input",
-          id: "validation_toggle",
-          role: "switch",
-          onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'manual' : 'automatic'" %>
-      <label class="form-check-label" for="validation_toggle">
-        Validation manuelle
-      </label>
-    </div>
+          <%# Champ Description — facultatif
+              Textarea redimensionnable (4 lignes par défaut) %>
+          <div class="mb-0">
+            <%= f.label :description, "Description", class: "form-label" %>
+            <%= f.text_area :description,
+                class: "form-control",
+                rows: 4,
+                placeholder: "Décris le match, le niveau attendu, les règles...",
+                data: {
+                  "match-form-target": "descriptionInput",
+                  "action": "input->match-form#updateDescription"
+                } %>
+          </div>
 
-    <%# Texte d'aide qui change selon l'état du toggle %>
-    <div class="form-text" id="validation_help">
-      <% if @match.manual_validation? %>
-        Tu valides toi-même chaque joueur.
-      <% else %>
-        Les joueurs sont acceptés immédiatement.
-      <% end %>
-    </div>
+        </div><%# fin section 1 %>
 
-    <%# Script pour mettre à jour le texte d'aide en temps réel %>
-    <script>
-      document.getElementById('validation_toggle').addEventListener('change', function() {
-        const help = document.getElementById('validation_help');
-        help.textContent = this.checked
-          ? 'Tu valides toi-même chaque joueur.'
-          : 'Les joueurs sont acceptés immédiatement.';
-      });
-    </script>
-  </div>
 
-  <%# Légende des champs obligatoires %>
-  <div class="col-12">
-    <small class="text-muted"><span class="text-danger">*</span> Champs obligatoires</small>
-  </div>
+        <%# ────────────────────────────────────────────────
+            SECTION 2 : Lieu
+            Champ : Lieu avec autocomplétion (Stimulus "place-search")
+            ──────────────────────────────────────────────── %>
+        <%# IMPORTANT : ce div a DEUX contrôleurs Stimulus :
+            - "place-search"  → gère l'autocomplétion (suggestions Nominatim)
+            - "match-form"    → est sur le <form>, donc englobe tout
+            Le target "placeInput" est reconnu par les deux %>
+        <div class="match-form-section" data-controller="place-search">
 
-  <%# Bouton de soumission %>
-  <div class="col-12">
-    <%= f.submit class: "btn btn-primary" %>
-  </div>
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">2</div>
+            <h2 class="match-form-section-title">Où se déroule le match ?</h2>
+          </div>
 
-<% end %>
+          <div class="mb-0">
+            <%= f.label :place, "Rechercher un club ou une adresse", class: "form-label" %>
+
+            <div class="position-relative">
+              <%# Le champ texte :
+                  - data-place-search-target="input"   → autocomplétion
+                  - data-match-form-target="placeInput" → récap Stimulus
+                  - data-action avec deux actions séparées par un espace %>
+              <%= f.text_field :place,
+                  class: "form-control",
+                  placeholder: "Ex: Urban Soccer, Bordeaux...",
+                  autocomplete: "off",
+                  required: true,
+                  data: {
+                    "place-search-target": "input",
+                    "match-form-target":   "placeInput",
+                    "action": "input->place-search#search input->match-form#updatePlace"
+                  } %>
+
+              <%# Dropdown des suggestions — géré par place_search_controller.js %>
+              <div data-place-search-target="dropdown"
+                   class="dropdown-menu w-100 shadow"
+                   style="display:none; position:absolute; top:100%; left:0; z-index:1050; max-height:250px; overflow-y:auto;">
+              </div>
+            </div>
+          </div>
+
+        </div><%# fin section 2 %>
+
+
+        <%# ────────────────────────────────────────────────
+            SECTION 3 : Quand ?
+            Champs : Date + Heure (deux colonnes)
+            ──────────────────────────────────────────────── %>
+        <div class="match-form-section">
+
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">3</div>
+            <h2 class="match-form-section-title">Quand ?</h2>
+          </div>
+
+          <div class="row g-3">
+
+            <%# Champ Date %>
+            <div class="col-md-6">
+              <%= f.label :date, "Date du match", class: "form-label" %>
+              <%= f.date_field :date,
+                  class: "form-control",
+                  value: @match.date,
+                  required: true,
+                  data: {
+                    "match-form-target": "dateInput",
+                    "action": "change->match-form#updateDate"
+                  } %>
+            </div>
+
+            <%# Champ Heure
+                time_select génère DEUX <select> :
+                  - match_time_4i → heures (0 à 23)
+                  - match_time_5i → minutes (00, 15, 30, 45 grâce à minute_step: 15)
+                Le data-action sur le div parent capture les changements des deux selects %>
+            <div class="col-md-6">
+              <%= f.label :time, "Heure de début", class: "form-label" %>
+              <div class="d-flex gap-2"
+                   data-action="change->match-form#updateTime">
+                <%= f.time_select :time,
+                    { minute_step: 15, default: @match.time, prompt: { hour: "H", minute: "Min" } },
+                    { class: "form-select" } %>
+              </div>
+            </div>
+
+          </div>
+        </div><%# fin section 3 %>
+
+
+        <%# ────────────────────────────────────────────────
+            SECTION 4 : Détails du match
+            Champs :
+              - Nombre de joueurs manquants (compteur − N +)
+              - Niveau requis (boutons radio stylisés)
+              - Validation des joueurs (toggle Manuel/Auto)
+            ──────────────────────────────────────────────── %>
+        <div class="match-form-section">
+
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">4</div>
+            <h2 class="match-form-section-title">Détails du match</h2>
+          </div>
+
+          <%# ── Compteur : Nombre de joueurs manquants ── %>
+          <div class="mb-4">
+            <label class="form-label d-block">Nombre de joueurs manquants</label>
+
+            <%# Input caché : sa valeur est la vraie valeur soumise avec le formulaire.
+                Le compteur visible (+/-) met à jour cet input via Stimulus.
+                Valeur par défaut : 4 si non défini %>
+            <%= f.hidden_field :player_left,
+                value: (@match.player_left || 4),
+                data: { "match-form-target": "playersInput" } %>
+
+            <div class="match-player-counter">
+
+              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus %>
+              <button type="button"
+                      class="counter-btn counter-btn-minus"
+                      data-action="click->match-form#decrement"
+                      aria-label="Réduire le nombre de joueurs">−</button>
+
+              <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
+              <span class="counter-value"
+                    data-match-form-target="playersCount">
+                <%= @match.player_left || 4 %>
+              </span>
+
+              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus %>
+              <button type="button"
+                      class="counter-btn counter-btn-plus"
+                      data-action="click->match-form#increment"
+                      aria-label="Augmenter le nombre de joueurs">+</button>
+
+            </div>
+          </div><%# fin compteur %>
+
+          <%# ── Boutons de niveau ── %>
+          <div class="mb-4">
+            <label class="form-label d-block">Niveau requis</label>
+
+            <%# Input caché : contient le niveau sélectionné (ex: "Avancé").
+                Mis à jour par selectLevel() dans Stimulus quand on clique un bouton. %>
+            <%= f.hidden_field :level,
+                value: @match.level,
+                data: { "match-form-target": "levelInput" } %>
+
+            <%# Groupe de boutons stylisés (pas de vrais radio inputs)
+                Chaque bouton a data-level="Nom du niveau" et data-action pour Stimulus
+                La classe .active est ajoutée/retirée par Stimulus selon la sélection %>
+            <div class="match-level-buttons">
+              <% Match::LEVELS.each do |lvl| %>
+                <button type="button"
+                        class="match-level-btn <%= 'active' if @match.level == lvl %>"
+                        data-level="<%= lvl %>"
+                        data-action="click->match-form#selectLevel">
+                  <%= lvl %>
+                </button>
+              <% end %>
+            </div>
+
+          </div><%# fin niveau %>
+
+          <%# ── Toggle validation ── %>
+          <div class="mb-2">
+            <label class="form-label d-block">Validations des joueurs</label>
+
+            <%# Champ caché envoyé TOUJOURS avec le formulaire.
+                Valeur par défaut : "automatic".
+                Si le toggle est coché (manuel), le onchange change sa valeur en "manual". %>
+            <%= f.hidden_field :validation_mode, value: "automatic" %>
+
+            <div class="match-validation-toggle">
+
+              <%# Label "Manuel" à gauche — vert si le toggle est en mode manuel %>
+              <span class="toggle-label <%= 'active-label' if @match.manual_validation? %>">
+                Manuel
+              </span>
+
+              <%# Le toggle Bootstrap switch
+                  - checked : true si le match est déjà en validation manuelle
+                  - data-action : appelle updateValidation() dans Stimulus
+                  - onchange : met à jour le champ caché match_validation_mode %>
+              <%= check_box_tag :validation_mode_toggle,
+                  "manual",
+                  @match.manual_validation?,
+                  class: "form-check-input",
+                  id:    "validation_toggle",
+                  role:  "switch",
+                  data: {
+                    "match-form-target": "validationToggle",
+                    "action": "change->match-form#updateValidation"
+                  },
+                  onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'manual' : 'automatic'" %>
+
+              <%# Label "Automatique" à droite — vert si le toggle est en mode automatique %>
+              <span class="toggle-label <%= 'active-label' unless @match.manual_validation? %>">
+                Automatique
+              </span>
+
+            </div>
+          </div><%# fin toggle %>
+
+        </div><%# fin section 4 %>
+
+        <%# Lien Annuler visible uniquement sur mobile (< lg)
+            Sur desktop il est dans la sidebar %>
+        <div class="d-lg-none mt-2">
+          <%= link_to "Annuler", cancel_path, class: "btn btn-outline-secondary w-100" %>
+        </div>
+
+      </div><%# fin colonne gauche %>
+
+
+      <%# ════════════════════════════════════════════════════
+          COLONNE DROITE : Récapitulatif (sticky)
+          Cette colonne reste visible pendant le scroll grâce à
+          position: sticky dans _match_form.scss
+          ════════════════════════════════════════════════════ %>
+      <div class="col-lg-5">
+        <div class="match-recap-card">
+
+          <%# En-tête "Récapitulatif" avec icône %>
+          <div class="match-recap-header">
+            <i data-lucide="bar-chart-2" style="width:18px; height:18px;"></i>
+            <span>Récapitulatif</span>
+          </div>
+
+          <%# Titre du match (mis à jour en temps réel par Stimulus)
+              Valeur initiale : titre existant ou texte par défaut %>
+          <h3 class="match-recap-main-title"
+              data-match-form-target="recapTitle">
+            <%= @match.title.present? ? @match.title : "Titre" %>
+          </h3>
+
+          <%# Description courte (tronquée à 80 caractères par Stimulus) %>
+          <p class="match-recap-description"
+             data-match-form-target="recapDescription">
+            <%= @match.description.present? ? truncate(@match.description, length: 80) : "—" %>
+          </p>
+
+          <%# ── Ligne Lieu ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Lieu</span>
+            <span class="recap-value" data-match-form-target="recapPlace">
+              <%= @match.place.present? ? @match.place : "—" %>
+            </span>
+          </div>
+
+          <%# ── Ligne Date ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Date</span>
+            <span class="recap-value" data-match-form-target="recapDate">
+              <%# strftime formatage : "16 mar. 2026"
+                  Stimulus mettra à jour avec le format français dynamiquement %>
+              <%= @match.date.present? ? @match.date.strftime("%d %b %Y") : "—" %>
+            </span>
+          </div>
+
+          <%# ── Ligne Heure ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Heure</span>
+            <span class="recap-value" data-match-form-target="recapTime">
+              <%# strftime "%Hh%M" donne "21h15" %>
+              <%= @match.time.present? ? @match.time.strftime("%Hh%M") : "—" %>
+            </span>
+          </div>
+
+          <%# ── Ligne Joueurs recherchés ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Joueurs recherchés</span>
+            <span class="recap-value" data-match-form-target="recapPlayers">
+              <%= @match.player_left || 4 %>
+            </span>
+          </div>
+
+          <%# ── Ligne Niveau souhaité ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Niveau souhaité</span>
+            <span class="recap-value" data-match-form-target="recapLevel">
+              <%= @match.level.present? ? @match.level : "—" %>
+            </span>
+          </div>
+
+          <%# ── Ligne Validation ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Validation</span>
+            <span class="recap-value" data-match-form-target="recapValidation">
+              <%= @match.manual_validation? ? "Manuelle" : "Automatique" %>
+            </span>
+          </div>
+
+          <%# ── Bouton de soumission ──
+              f.submit détecte automatiquement si c'est une création ou une modification
+              On surcharge le texte manuellement pour coller au design %>
+          <%= f.submit(@match.new_record? ? "Publier le match" : "Enregistrer les modifications",
+              class: "match-publish-btn") %>
+
+          <%# Petit texte légal sous le bouton %>
+          <p class="match-publish-legal">
+            En publiant, vous acceptez nos conditions d'utilisation et la politique d'annulation.
+          </p>
+
+          <%# Lien Annuler visible uniquement sur desktop (≥ lg)
+              Sur mobile il est en bas de la colonne gauche %>
+          <div class="d-none d-lg-block text-center mt-2">
+            <%= link_to "Annuler", cancel_path,
+                class: "btn btn-link btn-sm text-muted" %>
+          </div>
+
+        </div><%# fin match-recap-card %>
+      </div><%# fin colonne droite %>
+
+    </div><%# fin row %>
+  </div><%# fin container %>
+
+<% end %><%# fin form_with %>
