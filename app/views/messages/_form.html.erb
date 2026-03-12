@@ -1,10 +1,10 @@
 <%# Formulaire d'envoi de message — réinitialisé après chaque envoi via Turbo Stream %>
 <%# Pas de data-controller ici — on utilise celui de la carte parente (chat_controller.js) %>
-<%= form_with model: [match, message], class: "chat-form d-flex gap-2", data: { chat_target: "form" } do |f| %>
-  <%# Champ texte pour écrire le message %>
+<%= form_with model: [match, message], class: "chat-form d-flex gap-2 align-items-center w-100", data: { chat_target: "form" } do |f| %>
+  <%# Champ texte — flex-grow-1 pour prendre toute la largeur disponible %>
   <%= f.text_field :content,
       placeholder: "Écrire un message...",
-      class: "form-control",
+      class: "form-control flex-grow-1",
       autocomplete: "off",
       data: {
         chat_target: "input",
@@ -13,8 +13,13 @@
         action: "keydown->chat#handleKeydown input->chat#onTyping"
       } %>
 
-  <%# Bouton d'envoi %>
-  <%= f.submit "➤",
-      class: "btn btn-success px-3",
-      data: { chat_target: "submit" } %>
+  <%# Bouton d'envoi avec icône SVG flèche %>
+  <%= f.button type: "submit",
+      class: "btn btn-success chat-send-btn",
+      data: { chat_target: "submit" } do %>
+    <%# Icône SVG "send" (flèche vers la droite) %>
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+    </svg>
+  <% end %>
 <% end %>

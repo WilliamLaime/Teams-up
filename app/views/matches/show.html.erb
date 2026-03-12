@@ -486,10 +486,8 @@
             <%# Abonnement Turbo Stream pour les nouveaux messages en temps réel %>
             <%= turbo_stream_from "match_chat_#{@match.id}" %>
 
-            <%# Wrapper Stimulus (scroll automatique + typing indicator) %>
-            <div data-controller="chat"
-                 data-chat-current-user-id-value="<%= current_user.id %>"
-                 data-chat-match-id-value="<%= @match.id %>">
+            <%# Aperçu des 2 derniers messages (pas de controller ici, il est sur le modal) %>
+            <div>
 
               <%# Aperçu des 2 derniers messages %>
               <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
@@ -653,9 +651,15 @@
     MODAL CHAT COMPLET — participants et organisateur
     ══════════════════════════════════════════════════ %>
 <% if is_participant %>
+  <%# Le data-controller est ICI sur le modal pour que Stimulus ait accès
+      aux targets messages/input/typing ET que onModalOpen se déclenche
+      quand Bootstrap ouvre le modal (shown.bs.modal) %>
   <div class="modal fade"
        id="chatModal"
        tabindex="-1"
+       data-controller="chat"
+       data-chat-current-user-id-value="<%= current_user.id %>"
+       data-chat-match-id-value="<%= @match.id %>"
        data-action="shown.bs.modal->chat#onModalOpen">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content chat-modal-content">
@@ -682,7 +686,8 @@
             <% if @match.messages.any? %>
               <%= render @match.messages.includes(:user).order(:created_at) %>
             <% else %>
-              <div class="chat-empty text-center text-muted py-5">
+              <%# id="chat-empty" ciblé par Stimulus pour suppression au 1er message %>
+              <div class="chat-empty text-center text-muted py-5" id="chat-empty">
                 <div class="mb-2" style="font-size: 2rem;">💬</div>
                 <p>Personne n'a encore écrit. Brise la glace !</p>
               </div>

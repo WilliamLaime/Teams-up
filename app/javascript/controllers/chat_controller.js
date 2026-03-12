@@ -101,6 +101,8 @@ export default class extends Controller {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             this.applyMineStyleTo(node)
+            // Supprime le message "Brise la glace" au 1er message envoyé
+            this.removeEmptyState()
           }
         })
       })
@@ -112,6 +114,12 @@ export default class extends Controller {
     }
   }
 
+  // Supprime le message vide "Brise la glace" s'il est encore présent
+  removeEmptyState() {
+    const emptyState = document.getElementById("chat-empty")
+    if (emptyState) emptyState.remove()
+  }
+
   // Applique le style "mine" sur tous les messages existants
   applyMineStyles() {
     if (!this.hasMessagesTarget) return
@@ -121,13 +129,12 @@ export default class extends Controller {
   }
 
   // Applique le style "mine" sur un seul message si l'auteur correspond
+  // Le CSS --mine gère déjà le masquage de l'avatar et du nom — pas besoin de JS pour ça
   applyMineStyleTo(element) {
     const userId = parseInt(element.dataset.userId, 10)
     if (userId === this.currentUserIdValue) {
       element.classList.remove("chat-message--theirs")
       element.classList.add("chat-message--mine")
-      const senderName = element.querySelector(".chat-sender-name")
-      if (senderName) senderName.style.display = "none"
     }
   }
 

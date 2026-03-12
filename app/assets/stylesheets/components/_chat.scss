@@ -99,12 +99,13 @@
   border: none;
   border-radius: 12px;
   overflow: hidden;
-  background-color: $dark-card-bg;
+  background-color: $dark-bg; // fond global sombre
 
-  // Pied du modal (formulaire) sur fond sombre
+  // Pied de page (zone de saisie)
   .modal-footer {
-    background-color: $dark-card-bg;
-    border-color: $dark-surface;
+    background-color: $dark-bg;
+    border-color: $green;
+    padding: 10px 14px;
   }
 }
 
@@ -184,109 +185,96 @@
   }
 }
 
-// Zone scrollable des messages
+// ── Zone scrollable des messages (dark theme) ─────────────────────────────────
 .chat-messages {
-  height: 400px;          // hauteur fixe
-  overflow-y: auto;       // scroll vertical
-  padding: 16px;
-  background-color: #f9f9f9;
+  height: 420px;
+  overflow-y: auto;
+  padding: 16px 14px;
+  background-color: #444444; // fond du chat
   display: flex;
-  flex-direction: column; // les messages s'empilent du haut vers le bas
+  flex-direction: column;
+  gap: 6px; // espace entre les messages
 
-  // Scrollbar discrète (navigateurs Webkit)
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
+  // Scrollbar discrète sur fond sombre
+  &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-thumb {
-    background-color: #ccc;
+    background-color: $dark-surface;
     border-radius: 4px;
   }
 }
 
-// Un message (conteneur de la bulle + avatar + nom)
+// ── Conteneur d'un message (avatar + bulle) ────────────────────────────────────
 .chat-message {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  max-width: 75%;
+  align-items: flex-start; // avatar aligné en haut de la bulle
+  gap: 10px;
+  max-width: 78%;
 
-  // Message d'un autre joueur : aligné à gauche
+  // Message d'un autre joueur → à gauche
   &--theirs {
     align-self: flex-start;
 
     .chat-bubble {
-      background-color: #ffffff;
-      color: #1a1a1a;
-      border: 1px solid #e0e0e0;
-      border-radius: 0 12px 12px 12px; // coin supérieur gauche plat
+      background-color: $dark-surface; // #242624 — plus clair que le fond #111111
+      color: $dark-text;
+      border-radius: 0 14px 14px 14px;
     }
 
-    .chat-bubble-wrapper {
-      align-items: flex-start;
-    }
-
-    .chat-time {
-      text-align: left;
-    }
+    .chat-time { color: $dark-muted; }
   }
 
-  // Mon message : aligné à droite, bulle verte
+  // Mon message → à droite, bulle verte, sans avatar
   &--mine {
     align-self: flex-end;
-    flex-direction: row-reverse; // avatar à droite
+    flex-direction: row-reverse;
+
+    .chat-avatar { display: none; } // pas d'avatar pour mes propres messages
 
     .chat-bubble {
       background-color: $green;
       color: #111;
-      border-radius: 12px 0 12px 12px; // coin supérieur droit plat
-      font-weight: 500;
+      border-radius: 14px 0 14px 14px; // coin supérieur droit plat
     }
 
-    .chat-bubble-wrapper {
-      align-items: flex-end;
-    }
+    .chat-sender-name { display: none; } // pas de nom pour mes messages
 
-    .chat-time {
-      text-align: right;
-    }
+    .chat-time { color: rgba(0, 0, 0, 0.45); }
   }
 }
 
-// Wrapper de la bulle (contient nom, bulle, heure)
-.chat-bubble-wrapper {
+// ── Bulle : contient le nom, le texte et l'heure ───────────────────────────────
+.chat-bubble {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
-// Nom de l'expéditeur (au-dessus de la bulle)
+// Nom de l'expéditeur (en haut de la bulle, coloré par utilisateur)
 .chat-sender-name {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #555;
-  padding-left: 2px;
+  // La couleur est appliquée en inline style (basée sur user_id)
 }
 
-// La bulle du message
-.chat-bubble {
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  word-break: break-word; // évite le débordement sur les longs mots
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+// Corps du message
+.chat-bubble-body {
+  // hérite des styles de la bulle
 }
 
-// Heure d'envoi
+// Heure (en bas à droite de la bulle)
 .chat-time {
-  font-size: 0.65rem;
-  color: #999;
-  padding: 0 2px;
+  font-size: 0.62rem;
+  text-align: right;
 }
 
-// Avatar rond avec initiales
+// ── Avatar (photo ou initiales) ────────────────────────────────────────────────
 .chat-avatar {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -294,40 +282,61 @@
   font-size: 0.7rem;
   font-weight: 700;
   color: white;
-  flex-shrink: 0; // ne rétrécit pas
+  flex-shrink: 0;
   text-transform: uppercase;
+  overflow: hidden; // rogne la photo en cercle
+  margin-top: 2px;
 }
 
-// Message d'état vide (aucun message dans le chat)
+// Photo de profil (taille fixe pour contrer le height: auto de Bootstrap)
+.chat-avatar-img {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// ── État vide (aucun message) ──────────────────────────────────────────────────
 .chat-empty {
-  flex: 1; // prend toute la hauteur disponible
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  color: $dark-muted; // texte clair sur fond sombre
 }
 
-// Formulaire d'envoi en bas du chat
+// ── Formulaire d'envoi ────────────────────────────────────────────────────────
 .chat-form {
   align-items: center;
 
   .form-control {
-    border-radius: 20px; // champ arrondi
-    border: 1px solid #ddd;
+    border-radius: 20px;
+    background-color: $dark-surface; // champ sombre
+    border: 1px solid lighten($dark-surface, 8%);
+    color: $dark-text;
     padding: 8px 16px;
     font-size: 0.9rem;
 
+    &::placeholder { color: $dark-muted; }
+
     &:focus {
+      background-color: $dark-surface;
       border-color: $green;
-      box-shadow: 0 0 0 0.2rem rgba(30, 221, 136, 0.25);
+      color: $dark-text;
+      box-shadow: 0 0 0 0.2rem rgba(30, 221, 136, 0.2);
     }
   }
 
   // Bouton d'envoi rond
-  .btn-success {
+  .chat-send-btn {
     border-radius: 50%;
     width: 40px;
     height: 40px;
+    min-width: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -335,7 +344,9 @@
     background-color: $green;
     border-color: $green;
     color: #111;
-    font-size: 1rem;
+    padding: 0;
+
+    svg { display: block; }
 
     &:hover {
       background-color: darken($green, 8%);
