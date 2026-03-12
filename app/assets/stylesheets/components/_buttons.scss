@@ -36,6 +36,30 @@
 }
 
 
+// ── Lien texte "Se connecter" — surlignage vert ──────
+// Pas de fond ni de bordure, juste le texte en vert
+// avec un soulignement vert en guise de surlignage
+.btn-cta-link {
+  background: none;
+  border: none;
+  color: $green;                              // texte vert
+  font-size: 0.875rem;                        // aligné avec btn-sm
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1.5px solid $green;         // surlignage vert sous le texte
+  padding: 0 0.1rem;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    background: rgba($green, 0.1);           // légère teinte verte au survol
+    color: $green;
+    border-radius: 3px;
+  }
+}
+
+
 // ── Bouton Secondaire ────────────────────────────────
 // Fond transparent, bordure verte, texte vert
 // Hover : légèrement éclairci avec bordure blanche
