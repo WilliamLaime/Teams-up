@@ -5,17 +5,21 @@
 
 <footer class="site-footer">
   <div class="container">
-    <div class="row align-items-start g-4">
+    <%# align-items-center : tout sur la même ligne, centré verticalement %>
+    <div class="row align-items-center">
 
-      <%# ── Logo + tagline ── %>
+      <%# ── Logo : picto SVG + texte SVG côte à côte ── %>
       <div class="col-md-4">
         <%= link_to root_path, class: "footer-logo" do %>
-          <%= image_tag "logo_teams-up_logo_vert.png", alt: "Teams-Up", height: 26 %>
+          <%# Icône picto (bouclier/symbole Teams-Up) %>
+          <%= image_tag "img_footer/teamsup_picto.svg", alt: "", height: 32, class: "footer-logo-picto" %>
+          <%# Texte "TEAMS-UP" en SVG %>
+          <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", height: 18, class: "footer-logo-texte" %>
         <% end %>
       </div>
 
-      <%# ── Liens navigation ── %>
-      <div class="col-md-4">
+      <%# ── Liens navigation centrés ── %>
+      <div class="col-md-4 d-flex align-items-center justify-content-center">
         <ul class="footer-links">
           <%# "#" = lien temporaire, à remplacer quand les pages seront créées %>
           <li><%= link_to "Confidentialité", "#" %></li>
@@ -45,13 +49,13 @@
 
     </div>
 
-    <%# Séparateur %>
-    <hr class="footer-divider">
+  </div><%# fin container %>
 
-    <%# Copyright %>
-    <div class="footer-bottom text-center">
+  <%# Bande copyright pleine largeur — fond plus foncé que le reste du footer %>
+  <div class="footer-bottom">
+    <div class="container text-center">
       &copy; <%= Time.current.year %> Team-Up. Tous droits réservés.
     </div>
-
   </div>
+
 </footer>

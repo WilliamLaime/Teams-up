@@ -1,0 +1,87 @@
+// ═══════════════════════════════════════════════════
+//  FOOTER — Pied de page
+//  Utilisé sur TOUTES les pages via shared/_footer.html.erb
+//  et rendu dans app/views/layouts/application.html.erb
+//
+//  Sticky bottom : géré dans application.scss
+//    body { min-height: 100vh; display: flex; flex-direction: column; }
+//    main { flex: 1; }  → le footer se retrouve toujours en bas
+// ═══════════════════════════════════════════════════
+
+.site-footer {
+  // Fond de la partie haute du footer
+  background-color: #1f1f1f;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: $dark-muted;
+  // Le padding bottom est géré par .footer-bottom qui a son propre fond
+  padding: 20px 0 0;
+
+  // ── Logo : picto + texte SVG côte à côte ─────────
+  .footer-logo {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;            // espace entre le picto et le texte
+    perspective: 300px;     // active la profondeur 3D pour l'enfant .footer-logo-picto
+  }
+
+  // ── Animation "coin flip" : rotation 3D sur l'axe Y ─
+  // rotateY(0) → face visible
+  // rotateY(360deg) → fait un tour complet comme une pièce de monnaie
+  @keyframes flip-y {
+    0%   { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+  }
+
+  .footer-logo-picto {
+    display: block;
+    transform-origin: center center;
+    // perspective sur le parent pour activer l'effet 3D
+    // 6s = plus lent, cubic-bezier = démarre doucement et accélère fort en fin de tour
+    animation: flip-y 6s cubic-bezier(0.4, 0, 1, 1) infinite;
+  }
+
+
+  .footer-logo-texte {
+    display: block; // le texte reste immobile
+  }
+
+  // ── Liens de navigation ───────────────────────────
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;         // passe à la ligne sur mobile
+    gap: 0.5rem 1.5rem;
+
+    li a {
+      color: $dark-muted;
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.15s;
+
+      &:hover { color: #fff; }
+    }
+  }
+
+  // ── Bande copyright : fond plus foncé, pleine largeur ──
+  // Plus foncé que #292929 (fond du footer principal)
+  // margin-top pour séparer visuellement du contenu au-dessus
+  .footer-bottom {
+    background-color: #111111;  // $dark-bg : nettement plus sombre
+    margin-top: 20px;           // espace entre le contenu et cette bande
+    padding: 12px 0;            // hauteur de la bande
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.25);
+  }
+
+  // ── Icônes réseaux sociaux ─────────────────────────
+  // Les icônes passent au vert au hover
+  .footer-social a {
+    color: $dark-muted;
+    transition: color 0.15s;
+
+    &:hover { color: $green; }
+  }
+}
