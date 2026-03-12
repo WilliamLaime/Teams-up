@@ -1,0 +1,26 @@
+// ============================================================
+// Bouton de navigation réutilisable
+// Utilisé pour les boutons "Tout voir" et "Retour"
+// Partial associé : app/views/shared/_nav_button.html.erb
+// ============================================================
+
+.nav-button {
+  // Alignement horizontal de l'icône et du texte
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  // Style du texte
+  color: $green;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+
+  // Animation douce au survol
+  transition: gap 0.2s, color 0.2s;
+
+  &:hover {
+    gap: 0.5rem;    // L'icône s'éloigne légèrement du texte
+    color: #fff;
+  }
+}

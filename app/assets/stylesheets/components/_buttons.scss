@@ -1,0 +1,52 @@
+// =====================================================
+// COMPOSANTS — Boutons CTA (Call To Action)
+// Bouton primaire vert et bouton secondaire outline
+// =====================================================
+
+
+// ── Styles communs aux deux boutons CTA ──────────────
+// On arrondit les coins à 10px pour les deux
+.btn-cta-primary,
+.btn-cta-secondary {
+  border-radius: 10px;
+}
+
+// ── Icône dans les boutons (Lucide) ──────────────────
+// L'icône est alignée verticalement avec le texte
+.btn-cta-icon {
+  width: 17px;
+  height: 17px;
+  margin-right: 5px;
+  vertical-align: middle; // aligne l'icône avec le texte
+}
+
+
+// ── Bouton Primaire ──────────────────────────────────
+// Fond vert (Bootstrap btn-primary mappé sur $green)
+// Hover : vert légèrement assombri
+.btn-cta-primary {
+  // Les styles de couleur viennent de Bootstrap via $primary: $green
+  // défini dans config/_bootstrap_variables.scss
+
+  &:hover {
+    background-color: darken($green, 10%); // vert assombri de 10% au survol
+    border-color: darken($green, 10%);     // bordure assortie
+    color: #111111;                        // texte sombre pour le contraste sur fond vert clair
+  }
+}
+
+
+// ── Bouton Secondaire ────────────────────────────────
+// Fond transparent, bordure verte, texte vert
+// Hover : légèrement éclairci avec bordure blanche
+.btn-cta-secondary {
+  background: #1B1B1B;         // fond transparent pour l'effet outline
+  color: $green;                   // texte vert
+  border: 1.5px solid $green;      // bordure verte fine
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08); // légère surbrillance blanche au survol
+    color: #fff;                           // texte blanc au survol
+    border-color: rgba(255, 255, 255, 0.5); // bordure blanche semi-transparente
+  }
+}

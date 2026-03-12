@@ -249,7 +249,7 @@
 // Chaque section du formulaire (Descriptif, Lieu, Quand, Détails) est une carte
 .match-form-section {
   background-color: $dark-card-bg; // #1a1c1a → légèrement plus clair que le fond
-  border-radius: 1rem;
+  border-radius: 8px;
   padding: 1.75rem;
   margin-bottom: 1.25rem;
   color: $dark-text; // Texte clair sur fond sombre
@@ -481,7 +481,7 @@
 // Carte principale du récapitulatif
 .match-recap-card {
   background-color: $dark-card-bg; // #1a1c1a → même que les sections du formulaire
-  border-radius: 1rem;
+  border-radius: 8px;
   padding: 1.5rem;
   color: $dark-text;
 

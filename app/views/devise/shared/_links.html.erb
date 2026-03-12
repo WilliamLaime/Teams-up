@@ -1,25 +1,33 @@
+<%# ── Liens secondaires partagés entre les pages Devise ──────────────────────── %>
+
+<%# Lien vers la connexion (affiché partout sauf sur la page de connexion) %>
 <%- if controller_name != 'sessions' %>
-  <p><%= link_to "Log in", new_session_path(resource_name) %></p>
+  <p><%= link_to "Se connecter", new_session_path(resource_name) %></p>
 <% end %>
 
+<%# Lien vers l'inscription (affiché partout sauf sur la page d'inscription) %>
 <%- if devise_mapping.registerable? && controller_name != 'registrations' %>
-  <p><%= link_to "Sign up", new_registration_path(resource_name) %></p>
+  <p><%= link_to "Créer un compte", new_registration_path(resource_name) %></p>
 <% end %>
 
+<%# Lien mot de passe oublié (affiché sur la page de connexion uniquement) %>
 <%- if devise_mapping.recoverable? && controller_name != 'passwords' && controller_name != 'registrations' %>
-  <p><%= link_to "Forgot your password?", new_password_path(resource_name) %></p>
+  <p><%= link_to "Mot de passe oublié ?", new_password_path(resource_name) %></p>
 <% end %>
 
+<%# Lien renvoi des instructions de confirmation %>
 <%- if devise_mapping.confirmable? && controller_name != 'confirmations' %>
-  <p><%= link_to "Didn't receive confirmation instructions?", new_confirmation_path(resource_name) %></p>
+  <p><%= link_to "Renvoyer les instructions de confirmation", new_confirmation_path(resource_name) %></p>
 <% end %>
 
+<%# Lien déverrouillage du compte %>
 <%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
-  <p><%= link_to "Didn't receive unlock instructions?", new_unlock_path(resource_name) %></p>
+  <p><%= link_to "Renvoyer les instructions de déverrouillage", new_unlock_path(resource_name) %></p>
 <% end %>
 
+<%# Boutons OAuth (si configuré) %>
 <%- if devise_mapping.omniauthable? %>
   <%- resource_class.omniauth_providers.each do |provider| %>
-    <p><%= button_to "Sign in with #{OmniAuth::Utils.camelize(provider)}", omniauth_authorize_path(resource_name, provider), data: { turbo: false } %></p>
+    <p><%= button_to "Se connecter avec #{OmniAuth::Utils.camelize(provider)}", omniauth_authorize_path(resource_name, provider), data: { turbo: false } %></p>
   <% end %>
 <% end %>

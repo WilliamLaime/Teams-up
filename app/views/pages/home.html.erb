@@ -39,25 +39,15 @@
         %>
         <div class="d-flex flex-wrap gap-3">
           <% if user_signed_in? %>
-            <%# Bouton primaire (vert) %>
-            <%= link_to new_match_path, class: "btn btn-primary btn-lg px-4" do %>
-              <i style="width:17px;height:17px;margin-right:5px;"></i>
-              Créer un match
-            <% end %>
-            <%# Bouton secondaire (outline sombre) %>
-            <%= link_to matches_path, class: "btn btn-lg btn-hero-secondary px-4" do %>
-              Voir les matchs
-            <% end %>
-          <% else %>
-            <%# Bouton primaire → inscription %>
-            <%= link_to new_user_registration_path, class: "btn btn-primary btn-lg px-4" do %>
-              <i style="width:17px;height:17px;margin-right:5px;"></i>
-              Créer un match
-            <% end %>
+            <%# Bouton primaire → création d'un match %>
+            <%= render "shared/btn_primary", url: new_match_path, text: "Créer un match" %>
             <%# Bouton secondaire → liste des matchs %>
-            <%= link_to matches_path, class: "btn btn-lg btn-hero-secondary px-4" do %>
-              Voir les matchs
-            <% end %>
+            <%= render "shared/btn_secondary", url: matches_path, text: "Voir les matchs" %>
+          <% else %>
+            <%# Bouton primaire → inscription (utilisateur non connecté) %>
+            <%= render "shared/btn_primary", url: new_user_registration_path, text: "Créer un match" %>
+            <%# Bouton secondaire → liste des matchs %>
+            <%= render "shared/btn_secondary", url: matches_path, text: "Voir les matchs" %>
           <% end %>
         </div>
 
@@ -74,11 +64,11 @@
             class="hero-img"
           >
 
-          <%# Carte overlay : affiche le prochain match urgent ou le premier dispo %>
-          <% if @matches.any? %>
-            <%# Préférer un match urgent, sinon prendre le premier %>
-            <% next_match = @matches.find(&:urgent?) || @matches.first %>
-            <div class="hero-match-card">
+          <%# Carte overlay : affiche le prochain match disponible (jamais complet)
+              @hero_match est calculé dans le controller — exclut les matchs full? %>
+          <% if @hero_match %>
+            <%# Le lien englobe toute la carte pour la rendre cliquable %>
+            <%= link_to match_path(@hero_match), class: "hero-match-card" do %>
 
               <%# Ligne haute : icône ronde + label + titre %>
               <div class="d-flex align-items-center gap-3">
@@ -89,27 +79,24 @@
                 <%# Infos principales %>
                 <div class="flex-grow-1 overflow-hidden">
                   <div class="hero-match-label">
-                    <%= next_match.urgent? ? "Match Urgent" : next_match.level %>
+                    <%= @hero_match.urgent? ? "Match Urgent" : @hero_match.level %>
                   </div>
-                  <div class="hero-match-title"><%= next_match.title %></div>
+                  <div class="hero-match-title"><%= @hero_match.title %></div>
                 </div>
               </div>
 
-              <%# Ligne basse : heure à gauche, places à droite %>
+              <%# Ligne basse : heure à gauche, places restantes à droite %>
               <div class="d-flex justify-content-between align-items-center hero-match-footer">
                 <span class="hero-match-time">
-                  <%= next_match.time&.strftime('%H:%M') %> · Ce soir
+                  <%= @hero_match.time&.strftime('%H:%M') %> · Ce soir
                 </span>
-                <% if next_match.full? %>
-                  <span class="hero-match-spots" style="color:#ff6b6b;">Complet</span>
-                <% else %>
-                  <span class="hero-match-spots">
-                    <%= next_match.player_left %> place<%= next_match.player_left > 1 ? "s" : "" %>
-                  </span>
-                <% end %>
+                <%# Toujours des places dispo (jamais complet grâce au controller) %>
+                <span class="hero-match-spots">
+                  <%= @hero_match.player_left %> place<%= @hero_match.player_left > 1 ? "s" : "" %>
+                </span>
               </div>
 
-            </div>
+            <% end %>
           <% end %>
 
         </div>
@@ -135,10 +122,7 @@
           Les prochaines séances disponibles près de vous.
         </p>
       </div>
-      <%= link_to matches_path, class: "matches-see-all mt-1" do %>
-        Tout voir
-        <i data-lucide="arrow-right" style="width:15px;height:15px;"></i>
-      <% end %>
+      <%= render "shared/nav_button", url: matches_path, label: "Tout voir", direction: "forward", extra_class: "mt-1" %>
     </div>
 
     <% if @matches.any? %>
@@ -147,12 +131,34 @@
           <div class="col">
             <div class="match-card">
 
-              <%# Image de terrain (placeholder différent pour chaque carte) %>
-              <img
-                src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=500&q=75"
-                alt="Terrain <%= match.title %>"
-                class="match-card-img"
-              >
+              <%# Image de terrain — wrapper relatif pour accueillir l'overlay organisateur %>
+              <div class="match-card-img-wrapper">
+                <img
+                  src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=500&q=75"
+                  alt="Terrain <%= match.title %>"
+                  class="match-card-img"
+                >
+
+                <%# Overlay organisateur — coin supérieur droit de l'image
+                    Current user → brassard capitaine "C" + "Ton match"
+                    Autre user   → "Prénom N." sur fond sombre %>
+                <% if user_signed_in? && match.user == current_user %>
+                  <div class="match-organizer-overlay">
+                    <span class="match-captain-armband">C</span>
+                    <span class="match-captain-label">Ton match</span>
+                  </div>
+                <% elsif match.user.present? %>
+                  <%
+                    first        = match.user.profil&.first_name || match.user.email.split("@").first
+                    last_initial = match.user.profil&.last_name&.first
+                    organizer_display = last_initial ? "#{first} #{last_initial}." : first
+                  %>
+                  <div class="match-organizer-overlay">
+                    <span class="match-organizer-name"><%= organizer_display %></span>
+                  </div>
+                <% end %>
+
+              </div>
 
               <%# Corps de la carte %>
               <div class="match-card-body">
@@ -223,15 +229,15 @@
 
               </div>
 
-              <%# Pied de carte : bouton Rejoindre pill plein vert %>
+              <%# Pied de carte : bouton Voir le match pill plein vert %>
               <div class="match-card-footer">
                 <% if user_signed_in? %>
                   <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
-                    Rejoindre
+                    Voir le match
                   <% end %>
                 <% else %>
                   <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
-                    Rejoindre
+                    Voir le match
                   <% end %>
                 <% end %>
               </div>
@@ -326,8 +332,7 @@
       <div class="col-lg-6">
 
         <h2 class="cta-title">
-          Dites adieu aux groupes whatsApp<br>
-          <span class="cta-title-accent">bordéliques.</span>
+          Dites adieu aux groupes whatsApp <span class="cta-title-accent">bordéliques.</span>
         </h2>
 
         <p class="cta-description">
@@ -378,11 +383,15 @@
 
           <%# Message entrant d'Alex avec son avatar %>
           <div class="chat-message-row">
-            <img src="https://i.pravatar.cc/28?img=11" class="chat-avatar" alt="Alex">
-            <div class="chat-message incoming">
-              <div class="msg-sender">Alex</div>
-              <span class="msg-text">On est 9, il manque encore quelqu'un pour demain ?</span>
-              <span class="msg-time">18:42</span>
+            <%# Avatar en 56px affiché à 28px → résolution 2× propre %>
+            <img src="https://i.pravatar.cc/56?img=11" class="chat-avatar" alt="Alex">
+            <div class="chat-message-col">
+              <%# Prénom au-dessus de la bulle, en gris discret %>
+              <span class="chat-sender-name">Alex</span>
+              <div class="chat-message incoming">
+                <span class="msg-text">On est 9, il manque encore quelqu'un pour demain ?</span>
+                <span class="msg-time">18:42</span>
+              </div>
             </div>
           </div>
 
@@ -392,11 +401,15 @@
 
           <%# Message entrant de Julie avec son avatar %>
           <div class="chat-message-row">
-            <img src="https://i.pravatar.cc/28?img=47" class="chat-avatar" alt="Julie">
-            <div class="chat-message incoming">
-              <div class="msg-sender">Julie</div>
-              <span class="msg-text">C'est à quelle heure le terrain ?</span>
-              <span class="msg-time">18:55</span>
+            <%# Avatar en 56px affiché à 28px → résolution 2× propre %>
+            <img src="https://i.pravatar.cc/56?img=47" class="chat-avatar" alt="Julie">
+            <div class="chat-message-col">
+              <%# Prénom au-dessus de la bulle, en gris discret %>
+              <span class="chat-sender-name">Julie</span>
+              <div class="chat-message incoming">
+                <span class="msg-text">C'est à quelle heure le terrain ?</span>
+                <span class="msg-time">18:55</span>
+              </div>
             </div>
           </div>
 

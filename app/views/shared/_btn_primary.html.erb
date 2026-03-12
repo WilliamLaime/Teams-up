@@ -1,0 +1,16 @@
+<%# =====================================================
+    COMPOSANT — Bouton Primaire (vert)
+    =====================================================
+    Variables locales attendues :
+      - url   : chemin vers lequel pointe le bouton (ex: new_match_path)
+      - text  : texte affiché dans le bouton         (ex: "Créer un match")
+      - icon  : (optionnel) nom d'icône Lucide        (ex: "circle-plus")
+    ===================================================== %>
+
+<%= link_to url, class: "btn btn-primary btn-lg px-4 btn-cta-primary" do %>
+  <%# Icône optionnelle Lucide — affichée seulement si la variable icon est fournie %>
+  <% if local_assigns[:icon] %>
+    <i data-lucide="<%= icon %>" class="btn-cta-icon"></i>
+  <% end %>
+  <%= text %>
+<% end %>

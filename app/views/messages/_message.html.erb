@@ -3,36 +3,47 @@
 <%# IMPORTANT : on n'utilise pas current_user ici car cette partielle est aussi rendue %>
 <%# par le broadcast ActionCable (hors contexte de requête HTTP, sans Devise disponible) %>
 
-<%# Initiales de l'expéditeur (ex: "MC" pour "Marvin Cohen") %>
+<%# Infos de l'expéditeur %>
 <% sender_name = message.user.display_name %>
+<%# Initiales pour le fallback avatar (ex: "MC" pour "Marvin Cohen") %>
 <% initials = sender_name.split.map(&:first).join.upcase.first(2) %>
 
-<%# Couleur de fond de l'avatar basée sur l'ID utilisateur (stable, pas aléatoire) %>
-<% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C #37474F] %>
-<% avatar_color = avatar_colors[message.user_id % avatar_colors.length] %>
+<%# Couleur unique par utilisateur (stable, basée sur son ID) %>
+<%# Utilisée pour l'avatar fallback ET la couleur de son nom dans la bulle %>
+<% user_colors = %w[#1EDD88 #00BCD4 #9C27B0 #FF5722 #2196F3 #FF9800 #E91E63] %>
+<% user_color = user_colors[message.user_id % user_colors.length] %>
+
+<%# Vérifie si l'utilisateur a une photo de profil Active Storage %>
+<% has_avatar = message.user.profil&.avatar&.attached? %>
 
 <%#
   data-user-id : utilisé par le Stimulus controller (chat_controller.js) pour savoir
   si ce message m'appartient et appliquer la classe CSS chat-message--mine dynamiquement
 %>
-<div class="chat-message chat-message--theirs mb-3"
+<div class="chat-message chat-message--theirs mb-2"
      data-user-id="<%= message.user_id %>">
 
-  <%# Avatar initiales (à gauche par défaut, Stimulus le déplace à droite si c'est le mien) %>
-  <div class="chat-avatar chat-avatar--left" style="background-color: <%= avatar_color %>;">
-    <%= initials %>
+  <%# Avatar : photo de profil ou initiales colorées (caché pour mes propres messages via CSS) %>
+  <div class="chat-avatar" style="<%= has_avatar ? '' : "background-color: #{user_color};" %>">
+    <% if has_avatar %>
+      <%# blob.url = URL Cloudinary directe (fonctionne aussi dans les broadcasts Turbo Stream) %>
+      <%= image_tag message.user.profil.avatar.blob.url,
+          class: "chat-avatar-img",
+          alt: sender_name %>
+    <% else %>
+      <%= initials %>
+    <% end %>
   </div>
 
-  <div class="chat-bubble-wrapper">
-    <%# Nom de l'expéditeur (masqué si c'est mon message, via CSS) %>
-    <div class="chat-sender-name"><%= sender_name %></div>
+  <%# Bulle : contient le nom, le texte et l'heure (tout dans la bulle comme sur le design) %>
+  <div class="chat-bubble">
+    <%# Nom de l'expéditeur en couleur (masqué par Stimulus si c'est mon message) %>
+    <div class="chat-sender-name" style="color: <%= user_color %>"><%= sender_name %></div>
 
-    <%# Bulle du message %>
-    <div class="chat-bubble">
-      <%= message.content %>
-    </div>
+    <%# Contenu du message %>
+    <div class="chat-bubble-body"><%= message.content %></div>
 
-    <%# Heure d'envoi du message %>
+    <%# Heure en bas à droite de la bulle %>
     <div class="chat-time"><%= message.created_at.strftime("%H:%M") %></div>
   </div>
 

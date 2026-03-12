@@ -78,23 +78,6 @@
     margin-bottom: 2rem;
   }
 
-  // Boutons CTA en forme de pill (border-radius maximum)
-  .btn { border-radius: 10px; }
-
-  // Bouton secondaire adapté au fond sombre
-  .btn-hero-secondary {
-    background: transparent;
-    color: $green;
-    border: 1.5px solid $green;
-    border-radius: 10px;
-
-    &:hover {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      border-color: rgba(255,255,255,0.5);
-    }
-  }
-
   // ── Image droite du hero ──
   .hero-image-wrapper {
     position: relative;
@@ -128,6 +111,7 @@
   }
 
   // Carte "match" à cheval : déborde à gauche ET en bas de l'image
+  // C'est un <a> (link_to) donc on neutralise les styles de lien
   .hero-match-card {
     position: absolute;
     bottom: -48px;  // dépasse bien en bas de l'image
@@ -136,10 +120,20 @@
     background: rgba(12, 18, 12, 0.92);
     backdrop-filter: blur(14px);
     border: 1px solid $green;
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 0.85rem 1rem;
     z-index: 2;
     color: $dark-text;
+    display: block;         // <a> est inline par défaut, on passe en block
+    text-decoration: none;  // supprime le soulignement du lien
+
+    // Zoom discret au survol
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    &:hover {
+      transform: scale(1.05);                       // légère grossissement
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55); // ombre plus marquée
+      color: $dark-text;                            // garde la couleur du texte au hover
+    }
 
     // Icône ronde orange (éclair = urgent)
     .hero-match-icon {
@@ -218,24 +212,10 @@
     margin-top: 0.25rem;
   }
 
-  // Lien "Tout voir →"
-  .matches-see-all {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: $green;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    transition: gap 0.2s, color 0.2s;
-
-    &:hover { gap: 0.5rem; color: #fff; }
-  }
-
   // Carte individuelle d'un match
   .match-card {
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
+    border-radius: 8px;
     overflow: hidden;
     background: $dark-card-bg;
     transition: box-shadow 0.2s, transform 0.2s;
@@ -249,11 +229,66 @@
       transform: translateY(-2px);
     }
 
+    // Wrapper de l'image — position: relative pour l'overlay organisateur
+    .match-card-img-wrapper {
+      position: relative; // ancre les éléments absolus enfants
+    }
+
     // Image en haut de la carte
     .match-card-img {
       width: 100%;
       height: 160px;
       object-fit: cover;
+      display: block; // supprime l'espace parasite sous l'image (inline default)
+    }
+
+    // Overlay organisateur — positionné en haut à droite de l'image
+    .match-organizer-overlay {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    // Brassard capitaine — badge doré "C" qui évoque un brassard de capitaine
+    .match-captain-armband {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, #F5C518, #D4A00A); // dégradé or
+      color: #1a1200;                                          // texte brun foncé sur fond or
+      font-weight: 900;
+      font-size: 0.72rem;
+      border-radius: 5px;
+      border: 1.5px solid rgba(255, 215, 0, 0.5);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+      letter-spacing: 0;
+    }
+
+    // Label "Ton match" — texte blanc sur fond sombre flouté, à côté du brassard
+    .match-captain-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    // Nom de l'organisateur — "Prénom N." sur fond sombre flouté
+    .match-organizer-name {
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.85);
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
     }
 
     // Corps de la carte — flex: 1 pour pousser le footer en bas
@@ -444,9 +479,10 @@
     color: #fff;
     margin-bottom: 1rem;
 
-    // Partie colorée en orange (comme dans le template)
+    // Partie colorée en orange — légèrement plus grande pour dépasser la 1ère ligne
     .cta-title-accent {
       color: $orange;
+      font-size: 1.18em; // 1.18× la taille du titre parent → quelques lettres de plus
     }
   }
 
@@ -491,7 +527,7 @@
   .cta-chat-mockup {
     background: $dark-surface;
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 18px;
+    border-radius: 8px;
     padding: 1.25rem;
     max-width: 400px;
     margin: 0 auto;
@@ -530,7 +566,7 @@
     // Ligne avatar + bulle (messages entrants uniquement)
     .chat-message-row {
       display: flex;
-      align-items: flex-start; // avatar aligné en HAUT de la bulle
+      align-items: flex-start; // avatar aligné en HAUT
       gap: 0.5rem;
       margin-bottom: 0.75rem;
 
@@ -538,13 +574,29 @@
       .chat-message { margin-bottom: 0; }
     }
 
+    // Colonne : prénom au-dessus, bulle en dessous
+    .chat-message-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem; // espace entre le prénom et la bulle
+    }
+
+    // Prénom affiché au-dessus de la bulle, en gris discret
+    .chat-sender-name {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
+      padding-left: 0.2rem; // léger décalage pour aligner visuellement avec la bulle
+    }
+
     // Avatar rond à gauche des messages entrants
+    // Chargé en 56px et affiché à 28px → résolution 2× sans pixelisation
     .chat-avatar {
       width: 28px;
       height: 28px;
       min-width: 28px;
       border-radius: 50%;
       object-fit: cover;
+      image-rendering: auto; // laisse le navigateur lisser l'image
     }
 
     // Bulle de message
@@ -591,18 +643,12 @@
           border-left: 7px solid transparent;
         }
 
-        .msg-sender {
-          font-size: 0.7rem;
-          color: $green;
-          font-weight: 700;
-          margin-bottom: 0.25rem;
-        }
       }
 
       &.outgoing {
         background: $green;
         color: $dark-bg;
-        font-weight: 600;
+        font-weight: 400; // texte normal, sans gras
         border-radius: 12px 0px 12px 12px; // coin sup droit plat = base de la queue
         margin-left: auto;
         position: relative; // nécessaire pour positionner le ::after
