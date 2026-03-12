@@ -7,13 +7,13 @@
 <% unread_count = current_user.notifications.unread.count %>
 
 <%# Bouton cloche — badge rouge si notifications non lues %>
-<a class="nav-link position-relative px-2" href="#"
+<a class="nav-link notif-bell-link position-relative px-2" href="#"
    id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-  <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
+  <i data-lucide="bell" class="notif-bell-icon" style="width:20px;height:20px;"></i>
   <% if unread_count > 0 %>
     <%# Badge rouge avec le nombre de notifications non lues %>
-    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-          style="font-size:0.6rem;">
+    <span class="position-absolute badge rounded-pill bg-danger"
+          style="font-size:0.6rem; top:2px; right:2px;">
       <%= unread_count %>
     </span>
   <% end %>
@@ -38,8 +38,11 @@
   <% if recent_notifs.any? %>
     <% recent_notifs.each do |notif| %>
       <%# Cliquer marque la notif comme lue — classe "unread" = fond vert léger %>
+      <%# turbo_frame: "_top" force Turbo à naviguer au niveau de la page entière
+          au lieu d'essayer d'afficher la réponse dans le turbo_frame de la cloche %>
       <%= button_to mark_read_notification_path(notif), method: :patch,
-          class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}" do %>
+          class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}",
+          data: { turbo_frame: "_top" } do %>
         <div class="d-flex align-items-start gap-2 px-3 py-2">
           <%# Icône : check grisé si lue, cloche verte si non lue %>
           <% if notif.read? %>

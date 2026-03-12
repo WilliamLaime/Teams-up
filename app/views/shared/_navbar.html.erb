@@ -24,16 +24,16 @@
       <%# ── Liens du centre ── %>
       <ul class="navbar-nav mx-auto gap-1">
         <li class="nav-item">
-          <%= link_to matches_path, class: "nav-link d-flex align-items-center gap-1" do %>
-            <i style="width:15px;height:15px;"></i>
+          <%# "active" si on est sur /matches SANS le filtre ?mine=true %>
+          <%= link_to matches_path, class: "nav-link #{current_page?(matches_path) && params[:mine].blank? ? 'active' : ''}" do %>
             Trouver un match
           <% end %>
         </li>
         <% if user_signed_in? %>
           <%# "Mes matchs" visible uniquement pour les utilisateurs connectés %>
           <li class="nav-item">
-            <%= link_to matches_path(mine: true), class: "nav-link d-flex align-items-center gap-1" do %>
-              <i style="width:15px;height:15px;"></i>
+            <%# "active" si on est sur la page des matchs avec le filtre "mine" %>
+            <%= link_to matches_path(mine: true), class: "nav-link #{current_page?(matches_path(mine: true)) ? 'active' : ''}" do %>
               Mes matchs
             <% end %>
           </li>
