@@ -1,0 +1,199 @@
+// =====================================================
+// MATCH CARD — Composant partagé
+// Utilisé sur la home (section matchs) ET la liste des matchs (/matches)
+// =====================================================
+
+.match-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  background: $dark-card-bg;
+  transition: box-shadow 0.2s, transform 0.2s;
+  height: 100%;
+  // Flex column → le footer est toujours poussé en bas
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+  }
+
+  // ── Image ──────────────────────────────────────────
+  // Wrapper relatif pour ancrer les overlays absolus
+  .match-card-img-wrapper {
+    position: relative;
+  }
+
+  // Photo du terrain
+  .match-card-img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block; // supprime l'espace parasite sous l'image
+  }
+
+  // ── Overlay "COMPLET" ──────────────────────────────
+  // Bandeau sombre centré sur l'image quand le match est plein
+  .match-full-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  // ── Overlay organisateur ───────────────────────────
+  // Positionné en haut à droite de l'image
+  .match-organizer-overlay {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  // Badge doré "C" (capitaine)
+  .match-captain-armband {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: linear-gradient(135deg, #F5C518, #D4A00A);
+    color: #1a1200;
+    font-weight: 900;
+    font-size: 0.72rem;
+    border-radius: 5px;
+    border: 1.5px solid rgba(255, 215, 0, 0.5);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  }
+
+  // Label "Ton match"
+  .match-captain-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+  }
+
+  // Nom de l'organisateur (Prénom N.)
+  .match-organizer-name {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+  }
+
+  // ── Corps ──────────────────────────────────────────
+  .match-card-body {
+    padding: 1rem 1.1rem 0.75rem;
+    flex: 1; // pousse le footer en bas
+
+    // Date courte alignée à droite des badges
+    .match-card-date {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.72rem;
+      color: $dark-muted;
+      white-space: nowrap;
+    }
+
+    // Titre (tronqué à 2 lignes pour uniformiser la hauteur des cartes)
+    .match-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: calc(1rem * 1.3 * 2);
+    }
+
+    // Ligne icône + texte (lieu, etc.)
+    .match-info-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+      color: $dark-muted;
+      margin-bottom: 0.5rem;
+
+      i { flex-shrink: 0; color: rgba(255, 255, 255, 0.3); margin-top: 2px; }
+
+      span {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: calc(0.82rem * 1.4 * 2);
+      }
+    }
+
+    // Ligne avatars + "X joueurs manquants"
+    .match-players-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+      min-height: 30px;
+
+      // Pile d'avatars en chevauchement
+      .match-avatars {
+        display: flex;
+
+        .match-avatar {
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid $dark-card-bg; // bord = fond carte → effet "découpé"
+          margin-left: -6px;
+
+          &:first-child { margin-left: 0; }
+        }
+      }
+
+      // Texte "X joueurs manquants" en orange
+      .match-players-text {
+        font-size: 0.78rem;
+        color: $orange;
+        font-weight: 600;
+      }
+    }
+  }
+
+  // ── Pied de carte ──────────────────────────────────
+  .match-card-footer {
+    padding: 0.75rem 1.1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: $dark-card-bg;
+
+    // Bouton pill plein vert
+    .match-card-btn {
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.5rem;
+    }
+  }
+}

@@ -1,62 +1,10 @@
 <%#
-  Partial d'une carte match.
-  Utilisé dans :
-    - l'index (render @matches)
-    - les broadcasts ActionCable (Turbo Stream) quand un match est créé/modifié/supprimé
+  Wrapper Turbo Stream obligatoire pour la carte match.
+  L'id DOM (dom_id(match) → "match_1") permet à ActionCable de remplacer
+  ou supprimer la bonne carte en temps réel sans rechargement de page.
 
-  IMPORTANT : l'id DOM (dom_id(match) → "match_1") est obligatoire pour que
-  Turbo Stream puisse remplacer ou supprimer la bonne carte en temps réel.
+  Le contenu visuel est délégué au composant partagé shared/_match_card.
 %>
-
-<%# data-load-more-target="card" → le Stimulus controller gère la visibilité %>
 <div id="<%= dom_id(match) %>" class="col" data-load-more-target="card">
-  <div class="card h-100 shadow-sm">
-    <div class="card-body">
-
-      <%# Ligne titre + badges %>
-      <div class="d-flex justify-content-between align-items-start mb-2">
-        <h5 class="card-title me-2"><%= match.title %></h5>
-        <div class="d-flex flex-wrap gap-1 justify-content-end">
-          <%# Badge "Urgent" — clignote (voir components/_badges.scss) %>
-          <% if match.urgent? %>
-            <span class="match-badge-urgent">🔥 Urgent</span>
-          <% end %>
-          <%# Badge niveau — classes partagées dans components/_badges.scss %>
-          <%
-            level_css = case match.level
-              when "Débutant"      then "level-debutant"
-              when "Intermédiaire" then "level-intermediaire"
-              when "Avancé"        then "level-avance"
-              else                      "level-tout"
-            end
-          %>
-          <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
-        </div>
-      </div>
-
-      <%# Description courte (tronquée à 100 caractères) %>
-      <p class="card-text text-muted"><%= truncate(match.description, length: 100) %></p>
-
-      <%# Infos du match %>
-      <ul class="list-unstyled small mb-3">
-        <li>📅 <%= match.date&.strftime("%d/%m/%Y") || "Date non définie" %></li>
-        <li>🕐 <%= match.time&.strftime("%H:%M") || "Heure non définie" %></li>
-        <li>📍 <%= match.place || "Lieu non défini" %></li>
-        <%# Affiche "Complet" si plus aucune place %>
-        <li>
-          <% if match.full? %>
-            <span class="text-danger fw-semibold">🔴 Complet</span>
-          <% else %>
-            👥 <%= match.player_left %> place(s) disponible(s)
-          <% end %>
-        </li>
-      </ul>
-
-    </div>
-
-    <%# Lien vers le détail du match %>
-    <div class="card-footer bg-transparent">
-      <%= link_to "Voir le match", match_path(match), class: "btn btn-outline-primary btn-sm w-100" %>
-    </div>
-  </div>
+  <%= render "shared/match_card", match: match, btn_label: "Rejoindre" %>
 </div>

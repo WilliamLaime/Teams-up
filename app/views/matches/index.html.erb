@@ -1,142 +1,147 @@
-<%# Liste de tous les matchs disponibles %>
+<%# ── Liste de tous les matchs disponibles ──────────────────────────────────── %>
 
-<%#
-  Abonnement au canal ActionCable "matches".
-  Quand un match est créé/modifié/supprimé, la page se met à jour automatiquement
-  sans rechargement grâce à Turbo Stream (WebSocket).
-%>
+<%# Abonnement ActionCable : mises à jour en temps réel sans rechargement %>
 <%= turbo_stream_from "matches" %>
 
-<div class="container my-4">
+<div class="matches-index-page">
+  <div class="container">
 
-  <%# ── Bouton retour ──────────────────────────────────────────────────────── %>
-  <%= link_to :back, class: "btn btn-outline-secondary btn-sm mb-3" do %>
-    ← Retour
-  <% end %>
+    <%# ── En-tête ──────────────────────────────────────────────────────────── %>
+    <div class="matches-index-header">
 
-  <%# ── En-tête avec titre et bouton de création ───────────────────────────── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Les matchs</h1>
-    <%= link_to "Créer un match", new_match_path, class: "btn btn-primary" %>
-  </div>
+      <%# Lien retour %>
+      <%= link_to root_path, class: "matches-back-link" do %>
+        <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+        Retour
+      <% end %>
 
-  <%# ── Formulaire de filtres ──────────────────────────────────────────────── %>
-  <%# Méthode GET pour que les filtres apparaissent dans l'URL (pratique pour partager) %>
-  <%= form_with url: matches_path, method: :get, local: true, class: "mb-4" do |f| %>
-    <div class="row g-2 align-items-end">
-
-      <%# Barre de recherche libre — cherche dans titre, ville, description et email du créateur %>
-      <div class="col-12 col-md-4">
-        <%= f.label :query, "Recherche", class: "form-label small fw-semibold mb-1" %>
-        <%= f.text_field :query,
-            value: params[:query],
-            placeholder: "Titre, ville, description...",
-            class: "form-control form-control-sm" %>
-      </div>
-
-      <%# Filtre : Date (impossible de choisir une date déjà passée) %>
-      <div class="col-12 col-md-2">
-        <%= f.label :date, "Date", class: "form-label small fw-semibold mb-1" %>
-        <%= f.date_field :date,
-            value: params[:date],
-            min: Date.today,
-            class: "form-control form-control-sm" %>
-      </div>
-
-
-      <%# Filtre : Heure minimum — uniquement les créneaux toutes les 15 minutes %>
-      <div class="col-12 col-md-2">
-        <%= f.label :time_from, "Heure (à partir de)", class: "form-label small fw-semibold mb-1" %>
-        <%#
-          On génère les options : 00:00, 00:15, 00:30, 00:45, 01:00, ..., 23:45
-          (0..23) → chaque heure
-          [0, 15, 30, 45] → les 4 créneaux par heure
-        %>
-        <%= f.select :time_from,
-            [["Toutes heures", ""]] + (0..23).flat_map { |h|
-              [0, 15, 30, 45].map { |m| "%02d:%02d" % [h, m] }
-            },
-            { selected: params[:time_from] },
-            class: "form-select form-select-sm" %>
-      </div>
-
-      <%# Filtre : Niveau %>
-      <div class="col-12 col-md-2">
-        <%= f.label :level, "Niveau", class: "form-label small fw-semibold mb-1" %>
-        <%= f.select :level,
-            [["Tous les niveaux", ""]] + Match::LEVELS,
-            { selected: params[:level] },
-            class: "form-select form-select-sm" %>
-      </div>
-
-      <%# Filtre : Ville %>
-      <div class="col-12 col-md-2">
-        <%= f.label :place, "Ville", class: "form-label small fw-semibold mb-1" %>
-        <%= f.text_field :place,
-            value: params[:place],
-            placeholder: "Ex : Paris",
-            class: "form-control form-control-sm" %>
-      </div>
-
-      <%# Filtre : Places disponibles (minimum) %>
-      <div class="col-12 col-md-2">
-        <%= f.label :player_left, "Places dispo (min)", class: "form-label small fw-semibold mb-1" %>
-        <%= f.number_field :player_left,
-            value: params[:player_left],
-            min: 1,
-            placeholder: "Ex : 2",
-            class: "form-control form-control-sm" %>
-      </div>
-
-      <%# Boutons Filtrer + Réinitialiser %>
-      <div class="col-12 col-md-2 d-flex gap-2">
-        <%= f.submit "Filtrer", class: "btn btn-primary btn-sm" %>
-        <%= link_to "Réinitialiser", matches_path, class: "btn btn-outline-secondary btn-sm" %>
-      </div>
-
+      <h1 class="matches-index-title">Trouver un match</h1>
+      <p class="matches-index-subtitle">
+        Rejoignez les matchs pas loin de chez vous.
+      </p>
     </div>
-  <% end %>
 
-  <%# ── Liste des matchs ───────────────────────────────────────────────────── %>
-  <% if @matches.empty? %>
-    <%# Message si aucun match ne correspond aux filtres %>
-    <div class="alert alert-info">
-      Aucun match disponible pour le moment. Sois le premier à en créer un !
-    </div>
-  <% else %>
+    <%# ── Barre de filtres ────────────────────────────────────────────────── %>
+    <%# GET → les paramètres apparaissent dans l'URL (partageables) %>
+    <%= form_with url: matches_path, method: :get, local: true do |f| %>
+      <div class="matches-filters-bar">
 
-    <%#
-      Stimulus controller "load-more" :
-      - data-controller="load-more"          → active le controller JS
-      - data-load-more-step-value="6"        → nombre de cartes révélées par clic
-      Chaque carte a data-load-more-target="card"
-      Le bouton a data-load-more-target="button" et data-action="load-more#more"
-    %>
-    <div data-controller="load-more" data-load-more-step-value="6">
+        <%# ── Filtres pill (gauche) ─────────────────────────────────────── %>
+        <div class="matches-filters-left">
+
+          <%# Date %>
+          <div class="filter-pill-group">
+            <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+            <%= f.date_field :date,
+                value: params[:date],
+                min: Date.today,
+                class: "filter-date-input" %>
+          </div>
+
+          <%# Niveau %>
+          <div class="filter-pill-group">
+            <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
+            <%= f.select :level,
+                [["Niveau", ""]] + Match::LEVELS,
+                { selected: params[:level] },
+                class: "filter-select" %>
+          </div>
+
+          <%# Ville %>
+          <div class="filter-pill-group">
+            <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+            <%= f.text_field :place,
+                value: params[:place],
+                placeholder: "Ville",
+                class: "filter-text-input" %>
+          </div>
+
+          <%# Bouton "Effacer" visible seulement si un filtre est actif %>
+          <% if params[:date].present? || params[:level].present? || params[:place].present? || params[:query].present? %>
+            <%= link_to matches_path, class: "filter-reset-btn" do %>
+              <i data-lucide="x" style="width:13px;height:13px;"></i>
+              Effacer
+            <% end %>
+          <% end %>
+        </div>
+
+        <%# ── Recherche + Créer (droite) ───────────────────────────────── %>
+        <div class="matches-filters-right">
+
+          <%# Barre de recherche texte libre %>
+          <div class="filter-search-wrap">
+            <i data-lucide="search" style="width:15px;height:15px;" class="filter-search-icon"></i>
+            <%= f.text_field :query,
+                value: params[:query],
+                placeholder: "Rechercher un match...",
+                class: "filter-search-input" %>
+          </div>
+
+          <%# Bouton créer un match %>
+          <% if user_signed_in? %>
+            <%= link_to new_match_path, class: "btn btn-primary btn-sm matches-create-btn" do %>
+              <i data-lucide="plus" style="width:15px;height:15px;"></i>
+              Créer
+            <% end %>
+          <% end %>
+
+          <%# Submit caché — déclenché par JS au changement des selects/date %>
+          <%= f.submit "Filtrer", id: "filter-submit-btn", class: "d-none" %>
+        </div>
+
+      </div>
+    <% end %>
+
+    <%# ── Grille de matchs ────────────────────────────────────────────────── %>
+    <% if @matches.empty? %>
+
+      <div class="matches-empty-state">
+        <i data-lucide="search-x" style="width:48px;height:48px;"></i>
+        <p class="mt-3 mb-1">Aucun match ne correspond à ta recherche.</p>
+        <% if user_signed_in? %>
+          <%= link_to "Créer un match", new_match_path, class: "btn btn-primary mt-2" %>
+        <% end %>
+      </div>
+
+    <% else %>
 
       <%#
-        Grille de cartes Bootstrap — 3 colonnes sur grand écran, 1 sur mobile.
-        id="matches" est OBLIGATOIRE : c'est la cible du broadcast ActionCable.
-        Quand un nouveau match est créé, Turbo l'ajoute automatiquement ici (append).
+        Stimulus "load-more" :
+          data-load-more-step-value="6" → 6 cartes révélées par clic sur le bouton
+          Chaque carte (_match.html.erb) a data-load-more-target="card"
       %>
-      <div id="matches" class="row row-cols-1 row-cols-md-3 g-4">
-        <%# render @matches appelle automatiquement le partial _match.html.erb pour chaque match %>
-        <%= render @matches %>
+      <div data-controller="load-more" data-load-more-step-value="6">
+
+        <%#
+          id="matches" obligatoire → cible des broadcasts ActionCable.
+          Quand un nouveau match est créé, Turbo l'insère ici automatiquement (prepend).
+        %>
+        <div id="matches" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          <%= render @matches %>
+        </div>
+
+        <%# Bouton "Afficher plus" — géré par le Stimulus load-more controller %>
+        <div class="text-center mt-5">
+          <button
+            class="matches-load-more-btn"
+            data-load-more-target="button"
+            data-action="click->load-more#more">
+            Afficher plus de matchs
+            <i data-lucide="chevron-down" style="width:16px;height:16px;margin-left:6px;"></i>
+          </button>
+        </div>
+
       </div>
+    <% end %>
 
-      <%# ── Bouton "Afficher plus de matchs" ──────────────────────────────── %>
-      <%# data-load-more-target="button" → le controller le cache quand tout est visible %>
-      <%# data-action="load-more#more"   → appelle la méthode more() au clic %>
-      <div class="text-center mt-4">
-        <button
-          class="btn btn-outline-primary"
-          data-load-more-target="button"
-          data-action="click->load-more#more">
-          Afficher plus de matchs
-        </button>
-      </div>
-
-    </div>
-  <% end %>
-
+  </div>
 </div>
+
+<%# Auto-submit : date et niveau déclenchent le filtre sans clic sur "Filtrer" %>
+<script>
+  document.querySelectorAll(".filter-date-input, .filter-select").forEach(function(el) {
+    el.addEventListener("change", function() {
+      document.getElementById("filter-submit-btn").click();
+    });
+  });
+</script>

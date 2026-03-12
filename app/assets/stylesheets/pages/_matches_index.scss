@@ -1,0 +1,230 @@
+// =====================================================
+// MATCHES INDEX — Page "Trouver un match" (/matches)
+// Thème sombre cohérent avec la home et la navbar
+// =====================================================
+
+// Fond sombre pleine page (reprend $dark-bg comme le hero)
+.matches-index-page {
+  background-color: $dark-bg;
+  min-height: calc(100vh - 130px);
+  padding: 2.5rem 0 4rem;
+
+  // ── En-tête ──────────────────────────────────────
+  .matches-index-header {
+    margin-bottom: 2rem;
+
+    // Lien "← Retour"
+    .matches-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.85rem;
+      text-decoration: none;
+      margin-bottom: 1.25rem;
+      transition: color 0.15s;
+
+      &:hover { color: rgba(255, 255, 255, 0.85); }
+    }
+
+    // Titre principal
+    .matches-index-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.35rem;
+      font-family: $headers-font;
+    }
+
+    // Sous-titre
+    .matches-index-subtitle {
+      color: $dark-muted;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+
+  // ── Barre de filtres ──────────────────────────────
+  .matches-filters-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: 0.85rem 1.1rem;
+    background-color: $dark-card-bg;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+  }
+
+  // Groupe gauche : filtres pill
+  .matches-filters-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  // Groupe droite : recherche + bouton créer
+  .matches-filters-right {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  // Chaque filtre "pill" (icône + input/select)
+  .filter-pill-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: $dark-surface;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 0.35rem 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    transition: border-color 0.15s;
+
+    &:focus-within {
+      border-color: $green;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    // Input date dans la pill
+    .filter-date-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.82rem;
+      width: 120px;
+      cursor: pointer;
+
+      // Masque le calendrier natif sur certains navigateurs
+      &::-webkit-calendar-picker-indicator {
+        filter: invert(0.6);
+        cursor: pointer;
+      }
+    }
+
+    // Select niveau dans la pill
+    .filter-select {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.82rem;
+      cursor: pointer;
+      -webkit-appearance: none; // retire la flèche native
+
+      option {
+        background-color: $dark-surface;
+        color: #fff;
+      }
+    }
+
+    // Input texte ville dans la pill
+    .filter-text-input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 0.82rem;
+      width: 100px;
+
+      &::placeholder { color: rgba(255, 255, 255, 0.35); }
+    }
+  }
+
+  // Bouton "Effacer" (réinitialise les filtres)
+  .filter-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.45);
+    text-decoration: none;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.15s;
+
+    &:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+  }
+
+  // Zone de recherche libre (droite)
+  .filter-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    // Icône loupe positionnée dans le champ
+    .filter-search-icon {
+      position: absolute;
+      left: 0.75rem;
+      color: rgba(255, 255, 255, 0.35);
+      pointer-events: none;
+    }
+
+    .filter-search-input {
+      background-color: $dark-surface;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.82rem;
+      padding: 0.4rem 1rem 0.4rem 2.25rem; // padding-left pour l'icône
+      width: 200px;
+      outline: none;
+      transition: border-color 0.15s;
+
+      &::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+      &:focus { border-color: $green; }
+    }
+  }
+
+  // Bouton "Créer" (version compacte dans la barre)
+  .matches-create-btn {
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  // ── État vide ─────────────────────────────────────
+  .matches-empty-state {
+    text-align: center;
+    padding: 5rem 0;
+    color: $dark-muted;
+
+    i { opacity: 0.4; }
+    p  { font-size: 1rem; }
+  }
+
+  // ── Bouton "Afficher plus" ────────────────────────
+  .matches-load-more-btn {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 999px;
+    padding: 0.6rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: $green;
+      color: $green;
+    }
+  }
+}
