@@ -179,7 +179,7 @@
   // Pour changer l'opacité de l'aplat, modifie le chiffre dans rgba(0,0,0, X)
   // Pour enlever l'image, remplace tout par : background-color: $dark-bg;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
+    linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
     image-url("herbe.jpg") center 25% / cover no-repeat;
   padding: 2rem 0 2.25rem;
   // Séparateur subtil entre la banner et le formulaire
@@ -214,7 +214,7 @@
 
 // Sous-titre / description
 .match-new-banner-subtitle {
-  color: $dark-muted;          // Texte secondaire grisé
+  color: $dark-text;           // Texte blanc
   font-size: 1rem;
   margin: 0;
 }
@@ -346,6 +346,30 @@
       background-color: $dark-surface;
       color: $dark-text;
     }
+
+    // Icône calendrier de l'input date : même couleur que le texte
+    &::-webkit-calendar-picker-indicator {
+      filter: invert(1); // Passe l'icône en clair (blanc/gris) sur fond sombre
+      opacity: 0.7;
+      cursor: pointer;
+    }
+  }
+
+  // Input lieu : padding à droite pour laisser place au chevron
+  .place-search-input {
+    padding-right: 2.25rem;
+  }
+
+  // Chevron visuel à droite de l'input lieu
+  // On cible la hauteur exacte de .form-control Bootstrap : calc(1.5em + 0.75rem + 2px) ≈ 38px
+  .place-search-chevron {
+    position: absolute;
+    right: 0.75rem;
+    top: calc((1.5em + 0.75rem + 2px) / 2);  // Moitié exacte de la hauteur du .form-control
+    transform: translateY(-50%);              // Remonte de sa propre moitié → centré
+    color: $dark-muted;
+    font-size: 0.85rem;
+    pointer-events: none;  // Ne bloque pas les clics sur l'input
   }
 
   // Dropdown de l'autocomplete lieu (style sombre)
@@ -401,16 +425,23 @@
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease;
 
-    // Au survol : bordure et texte verts
-    &:hover {
+    // Au survol : bordure et texte verts (sauf si désactivé)
+    &:hover:not(.is-disabled) {
       border-color: $green;
       color: $green;
     }
 
-    // Le bouton "+" a une bordure verte par défaut (plus mis en avant)
-    &.counter-btn-plus {
+    // État actif (vert) — géré dynamiquement par Stimulus
+    &.is-active {
       border-color: $green;
       color: $green;
+    }
+
+    // État désactivé (gris) — limite min ou max atteinte
+    &.is-disabled {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: $dark-muted;
+      cursor: not-allowed;
     }
   }
 }
@@ -439,10 +470,11 @@
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 
-  // Au survol : mise en évidence
+  // Au survol : vert comme l'état actif
   &:hover {
-    border-color: rgba(255, 255, 255, 0.5);
-    color: $dark-text;
+    border-color: $green;
+    color: $green;
+    background-color: rgba($green, 0.08);
   }
 
   // Quand ce niveau est sélectionné (classe .active ajoutée par Stimulus)
@@ -668,6 +700,17 @@
 
   &:active {
     transform: translateY(0); // Revient en place au clic
+  }
+}
+
+// Lien "Annuler" — hover discret avec underline et légère opacité
+.btn.btn-link.text-success {
+  transition: opacity 0.2s ease, text-decoration-color 0.2s ease;
+  text-decoration: none;
+
+  &:hover {
+    opacity: 0.75;
+    text-decoration: underline;
   }
 }
 

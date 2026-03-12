@@ -125,17 +125,21 @@
               <%# Le champ texte :
                   - data-place-search-target="input"   → autocomplétion
                   - data-match-form-target="placeInput" → récap Stimulus
-                  - data-action avec deux actions séparées par un espace %>
+                  - focus->place-search#showDefault     → ouvre le dropdown avec "Ma position" au clic
+                  - data-action avec les actions séparées par un espace %>
               <%= f.text_field :place,
-                  class: "form-control",
+                  class: "form-control place-search-input",
                   placeholder: "Ex: Urban Soccer, Bordeaux...",
                   autocomplete: "off",
                   required: true,
                   data: {
                     "place-search-target": "input",
                     "match-form-target":   "placeInput",
-                    "action": "input->place-search#search input->match-form#updatePlace"
+                    "action": "input->place-search#search focus->place-search#showDefault input->match-form#updatePlace"
                   } %>
+
+              <%# Chevron visuel à droite de l'input pour indiquer le dropdown %>
+              <span class="place-search-chevron" aria-hidden="true">&#8964;</span>
 
               <%# Dropdown des suggestions — géré par place_search_controller.js %>
               <div data-place-search-target="dropdown"
@@ -220,10 +224,12 @@
 
             <div class="match-player-counter">
 
-              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus %>
+              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus
+                  data-match-form-target="minusBtn" → Stimulus y accède pour changer sa couleur %>
               <button type="button"
                       class="counter-btn counter-btn-minus"
                       data-action="click->match-form#decrement"
+                      data-match-form-target="minusBtn"
                       aria-label="Réduire le nombre de joueurs">−</button>
 
               <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
@@ -232,10 +238,12 @@
                 <%= @match.player_left || 4 %>
               </span>
 
-              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus %>
+              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus
+                  data-match-form-target="plusBtn" → Stimulus y accède pour changer sa couleur %>
               <button type="button"
-                      class="counter-btn counter-btn-plus"
+                      class="counter-btn"
                       data-action="click->match-form#increment"
+                      data-match-form-target="plusBtn"
                       aria-label="Augmenter le nombre de joueurs">+</button>
 
             </div>
@@ -413,7 +421,7 @@
               Sur mobile il est en bas de la colonne gauche %>
           <div class="d-none d-lg-block text-center mt-2">
             <%= link_to "Annuler", cancel_path,
-                class: "btn btn-link btn-sm text-muted" %>
+                class: "btn btn-link btn-sm text-success" %>
           </div>
 
         </div><%# fin match-recap-card %>

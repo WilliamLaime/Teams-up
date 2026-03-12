@@ -28,6 +28,8 @@ export default class extends Controller {
     "dateInput",         // Champ date
     "playersInput",      // Input caché : nombre de joueurs (mis à jour par le compteur)
     "playersCount",      // Span visible : chiffre du compteur affiché à l'écran
+    "minusBtn",          // Bouton "−" du compteur (pour changer sa couleur)
+    "plusBtn",           // Bouton "+" du compteur (pour changer sa couleur)
     "levelInput",        // Input caché : niveau sélectionné (mis à jour par les boutons)
     "validationToggle",  // Checkbox du toggle Manuel/Automatique
 
@@ -54,6 +56,8 @@ export default class extends Controller {
     this.updatePlayers()
     this.updateLevel()
     this.updateValidation()
+    // Initialise les couleurs des boutons − et + selon la valeur de départ
+    this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
   }
 
   // ══════════════════════════════════════════════════════════
@@ -129,6 +133,7 @@ export default class extends Controller {
       input.value = newVal
       this.playersCountTarget.textContent = newVal   // met à jour l'affichage du compteur
       this.recapPlayersTarget.textContent  = newVal  // met à jour le récap
+      this.updateCounterButtons(newVal)              // met à jour les couleurs des boutons
     }
   }
 
@@ -136,10 +141,39 @@ export default class extends Controller {
   increment() {
     const input = this.playersInputTarget
     const current = parseInt(input.value) || 1
-    const newVal = current + 1
-    input.value = newVal
-    this.playersCountTarget.textContent = newVal
-    this.recapPlayersTarget.textContent  = newVal
+    // Maximum : 9 joueurs
+    if (current < 9) {
+      const newVal = current + 1
+      input.value = newVal
+      this.playersCountTarget.textContent = newVal
+      this.recapPlayersTarget.textContent  = newVal
+      this.updateCounterButtons(newVal)              // met à jour les couleurs des boutons
+    }
+  }
+
+  // ── Met à jour la couleur des boutons − et + selon la valeur ──
+  // Règle :
+  //   val = 1 → "-" gris (limite atteinte),  "+" vert
+  //   val = 9 → "-" vert,                    "+" gris (limite atteinte)
+  //   entre   → les deux verts
+  updateCounterButtons(val) {
+    const minus = this.minusBtnTarget
+    const plus  = this.plusBtnTarget
+
+    // On retire les deux classes d'état avant de les réappliquer
+    minus.classList.remove("is-active", "is-disabled")
+    plus.classList.remove("is-active", "is-disabled")
+
+    if (val <= 1) {
+      minus.classList.add("is-disabled")  // Minimum atteint → "-" gris
+      plus.classList.add("is-active")
+    } else if (val >= 9) {
+      minus.classList.add("is-active")
+      plus.classList.add("is-disabled")   // Maximum atteint → "+" gris
+    } else {
+      minus.classList.add("is-active")    // Entre 1 et 9 → les deux verts
+      plus.classList.add("is-active")
+    }
   }
 
   // ── Synchroniser le récap avec la valeur actuelle ────────
