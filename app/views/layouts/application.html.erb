@@ -38,6 +38,19 @@
 
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>
-    <script>lucide.createIcons();</script>
+    <script>
+      // Fonction utilitaire : (ré)initialise toutes les icônes Lucide dans la page
+      function initLucide() { lucide.createIcons(); }
+
+      // 1. Chargement initial de la page
+      initLucide();
+
+      // 2. Après une navigation Turbo (changement de page)
+      document.addEventListener("turbo:render", initLucide);
+
+      // 3. Après la mise à jour d'un turbo_frame (ex: cloche de notifications)
+      //    C'est cet événement qui se déclenche quand un turbo_stream remplace un frame
+      document.addEventListener("turbo:frame-render", initLucide);
+    </script>
   </body>
 </html>
