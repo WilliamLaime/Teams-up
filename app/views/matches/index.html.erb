@@ -6,38 +6,7 @@
 <div class="matches-index-page">
   <div class="container">
 
-  <%# ── Bouton retour ──────────────────────────────────────────────────────── %>
-  <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-3" %>
-
-  <%# ── En-tête avec titre et bouton de création ───────────────────────────── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Les matchs</h1>
-    <%= link_to "Créer un match", new_match_path, class: "btn btn-primary" %>
-  </div>
-
-  <%# ── Formulaire de filtres ──────────────────────────────────────────────── %>
-  <%# Méthode GET pour que les filtres apparaissent dans l'URL (pratique pour partager) %>
-  <%= form_with url: matches_path, method: :get, local: true, class: "mb-4" do |f| %>
-    <div class="row g-2 align-items-end">
-
-      <%# Barre de recherche libre — cherche dans titre, ville, description et email du créateur %>
-      <div class="col-12 col-md-4">
-        <%= f.label :query, "Recherche", class: "form-label small fw-semibold mb-1" %>
-        <%= f.text_field :query,
-            value: params[:query],
-            placeholder: "Titre, ville, description...",
-            class: "form-control form-control-sm" %>
-      </div>
-
-      <%# Filtre : Date (impossible de choisir une date déjà passée) %>
-      <div class="col-12 col-md-2">
-        <%= f.label :date, "Date", class: "form-label small fw-semibold mb-1" %>
-        <%= f.date_field :date,
-            value: params[:date],
-            min: Date.today,
-            class: "form-control form-control-sm" %>
-      </div>
-    <%# ── En-tête ──────────────────────────────────────────────────────────── %>
+  <%# ── En-tête ──────────────────────────────────────────────────────────── %>
     <div class="matches-index-header">
 
       <%# Lien retour %>
