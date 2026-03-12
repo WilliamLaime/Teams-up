@@ -32,6 +32,7 @@ export default class extends Controller {
     "plusBtn",           // Bouton "+" du compteur (pour changer sa couleur)
     "levelInput",        // Input caché : niveau sélectionné (mis à jour par les boutons)
     "validationToggle",  // Checkbox du toggle Manuel/Automatique
+    "priceInput",        // Champ numérique : prix par joueur
 
     // ── Éléments du récapitulatif (destinations) ──────────
     "recapTitle",        // Zone affichant le titre dans la sidebar
@@ -41,7 +42,8 @@ export default class extends Controller {
     "recapTime",         // Zone affichant l'heure (ex: 21h15)
     "recapPlayers",      // Zone affichant le nombre de joueurs
     "recapLevel",        // Zone affichant le niveau
-    "recapValidation"    // Zone affichant le mode de validation (Manuel / Automatique)
+    "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
+    "recapPrice"         // Zone affichant le prix par joueur (en bas du récap, en blanc)
   ]
 
   // ── connect() : appelé automatiquement au chargement de la page ──
@@ -56,6 +58,7 @@ export default class extends Controller {
     this.updatePlayers()
     this.updateLevel()
     this.updateValidation()
+    this.updatePrice()
     // Initialise les couleurs des boutons − et + selon la valeur de départ
     this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
   }
@@ -207,6 +210,14 @@ export default class extends Controller {
   updateLevel() {
     const val = this.levelInputTarget.value
     this.recapLevelTarget.textContent = val || "—"
+  }
+
+  // ── Prix par joueur ──────────────────────────────────────
+  // Lit la valeur du champ prix et met à jour le récapitulatif.
+  // Affiche "Gratuit" si le prix vaut 0 ou est vide, sinon "X €"
+  updatePrice() {
+    const val = parseInt(this.priceInputTarget.value) || 0
+    this.recapPriceTarget.textContent = val > 0 ? `${val} €` : "Gratuit"
   }
 
   // ── Validation : Manuel / Automatique ───────────────────

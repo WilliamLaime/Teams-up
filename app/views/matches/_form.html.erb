@@ -172,6 +172,7 @@
                   class: "form-control",
                   value: @match.date,
                   required: true,
+                  min: Date.today.to_s,
                   data: {
                     "match-form-target": "dateInput",
                     "action": "change->match-form#updateDate"
@@ -316,6 +317,36 @@
             </div>
           </div><%# fin toggle validation %>
 
+          <%# ── Ligne séparatrice ── %>
+          <hr class="my-4">
+
+          <%# ── Prix par joueur (à titre indicatif) ── %>
+          <div class="mb-0">
+            <label class="form-label d-block" for="match_price_per_player">
+              Prix par joueur (€)
+            </label>
+
+            <%# Champ petit : max-width 100px pour ne pas prendre toute la largeur %>
+            <div style="max-width: 100px;">
+              <%= f.number_field :price_per_player,
+                  class: "form-control form-control-sm",
+                  placeholder: "0",
+                  min: 0,
+                  step: 1,
+                  value: (@match.price_per_player || 0),
+                  data: {
+                    "match-form-target": "priceInput",
+                    "action": "input->match-form#updatePrice"
+                  } %>
+            </div>
+
+            <%# Message informatif en gris semi-transparent %>
+            <p class="form-text mt-1" style="color: rgba(255, 255, 255, 0.55); font-size: 0.8rem;">
+              <i data-lucide="info" style="width:12px; height:12px; vertical-align:middle;"></i>
+              Prix indicatif.
+            </p>
+          </div><%# fin prix %>
+
         </div><%# fin section 4 %>
 
         <%# Lien Annuler visible uniquement sur mobile (< lg)
@@ -398,11 +429,21 @@
           </div>
 
           <%# ── Ligne Validation — mise à jour en temps réel par Stimulus ── %>
-          <div class="match-recap-row">
+          <div class="match-recap-row" style="border-bottom: none;">
             <span class="recap-label">Validation</span>
             <%# data-match-form-target="recapValidation" : Stimulus écrit "Manuel" ou "Automatique" ici %>
             <span class="recap-value" data-match-form-target="recapValidation">
               <%= @match.manual_validation? ? "Manuel" : "Automatique" %>
+            </span>
+          </div>
+
+          <%# ── Prix par joueur (affiché en blanc en bas du récap) ── %>
+          <div class="match-recap-price mt-1">
+            <span class="recap-price-label">Prix par joueur</span>
+            <span class="recap-price-value" data-match-form-target="recapPrice">
+              <%# Affiche "Gratuit" si prix = 0, sinon "X €" %>
+              <% price = @match.price_per_player.to_i %>
+              <%= price > 0 ? "#{price} €" : "Gratuit" %>
             </span>
           </div>
 

@@ -9,11 +9,8 @@
   <%# ── En-tête ──────────────────────────────────────────────────────────── %>
     <div class="matches-index-header">
 
-      <%# Lien retour %>
-      <%= link_to root_path, class: "matches-back-link" do %>
-        <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
-        Retour
-      <% end %>
+      <%# Lien retour — utilise le composant partagé nav_button %>
+      <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
 
       <h1 class="matches-index-title">Trouver un match</h1>
       <p class="matches-index-subtitle">
