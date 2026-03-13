@@ -376,20 +376,23 @@
               Valeur initiale : titre existant ou texte par défaut %>
           <h3 class="match-recap-main-title"
               data-match-form-target="recapTitle">
-            <%= @match.title.present? ? @match.title : "Titre" %>
+            <%# Première lettre en majuscule, reste en minuscules %>
+            <%= @match.title.present? ? (@match.title[0].upcase + @match.title[1..].downcase) : "Titre" %>
           </h3>
 
-          <%# Description courte (tronquée à 80 caractères par Stimulus) %>
+          <%# Description courte (tronquée à 80 caractères par Stimulus)
+              Masquée si vide — Stimulus la réaffiche quand l'utilisateur saisit quelque chose %>
           <p class="match-recap-description"
-             data-match-form-target="recapDescription">
-            <%= @match.description.present? ? truncate(@match.description, length: 80) : "—" %>
+             data-match-form-target="recapDescription"
+             style="<%= 'display:none;' if @match.description.blank? %>">
+            <%= truncate(@match.description.to_s, length: 80) %>
           </p>
 
           <%# ── Ligne Lieu ── %>
           <div class="match-recap-row">
             <span class="recap-label">Lieu</span>
             <span class="recap-value" data-match-form-target="recapPlace">
-              <%= @match.place.present? ? @match.place : "—" %>
+              <%= @match.place.to_s %>
             </span>
           </div>
 
@@ -424,7 +427,7 @@
           <div class="match-recap-row">
             <span class="recap-label">Niveau souhaité</span>
             <span class="recap-value" data-match-form-target="recapLevel">
-              <%= @match.level.present? ? @match.level : "—" %>
+              <%= @match.level.to_s %>
             </span>
           </div>
 
@@ -441,9 +444,9 @@
           <div class="match-recap-price mt-1">
             <span class="recap-price-label">Prix par joueur</span>
             <span class="recap-price-value" data-match-form-target="recapPrice">
-              <%# Affiche "Gratuit" si prix = 0, sinon "X €" %>
+              <%# Affiche le prix en € si > 0, sinon rien %>
               <% price = @match.price_per_player.to_i %>
-              <%= price > 0 ? "#{price} €" : "Gratuit" %>
+              <%= price > 0 ? "#{price} €" : "" %>
             </span>
           </div>
 

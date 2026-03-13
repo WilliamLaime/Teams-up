@@ -49,11 +49,12 @@ class Message < ApplicationRecord
     )
 
     # 2. Cible le panneau sticky chat (visible sur toutes les pages)
-    # Si l'utilisateur a le panneau ouvert sur n'importe quelle page,
-    # il reçoit aussi le message en temps réel
+    # On utilise un stream DIFFÉRENT ("match_chat_sticky_<id>") pour éviter que
+    # les utilisateurs sur la page show du match reçoivent le message en double
+    # (car ils seraient abonnés aux deux streams en même temps)
     broadcast_append_to(
-      "match_chat_#{match_id}",
-      target: "sticky-chat-messages", # id de la zone de messages dans le sticky chat
+      "match_chat_sticky_#{match_id}",  # stream distinct du modal
+      target: "sticky-chat-messages",   # id de la zone de messages dans le sticky chat
       partial: "messages/message",
       locals: { message: self }
     )

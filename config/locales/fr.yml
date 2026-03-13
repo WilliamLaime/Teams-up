@@ -1,4 +1,26 @@
 fr:
+  # Traductions pour les erreurs de validation ActiveRecord
+  errors:
+    messages:
+      taken: "est déjà utilisé"
+      blank: "ne peut pas être vide"
+      too_short: "est trop court (minimum %{count} caractères)"
+      too_long: "est trop long (maximum %{count} caractères)"
+      invalid: "est invalide"
+      confirmation: "ne correspond pas"
+      not_a_number: "n'est pas un nombre"
+
+  activerecord:
+    errors:
+      messages:
+        taken: "est déjà utilisé"
+        blank: "ne peut pas être vide"
+        too_short: "est trop court (minimum %{count} caractères)"
+        too_long: "est trop long (maximum %{count} caractères)"
+        invalid: "est invalide"
+        confirmation: "ne correspond pas"
+        not_a_number: "n'est pas un nombre"
+
   # Traductions pour time_ago_in_words (utilisé dans les notifications)
   datetime:
     distance_in_words:

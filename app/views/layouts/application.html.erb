@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "Team Up" %></title>
+    <title><%= content_for(:title) || "Teams-up" %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Team Up">
+    <meta name="application-name" content="Teams-up">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -50,6 +50,13 @@
       // Sans ça, les icônes dans les frames remplacées par Turbo disparaissent
       document.addEventListener("turbo:render", () => lucide.createIcons());
       document.addEventListener("turbo:frame-render", () => lucide.createIcons());
+
+      // Turbo Stream (ex: nouvelle notification via ActionCable) — l'événement "before-stream-render"
+      // se déclenche AVANT que le DOM soit modifié, donc on utilise setTimeout pour attendre
+      // que le remplacement du fragment soit terminé avant de ré-initialiser les icônes Lucide
+      document.addEventListener("turbo:before-stream-render", () => {
+        setTimeout(() => lucide.createIcons(), 0);
+      });
     </script>
   </body>
 </html>

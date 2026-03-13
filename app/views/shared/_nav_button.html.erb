@@ -7,8 +7,9 @@
     - extra_class : classes CSS supplémentaires optionnelles (ex: "mt-1", "mb-4")
 %>
 
-<%# Valeur par défaut pour la direction %>
-<% direction ||= "forward" %>
+<%# Valeurs par défaut %>
+<% direction   ||= "forward" %>
+<% extra_class ||= nil %>
 
 <%# Choix de l'icône selon la direction %>
 <% icon      = direction == "back" ? "arrow-left" : "arrow-right" %>

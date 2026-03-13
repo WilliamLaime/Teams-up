@@ -11,13 +11,14 @@
 <%
   # Liste des images d'illustration foot disponibles dans assets/images/Img_illu_foot
   foot_images = %w[
-    Img_illu_foot/alfonso-scarpa-jNGcyd4ME-E-unsplash.jpg
-    Img_illu_foot/bayu-syaits-p9l4ZJVZi40-unsplash.jpg
-    Img_illu_foot/declan-sun-9WvJsfdqjSc-unsplash.jpg
+    Img_illu_foot/ballon.jpg
+    Img_illu_foot/citytoulouse.jpg
+    Img_illu_foot/bresil.jpg
     Img_illu_foot/herbe.jpg
-    Img_illu_foot/jorgen-hendriksen-eeE1UkPRm_M-unsplash.jpg
-    Img_illu_foot/jorgen-hendriksen-f1OzAuhpQo4-unsplash.jpg
-    Img_illu_foot/jorgen-hendriksen-OuzaPRzOM6E-unsplash.jpg
+    Img_illu_foot/city1.jpg
+    Img_illu_foot/citydrone.jpg
+    Img_illu_foot/Duel.jpg
+    Img_illu_foot/Medellin.jpg
   ]
 
   # On choisit l'image selon l'id du match (modulo = rotation sur les 7 images)
@@ -126,9 +127,9 @@
   <%# ── Pied de carte : bouton ────────────────────────────────────────────── %>
   <div class="match-card-footer">
     <% if match.full? %>
-      <%# Match complet → bouton liste d'attente %>
-      <%= link_to match_path(match), class: "btn btn-outline-secondary btn-sm w-100 match-card-btn" do %>
-        Liste d'attente
+      <%# Match complet → bouton voir le match %>
+      <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+        Voir le match
       <% end %>
     <% elsif user_signed_in? %>
       <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>

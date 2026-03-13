@@ -20,6 +20,16 @@ class NotificationsController < ApplicationController
     redirect_to @notification.link || notifications_path
   end
 
+  # DELETE /notifications/:id
+  # Supprime une notification
+  def destroy
+    @notification = Notification.find(params[:id])
+    authorize @notification
+
+    @notification.destroy
+    redirect_to notifications_path
+  end
+
   # PATCH /notifications/mark_all_read
   # Marque toutes les notifications de l'utilisateur comme lues
   def mark_all_read

@@ -1,0 +1,304 @@
+// =====================================================
+// PAGE PROFIL — /profil
+// Background identique à la homepage (dark-bg + gradient vert)
+// Réutilise .match-block / .match-block-title pour les cards
+// =====================================================
+
+.profil-page {
+  background-color: $dark-bg;
+  min-height: calc(100vh - 130px);
+  padding: 2.5rem 0 4rem;
+  position: relative;
+
+  // Dégradé vert radial en haut à gauche — identique au hero de la homepage
+  &::before {
+    content: "";
+    position: absolute;
+    top: -120px;
+    left: -120px;
+    width: 520px;
+    height: 520px;
+    background: radial-gradient(circle, rgba($green, 0.13) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  // Tout le contenu passe au-dessus du gradient
+  > .container { position: relative; z-index: 1; }
+
+
+  // ── 1. IDENTITÉ (directement sur le fond, pas de card) ────────────────
+
+  .profil-identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .profil-avatar-wrap { flex-shrink: 0; }
+
+  // Photo ronde avec bordure verte
+  .profil-avatar-img {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid $green;
+    display: block;
+  }
+
+  // Fallback initiale
+  .profil-avatar-fallback {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.12);
+    background-color: $dark-surface;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: $dark-muted;
+  }
+
+  .profil-identity-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  // Nom + icône vérifié
+  .profil-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .profil-name {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    font-family: $headers-font;
+    line-height: 1.2;
+  }
+
+  .profil-verified-icon { color: $green; flex-shrink: 0; }
+
+  // Ligne rôle / localisation / badge
+  .profil-meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .profil-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    color: $dark-muted;
+
+    i { color: rgba(255, 255, 255, 0.2); }
+  }
+
+  .profil-meta-sep { color: rgba(255, 255, 255, 0.2); font-size: 0.8rem; }
+
+  // Bouton "Modifier le profil"
+  .profil-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+
+  // ── 2. STATS (1 stat = 1 card via .match-block) ───────────────────────
+
+  // Card stat individuelle — hauteur fixe pour les rendre égales
+  .profil-stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    height: 100%; // les 2 cards font la même hauteur grâce au row Bootstrap
+  }
+
+  .profil-stat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: $dark-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  .profil-stat-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #fff;
+    font-family: $headers-font;
+    line-height: 1;
+  }
+
+
+  // ── 3. MES MATCHS (chaque match = 1 card horizontale) ─────────────────
+
+  .profil-matches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  // Card horizontale : image à gauche, info au centre, bouton à droite
+  .profil-match-card {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.75rem 0.85rem;
+    background-color: $dark-surface;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    transition: border-color 0.15s;
+
+    &:hover { border-color: rgba(255, 255, 255, 0.15); }
+  }
+
+  // Zone info centrale (flexible)
+  .profil-match-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .profil-match-title {
+    font-size: 0.87rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .profil-match-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.7rem;
+    color: $dark-muted;
+
+    i { color: rgba(255, 255, 255, 0.2); }
+  }
+
+  // Bouton "Détails" — pill outline discret
+  .profil-details-btn {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 0.25rem 0.8rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s;
+
+    &:hover { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+  }
+
+
+  // ── 4. DESCRIPTION ────────────────────────────────────────────────────
+
+  .profil-description-text {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .profil-empty-text {
+    font-size: 0.88rem;
+    color: $dark-muted;
+    margin: 0;
+  }
+
+
+  // ── 5. AVIS (chaque avis = 1 card via .match-block) ───────────────────
+
+  .profil-reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  // Card avis : avatar + nom en ligne, puis texte dessous
+  .profil-review-card {
+    // Surcharge le padding du match-block pour être plus compact
+    padding: 0.85rem 1rem !important;
+  }
+
+  // Ligne : bulle initiale + nom
+  .profil-review-avatar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.45rem;
+  }
+
+  // Bulle colorée avec initiale
+  .profil-review-avatar {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .profil-review-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .profil-review-text {
+    font-size: 0.78rem;
+    color: $dark-muted;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  // Lien "Voir les avis" sous les cards
+  .profil-reviews-footer {
+    margin-top: 0.75rem;
+    text-align: center;
+  }
+
+
+  // ── UTILITAIRES ───────────────────────────────────────────────────────
+
+  .profil-link-green {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $green;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+
+  .profil-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 0 0.5rem;
+    text-align: center;
+    color: $dark-muted;
+
+    i { opacity: 0.3; }
+    p { font-size: 0.88rem; margin: 0; }
+  }
+}

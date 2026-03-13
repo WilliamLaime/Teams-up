@@ -1,6 +1,131 @@
-.alert {
+// ============================================================
+// Flash Toast notifications
+// Renommé .flash-toast pour éviter le conflit avec Bootstrap .toast
+// Positionnées au centre en bas de l'écran
+// ============================================================
+
+// Conteneur qui empile les toasts au centre en bas de l'écran
+.flash-toast-container {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  z-index: 1000;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%); // Centrage horizontal
+  z-index: 1100; // Au-dessus de la navbar Bootstrap (z-index: 1030)
+  display: flex;
+  flex-direction: column;
+  gap: 12px; // Espace entre les toasts empilés
+  pointer-events: none; // Le conteneur lui-même ne capte pas les clics
+  align-items: center; // Centre les toasts horizontalement
+}
+
+// Toast de base — état initial invisible et décalé vers le bas
+.flash-toast {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  min-width: 320px;
+  max-width: 420px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  pointer-events: all; // Les toasts eux-mêmes captent les clics
+
+  // État initial : invisible et décalé vers le bas
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+
+  // État visible (ajouté par le Stimulus controller)
+  &--visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  // État en cours de fermeture
+  &--hiding {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  // ---- Variante succès (vert) ----
+  &--success {
+    background-color: #f0faf4;
+    border-color: #4caf81;
+
+    .flash-toast__icon {
+      background-color: #4caf81;
+      color: white;
+    }
+  }
+
+  // ---- Variante erreur (rouge) ----
+  &--danger {
+    background-color: #fff4f4;
+    border-color: #e05c5c;
+
+    .flash-toast__icon {
+      background-color: #e05c5c;
+      color: white;
+    }
+  }
+}
+
+// Cercle coloré contenant l'icône Lucide
+.flash-toast__icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i, svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Bloc texte (titre + message)
+.flash-toast__body {
+  flex: 1;
+}
+
+.flash-toast__title {
+  margin: 0 0 2px 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+}
+
+.flash-toast__message {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+// Bouton de fermeture (X) discret
+.flash-toast__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.2s, background-color 0.2s;
+
+  &:hover {
+    color: #555;
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+
+  i, svg {
+    width: 16px;
+    height: 16px;
+  }
 }

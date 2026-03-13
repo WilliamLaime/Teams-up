@@ -36,12 +36,12 @@ export default class extends Controller {
 
     // ── Éléments du récapitulatif (destinations) ──────────
     "recapTitle",        // Zone affichant le titre dans la sidebar
-    "recapDescription",  // Zone affichant la description tronquée
-    "recapPlace",        // Zone affichant le lieu
+    "recapDescription",  // Paragraphe affichant la description (masqué si vide)
+    "recapPlace",        // Valeur du lieu dans la ligne
     "recapDate",         // Zone affichant la date formatée
     "recapTime",         // Zone affichant l'heure (ex: 21h15)
     "recapPlayers",      // Zone affichant le nombre de joueurs
-    "recapLevel",        // Zone affichant le niveau
+    "recapLevel",        // Valeur du niveau dans la ligne
     "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
     "recapPrice"         // Zone affichant le prix par joueur (en bas du récap, en blanc)
   ]
@@ -71,25 +71,34 @@ export default class extends Controller {
   // ── Titre ─────────────────────────────────────────────────
   updateTitle() {
     const val = this.titleInputTarget.value.trim()
-    // Si le champ est vide, affiche un tiret, sinon la vraie valeur
-    this.recapTitleTarget.textContent = val || "—"
+    if (val) {
+      // Met uniquement la première lettre en majuscule, le reste en minuscules
+      this.recapTitleTarget.textContent = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase()
+    } else {
+      // Si le champ est vide, affiche le placeholder "Titre"
+      this.recapTitleTarget.textContent = "Titre"
+    }
   }
 
   // ── Description (tronquée à 80 caractères) ────────────────
+  // Masque le paragraphe entier si la description est vide
   updateDescription() {
     const val = this.descriptionInputTarget.value.trim()
-    if (val.length > 80) {
-      // Coupe à 80 caractères et ajoute "..."
-      this.recapDescriptionTarget.textContent = val.substring(0, 80) + "..."
+    if (val) {
+      // Affiche la description tronquée à 80 caractères
+      this.recapDescriptionTarget.textContent = val.length > 80 ? val.substring(0, 80) + "..." : val
+      this.recapDescriptionTarget.style.display = ""   // visible
     } else {
-      this.recapDescriptionTarget.textContent = val || "—"
+      this.recapDescriptionTarget.textContent = ""
+      this.recapDescriptionTarget.style.display = "none" // masqué
     }
   }
 
   // ── Lieu ──────────────────────────────────────────────────
   updatePlace() {
     const val = this.placeInputTarget.value.trim()
-    this.recapPlaceTarget.textContent = val || "—"
+    // Affiche la valeur ou rien si vide (la ligne reste toujours visible)
+    this.recapPlaceTarget.textContent = val
   }
 
   // ── Date (format : "16 déc. 2026") ────────────────────────
@@ -202,22 +211,22 @@ export default class extends Controller {
     // 3. Ajoute "active" seulement sur le bouton cliqué
     btn.classList.add("active")
 
-    // 4. Met à jour le récap
-    this.recapLevelTarget.textContent = value || "—"
+    // 4. Met à jour le récap (la ligne reste toujours visible)
+    this.recapLevelTarget.textContent = value
   }
 
   // ── Niveau : synchroniser le récap ────────────────────────
   updateLevel() {
     const val = this.levelInputTarget.value
-    this.recapLevelTarget.textContent = val || "—"
+    // Affiche la valeur ou rien si vide (la ligne reste toujours visible)
+    this.recapLevelTarget.textContent = val
   }
 
   // ── Prix par joueur ──────────────────────────────────────
-  // Lit la valeur du champ prix et met à jour le récapitulatif.
-  // Affiche "Gratuit" si le prix vaut 0 ou est vide, sinon "X €"
+  // Affiche "X €" si prix > 0, sinon rien (pas de "Gratuit")
   updatePrice() {
     const val = parseInt(this.priceInputTarget.value) || 0
-    this.recapPriceTarget.textContent = val > 0 ? `${val} €` : "Gratuit"
+    this.recapPriceTarget.textContent = val > 0 ? `${val} €` : ""
   }
 
   // ── Validation : Manuel / Automatique ───────────────────

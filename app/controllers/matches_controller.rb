@@ -39,8 +39,8 @@ class MatchesController < ApplicationController
   # GET /matches/:id
   # Affiche le détail d'un match
   def show
-    # Récupère les participants du match
-    @match_users = @match.match_users.includes(:user)
+    # Récupère les participants du match avec leur profil (évite les N+1 dans la vue)
+    @match_users = @match.match_users.includes(user: :profil)
     authorize @match
 
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match

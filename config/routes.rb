@@ -34,11 +34,15 @@ Rails.application.routes.draw do
   # PUT  /profil      => sauvegarder les modifications
   resource :profil, only: [:show, :edit, :update]
 
+  # Route pour voir le profil public d'un autre utilisateur
+  # GET /users/:id/profil => voir le profil de l'utilisateur avec cet id
+  get "users/:id/profil", to: "profils#show_user", as: :user_profil
+
   # Routes pour les notifications
   # GET   /notifications               => liste des notifications
   # PATCH /notifications/:id/mark_read => marquer une notif comme lue
   # PATCH /notifications/mark_all_read => tout marquer comme lu
-  resources :notifications, only: [:index] do
+  resources :notifications, only: [:index, :destroy] do
     member do
       patch :mark_read
     end
