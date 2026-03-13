@@ -1,0 +1,383 @@
+// ── Chat sticky global — bouton + panneau (sidebar + chat) ───────────────────
+// Visible sur toutes les pages pour les utilisateurs connectés.
+
+// ── Conteneur positionné en bas à droite ─────────────────────────────────────
+.sticky-chat-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+// ── Bouton rond — même style que btn-cta-secondary (fond sombre + bordure verte)
+.sticky-chat-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #1B1B1B;       // même fond que btn-cta-secondary
+  color: $green;                   // icône verte
+  border: 1.5px solid $green;      // bordure verte fine
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease,
+              background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+  position: relative;              // nécessaire pour positionner le badge en absolu
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.08); // légère surbrillance blanche
+    color: #fff;                                  // icône blanche
+    border-color: rgba(255, 255, 255, 0.5);       // bordure blanche semi-transparente
+    transform: scale(1.06);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+  &:active { transform: scale(0.97); }
+}
+
+// ── Badge notification sur le bouton ─────────────────────────────────────────
+// Petit rond vert "à cheval" en haut à droite du bouton
+// Affiché par Stimulus quand des messages non lus existent dans la sidebar
+.sticky-chat-btn-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: #FF8C00;       // orange vif pour la notification
+  border: 2px solid #1B1B1B;       // même couleur que le fond du bouton → effet de détachement
+  animation: unread-pulse 2s ease-in-out infinite;
+}
+
+// ── Panneau principal ─────────────────────────────────────────────────────────
+// Caché par défaut, affiché avec la classe --open
+.sticky-chat-panel {
+  display: none;
+  width: 500px;           // largeur totale du panneau
+  height: 420px;          // hauteur fixe
+  background-color: $dark-card-bg;
+  border: 1px solid $dark-surface;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+
+  &--open {
+    display: flex;         // flex-row : sidebar | contenu chat
+    flex-direction: row;
+  }
+}
+
+// ── Colonne gauche : sidebar des conversations ────────────────────────────────
+.sticky-chat-sidebar {
+  width: 160px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid $dark-surface;
+  background-color: $dark-bg;
+  overflow: hidden;
+}
+
+// En-tête de la sidebar ("Chats" + bouton fermer)
+.sticky-chat-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  font-weight: 700;
+  color: $dark-text;
+  font-size: 0.85rem;
+  border-bottom: 1px solid $dark-surface;
+  flex-shrink: 0;
+}
+
+// Bouton × fermer
+.sticky-chat-close-btn {
+  background: none;
+  border: none;
+  color: $dark-muted;
+  padding: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover {
+    color: $dark-text;
+    background-color: $dark-surface;
+  }
+}
+
+// Liste scrollable des conversations
+.sticky-chat-sidebar-list {
+  overflow-y: auto;
+  flex: 1;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb {
+    background-color: $dark-surface;
+    border-radius: 3px;
+  }
+}
+
+// Conteneur d'un item de conversation (lien + bouton poubelle)
+.sticky-chat-convo-item-wrapper {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+
+  // Affiche le bouton poubelle au survol du conteneur
+  &:hover .sticky-chat-dismiss-btn {
+    opacity: 1;
+  }
+
+  // Le <form> généré par button_to doit être un flex item transparent
+  // Sans ça, le form est un bloc qui casse le layout et la zone de clic est bizarre
+  > form {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+}
+
+// Lien d'une conversation (prend tout l'espace sauf le bouton poubelle)
+.sticky-chat-convo-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  text-decoration: none;
+  color: inherit;
+  flex: 1;
+  min-width: 0;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: $dark-surface;
+    color: inherit;
+  }
+
+  // Conversation active (sélectionnée)
+  &--active {
+    background-color: $dark-surface;
+    border-left: 2px solid $green;
+  }
+}
+
+// Bouton poubelle (discret par défaut, bien visible au survol)
+.sticky-chat-dismiss-btn {
+  opacity: 0.3;                // légèrement visible par défaut (évite la disparition après Turbo Stream)
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: $dark-muted;
+  padding: 6px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: opacity 0.15s, color 0.15s, background-color 0.15s;
+
+  &:hover {
+    color: #ff6b6b;            // rouge au survol du bouton poubelle lui-même
+    background-color: rgba(255, 107, 107, 0.12);
+    opacity: 1;
+  }
+}
+
+// Au survol du conteneur : rend le bouton bien visible
+.sticky-chat-convo-item-wrapper:hover .sticky-chat-dismiss-btn {
+  opacity: 1;
+}
+
+// Infos texte de la conversation (titre + aperçu)
+.sticky-chat-convo-info {
+  min-width: 0;
+  flex: 1;
+}
+
+// Ligne titre + badge non-lu alignés côte à côte
+.sticky-chat-convo-title-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sticky-chat-convo-title {
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: $dark-text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Badge non-lu : petit rond orange pulsant
+.sticky-chat-unread-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  border-radius: 50%;
+  background-color: #FF8C00;       // orange — cohérent avec le badge sur le bouton
+  display: inline-block;
+  flex-shrink: 0;
+  animation: unread-pulse 2s ease-in-out infinite;
+}
+
+// Animation légère du badge non-lu
+@keyframes unread-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+.sticky-chat-convo-preview {
+  font-size: 0.68rem;
+  color: $dark-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// État vide dans la sidebar
+.sticky-chat-sidebar-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: $dark-muted;
+  font-size: 0.78rem;
+
+  div { font-size: 1.4rem; margin-bottom: 6px; }
+  p { margin: 0; }
+}
+
+// ── Colonne droite : zone de chat ─────────────────────────────────────────────
+.sticky-chat-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+// Le Turbo Frame occupe toute la colonne droite
+.sticky-chat-frame-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+// État initial "sélectionne une conversation"
+.sticky-chat-no-selection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: $dark-muted;
+  font-size: 0.82rem;
+  text-align: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+// ── Contenu du chat individuel (conversations/show) ───────────────────────────
+.sticky-chat-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// En-tête du chat (nom du match)
+.sticky-chat-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  background-color: $dark-bg;
+  border-bottom: 1px solid $dark-surface;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: $dark-text;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Zone scrollable des messages
+.sticky-chat-messages-zone {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  background-color: #444444;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+
+  // ── Overrides pour réduire la taille des messages dans le sticky chat ───────
+  // Le partial _message.html.erb est partagé avec la modal, on surcharge ici
+  // sans toucher les styles globaux de _chat.scss
+
+  .chat-message {
+    gap: 6px;         // moins d'espace entre avatar et bulle
+    max-width: 90%;   // bulles plus larges dans le petit panneau
+  }
+
+  // Avatar plus petit
+  .chat-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.55rem;
+  }
+
+  // Photo de profil plus petite
+  .chat-avatar-img {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+  }
+
+  // Bulle plus compacte
+  .chat-bubble {
+    padding: 6px 9px;
+    font-size: 0.78rem;
+    gap: 2px;
+  }
+
+  // Nom de l'expéditeur
+  .chat-sender-name {
+    font-size: 0.65rem;
+  }
+
+  // Heure
+  .chat-time {
+    font-size: 0.58rem;
+  }
+}
+
+// Formulaire d'envoi (bas de la colonne droite)
+.sticky-chat-form-zone {
+  padding: 8px 10px;
+  background-color: $dark-bg;
+  border-top: 1px solid $dark-surface;
+  flex-shrink: 0;
+}

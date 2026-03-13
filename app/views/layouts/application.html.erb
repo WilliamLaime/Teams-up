@@ -36,6 +36,10 @@
     <%# Pied de page commun à toutes les pages %>
     <%= render "shared/footer" %>
 
+    <%# Bouton + panneau chat sticky — visible sur toutes les pages pour les connectés %>
+    <%# Doit être EN DEHORS du <main> pour que position:fixed fonctionne correctement %>
+    <%= render "shared/sticky_chat" %>
+
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>
     <script>

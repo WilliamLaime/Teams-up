@@ -21,11 +21,22 @@ class MessagesController < ApplicationController
       # On réinitialise le formulaire via Turbo Stream (vide le champ texte)
       respond_to do |format|
         format.turbo_stream do
-          render turbo_stream: turbo_stream.update(
-            "chat-form",
-            partial: "messages/form",
-            locals: { match: @match, message: Message.new }
-          )
+          # On envoie DEUX mises à jour Turbo Stream :
+          # 1. "chat-form"        → formulaire dans la modal sur la page show du match
+          # 2. "sticky-chat-form" → formulaire dans le panneau sticky (toutes les pages)
+          # Si l'un des deux éléments n'existe pas dans la page, Turbo l'ignore silencieusement
+          render turbo_stream: [
+            turbo_stream.update(
+              "chat-form",
+              partial: "messages/form",
+              locals: { match: @match, message: Message.new }
+            ),
+            turbo_stream.update(
+              "sticky-chat-form",
+              partial: "messages/form",
+              locals: { match: @match, message: Message.new }
+            )
+          ]
         end
         format.html { redirect_to @match }
       end
