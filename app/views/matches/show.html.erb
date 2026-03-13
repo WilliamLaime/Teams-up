@@ -10,6 +10,20 @@
 
 <%# ── Données calculées une seule fois en haut ── %>
 <%
+  # Même liste d'images que dans _match_card.html.erb — ordre identique pour cohérence
+  foot_images = %w[
+    Img_illu_foot/ballon.jpg
+    Img_illu_foot/citytoulouse.jpg
+    Img_illu_foot/bresil.jpg
+    Img_illu_foot/herbe.jpg
+    Img_illu_foot/city1.jpg
+    Img_illu_foot/citydrone.jpg
+    Img_illu_foot/Duel.jpg
+    Img_illu_foot/Medellin.jpg
+  ]
+  # Image déterministe : même calcul que la card (id % nombre d'images)
+  cover_image_path = foot_images[@match.id % foot_images.length]
+
   # Organisateur du match
   organizer_mu   = @match_users.find { |mu| mu.role == "organisateur" }
   organizer      = organizer_mu&.user
@@ -40,9 +54,9 @@
     ══════════════════════════════════════════════════ %>
 <section class="match-banner">
 
-  <%# Image de fond (placeholder terrain — pas encore de champ image en BDD) %>
+  <%# Image de fond — même image que sur la card (déterministe selon l'id du match) %>
   <div class="match-banner-bg"
-       style="background-image: url('https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1400&q=80')">
+       style="background-image: url('<%= asset_path(cover_image_path) %>')">
   </div>
 
   <%# Calque sombre semi-transparent pour lisibilité du texte %>
