@@ -10,8 +10,10 @@
        data-chat-match-id-value="<%= @match.id %>"
        class="sticky-chat-inner">
 
-    <%# Abonnement Turbo Stream — reçoit les nouveaux messages en temps réel %>
-    <%= turbo_stream_from "match_chat_#{@match.id}" %>
+    <%# Abonnement Turbo Stream — reçoit les nouveaux messages en temps réel
+        On s'abonne au stream "sticky" (différent du stream de la modal)
+        pour éviter un doublon si l'utilisateur est aussi sur la page show du match %>
+    <%= turbo_stream_from "match_chat_sticky_#{@match.id}" %>
 
     <%# En-tête : nom du match %>
     <div class="sticky-chat-chat-header">
