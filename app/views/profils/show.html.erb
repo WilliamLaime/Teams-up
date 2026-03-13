@@ -19,7 +19,7 @@
           <div style="flex-shrink:0;">
             <% if @profil.avatar.attached? %>
               <%= image_tag @profil.avatar,
-                  alt: "Photo de #{current_user.display_name}",
+                  alt: "Photo de #{@profil_user.display_name}",
                   style: "width:82px; height:82px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:block;" %>
             <% else %>
               <div style="width:82px; height:82px; border-radius:50%; border:3px solid rgba(255,255,255,0.12); background:#242624; display:flex; align-items:center; justify-content:center; font-size:1.75rem; font-weight:800; color:rgba(255,255,255,0.4);">
@@ -34,7 +34,7 @@
             <%# Nom + icône vérifié %>
             <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.3rem;">
               <h1 style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; line-height:1.2;">
-                <%= current_user.display_name %>
+                <%= @profil_user.display_name %>
               </h1>
               <i data-lucide="badge-check" style="width:18px; height:18px; color:#1EDD88; flex-shrink:0;"></i>
             </div>
@@ -73,10 +73,12 @@
               <span style="font-size:0.78rem; color:rgba(255,255,255,0.4);">(26 avis)</span>
             </div>
 
-            <%# Bouton modifier le profil %>
-            <%= link_to edit_profil_path, class: "btn btn-primary btn-sm btn-cta-primary", style: "display:inline-flex; align-items:center; gap:0.4rem;" do %>
-              <i data-lucide="pencil" style="width:12px; height:12px;"></i>
-              Modifier le profil
+            <%# Bouton modifier le profil — visible uniquement pour le propriétaire du profil %>
+            <% if current_user == @profil_user %>
+              <%= link_to edit_profil_path, class: "btn btn-primary btn-sm btn-cta-primary", style: "display:inline-flex; align-items:center; gap:0.4rem;" do %>
+                <i data-lucide="pencil" style="width:12px; height:12px;"></i>
+                Modifier le profil
+              <% end %>
             <% end %>
 
           </div>
@@ -97,7 +99,7 @@
                 Matchs joués
               </span>
               <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%= current_user.matchs.count %>
+                <%= @profil_user.matchs.count %>
               </span>
             </div>
           </div>
@@ -108,7 +110,7 @@
                 Matchs créés
               </span>
               <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%= current_user.match_users.where(role: "organisateur").count %>
+                <%= @profil_user.match_users.where(role: "organisateur").count %>
               </span>
             </div>
           </div>
@@ -121,15 +123,19 @@
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
           <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
             <i data-lucide="calendar" style="width:14px; height:14px;"></i>
-            Mes matchs
+            <%# Titre adapté : "Mes matchs" si c'est son profil, sinon le prénom de l'organisateur %>
+            <%= current_user == @profil_user ? "Mes matchs" : "Matchs de #{@profil_user.display_name}" %>
           </div>
-          <%= link_to "Voir tout", matches_path(mine: true), style: "font-size:0.8rem; font-weight:600; color:#1EDD88; text-decoration:none;" %>
+          <%# Lien "Voir tout" uniquement sur son propre profil %>
+          <% if current_user == @profil_user %>
+            <%= link_to "Voir tout", matches_path(mine: true), style: "font-size:0.8rem; font-weight:600; color:#1EDD88; text-decoration:none;" %>
+          <% end %>
         </div>
         <div class="match-block">
 
           <%
-            # Récupère les 3 prochains matchs de l'utilisateur (créateur ou participant)
-            upcoming_matches = current_user.matchs
+            # Récupère les 3 prochains matchs de l'utilisateur affiché (créateur ou participant)
+            upcoming_matches = @profil_user.matchs
               .where("(date + time) > ?", Time.current)
               .order(date: :asc, time: :asc)
               .first(3)
@@ -233,7 +239,10 @@
           <% else %>
             <p style="font-size:0.88rem; color:rgba(255,255,255,0.4); margin:0;">
               Pas encore de description.
-              <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
+              <%# Lien "Ajouter" uniquement si c'est son propre profil %>
+              <% if current_user == @profil_user %>
+                <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
+              <% end %>
             </p>
           <% end %>
         </div>
