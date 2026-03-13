@@ -151,6 +151,17 @@
     border-radius: 10px 10px 0 0;
   }
 
+  // Zone scrollable — hauteur max pour afficher ~5 notifs, scroll pour le reste
+  .notif-list {
+    max-height: 360px;
+    overflow-y: auto;
+
+    // Scrollbar discrète sur webkit (Chrome, Safari)
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+  }
+
   .notif-item {
     background: transparent;
     border-bottom: 1px solid rgba(255,255,255,0.06);
