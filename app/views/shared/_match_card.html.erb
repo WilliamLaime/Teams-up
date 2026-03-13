@@ -9,6 +9,21 @@
 
 <%# Calculs réutilisés dans la carte %>
 <%
+  # Liste des images d'illustration foot disponibles dans assets/images/Img_illu_foot
+  foot_images = %w[
+    Img_illu_foot/alfonso-scarpa-jNGcyd4ME-E-unsplash.jpg
+    Img_illu_foot/bayu-syaits-p9l4ZJVZi40-unsplash.jpg
+    Img_illu_foot/declan-sun-9WvJsfdqjSc-unsplash.jpg
+    Img_illu_foot/herbe.jpg
+    Img_illu_foot/jorgen-hendriksen-eeE1UkPRm_M-unsplash.jpg
+    Img_illu_foot/jorgen-hendriksen-f1OzAuhpQo4-unsplash.jpg
+    Img_illu_foot/jorgen-hendriksen-OuzaPRzOM6E-unsplash.jpg
+  ]
+
+  # On choisit l'image selon l'id du match (modulo = rotation sur les 7 images)
+  # Ainsi chaque match a toujours la même image (déterministe)
+  cover_image = foot_images[match.id % foot_images.length]
+
   # Classe CSS du badge de niveau
   level_css = case match.level
     when "Débutant"      then "level-debutant"
@@ -39,11 +54,8 @@
 
   <%# ── Image du terrain + overlays ──────────────────────────────────────── %>
   <div class="match-card-img-wrapper">
-    <img
-      src="https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=500&q=75"
-      alt="Terrain <%= match.title %>"
-      class="match-card-img"
-    >
+    <%# Image locale choisie selon l'id du match (déterministe, varie entre les matchs) %>
+    <%= image_tag cover_image, alt: "Terrain #{match.title}", class: "match-card-img" %>
 
     <%# Bandeau "COMPLET" sur l'image si le match est plein %>
     <% if match.full? %>
@@ -120,7 +132,8 @@
       <% end %>
     <% elsif user_signed_in? %>
       <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
-        <%= btn_label %>
+        <%# Si c'est le créateur du match, on personnalise le label %>
+        <%= match.user == current_user ? "Voir ton match" : btn_label %>
       <% end %>
     <% else %>
       <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
