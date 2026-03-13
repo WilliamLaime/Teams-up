@@ -376,7 +376,8 @@
               Valeur initiale : titre existant ou texte par défaut %>
           <h3 class="match-recap-main-title"
               data-match-form-target="recapTitle">
-            <%= @match.title.present? ? @match.title : "Titre" %>
+            <%# Première lettre en majuscule, reste en minuscules %>
+            <%= @match.title.present? ? (@match.title[0].upcase + @match.title[1..].downcase) : "Titre" %>
           </h3>
 
           <%# Description courte (tronquée à 80 caractères par Stimulus) %>

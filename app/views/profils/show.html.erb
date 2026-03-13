@@ -1,6 +1,18 @@
-<%# Page de visualisation du profil de l'utilisateur connecté %>
+<%# Page de visualisation du profil — fonctionne pour soi-même et pour un autre utilisateur %>
+<%# @profil_user = l'utilisateur dont on affiche le profil %>
+<%# @profil      = son profil (peut être vide) %>
+
+<% is_own_profile = (@profil_user == current_user) %>
 
 <div class="container my-4">
+
+  <%# Bouton retour — revient à la page précédente dans l'historique du navigateur %>
+  <div class="mb-3">
+    <%= link_to "javascript:history.back()", class: "nav-button nav-button--back" do %>
+      <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+      Retour
+    <% end %>
+  </div>
   <div class="row justify-content-center">
     <div class="col-md-8">
 
@@ -16,9 +28,8 @@
                 <%= image_tag @profil.avatar,
                     class: "rounded-circle",
                     style: "width:80px;height:80px;object-fit:cover;",
-                    alt: "Photo de profil de #{[@profil.first_name, @profil.last_name].compact.join(' ').presence || current_user.email}" %>
+                    alt: "Photo de profil de #{[@profil.first_name, @profil.last_name].compact.join(' ').presence || @profil_user.email}" %>
               <% else %>
-                <%# Pas encore de photo — icône générique Lucide %>
                 <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
                      style="width:80px;height:80px;">
                   <i data-lucide="user-round" style="width:40px;height:40px;" class="text-muted"></i>
@@ -27,13 +38,15 @@
 
               <div>
                 <%# Affiche "Prénom Nom" ou l'email si le profil n'est pas encore rempli %>
-                <h2 class="mb-1"><%= [@profil.first_name, @profil.last_name].compact.join(' ').presence || current_user.email %></h2>
-                <p class="text-muted mb-0"><%= current_user.email %></p>
+                <h2 class="mb-1"><%= [@profil.first_name, @profil.last_name].compact.join(' ').presence || @profil_user.email %></h2>
+                <p class="text-muted mb-0"><%= @profil_user.email %></p>
               </div>
             </div>
 
-            <%# Bouton pour modifier le profil %>
-            <%= link_to "Modifier mon profil", edit_profil_path, class: "btn btn-outline-primary" %>
+            <%# Bouton "Modifier" uniquement sur son propre profil %>
+            <% if is_own_profile %>
+              <%= link_to "Modifier mon profil", edit_profil_path, class: "btn btn-outline-primary" %>
+            <% end %>
           </div>
 
           <hr>
@@ -75,8 +88,8 @@
 
           </div>
 
-          <%# Si le profil est vide, on invite l'utilisateur à le compléter %>
-          <% if @profil.new_record? || @profil.first_name.blank? %>
+          <%# Alerte "profil vide" uniquement sur son propre profil %>
+          <% if is_own_profile && (@profil.new_record? || @profil.first_name.blank?) %>
             <div class="alert alert-warning mt-3">
               Ton profil est vide ! <%= link_to "Complète-le maintenant", edit_profil_path, class: "alert-link" %>.
             </div>
@@ -85,14 +98,14 @@
         </div>
       </div>
 
-      <%# Matchs de l'utilisateur %>
+      <%# Matchs de l'utilisateur affiché %>
       <div class="card shadow-sm mt-4">
         <div class="card-header">
-          <h5 class="mb-0">Mes matchs</h5>
+          <h5 class="mb-0"><%= is_own_profile ? "Mes matchs" : "Ses matchs" %></h5>
         </div>
         <ul class="list-group list-group-flush">
-          <% if current_user.matchs.any? %>
-            <% current_user.matchs.order(date: :asc).each do |match| %>
+          <% if @profil_user.matchs.any? %>
+            <% @profil_user.matchs.order(date: :asc).each do |match| %>
               <li class="list-group-item d-flex justify-content-between align-items-center">
                 <%= match.title %>
                 <div>
@@ -102,7 +115,9 @@
               </li>
             <% end %>
           <% else %>
-            <li class="list-group-item text-muted">Tu n'es inscrit à aucun match.</li>
+            <li class="list-group-item text-muted">
+              <%= is_own_profile ? "Tu n'es inscrit à aucun match." : "Pas encore inscrit à un match." %>
+            </li>
           <% end %>
         </ul>
       </div>

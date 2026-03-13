@@ -71,8 +71,13 @@ export default class extends Controller {
   // ── Titre ─────────────────────────────────────────────────
   updateTitle() {
     const val = this.titleInputTarget.value.trim()
-    // Si le champ est vide, affiche un tiret, sinon la vraie valeur
-    this.recapTitleTarget.textContent = val || "—"
+    if (val) {
+      // Met uniquement la première lettre en majuscule, le reste en minuscules
+      this.recapTitleTarget.textContent = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase()
+    } else {
+      // Si le champ est vide, affiche un tiret
+      this.recapTitleTarget.textContent = "—"
+    }
   }
 
   // ── Description (tronquée à 80 caractères) ────────────────

@@ -9,12 +9,12 @@
   position: relative;
   min-height: 340px;
   display: flex;
-  align-items: flex-end; // le contenu colle en bas de la banner
+  align-items: stretch;         // le container s'étire sur toute la hauteur
 
   // Image de fond (définie en inline style sur l'élément)
   .match-banner-bg {
     position: absolute;
-    inset: 0; // top/right/bottom/left = 0
+    inset: 0;
     background-size: cover;
     background-position: center;
   }
@@ -25,32 +25,74 @@
     inset: 0;
     background: linear-gradient(
       to bottom,
-      rgba(#111111, 0.50) 0%,   // haut : léger
-      rgba(#111111, 0.90) 100%  // bas : très sombre
+      rgba(#111111, 0.50) 0%,
+      rgba(#111111, 0.90) 100%
     );
   }
 
-  // Conteneur principal de la banner
+  // Conteneur principal : colonne flex pleine hauteur
   .match-banner-container {
-    position: relative; // passe au-dessus de l'overlay
+    position: relative;
     z-index: 1;
     width: 100%;
     padding-top: 2rem;
     padding-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;     // empile topbar puis contenu verticalement
   }
 }
 
-// Disposition gauche / droite dans la banner
+// Ligne haute — Retour (gauche) + Partager (droite)
+.match-banner-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.75rem;
+}
+
+// Ligne basse — gauche : titre/desc/date | droite : boutons+prix collés en bas
 .match-banner-content {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-end;        // les deux colonnes s'alignent par le bas
   gap: 1.5rem;
+  flex: 1;                      // prend tout l'espace restant sous la topbar
 }
 
+// Colonne gauche : badges, titre, description, date
 .match-banner-left {
   flex: 1;
   min-width: 0;
+}
+
+// Colonne droite : boutons (côte à côte) au-dessus du prix, collés en bas
+.match-banner-right {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;       // empile boutons puis prix
+  align-items: flex-end;        // aligne à droite
+  gap: 0.5rem;
+}
+
+// Prix affiché à droite dans la ligne basse
+.match-banner-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #fff;                                  // blanc comme demandé
+  font-size: 0.9rem;
+
+  // Montant mis en avant (blanc gras)
+  .match-banner-price-amount {
+    font-weight: 700;
+    color: #fff;
+  }
+
+  // Libellé "par joueur" légèrement transparent
+  .match-banner-price-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+  }
 }
 
 // Titre principal
@@ -136,6 +178,58 @@
   &:hover { background: rgba(255,255,255,0.22); }
 }
 
+
+// Conteneur des boutons organisateur dans la bannière
+.match-banner-organizer-actions {
+  display: flex;
+  flex-direction: row;          // boutons côte à côte
+  gap: 0.5rem;
+  align-items: center;
+}
+
+// Bouton d'action organisateur (Modifier / Supprimer) dans la bannière
+.match-banner-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+  border: 1px solid $green;         // Bordure verte par défaut
+  background: $dark-surface;        // Fond sombre comme le bouton partage
+  color: $green;                    // Texte et icône verts
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: $green;
+  }
+
+  // Variante danger (Supprimer) — bordure et texte rouges
+  &--danger {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+
+    &:hover {
+      background: rgba(255, 107, 107, 0.12);
+      color: #ff6b6b;
+    }
+  }
+
+  // Variante pending (Demandes en attente) — bordure et texte jaunes
+  &--pending {
+    border-color: $yellow;
+    color: $yellow;
+
+    &:hover {
+      background: rgba($yellow, 0.12);
+      color: $yellow;
+    }
+  }
+}
 
 // ── 2. WRAPPER PRINCIPAL ──────────────────────────
 
@@ -283,6 +377,45 @@
   font-size: 0.75rem;
   color: $dark-muted;
   white-space: nowrap;
+}
+
+// Wrapper relatif autour de l'avatar pour positionner le badge horloge
+.match-player-avatar-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+// Lien wrappant l'avatar quand l'organisateur clique pour voir le profil
+.match-player-avatar-link {
+  display: inline-flex;
+  border-radius: 50%;
+}
+
+// Avatar d'un joueur en attente — bordure orange et légère transparence
+.match-player-avatar--pending {
+  border-color: rgba($yellow, 0.7) !important;
+  opacity: 0.8;
+}
+
+// Badge horloge positionné en bas à droite de l'avatar
+.match-player-pending-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: $yellow;
+  color: $dark-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid $dark-card-bg; // liseré sombre pour détacher du fond
+}
+
+// Nom du joueur en attente — couleur jaune pour indiquer l'état
+.match-player-name--pending {
+  color: $yellow;
 }
 
 // Slot vide (cercle pointillé + "+" pour rejoindre)
@@ -600,7 +733,257 @@
 }
 
 
-// ── 10. MODAL "REJOINDRE CE MATCH ?" ──────────────
+// ── 10. BOUTON "GÉRER LES DEMANDES" (trigger modale) ──
+
+// Petit pill jaune dans le titre du bloc joueurs inscrits
+.match-pending-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: rgba($yellow, 0.12);
+  border: 1px solid rgba($yellow, 0.45);
+  color: $yellow;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+
+  &:hover { background: rgba($yellow, 0.22); }
+}
+
+
+// ── 11. MODAL "DEMANDES EN ATTENTE" ───────────────
+
+// Fond de la modale — thème sombre cohérent avec le reste
+.pending-modal-content {
+  background: $dark-card-bg;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1.75rem;
+  color: $dark-text;
+  position: relative;
+}
+
+// Croix de fermeture en haut à droite
+.pending-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $dark-muted;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+}
+
+// En-tête de la modale (icône + titre + sous-titre)
+.pending-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-right: 2.5rem; // évite de chevaucher la croix
+}
+
+// Cercle vert avec icône utilisateurs
+.pending-modal-icon {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 50%;
+  background: rgba($green, 0.12);
+  border: 1px solid rgba($green, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $green;
+}
+
+// Titre principal de la modale
+.pending-modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+// Sous-titre (ex : "2 joueurs souhaitent rejoindre")
+.pending-modal-subtitle {
+  font-size: 0.8rem;
+  color: $dark-muted;
+  margin-top: 0.15rem;
+}
+
+// Séparateur entre l'en-tête et la liste
+.pending-modal-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin-bottom: 1rem;
+}
+
+// Conteneur scrollable si beaucoup de joueurs
+.pending-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+// Ligne d'un joueur en attente
+.pending-modal-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  &:last-child { border-bottom: none; }
+}
+
+// Avatar cliquable (lien) — arrondi
+.pending-modal-avatar-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  border-radius: 50%;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 0.8; }
+}
+
+// Avatar du joueur en attente dans la modale
+.pending-modal-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+// Zone infos : nom + tags + lien profil
+.pending-modal-info {
+  flex: 1;
+  min-width: 0; // évite le débordement de texte
+}
+
+// Nom complet du joueur
+.pending-modal-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Ligne de tags (niveau + rôle)
+.pending-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+// Tag générique (niveau ou rôle préféré)
+.pending-modal-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+
+  // Niveau — bleu discret
+  &--level {
+    background: rgba($blue, 0.15);
+    color: lighten($blue, 20%);
+    border: 1px solid rgba($blue, 0.3);
+  }
+
+  // Rôle préféré — vert discret
+  &--role {
+    background: rgba($green, 0.12);
+    color: $green;
+    border: 1px solid rgba($green, 0.3);
+  }
+}
+
+// Lien "Voir le profil complet" sous les tags
+.pending-modal-profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: $dark-muted;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover { color: $green; }
+}
+
+// Boutons accepter / refuser à droite de la ligne
+.pending-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex-shrink: 0;
+
+  // button_to génère un <form> → on lui enlève son impact sur le layout
+  form { display: flex; }
+}
+
+// Bouton action dans la modale (plus grand que dans la grille)
+.pending-modal-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+
+  // Accepter — vert
+  &--approve {
+    background: rgba($green, 0.15);
+    color: $green;
+    border: 1px solid rgba($green, 0.5);
+
+    &:hover { background: $green; color: $dark-bg; }
+  }
+
+  // Refuser — rouge
+  &--reject {
+    background: rgba($red, 0.15);
+    color: $red;
+    border: 1px solid rgba($red, 0.5);
+
+    &:hover { background: $red; color: #fff; }
+  }
+}
+
+// Message si aucune demande (ne devrait pas s'afficher en pratique)
+.pending-modal-empty {
+  font-size: 0.85rem;
+  color: $dark-muted;
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+
+// ── 12. MODAL "REJOINDRE CE MATCH ?" ──────────────
 
 .join-modal-content {
   background: $dark-card-bg;

@@ -50,12 +50,18 @@
 
   <div class="container match-banner-container">
 
-    <%# Bouton retour %>
-    <%= render "shared/nav_button", url: matches_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
+    <%# ── Ligne haute : Retour (gauche) + Partager (droite) ── %>
+    <div class="match-banner-topbar">
+      <%= render "shared/nav_button", url: matches_path, label: "Retour", direction: "back" %>
+      <button class="match-banner-share-btn" title="Partager ce match">
+        <i data-lucide="share-2" style="width:17px;height:17px;"></i>
+      </button>
+    </div>
 
+    <%# ── Ligne basse : gauche = titre/desc/date, droite = boutons+prix en bas ── %>
     <div class="match-banner-content">
 
-      <%# ── Gauche : badges / titre / description / date ── %>
+      <%# Gauche : badges / titre / description / date %>
       <div class="match-banner-left">
 
         <%# Badges %>
@@ -85,11 +91,9 @@
           time_str = t ? t.strftime('%H:%M') : "—"
         %>
         <div class="match-banner-datetime">
-          <%# Icône horloge avec fond vert arrondi %>
           <div class="match-banner-datetime-icon">
             <i data-lucide="clock" style="width:16px;height:16px;"></i>
           </div>
-          <%# Label + valeur %>
           <div>
             <div class="match-banner-datetime-label">Date &amp; Heure</div>
             <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
@@ -98,14 +102,62 @@
 
       </div>
 
-      <%# ── Droite : bouton partage ── %>
+      <%# Droite : prix en haut, boutons organisateur en dessous, collés en bas %>
       <div class="match-banner-right">
-        <button class="match-banner-share-btn" title="Partager ce match">
-          <i data-lucide="share-2" style="width:17px;height:17px;"></i>
-        </button>
+
+        <%# Prix au-dessus des boutons %>
+        <% if @match.price_per_player.present? && @match.price_per_player.to_f > 0 %>
+          <div class="match-banner-price">
+            <i data-lucide="euro" style="width:15px;height:15px;"></i>
+            <span class="match-banner-price-amount"><%= number_to_currency(@match.price_per_player, unit: "€", format: "%n %u", precision: 0) %></span>
+            <span class="match-banner-price-label">par joueur</span>
+          </div>
+        <% else %>
+          <div class="match-banner-price">
+            <i data-lucide="euro" style="width:15px;height:15px;"></i>
+            <span class="match-banner-price-amount">Gratuit</span>
+          </div>
+        <% end %>
+
+        <%# Boutons Modifier / Supprimer en dessous — uniquement pour l'organisateur %>
+        <% if @current_match_user&.role == "organisateur" %>
+          <%
+            # Calcul des demandes en attente pour le badge dans la bannière
+            banner_pending_count = @match_users.count(&:pending?)
+          %>
+          <div class="match-banner-organizer-actions">
+
+            <%# Bouton "en attente" — ouvre la modale de gestion des demandes %>
+            <button class="match-banner-action-btn match-banner-action-btn--pending"
+                    data-bs-toggle="modal"
+                    data-bs-target="#pendingModal"
+                    title="Gérer les demandes en attente">
+              <i data-lucide="clock" style="width:14px;height:14px;"></i>
+              <% if banner_pending_count > 0 %>
+                <%= banner_pending_count %> en attente
+              <% else %>
+                Demandes
+              <% end %>
+            </button>
+
+            <%= link_to edit_match_path(@match), class: "match-banner-action-btn" do %>
+              <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+              Modifier
+            <% end %>
+            <%= button_to match_path(@match),
+                method: :delete,
+                class: "match-banner-action-btn match-banner-action-btn--danger",
+                data: { turbo_confirm: "Supprimer définitivement ce match ?" } do %>
+              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+              Supprimer
+            <% end %>
+          </div>
+        <% end %>
+
       </div>
 
     </div>
+
   </div>
 </section>
 
@@ -160,8 +212,8 @@
               </div>
             </div>
 
-            <%# Bouton voir profil %>
-            <%= link_to profil_path, class: "btn btn-sm match-profile-btn" do %>
+            <%# Bouton voir profil — redirige vers le profil de l'organisateur %>
+            <%= link_to user_profil_path(organizer), class: "btn btn-sm match-profile-btn" do %>
               <i data-lucide="user" style="width:13px;height:13px;"></i>
               Voir profil
             <% end %>
@@ -180,9 +232,7 @@
               <i data-lucide="map-pin" style="width:15px;height:15px;"></i>
               Lieu du match
             </h5>
-            <%# Nom de l'établissement en vert en haut à droite
-                On prend la partie avant " - " pour ne pas afficher l'adresse
-                Ex: "Le Five Bordeaux - Rue Dumont..." → "Le Five Bordeaux" %>
+            <%# Nom de l'établissement en vert en haut à droite %>
             <% if @match.place.present? %>
               <span class="match-map-venue-name"><%= @match.place.split(' - ').first %></span>
             <% end %>
@@ -192,11 +242,12 @@
           <% if @match.place.present? %>
             <div class="match-map-wrapper">
               <iframe
+                title="Carte Google Maps du lieu du match"
                 src="https://maps.google.com/maps?q=<%= URI.encode_www_form_component(@match.place) %>&output=embed"
                 width="100%"
                 height="220"
                 style="border:0;"
-                allowfullscreen=""
+                allowfullscreen
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade">
               </iframe>
@@ -214,17 +265,43 @@
 
         <%# ──────────────────────────────────────
             BLOC JOUEURS INSCRITS
+            Joueurs approuvés + joueurs en attente (avec badge horloge).
+            Pour l'organisateur : bouton "Gérer les demandes" dans le titre
+            qui ouvre la modale de validation (#pendingModal).
             ────────────────────────────────────── %>
+        <%
+          # Calcul des joueurs en attente une seule fois pour ce bloc
+          pending_mus = @match_users.select(&:pending?)
+        %>
         <div class="match-block">
 
-          <h5 class="match-block-title">
-            <i data-lucide="users" style="width:15px;height:15px;"></i>
-            Joueurs inscrits (<%= approved_users.count %>)
-          </h5>
+          <%# Titre + bouton "Gérer les demandes" pour l'organisateur %>
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="match-block-title mb-0">
+              <i data-lucide="users" style="width:15px;height:15px;"></i>
+              Joueurs inscrits (<%= approved_users.count %>)
+            </h5>
+
+            <%# Bouton visible pour tous les organisateurs (peu importe le mode de validation)
+                Montre le nombre de demandes en attente, ou "Demandes" si aucune %>
+            <% if @current_match_user&.role == "organisateur" %>
+              <button class="match-pending-trigger-btn"
+                      data-bs-toggle="modal"
+                      data-bs-target="#pendingModal"
+                      title="Gérer les demandes en attente">
+                <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                <% if pending_mus.any? %>
+                  <%= pending_mus.count %> en attente
+                <% else %>
+                  Demandes
+                <% end %>
+              </button>
+            <% end %>
+          </div>
 
           <div class="match-players-grid">
 
-            <%# Un item par joueur approuvé %>
+            <%# ── Joueurs approuvés (organisateur inclus) ── %>
             <% approved_users.each do |mu| %>
               <div class="match-player-item">
 
@@ -249,7 +326,38 @@
               </div>
             <% end %>
 
-            <%# Slot vide cliquable si l'utilisateur connecté n'est pas encore inscrit %>
+            <%# ── Joueurs en attente — avatar avec badge horloge, non cliquable ── %>
+            <% pending_mus.each do |mu| %>
+              <div class="match-player-item match-player-item--pending">
+
+                <%# Wrapper relatif pour positionner le badge horloge sur l'avatar %>
+                <div class="match-player-avatar-wrapper">
+                  <% if mu.user.profil&.avatar&.attached? %>
+                    <%= image_tag mu.user.profil.avatar,
+                        class: "match-player-avatar match-player-avatar--pending", alt: "Avatar joueur" %>
+                  <% else %>
+                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
+                         class="match-player-avatar match-player-avatar--pending" alt="joueur">
+                  <% end %>
+
+                  <%# Badge horloge en bas à droite (visible pour tous) %>
+                  <span class="match-player-pending-badge">
+                    <i data-lucide="clock" style="width:9px;height:9px;"></i>
+                  </span>
+                </div>
+
+                <%# Nom en jaune pour signaler l'état en attente %>
+                <%
+                  first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                  last_letter = mu.user.profil&.last_name.presence&.first&.upcase
+                  display     = last_letter ? "#{first} #{last_letter}." : first
+                %>
+                <span class="match-player-name match-player-name--pending"><%= display %></span>
+
+              </div>
+            <% end %>
+
+            <%# ── Slot vide cliquable si l'utilisateur connecté n'est pas encore inscrit ── %>
             <% if user_signed_in? && !@current_match_user && !@match.full? %>
               <div class="match-player-item match-player-empty"
                    data-bs-toggle="modal"
@@ -265,63 +373,6 @@
 
           </div>
         </div>
-
-
-        <%# ──────────────────────────────────────
-            BLOC GESTION (organisateur seulement)
-            ────────────────────────────────────── %>
-        <% if @current_match_user&.role == "organisateur" %>
-          <div class="match-block match-block-organizer">
-
-            <h5 class="match-block-title">
-              <i data-lucide="settings" style="width:15px;height:15px;"></i>
-              Gestion du match
-            </h5>
-
-            <div class="d-flex gap-2 flex-wrap">
-              <%= link_to edit_match_path(@match), class: "btn btn-sm btn-primary" do %>
-                <i data-lucide="edit-2" style="width:13px;height:13px;"></i>
-                Modifier
-              <% end %>
-              <%= button_to match_path(@match),
-                  method: :delete,
-                  class: "btn btn-sm btn-danger",
-                  data: { turbo_confirm: "Supprimer définitivement ce match ?" } do %>
-                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
-                Supprimer
-              <% end %>
-            </div>
-
-            <%# Demandes en attente (mode manuel uniquement) %>
-            <% if @match.manual_validation? %>
-              <% pending_users = @match_users.select(&:pending?) %>
-              <% if pending_users.any? %>
-                <div class="mt-3">
-                  <h6 style="color:#FFC65A;" class="mb-2">
-                    ⏳ Demandes en attente (<%= pending_users.count %>)
-                  </h6>
-                  <% pending_users.each do |mu| %>
-                    <div class="d-flex justify-content-between align-items-center py-2"
-                         style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-                      <span class="text-white small"><%= mu.user.display_name %></span>
-                      <div class="d-flex gap-2">
-                        <%= button_to approve_match_match_user_path(@match, mu),
-                            method: :patch, class: "btn btn-success btn-sm" do %>
-                          Accepter
-                        <% end %>
-                        <%= button_to reject_match_match_user_path(@match, mu),
-                            method: :patch, class: "btn btn-danger btn-sm" do %>
-                          Refuser
-                        <% end %>
-                      </div>
-                    </div>
-                  <% end %>
-                </div>
-              <% end %>
-            <% end %>
-
-          </div>
-        <% end %>
 
 
       </div>
@@ -715,4 +766,137 @@
       </div>
     </div>
   </div>
+<% end %>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "DEMANDES EN ATTENTE" — uniquement pour l'organisateur
+    Affiche la liste des joueurs qui souhaitent rejoindre le match.
+    Permet de voir leur profil, leur niveau / rôle, et d'accepter ou refuser.
+    ══════════════════════════════════════════════════ %>
+<% if @current_match_user&.role == "organisateur" %>
+  <% pending_modal_users = @match_users.select(&:pending?) %>
+
+  <div class="modal fade" id="pendingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="pending-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# En-tête — icône + titre + nombre de demandes %>
+        <div class="pending-modal-header">
+          <div class="pending-modal-icon">
+            <i data-lucide="users" style="width:22px;height:22px;"></i>
+          </div>
+          <div>
+            <div class="pending-modal-title">Demandes en attente</div>
+            <div class="pending-modal-subtitle">
+              <%= pending_modal_users.count %> joueur<%= pending_modal_users.count > 1 ? "s" : "" %> souhaite<%= pending_modal_users.count > 1 ? "nt" : "" %> rejoindre
+            </div>
+          </div>
+        </div>
+
+        <%# Séparateur %>
+        <div class="pending-modal-divider"></div>
+
+        <%# Liste des joueurs en attente %>
+        <div class="pending-modal-list">
+
+          <% if pending_modal_users.any? %>
+            <% pending_modal_users.each do |mu| %>
+
+              <%# Ligne d'un joueur en attente %>
+              <div class="pending-modal-row">
+
+                <%# Avatar cliquable → ouvre le profil dans un nouvel onglet %>
+                <%= link_to user_profil_path(mu.user),
+                    class: "pending-modal-avatar-link",
+                    target: "_blank",
+                    title: "Voir le profil" do %>
+                  <% if mu.user.profil&.avatar&.attached? %>
+                    <%= image_tag mu.user.profil.avatar,
+                        class: "pending-modal-avatar", alt: "Avatar joueur" %>
+                  <% else %>
+                    <img src="https://kitt.lewagon.com/placeholder/users/ssaunier"
+                         class="pending-modal-avatar" alt="joueur">
+                  <% end %>
+                <% end %>
+
+                <%# Infos du joueur : nom + niveau + rôle + lien profil %>
+                <div class="pending-modal-info">
+                  <%
+                    first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                    last_name   = mu.user.profil&.last_name.presence
+                    full_name   = last_name ? "#{first} #{last_name}" : first
+                    level       = mu.user.profil&.level.presence  || "Niveau non renseigné"
+                    role_pref   = mu.user.profil&.role.presence   || "Rôle non renseigné"
+                  %>
+                  <div class="pending-modal-name"><%= full_name %></div>
+                  <div class="pending-modal-tags">
+                    <span class="pending-modal-tag pending-modal-tag--level"><%= level %></span>
+                    <span class="pending-modal-tag pending-modal-tag--role"><%= role_pref %></span>
+                  </div>
+                  <%# Lien vers le profil complet (ouvre dans un nouvel onglet) %>
+                  <%= link_to user_profil_path(mu.user),
+                      class: "pending-modal-profile-link",
+                      target: "_blank" do %>
+                    <i data-lucide="external-link" style="width:11px;height:11px;"></i>
+                    Voir le profil complet
+                  <% end %>
+                </div>
+
+                <%# Boutons accepter (vert) / refuser (rouge) %>
+                <div class="pending-modal-actions">
+                  <%= button_to approve_match_match_user_path(@match, mu),
+                      method: :patch,
+                      class: "pending-modal-btn pending-modal-btn--approve",
+                      title: "Accepter" do %>
+                    <i data-lucide="check" style="width:14px;height:14px;"></i>
+                  <% end %>
+                  <%= button_to reject_match_match_user_path(@match, mu),
+                      method: :patch,
+                      class: "pending-modal-btn pending-modal-btn--reject",
+                      title: "Refuser" do %>
+                    <i data-lucide="x" style="width:14px;height:14px;"></i>
+                  <% end %>
+                </div>
+
+              </div>
+
+            <% end %>
+          <% else %>
+            <p class="pending-modal-empty">Aucune demande en attente pour le moment.</p>
+          <% end %>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <%# Ouvre automatiquement la modale dès que l'organisateur arrive sur la page
+      — uniquement s'il y a au moins une demande en attente %>
+  <% if pending_modal_users.any? %>
+    <script>
+      // "turbo:load" se déclenche à chaque navigation Turbo (remplace DOMContentLoaded)
+      document.addEventListener("turbo:load", function openPendingModal() {
+        var modalEl = document.getElementById("pendingModal");
+        if (modalEl) {
+          // getOrCreateInstance réutilise l'instance Bootstrap existante
+          // → évite que le backdrop reste bloqué quand on ferme avec la croix
+          var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+          modal.show();
+        }
+        // On retire l'écouteur pour ne l'exécuter qu'une seule fois par visite
+        document.removeEventListener("turbo:load", openPendingModal);
+      });
+    </script>
+  <% end %>
+
 <% end %>

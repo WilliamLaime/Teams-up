@@ -1,12 +1,24 @@
 class ProfilsController < ApplicationController
   # Retrouver le profil de l'utilisateur connecté avant chaque action
-  before_action :set_profil
+  # On exclut show_user car il charge le profil d'un autre utilisateur
+  before_action :set_profil, except: [:show_user]
 
   # GET /profil
   # Affiche le profil de l'utilisateur connecté
   def show
-    # Pundit vérifie que l'utilisateur ne peut voir que son propre profil
     authorize @profil
+    # @profil_user sert dans la vue pour afficher le bon utilisateur
+    @profil_user = current_user
+  end
+
+  # GET /users/:id/profil
+  # Affiche le profil public d'un autre utilisateur
+  def show_user
+    # On indique à Pundit qu'on gère l'autorisation manuellement (accès public)
+    skip_authorization
+    @profil_user = User.find(params[:id])
+    @profil = @profil_user.profil || @profil_user.build_profil
+    render :show
   end
 
   # GET /profil/edit
