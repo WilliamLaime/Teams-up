@@ -38,38 +38,51 @@
           <div class="notif-page-list">
             <% @notifications.each do |notif| %>
 
-              <%# Chaque notif est un bouton : marque comme lue puis redirige %>
-              <%= button_to mark_read_notification_path(notif), method: :patch,
-                  class: "notif-page-item w-100 text-start border-0 p-0 #{notif.read? ? 'is-read' : 'is-unread'}" do %>
-                <div class="d-flex align-items-start gap-3 px-4 py-3">
+              <%# Wrapper relatif pour pouvoir positionner la croix en absolu %>
+              <div class="notif-page-wrapper">
 
-                  <%# Icône : cloche verte si non lue, check grisé si lue %>
-                  <div class="notif-page-icon flex-shrink-0 mt-1">
-                    <% if notif.read? %>
-                      <i data-lucide="check-circle" style="width:18px;height:18px;color:rgba(255,255,255,0.3);"></i>
-                    <% else %>
-                      <i data-lucide="bell-dot" style="width:18px;height:18px;" class="text-primary"></i>
-                    <% end %>
-                  </div>
+                <%# Bouton principal : marque comme lue puis redirige %>
+                <%= button_to mark_read_notification_path(notif), method: :patch,
+                    class: "notif-page-item w-100 text-start border-0 p-0 #{notif.read? ? 'is-read' : 'is-unread'}" do %>
+                  <div class="d-flex align-items-start gap-3 px-4 py-3">
 
-                  <%# Message + date %>
-                  <div class="flex-grow-1">
-                    <div class="notif-page-message <%= notif.read? ? 'read' : 'unread' %>">
-                      <%= notif.message %>
+                    <%# Icône : cloche verte si non lue, check grisé si lue %>
+                    <div class="notif-page-icon flex-shrink-0 mt-1">
+                      <% if notif.read? %>
+                        <i data-lucide="check-circle" style="width:18px;height:18px;color:rgba(255,255,255,0.3);"></i>
+                      <% else %>
+                        <i data-lucide="bell-dot" style="width:18px;height:18px;" class="text-primary"></i>
+                      <% end %>
                     </div>
-                    <small class="notif-page-time">
-                      <i data-lucide="clock" style="width:11px;height:11px;"></i>
-                      <%= time_ago_in_words(notif.created_at) %>
-                    </small>
+
+                    <%# Message + date %>
+                    <div class="flex-grow-1">
+                      <div class="notif-page-message <%= notif.read? ? 'read' : 'unread' %>">
+                        <%= notif.message %>
+                      </div>
+                      <small class="notif-page-time">
+                        <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                        <%= time_ago_in_words(notif.created_at) %>
+                      </small>
+                    </div>
+
+                    <%# Point vert "nouveau" à droite pour les non lues %>
+                    <% unless notif.read? %>
+                      <span class="notif-page-dot flex-shrink-0 mt-2"></span>
+                    <% end %>
+
                   </div>
+                <% end %>
 
-                  <%# Point vert "nouveau" à droite pour les non lues %>
-                  <% unless notif.read? %>
-                    <span class="notif-page-dot flex-shrink-0 mt-2"></span>
-                  <% end %>
+                <%# Bouton supprimer (croix) — positionné en absolu dans le wrapper %>
+                <%# C'est un formulaire séparé car button_to génère déjà un <form> %>
+                <%= button_to notification_path(notif), method: :delete,
+                    class: "notif-delete-btn",
+                    title: "Supprimer" do %>
+                  <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+                <% end %>
 
-                </div>
-              <% end %>
+              </div>
 
             <% end %>
           </div>

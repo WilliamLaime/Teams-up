@@ -47,12 +47,8 @@
 // Chaque ligne de notification
 .notif-page-item {
   display: block;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
   transition: background 0.15s;
   cursor: pointer;
-
-  // Dernière ligne sans séparateur
-  &:last-child { border-bottom: none; }
 
   // Non lue : léger fond vert
   &.is-unread {
@@ -102,6 +98,39 @@
   border-radius: 50%;
   background: $green;
   flex-shrink: 0;
+}
+
+// Wrapper relatif autour de chaque notification (pour positionner la croix)
+.notif-page-wrapper {
+  position: relative;
+
+  // Séparateur entre les notifications (repris de notif-page-item)
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  &:last-child { border-bottom: none; }
+}
+
+// Bouton poubelle pour supprimer une notification — coin haut droit
+.notif-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  // Réinitialise le style du bouton
+  background: none;
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+
+  // Couleur discrète, hover rouge
+  color: rgba(255,255,255,0.25);
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.12);
+  }
 }
 
 // État vide

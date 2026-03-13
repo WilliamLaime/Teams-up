@@ -42,7 +42,7 @@ Rails.application.routes.draw do
   # GET   /notifications               => liste des notifications
   # PATCH /notifications/:id/mark_read => marquer une notif comme lue
   # PATCH /notifications/mark_all_read => tout marquer comme lu
-  resources :notifications, only: [:index] do
+  resources :notifications, only: [:index, :destroy] do
     member do
       patch :mark_read
     end
