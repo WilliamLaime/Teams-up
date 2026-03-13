@@ -1,14 +1,46 @@
-<% if notice %>
-  <div class="alert alert-info alert-dismissible fade show m-1" role="alert">
-    <%= notice %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-    </button>
-  </div>
-<% end %>
-<% if alert %>
-  <div class="alert alert-warning alert-dismissible fade show m-1" role="alert">
-    <%= alert %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-    </button>
-  </div>
-<% end %>
+<%# Conteneur des toasts — positionné au centre en bas via CSS %>
+<div class="flash-toast-container">
+
+  <%# Toast de succès (notice) — fond vert %>
+  <% if notice %>
+    <div class="flash-toast flash-toast--success" role="alert" data-controller="toast">
+      <%# Icône ronde verte avec une coche %>
+      <div class="flash-toast__icon">
+        <i data-lucide="check"></i>
+      </div>
+
+      <%# Contenu texte %>
+      <div class="flash-toast__body">
+        <p class="flash-toast__title">Succès</p>
+        <p class="flash-toast__message"><%= notice %></p>
+      </div>
+
+      <%# Bouton de fermeture manuelle %>
+      <button class="flash-toast__close" data-action="click->toast#dismiss" aria-label="Fermer">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+  <% end %>
+
+  <%# Toast d'erreur (alert) — fond rouge %>
+  <% if alert %>
+    <div class="flash-toast flash-toast--danger" role="alert" data-controller="toast">
+      <%# Icône ronde rouge avec une croix %>
+      <div class="flash-toast__icon">
+        <i data-lucide="x"></i>
+      </div>
+
+      <%# Contenu texte %>
+      <div class="flash-toast__body">
+        <p class="flash-toast__title">Erreur</p>
+        <p class="flash-toast__message"><%= alert %></p>
+      </div>
+
+      <%# Bouton de fermeture manuelle %>
+      <button class="flash-toast__close" data-action="click->toast#dismiss" aria-label="Fermer">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+  <% end %>
+
+</div>
