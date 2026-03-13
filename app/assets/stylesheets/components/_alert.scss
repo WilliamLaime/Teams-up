@@ -7,7 +7,7 @@
 // Conteneur qui empile les toasts au centre en bas de l'écran
 .flash-toast-container {
   position: fixed;
-  bottom: 80px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%); // Centrage horizontal
   z-index: 1100; // Au-dessus de la navbar Bootstrap (z-index: 1030)

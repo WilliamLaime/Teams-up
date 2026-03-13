@@ -50,6 +50,13 @@
       // Sans ça, les icônes dans les frames remplacées par Turbo disparaissent
       document.addEventListener("turbo:render", () => lucide.createIcons());
       document.addEventListener("turbo:frame-render", () => lucide.createIcons());
+
+      // Turbo Stream (ex: nouvelle notification via ActionCable) — l'événement "before-stream-render"
+      // se déclenche AVANT que le DOM soit modifié, donc on utilise setTimeout pour attendre
+      // que le remplacement du fragment soit terminé avant de ré-initialiser les icônes Lucide
+      document.addEventListener("turbo:before-stream-render", () => {
+        setTimeout(() => lucide.createIcons(), 0);
+      });
     </script>
   </body>
 </html>
