@@ -1,6 +1,11 @@
 // Import Google fonts
 @import url('https://fonts.googleapis.com/css?family=Nunito:400,700|Work+Sans:400,700&display=swap');
 
+// Bebas Neue — géométrique, condensé, style Futura anguleux
+// Utilisé pour les titres de la page "Qui sommes-nous ?"
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+$display-font: "Bebas Neue", "Impact", sans-serif;
+
 // Define fonts for body and headers
 $body-font: "Work Sans", "Helvetica", "sans-serif";
 $headers-font: "Nunito", "Helvetica", "sans-serif";
