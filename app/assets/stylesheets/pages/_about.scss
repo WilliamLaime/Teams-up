@@ -10,7 +10,7 @@
   // Image abstract_perso en fond avec aplat noir léger par-dessus
   .about-banner {
     background:
-      linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.70)), // aplat sombre pour lisibilité
+      linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), // aplat réduit — photo visible
       image-url("Img_illu_foot/herbe.jpg") center center / cover no-repeat;
     padding: 100px 0;
     padding-bottom: 8vw;  // place pour la moitié basse du SVG (hauteur SVG ≈ 15.8vw → moitié ≈ 8vw)
@@ -51,8 +51,8 @@
     // Photo bris_glace en arrière-plan (section 1 - le problème)
     &--fragmenter {
       background:
-        linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), // aplat sombre pour lisibilité
-        image-url("Img_illu_foot/bris_glace.jpg") center center / cover no-repeat;
+        linear-gradient(rgba(0,0,0,0.90), rgba(0,0,0,0.90)), // aplat 90% noir
+        image-url("img_qsn/fragmenter.jpg") center center / cover no-repeat;
     }
 
     // Photo vestiaire abandonné en arrière-plan (section 2 - frustration)
@@ -61,15 +61,15 @@
       display: flex;
       align-items: center;      // centre le contenu verticalement
       background:
-        linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 100%), // haut foncé → bas plus transparent
-        image-url("Img_illu_foot/vestiaire_abandon.jpg") center center / cover no-repeat;
+        linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.20) 100%), // aplat réduit — photo visible
+        image-url("img_qsn/vestiaire_abandon.jpg") center center / cover no-repeat;
     }
 
     // Photo connexion en arrière-plan très transparent (section 3)
     &--mission {
       background:
-        linear-gradient(rgba(17,17,17,0.72), rgba(17,17,17,0.72)), // aplat opaque — 28% de l'image visible
-        image-url("Img_illu_foot/connexion.jpg") center center / cover no-repeat;
+        linear-gradient(rgba(17,17,17,0.45), rgba(17,17,17,0.45)), // aplat réduit — photo visible
+        image-url("img_qsn/connexion.jpg") center center / cover no-repeat;
     }
 
     // Contenu centré horizontalement (section 1)
@@ -375,7 +375,7 @@
     justify-content: center; // centre horizontalement
     background:
       linear-gradient(to top, rgba(8, 100, 58, 0.97) 0%, rgba(8, 100, 58, 0.82) 100%),  // bas quasi-opaque → haut laisse deviner l'image (18% visible)
-      image-url("Img_illu_foot/players_waiting.png") center 90% / cover no-repeat;
+      image-url("img_qsn/players_waiting.png") center 90% / cover no-repeat;
   }
 
   // ── CTA final ────────────────────────────────────
