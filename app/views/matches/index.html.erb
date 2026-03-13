@@ -12,18 +12,27 @@
       <%# Lien retour — utilise le composant partagé nav_button %>
       <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
 
-      <h1 class="matches-index-title">Trouver un match</h1>
-      <p class="matches-index-subtitle">
-        Rejoignez les matchs pas loin de chez vous.
-      </p>
+      <%# Titre et sous-titre différents selon le contexte (mes matchs vs liste générale) %>
+      <% if params[:mine].present? %>
+        <h1 class="matches-index-title">Mes matchs</h1>
+        <div class="d-flex align-items-center justify-content-between">
+          <p class="matches-index-subtitle mb-0">
+            Tous les matchs auxquels tu participes ou que tu as créés.
+          </p>
+          <%= link_to "Créer un match", new_match_path, class: "btn btn-primary btn-sm px-3 btn-cta-primary" %>
+        </div>
+      <% else %>
+        <h1 class="matches-index-title">Trouver un match</h1>
+        <div class="d-flex align-items-center justify-content-between">
+          <p class="matches-index-subtitle mb-0">
+            Rejoignez les matchs pas loin de chez vous.
+          </p>
+          <% if user_signed_in? %>
+            <%= link_to "Créer un match", new_match_path, class: "btn btn-primary btn-sm px-3 btn-cta-primary" %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
-
-    <%# ── Bouton créer — au-dessus des filtres, aligné à droite ────────────── %>
-    <% if user_signed_in? %>
-      <div class="d-flex justify-content-end mb-3">
-        <%= link_to "Créer un match", new_match_path, class: "btn btn-primary btn-sm" %>
-      </div>
-    <% end %>
 
     <%# ── Barre de filtres ────────────────────────────────────────────────── %>
     <%# GET → les paramètres apparaissent dans l'URL (partageables) %>
@@ -42,13 +51,42 @@
                 class: "filter-date-input" %>
           </div>
 
-          <%# Niveau %>
-          <div class="filter-pill-group">
-            <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
-            <%= f.select :level,
-                [["Niveau", ""]] + Match::LEVELS,
-                { selected: params[:level] },
-                class: "filter-select" %>
+          <%# Niveau — dropdown custom avec badges et checkboxes (multi-sélection) %>
+          <%# position:relative en inline = ancre garantie pour le dropdown absolu %>
+          <div class="level-filter-pill" data-controller="level-filter" style="position:relative">
+
+            <%# Trigger : pill cliquable qui ouvre le dropdown %>
+            <button type="button"
+                    class="filter-pill-group level-filter-trigger"
+                    data-action="click->level-filter#toggle">
+              <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
+              <span data-level-filter-target="label" style="color:rgba(255,255,255,0.9);">Niveau</span>
+              <i data-lucide="chevron-down" style="width:11px;height:11px;margin-left:2px;"></i>
+            </button>
+
+            <%#
+              Panel dropdown — tous les styles critiques en inline pour éviter tout conflit CSS/cache.
+              display:none = caché par défaut, Stimulus le passe à "flex" au clic.
+            %>
+            <div class="level-filter-dropdown"
+                 data-level-filter-target="dropdown"
+                 style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:120px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem">
+
+              <% [["Débutant", "level-debutant"], ["Intermédiaire", "level-intermediaire"], ["Avancé", "level-avance"], ["Tout niveau", "level-tout"]].each do |level_name, level_css| %>
+                <%# Inline styles sur le label = une seule ligne, checkbox + badge côte à côte, centrés %>
+                <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
+                  <input type="checkbox"
+                         name="levels[]"
+                         value="<%= level_name %>"
+                         data-level-filter-target="checkbox"
+                         data-action="change->level-filter#change"
+                         style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
+                         <%= "checked" if params[:levels]&.include?(level_name) %>>
+                  <span class="match-badge-level <%= level_css %>" style="font-size:0.72rem; padding:0.2rem 0.6rem; line-height:1; margin:0;"><%= level_name %></span>
+                </label>
+              <% end %>
+
+            </div>
           </div>
 
           <%# Ville %>
@@ -61,7 +99,7 @@
           </div>
 
           <%# Bouton "Effacer" visible seulement si un filtre est actif %>
-          <% if params[:date].present? || params[:level].present? || params[:place].present? || params[:query].present? %>
+          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? %>
             <%= link_to matches_path, class: "filter-reset-btn" do %>
               <i data-lucide="x" style="width:13px;height:13px;"></i>
               Effacer
@@ -93,7 +131,9 @@
 
       <div class="matches-empty-state">
         <i data-lucide="search-x" style="width:48px;height:48px;"></i>
-        <p class="mt-3 mb-1">Aucun match ne correspond à ta recherche.</p>
+        <p class="mt-3 mb-1">
+          <%= params[:mine].present? ? "Tu ne participes à aucun match pour l'instant." : "Aucun match ne correspond à ta recherche." %>
+        </p>
         <% if user_signed_in? %>
           <%= link_to "Créer un match", new_match_path, class: "btn btn-primary mt-2" %>
         <% end %>

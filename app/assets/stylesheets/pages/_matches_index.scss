@@ -11,21 +11,7 @@
 
   // ── En-tête ──────────────────────────────────────
   .matches-index-header {
-    margin-bottom: 2rem;
-
-    // Lien "← Retour"
-    .matches-back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 0.85rem;
-      text-decoration: none;
-      margin-bottom: 1.25rem;
-      transition: color 0.15s;
-
-      &:hover { color: rgba(255, 255, 255, 0.85); }
-    }
+    margin-bottom: 1.5rem;
 
     // Titre principal
     .matches-index-title {
@@ -82,12 +68,12 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 999px;
     padding: 0.35rem 0.85rem;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.9);
     transition: border-color 0.15s;
 
     &:focus-within {
       border-color: $green;
-      color: rgba(255, 255, 255, 0.8);
+      color: #fff;
     }
 
     // Input date dans la pill
@@ -95,10 +81,13 @@
       background: transparent;
       border: none;
       outline: none;
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(255, 255, 255, 0.9);
       font-size: 0.82rem;
       width: 120px;
       cursor: pointer;
+
+      // Couleur du texte jj/mm/aaaa dans Chrome (pseudo-élément interne)
+      &::-webkit-datetime-edit { color: rgba(255, 255, 255, 0.9); }
 
       // Masque le calendrier natif sur certains navigateurs
       &::-webkit-calendar-picker-indicator {
@@ -107,33 +96,40 @@
       }
     }
 
-    // Select niveau dans la pill
-    .filter-select {
-      background: transparent;
-      border: none;
-      outline: none;
-      color: rgba(255, 255, 255, 0.75);
-      font-size: 0.82rem;
-      cursor: pointer;
-      -webkit-appearance: none; // retire la flèche native
+  }
 
-      option {
-        background-color: $dark-surface;
-        color: #fff;
-      }
+  // ── Dropdown filtre niveau (custom multi-sélection) ───────────────────
+
+  // Wrapper — ancre pour le panel absolu
+  .level-filter-pill {
+    position: relative;
+  }
+
+  // Trigger hérite de .filter-pill-group — on retire juste les styles natifs du <button>
+  .level-filter-trigger {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+
+    &:hover {
+      border-color: $green;
+      color: rgba(255, 255, 255, 0.8);
     }
 
-    // Input texte ville dans la pill
-    .filter-text-input {
-      background: transparent;
-      border: none;
-      outline: none;
-      color: rgba(255, 255, 255, 0.75);
-      font-size: 0.82rem;
-      width: 100px;
+    &:focus { outline: none; }
+  }
 
-      &::placeholder { color: rgba(255, 255, 255, 0.35); }
-    }
+  // Input texte ville dans la pill
+  .filter-pill-group .filter-text-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.82rem;
+    width: 100px;
+
+    &::placeholder { color: rgba(255, 255, 255, 0.35); }
   }
 
   // Bouton "Effacer" (réinitialise les filtres)
@@ -184,16 +180,6 @@
 
       &:focus { border-color: $green; }
     }
-  }
-
-  // Bouton "Créer" (version compacte dans la barre)
-  .matches-create-btn {
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-weight: 600;
-    white-space: nowrap;
   }
 
   // ── État vide ─────────────────────────────────────

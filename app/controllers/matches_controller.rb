@@ -12,11 +12,16 @@ class MatchesController < ApplicationController
 
     # Recherche full-text — titre, ville, description ou email du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
-    # Filtre "Mes matchs" — seulement les matchs créés par l'utilisateur connecté
-    @matches = @matches.where(user: current_user) if params[:mine].present? && user_signed_in?
+    # Filtre "Mes matchs" — matchs où current_user est créateur OU participant (via match_users)
+    # current_user.match_users.select(:match_id) → sous-requête SQL sur la table match_users
+    # Cela couvre les deux cas car le créateur est ajouté automatiquement comme match_user à la création
+    if params[:mine].present? && user_signed_in?
+      @matches = @matches.where(id: current_user.match_users.select(:match_id))
+    end
 
-    # Filtre par niveau (ex: "Débutant", "Intermédiaire", "Avancé")
-    @matches = @matches.where(level: params[:level]) if params[:level].present?
+    # Filtre par niveau — accepte plusieurs niveaux (tableau via levels[])
+    # ActiveRecord génère automatiquement un WHERE level IN ('...', '...')
+    @matches = @matches.where(level: params[:levels]) if params[:levels].present?
 
     # Filtre par ville — recherche insensible à la casse (ILIKE = like sans casse en PostgreSQL)
     @matches = @matches.where("place ILIKE ?", "%#{params[:place]}%") if params[:place].present?
