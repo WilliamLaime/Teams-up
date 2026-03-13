@@ -12,6 +12,13 @@ class PagesController < ApplicationController
   end
 
   def home
+    # Compte total de tous les matchs disponibles (pas complets, dans le futur)
+    # Utilisé pour le badge "X matchs disponibles" dans le hero
+    @available_matches_count = Match
+      .where("(date + time) > ?", Time.current)
+      .where("player_left > 0")
+      .count
+
     # Récupère les 3 prochains matchs à venir (passés exclus), triés par date puis heure
     @matches = Match
       .where("(date + time) > ?", Time.current)
