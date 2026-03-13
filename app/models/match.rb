@@ -39,6 +39,11 @@ class Match < ApplicationRecord
   # Validation : le niveau est obligatoire
   validates :level, presence: true, inclusion: { in: LEVELS }
 
+  # Validation : nombre de joueurs manquants obligatoire, entier, minimum 1
+  validates :player_left,
+            presence: true,
+            numericality: { only_integer: true, greater_than: 0, message: "doit être au moins 1" }
+
   # Validation : le match doit être prévu au minimum 30 minutes à l'avance
   validate :match_must_be_at_least_30min_in_future, on: [:create, :update]
 

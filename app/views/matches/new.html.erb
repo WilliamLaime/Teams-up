@@ -26,10 +26,7 @@
     <div class="container">
 
       <%# Lien retour vers la liste des matchs %>
-      <%= link_to matches_path, class: "match-new-back-btn" do %>
-        <i data-lucide="arrow-left" style="width:15px; height:15px;"></i>
-        Retour aux matchs
-      <% end %>
+      <%= render "shared/nav_button", url: matches_path, label: "Retour aux matchs", direction: "back", extra_class: "mb-3" %>
 
       <%# Titre principal de la page %>
       <h1 class="match-new-banner-title">

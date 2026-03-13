@@ -44,12 +44,19 @@
       </div>
     <% end %>
 
-    <div class="row g-4 align-items-start">
+    <%# align-items-start retiré : la col-lg-5 s'étire à la même hauteur que col-lg-7
+        ce qui permet à position:sticky de s'arrêter en bas du dernier bloc gauche %>
+    <div class="row g-4">
 
       <%# ════════════════════════════════════════════════════
           COLONNE GAUCHE : les 4 sections du formulaire
           ════════════════════════════════════════════════════ %>
       <div class="col-lg-7">
+
+        <%# Légende : explication de l'astérisque %>
+        <p class="form-required-legend">
+          <span class="required-star">*</span> Champs obligatoires
+        </p>
 
 
         <%# ────────────────────────────────────────────────
@@ -68,7 +75,7 @@
               data-match-form-target="titleInput" : Stimulus surveille ce champ
               data-action="input->match-form#updateTitle" : met à jour le récap à chaque frappe %>
           <div class="mb-3">
-            <%= f.label :title, "Titre", class: "form-label" %>
+            <%= f.label :title, class: "form-label" do %>Titre <span class="required-star">*</span><% end %>
             <%= f.text_field :title,
                 class: "form-control",
                 placeholder: "Ex: Match foot samedi matin",
@@ -112,23 +119,27 @@
           </div>
 
           <div class="mb-0">
-            <%= f.label :place, "Rechercher un club ou une adresse", class: "form-label" %>
+            <%= f.label :place, class: "form-label" do %>Rechercher un club ou une adresse <span class="required-star">*</span><% end %>
 
             <div class="position-relative">
               <%# Le champ texte :
                   - data-place-search-target="input"   → autocomplétion
                   - data-match-form-target="placeInput" → récap Stimulus
-                  - data-action avec deux actions séparées par un espace %>
+                  - focus->place-search#showDefault     → ouvre le dropdown avec "Ma position" au clic
+                  - data-action avec les actions séparées par un espace %>
               <%= f.text_field :place,
-                  class: "form-control",
+                  class: "form-control place-search-input",
                   placeholder: "Ex: Urban Soccer, Bordeaux...",
                   autocomplete: "off",
                   required: true,
                   data: {
                     "place-search-target": "input",
                     "match-form-target":   "placeInput",
-                    "action": "input->place-search#search input->match-form#updatePlace"
+                    "action": "input->place-search#search focus->place-search#showDefault input->match-form#updatePlace"
                   } %>
+
+              <%# Chevron visuel à droite de l'input pour indiquer le dropdown %>
+              <span class="place-search-chevron" aria-hidden="true">&#8964;</span>
 
               <%# Dropdown des suggestions — géré par place_search_controller.js %>
               <div data-place-search-target="dropdown"
@@ -156,11 +167,12 @@
 
             <%# Champ Date %>
             <div class="col-md-6">
-              <%= f.label :date, "Date du match", class: "form-label" %>
+              <%= f.label :date, class: "form-label" do %>Date du match <span class="required-star">*</span><% end %>
               <%= f.date_field :date,
                   class: "form-control",
                   value: @match.date,
                   required: true,
+                  min: Date.today.to_s,
                   data: {
                     "match-form-target": "dateInput",
                     "action": "change->match-form#updateDate"
@@ -173,7 +185,7 @@
                   - match_time_5i → minutes (00, 15, 30, 45 grâce à minute_step: 15)
                 Le data-action sur le div parent capture les changements des deux selects %>
             <div class="col-md-6">
-              <%= f.label :time, "Heure de début", class: "form-label" %>
+              <%= f.label :time, class: "form-label" do %>Heure de début <span class="required-star">*</span><% end %>
               <div class="d-flex gap-2"
                    data-action="change->match-form#updateTime">
                 <%= f.time_select :time,
@@ -202,7 +214,7 @@
 
           <%# ── Compteur : Nombre de joueurs manquants ── %>
           <div class="mb-4">
-            <label class="form-label d-block">Nombre de joueurs manquants</label>
+            <label class="form-label d-block">Nombre de joueurs manquants <span class="required-star">*</span></label>
 
             <%# Input caché : sa valeur est la vraie valeur soumise avec le formulaire.
                 Le compteur visible (+/-) met à jour cet input via Stimulus.
@@ -213,10 +225,12 @@
 
             <div class="match-player-counter">
 
-              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus %>
+              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus
+                  data-match-form-target="minusBtn" → Stimulus y accède pour changer sa couleur %>
               <button type="button"
                       class="counter-btn counter-btn-minus"
                       data-action="click->match-form#decrement"
+                      data-match-form-target="minusBtn"
                       aria-label="Réduire le nombre de joueurs">−</button>
 
               <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
@@ -225,10 +239,12 @@
                 <%= @match.player_left || 4 %>
               </span>
 
-              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus %>
+              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus
+                  data-match-form-target="plusBtn" → Stimulus y accède pour changer sa couleur %>
               <button type="button"
-                      class="counter-btn counter-btn-plus"
+                      class="counter-btn"
                       data-action="click->match-form#increment"
+                      data-match-form-target="plusBtn"
                       aria-label="Augmenter le nombre de joueurs">+</button>
 
             </div>
@@ -236,7 +252,7 @@
 
           <%# ── Boutons de niveau ── %>
           <div class="mb-4">
-            <label class="form-label d-block">Niveau requis</label>
+            <label class="form-label d-block">Niveau requis <span class="required-star">*</span></label>
 
             <%# Input caché : contient le niveau sélectionné (ex: "Avancé").
                 Mis à jour par selectLevel() dans Stimulus quand on clique un bouton. %>
@@ -260,45 +276,76 @@
 
           </div><%# fin niveau %>
 
-          <%# ── Toggle validation ── %>
-          <div class="mb-2">
-            <label class="form-label d-block">Validations des joueurs</label>
+          <%# ── Toggle : Validation Manuel / Automatique ── %>
+          <div class="mb-0">
+            <label class="form-label d-block">Validation des joueurs</label>
 
-            <%# Champ caché envoyé TOUJOURS avec le formulaire.
-                Valeur par défaut : "automatic".
-                Si le toggle est coché (manuel), le onchange change sa valeur en "manual". %>
-            <%= f.hidden_field :validation_mode, value: "automatic" %>
+            <%# Champ caché : contient la vraie valeur envoyée avec le formulaire.
+                Mis à jour via onchange du toggle ci-dessous. %>
+            <%= f.hidden_field :validation_mode, value: (@match.validation_mode || "automatic"),
+                id: "match_validation_mode" %>
 
-            <div class="match-validation-toggle">
+            <%# Toggle avec "Manuel" à gauche et "Automatique" à droite
+                - Toggle OFF (boule à gauche) = Manuel sélectionné
+                - Toggle ON  (boule à droite) = Automatique sélectionné %>
+            <div class="d-flex align-items-center gap-3 mt-2">
 
-              <%# Label "Manuel" à gauche — vert si le toggle est en mode manuel %>
-              <span class="toggle-label <%= 'active-label' if @match.manual_validation? %>">
-                Manuel
-              </span>
+              <%# Label gauche "Manuel" — vert quand mode manuel actif %>
+              <span class="toggle-label <%= 'active-label' if @match.manual_validation? %>">Manuel</span>
 
-              <%# Le toggle Bootstrap switch
-                  - checked : true si le match est déjà en validation manuelle
-                  - data-action : appelle updateValidation() dans Stimulus
-                  - onchange : met à jour le champ caché match_validation_mode %>
-              <%= check_box_tag :validation_mode_toggle,
-                  "manual",
-                  @match.manual_validation?,
-                  class: "form-check-input",
-                  id:    "validation_toggle",
-                  role:  "switch",
-                  data: {
-                    "match-form-target": "validationToggle",
-                    "action": "change->match-form#updateValidation"
-                  },
-                  onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'manual' : 'automatic'" %>
+              <%# Toggle pill visuel
+                  checked = Automatique (boule à droite, fond vert)
+                  unchecked = Manuel (boule à gauche) %>
+              <label class="pill-toggle" for="validation_toggle">
+                <%= check_box_tag :validation_mode_toggle,
+                    "automatic",
+                    !@match.manual_validation?,
+                    class: "pill-toggle-input",
+                    id: "validation_toggle",
+                    data: {
+                      "match-form-target": "validationToggle",
+                      "action": "change->match-form#updateValidation"
+                    },
+                    onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'automatic' : 'manual'" %>
+                <%# Piste visuelle (fond + boule blanche via CSS) %>
+                <span class="pill-toggle-track"></span>
+              </label>
 
-              <%# Label "Automatique" à droite — vert si le toggle est en mode automatique %>
-              <span class="toggle-label <%= 'active-label' unless @match.manual_validation? %>">
-                Automatique
-              </span>
+              <%# Label droit "Automatique" — vert quand mode automatique actif %>
+              <span class="toggle-label <%= 'active-label' unless @match.manual_validation? %>">Automatique</span>
 
             </div>
-          </div><%# fin toggle %>
+          </div><%# fin toggle validation %>
+
+          <%# ── Ligne séparatrice ── %>
+          <hr class="my-4">
+
+          <%# ── Prix par joueur (à titre indicatif) ── %>
+          <div class="mb-0">
+            <label class="form-label d-block" for="match_price_per_player">
+              Prix par joueur (€)
+            </label>
+
+            <%# Champ petit : max-width 100px pour ne pas prendre toute la largeur %>
+            <div style="max-width: 100px;">
+              <%= f.number_field :price_per_player,
+                  class: "form-control form-control-sm",
+                  placeholder: "0",
+                  min: 0,
+                  step: 1,
+                  value: (@match.price_per_player || 0),
+                  data: {
+                    "match-form-target": "priceInput",
+                    "action": "input->match-form#updatePrice"
+                  } %>
+            </div>
+
+            <%# Message informatif en gris semi-transparent %>
+            <p class="form-text mt-1" style="color: rgba(255, 255, 255, 0.55); font-size: 0.8rem;">
+              <i data-lucide="info" style="width:12px; height:12px; vertical-align:middle;"></i>
+              Prix indicatif.
+            </p>
+          </div><%# fin prix %>
 
         </div><%# fin section 4 %>
 
@@ -381,11 +428,22 @@
             </span>
           </div>
 
-          <%# ── Ligne Validation ── %>
-          <div class="match-recap-row">
+          <%# ── Ligne Validation — mise à jour en temps réel par Stimulus ── %>
+          <div class="match-recap-row" style="border-bottom: none;">
             <span class="recap-label">Validation</span>
+            <%# data-match-form-target="recapValidation" : Stimulus écrit "Manuel" ou "Automatique" ici %>
             <span class="recap-value" data-match-form-target="recapValidation">
-              <%= @match.manual_validation? ? "Manuelle" : "Automatique" %>
+              <%= @match.manual_validation? ? "Manuel" : "Automatique" %>
+            </span>
+          </div>
+
+          <%# ── Prix par joueur (affiché en blanc en bas du récap) ── %>
+          <div class="match-recap-price mt-1">
+            <span class="recap-price-label">Prix par joueur</span>
+            <span class="recap-price-value" data-match-form-target="recapPrice">
+              <%# Affiche "Gratuit" si prix = 0, sinon "X €" %>
+              <% price = @match.price_per_player.to_i %>
+              <%= price > 0 ? "#{price} €" : "Gratuit" %>
             </span>
           </div>
 
@@ -404,7 +462,7 @@
               Sur mobile il est en bas de la colonne gauche %>
           <div class="d-none d-lg-block text-center mt-2">
             <%= link_to "Annuler", cancel_path,
-                class: "btn btn-link btn-sm text-muted" %>
+                class: "btn btn-link btn-sm text-success" %>
           </div>
 
         </div><%# fin match-recap-card %>

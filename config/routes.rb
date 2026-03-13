@@ -47,6 +47,15 @@ Rails.application.routes.draw do
     end
   end
 
+  # Routes pour le chat sticky global (accessible depuis toutes les pages)
+  # GET    /conversations/:id         => chat d'un match spécifique (dans le panneau sticky)
+  # DELETE /conversations/:id/dismiss => masquer la conversation (bouton poubelle)
+  resources :conversations, only: [:index, :show] do
+    member do
+      delete :dismiss
+    end
+  end
+
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
 end

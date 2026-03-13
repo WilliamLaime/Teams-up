@@ -1,0 +1,71 @@
+<%# ── Partial : un item de conversation dans la sidebar sticky ────────────────
+    Variables attendues :
+      - match      : objet Match
+      - match_user : objet MatchUser de l'utilisateur connecté pour ce match
+    Ce partial est rendu :
+      1. Directement depuis _sticky_chat.html.erb (chargement initial)
+      2. Via broadcast Turbo Stream depuis Message model (mise à jour du badge non-lu)
+%>
+
+<% last_msg = match.messages.last %>
+
+<%# Détermine si l'utilisateur a des messages non lus dans cette conversation
+    Non lu = il existe des messages postés APRÈS son dernier last_read_at %>
+<% unread = if match_user.last_read_at.nil?
+               match.messages.exists?
+             else
+               match.messages.where("created_at > ?", match_user.last_read_at).exists?
+             end %>
+
+<%# Conteneur de l'item — id ciblé par le broadcast Turbo Stream %>
+<div class="sticky-chat-convo-item-wrapper" id="sticky-convo-<%= match.id %>">
+
+  <%# Lien vers le chat (ouvre le chat dans la colonne droite)
+      turbo_prefetch: false → désactive le prefetch au survol de Turbo 8
+      Sans ça, le simple survol déclenche GET conversations#show qui marque
+      la conversation comme lue et supprime le badge orange avant le clic %>
+  <%= link_to conversation_path(match),
+      data: {
+        turbo_frame: "sticky-chat-frame",
+        action: "click->sticky-chat#selectConvo",
+        turbo_prefetch: false
+      },
+      class: "sticky-chat-convo-link",
+      id: "sticky-convo-link-#{match.id}" do %>
+
+    <div class="sticky-chat-convo-info">
+
+      <%# Titre du match + badge non-lu si applicable %>
+      <div class="sticky-chat-convo-title-row">
+        <span class="sticky-chat-convo-title">
+          <%= truncate(match.title, length: 20) %>
+        </span>
+        <%# Petit rond vert = messages non lus %>
+        <% if unread %>
+          <span class="sticky-chat-unread-dot" title="Nouveau message"></span>
+        <% end %>
+      </div>
+
+      <%# Aperçu du dernier message %>
+      <div class="sticky-chat-convo-preview">
+        <% if last_msg %>
+          <%= truncate(last_msg.content, length: 22) %>
+        <% else %>
+          Aucun message
+        <% end %>
+      </div>
+
+    </div>
+
+  <% end %>
+
+  <%# Bouton poubelle (visible au survol) %>
+  <%= button_to dismiss_conversation_path(match),
+      method: :delete,
+      class: "sticky-chat-dismiss-btn",
+      title: "Masquer cette conversation",
+      data: { turbo_stream: true } do %>
+    <i data-lucide="trash-2" style="width:11px;height:11px;"></i>
+  <% end %>
+
+</div>

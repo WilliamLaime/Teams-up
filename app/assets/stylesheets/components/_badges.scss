@@ -12,50 +12,55 @@
 // ── Badge niveau : pill coloré ──────────────────────
 .match-badge-level {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.75rem;           // légèrement plus grand pour la lisibilité (était 0.7)
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 0.25rem 0.65rem;
+  padding: 0.25rem 0.7rem;
   border-radius: 999px;
 
   // Débutant → vert
   &.level-debutant {
-    background: rgba($green, 0.18);
+    background: rgba($green, 0.15);
     color: $green;
+    border: 1px solid rgba($green, 0.40); // bordure pour définir la pill sur fond sombre
   }
 
   // Intermédiaire → jaune
   &.level-intermediaire {
-    background: rgba($yellow, 0.18);
+    background: rgba($yellow, 0.15);
     color: $yellow;
+    border: 1px solid rgba($yellow, 0.40);
   }
 
-  // Avancé → rouge (doux, moins intense qu'Urgent)
+  // Avancé → rouge doux
   &.level-avance {
-    background: rgba(#f87171, 0.18);
+    background: rgba(#f87171, 0.15);
     color: #f87171;
+    border: 1px solid rgba(#f87171, 0.40);
   }
 
   // Tout niveau → bleu
   &.level-tout {
-    background: rgba($blue, 0.18);
+    background: rgba($blue, 0.30);
     color: lighten($blue, 25%);
+    border: 1px solid rgba($blue, 1);
   }
 }
 
 // ── Badge urgent : rouge intense + majuscules + clignotant ─
 .match-badge-urgent {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.75rem;           // aligné avec .match-badge-level
   font-weight: 700;
-  text-transform: uppercase;    // majuscules comme les autres badges
+  text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: rgba($red, 0.12); // fond plus léger (0.12 au lieu de 0.25)
+  background: rgba($red, 0.15);
   color: $red;
+  border: 1px solid rgba($red, 0.40); // bordure cohérente avec les autres badges
   border-radius: 999px;
-  padding: 0.25rem 0.65rem;
+  padding: 0.25rem 0.7rem;
 
-  // Clignotement : la phase sombre passe à 0.5 (moins prononcé)
+  // Clignotement discret
   animation: blink-urgent 1.2s ease-in-out infinite;
 }

@@ -78,23 +78,6 @@
     margin-bottom: 2rem;
   }
 
-  // Boutons CTA en forme de pill (border-radius maximum)
-  .btn { border-radius: 10px; }
-
-  // Bouton secondaire adapté au fond sombre
-  .btn-hero-secondary {
-    background: transparent;
-    color: $green;
-    border: 1.5px solid $green;
-    border-radius: 10px;
-
-    &:hover {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      border-color: rgba(255,255,255,0.5);
-    }
-  }
-
   // ── Image droite du hero ──
   .hero-image-wrapper {
     position: relative;
@@ -128,6 +111,7 @@
   }
 
   // Carte "match" à cheval : déborde à gauche ET en bas de l'image
+  // C'est un <a> (link_to) donc on neutralise les styles de lien
   .hero-match-card {
     position: absolute;
     bottom: -48px;  // dépasse bien en bas de l'image
@@ -136,10 +120,20 @@
     background: rgba(12, 18, 12, 0.92);
     backdrop-filter: blur(14px);
     border: 1px solid $green;
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 0.85rem 1rem;
     z-index: 2;
     color: $dark-text;
+    display: block;         // <a> est inline par défaut, on passe en block
+    text-decoration: none;  // supprime le soulignement du lien
+
+    // Zoom discret au survol
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    &:hover {
+      transform: scale(1.05);                       // légère grossissement
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55); // ombre plus marquée
+      color: $dark-text;                            // garde la couleur du texte au hover
+    }
 
     // Icône ronde orange (éclair = urgent)
     .hero-match-icon {
@@ -218,145 +212,7 @@
     margin-top: 0.25rem;
   }
 
-  // Lien "Tout voir →"
-  .matches-see-all {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: $green;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    transition: gap 0.2s, color 0.2s;
-
-    &:hover { gap: 0.5rem; color: #fff; }
-  }
-
-  // Carte individuelle d'un match
-  .match-card {
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    overflow: hidden;
-    background: $dark-card-bg;
-    transition: box-shadow 0.2s, transform 0.2s;
-    height: 100%;
-    // Flex column → le footer est toujours poussé en bas
-    display: flex;
-    flex-direction: column;
-
-    &:hover {
-      box-shadow: 0 8px 28px rgba(0,0,0,0.4);
-      transform: translateY(-2px);
-    }
-
-    // Image en haut de la carte
-    .match-card-img {
-      width: 100%;
-      height: 160px;
-      object-fit: cover;
-    }
-
-    // Corps de la carte — flex: 1 pour pousser le footer en bas
-    .match-card-body {
-      padding: 1rem 1.1rem 0.75rem;
-      flex: 1; // prend tout l'espace disponible
-
-      // Date courte alignée à droite du badge
-      .match-card-date {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-size: 0.72rem;
-        color: $dark-muted;
-        white-space: nowrap;
-      }
-
-      .match-card-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #fff;
-        margin-bottom: 0.5rem;
-        line-height: 1.3;
-        // Tronqué à 2 lignes max → hauteur toujours identique entre les cartes
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        min-height: calc(1rem * 1.3 * 2); // 2 lignes × (font-size × line-height)
-      }
-
-      // Ligne d'info (icône + texte)
-      .match-info-line {
-        display: flex;
-        align-items: flex-start; // aligne l'icône en haut si le texte passe sur 2 lignes
-        gap: 0.4rem;
-        font-size: 0.82rem;
-        color: $dark-muted;
-        margin-bottom: 0.5rem;
-
-        i { flex-shrink: 0; color: rgba(255,255,255,0.3); margin-top: 2px; }
-
-        // Texte (dans un <span>) tronqué à 2 lignes max
-        // min-height = 2 lignes → hauteur identique même si 1 ligne seulement
-        span {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          min-height: calc(0.82rem * 1.4 * 2); // 2 lignes × (font-size × line-height)
-        }
-      }
-
-      // Ligne avatars joueurs + texte manquants
-      // min-height fixe → reste alignée même si 0 joueurs inscrits
-      .match-players-row {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        margin-top: 0.5rem;
-        min-height: 30px; // hauteur d'un avatar (26px) + 4px de marge
-
-        // Pile d'avatars (overlapping)
-        .match-avatars {
-          display: flex;
-
-          .match-avatar {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid $dark-card-bg; // bord = fond carte pour effet "découpé"
-            margin-left: -6px;              // chevauchement
-
-            &:first-child { margin-left: 0; }
-          }
-        }
-
-        .match-players-text {
-          font-size: 0.78rem;
-          color: $orange; // orange intense pour "X joueurs manquants"
-          font-weight: 600;
-        }
-      }
-    }
-
-    // Pied de carte avec bouton
-    .match-card-footer {
-      padding: 0.75rem 1.1rem;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      background: $dark-card-bg;
-
-      // Bouton pill plein vert (comme le template)
-      .match-card-btn {
-        border-radius: 999px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        padding: 0.5rem;
-      }
-    }
-  }
+  // Les styles .match-card sont dans components/_match_card.scss (composant partagé)
 
   // État vide : aucun match
   .matches-empty {
@@ -444,9 +300,10 @@
     color: #fff;
     margin-bottom: 1rem;
 
-    // Partie colorée en orange (comme dans le template)
+    // Partie colorée en orange — légèrement plus grande pour dépasser la 1ère ligne
     .cta-title-accent {
       color: $orange;
+      font-size: 1.18em; // 1.18× la taille du titre parent → quelques lettres de plus
     }
   }
 
@@ -491,7 +348,7 @@
   .cta-chat-mockup {
     background: $dark-surface;
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 18px;
+    border-radius: 8px;
     padding: 1.25rem;
     max-width: 400px;
     margin: 0 auto;
@@ -530,7 +387,7 @@
     // Ligne avatar + bulle (messages entrants uniquement)
     .chat-message-row {
       display: flex;
-      align-items: flex-start; // avatar aligné en HAUT de la bulle
+      align-items: flex-start; // avatar aligné en HAUT
       gap: 0.5rem;
       margin-bottom: 0.75rem;
 
@@ -538,13 +395,29 @@
       .chat-message { margin-bottom: 0; }
     }
 
+    // Colonne : prénom au-dessus, bulle en dessous
+    .chat-message-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem; // espace entre le prénom et la bulle
+    }
+
+    // Prénom affiché au-dessus de la bulle, en gris discret
+    .chat-sender-name {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
+      padding-left: 0.2rem; // léger décalage pour aligner visuellement avec la bulle
+    }
+
     // Avatar rond à gauche des messages entrants
+    // Chargé en 56px et affiché à 28px → résolution 2× sans pixelisation
     .chat-avatar {
       width: 28px;
       height: 28px;
       min-width: 28px;
       border-radius: 50%;
       object-fit: cover;
+      image-rendering: auto; // laisse le navigateur lisser l'image
     }
 
     // Bulle de message
@@ -591,18 +464,12 @@
           border-left: 7px solid transparent;
         }
 
-        .msg-sender {
-          font-size: 0.7rem;
-          color: $green;
-          font-weight: 700;
-          margin-bottom: 0.25rem;
-        }
       }
 
       &.outgoing {
         background: $green;
         color: $dark-bg;
-        font-weight: 600;
+        font-weight: 400; // texte normal, sans gras
         border-radius: 12px 0px 12px 12px; // coin sup droit plat = base de la queue
         margin-left: auto;
         position: relative; // nécessaire pour positionner le ::after

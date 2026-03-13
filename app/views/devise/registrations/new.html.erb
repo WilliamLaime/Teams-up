@@ -1,45 +1,162 @@
-<h2>Créer un compte</h2>
+<%# ── Page d'inscription ────────────────────────────────────────────────────── %>
+<div class="auth-page">
+  <div class="auth-card">
 
-<%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f| %>
-  <%= f.error_notification %>
+    <h2>Créer un <span class="accent">compte</span></h2>
 
-  <div class="form-inputs">
-    <%# Prénom — obligatoire %>
-    <%= f.input :first_name,
-                label: "Prénom",
-                required: true,
-                autofocus: true,
-                input_html: { autocomplete: "given-name" } %>
+    <%# multipart: true obligatoire pour l'upload de fichier %>
+    <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { multipart: true }) do |f| %>
 
-    <%# Nom de famille — obligatoire %>
-    <%= f.input :last_name,
-                label: "Nom",
-                required: true,
-                input_html: { autocomplete: "family-name" } %>
+      <%= f.error_notification %>
 
-    <%# Email %>
-    <%= f.input :email,
-                required: true,
-                input_html: { autocomplete: "email" } %>
+      <%# ── Bloc choix d'avatar ────────────────────────────────────────────── %>
+      <div class="auth-avatar-block mb-4"
+           data-controller="avatar-choice avatar-preview">
 
-    <%# Mot de passe %>
-    <%= f.input :password,
-                required: true,
-                hint: ("#{@minimum_password_length} caractères minimum" if @minimum_password_length),
-                input_html: { autocomplete: "new-password" } %>
+        <%# Onglets "Ma photo" / "Avatars" %>
+        <div class="auth-tabs">
+          <button type="button"
+                  class="auth-tab auth-tab-active"
+                  data-avatar-choice-target="photoTab"
+                  data-action="click->avatar-choice#showPhoto">
+            <i data-lucide="image" style="width:14px;height:14px;"></i>
+            Ma photo
+          </button>
+          <button type="button"
+                  class="auth-tab"
+                  data-avatar-choice-target="avatarTab"
+                  data-action="click->avatar-choice#showAvatars">
+            <i data-lucide="smile" style="width:14px;height:14px;"></i>
+            Avatars
+          </button>
+        </div>
 
-    <%# Confirmation du mot de passe %>
-    <%= f.input :password_confirmation,
-                required: true,
-                input_html: { autocomplete: "new-password" } %>
+        <%# ── Panneau "Ma photo" ──────────────────────────────────────────── %>
+        <div data-avatar-choice-target="photoPanel" class="auth-panel">
+
+          <%# Wrapper pour positionner le badge EN DEHORS du cercle (overflow:hidden) %>
+          <div class="avatar-upload-wrapper">
+
+            <%# Cercle cliquable — overflow:hidden pour que la preview soit ronde %>
+            <label for="user_avatar" class="avatar-upload-circle">
+              <%# Placeholder caméra (caché après sélection d'une photo) %>
+              <div data-avatar-preview-target="placeholder" class="avatar-placeholder-icon">
+                <i data-lucide="camera" style="width:26px;height:26px;"></i>
+                <span>Photo</span>
+              </div>
+              <%# Prévisualisation de la photo choisie %>
+              <div data-avatar-preview-target="preview" style="display:none;">
+                <img data-avatar-preview-target="image" alt="Aperçu" class="avatar-preview-img">
+              </div>
+            </label>
+
+            <%# Badge caméra HORS du cercle → toujours visible même avec une preview %>
+            <div class="avatar-upload-badge">
+              <i data-lucide="camera" style="width:13px;height:13px;"></i>
+            </div>
+
+          </div>
+
+          <%# Input fichier caché, déclenché par le label ci-dessus %>
+          <%= f.file_field :avatar,
+              id: "user_avatar",
+              accept: "image/*",
+              class: "d-none",
+              data: {
+                "avatar-choice-target": "fileInput",
+                "avatar-preview-target": "input",
+                action: "change->avatar-preview#preview"
+              } %>
+
+          <small class="avatar-upload-hint">Optionnel — JPG, PNG, GIF. Max 5 Mo.</small>
+        </div>
+
+        <%# ── Panneau "Avatars prédéfinis" (caché par défaut) ────────────── %>
+        <% avatar_names = ["01", "02", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"] %>
+        <div data-avatar-choice-target="avatarPanel" class="auth-panel" style="display:none;">
+
+          <%# Zone de prévisualisation de l'avatar sélectionné %>
+          <div class="avatar-preset-selected-wrap">
+            <%# Placeholder affiché tant qu'aucun avatar n'est cliqué %>
+            <div class="avatar-preset-placeholder" data-avatar-choice-target="presetPlaceholder">
+              <i data-lucide="smile" style="width:28px;height:28px;"></i>
+            </div>
+            <%# Preview de l'avatar cliqué (caché par défaut) %>
+            <img data-avatar-choice-target="presetPreview"
+                 class="avatar-preset-preview-img"
+                 alt="Avatar sélectionné"
+                 style="display:none;">
+          </div>
+
+          <%# Grille des 12 avatars %>
+          <div class="avatar-preset-grid">
+            <% avatar_names.each do |name| %>
+              <div class="avatar-preset-item"
+                   data-avatar-choice-target="avatarItem"
+                   data-avatar-name="<%= name %>"
+                   data-avatar-src="<%= asset_path("avatar_png/#{name}.png") %>"
+                   data-action="click->avatar-choice#selectAvatar">
+                <%= image_tag "avatar_png/#{name}.png",
+                    alt: "Avatar #{name}",
+                    class: "avatar-preset-img" %>
+              </div>
+            <% end %>
+          </div>
+
+          <small class="avatar-upload-hint">Clique sur un avatar pour le sélectionner</small>
+        </div>
+
+        <%# Input caché → reçoit le nom du fichier preset sélectionné %>
+        <input type="hidden" name="user[preset_avatar]" data-avatar-choice-target="presetInput">
+
+      </div>
+      <%# ── Fin bloc avatar ─────────────────────────────────────────────── %>
+
+      <%# Champs du formulaire %>
+      <div class="form-inputs">
+        <%= f.input :first_name,
+                    label: "Prénom",
+                    required: true,
+                    autofocus: true,
+                    input_html: { autocomplete: "given-name", placeholder: "Jean" } %>
+
+        <%= f.input :last_name,
+                    label: "Nom",
+                    required: true,
+                    input_html: { autocomplete: "family-name", placeholder: "Dupont" } %>
+
+        <%= f.input :email,
+                    label: "Email",
+                    required: true,
+                    input_html: { autocomplete: "email", placeholder: "votre@email.com" } %>
+
+        <%= f.input :password,
+                    label: "Mot de passe",
+                    required: true,
+                    hint: ("#{@minimum_password_length} caractères minimum" if @minimum_password_length),
+                    input_html: { autocomplete: "new-password", placeholder: "••••••••" } %>
+
+        <%= f.input :password_confirmation,
+                    label: "Confirmer le mot de passe",
+                    required: true,
+                    input_html: { autocomplete: "new-password", placeholder: "••••••••" } %>
+      </div>
+
+      <small class="required-legend">
+        <span class="required-star">*</span> Champs obligatoires
+      </small>
+
+      <div class="form-actions mt-3">
+        <%= f.button :submit, "S'inscrire" %>
+      </div>
+
+    <% end %>
+
+    <hr class="auth-divider">
+
+    <div class="auth-links">
+      <%= render "devise/shared/links" %>
+    </div>
+
   </div>
-
-  <%# Légende des champs obligatoires %>
-  <small class="text-muted"><span class="text-danger">*</span> Champs obligatoires</small>
-
-  <div class="form-actions mt-3">
-    <%= f.button :submit, "S'inscrire" %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+</div>

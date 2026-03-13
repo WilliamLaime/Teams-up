@@ -1,0 +1,31 @@
+<%#
+  Bouton de navigation réutilisable
+  Paramètres :
+    - url         : destination du lien (ex: matches_path)
+    - label       : texte affiché (ex: "Tout voir", "Retour")
+    - direction   : "forward" ou "back" (défaut: "forward")
+    - extra_class : classes CSS supplémentaires optionnelles (ex: "mt-1", "mb-4")
+%>
+
+<%# Valeur par défaut pour la direction %>
+<% direction ||= "forward" %>
+
+<%# Choix de l'icône selon la direction %>
+<% icon      = direction == "back" ? "arrow-left" : "arrow-right" %>
+<%# Taille légèrement différente selon usage (cohérence avec l'original) %>
+<% icon_size = direction == "back" ? 14 : 15 %>
+
+<%# Construction des classes CSS du lien %>
+<% link_classes = ["nav-button", "nav-button--#{direction}", extra_class].compact.join(" ") %>
+
+<%= link_to url, class: link_classes do %>
+  <%# Pour "retour" : icône à gauche puis texte %>
+  <% if direction == "back" %>
+    <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
+    <%= label %>
+  <%# Pour "tout voir" : texte puis icône à droite %>
+  <% else %>
+    <%= label %>
+    <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
+  <% end %>
+<% end %>

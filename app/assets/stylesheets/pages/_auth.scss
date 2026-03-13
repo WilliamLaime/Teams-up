@@ -1,0 +1,403 @@
+// =====================================================
+// AUTH PAGES — Connexion & Inscription
+// Thème sombre cohérent avec la navbar/footer
+// =====================================================
+
+// Fond pleine page sombre pour les pages d'authentification
+.auth-page {
+  min-height: calc(100vh - 130px); // Retire la hauteur navbar + footer
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  background-color: $dark-bg; // Fond très sombre #111
+}
+
+// Carte blanche du formulaire (légèrement plus claire que le fond)
+.auth-card {
+  background-color: $dark-card-bg; // #1a1c1a
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2.5rem 2.25rem;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+
+  // ── Titre du formulaire ──────────────────────────
+  h2 {
+    color: $dark-text;
+    font-family: $headers-font;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1.75rem;
+
+    // Accent vert sur le dernier mot (optionnel, utilisé via <span class="accent">)
+    .accent {
+      color: $green;
+    }
+  }
+
+  // ── Labels des champs ────────────────────────────
+  label,
+  .col-form-label {
+    color: rgba(255, 255, 255, 0.65) !important;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+  }
+
+  // ── Champs de saisie ─────────────────────────────
+  .form-control {
+    background-color: $dark-surface !important; // #242624
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: $dark-text !important;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
+
+    // Focus : bordure verte + halo vert subtil
+    &:focus {
+      border-color: $green !important;
+      box-shadow: 0 0 0 3px rgba($green, 0.15) !important;
+      outline: none;
+    }
+
+    // Autofill navigateur : le navigateur force un fond blanc/bleu clair
+    // On utilise un box-shadow inset géant pour le masquer avec notre couleur sombre
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0px 1000px $dark-surface inset !important;
+      -webkit-text-fill-color: $dark-text !important;
+      caret-color: $dark-text;
+      // Transition de 5000s → l'animation du navigateur dure si longtemps qu'elle est invisible
+      transition: background-color 5000s ease-in-out 0s !important;
+    }
+  }
+
+  // ── Texte d'aide (hint, ex: "6 caractères minimum") ──
+  .form-text,
+  .hint {
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-size: 0.78rem;
+    margin-top: 0.25rem;
+  }
+
+  // ── Messages d'erreur ────────────────────────────
+  .invalid-feedback,
+  .error {
+    color: lighten($red, 15%) !important;
+    font-size: 0.8rem;
+  }
+
+  // Champ en erreur : bordure rouge
+  .is-invalid .form-control,
+  .field_with_errors .form-control {
+    border-color: $red !important;
+  }
+
+  // Erreurs globales du formulaire (simple_form)
+  #error_explanation {
+    background-color: rgba($red, 0.1);
+    border: 1px solid rgba($red, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+
+    h2 {
+      color: lighten($red, 20%);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.2rem;
+      li { color: lighten($red, 15%); font-size: 0.85rem; }
+    }
+  }
+
+  // ── Checkbox "Remember me" ───────────────────────
+  .form-check-label {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.875rem;
+  }
+
+  .form-check-input:checked {
+    background-color: $green;
+    border-color: $green;
+  }
+
+  // ── Bouton principal "Se connecter / S'inscrire" ─
+  .btn-primary,
+  input[type="submit"],
+  button[type="submit"] {
+    background-color: $green;
+    border-color: $green;
+    color: #111111; // Texte sombre sur fond vert
+    font-weight: 700;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    margin-top: 0.75rem;
+    letter-spacing: 0.02em;
+
+    &:hover {
+      background-color: darken($green, 8%);
+      border-color: darken($green, 8%);
+      color: #111111;
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  // ── Séparateur ───────────────────────────────────
+  .auth-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 1.5rem 0 1.25rem;
+  }
+
+  // ── Liens secondaires (Sign up, Forgot password) ─
+  .auth-links {
+    text-align: center;
+
+    p {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.875rem;
+      margin-bottom: 0.4rem;
+    }
+
+    a {
+      color: $green;
+      font-size: 0.875rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+
+      &:hover {
+        color: lighten($green, 10%);
+        text-decoration: underline;
+      }
+    }
+  }
+
+  // ── Légende champs obligatoires ──────────────────
+  .required-legend {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.78rem;
+    margin-top: 0.75rem;
+    display: block;
+  }
+
+  // ── Étoile obligatoire verte ─────────────────────
+  // simple_form génère <abbr title="required">*</abbr> dans les labels
+  // On la passe en vert pour correspondre à la charte visuelle
+  abbr[title="required"],
+  .required-star {
+    color: $green !important;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  // ── Bloc choix d'avatar (photo personnelle OU preset) ────
+  .auth-avatar-block {
+    // ── Onglets "Ma photo" / "Avatars" ──────────────────
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    // Bouton d'onglet inactif
+    .auth-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: transparent;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: rgba(255, 255, 255, 0.75);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+    }
+
+    // Onglet actif : fond vert
+    .auth-tab-active {
+      background-color: rgba($green, 0.15);
+      border-color: $green;
+      color: $green;
+    }
+
+    // ── Panneau centré (commun aux 2 panneaux) ───────────
+    .auth-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    // ── Panneau "Ma photo" ───────────────────────────────
+
+    // Wrapper pour positionner le badge EN DEHORS du cercle overflow:hidden
+    .avatar-upload-wrapper {
+      position: relative;
+      display: inline-block; // Taille calquée sur le label enfant
+    }
+
+    // Cercle cliquable — overflow:hidden pour arrondir la preview
+    .avatar-upload-circle {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background-color: $dark-surface;
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      overflow: hidden; // Arrondit la photo mais isole le badge
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s ease;
+
+      &:hover {
+        border-color: $green;
+
+        .avatar-placeholder-icon { color: rgba(255, 255, 255, 0.7); }
+      }
+    }
+
+    // Icône caméra + texte "Photo" (placeholder par défaut)
+    .avatar-placeholder-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.7rem;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+
+    // Image de prévisualisation (remplie par le JS)
+    .avatar-preview-img {
+      width: 96px;
+      height: 96px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    // Badge caméra vert — positionné sur le wrapper (HORS overflow:hidden)
+    // → reste visible même quand une photo est prévisualisée dans le cercle
+    .avatar-upload-badge {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 26px;
+      height: 26px;
+      background-color: $green;
+      border-radius: 50%;
+      border: 2px solid $dark-card-bg; // Petit filet pour le détacher du cercle
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #111111;
+      pointer-events: none;
+    }
+
+    // ── Panneau "Avatars prédéfinis" ─────────────────────
+
+    // Zone de prévisualisation de l'avatar sélectionné
+    .avatar-preset-selected-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background-color: $dark-surface;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.85rem;
+      overflow: hidden;
+    }
+
+    // Icône smile affichée avant toute sélection
+    .avatar-preset-placeholder {
+      color: rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    // Grande preview de l'avatar cliqué
+    .avatar-preset-preview-img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    // Grille des 12 avatars (6 colonnes)
+    .avatar-preset-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    // Miniature d'un avatar dans la grille
+    .avatar-preset-item {
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+      overflow: hidden;
+      aspect-ratio: 1;
+
+      &:hover {
+        border-color: rgba($green, 0.5);
+        transform: scale(1.08);
+      }
+    }
+
+    // Avatar sélectionné : bordure verte pleine
+    .avatar-item-selected {
+      border-color: $green;
+      box-shadow: 0 0 0 2px rgba($green, 0.3);
+      transform: scale(1.08);
+    }
+
+    // Image dans la miniature
+    .avatar-preset-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    // Texte d'aide sous les deux panneaux
+    .avatar-upload-hint {
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 0.72rem;
+      margin-top: 0.6rem;
+      text-align: center;
+    }
+  }
+}

@@ -179,7 +179,7 @@
   // Pour changer l'opacité de l'aplat, modifie le chiffre dans rgba(0,0,0, X)
   // Pour enlever l'image, remplace tout par : background-color: $dark-bg;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
+    linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
     image-url("herbe.jpg") center 25% / cover no-repeat;
   padding: 2rem 0 2.25rem;
   // Séparateur subtil entre la banner et le formulaire
@@ -214,7 +214,7 @@
 
 // Sous-titre / description
 .match-new-banner-subtitle {
-  color: $dark-muted;          // Texte secondaire grisé
+  color: $dark-text;           // Texte blanc
   font-size: 1rem;
   margin: 0;
 }
@@ -233,6 +233,23 @@
 // ══════════════════════════════════════════════════════════════
 
 
+// ── Astérisque champ obligatoire ───────────────────────────
+// Petit * vert affiché après les labels des champs obligatoires
+.required-star {
+  color: $green;       // Vert de l'app
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+// Légende "* Champs obligatoires" en haut du formulaire
+.form-required-legend {
+  font-size: 0.8rem;
+  color: $dark-muted;  // Gris discret
+  margin-bottom: 0.75rem;
+  margin-top: 0;
+}
+
+
 // ── Fond général de la page ────────────────────────────────
 // Donne un fond sombre à toute la page de création
 .match-create-page {
@@ -249,7 +266,7 @@
 // Chaque section du formulaire (Descriptif, Lieu, Quand, Détails) est une carte
 .match-form-section {
   background-color: $dark-card-bg; // #1a1c1a → légèrement plus clair que le fond
-  border-radius: 1rem;
+  border-radius: 8px;
   padding: 1.75rem;
   margin-bottom: 1.25rem;
   color: $dark-text; // Texte clair sur fond sombre
@@ -329,6 +346,30 @@
       background-color: $dark-surface;
       color: $dark-text;
     }
+
+    // Icône calendrier de l'input date : même couleur que le texte
+    &::-webkit-calendar-picker-indicator {
+      filter: invert(1); // Passe l'icône en clair (blanc/gris) sur fond sombre
+      opacity: 0.7;
+      cursor: pointer;
+    }
+  }
+
+  // Input lieu : padding à droite pour laisser place au chevron
+  .place-search-input {
+    padding-right: 2.25rem;
+  }
+
+  // Chevron visuel à droite de l'input lieu
+  // On cible la hauteur exacte de .form-control Bootstrap : calc(1.5em + 0.75rem + 2px) ≈ 38px
+  .place-search-chevron {
+    position: absolute;
+    right: 0.75rem;
+    top: calc((1.5em + 0.75rem + 2px) / 2);  // Moitié exacte de la hauteur du .form-control
+    transform: translateY(-50%);              // Remonte de sa propre moitié → centré
+    color: $dark-muted;
+    font-size: 0.85rem;
+    pointer-events: none;  // Ne bloque pas les clics sur l'input
   }
 
   // Dropdown de l'autocomplete lieu (style sombre)
@@ -384,16 +425,23 @@
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease;
 
-    // Au survol : bordure et texte verts
-    &:hover {
+    // Au survol : bordure et texte verts (sauf si désactivé)
+    &:hover:not(.is-disabled) {
       border-color: $green;
       color: $green;
     }
 
-    // Le bouton "+" a une bordure verte par défaut (plus mis en avant)
-    &.counter-btn-plus {
+    // État actif (vert) — géré dynamiquement par Stimulus
+    &.is-active {
       border-color: $green;
       color: $green;
+    }
+
+    // État désactivé (gris) — limite min ou max atteinte
+    &.is-disabled {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: $dark-muted;
+      cursor: not-allowed;
     }
   }
 }
@@ -422,10 +470,11 @@
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 
-  // Au survol : mise en évidence
+  // Au survol : vert comme l'état actif
   &:hover {
-    border-color: rgba(255, 255, 255, 0.5);
-    color: $dark-text;
+    border-color: $green;
+    color: $green;
+    background-color: rgba($green, 0.08);
   }
 
   // Quand ce niveau est sélectionné (classe .active ajoutée par Stimulus)
@@ -439,37 +488,81 @@
 
 
 // ══════════════════════════════════════════════════════════
-// TOGGLE VALIDATION : "Manuel ◉ Automatique"
+// TOGGLE VALIDATION (récap) : pill style Auto / Manuel
 // ══════════════════════════════════════════════════════════
 
-.match-validation-toggle {
+// Conteneur centré du toggle dans le récap
+.recap-validation-section {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
+  padding: 1rem 0;
+  // Séparateurs discrets au-dessus et en dessous
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  margin-bottom: 0.25rem;
+}
 
-  // Les labels "Manuel" et "Automatique" de chaque côté du toggle
-  .toggle-label {
-    font-size: 0.95rem;
-    color: $dark-muted; // Grisé par défaut
-    transition: color 0.15s ease;
+// Labels "Auto" et "Manuel" de chaque côté
+.toggle-label {
+  font-size: 0.85rem;
+  color: $dark-muted;         // Gris par défaut
+  transition: color 0.15s ease;
 
-    // Le label actif (côté sélectionné) est vert
-    &.active-label {
-      color: $green;
-      font-weight: 600;
+  &.active-label {
+    color: $green;             // Vert quand actif
+    font-weight: 600;
+  }
+}
+
+// Label HTML du toggle (cache l'input, affiche la piste)
+.pill-toggle {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+
+  // Input checkbox masqué — seul le visuel ci-dessous est visible
+  .pill-toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  // Piste ovale du toggle (fond + poignée ronde via ::after)
+  .pill-toggle-track {
+    display: block;
+    width: 52px;
+    height: 28px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.18); // Gris OFF
+    transition: background 0.25s ease;
+    position: relative;
+
+    // Boule blanche (poignée) — positionnée à gauche par défaut (OFF)
+    &::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      transition: transform 0.25s ease;
     }
   }
 
-  // Surcharge Bootstrap : le switch en position ON → fond vert
-  .form-check-input:checked {
-    background-color: $green;
-    border-color: $green;
-  }
+  // Quand coché (Manuel) : fond vert + boule glisse à droite
+  .pill-toggle-input:checked + .pill-toggle-track {
+    background: $green;
 
-  // En position OFF → bordure grise
-  .form-check-input:not(:checked) {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    &::after {
+      transform: translateX(24px); // 52 - 22 - 3×2 = 24px
+    }
   }
 }
 
@@ -481,14 +574,24 @@
 // Carte principale du récapitulatif
 .match-recap-card {
   background-color: $dark-card-bg; // #1a1c1a → même que les sections du formulaire
-  border-radius: 1rem;
+  border-radius: 8px;
   padding: 1.5rem;
   color: $dark-text;
 
   // Sticky : reste visible pendant que l'utilisateur scrolle
-  // top: 80px → laisse de la place pour la navbar (~70px)
+  // top: 20px → petit espace en haut du viewport (la navbar n'est pas fixed)
+  // La col-lg-5 parente s'étire à la hauteur de col-lg-7 (pas d'align-items-start),
+  // donc le sticky s'arrête naturellement au bas du dernier bloc à gauche.
   position: sticky;
-  top: 80px;
+  top: 20px;
+  align-self: flex-start; // empêche la carte elle-même de s'étirer sur toute la hauteur
+
+  // Sur desktop (≥ lg) : décale la carte vers le bas pour l'aligner avec
+  // la première section à gauche (compense la hauteur de .form-required-legend)
+  // Calcul : font-size 0.8rem × line-height 1.5 + margin-bottom 0.75rem = 1.95rem
+  @media (min-width: 992px) {
+    margin-top: 1.95rem;
+  }
 }
 
 // En-tête "📊 Récapitulatif"
@@ -516,7 +619,8 @@
   font-weight: 700;
   color: $dark-text;
   margin-bottom: 0.375rem;
-  font-family: $headers-font; // Nunito
+  font-family: $headers-font;   // Nunito
+  text-transform: capitalize;   // Première lettre de chaque mot en majuscule
   // Coupe le texte s'il est trop long
   overflow: hidden;
   display: -webkit-box;
@@ -568,6 +672,30 @@
   }
 }
 
+// ── Bloc prix en bas du récapitulatif ─────────────────────
+// Affiché en blanc et en grand pour mettre le prix en valeur
+.match-recap-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0 0.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1); // Séparateur discret au-dessus
+
+  // Label "Prix par joueur" — grisé comme les autres labels
+  .recap-price-label {
+    color: $dark-muted;
+    font-size: 0.875rem;
+  }
+
+  // Valeur du prix — en blanc et en gras pour le mettre en avant
+  .recap-price-value {
+    color: $dark-text;   // Blanc
+    font-weight: 700;
+    font-size: 1rem;
+  }
+}
+
+
 // Bouton "PUBLIER LE MATCH" (ou "ENREGISTRER")
 // On surcharge .btn pour avoir le style custom
 .match-publish-btn {
@@ -596,6 +724,17 @@
 
   &:active {
     transform: translateY(0); // Revient en place au clic
+  }
+}
+
+// Lien "Annuler" — hover discret avec underline et légère opacité
+.btn.btn-link.text-success {
+  transition: opacity 0.2s ease, text-decoration-color 0.2s ease;
+  text-decoration: none;
+
+  &:hover {
+    opacity: 0.75;
+    text-decoration: underline;
   }
 }
 

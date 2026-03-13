@@ -12,11 +12,16 @@ class MatchesController < ApplicationController
 
     # Recherche full-text — titre, ville, description ou email du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
-    # Filtre "Mes matchs" — seulement les matchs créés par l'utilisateur connecté
-    @matches = @matches.where(user: current_user) if params[:mine].present? && user_signed_in?
+    # Filtre "Mes matchs" — matchs où current_user est créateur OU participant (via match_users)
+    # current_user.match_users.select(:match_id) → sous-requête SQL sur la table match_users
+    # Cela couvre les deux cas car le créateur est ajouté automatiquement comme match_user à la création
+    if params[:mine].present? && user_signed_in?
+      @matches = @matches.where(id: current_user.match_users.select(:match_id))
+    end
 
-    # Filtre par niveau (ex: "Débutant", "Intermédiaire", "Avancé")
-    @matches = @matches.where(level: params[:level]) if params[:level].present?
+    # Filtre par niveau — accepte plusieurs niveaux (tableau via levels[])
+    # ActiveRecord génère automatiquement un WHERE level IN ('...', '...')
+    @matches = @matches.where(level: params[:levels]) if params[:levels].present?
 
     # Filtre par ville — recherche insensible à la casse (ILIKE = like sans casse en PostgreSQL)
     @matches = @matches.where("place ILIKE ?", "%#{params[:place]}%") if params[:place].present?
@@ -48,19 +53,11 @@ class MatchesController < ApplicationController
     @match = Match.new
     authorize @match
 
-    # Date par défaut : aujourd'hui
-    @match.date = Date.today
-
-    # Heure par défaut : maintenant + 30 min, arrondie au prochain quart d'heure (00/15/30/45)
-    future = Time.current + 30.minutes
-    rounded_minutes = (future.min / 15.0).ceil * 15
-
-    if rounded_minutes >= 60
-      # Si le résultat dépasse 59 min, on passe à l'heure suivante
-      @match.time = future.change(hour: future.hour + 1, min: 0, sec: 0)
-    else
-      @match.time = future.change(min: rounded_minutes, sec: 0)
-    end
+    # Valeurs par défaut explicites
+    @match.date            = Date.today        # Date : aujourd'hui
+    @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
+    @match.validation_mode = "automatic"       # Validation : automatique par défaut
+    @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
   end
 
   # POST /matches
@@ -109,6 +106,18 @@ class MatchesController < ApplicationController
 
   private
 
+  # Calcule l'heure par défaut : maintenant + 30 min, arrondie au prochain quart d'heure
+  def default_match_time
+    future = Time.current + 30.minutes
+    rounded_minutes = (future.min / 15.0).ceil * 15
+
+    if rounded_minutes >= 60
+      future.change(hour: future.hour + 1, min: 0, sec: 0)
+    else
+      future.change(min: rounded_minutes, sec: 0)
+    end
+  end
+
   # Retrouve le match par son id dans les paramètres de l'URL
   def set_match
     @match = Match.find(params[:id])
@@ -116,6 +125,6 @@ class MatchesController < ApplicationController
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
-    params.require(:match).permit(:title, :description, :date, :time, :place, :level, :player_left, :validation_mode)
+    params.require(:match).permit(:title, :description, :date, :time, :place, :level, :player_left, :validation_mode, :price_per_player)
   end
 end

@@ -3,3 +3,6 @@
 @import "match_form";     // Styles pour la création / modification d'un match
 @import "about";          // Page "Qui sommes-nous ?"
 @import "notifications";  // Page toutes les notifications
+@import "match_show";
+@import "auth";          // Pages de connexion et d'inscription (thème sombre)
+@import "matches_index"; // Page liste des matchs (/matches)

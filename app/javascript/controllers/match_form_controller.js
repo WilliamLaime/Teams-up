@@ -28,8 +28,11 @@ export default class extends Controller {
     "dateInput",         // Champ date
     "playersInput",      // Input caché : nombre de joueurs (mis à jour par le compteur)
     "playersCount",      // Span visible : chiffre du compteur affiché à l'écran
+    "minusBtn",          // Bouton "−" du compteur (pour changer sa couleur)
+    "plusBtn",           // Bouton "+" du compteur (pour changer sa couleur)
     "levelInput",        // Input caché : niveau sélectionné (mis à jour par les boutons)
     "validationToggle",  // Checkbox du toggle Manuel/Automatique
+    "priceInput",        // Champ numérique : prix par joueur
 
     // ── Éléments du récapitulatif (destinations) ──────────
     "recapTitle",        // Zone affichant le titre dans la sidebar
@@ -39,7 +42,8 @@ export default class extends Controller {
     "recapTime",         // Zone affichant l'heure (ex: 21h15)
     "recapPlayers",      // Zone affichant le nombre de joueurs
     "recapLevel",        // Zone affichant le niveau
-    "recapValidation"    // Zone affichant "Automatique" ou "Manuelle"
+    "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
+    "recapPrice"         // Zone affichant le prix par joueur (en bas du récap, en blanc)
   ]
 
   // ── connect() : appelé automatiquement au chargement de la page ──
@@ -54,6 +58,9 @@ export default class extends Controller {
     this.updatePlayers()
     this.updateLevel()
     this.updateValidation()
+    this.updatePrice()
+    // Initialise les couleurs des boutons − et + selon la valeur de départ
+    this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
   }
 
   // ══════════════════════════════════════════════════════════
@@ -129,6 +136,7 @@ export default class extends Controller {
       input.value = newVal
       this.playersCountTarget.textContent = newVal   // met à jour l'affichage du compteur
       this.recapPlayersTarget.textContent  = newVal  // met à jour le récap
+      this.updateCounterButtons(newVal)              // met à jour les couleurs des boutons
     }
   }
 
@@ -136,10 +144,39 @@ export default class extends Controller {
   increment() {
     const input = this.playersInputTarget
     const current = parseInt(input.value) || 1
-    const newVal = current + 1
-    input.value = newVal
-    this.playersCountTarget.textContent = newVal
-    this.recapPlayersTarget.textContent  = newVal
+    // Maximum : 9 joueurs
+    if (current < 9) {
+      const newVal = current + 1
+      input.value = newVal
+      this.playersCountTarget.textContent = newVal
+      this.recapPlayersTarget.textContent  = newVal
+      this.updateCounterButtons(newVal)              // met à jour les couleurs des boutons
+    }
+  }
+
+  // ── Met à jour la couleur des boutons − et + selon la valeur ──
+  // Règle :
+  //   val = 1 → "-" gris (limite atteinte),  "+" vert
+  //   val = 9 → "-" vert,                    "+" gris (limite atteinte)
+  //   entre   → les deux verts
+  updateCounterButtons(val) {
+    const minus = this.minusBtnTarget
+    const plus  = this.plusBtnTarget
+
+    // On retire les deux classes d'état avant de les réappliquer
+    minus.classList.remove("is-active", "is-disabled")
+    plus.classList.remove("is-active", "is-disabled")
+
+    if (val <= 1) {
+      minus.classList.add("is-disabled")  // Minimum atteint → "-" gris
+      plus.classList.add("is-active")
+    } else if (val >= 9) {
+      minus.classList.add("is-active")
+      plus.classList.add("is-disabled")   // Maximum atteint → "+" gris
+    } else {
+      minus.classList.add("is-active")    // Entre 1 et 9 → les deux verts
+      plus.classList.add("is-active")
+    }
   }
 
   // ── Synchroniser le récap avec la valeur actuelle ────────
@@ -175,18 +212,32 @@ export default class extends Controller {
     this.recapLevelTarget.textContent = val || "—"
   }
 
-  // ── Validation : Manuel / Automatique ────────────────────
-  updateValidation() {
-    const isManual = this.validationToggleTarget.checked
-    this.recapValidationTarget.textContent = isManual ? "Manuelle" : "Automatique"
+  // ── Prix par joueur ──────────────────────────────────────
+  // Lit la valeur du champ prix et met à jour le récapitulatif.
+  // Affiche "Gratuit" si le prix vaut 0 ou est vide, sinon "X €"
+  updatePrice() {
+    const val = parseInt(this.priceInputTarget.value) || 0
+    this.recapPriceTarget.textContent = val > 0 ? `${val} €` : "Gratuit"
+  }
 
-    // Met aussi à jour les labels "Manuel" / "Automatique" à côté du toggle
+  // ── Validation : Manuel / Automatique ───────────────────
+  // Le toggle est dans la Section 4 du formulaire
+  // Ordre des labels : "Manuel" à gauche (index 0), "Automatique" à droite (index 1)
+  // checked = Automatique, unchecked = Manuel
+  updateValidation() {
+    // checked = Automatique → isManual est l'inverse
+    const isManual = !this.validationToggleTarget.checked
+
+    // Met à jour les labels "Manuel" / "Automatique" autour du toggle
     const labels = this.element.querySelectorAll(".toggle-label")
     if (labels.length === 2) {
-      // Premier label = "Manuel" → actif si coché
+      // Premier label = "Manuel" → actif si mode manuel
       labels[0].classList.toggle("active-label", isManual)
-      // Deuxième label = "Automatique" → actif si décoché
+      // Deuxième label = "Automatique" → actif si mode automatique
       labels[1].classList.toggle("active-label", !isManual)
     }
+
+    // Met à jour la ligne "Validation" dans le récapitulatif
+    this.recapValidationTarget.textContent = isManual ? "Manuel" : "Automatique"
   }
 }

@@ -21,18 +21,64 @@
   }
 }
 
-// Liens de navigation : blancs, légers au survol
+// Style de base pour tous les liens de navigation
 .navbar-dark-custom .nav-link {
   color: rgba(255,255,255,0.8) !important;
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.4rem 0.75rem !important;
   border-radius: 6px;
-  transition: color 0.2s, background 0.2s;
+  transition: color 0.2s;
 
   &:hover {
     color: #fff !important;
-    background: rgba(255,255,255,0.07);
+    background: transparent;
+  }
+}
+
+// Soulignement vert animé uniquement sur les liens du centre (pas la cloche ni les boutons)
+.navbar-dark-custom .navbar-nav.mx-auto .nav-link {
+  position: relative;
+
+  // Trait vert invisible par défaut, centré
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: $green;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: width 0.25s ease;
+  }
+
+  // Au hover : la ligne s'étend jusqu'aux extrémités du texte
+  &:hover::after {
+    width: calc(100% - 1.5rem); // 1.5rem = paddings gauche + droite (0.75rem × 2)
+  }
+
+  // Page active : ligne verte affichée en permanence à 100%
+  &.active::after {
+    width: calc(100% - 1.5rem);
+  }
+
+  &.active {
+    color: #fff !important;
+  }
+}
+
+// Hover sur la cloche : l'icône passe en vert
+.navbar-dark-custom .notif-bell-link {
+  // Couleur de base de l'icône (via currentColor du SVG Lucide)
+  .notif-bell-icon {
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.2s ease;
+  }
+
+  &:hover .notif-bell-icon {
+    color: $green;
   }
 }
 
@@ -131,14 +177,4 @@
     }
   }
 
-  .notif-footer {
-    border-top: 1px solid rgba(255,255,255,0.1);
-    border-radius: 0 0 10px 10px;
-    background: $dark-surface;
-  }
-
-  a.notif-see-all {
-    color: $green !important;
-    font-size: 0.82rem;
-  }
 }

@@ -1,0 +1,16 @@
+<%# =====================================================
+    COMPOSANT — Bouton Secondaire (outline vert)
+    =====================================================
+    Variables locales attendues :
+      - url   : chemin vers lequel pointe le bouton (ex: matches_path)
+      - text  : texte affiché dans le bouton         (ex: "Voir les matchs")
+      - icon  : (optionnel) nom d'icône Lucide        (ex: "search")
+    ===================================================== %>
+
+<%= link_to url, class: "btn btn-lg px-4 btn-cta-secondary" do %>
+  <%# Icône optionnelle Lucide — affichée seulement si la variable icon est fournie %>
+  <% if local_assigns[:icon] %>
+    <i data-lucide="<%= icon %>" class="btn-cta-icon"></i>
+  <% end %>
+  <%= text %>
+<% end %>

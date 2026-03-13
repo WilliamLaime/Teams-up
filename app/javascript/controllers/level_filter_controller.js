@@ -1,0 +1,58 @@
+// level_filter_controller.js
+// Gère le dropdown personnalisé pour le filtre de niveau (multi-sélection).
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends Controller {
+  static targets = ["dropdown", "label", "checkbox"]
+
+  connect() {
+    // Ferme le dropdown si on clique en dehors
+    this.handleClickOutside = this.handleClickOutside.bind(this)
+    document.addEventListener("click", this.handleClickOutside)
+    // Met à jour le label si des niveaux sont déjà dans l'URL
+    this.updateLabel()
+  }
+
+  disconnect() {
+    document.removeEventListener("click", this.handleClickOutside)
+  }
+
+  // Ouvre ou ferme le dropdown au clic sur le trigger
+  toggle(event) {
+    event.stopPropagation()
+    const dropdown = this.dropdownTarget
+    // On contrôle directement le style inline — pas de conflit CSS possible
+    if (dropdown.style.display === "none") {
+      dropdown.style.display = "flex"
+      dropdown.style.flexDirection = "column"
+    } else {
+      dropdown.style.display = "none"
+    }
+  }
+
+  // Ferme le dropdown si on clique ailleurs sur la page
+  handleClickOutside(event) {
+    if (!this.element.contains(event.target)) {
+      this.dropdownTarget.style.display = "none"
+    }
+  }
+
+  // Appelé à chaque checkbox cochée/décochée — met à jour le label et soumet
+  change() {
+    this.updateLabel()
+    this.element.closest("form").requestSubmit()
+  }
+
+  // Met à jour le texte du trigger selon les cases cochées
+  updateLabel() {
+    const checked = this.checkboxTargets.filter(cb => cb.checked)
+
+    if (checked.length === 0) {
+      this.labelTarget.textContent = "Niveau"
+    } else if (checked.length === 1) {
+      this.labelTarget.textContent = checked[0].value
+    } else {
+      this.labelTarget.textContent = `${checked.length} niveaux`
+    }
+  }
+}

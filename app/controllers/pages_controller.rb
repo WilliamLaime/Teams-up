@@ -17,5 +17,14 @@ class PagesController < ApplicationController
       .where("(date + time) > ?", Time.current)
       .order(date: :asc, time: :asc)
       .limit(3)
+
+    # Match affiché dans la carte hero (droite) :
+    # - jamais complet (player_left > 0)
+    # - le plus proche dans le temps
+    @hero_match = Match
+      .where("(date + time) > ?", Time.current)
+      .where("player_left > 0")
+      .order(date: :asc, time: :asc)
+      .first
   end
 end

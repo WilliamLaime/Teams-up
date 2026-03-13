@@ -1,0 +1,145 @@
+<%#
+  Composant carte match — partagé entre la home et la liste des matchs.
+
+  Variables locales :
+    match      (required) — l'objet Match à afficher
+    btn_label  (optional) — texte du bouton principal, défaut : "Rejoindre"
+%>
+<% btn_label ||= "Voir le match" %>
+
+<%# Calculs réutilisés dans la carte %>
+<%
+  # Liste des images d'illustration foot disponibles dans assets/images/Img_illu_foot
+  foot_images = %w[
+    Img_illu_foot/alfonso-scarpa-jNGcyd4ME-E-unsplash.jpg
+    Img_illu_foot/bayu-syaits-p9l4ZJVZi40-unsplash.jpg
+    Img_illu_foot/declan-sun-9WvJsfdqjSc-unsplash.jpg
+    Img_illu_foot/herbe.jpg
+    Img_illu_foot/jorgen-hendriksen-eeE1UkPRm_M-unsplash.jpg
+    Img_illu_foot/jorgen-hendriksen-f1OzAuhpQo4-unsplash.jpg
+    Img_illu_foot/jorgen-hendriksen-OuzaPRzOM6E-unsplash.jpg
+  ]
+
+  # On choisit l'image selon l'id du match (modulo = rotation sur les 7 images)
+  # Ainsi chaque match a toujours la même image (déterministe)
+  cover_image = foot_images[match.id % foot_images.length]
+
+  # Classe CSS du badge de niveau
+  level_css = case match.level
+    when "Débutant"      then "level-debutant"
+    when "Intermédiaire" then "level-intermediaire"
+    when "Avancé"        then "level-avance"
+    else                      "level-tout"
+  end
+
+  # Date courte en français (ex: "Lun 13, 18:30")
+  fr_days  = %w[Dim Lun Mar Mer Jeu Ven Sam]
+  date_str = if match.date
+    day       = fr_days[match.date.wday]
+    time_part = match.time ? ", #{match.time.strftime('%H:%M')}" : ""
+    "#{day} #{match.date.strftime('%d')}#{time_part}"
+  else
+    "—"
+  end
+
+  # Nom affiché de l'organisateur (Prénom I.)
+  if match.user.present?
+    first        = match.user.profil&.first_name || match.user.email.split("@").first
+    last_initial = match.user.profil&.last_name&.first
+    organizer_display = last_initial ? "#{first} #{last_initial}." : first
+  end
+%>
+
+<div class="match-card">
+
+  <%# ── Image du terrain + overlays ──────────────────────────────────────── %>
+  <div class="match-card-img-wrapper">
+    <%# Image locale choisie selon l'id du match (déterministe, varie entre les matchs) %>
+    <%= image_tag cover_image, alt: "Terrain #{match.title}", class: "match-card-img" %>
+
+    <%# Bandeau "COMPLET" sur l'image si le match est plein %>
+    <% if match.full? %>
+      <div class="match-full-overlay">Complet</div>
+    <% end %>
+
+    <%# Overlay organisateur : brassard capitaine OU "Prénom N." %>
+    <% if user_signed_in? && match.user == current_user %>
+      <div class="match-organizer-overlay">
+        <span class="match-captain-armband">C</span>
+        <span class="match-captain-label">Ton match</span>
+      </div>
+    <% elsif match.user.present? %>
+      <div class="match-organizer-overlay">
+        <span class="match-organizer-name"><%= organizer_display %></span>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Corps de la carte ─────────────────────────────────────────────────── %>
+  <div class="match-card-body">
+
+    <%# Ligne 1 : badges (urgent + niveau) + date courte %>
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="d-flex gap-1">
+        <% if match.urgent? %>
+          <span class="match-badge-urgent">🔥 Urgent</span>
+        <% end %>
+        <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
+      </div>
+      <span class="match-card-date">
+        <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+        <%= date_str %>
+      </span>
+    </div>
+
+    <%# Titre du match (tronqué à 2 lignes) %>
+    <div class="match-card-title"><%= match.title %></div>
+
+    <%# Lieu %>
+    <div class="match-info-line">
+      <i data-lucide="map-pin" style="width:13px;height:13px;"></i>
+      <span><%= match.place || "Lieu non défini" %></span>
+    </div>
+
+    <%# Avatars des joueurs inscrits + places manquantes %>
+    <div class="match-players-row">
+      <div class="match-avatars">
+        <% match.users.first(3).each do |player| %>
+          <% if player.profil&.avatar&.attached? %>
+            <%= image_tag player.profil.avatar, class: "match-avatar", alt: player.email %>
+          <% else %>
+            <img src="https://kitt.lewagon.com/placeholder/users/ssaunier" class="match-avatar" alt="joueur">
+          <% end %>
+        <% end %>
+      </div>
+      <span class="match-players-text">
+        <% if match.full? %>
+          Complet
+        <% else %>
+          <%= match.player_left %> joueur<%= match.player_left > 1 ? "s" : "" %> manquant<%= match.player_left > 1 ? "s" : "" %>
+        <% end %>
+      </span>
+    </div>
+
+  </div>
+
+  <%# ── Pied de carte : bouton ────────────────────────────────────────────── %>
+  <div class="match-card-footer">
+    <% if match.full? %>
+      <%# Match complet → bouton liste d'attente %>
+      <%= link_to match_path(match), class: "btn btn-outline-secondary btn-sm w-100 match-card-btn" do %>
+        Liste d'attente
+      <% end %>
+    <% elsif user_signed_in? %>
+      <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
+        <%# Si c'est le créateur du match, on personnalise le label %>
+        <%= match.user == current_user ? "Voir ton match" : btn_label %>
+      <% end %>
+    <% else %>
+      <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
+        <%= btn_label %>
+      <% end %>
+    <% end %>
+  </div>
+
+</div>
