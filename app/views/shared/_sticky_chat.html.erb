@@ -1,0 +1,100 @@
+<%# ── Chat sticky — panneau flottant avec sidebar + zone de chat ──────────────
+    Structure :
+      [bouton] → clic → panneau s'ouvre
+      [sidebar conversations | zone chat]
+    Notifications : badge non-lu mis à jour en temps réel via ActionCable
+%>
+<% if user_signed_in? %>
+
+  <%# Récupère les match_users actifs (non-dismissés, matchs non terminés) %>
+  <%
+    active_match_users = current_user.match_users
+      .where("status = 'approved' OR role = 'organisateur'")
+      .where(chat_dismissed_at: nil)
+      .includes(:match)
+
+    sticky_convos = active_match_users
+      .select { |mu| !mu.match.past? }
+      .sort_by { |mu| mu.match.created_at }
+      .reverse
+  %>
+
+  <div data-controller="sticky-chat" class="sticky-chat-container">
+
+    <%# Abonnement au stream personnel de l'utilisateur
+        Permet de recevoir les mises à jour des badges non-lus en temps réel
+        sans recharger la page (broadcast depuis Message model) %>
+    <%= turbo_stream_from "user_conversations_#{current_user.id}" %>
+
+    <%# ── Panneau principal (sidebar + chat) ──────────────────────────────── %>
+    <div class="sticky-chat-panel" data-sticky-chat-target="panel">
+
+      <%# ── Colonne gauche : liste des conversations ──────────────────────── %>
+      <div class="sticky-chat-sidebar">
+
+        <%# En-tête de la sidebar %>
+        <div class="sticky-chat-sidebar-header">
+          <span>Chats</span>
+          <button class="sticky-chat-close-btn"
+                  data-action="click->sticky-chat#close"
+                  title="Fermer">
+            <i data-lucide="x" style="width:14px;height:14px;"></i>
+          </button>
+        </div>
+
+        <%# Liste des conversations %>
+        <div class="sticky-chat-sidebar-list">
+          <% if sticky_convos.any? %>
+            <%# Chaque item est rendu via le partial partagé
+                Ce même partial est utilisé pour les mises à jour Turbo Stream %>
+            <% sticky_convos.each do |mu| %>
+              <%= render "shared/sticky_convo_item", match: mu.match, match_user: mu %>
+            <% end %>
+          <% else %>
+            <div class="sticky-chat-sidebar-empty">
+              <div>💬</div>
+              <p>Rejoins un match !</p>
+            </div>
+          <% end %>
+        </div>
+
+      </div>
+      <%# ── Fin sidebar ── %>
+
+      <%# ── Colonne droite : chat sélectionné (Turbo Frame) ─────────────────── %>
+      <div class="sticky-chat-content">
+        <turbo-frame id="sticky-chat-frame" class="sticky-chat-frame-wrapper">
+          <div class="sticky-chat-no-selection">
+            <div style="font-size: 1.8rem;">💬</div>
+            <p>Sélectionne une conversation</p>
+          </div>
+        </turbo-frame>
+      </div>
+
+    </div>
+    <%# ── Fin panneau ── %>
+
+    <%# ── Bouton rond ─────────────────────────────────────────────────────── %>
+    <button class="sticky-chat-btn"
+            data-action="click->sticky-chat#toggle"
+            data-sticky-chat-target="button"
+            title="Ouvrir les conversations">
+
+      <%# Badge notification — petit rond vert à cheval sur le bouton
+          Caché par défaut, Stimulus le montre s'il y a des messages non lus
+          (détecté via MutationObserver sur les .sticky-chat-unread-dot de la sidebar) %>
+      <span class="sticky-chat-btn-badge"
+            data-sticky-chat-target="badge"
+            style="display:none;"></span>
+
+      <i data-lucide="message-circle"
+         data-sticky-chat-target="iconOpen"
+         style="width:20px;height:20px;"></i>
+      <i data-lucide="x"
+         data-sticky-chat-target="iconClose"
+         style="width:20px;height:20px;display:none;"></i>
+    </button>
+
+  </div>
+
+<% end %>

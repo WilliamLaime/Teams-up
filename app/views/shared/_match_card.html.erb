@@ -126,9 +126,9 @@
   <%# ── Pied de carte : bouton ────────────────────────────────────────────── %>
   <div class="match-card-footer">
     <% if match.full? %>
-      <%# Match complet → bouton liste d'attente %>
-      <%= link_to match_path(match), class: "btn btn-outline-secondary btn-sm w-100 match-card-btn" do %>
-        Liste d'attente
+      <%# Match complet → bouton voir le match %>
+      <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+        Voir le match
       <% end %>
     <% elsif user_signed_in? %>
       <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>

@@ -34,6 +34,10 @@ Rails.application.routes.draw do
   # PUT  /profil      => sauvegarder les modifications
   resource :profil, only: [:show, :edit, :update]
 
+  # Route pour voir le profil public d'un autre utilisateur
+  # GET /users/:id/profil => voir le profil de l'utilisateur avec cet id
+  get "users/:id/profil", to: "profils#show_user", as: :user_profil
+
   # Routes pour les notifications
   # GET   /notifications               => liste des notifications
   # PATCH /notifications/:id/mark_read => marquer une notif comme lue
@@ -44,6 +48,15 @@ Rails.application.routes.draw do
     end
     collection do
       patch :mark_all_read
+    end
+  end
+
+  # Routes pour le chat sticky global (accessible depuis toutes les pages)
+  # GET    /conversations/:id         => chat d'un match spécifique (dans le panneau sticky)
+  # DELETE /conversations/:id/dismiss => masquer la conversation (bouton poubelle)
+  resources :conversations, only: [:index, :show] do
+    member do
+      delete :dismiss
     end
   end
 

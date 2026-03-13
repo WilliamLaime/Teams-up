@@ -1,0 +1,46 @@
+<%# ── Chat individuel — chargé dans la colonne droite du sticky chat ──────────
+    Pas de bouton "retour" ici : la sidebar gauche reste toujours visible.
+    Le data-controller="chat" réutilise le controller Stimulus existant
+    (auto-scroll, style "mine", frappe, raccourci clavier). %>
+
+<%= turbo_frame_tag "sticky-chat-frame" do %>
+
+  <div data-controller="chat"
+       data-chat-current-user-id-value="<%= current_user.id %>"
+       data-chat-match-id-value="<%= @match.id %>"
+       class="sticky-chat-inner">
+
+    <%# Abonnement Turbo Stream — reçoit les nouveaux messages en temps réel %>
+    <%= turbo_stream_from "match_chat_#{@match.id}" %>
+
+    <%# En-tête : nom du match %>
+    <div class="sticky-chat-chat-header">
+      <i data-lucide="message-circle" style="width:13px;height:13px;color:#1EDD88;"></i>
+      <%= truncate(@match.title, length: 30) %>
+    </div>
+
+    <%# Zone scrollable des messages
+        id="sticky-chat-messages" : cible du broadcast Turbo Stream (message.rb) %>
+    <div class="sticky-chat-messages-zone"
+         id="sticky-chat-messages"
+         data-chat-target="messages">
+
+      <% if @messages.any? %>
+        <%= render @messages %>
+      <% else %>
+        <div class="chat-empty text-center py-3" id="chat-empty">
+          <p class="small">Brise la glace ! 🏐</p>
+        </div>
+      <% end %>
+
+    </div>
+
+    <%# Formulaire d'envoi
+        id="sticky-chat-form" : réinitialisé par MessagesController après envoi %>
+    <div class="sticky-chat-form-zone" id="sticky-chat-form">
+      <%= render "messages/form", match: @match, message: @message %>
+    </div>
+
+  </div>
+
+<% end %>

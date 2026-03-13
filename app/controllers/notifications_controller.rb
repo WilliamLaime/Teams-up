@@ -3,7 +3,8 @@ class NotificationsController < ApplicationController
   # Affiche toutes les notifications de l'utilisateur connecté
   def index
     # policy_scope filtre pour ne retourner que les notifs de l'utilisateur connecté
-    @notifications = policy_scope(Notification).order(created_at: :desc)
+    # Tri : non lues en premier (read: asc = false avant true), puis plus récentes en premier
+    @notifications = policy_scope(Notification).order(read: :asc, created_at: :desc)
   end
 
   # PATCH /notifications/:id/mark_read

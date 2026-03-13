@@ -1,3 +1,4 @@
+<<<<<<< profil
 <%# ── Page profil utilisateur ─────────────────────────────────────────────── %>
 
 <%# Fond sombre forcé en inline pour bypass le cache CSS %>
@@ -25,6 +26,56 @@
               <div style="width:82px; height:82px; border-radius:50%; border:3px solid rgba(255,255,255,0.12); background:#242624; display:flex; align-items:center; justify-content:center; font-size:1.75rem; font-weight:800; color:rgba(255,255,255,0.4);">
                 <%= @profil.first_name&.first&.upcase || "?" %>
               </div>
+=======
+<%# Page de visualisation du profil — fonctionne pour soi-même et pour un autre utilisateur %>
+<%# @profil_user = l'utilisateur dont on affiche le profil %>
+<%# @profil      = son profil (peut être vide) %>
+
+<% is_own_profile = (@profil_user == current_user) %>
+
+<div class="container my-4">
+
+  <%# Bouton retour — revient à la page précédente dans l'historique du navigateur %>
+  <div class="mb-3">
+    <%= link_to "javascript:history.back()", class: "nav-button nav-button--back" do %>
+      <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+      Retour
+    <% end %>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+          <%# En-tête du profil %>
+          <div class="d-flex justify-content-between align-items-start mb-4">
+            <div class="d-flex align-items-center gap-3">
+
+              <%# Photo de profil — affiche l'avatar ou une icône par défaut %>
+              <% if @profil.avatar.attached? %>
+                <%= image_tag @profil.avatar,
+                    class: "rounded-circle",
+                    style: "width:80px;height:80px;object-fit:cover;",
+                    alt: "Photo de profil de #{[@profil.first_name, @profil.last_name].compact.join(' ').presence || @profil_user.email}" %>
+              <% else %>
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                     style="width:80px;height:80px;">
+                  <i data-lucide="user-round" style="width:40px;height:40px;" class="text-muted"></i>
+                </div>
+              <% end %>
+
+              <div>
+                <%# Affiche "Prénom Nom" ou l'email si le profil n'est pas encore rempli %>
+                <h2 class="mb-1"><%= [@profil.first_name, @profil.last_name].compact.join(' ').presence || @profil_user.email %></h2>
+                <p class="text-muted mb-0"><%= @profil_user.email %></p>
+              </div>
+            </div>
+
+            <%# Bouton "Modifier" uniquement sur son propre profil %>
+            <% if is_own_profile %>
+              <%= link_to "Modifier mon profil", edit_profil_path, class: "btn btn-outline-primary" %>
+>>>>>>> master
             <% end %>
           </div>
 
@@ -190,6 +241,7 @@
                     </div>
                   </div>
 
+<<<<<<< profil
                   <%# Bouton détails %>
                   <%= link_to "Détails", match_path(match),
                       style: "flex-shrink:0; font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:999px; padding:0.25rem 0.8rem; text-decoration:none; white-space:nowrap;" %>
@@ -203,6 +255,12 @@
               <i data-lucide="calendar-x" style="width:28px; height:28px; opacity:0.3;"></i>
               <p style="font-size:0.88rem; margin:0;">Aucun match à venir.</p>
               <%= link_to "Trouver un match", matches_path, class: "btn btn-primary btn-sm btn-cta-primary mt-2" %>
+=======
+          <%# Alerte "profil vide" uniquement sur son propre profil %>
+          <% if is_own_profile && (@profil.new_record? || @profil.first_name.blank?) %>
+            <div class="alert alert-warning mt-3">
+              Ton profil est vide ! <%= link_to "Complète-le maintenant", edit_profil_path, class: "alert-link" %>.
+>>>>>>> master
             </div>
           <% end %>
 
@@ -216,6 +274,7 @@
       <%# ════════════════════════ COLONNE DROITE (5/12) ════════════════════════ %>
       <div class="col-lg-5">
 
+<<<<<<< profil
         <%# ── 4. Description — en-tête hors card ─────────────────────────────── %>
         <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
           <i data-lucide="file-text" style="width:14px; height:14px;"></i>
@@ -231,6 +290,28 @@
               Pas encore de description.
               <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
             </p>
+=======
+      <%# Matchs de l'utilisateur affiché %>
+      <div class="card shadow-sm mt-4">
+        <div class="card-header">
+          <h5 class="mb-0"><%= is_own_profile ? "Mes matchs" : "Ses matchs" %></h5>
+        </div>
+        <ul class="list-group list-group-flush">
+          <% if @profil_user.matchs.any? %>
+            <% @profil_user.matchs.order(date: :asc).each do |match| %>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <%= match.title %>
+                <div>
+                  <small class="text-muted me-2"><%= match.date&.strftime("%d/%m/%Y") %></small>
+                  <%= link_to "Voir", match_path(match), class: "btn btn-sm btn-outline-primary" %>
+                </div>
+              </li>
+            <% end %>
+          <% else %>
+            <li class="list-group-item text-muted">
+              <%= is_own_profile ? "Tu n'es inscrit à aucun match." : "Pas encore inscrit à un match." %>
+            </li>
+>>>>>>> master
           <% end %>
         </div>
 
