@@ -136,6 +136,6 @@ class MatchesController < ApplicationController
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
-    params.require(:match).permit(:title, :description, :date, :time, :place, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format)
+    params.require(:match).permit(:title, :description, :date, :time, :place, :venue_id, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format)
   end
 end

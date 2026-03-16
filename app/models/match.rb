@@ -17,6 +17,10 @@ class Match < ApplicationRecord
 
   # Le sport associé à ce match (Football, Tennis, etc.)
   belongs_to :sport, optional: true
+
+  # L'établissement sportif sélectionné via l'autocomplétion (optionnel)
+  # nil si l'user a saisi une adresse libre ou un résultat OSM non référencé
+  belongs_to :venue, optional: true
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 

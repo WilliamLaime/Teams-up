@@ -210,6 +210,11 @@
                     "action": "input->place-search#search focus->place-search#showDefault input->match-form#updatePlace"
                   } %>
 
+              <%# Champ caché : stocke l'id du venue sélectionné en BDD
+                  Rempli par place_search_controller.js quand l'user choisit un résultat BDD.
+                  Vide si l'user choisit un résultat OSM ou saisit librement. %>
+              <%= f.hidden_field :venue_id, data: { "place-search-target": "venueId" } %>
+
               <%# Dropdown des suggestions — géré par place_search_controller.js %>
               <div data-place-search-target="dropdown"
                    class="dropdown-menu w-100 shadow"

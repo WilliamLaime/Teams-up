@@ -67,6 +67,11 @@ Rails.application.routes.draw do
   # POST /switch_sport/3 → passe au sport avec l'id 3
   post "/switch_sport/:id", to: "sports#switch", as: :switch_sport
 
+  # Route AJAX pour la recherche d'établissements sportifs
+  # Appelée par le Stimulus controller "place-search" via fetchDbVenues()
+  # GET /venues/search?q=...&lat=...&lon=... → retourne JSON
+  get "venues/search", to: "venues#search", as: :search_venues
+
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
 end
