@@ -258,7 +258,7 @@
                 Le compteur visible (+/-) met à jour cet input via Stimulus.
                 Valeur par défaut : 4 si non défini %>
             <%= f.hidden_field :player_left,
-                value: (@match.player_left || 4),
+                value: (@match.player_left || 1),
                 data: { "match-form-target": "playersInput" } %>
 
             <div class="match-player-counter">
@@ -274,7 +274,7 @@
               <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
               <span class="counter-value"
                     data-match-form-target="playersCount">
-                <%= @match.player_left || 4 %>
+                <%= @match.player_left || 1 %>
               </span>
 
               <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus

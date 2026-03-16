@@ -9,21 +9,74 @@
 
 <%# Calculs réutilisés dans la carte %>
 <%
-  # Liste des images d'illustration foot disponibles dans assets/images/Img_illu_foot
-  foot_images = %w[
-    Img_illu_foot/ballon.jpg
-    Img_illu_foot/citytoulouse.jpg
-    Img_illu_foot/bresil.jpg
-    Img_illu_foot/herbe.jpg
-    Img_illu_foot/city1.jpg
-    Img_illu_foot/citydrone.jpg
-    Img_illu_foot/Duel.jpg
-    Img_illu_foot/Medellin.jpg
-  ]
+  # Images disponibles par sport — dossier sports/ dans assets/images/
+  sport_images = {
+    "football"   => %w[
+      sports/Football/ballon.jpg
+      sports/Football/citytoulouse.jpg
+      sports/Football/bresil.jpg
+      sports/Football/herbe.jpg
+      sports/Football/city1.jpg
+      sports/Football/citydrone.jpg
+      sports/Football/Duel.jpg
+      sports/Football/Medellin.jpg
+      sports/Football/bris_glace.jpg
+      sports/Football/terrainight.jpg
+    ],
+    "tennis"     => %w[
+      sports/Tennis/tennis1.jpg
+      sports/Tennis/tennis2.jpg
+      sports/Tennis/tennis3.jpg
+      sports/Tennis/tennis4.jpg
+      sports/Tennis/tennis5.jpg
+      sports/Tennis/tennis6.jpg
+    ],
+    "padel"      => %w[
+      sports/Padel/padel1.jpg
+      sports/Padel/padel2.jpg
+      sports/Padel/padel3.jpg
+      sports/Padel/padel4.jpg
+      sports/Padel/padel5.jpg
+      sports/Padel/padel6.jpg
+    ],
+    "volleyball" => %w[
+      sports/Volley/volley1.jpg
+      sports/Volley/volley2.jpg
+      sports/Volley/volley3.jpg
+      sports/Volley/volley4.jpg
+      sports/Volley/volley5.jpg
+      sports/Volley/volley6.jpg
+    ],
+    "basketball" => %w[
+      sports/Basketball/basket1.jpg
+      sports/Basketball/basket2.jpg
+      sports/Basketball/basket3.jpg
+      sports/Basketball/basket4.jpg
+      sports/Basketball/basket5.jpg
+      sports/Basketball/basket6.jpg
+    ],
+    "handball"   => %w[
+      sports/Handball/handball1.jpg
+      sports/Handball/handball2.jpg
+    ],
+    "badminton"  => %w[
+      sports/Badminton/badminton1.jpg
+      sports/Badminton/badminton2.jpg
+      sports/Badminton/badminton3.jpg
+      sports/Badminton/badminton4.jpg
+      sports/Badminton/badminton5.jpg
+      sports/Badminton/badminton6.jpg
+    ]
+  }
 
-  # On choisit l'image selon l'id du match (modulo = rotation sur les 7 images)
-  # Ainsi chaque match a toujours la même image (déterministe)
-  cover_image = foot_images[match.id % foot_images.length]
+  # On récupère le slug du sport du match, ou "football" par défaut
+  sport_slug = match.sport&.slug || "football"
+
+  # On récupère la liste d'images correspondante (ou football si slug inconnu)
+  images = sport_images[sport_slug] || sport_images["football"]
+
+  # Rotation déterministe : le même match aura toujours la même image
+  cover_image = images[match.id % images.length]
 
   # Classe CSS du badge de niveau
   level_css = case match.level
