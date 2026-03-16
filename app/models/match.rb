@@ -14,6 +14,13 @@ class Match < ApplicationRecord
 
   # Le créateur du match (organisateur)
   belongs_to :user, optional: true
+
+  # Le sport associé à ce match (Football, Tennis, etc.)
+  belongs_to :sport, optional: true
+
+  # L'établissement sportif sélectionné via l'autocomplétion (optionnel)
+  # nil si l'user a saisi une adresse libre ou un résultat OSM non référencé
+  belongs_to :venue, optional: true
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 
@@ -29,6 +36,10 @@ class Match < ApplicationRecord
   #   - suppression → retire la carte de la page (remove)
   # La vue s'abonne avec <%= turbo_stream_from "matches" %>
   broadcasts_to ->(match) { "matches" }
+
+  # Scope réutilisable : matchs à venir (date+heure dans le futur)
+  # Utilisé dans plusieurs controllers pour éviter la duplication du WHERE
+  scope :upcoming, -> { where("(date + time) > ?", Time.current) }
 
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze

@@ -56,12 +56,36 @@
       <div class="col-lg-6 d-none d-lg-block">
         <div class="hero-image-wrapper">
 
-          <%# Image de terrain (placeholder sportif) %>
-          <img
-            src="https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=700&q=80"
-            alt="Terrain de sport"
-            class="hero-img"
-          >
+          <%# Image hero : change selon le sport actif de l'utilisateur %>
+          <% case current_sport&.name
+             when "Football"
+               hero_src = "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=700&q=80"
+               hero_alt = "Chaussures de football"
+             when "Badminton"
+               hero_src = "https://images.unsplash.com/photo-1696250530563-70f39e532e10?w=700&q=80"
+               hero_alt = "Raquette de badminton"
+             when "Basketball"
+               hero_src = "https://images.unsplash.com/photo-1628779238951-be2c9f2a59f4?w=700&q=80"
+               hero_alt = "Ballon de basketball"
+             when "Handball"
+               hero_src = "https://images.unsplash.com/photo-1553627220-92f0446b6a5f?w=700&q=80"
+               hero_alt = "Ballon de handball"
+             when "Padel"
+               hero_src = "https://images.unsplash.com/photo-1612534847738-b3af9bc31f0c?w=700&q=80"
+               hero_alt = "Raquette de padel"
+             when "Volleyball"
+               hero_src = "https://images.unsplash.com/photo-1666901356149-93f2eb3ba5a2?w=700&q=80"
+               hero_alt = "Ballon de volley"
+             when nil
+               # Mode Multisport (aucun sport sélectionné) → image locale multisports
+               hero_src = asset_path("sports/multisports-img.png")
+               hero_alt = "Multisport"
+             else
+               # Tennis par défaut
+               hero_src = "https://images.unsplash.com/photo-1622163642998-1ea32b0bbc67?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8dGVubmlzfGVufDB8fDB8fHwy"
+               hero_alt = "Raquette de tennis"
+             end %>
+          <%= image_tag hero_src, alt: hero_alt, class: "hero-img" %>
 
           <%# Carte overlay : affiche le prochain match disponible (jamais complet)
               @hero_match est calculé dans le controller — exclut les matchs full? %>
@@ -96,6 +120,32 @@
               </div>
 
             <% end %>
+
+          <% else %>
+            <%# Aucun match disponible — encart vide avec CTA %>
+            <div class="hero-match-card hero-match-card--empty">
+              <div class="d-flex align-items-center gap-3">
+                <div class="hero-match-icon">
+                  <i data-lucide="calendar-plus" style="width:18px;height:18px;"></i>
+                </div>
+                <div class="flex-grow-1">
+                  <div class="hero-match-label">Aucun match prévu</div>
+                  <div class="hero-match-title">Sois le premier à créer un match !</div>
+                </div>
+              </div>
+              <div class="hero-match-footer">
+                <% if user_signed_in? %>
+                  <%= link_to new_match_path, class: "hero-match-cta-link" do %>
+                    Créer un match <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+                  <% end %>
+                <% else %>
+                  <%= link_to new_user_registration_path, class: "hero-match-cta-link" do %>
+                    S'inscrire pour jouer <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+
           <% end %>
 
         </div>

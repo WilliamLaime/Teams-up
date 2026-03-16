@@ -16,27 +16,26 @@ export default class extends Controller {
 
   // Bascule vers le panneau "Ma photo"
   showPhoto() {
-    // "flex" et non "block" pour conserver le centrage CSS (display: flex sur .auth-panel)
-    this.photoPanelTarget.style.display = "flex"
-    this.avatarPanelTarget.style.display = "none"
-
-    this.photoTabTarget.classList.add("auth-tab-active")
-    this.avatarTabTarget.classList.remove("auth-tab-active")
-
+    this.switchPanel(true)
     // Vide le preset pour ne pas envoyer les deux
     this.presetInputTarget.value = ""
   }
 
   // Bascule vers le panneau "Avatars prédéfinis"
   showAvatars() {
-    this.photoPanelTarget.style.display = "none"
-    this.avatarPanelTarget.style.display = "flex"
-
-    this.avatarTabTarget.classList.add("auth-tab-active")
-    this.photoTabTarget.classList.remove("auth-tab-active")
-
+    this.switchPanel(false)
     // Vide le fichier uploadé pour ne pas envoyer les deux
     this.fileInputTarget.value = ""
+  }
+
+  // Affiche/cache les panneaux et onglets selon le paramètre showPhoto
+  // "flex" et non "block" pour conserver le centrage CSS (display: flex sur .auth-panel)
+  switchPanel(showPhoto) {
+    this.photoPanelTarget.style.display = showPhoto ? "flex" : "none"
+    this.avatarPanelTarget.style.display = showPhoto ? "none" : "flex"
+    // classList.toggle(classe, condition) ajoute si true, retire si false
+    this.photoTabTarget.classList.toggle("auth-tab-active", showPhoto)
+    this.avatarTabTarget.classList.toggle("auth-tab-active", !showPhoto)
   }
 
   // Appelé quand l'utilisateur clique sur un avatar dans la grille

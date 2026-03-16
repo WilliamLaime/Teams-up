@@ -77,26 +77,30 @@ export default class extends Controller {
 
   // ── Ouvrir le panneau ─────────────────────────────────────────────────────
   open() {
-    this.panelTarget.classList.add("sticky-chat-panel--open")
-    this.isOpen = true
-    // Changer les icônes
-    if (this.hasIconOpenTarget)  this.iconOpenTarget.style.display  = "none"
-    if (this.hasIconCloseTarget) this.iconCloseTarget.style.display = "block"
-    // Réinitialise les icônes Lucide dans le panneau après ouverture
-    if (typeof lucide !== "undefined") lucide.createIcons()
-    // Cacher le badge quand le panneau est ouvert (l'utilisateur voit la sidebar)
-    this.updateBadge()
+    this.setState(true)
   }
 
   // ── Fermer le panneau ─────────────────────────────────────────────────────
   close() {
-    this.panelTarget.classList.remove("sticky-chat-panel--open")
-    this.isOpen = false
-    // Rétablir les icônes
-    if (this.hasIconOpenTarget)  this.iconOpenTarget.style.display  = "block"
-    if (this.hasIconCloseTarget) this.iconCloseTarget.style.display = "none"
-    // Ré-afficher le badge si des non-lus existent encore
+    this.setState(false)
+  }
+
+  // ── Applique l'état ouvert/fermé (évite la duplication entre open et close) ──
+  setState(isOpen) {
+    this.isOpen = isOpen
+    // Ajoute ou retire la classe CSS selon l'état
+    this.panelTarget.classList.toggle("sticky-chat-panel--open", isOpen)
+    this.updateIcons(isOpen)
+    // Réinitialise les icônes Lucide dans le panneau après ouverture
+    if (isOpen && typeof lucide !== "undefined") lucide.createIcons()
+    // Met à jour le badge (caché si ouvert, visible si fermé + non-lus)
     this.updateBadge()
+  }
+
+  // ── Met à jour l'icône du bouton (message-circle ↔ croix) ─────────────────
+  updateIcons(isOpen) {
+    if (this.hasIconOpenTarget)  this.iconOpenTarget.style.display  = isOpen ? "none"  : "block"
+    if (this.hasIconCloseTarget) this.iconCloseTarget.style.display = isOpen ? "block" : "none"
   }
 
   // ── Sélectionner une conversation (highlight dans la sidebar) ─────────────

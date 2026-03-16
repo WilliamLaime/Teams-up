@@ -1,6 +1,5 @@
 class ConversationsController < ApplicationController
-  # L'utilisateur doit être connecté pour accéder à ses conversations
-  before_action :authenticate_user!
+  # authenticate_user! est déjà appliqué globalement dans ApplicationController
 
   def index
     # Pundit : skip_policy_scope car on filtre manuellement par current_user
@@ -51,8 +50,6 @@ class ConversationsController < ApplicationController
       locals: { match: @match, match_user: match_user }
     )
   end
-
-  public
 
   def dismiss
     skip_authorization

@@ -13,10 +13,17 @@ class MatchPolicy < ApplicationPolicy
   end
 
   def update?
-    record.user == user
+    owner?
   end
 
   def destroy?
+    owner?
+  end
+
+  private
+
+  # Vérifie que l'utilisateur connecté est le créateur du match
+  def owner?
     record.user == user
   end
 

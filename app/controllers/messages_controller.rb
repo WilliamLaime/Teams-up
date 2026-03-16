@@ -1,6 +1,5 @@
 class MessagesController < ApplicationController
-  # L'utilisateur doit être connecté pour envoyer un message
-  before_action :authenticate_user!
+  # authenticate_user! est déjà appliqué globalement dans ApplicationController
 
   # Charge le match et vérifie que l'utilisateur a le droit de participer au chat
   before_action :set_match_and_check_access

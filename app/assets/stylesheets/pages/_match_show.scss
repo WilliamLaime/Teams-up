@@ -25,8 +25,8 @@
     inset: 0;
     background: linear-gradient(
       to bottom,
-      rgba(#111111, 0.50) 0%,
-      rgba(#111111, 0.90) 100%
+      rgba(#111111, 0.65) 0%,
+      rgba(#111111, 0.96) 100%
     );
   }
 
@@ -463,6 +463,51 @@
   }
 }
 
+
+// Avatar groupé pour les joueurs présents IRL (sans compte app)
+// Cercle gris avec icone user + badge numérique en bas à droite
+.match-player-item--irl {
+  cursor: default; // pas cliquable
+
+  .match-player-avatar-irl {
+    position: relative; // pour positionner le badge (nécessaire pour le badge numérique)
+    display: inline-flex; // garde le wrapper en inline pour le badge positionné en absolu
+
+    // L'image SVG hérite du même style que les vrais avatars (.match-player-avatar)
+    img {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+  }
+
+  // Badge numérique (ex: "4") positionné en bas à droite de l'avatar
+  .match-player-irl-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px; // pill pour les nombres > 9
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid $dark-card-bg; // liseré sombre pour détacher du fond
+  }
+}
+
+// Label "Sur place" sous l'avatar groupé — discret
+.match-player-name--irl {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
 
 // ── 7. BLOC GESTION (organisateur) ────────────────
 
@@ -936,6 +981,18 @@
 }
 
 // Lien "Voir le profil complet" sous les tags
+// Message laissé par le joueur lors de sa demande
+.pending-modal-message {
+  font-size: 0.75rem;
+  color: $dark-muted;
+  font-style: italic;
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  i { margin-top: 2px; flex-shrink: 0; }
+}
+
 .pending-modal-profile-link {
   display: inline-flex;
   align-items: center;
@@ -1060,6 +1117,31 @@
   margin: 0;
 }
 
+// Label du champ message
+.join-modal-label {
+  font-size: 0.78rem;
+  color: $dark-muted;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+// Textarea message dans le modal rejoindre
+.join-modal-textarea {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+  font-size: 0.85rem;
+  resize: none;
+
+  &::placeholder { color: $dark-muted; }
+  &:focus {
+    border-color: $green !important;
+    box-shadow: 0 0 0 2px rgba($green, 0.2) !important;
+    background: rgba(255,255,255,0.07) !important;
+  }
+}
+
 // Boutons Oui / Non
 .join-modal-btn-no {
   border-radius: 999px !important;
@@ -1069,4 +1151,120 @@
 .join-modal-btn-yes {
   border-radius: 999px !important;
   font-weight: 700;
+}
+
+
+// ── 13. MODAL "PARTAGER CE MATCH" ──────────────────
+
+// Fond de la modale — même style que les autres modals du projet
+.share-modal-content {
+  background: $dark-card-bg;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 2rem 1.75rem 1.75rem;
+  color: $dark-text;
+  text-align: center;
+  position: relative;
+}
+
+// Croix de fermeture positionnée en haut à droite
+.share-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255,255,255,0.08);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $dark-muted;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255,255,255,0.15); color: #fff; }
+}
+
+// Cercle icône en haut de la modale
+.share-modal-icon {
+  width: 56px;
+  height: 56px;
+  background: rgba($green, 0.12);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  color: $green;
+}
+
+// Titre
+.share-modal-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.3rem;
+}
+
+// Sous-titre (nom du match)
+.share-modal-subtitle {
+  font-size: 0.82rem;
+  color: $dark-muted;
+  margin-bottom: 1.5rem;
+}
+
+// Grille 2×2 des options de partage
+.share-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+// Chaque option : bouton/lien avec icône + libellé empilés
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 0.5rem;
+  background: $dark-surface;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  color: $dark-text;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.15);
+    color: #fff;
+    text-decoration: none;
+  }
+}
+
+// Cercle autour de chaque icône d'option
+.share-option-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Couleurs de fond spécifiques par réseau
+  &.share-copy-icon     { background: rgba(255,255,255,0.1);   color: #fff; }
+  &.share-check-icon    { background: rgba($green, 0.2);        color: $green; }
+  &.share-whatsapp-icon { background: rgba(37,211,102,0.15); }
+  &.share-messenger-icon{ background: rgba(0,153,255,0.15); }
+  &.share-sms-icon      { background: rgba($green, 0.12);       color: $green; }
+}
+
+// Libellé sous l'icône
+.share-option-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $dark-muted;
 }

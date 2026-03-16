@@ -468,4 +468,65 @@
     i { opacity: 0.3; }
     p { font-size: 0.88rem; margin: 0; }
   }
+
+
+  // ── FORMULAIRE D'ÉDITION ──────────────────────────────────────────────────
+  // Styles des labels et inputs pour /profil/edit et /users/edit
+  // Reprend le même thème sombre que les pages d'authentification (_auth.scss)
+
+  // simple_form génère des wrappers avec margin-bottom par défaut
+  // On les neutralise ici pour contrôler l'espacement via les classes Bootstrap
+  .input {
+    margin-bottom: 0 !important;
+  }
+
+  // Label — texte gris clair au-dessus de chaque champ
+  .edit-form-label {
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 0.83rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+
+  // Inputs et selects — fond sombre, texte blanc, bordure subtile
+  .edit-form-input {
+    background-color: $dark-surface !important; // #242624
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: $dark-text !important;              // #f0f0f0
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    // Placeholder grisé — plus discret que le texte saisi
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.22) !important;
+    }
+
+    // Options du select — fond sombre pour correspondre au thème
+    option {
+      background-color: $dark-surface;
+      color: $dark-text;
+    }
+
+    // Focus : bordure verte + halo vert léger
+    &:focus {
+      background-color: $dark-surface !important;
+      border-color: $green !important;
+      box-shadow: 0 0 0 3px rgba($green, 0.14) !important;
+      color: $dark-text !important;
+      outline: none;
+    }
+
+    // Autofill navigateur : le navigateur force un fond clair
+    // On utilise un box-shadow inset géant pour le masquer
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0px 1000px $dark-surface inset !important;
+      -webkit-text-fill-color: $dark-text !important;
+      caret-color: $dark-text;
+      transition: background-color 5000s ease-in-out 0s !important;
+    }
+  }
 }

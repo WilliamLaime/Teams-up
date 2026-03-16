@@ -1,9 +1,10 @@
 <%#
   Bouton de navigation réutilisable
   Paramètres :
-    - url         : destination du lien (ex: matches_path)
+    - url         : destination du lien (ex: matches_path) — ignoré si direction == "back"
     - label       : texte affiché (ex: "Tout voir", "Retour")
     - direction   : "forward" ou "back" (défaut: "forward")
+                    → "back" utilise history.back() pour revenir à la page précédente
     - extra_class : classes CSS supplémentaires optionnelles (ex: "mt-1", "mb-4")
 %>
 
@@ -19,13 +20,15 @@
 <%# Construction des classes CSS du lien %>
 <% link_classes = ["nav-button", "nav-button--#{direction}", extra_class].compact.join(" ") %>
 
-<%= link_to url, class: link_classes do %>
-  <%# Pour "retour" : icône à gauche puis texte %>
-  <% if direction == "back" %>
+<%# Pour les boutons "retour" : history.back() pour revenir à la page précédente %>
+<% if direction == "back" %>
+  <a href="#" class="<%= link_classes %>" onclick="history.back(); return false;">
     <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
     <%= label %>
-  <%# Pour "tout voir" : texte puis icône à droite %>
-  <% else %>
+  </a>
+<%# Pour les boutons "forward" : lien classique vers l'url fournie %>
+<% else %>
+  <%= link_to url, class: link_classes do %>
     <%= label %>
     <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
   <% end %>

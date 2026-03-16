@@ -22,27 +22,82 @@
     <div class="collapse navbar-collapse" id="navbarMain">
 
       <%# ── Liens du centre ── %>
-      <ul class="navbar-nav mx-auto gap-1">
+      <ul class="navbar-nav mx-auto gap-1 align-items-center">
         <li class="nav-item">
           <%# "active" si on est sur /matches SANS le filtre ?mine=true %>
           <%= link_to matches_path, class: "nav-link #{current_page?(matches_path) && params[:mine].blank? ? 'active' : ''}" do %>
             Trouver un match
           <% end %>
         </li>
-        <% if user_signed_in? %>
-          <%# "Mes matchs" visible uniquement pour les utilisateurs connectés %>
-          <li class="nav-item">
-            <%# "active" si on est sur la page des matchs avec le filtre "mine" %>
-            <%= link_to matches_path(mine: true), class: "nav-link #{current_page?(matches_path(mine: true)) ? 'active' : ''}" do %>
-              Mes matchs
-            <% end %>
-          </li>
-        <% end %>
         <li class="nav-item">
           <%= link_to about_path, class: "nav-link" do %>
             Qui sommes-nous ?
           <% end %>
         </li>
+
+        <% if user_signed_in? %>
+          <%# ── Sélecteur de sport actif ─────────────────────────────────── %>
+          <%# Bouton nav-link standard, même couleur que les autres liens %>
+          <li class="nav-item dropdown">
+            <button class="nav-link sport-switcher d-flex align-items-center gap-1"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false">
+              <% if multisport_mode? %>
+                <%# Icône multisport quand le mode "tous les sports" est actif %>
+                <%= image_tag "sports/multisports.png", style: "width:1rem;height:1rem;object-fit:contain;", class: "sport-switcher-icon" %>
+              <% elsif current_sport %>
+                <%= sport_icon(current_sport, size: "1rem", css_class: "sport-switcher-icon") %>
+              <% end %>
+              <span class="sport-switcher-name"><%= multisport_mode? ? "Multisport" : (current_sport&.name || "Sport") %></span>
+              <i data-lucide="chevron-down" style="width:13px;height:13px;" class="sport-switcher-chevron"></i>
+            </button>
+
+            <ul class="dropdown-menu sport-dropdown">
+
+              <%# ── Option Multisport (en premier, tous les sports) ── %>
+              <li>
+                <%= button_to multisport_switch_path,
+                    method: :post,
+                    class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
+                    form: { "data-turbo": "false" } do %>
+                  <%= image_tag "sports/multisports.png", style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
+                  <span>Multisport</span>
+                  <% if multisport_mode? %>
+                    <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
+                  <% end %>
+                <% end %>
+              </li>
+
+              <li><hr class="dropdown-divider my-1"></li>
+
+              <% Sport.order(:name).each do |sport| %>
+                <li>
+                  <%= button_to switch_sport_path(sport),
+                      method: :post,
+                      class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{'sport-dropdown-item--active' if current_sport&.id == sport.id}",
+                      form: { "data-turbo": "false" } do %>
+                    <%= sport_icon(sport, size: "1.1rem") %>
+                    <span><%= sport.name %></span>
+                    <% if current_sport&.id == sport.id %>
+                      <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
+                    <% end %>
+                  <% end %>
+                </li>
+              <% end %>
+
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <%# "Gérer mes sports" — redirige vers la page de modification du profil %>
+                <%= link_to edit_profil_path, class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2" do %>
+                  <i data-lucide="settings" style="width:13px;height:13px;"></i>
+                  <span>Gérer mes sports</span>
+                <% end %>
+              </li>
+            </ul>
+          </li>
+          <%# ── Fin sélecteur de sport ──────────────────────────────────── %>
+        <% end %>
       </ul>
 
       <%# ── Actions à droite ── %>
@@ -78,7 +133,7 @@
 
           <%# ── Avatar + dropdown utilisateur ── %>
           <li class="nav-item dropdown">
-            <a href="#" class="d-flex align-items-center gap-2 text-decoration-none"
+            <button type="button" class="d-flex align-items-center gap-2 text-decoration-none btn-reset"
                id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
               <% display_name = current_user.profil &&
                   [current_user.profil.first_name, current_user.profil.last_name]
@@ -94,7 +149,7 @@
                 <%= image_tag "https://kitt.lewagon.com/placeholder/users/ssaunier",
                     class: "avatar", alt: "avatar" %>
               <% end %>
-            </a>
+            </button>
 
             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
               <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>

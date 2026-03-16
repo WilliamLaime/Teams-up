@@ -63,6 +63,18 @@ Rails.application.routes.draw do
     end
   end
 
+  # Route multisport EN PREMIER — doit être avant /:id sinon "all" est capturé comme un id
+  post "/switch_sport/all", to: "sports#multisport", as: :multisport_switch
+
+  # Route pour changer le sport actif de l'utilisateur
+  # POST /switch_sport/3 → passe au sport avec l'id 3
+  post "/switch_sport/:id", to: "sports#switch", as: :switch_sport
+
+  # Route AJAX pour la recherche d'établissements sportifs
+  # Appelée par le Stimulus controller "place-search" via fetchDbVenues()
+  # GET /venues/search?q=...&lat=...&lon=... → retourne JSON
+  get "venues/search", to: "venues#search", as: :search_venues
+
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
 end

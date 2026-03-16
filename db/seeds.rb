@@ -148,3 +148,32 @@ achievements_data.each do |data|
 end
 
 puts "#{Achievement.count} achievements en base."
+# ── Sports de base ────────────────────────────────────────────────────────────
+# find_or_create_by! = idempotent (peut être relancé sans créer de doublons)
+puts "Création des sports..."
+
+sports_data = [
+  { name: "Football",   icon: "⚽", slug: "football"   },
+  { name: "Tennis",     icon: "🎾", slug: "tennis"     },
+  { name: "Padel",      icon: "sports/padel.png", slug: "padel"      },
+  { name: "Volleyball", icon: "🏐", slug: "volleyball" },
+  { name: "Basketball", icon: "🏀", slug: "basketball" },
+  { name: "Handball",   icon: "🤾", slug: "handball"   },
+  { name: "Badminton",  icon: "🏸", slug: "badminton"  }
+]
+
+sports_data.each do |sport|
+  Sport.find_or_create_by!(slug: sport[:slug]) do |s|
+    s.name = sport[:name]
+    s.icon = sport[:icon]
+  end
+end
+
+puts "✅ #{Sport.count} sports créés."
+
+# Assigne Football à tous les matchs existants sans sport (migration de données)
+football = Sport.find_by(slug: "football")
+if football
+  updated = Match.where(sport_id: nil).update_all(sport_id: football.id)
+  puts "⚽ #{updated} matchs existants tagués Football." if updated > 0
+end
