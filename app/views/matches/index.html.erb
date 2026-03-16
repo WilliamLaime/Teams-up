@@ -86,6 +86,15 @@
                 </label>
               <% end %>
 
+              <%# Bouton Appliquer — soumet le formulaire et ferme le dropdown %>
+              <button type="button"
+                      data-action="click->level-filter#apply"
+                      style="margin-top:0.3rem; width:100%; padding:0.35rem 0; background:#1EDD88; color:#111; border:none; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:opacity 0.15s;"
+                      onmouseover="this.style.opacity='0.85'"
+                      onmouseout="this.style.opacity='1'">
+                Appliquer
+              </button>
+
             </div>
           </div>
 

@@ -37,9 +37,16 @@ export default class extends Controller {
     }
   }
 
-  // Appelé à chaque checkbox cochée/décochée — met à jour le label et soumet
+  // Appelé à chaque checkbox cochée/décochée — met à jour le label uniquement
+  // (le formulaire n'est soumis que via le bouton "Appliquer")
   change() {
     this.updateLabel()
+  }
+
+  // Soumet le formulaire et ferme le dropdown — appelé par le bouton "Appliquer"
+  apply(event) {
+    event.stopPropagation()
+    this.dropdownTarget.style.display = "none"
     this.element.closest("form").requestSubmit()
   }
 
