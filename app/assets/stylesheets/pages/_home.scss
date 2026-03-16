@@ -29,6 +29,20 @@
   // Les enfants directs passent au-dessus du gradient
   > .container { position: relative; z-index: 1; }
 
+  // Picto décoratif flou en arrière-plan
+  .hero-picto-bg {
+    position: absolute;    // sorti du flux normal
+    top: 50%;              // centré verticalement
+    left: 19%;             // pile entre 8% et 30%
+    transform: translateY(-50%); // ajustement vertical précis
+    width: 26%;            // un peu plus petit
+    opacity: 0.12;         // légèrement plus visible pour le glow
+    filter: blur(3px) drop-shadow(0 0 60px rgba($green, 0.9)) drop-shadow(0 0 120px rgba($green, 0.6)); // flou + double glow vert intense
+    pointer-events: none;  // ne bloque pas les interactions
+    z-index: 0;            // derrière le contenu
+    user-select: none;
+  }
+
   // Badge "XX matchs disponibles" vert en haut
   .hero-badge {
     display: inline-flex;
