@@ -72,6 +72,8 @@ class MatchesController < ApplicationController
       # Ajoute automatiquement le créateur comme organisateur approuvé du match
       # status: "approved" car l'organisateur est automatiquement accepté dans son propre match
       @match.match_users.create(user: current_user, role: "organisateur", status: "approved")
+      # 🎮 Vérifier les achievements liés à la création de match
+      AchievementService.new(current_user).check(:match_created)
       redirect_to @match, notice: "Match créé avec succès !"
     else
       # En cas d'erreur, réaffiche le formulaire

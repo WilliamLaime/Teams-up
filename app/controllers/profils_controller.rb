@@ -28,12 +28,29 @@ class ProfilsController < ApplicationController
     authorize @profil
   end
 
+  # PATCH /profil/spend_stat?attribute=attr_attack
+  # Dépense 1 point de stat sur l'attribut demandé
+  def spend_stat
+    skip_authorization
+    attribute = params[:attribute]
+
+    # Sécurité : on n'accepte que les 4 attributs connus (pas d'injection SQL possible)
+    if Profil::STAT_ATTRIBUTES.include?(attribute) && @profil.stat_points > 0
+      @profil.increment!(attribute.to_sym)   # +1 sur l'attribut choisi
+      @profil.decrement!(:stat_points)       # -1 point disponible
+    end
+
+    redirect_to profil_path
+  end
+
   # PATCH/PUT /profil
   # Met à jour le profil de l'utilisateur connecté
   def update
     # Pundit vérifie l'autorisation avant de sauvegarder
     authorize @profil
     if @profil.update(profil_params)
+      # 🎮 Vérifier l'achievement "profil complété" après la mise à jour
+      AchievementService.new(current_user).check(:profile_updated)
       redirect_to profil_path, notice: "Profil mis à jour avec succès !"
     else
       render :edit, status: :unprocessable_entity

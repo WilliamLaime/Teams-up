@@ -40,6 +40,9 @@ class MatchUsersController < ApplicationController
       if @match_user.save
         @match.decrement!(:player_left)
         notify_organizer("#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
+        # 🎮 Vérifier les achievements liés à l'inscription à un match
+        AchievementService.new(current_user).check(:first_join)
+        AchievementService.new(current_user).check(:match_joined)
         redirect_to @match, notice: "Tu as rejoint le match !"
       else
         redirect_to @match, alert: "Impossible de rejoindre le match."

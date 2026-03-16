@@ -1,270 +1,447 @@
 <%# ── Page profil utilisateur ─────────────────────────────────────────────── %>
 
-<%# Fond sombre forcé en inline pour bypass le cache CSS %>
 <div class="profil-page" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
   <div class="container" style="position:relative; z-index:1;">
 
-    <%# ── Lien retour ──────────────────────────────────────────────────────── %>
     <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
 
+
+    <%# ══════════════════════════════════════════════════════════════════════ %>
+    <%# LAYOUT : carte à gauche (col-lg-5) | matchs + avis à droite (col-lg-7) %>
+    <%# ══════════════════════════════════════════════════════════════════════ %>
     <div class="row g-4">
 
-      <%# ════════════════════════ COLONNE GAUCHE (7/12) ════════════════════════ %>
-      <div class="col-lg-7">
+    <%# ── COLONNE GAUCHE : Carte de joueur + progression des tiers ──────── %>
+    <div class="col-lg-5">
 
-        <%# ── 1. Identité — directement sur le fond, pas de card ──────────── %>
-        <div class="d-flex align-items-start gap-4 mb-4">
+    <%# card_tier_class retourne "card-tier-bronze/silver/gold/platinum/elite" %>
+    <div data-controller="flip-card" class="profil-flip-card <%= @profil.card_tier_class %> mb-3">
+      <div class="profil-flip-inner" data-flip-card-target="inner">
 
-          <%# Avatar — inline styles pour forcer le cercle et les dimensions %>
-          <div style="flex-shrink:0;">
-            <% if @profil.avatar.attached? %>
-              <%= image_tag @profil.avatar,
-                  alt: "Photo de #{@profil_user.display_name}",
-                  style: "width:82px; height:82px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:block;" %>
-            <% else %>
-              <div style="width:82px; height:82px; border-radius:50%; border:3px solid rgba(255,255,255,0.12); background:#242624; display:flex; align-items:center; justify-content:center; font-size:1.75rem; font-weight:800; color:rgba(255,255,255,0.4);">
-                <%= @profil.first_name&.first&.upcase || "?" %>
+
+        <%# ══════════ RECTO : Identité + XP + Attributs ══════════ %>
+        <div class="profil-flip-front">
+
+          <%# ── Identité (avatar compact + nom + meta) ───────────────────── %>
+          <div style="display:flex; align-items:flex-start; gap:0.85rem; margin-bottom:0.85rem;">
+
+            <%# Avatar — réduit à 64px %>
+            <div style="flex-shrink:0;">
+              <% if @profil.avatar.attached? %>
+                <%= image_tag @profil.avatar,
+                    alt: "Photo de #{@profil_user.display_name}",
+                    style: "width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid #1EDD88; display:block;" %>
+              <% else %>
+                <div style="width:64px; height:64px; border-radius:50%; border:2px solid rgba(255,255,255,0.12); background:#242624; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; color:rgba(255,255,255,0.4);">
+                  <%= @profil.first_name&.first&.upcase || "?" %>
+                </div>
+              <% end %>
+            </div>
+
+            <%# Infos à droite de l'avatar %>
+            <div style="flex:1; min-width:0;">
+
+              <%# Nom + vérifié + bouton modifier %>
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-bottom:0.2rem;">
+                <div style="display:flex; align-items:center; gap:0.35rem;">
+                  <h1 style="font-size:1.15rem; font-weight:800; color:#fff; margin:0; line-height:1.2;">
+                    <%= @profil_user.display_name %>
+                  </h1>
+                  <i data-lucide="badge-check" style="width:15px; height:15px; color:#1EDD88; flex-shrink:0;"></i>
+                </div>
+                <% if current_user == @profil_user %>
+                  <%= link_to edit_profil_path, style: "flex-shrink:0; display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700; color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:0.2rem 0.6rem; text-decoration:none; white-space:nowrap;" do %>
+                    <i data-lucide="pencil" style="width:10px; height:10px;"></i>
+                    Modifier
+                  <% end %>
+                <% end %>
               </div>
-            <% end %>
-          </div>
 
-          <%# Infos : nom, rôle, localisation, bouton %>
-          <div style="flex:1; min-width:0;">
-
-            <%# Nom + icône vérifié %>
-            <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.3rem;">
-              <h1 style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; line-height:1.2;">
-                <%= @profil_user.display_name %>
-              </h1>
-              <i data-lucide="badge-check" style="width:18px; height:18px; color:#1EDD88; flex-shrink:0;"></i>
-            </div>
-
-            <%# Rôle + localisation + badge niveau %>
-            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.85rem;">
-              <% if @profil.role.present? %>
-                <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; color:rgba(255,255,255,0.55);">
-                  <i data-lucide="shield" style="width:12px; height:12px; color:rgba(255,255,255,0.2);"></i>
-                  <%= @profil.role %>
+              <%# Rôle + localisation + badge niveau de jeu %>
+              <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.35rem;">
+                <% if @profil.role.present? %>
+                  <span style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
+                    <%= @profil.role %>
+                  </span>
+                  <span style="color:rgba(255,255,255,0.18); font-size:0.75rem;">·</span>
+                <% end %>
+                <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:rgba(255,255,255,0.5);">
+                  <i data-lucide="map-pin" style="width:10px; height:10px; color:rgba(255,255,255,0.18);"></i>
+                  <%= @profil.localisation.presence || "—" %>
                 </span>
-                <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">·</span>
-              <% end %>
-              <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; color:rgba(255,255,255,0.55);">
-                <i data-lucide="map-pin" style="width:12px; height:12px; color:rgba(255,255,255,0.2);"></i>
-                <%= @profil.localisation.presence || "Localisation non renseignée" %>
-              </span>
-              <% if @profil.level.present? %>
-                <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">·</span>
+                <% if @profil.level.present? %>
+                  <span style="color:rgba(255,255,255,0.18); font-size:0.75rem;">·</span>
+                  <%
+                    level_css = case @profil.level
+                      when "Débutant"      then "level-debutant"
+                      when "Intermédiaire" then "level-intermediaire"
+                      when "Avancé"        then "level-avance"
+                      else                      "level-tout"
+                    end
+                  %>
+                  <span class="match-badge-level <%= level_css %>" style="font-size:0.6rem; padding:0.1rem 0.4rem;"><%= @profil.level %></span>
+                <% end %>
+              </div>
+
+              <%# Note + XP level badge sur la même ligne %>
+              <div style="display:flex; align-items:center; gap:0.55rem;">
+                <span style="color:#1EDD88; font-size:0.8rem;">★★★★★</span>
+                <span style="font-size:0.75rem; font-weight:700; color:#fff;">4.8</span>
+                <span style="color:rgba(255,255,255,0.25); font-size:0.75rem;">·</span>
+                <%# Badge niveau XP — plus grand, mis en valeur %>
                 <%
-                  level_css = case @profil.level
-                    when "Débutant"      then "level-debutant"
-                    when "Intermédiaire" then "level-intermediaire"
-                    when "Avancé"        then "level-avance"
-                    else                      "level-tout"
-                  end
+                  badge_color     = @profil.level_badge_color
+                  profil_xp_level = @profil.xp_level || 1
                 %>
-                <span class="match-badge-level <%= level_css %>"><%= @profil.level %></span>
-              <% end %>
-            </div>
+                <span class="badge bg-<%= badge_color %>" style="font-size:0.72rem; font-weight:800; padding:0.25rem 0.55rem; border-radius:999px;">
+                  Lvl <%= profil_xp_level %>
+                </span>
+              </div>
 
-            <%# Note moyenne (fake pour présentation) %>
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.85rem;">
-              <span style="color:#1EDD88; font-size:0.9rem; letter-spacing:0.05em;">★★★★★</span>
-              <span style="font-size:0.82rem; font-weight:700; color:#fff;">4.8</span>
-              <span style="font-size:0.78rem; color:rgba(255,255,255,0.4);">(26 avis)</span>
-            </div>
-
-            <%# Bouton modifier le profil — visible uniquement pour le propriétaire du profil %>
-            <% if current_user == @profil_user %>
-              <%= link_to edit_profil_path, class: "btn btn-primary btn-sm btn-cta-primary", style: "display:inline-flex; align-items:center; gap:0.4rem;" do %>
-                <i data-lucide="pencil" style="width:12px; height:12px;"></i>
-                Modifier le profil
-              <% end %>
-            <% end %>
-
-          </div>
-        </div>
-        <%# / identité %>
-
-
-        <%# ── 2. Statistiques — en-tête hors card ────────────────────────────── %>
-        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-          <i data-lucide="bar-chart-2" style="width:14px; height:14px;"></i>
-          Statistiques
-        </div>
-        <div class="row g-3 mb-3">
-
-          <div class="col-6">
-            <div class="match-block" style="display:flex; flex-direction:column; gap:0.4rem;">
-              <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.07em;">
-                Matchs joués
-              </span>
-              <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%= @profil_user.matchs.count %>
-              </span>
             </div>
           </div>
-
-          <div class="col-6">
-            <div class="match-block" style="display:flex; flex-direction:column; gap:0.4rem;">
-              <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.07em;">
-                Matchs créés
-              </span>
-              <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%= @profil_user.match_users.where(role: "organisateur").count %>
-              </span>
-            </div>
-          </div>
-
-        </div>
-        <%# / stats %>
+          <%# / identité %>
 
 
-        <%# ── 3. Mes matchs — en-tête hors card ──────────────────────────────── %>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
-            <i data-lucide="calendar" style="width:14px; height:14px;"></i>
-            <%# Titre adapté : "Mes matchs" si c'est son profil, sinon le prénom de l'organisateur %>
-            <%= current_user == @profil_user ? "Mes matchs" : "Matchs de #{@profil_user.display_name}" %>
-          </div>
-          <%# Lien "Voir tout" uniquement sur son propre profil %>
-          <% if current_user == @profil_user %>
-            <%= link_to "Voir tout", matches_path(mine: true), style: "font-size:0.8rem; font-weight:600; color:#1EDD88; text-decoration:none;" %>
-          <% end %>
-        </div>
-        <div class="match-block">
-
+          <%# ── Barre XP compacte ──────────────────────────────────────────── %>
           <%
-            # Récupère les 3 prochains matchs de l'utilisateur affiché (créateur ou participant)
-            upcoming_matches = @profil_user.matchs
-              .where("(date + time) > ?", Time.current)
-              .order(date: :asc, time: :asc)
-              .first(3)
+            xp_floor        = @profil.xp_for_current_level
+            xp_ceiling      = @profil.xp_for_next_level
+            profil_xp_total = @profil.xp || 0
+            profil_percent  = @profil.xp_progress_percent
+            xp_in_level     = profil_xp_total - xp_floor
+            xp_range        = xp_ceiling - xp_floor
           %>
+          <div style="margin-bottom:0.6rem;">
+            <%# Label + compteur XP sur une ligne %>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.3rem;">
+              <span style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.4);">
+                Progression
+              </span>
+              <span style="font-size:0.68rem; color:rgba(255,255,255,0.4); font-weight:600;">
+                <%= xp_in_level %> / <%= xp_range %> XP
+                <% unlocked_count = @profil_user.user_achievements.count %>
+                <% total_count    = Achievement.count %>
+                · 🏆 <%= unlocked_count %>/<%= total_count %>
+              </span>
+            </div>
+            <div class="progress" style="height:6px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden;">
+              <div class="progress-bar bg-<%= badge_color %>"
+                   role="progressbar"
+                   style="width:<%= [profil_percent, 2].max %>%; transition: width 0.6s ease;"
+                   aria-valuenow="<%= profil_percent %>"
+                   aria-valuemin="0" aria-valuemax="100">
+              </div>
+            </div>
+          </div>
+          <%# / barre XP %>
 
-          <% if upcoming_matches.any? %>
-            <div style="display:flex; flex-direction:column; gap:0.65rem;">
-              <% upcoming_matches.each do |match| %>
-                <%
-                  # Images de terrain disponibles (cycling selon l'id du match)
-                  foot_images = %w[
-                    Img_illu_foot/ballon.jpg
-                    Img_illu_foot/citytoulouse.jpg
-                    Img_illu_foot/bresil.jpg
-                    Img_illu_foot/herbe.jpg
-                    Img_illu_foot/city1.jpg
-                    Img_illu_foot/citydrone.jpg
-                    Img_illu_foot/Duel.jpg
-                    Img_illu_foot/Medellin.jpg
-                    Img_illu_foot/terrainight.jpg
-                  ]
-                  cover = foot_images[match.id % foot_images.length]
 
-                  # Classe CSS du badge niveau
-                  lvl_css = case match.level
-                    when "Débutant"      then "level-debutant"
-                    when "Intermédiaire" then "level-intermediaire"
-                    when "Avancé"        then "level-avance"
-                    else                      "level-tout"
-                  end
+          <%# ── Attributs RPG ──────────────────────────────────────────────── %>
+          <%# turbo_frame_tag : seule cette zone se rafraîchit au clic sur "+" %>
+          <%# sans recharger la page ni remonter en haut %>
+          <%= turbo_frame_tag "rpg-attributes" do %>
+            <%
+              stat_defs = [
+                # ── Attributs physiques / techniques ──
+                { key: "attr_attack",    label: "Attaque",    emoji: "⚔️",  color: "danger"  },
+                { key: "attr_defense",   label: "Défense",    emoji: "🛡️", color: "primary" },
+                { key: "attr_speed",     label: "Vitesse",    emoji: "⚡",  color: "warning" },
+                { key: "attr_precision", label: "Précision",  emoji: "🎯",  color: "success" },
+                # ── Attributs universels (tous sports) ──
+                { key: "attr_endurance", label: "Endurance",  emoji: "🏃",  color: "info"    },
+                { key: "attr_tactics",   label: "Tactique",   emoji: "🧠",  color: "secondary" },
+                { key: "attr_teamwork",  label: "Équipe",     emoji: "🤝",  color: "primary" },
+                { key: "attr_mental",    label: "Mental",     emoji: "🔥",  color: "danger"  }
+              ]
+              available_points = @profil.stat_points || 0
+              can_spend        = (current_user == @profil_user) && available_points > 0
+            %>
 
-                  # Date formatée en français
-                  fr_days = %w[Dim Lun Mar Mer Jeu Ven Sam]
-                  date_str = match.date ? "#{fr_days[match.date.wday]} #{match.date.strftime('%d/%m')}" : "—"
-                %>
+            <%# Titre + badge "points à distribuer" %>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+              <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+                ⚔️ Attributs
+              </div>
+              <% if can_spend %>
+                <span class="badge bg-success" style="font-size:0.65rem; animation: pulse 1.5s infinite;">
+                  🎲 <%= available_points %> pt<%= available_points > 1 ? "s" : "" %>
+                </span>
+              <% end %>
+            </div>
 
-                <%# Card horizontale — 1 match = 1 card %>
-                <div style="display:flex; align-items:center; gap:0.9rem; padding:0.75rem 0.85rem; background-color:#242624; border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+            <%# Les 8 attributs en 2 colonnes — barres plus hautes pour plus d'impact visuel %>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.55rem 0.7rem;">
+              <% stat_defs.each do |stat| %>
+                <% value       = @profil.send(stat[:key]) || 0 %>
+                <%# Cap visuel à 50 pts — au-delà la barre est pleine %>
+                <% bar_percent = [value / 50.0 * 100, 100].min.round %>
+                <div style="display:flex; align-items:center; gap:0.45rem;">
 
-                  <%# Miniature terrain %>
-                  <%= image_tag cover, alt: match.title,
-                      style: "width:80px; height:58px; object-fit:cover; border-radius:6px; flex-shrink:0; display:block;" %>
+                  <%# Emoji — agrandi pour être bien visible %>
+                  <span style="font-size:1rem; flex-shrink:0; line-height:1;"><%= stat[:emoji] %></span>
 
-                  <%# Info centrale %>
                   <div style="flex:1; min-width:0;">
-                    <div style="font-size:0.87rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                      <%= match.title %>
+                    <%# Label + valeur sur la même ligne %>
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.25rem;">
+                      <span style="font-size:0.62rem; font-weight:700; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.04em;">
+                        <%= stat[:label] %>
+                      </span>
+                      <%# Valeur numérique mise en avant à droite du label %>
+                      <span style="font-size:0.75rem; font-weight:900; color:#fff; line-height:1;">
+                        <%= value %>
+                      </span>
                     </div>
-                    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.35rem;">
-                      <span class="match-badge-level <%= lvl_css %>" style="font-size:0.65rem; padding:0.12rem 0.45rem;">
-                        <%= match.level %>
-                      </span>
-                      <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:rgba(255,255,255,0.55);">
-                        <i data-lucide="calendar" style="width:10px; height:10px;"></i>
-                        <%= date_str %>
-                      </span>
-                      <% if match.place.present? %>
-                        <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:rgba(255,255,255,0.55);">
-                          <i data-lucide="map-pin" style="width:10px; height:10px;"></i>
-                          <%= match.place.split(",").first %>
-                        </span>
-                      <% end %>
+                    <%# Barre plus haute (8px) pour un look plus impactant %>
+                    <div class="progress" style="height:8px; background:rgba(255,255,255,0.07); border-radius:999px; overflow:hidden;">
+                      <div class="progress-bar bg-<%= stat[:color] %>"
+                           role="progressbar"
+                           style="width:<%= [bar_percent, 4].max %>%; transition: width 0.4s ease;"
+                           aria-valuenow="<%= bar_percent %>" aria-valuemin="0" aria-valuemax="100">
+                      </div>
                     </div>
                   </div>
 
-                  <%# Bouton détails %>
-                  <%= link_to "Détails", match_path(match),
-                      style: "flex-shrink:0; font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:999px; padding:0.25rem 0.8rem; text-decoration:none; white-space:nowrap;" %>
+                  <%# Bouton "+" affiché uniquement si points disponibles %>
+                  <% if can_spend %>
+                    <%= button_to "+",
+                          spend_stat_profil_path(attribute: stat[:key]),
+                          method: :patch,
+                          style: "width:22px; height:22px; border-radius:50%; border:none; background:#1EDD88; color:#111;
+                                  font-weight:900; font-size:0.8rem; display:flex; align-items:center; justify-content:center;
+                                  cursor:pointer; flex-shrink:0; padding:0; line-height:1;" %>
+                  <% else %>
+                    <div style="width:22px; flex-shrink:0;"></div>
+                  <% end %>
 
                 </div>
               <% end %>
             </div>
 
+          <% end %>
+          <%# / attributs RPG %>
+
+
+          <%# Bouton flip — poussé en bas via margin-top:auto (flexbox column) %>
+          <div style="margin-top:auto; padding-top:0.5rem; display:flex; justify-content:flex-end;">
+            <button class="profil-flip-btn" data-action="click->flip-card#flip">
+              <i data-lucide="rotate-cw" style="width:11px; height:11px;"></i>
+              Voir les stats
+            </button>
+          </div>
+
+        </div>
+        <%# / recto %>
+
+
+        <%# ══════════ VERSO : Achievements + Stats + Description ══════════ %>
+        <div class="profil-flip-back">
+
+          <%# ── Achievements ──────────────────────────────────────────────── %>
+          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.5rem;">
+            🏆 Achievements
+          </div>
+          <%
+            all_achievements = Achievement.order(:category, :xp_reward)
+            unlocked_ids     = @profil_user.user_achievements.pluck(:achievement_id)
+          %>
+          <div style="display:flex; flex-wrap:wrap; gap:0.45rem; margin-bottom:0.35rem;">
+            <% all_achievements.each do |achievement| %>
+              <% is_unlocked = unlocked_ids.include?(achievement.id) %>
+              <div data-bs-toggle="tooltip"
+                   data-bs-placement="top"
+                   title="<%= achievement.name %> — <%= achievement.description %> (+<%= achievement.xp_reward %> XP)"
+                   style="width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+                          font-size:1.1rem; cursor:default;
+                          border: 1px solid <%= is_unlocked ? 'rgba(30,221,136,0.4)' : 'rgba(255,255,255,0.06)' %>;
+                          background: <%= is_unlocked ? 'rgba(30,221,136,0.1)' : 'rgba(255,255,255,0.04)' %>;
+                          opacity: <%= is_unlocked ? '1' : '0.28' %>;">
+                <%= achievement.icon_emoji %>
+              </div>
+            <% end %>
+          </div>
+          <p style="font-size:0.62rem; color:rgba(255,255,255,0.22); margin-bottom:0.9rem;">
+            Survole un badge pour les détails.
+          </p>
+
+
+          <%# ── Statistiques ────────────────────────────────────────────────── %>
+          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.5rem;">
+            📊 Statistiques
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.6rem 0.8rem;">
+                <div style="font-size:0.6rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs joués</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.matchs.count %></div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.6rem 0.8rem;">
+                <div style="font-size:0.6rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs créés</div>
+                <div style="font-size:1.6rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.match_users.where(role: "organisateur").count %></div>
+              </div>
+            </div>
+          </div>
+
+
+          <%# ── Description ─────────────────────────────────────────────────── %>
+          <div style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.5rem;">
+            📝 Description
+          </div>
+          <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.65rem 0.85rem; flex:1; min-height:0; overflow-y:auto;">
+            <% if @profil.description.present? %>
+              <p style="font-size:0.82rem; color:rgba(255,255,255,0.65); line-height:1.55; margin:0;">
+                <%= @profil.description %>
+              </p>
+            <% else %>
+              <p style="font-size:0.82rem; color:rgba(255,255,255,0.35); margin:0;">
+                Pas encore de description.
+                <% if current_user == @profil_user %>
+                  <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
+                <% end %>
+              </p>
+            <% end %>
+          </div>
+
+
+          <%# Bouton retour — poussé en bas via margin-top:auto %>
+          <div style="margin-top:auto; padding-top:0.85rem; display:flex; justify-content:flex-start;">
+            <button class="profil-flip-btn" data-action="click->flip-card#flip">
+              <i data-lucide="rotate-ccw" style="width:11px; height:11px;"></i>
+              Retour au profil
+            </button>
+          </div>
+
+        </div>
+        <%# / verso %>
+
+
+      </div><%# / flip-inner %>
+    </div><%# / flip-card %>
+
+
+    <%# ── Progression des tiers — visuel de l'évolution des contours ─────── %>
+    <%# Montre les 5 niveaux de bordure avec le tier actuel du joueur mis en valeur %>
+    <%
+      current_tier = @profil.card_tier_class
+      tiers = [
+        { cls: "card-tier-bronze",   label: "Bronze",  lvl: "1-2",  border: "rgba(180,110,50,0.6)",  bg: "rgba(180,110,50,0.08)",   dot: "rgba(180,110,50,1)"   },
+        { cls: "card-tier-silver",   label: "Silver",  lvl: "3-4",  border: "rgba(200,200,220,0.7)", bg: "rgba(200,200,220,0.07)",  dot: "rgba(210,210,230,1)"  },
+        { cls: "card-tier-gold",     label: "Gold",    lvl: "5-6",  border: "rgba(255,210,60,0.75)", bg: "rgba(255,210,60,0.08)",   dot: "rgba(255,210,60,1)"   },
+        { cls: "card-tier-platinum", label: "Platine", lvl: "7-8",  border: "rgba(130,100,255,0.8)", bg: "rgba(130,100,255,0.08)",  dot: "rgba(130,100,255,1)"  },
+        { cls: "card-tier-elite",    label: "Élite",   lvl: "9-10", border: "rgba(30,221,136,0.85)", bg: "rgba(30,221,136,0.09)",   dot: "#1EDD88"              }
+      ]
+    %>
+    <div style="display:flex; gap:0.35rem;">
+      <% tiers.each do |tier| %>
+        <% is_current = tier[:cls] == current_tier %>
+        <%# Chaque mini-carte = un aperçu du tier avec sa vraie couleur de contour %>
+        <div style="flex:1; text-align:center; padding:0.5rem 0.3rem; position:relative;
+                    border: <%= is_current ? '2px' : '1px' %> solid <%= tier[:border] %>;
+                    border-radius:8px;
+                    background: <%= tier[:bg] %>;
+                    opacity: <%= is_current ? '1' : '0.45' %>;
+                    transition: opacity 0.2s;">
+          <%# Point indicateur "vous êtes ici" au sommet %>
+          <% if is_current %>
+            <div style="position:absolute; top:-5px; left:50%; transform:translateX(-50%);
+                        width:8px; height:8px; background:<%= tier[:dot] %>; border-radius:50%;
+                        box-shadow: 0 0 6px <%= tier[:dot] %>;"></div>
+          <% end %>
+          <div style="font-size:0.62rem; font-weight:800; color:#fff; letter-spacing:0.02em; line-height:1.3;">
+            <%= tier[:label] %>
+          </div>
+          <div style="font-size:0.55rem; color:rgba(255,255,255,0.4); line-height:1.2;">
+            Niv <%= tier[:lvl] %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+    <%# / tiers preview %>
+
+    </div><%# / col-lg-5 %>
+
+
+    <%# ── COLONNE DROITE : Mes matchs + Avis des joueurs ─────────────────── %>
+    <div class="col-lg-7">
+
+      <%# ── Mes matchs ──────────────────────────────────────────────────── %>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+            <i data-lucide="calendar" style="width:14px; height:14px;"></i>
+            <%= current_user == @profil_user ? "Mes matchs" : "Matchs de #{@profil_user.display_name}" %>
+          </div>
+          <% if current_user == @profil_user %>
+            <%= link_to "Voir tout", matches_path(mine: true), style: "font-size:0.8rem; font-weight:600; color:#1EDD88; text-decoration:none;" %>
+          <% end %>
+        </div>
+
+        <div class="match-block">
+          <%
+            upcoming_matches = @profil_user.matchs
+              .where("(date + time) > ?", Time.current)
+              .order(date: :asc, time: :asc)
+              .first(3)
+          %>
+          <% if upcoming_matches.any? %>
+            <div style="display:flex; flex-direction:column; gap:0.65rem;">
+              <% upcoming_matches.each do |match| %>
+                <%
+                  foot_images = %w[Img_illu_foot/ballon.jpg Img_illu_foot/citytoulouse.jpg Img_illu_foot/bresil.jpg
+                                   Img_illu_foot/herbe.jpg Img_illu_foot/city1.jpg Img_illu_foot/citydrone.jpg
+                                   Img_illu_foot/Duel.jpg Img_illu_foot/Medellin.jpg Img_illu_foot/terrainight.jpg]
+                  cover   = foot_images[match.id % foot_images.length]
+                  lvl_css = case match.level
+                    when "Débutant" then "level-debutant"; when "Intermédiaire" then "level-intermediaire"
+                    when "Avancé"   then "level-avance";   else "level-tout"
+                  end
+                  fr_days  = %w[Dim Lun Mar Mer Jeu Ven Sam]
+                  date_str = match.date ? "#{fr_days[match.date.wday]} #{match.date.strftime('%d/%m')}" : "—"
+                %>
+                <div style="display:flex; align-items:center; gap:0.9rem; padding:0.75rem 0.85rem; background-color:#242624; border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+                  <%= image_tag cover, alt: match.title, style: "width:80px; height:58px; object-fit:cover; border-radius:6px; flex-shrink:0; display:block;" %>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:0.87rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= match.title %></div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-top:0.35rem;">
+                      <span class="match-badge-level <%= lvl_css %>" style="font-size:0.65rem; padding:0.12rem 0.45rem;"><%= match.level %></span>
+                      <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:rgba(255,255,255,0.55);">
+                        <i data-lucide="calendar" style="width:10px; height:10px;"></i><%= date_str %>
+                      </span>
+                      <% if match.place.present? %>
+                        <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:rgba(255,255,255,0.55);">
+                          <i data-lucide="map-pin" style="width:10px; height:10px;"></i><%= match.place.split(",").first %>
+                        </span>
+                      <% end %>
+                    </div>
+                  </div>
+                  <%= link_to "Détails", match_path(match), style: "flex-shrink:0; font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:999px; padding:0.25rem 0.8rem; text-decoration:none; white-space:nowrap;" %>
+                </div>
+              <% end %>
+            </div>
           <% else %>
-            <%# État vide — aucun match à venir %>
             <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem; padding:1.5rem 0; text-align:center; color:rgba(255,255,255,0.55);">
               <i data-lucide="calendar-x" style="width:28px; height:28px; opacity:0.3;"></i>
               <p style="font-size:0.88rem; margin:0;">Aucun match à venir.</p>
               <%= link_to "Trouver un match", matches_path, class: "btn btn-primary btn-sm btn-cta-primary mt-2" %>
             </div>
           <% end %>
-
-        </div>
-        <%# / mes matchs %>
-
-      </div>
-      <%# / col-lg-7 %>
-
-
-      <%# ════════════════════════ COLONNE DROITE (5/12) ════════════════════════ %>
-      <div class="col-lg-5">
-
-        <%# ── 4. Description — en-tête hors card ─────────────────────────────── %>
-        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-          <i data-lucide="file-text" style="width:14px; height:14px;"></i>
-          Description
-        </div>
-        <div class="match-block mb-3">
-          <% if @profil.description.present? %>
-            <p style="font-size:0.88rem; color:rgba(255,255,255,0.7); line-height:1.65; margin:0;">
-              <%= @profil.description %>
-            </p>
-          <% else %>
-            <p style="font-size:0.88rem; color:rgba(255,255,255,0.4); margin:0;">
-              Pas encore de description.
-              <%# Lien "Ajouter" uniquement si c'est son propre profil %>
-              <% if current_user == @profil_user %>
-                <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
-              <% end %>
-            </p>
-          <% end %>
         </div>
 
-        <%# ── 5. Titre avis des joueurs (hors card) ────────────────────────── %>
+      <%# ── Avis des joueurs ──────────────────────────────────────────────── %>
+      <div style="margin-top:1.5rem;">
+
         <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
           <i data-lucide="star" style="width:14px; height:14px;"></i>
           Avis des joueurs
         </div>
 
-        <%# Chaque avis = 1 card indépendante %>
         <div style="display:flex; flex-direction:column; gap:0.65rem;">
 
-          <%# Avis Marc — 5 étoiles %>
           <div class="match-block" style="padding:0.85rem 1rem;">
             <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-              <%# Photo placeholder via pravatar (déterministe selon seed) %>
-              <img src="https://i.pravatar.cc/80?u=marc_l"
-                   style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;"
-                   alt="Marc L.">
+              <img src="https://i.pravatar.cc/80?u=marc_l" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;" alt="Marc L.">
               <div>
                 <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">Marc L.</div>
                 <div style="color:#1EDD88; font-size:0.75rem; line-height:1; margin-top:0.15rem;">★★★★★</div>
@@ -273,12 +450,9 @@
             <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">Très bon joueur, ponctuel et fair-play. À bientôt sur le terrain !</p>
           </div>
 
-          <%# Avis Sophie — 4 étoiles %>
           <div class="match-block" style="padding:0.85rem 1rem;">
             <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-              <img src="https://i.pravatar.cc/80?u=sophie_t"
-                   style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;"
-                   alt="Sophie T.">
+              <img src="https://i.pravatar.cc/80?u=sophie_t" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;" alt="Sophie T.">
               <div>
                 <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">Sophie T.</div>
                 <div style="color:#1EDD88; font-size:0.75rem; line-height:1; margin-top:0.15rem;">★★★★<span style="color:rgba(255,255,255,0.2);">★</span></div>
@@ -287,12 +461,9 @@
             <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">Excellent coéquipier, toujours disponible. On se revoit sur le terrain !</p>
           </div>
 
-          <%# Avis Julian — 5 étoiles %>
           <div class="match-block" style="padding:0.85rem 1rem;">
             <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-              <img src="https://i.pravatar.cc/80?u=julian_d"
-                   style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;"
-                   alt="Julian D.">
+              <img src="https://i.pravatar.cc/80?u=julian_d" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;" alt="Julian D.">
               <div>
                 <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">Julian D.</div>
                 <div style="color:#1EDD88; font-size:0.75rem; line-height:1; margin-top:0.15rem;">★★★★★</div>
@@ -303,14 +474,15 @@
 
         </div>
 
-        <%# Lien "Voir les avis" %>
         <div style="margin-top:0.85rem; text-align:center;">
-          <a href="#" style="font-size:0.8rem; font-weight:600; color:#1EDD88; text-decoration:none;">Voir les 26 avis →</a>
+          <button type="button" style="background:none; border:none; padding:0; font-size:0.8rem; font-weight:600; color:#1EDD88; cursor:pointer;">Voir les 26 avis →</button>
         </div>
 
-      </div>
-      <%# / col-lg-5 %>
+      </div><%# / avis %>
 
-    </div>
+    </div><%# / col-lg-7 %>
+
+    </div><%# / row principal %>
+
   </div>
 </div>
