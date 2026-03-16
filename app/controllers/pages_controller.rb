@@ -29,15 +29,21 @@ class PagesController < ApplicationController
     Match.upcoming.where("player_left > 0").count
   end
 
-  # Récupère les 3 prochains matchs à venir, triés par date puis heure
+  # Récupère les 3 prochains matchs à venir, filtrés par sport actif si connecté
   def load_upcoming_matches
-    Match.upcoming.order(date: :asc, time: :asc).limit(3)
+    matches = Match.upcoming.order(date: :asc, time: :asc)
+    # Si l'utilisateur est connecté et a un sport actif, on filtre par ce sport
+    matches = matches.where(sport_id: current_sport.id) if current_sport.present?
+    matches.limit(3)
   end
 
   # Match affiché dans la carte hero (droite) :
   # - jamais complet (player_left > 0)
   # - le plus proche dans le temps
+  # - filtré par sport actif si connecté (cohérent avec la section "Matchs à proximité")
   def load_hero_match
-    Match.upcoming.where("player_left > 0").order(date: :asc, time: :asc).first
+    matches = Match.upcoming.where("player_left > 0").order(date: :asc, time: :asc)
+    matches = matches.where(sport_id: current_sport.id) if current_sport.present?
+    matches.first
   end
 end

@@ -25,7 +25,10 @@
     - @match existant    → action="/matches/:id"    method="PATCH"
     data-controller="match-form" → connecte le contrôleur Stimulus %>
 <%= form_with model: @match,
-    data: { controller: "match-form" } do |f| %>
+    data: {
+      controller: "match-form",
+      action: "sport-picker:sport-selected->match-form#updateSport"
+    } do |f| %>
 
   <div class="container py-4">
 
@@ -69,6 +72,77 @@
           <div class="match-form-section-header">
             <div class="match-form-step-badge">1</div>
             <h2 class="match-form-section-title">Descriptif</h2>
+          </div>
+
+          <%# Champ Sport — visible et pré-rempli avec le sport actif
+              L'utilisateur peut le modifier si besoin %>
+          <div class="mb-3">
+            <%= f.label :sport_id, class: "form-label" do %>Sport <span class="required-star">*</span><% end %>
+            <%
+              # Maps JSON passées au controller Stimulus pour adapter le compteur au sport/format
+              sports_defaults = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.default_player_count }
+              sports_max      = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.max_player_count }
+              # Pour le récap Stimulus : emoji + nom (image sports → juste le nom)
+              sports_names    = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = "#{sport_icon_text(s)} #{s.name}".strip }
+              # Formats disponibles par sport : { sportId => [{label, players}, ...] }
+              sports_formats  = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_formats }
+            %>
+            <%#
+              Select caché — soumis avec le formulaire et cible Stimulus.
+              Le dropdown custom ci-dessous met à jour sa valeur et déclenche
+              un event "change" pour que Stimulus (updateSport) réagisse.
+            %>
+            <%= f.hidden_field :sport_id,
+                data: {
+                  "match-form-target": "sportInput",
+                  "defaults": sports_defaults.to_json,
+                  "max-players": sports_max.to_json,
+                  "sport-names": sports_names.to_json,
+                  "formats": sports_formats.to_json
+                } %>
+
+            <%# Dropdown custom — affiche les icônes image + emoji %>
+            <div style="position:relative;" data-controller="sport-picker">
+
+              <%# Trigger : affiche le sport sélectionné (ou le prompt)
+                  form-select = même style + chevron blanc que date/heure
+                  Le contenu intérieur est en flex via un <span> pour ne pas casser
+                  le background-image du chevron Bootstrap %>
+              <button type="button"
+                      class="form-select"
+                      data-sport-picker-target="trigger"
+                      data-action="click->sport-picker#toggle"
+                      style="cursor:pointer; text-align:left;">
+                <span class="d-flex align-items-center gap-2">
+                  <% if @match.sport %>
+                    <%= sport_icon(@match.sport, size: "1.1rem") %>
+                    <span><%= @match.sport.name %></span>
+                  <% else %>
+                    <span style="color:rgba(255,255,255,0.4);">Sélectionner un sport</span>
+                  <% end %>
+                </span>
+              </button>
+
+              <%# Panel dropdown avec tous les sports %>
+              <div data-sport-picker-target="dropdown"
+                   style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
+                          background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
+                          padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                <% Sport.order(:name).each do |sport| %>
+                  <%# data-active="true" = sport actuellement sélectionné → fond vert géré par le controller %>
+                  <button type="button"
+                          class="sport-picker-item w-100 d-flex align-items-center gap-2 text-start <%= 'sport-picker-item--active' if @match.sport_id == sport.id %>"
+                          data-action="click->sport-picker#select"
+                          data-sport-picker-target="item"
+                          data-sport-id="<%= sport.id %>"
+                          data-sport-name="<%= sport.name %>">
+                    <%= sport_icon(sport, size: "1.1rem") %>
+                    <span><%= sport.name %></span>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+
           </div>
 
           <%# Champ Titre — obligatoire
@@ -127,8 +201,9 @@
                   - data-match-form-target="placeInput" → récap Stimulus
                   - focus->place-search#showDefault     → ouvre le dropdown avec "Ma position" au clic
                   - data-action avec les actions séparées par un espace %>
+              <%# form-select = même chevron blanc que date/heure/sport %>
               <%= f.text_field :place,
-                  class: "form-control place-search-input",
+                  class: "form-select",
                   placeholder: "Ex: Urban Soccer, Bordeaux...",
                   autocomplete: "off",
                   required: true,
@@ -138,8 +213,10 @@
                     "action": "input->place-search#search focus->place-search#showDefault input->match-form#updatePlace"
                   } %>
 
-              <%# Chevron visuel à droite de l'input pour indiquer le dropdown %>
-              <span class="place-search-chevron" aria-hidden="true">&#8964;</span>
+              <%# Champ caché : stocke l'id du venue sélectionné en BDD
+                  Rempli par place_search_controller.js quand l'user choisit un résultat BDD.
+                  Vide si l'user choisit un résultat OSM ou saisit librement. %>
+              <%= f.hidden_field :venue_id, data: { "place-search-target": "venueId" } %>
 
               <%# Dropdown des suggestions — géré par place_search_controller.js %>
               <div data-place-search-target="dropdown"
@@ -212,6 +289,13 @@
             <h2 class="match-form-section-title">Détails du match</h2>
           </div>
 
+          <%# ── Sélecteur de format — visible uniquement pour les sports multi-formats ── %>
+          <div class="mb-4" data-match-form-target="formatWrapper" style="display:none;">
+            <label class="form-label d-block">Format <span class="required-star">*</span></label>
+            <%= f.hidden_field :format, data: { "match-form-target": "formatInput" } %>
+            <div class="match-level-buttons" data-match-form-target="formatButtons"></div>
+          </div>
+
           <%# ── Compteur : Nombre de joueurs manquants ── %>
           <div class="mb-4">
             <label class="form-label d-block">Nombre de joueurs manquants <span class="required-star">*</span></label>
@@ -220,7 +304,7 @@
                 Le compteur visible (+/-) met à jour cet input via Stimulus.
                 Valeur par défaut : 4 si non défini %>
             <%= f.hidden_field :player_left,
-                value: (@match.player_left || 4),
+                value: (@match.player_left || 1),
                 data: { "match-form-target": "playersInput" } %>
 
             <div class="match-player-counter">
@@ -236,7 +320,7 @@
               <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
               <span class="counter-value"
                     data-match-form-target="playersCount">
-                <%= @match.player_left || 4 %>
+                <%= @match.player_left || 1 %>
               </span>
 
               <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus
@@ -388,6 +472,19 @@
             <%= truncate(@match.description.to_s, length: 80) %>
           </p>
 
+          <%# ── Ligne Sport ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Sport</span>
+            <span class="recap-value" data-match-form-target="recapSport">
+              <%# Affiche l'emoji + nom du sport si sélectionné %>
+              <% if @match.sport %>
+                <%= sport_icon(@match.sport, size: "1rem") %> <%= @match.sport.name %>
+              <% else %>
+                —
+              <% end %>
+            </span>
+          </div>
+
           <%# ── Ligne Lieu ── %>
           <div class="match-recap-row">
             <span class="recap-label">Lieu</span>
@@ -413,6 +510,12 @@
               <%# strftime "%Hh%M" donne "21h15" %>
               <%= @match.time.present? ? @match.time.strftime("%Hh%M") : "—" %>
             </span>
+          </div>
+
+          <%# ── Ligne Format — masquée si sport mono-format ── %>
+          <div class="match-recap-row" data-match-form-target="recapFormatRow" style="display:none;">
+            <span class="recap-label">Format</span>
+            <span class="recap-value" data-match-form-target="recapFormat">—</span>
           </div>
 
           <%# ── Ligne Joueurs recherchés ── %>

@@ -12,6 +12,25 @@ class ApplicationController < ActionController::Base
   # Si l'utilisateur n'est pas autorisé, on affiche un message et on le redirige
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
+  # Rend current_sport et multisport_mode? accessibles dans toutes les vues
+  helper_method :current_sport, :multisport_mode?
+
+  # Retourne true si l'utilisateur est en mode "Multisport" (tous les sports)
+  def multisport_mode?
+    user_signed_in? && session[:current_sport_id] == "all"
+  end
+
+  # Retourne le sport actuellement actif pour l'utilisateur connecté
+  # Priorité : 1) mode multisport → nil  2) session  3) base  4) premier sport
+  def current_sport
+    return nil unless user_signed_in?
+    # Mode multisport explicitement sélectionné → aucun sport actif
+    return nil if multisport_mode?
+
+    sport_id = session[:current_sport_id] || current_user.current_sport_id
+    Sport.find_by(id: sport_id) || current_user.sports.first
+  end
+
   private
 
   # Redirige l'utilisateur non autorisé avec un message d'alerte

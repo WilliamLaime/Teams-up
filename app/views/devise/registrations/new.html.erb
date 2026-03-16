@@ -5,7 +5,9 @@
     <h2>Créer un <span class="accent">compte</span></h2>
 
     <%# multipart: true obligatoire pour l'upload de fichier %>
-    <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { multipart: true }) do |f| %>
+    <%# data-action="submit->sport-select#validate" : vérifie qu'au moins 1 sport est sélectionné avant soumission %>
+    <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name),
+        html: { multipart: true, "data-action": "submit->sport-select#validate" }) do |f| %>
 
       <%= f.error_notification %>
 
@@ -112,18 +114,83 @@
       </div>
       <%# ── Fin bloc avatar ─────────────────────────────────────────────── %>
 
+      <%# ── Bloc sélection des sports ────────────────────────────────────────── %>
+      <%# L'utilisateur choisit ses sports favoris (au moins 1 requis) %>
+      <div class="mb-4" data-controller="sport-select">
+        <label class="form-label fw-semibold mb-2">
+          Quel(s) sport(s) pratiques-tu ?
+          <span class="required-star">*</span>
+        </label>
+        <small class="d-block mb-3" style="color:rgba(255,255,255,0.8);">Sélectionne au moins un sport</small>
+
+        <%# Grille des sports — chaque bouton est un checkbox visuel %>
+        <%# Les 4 premiers sont visibles, les suivants cachés jusqu'au clic "voir plus" %>
+        <div class="sport-select-grid">
+          <% Sport.order(:name).each_with_index do |sport, index| %>
+            <label class="sport-select-item <%= 'sport-select-item--hidden' if index >= 4 %>"
+                   data-sport-select-target="item"
+                   data-action="click->sport-select#toggle">
+              <%# Checkbox caché — soumis avec le formulaire %>
+              <input type="checkbox"
+                     name="user[sport_ids][]"
+                     value="<%= sport.id %>"
+                     class="d-none"
+                     data-sport-select-target="checkbox">
+              <%# Icône + nom du sport %>
+              <%= sport_icon(sport, size: "1.6rem", css_class: "sport-select-icon") %>
+              <span class="sport-select-name"><%= sport.name %></span>
+            </label>
+          <% end %>
+        </div>
+
+        <%# Bouton "voir plus" — caché une fois déroulé ; "voir moins" apparaît à la place %>
+        <% if Sport.count > 4 %>
+          <%# Bouton "Voir plus" — visible par défaut %>
+          <button type="button"
+                  class="sport-select-show-more"
+                  data-sport-select-target="showMore"
+                  data-action="click->sport-select#showMore">
+            Voir plus de sports
+            <i data-lucide="chevron-down" style="width:13px;height:13px;margin-left:4px;"></i>
+          </button>
+          <%# Bouton "Voir moins" — caché par défaut, révélé par Stimulus %>
+          <button type="button"
+                  class="sport-select-show-more"
+                  data-sport-select-target="showLess"
+                  data-action="click->sport-select#showLess"
+                  style="display:none;">
+            Voir moins
+            <i data-lucide="chevron-up" style="width:13px;height:13px;margin-left:4px;"></i>
+          </button>
+        <% end %>
+
+        <%# Message d'erreur si aucun sport sélectionné (géré par Stimulus) %>
+        <small class="text-danger d-none" data-sport-select-target="error">
+          Sélectionne au moins un sport pour continuer.
+        </small>
+      </div>
+      <%# ── Fin bloc sports ──────────────────────────────────────────────── %>
+
       <%# Champs du formulaire %>
       <div class="form-inputs">
-        <%= f.input :first_name,
-                    label: "Prénom",
-                    required: true,
-                    autofocus: true,
-                    input_html: { autocomplete: "given-name", placeholder: "Jean" } %>
-
-        <%= f.input :last_name,
-                    label: "Nom",
-                    required: true,
-                    input_html: { autocomplete: "family-name", placeholder: "Dupont" } %>
+        <%# Prénom + Nom côte à côte sur la même ligne %>
+        <div class="row g-3">
+          <div class="col-6">
+            <%= f.input :first_name,
+                        label: "Prénom",
+                        required: true,
+                        autofocus: true,
+                        wrapper_html: { class: "mb-0" },
+                        input_html: { autocomplete: "given-name", placeholder: "Jean" } %>
+          </div>
+          <div class="col-6">
+            <%= f.input :last_name,
+                        label: "Nom",
+                        required: true,
+                        wrapper_html: { class: "mb-0" },
+                        input_html: { autocomplete: "family-name", placeholder: "Dupont" } %>
+          </div>
+        </div>
 
         <%= f.input :email,
                     label: "Email",

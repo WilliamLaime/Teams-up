@@ -9,12 +9,16 @@ export default class extends Controller {
     // Ferme le dropdown si on clique en dehors
     this.handleClickOutside = this.handleClickOutside.bind(this)
     document.addEventListener("click", this.handleClickOutside)
+    // Ferme ce dropdown si un autre s'ouvre (custom event "filter:opened")
+    this.handleOtherOpened = this.handleOtherOpened.bind(this)
+    document.addEventListener("filter:opened", this.handleOtherOpened)
     // Met à jour le label si des niveaux sont déjà dans l'URL
     this.updateLabel()
   }
 
   disconnect() {
     document.removeEventListener("click", this.handleClickOutside)
+    document.removeEventListener("filter:opened", this.handleOtherOpened)
   }
 
   // Ouvre ou ferme le dropdown au clic sur le trigger
@@ -23,10 +27,19 @@ export default class extends Controller {
     const dropdown = this.dropdownTarget
     // On contrôle directement le style inline — pas de conflit CSS possible
     if (dropdown.style.display === "none") {
+      // Prévient les autres dropdowns de se fermer
+      document.dispatchEvent(new CustomEvent("filter:opened", { detail: { source: this } }))
       dropdown.style.display = "flex"
       dropdown.style.flexDirection = "column"
     } else {
       dropdown.style.display = "none"
+    }
+  }
+
+  // Ferme ce dropdown si un autre filtre vient de s'ouvrir
+  handleOtherOpened(event) {
+    if (event.detail.source !== this) {
+      this.dropdownTarget.style.display = "none"
     }
   }
 

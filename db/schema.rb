@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_13_100943) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,6 +47,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_100943) do
     t.datetime "created_at", null: false
     t.datetime "last_read_at"
     t.bigint "match_id", null: false
+    t.text "message"
     t.string "role"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
@@ -59,16 +60,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_100943) do
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
+    t.string "format"
     t.string "level"
     t.string "place"
     t.integer "player_left"
     t.integer "price_per_player", default: 0
+    t.bigint "sport_id"
     t.time "time"
     t.string "title"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.string "validation_mode", default: "automatic"
+    t.bigint "venue_id"
+    t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["user_id"], name: "index_matches_on_user_id"
+    t.index ["venue_id"], name: "index_matches_on_venue_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -107,8 +113,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_100943) do
     t.index ["user_id"], name: "index_profils_on_user_id"
   end
 
+  create_table "sports", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "icon"
+    t.string "name"
+    t.string "slug"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "user_sports", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "sport_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["sport_id"], name: "index_user_sports_on_sport_id"
+    t.index ["user_id"], name: "index_user_sports_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "current_sport_id"
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.datetime "remember_created_at"
@@ -119,13 +143,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_100943) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  create_table "venues", force: :cascade do |t|
+    t.string "address"
+    t.string "city"
+    t.datetime "created_at", null: false
+    t.float "latitude"
+    t.float "longitude"
+    t.string "name"
+    t.string "postal_code"
+    t.string "sport_type"
+    t.datetime "updated_at", null: false
+    t.index ["city"], name: "index_venues_on_city"
+    t.index ["sport_type"], name: "index_venues_on_sport_type"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "match_users", "matches"
   add_foreign_key "match_users", "users"
+  add_foreign_key "matches", "sports"
   add_foreign_key "matches", "users"
+  add_foreign_key "matches", "venues"
   add_foreign_key "messages", "matches"
   add_foreign_key "messages", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "profils", "users"
+  add_foreign_key "user_sports", "sports"
+  add_foreign_key "user_sports", "users"
 end

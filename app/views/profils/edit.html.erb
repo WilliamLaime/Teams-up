@@ -1,19 +1,25 @@
-<%# Page de modification du profil %>
+<%# ── Page modification du profil ──────────────────────────────────────────── %>
+<%# Même direction artistique que la page show : fond sombre, accents verts %>
 
-<div class="container my-4">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
+<div class="profil-page profil-edit-page" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
+  <div class="container" style="position:relative; z-index:1;">
 
-      <h1 class="mb-4">Mon profil</h1>
+    <%# ── Bouton retour ──────────────────────────────────────────────────── %>
+    <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-4" %>
 
-      <%# On appelle le formulaire partagé _form.html.erb %>
-      <%= render "form" %>
-
-      <%# Lien retour %>
-      <div class="mt-3">
-        <%= link_to "Annuler", profil_path, class: "btn btn-outline-secondary" %>
-      </div>
-
+    <%# ── En-tête de page ────────────────────────────────────────────────── %>
+    <div class="mb-4">
+      <h1 style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; font-family:'Nunito', sans-serif;">
+        Modifier mon profil
+      </h1>
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
+        Mets à jour tes informations personnelles
+      </p>
     </div>
+
+    <%# ── Formulaire ─────────────────────────────────────────────────────── %>
+    <%# On passe @profil en variable locale pour éviter d'utiliser une variable d'instance dans le partial %>
+    <%= render "form", profil: @profil %>
+
   </div>
 </div>

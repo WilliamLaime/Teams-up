@@ -7,7 +7,8 @@ class MatchUsersController < ApplicationController
   # POST /matches/:match_id/match_users
   # Rejoindre un match (ou rejoindre la file d'attente si le match est complet)
   def create
-    @match_user = @match.match_users.new(user: current_user, role: "joueur")
+    # On crée l'inscription avec le message optionnel du joueur
+    @match_user = @match.match_users.new(user: current_user, role: "joueur", message: params[:message].presence)
     authorize @match_user
 
     # Vérifie si l'utilisateur est déjà inscrit (peu importe le statut)

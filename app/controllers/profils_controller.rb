@@ -29,10 +29,18 @@ class ProfilsController < ApplicationController
   end
 
   # PATCH/PUT /profil
-  # Met à jour le profil de l'utilisateur connecté
+  # Met à jour le profil et les sports de l'utilisateur connecté
   def update
     # Pundit vérifie l'autorisation avant de sauvegarder
     authorize @profil
+
+    # Met à jour les sports si la section sport était présente dans le formulaire
+    # Le champ caché user[sports_submitted]=1 indique que la section a été soumise
+    if params.dig(:user, :sports_submitted)
+      # sport_ids est un tableau d'IDs — [] si aucun sport coché
+      current_user.sport_ids = params.dig(:user, :sport_ids) || []
+    end
+
     if @profil.update(profil_params)
       redirect_to profil_path, notice: "Profil mis à jour avec succès !"
     else

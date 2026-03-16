@@ -1,35 +1,227 @@
-<h2>Edit <%= resource_name.to_s.humanize %></h2>
+<%# ── Page modification du compte (email + mot de passe) ──────────────────── %>
+<%# Même direction artistique que /profil/edit : fond sombre, accents verts %>
 
-<%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
-  <%= f.error_notification %>
+<div class="profil-page profil-edit-page" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
+  <div class="container" style="position:relative; z-index:1;">
 
-  <div class="form-inputs">
-    <%= f.input :email, required: true, autofocus: true %>
+    <%# ── Bouton retour ──────────────────────────────────────────────────── %>
+    <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-4" %>
 
-    <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-      <p>Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
-    <% end %>
+    <%# ── En-tête de page ────────────────────────────────────────────────── %>
+    <div class="mb-4">
+      <h1 style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; font-family:'Nunito', sans-serif;">
+        Mon compte
+      </h1>
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
+        Modifie ton adresse email ou ton mot de passe
+      </p>
+    </div>
 
-    <%= f.input :password,
-                hint: "leave it blank if you don't want to change it",
-                required: false,
-                input_html: { autocomplete: "new-password" } %>
-    <%= f.input :password_confirmation,
-                required: false,
-                input_html: { autocomplete: "new-password" } %>
-    <%= f.input :current_password,
-                hint: "we need your current password to confirm your changes",
+    <%# ── Layout : colonne unique centrée (max 680px) ────────────────────── %>
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+
+        <%# ── Formulaire Devise ────────────────────────────────────────────── %>
+        <%# simple_form_for génère automatiquement les champs compatibles Devise %>
+        <%= simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+
+          <%# ── Erreurs de validation ──────────────────────────────────────── %>
+          <% if resource.errors.any? %>
+            <div style="background:rgba(253,16,21,0.1); border:1px solid rgba(253,16,21,0.3); border-radius:8px; padding:0.85rem 1rem; margin-bottom:1.5rem;">
+              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                <i data-lucide="alert-circle" style="width:14px; height:14px; color:#f87171; flex-shrink:0;"></i>
+                <span style="font-size:0.82rem; font-weight:700; color:#f87171;">
+                  <%= pluralize(resource.errors.count, "erreur") %> à corriger
+                </span>
+              </div>
+              <ul style="margin:0; padding-left:1.2rem;">
+                <% resource.errors.full_messages.each do |msg| %>
+                  <li style="font-size:0.8rem; color:rgba(248,113,113,0.85);"><%= msg %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%# ════════════════════════════════════════════════════════════════ %>
+          <%# SECTION 1 : Adresse email ────────────────────────────────────── %>
+          <%# ════════════════════════════════════════════════════════════════ %>
+
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+            <i data-lucide="mail" style="width:14px; height:14px;"></i>
+            Adresse email
+          </div>
+
+          <div class="match-block mb-4">
+
+            <%# Reconfirmation en attente — affiché si l'email vient d'être changé %>
+            <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+              <div style="display:flex; align-items:center; gap:0.5rem; padding:0.65rem 0.85rem; background:rgba(255,198,90,0.08); border:1px solid rgba(255,198,90,0.25); border-radius:8px; margin-bottom:1rem;">
+                <i data-lucide="clock" style="width:13px; height:13px; color:#FFC65A; flex-shrink:0;"></i>
+                <span style="font-size:0.78rem; color:#FFC65A;">
+                  Confirmation en attente pour : <strong><%= resource.unconfirmed_email %></strong>
+                </span>
+              </div>
+            <% end %>
+
+            <%# Champ email %>
+            <label class="edit-form-label">
+              Email <span style="color:#1EDD88; font-weight:700;">*</span>
+            </label>
+            <%= f.input :email,
                 required: true,
-                input_html: { autocomplete: "current-password" } %>
+                autofocus: true,
+                label: false,
+                wrapper_html: { style: "margin-bottom:0;" },
+                input_html: {
+                  class: "form-control edit-form-input",
+                  placeholder: "votre@email.com",
+                  autocomplete: "email"
+                } %>
+
+          </div>
+          <%# / email %>
+
+
+          <%# ════════════════════════════════════════════════════════════════ %>
+          <%# SECTION 2 : Changer le mot de passe ──────────────────────────── %>
+          <%# ════════════════════════════════════════════════════════════════ %>
+
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+            <i data-lucide="lock" style="width:14px; height:14px;"></i>
+            Changer le mot de passe
+          </div>
+
+          <div class="match-block mb-4">
+
+            <p style="font-size:0.78rem; color:rgba(255,255,255,0.35); margin:0 0 1rem;">
+              Laisse ces champs vides si tu ne veux pas changer ton mot de passe.
+            </p>
+
+            <%# Nouveau mot de passe %>
+            <label class="edit-form-label">Nouveau mot de passe</label>
+            <%= f.input :password,
+                required: false,
+                label: false,
+                wrapper_html: { style: "margin-bottom:0.85rem;" },
+                input_html: {
+                  class: "form-control edit-form-input",
+                  placeholder: "Nouveau mot de passe",
+                  autocomplete: "new-password"
+                } %>
+
+            <%# Confirmation du nouveau mot de passe %>
+            <label class="edit-form-label">Confirmer le nouveau mot de passe</label>
+            <%= f.input :password_confirmation,
+                required: false,
+                label: false,
+                wrapper_html: { style: "margin-bottom:0;" },
+                input_html: {
+                  class: "form-control edit-form-input",
+                  placeholder: "Confirmer le nouveau mot de passe",
+                  autocomplete: "new-password"
+                } %>
+
+          </div>
+          <%# / mot de passe %>
+
+
+          <%# ════════════════════════════════════════════════════════════════ %>
+          <%# SECTION 3 : Confirmation — mot de passe actuel obligatoire ───── %>
+          <%# ════════════════════════════════════════════════════════════════ %>
+
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+            <i data-lucide="shield-check" style="width:14px; height:14px;"></i>
+            Confirmation
+          </div>
+
+          <div class="match-block mb-4">
+
+            <div style="display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.75rem; background:rgba(30,221,136,0.06); border:1px solid rgba(30,221,136,0.15); border-radius:8px; margin-bottom:1rem;">
+              <i data-lucide="info" style="width:13px; height:13px; color:#1EDD88; flex-shrink:0;"></i>
+              <span style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
+                Ton mot de passe actuel est requis pour valider les modifications.
+              </span>
+            </div>
+
+            <%# Mot de passe actuel — obligatoire pour confirmer les changements %>
+            <label class="edit-form-label">
+              Mot de passe actuel <span style="color:#1EDD88; font-weight:700;">*</span>
+            </label>
+            <%= f.input :current_password,
+                required: true,
+                label: false,
+                wrapper_html: { style: "margin-bottom:0;" },
+                input_html: {
+                  class: "form-control edit-form-input",
+                  placeholder: "Ton mot de passe actuel",
+                  autocomplete: "current-password"
+                } %>
+
+          </div>
+          <%# / confirmation %>
+
+
+          <%# ── Boutons d'action ─────────────────────────────────────────── %>
+          <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+            <%= f.button :submit, "Sauvegarder les modifications",
+                class: "btn btn-primary btn-cta-primary",
+                style: "display:inline-flex; align-items:center; gap:0.4rem;" %>
+
+            <%= link_to profil_path, class: "btn btn-cta-secondary", style: "display:inline-flex; align-items:center; gap:0.4rem;" do %>
+              Annuler
+            <% end %>
+          </div>
+
+        <% end %>
+        <%# / formulaire %>
+
+
+        <%# ══════════════════════════════════════════════════════════════════ %>
+        <%# ZONE DANGER — Supprimer le compte ────────────────────────────── %>
+        <%# ══════════════════════════════════════════════════════════════════ %>
+
+        <div style="margin-top:2.5rem;">
+
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#f87171; margin-bottom:0.75rem;">
+            <i data-lucide="triangle-alert" style="width:14px; height:14px;"></i>
+            Zone dangereuse
+          </div>
+
+          <div style="background:rgba(253,16,21,0.04); border:1px solid rgba(253,16,21,0.18); border-radius:12px; padding:1.25rem 1.35rem;">
+
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+
+              <div>
+                <p style="font-size:0.9rem; font-weight:700; color:#fff; margin:0 0 0.3rem;">
+                  Supprimer mon compte
+                </p>
+                <p style="font-size:0.78rem; color:rgba(255,255,255,0.4); margin:0; max-width:380px; line-height:1.55;">
+                  Cette action est irréversible. Toutes tes données, matchs et messages seront définitivement supprimés.
+                </p>
+              </div>
+
+              <%# Bouton de suppression — confirmation obligatoire %>
+              <%= button_to "Supprimer le compte",
+                  registration_path(resource_name),
+                  data: {
+                    turbo_confirm: "Es-tu sûr(e) ? Cette action est irréversible et supprimera toutes tes données."
+                  },
+                  method: :delete,
+                  style: "background:transparent; border:1px solid rgba(253,16,21,0.45); color:#f87171; border-radius:8px; padding:0.5rem 1rem; font-size:0.82rem; font-weight:600; cursor:pointer; white-space:nowrap; transition:background 0.15s;",
+                  onmouseover: "this.style.background='rgba(253,16,21,0.12)'",
+                  onmouseout:  "this.style.background='transparent'" %>
+
+            </div>
+
+          </div>
+          <%# / zone danger %>
+
+        </div>
+
+      </div>
+      <%# / col-lg-7 %>
+    </div>
+    <%# / row %>
+
   </div>
-
-  <div class="form-actions">
-    <%= f.button :submit, "Update" %>
-  </div>
-<% end %>
-
-<h3>Cancel my account</h3>
-
-<div>Unhappy? <%= button_to "Cancel my account", registration_path(resource_name), data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" }, method: :delete %></div>
-
-<%= link_to "Back", :back %>
+</div>
