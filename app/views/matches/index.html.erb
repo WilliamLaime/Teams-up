@@ -32,6 +32,7 @@
           <% end %>
         </div>
       <% end %>
+
     </div>
 
     <%# ── Barre de filtres ────────────────────────────────────────────────── %>
@@ -98,6 +99,70 @@
             </div>
           </div>
 
+          <%# Sport — dropdown custom multi-select (comme le filtre Niveau) %>
+          <% if Sport.count > 0 %>
+            <div class="sport-filter-pill" data-controller="sport-filter" style="position:relative">
+
+              <%# Trigger : pill cliquable %>
+              <button type="button"
+                      class="filter-pill-group sport-filter-trigger"
+                      data-action="click->sport-filter#toggle">
+                <span data-sport-filter-target="label" style="color:rgba(255,255,255,0.9);">Sport</span>
+                <i data-lucide="chevron-down" style="width:11px;height:11px;margin-left:2px;"></i>
+              </button>
+
+              <%# Panel dropdown %>
+              <div class="sport-filter-dropdown"
+                   data-sport-filter-target="dropdown"
+                   style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:150px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem">
+
+                <%# Bouton Tout sélectionner — en haut, style pill vert outline %>
+                <button type="button"
+                        data-action="click->sport-filter#selectAll"
+                        style="width:100%; padding:0.35rem 0.5rem; background:rgba(30,221,136,0.1); color:#1EDD88; border:1px solid rgba(30,221,136,0.35); border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; text-align:center; transition:background 0.15s, border-color 0.15s; margin-bottom:0.2rem;"
+                        onmouseover="this.style.background='rgba(30,221,136,0.2)'; this.style.borderColor='rgba(30,221,136,0.6)'"
+                        onmouseout="this.style.background='rgba(30,221,136,0.1)'; this.style.borderColor='rgba(30,221,136,0.35)'">
+                  Tout sélectionner
+                </button>
+
+                <%# Séparateur %>
+                <div style="height:1px; background:rgba(255,255,255,0.08); margin:0.2rem 0 0.25rem;"></div>
+
+                <% Sport.order(:name).each do |sport| %>
+                  <%# Pré-coché si ce sport est dans les filtres URL, ou si c'est le sport actif (et aucun filtre URL) %>
+                  <% sport_checked = params[:sport_ids]&.include?(sport.id.to_s) ||
+                                     (params[:sport_ids].blank? && current_sport&.id == sport.id) %>
+                  <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
+                    <input type="checkbox"
+                           name="sport_ids[]"
+                           value="<%= sport.id %>"
+                           data-sport-filter-target="checkbox"
+                           data-label="<%= sport_icon_text(sport) %> <%= sport.name %>"
+                           data-label-html="<%= sport_icon_html_attr(sport, size: '1rem') %>"
+                           data-action="change->sport-filter#change"
+                           style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
+                           <% if sport_checked %>checked<% end %>>
+                    <%# Emoji + nom du sport %>
+                    <span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.85);">
+                      <%= sport_icon(sport, size: "1.05rem") %>
+                      <%= sport.name %>
+                    </span>
+                  </label>
+                <% end %>
+
+                <%# Bouton Appliquer %>
+                <button type="button"
+                        data-action="click->sport-filter#apply"
+                        style="margin-top:0.3rem; width:100%; padding:0.35rem 0; background:#1EDD88; color:#111; border:none; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:opacity 0.15s;"
+                        onmouseover="this.style.opacity='0.85'"
+                        onmouseout="this.style.opacity='1'">
+                  Appliquer
+                </button>
+
+              </div>
+            </div>
+          <% end %>
+
           <%# Ville %>
           <div class="filter-pill-group">
             <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
@@ -108,7 +173,7 @@
           </div>
 
           <%# Bouton "Effacer" visible seulement si un filtre est actif %>
-          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? %>
+          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? %>
             <%= link_to matches_path, class: "filter-reset-btn" do %>
               <i data-lucide="x" style="width:13px;height:13px;"></i>
               Effacer

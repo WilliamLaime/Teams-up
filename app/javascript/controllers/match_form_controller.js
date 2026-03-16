@@ -26,6 +26,7 @@ export default class extends Controller {
     "descriptionInput",  // Textarea : description
     "placeInput",        // Champ texte : lieu (avec autocomplete)
     "dateInput",         // Champ date
+    "sportInput",        // Select sport : déclenche updateSport au changement
     "playersInput",      // Input caché : nombre de joueurs (mis à jour par le compteur)
     "playersCount",      // Span visible : chiffre du compteur affiché à l'écran
     "minusBtn",          // Bouton "−" du compteur (pour changer sa couleur)
@@ -34,9 +35,17 @@ export default class extends Controller {
     "validationToggle",  // Checkbox du toggle Manuel/Automatique
     "priceInput",        // Champ numérique : prix par joueur
 
+    // ── Format ────────────────────────────────────────────
+    "formatWrapper",     // Div englobant les boutons de format (affiché/caché selon sport)
+    "formatInput",       // Input caché : valeur du format soumise avec le formulaire
+    "formatButtons",     // Div recevant les boutons de format générés dynamiquement
+    "recapFormatRow",    // Ligne "Format" dans le récap (masquée si mono-format)
+    "recapFormat",       // Valeur du format dans la ligne récap
+
     // ── Éléments du récapitulatif (destinations) ──────────
     "recapTitle",        // Zone affichant le titre dans la sidebar
     "recapDescription",  // Paragraphe affichant la description (masqué si vide)
+    "recapSport",        // Valeur du sport dans la ligne récap
     "recapPlace",        // Valeur du lieu dans la ligne
     "recapDate",         // Zone affichant la date formatée
     "recapTime",         // Zone affichant l'heure (ex: 21h15)
@@ -50,8 +59,13 @@ export default class extends Controller {
   // On initialise le récap avec les valeurs déjà présentes dans les champs
   // (utile lors de la modification d'un match existant)
   connect() {
+    // Initialise le max de joueurs selon le sport déjà sélectionné (edit d'un match existant)
+    // Par défaut 9 si aucun sport ou sport inconnu dans le mapping
+    this.maxPlayers = this._maxForCurrentSport()
+
     this.updateTitle()
     this.updateDescription()
+    this.updateSport()
     this.updatePlace()
     this.updateDate()
     this.updateTime()
@@ -92,6 +106,102 @@ export default class extends Controller {
       this.recapDescriptionTarget.textContent = ""
       this.recapDescriptionTarget.style.display = "none" // masqué
     }
+  }
+
+  // ── Sport : affiche les boutons de format + met à jour le récap ──
+  updateSport() {
+    const select  = this.sportInputTarget
+    const sportId = select.value
+
+    // Récupère les maps JSON passées en data-attributes sur le select
+    const formatsMap = JSON.parse(select.dataset.formats     || "{}")
+    const maxMap     = JSON.parse(select.dataset.maxPlayers  || "{}")
+    const nameMap    = JSON.parse(select.dataset.sportNames  || "{}")
+
+    if (sportId && formatsMap[sportId]) {
+      const formats = formatsMap[sportId]
+
+      // Met à jour le max global pour ce sport
+      this.maxPlayers = maxMap[sportId] || 9
+
+      // Met à jour le récap sport
+      this.recapSportTarget.textContent = nameMap[sportId] || "—"
+
+      // N'affiche le sélecteur et la ligne récap que s'il y a plusieurs formats possibles
+      if (formats.length > 1) {
+        this._renderFormatButtons(formats)
+        this.formatWrapperTarget.style.display = ""
+        this.recapFormatRowTarget.style.display = ""
+      } else {
+        this.formatWrapperTarget.style.display = "none"
+        this.recapFormatRowTarget.style.display = "none"
+      }
+
+      // Sélectionne automatiquement le premier format (applique aussi le compteur)
+      this._applyFormat(formats[0])
+    } else {
+      // Aucun sport sélectionné
+      this.maxPlayers = 9
+      this.recapSportTarget.textContent = "—"
+      this.formatWrapperTarget.style.display = "none"
+    }
+  }
+
+  // Génère les boutons de format dans le conteneur dédié
+  _renderFormatButtons(formats) {
+    const container = this.formatButtonsTarget
+    container.innerHTML = ""
+
+    formats.forEach((fmt, index) => {
+      const btn = document.createElement("button")
+      btn.type = "button"
+      btn.className = "match-level-btn" + (index === 0 ? " active" : "")
+      btn.textContent = fmt.label
+      btn.dataset.players = fmt.players
+      btn.dataset.label   = fmt.label
+      // Au clic : sélectionne ce format
+      btn.addEventListener("click", () => this._applyFormat(fmt, btn))
+      container.appendChild(btn)
+    })
+  }
+
+  // Applique un format : met à jour le compteur, le max et l'input caché
+  _applyFormat(fmt, clickedBtn = null) {
+    // Met à jour l'input caché format (soumis avec le formulaire)
+    this.formatInputTarget.value = fmt.label
+
+    // Met à jour la ligne récap format
+    this.recapFormatTarget.textContent = fmt.label
+
+    // Le max devient le nombre exact de joueurs du format (ex: 3v3 → max 5)
+    this.maxPlayers = fmt.players
+
+    // Met à jour le compteur de joueurs
+    const count = fmt.players
+    this.playersInputTarget.value       = count
+    this.playersCountTarget.textContent = count
+    this.recapPlayersTarget.textContent = count
+    this.updateCounterButtons(count)
+
+    // Met à jour l'état "active" des boutons de format
+    if (clickedBtn) {
+      this.formatButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
+        b.classList.toggle("active", b === clickedBtn)
+      })
+    }
+  }
+
+  // Appelé au clic sur un bouton de format (via event delegation)
+  selectFormat(event) {
+    const btn = event.currentTarget
+    this._applyFormat({ label: btn.dataset.label, players: parseInt(btn.dataset.players) }, btn)
+  }
+
+  // Retourne le max de joueurs pour le sport actuellement sélectionné au chargement
+  _maxForCurrentSport() {
+    const select = this.sportInputTarget
+    const maxMap = JSON.parse(select.dataset.maxPlayers || "{}")
+    return maxMap[select.value] || 9
   }
 
   // ── Lieu ──────────────────────────────────────────────────
@@ -153,37 +263,38 @@ export default class extends Controller {
   increment() {
     const input = this.playersInputTarget
     const current = parseInt(input.value) || 1
-    // Maximum : 9 joueurs
-    if (current < 9) {
+    // Maximum dynamique selon le sport (this.maxPlayers, par défaut 9)
+    const max = this.maxPlayers || 9
+    if (current < max) {
       const newVal = current + 1
       input.value = newVal
       this.playersCountTarget.textContent = newVal
       this.recapPlayersTarget.textContent  = newVal
-      this.updateCounterButtons(newVal)              // met à jour les couleurs des boutons
+      this.updateCounterButtons(newVal)
     }
   }
 
   // ── Met à jour la couleur des boutons − et + selon la valeur ──
   // Règle :
-  //   val = 1 → "-" gris (limite atteinte),  "+" vert
-  //   val = 9 → "-" vert,                    "+" gris (limite atteinte)
-  //   entre   → les deux verts
+  //   val = 1      → "-" gris (minimum atteint), "+" vert
+  //   val = max    → "-" vert, "+" gris (maximum atteint)
+  //   entre les deux → les deux verts
   updateCounterButtons(val) {
     const minus = this.minusBtnTarget
     const plus  = this.plusBtnTarget
+    const max   = this.maxPlayers || 9
 
-    // On retire les deux classes d'état avant de les réappliquer
     minus.classList.remove("is-active", "is-disabled")
     plus.classList.remove("is-active", "is-disabled")
 
     if (val <= 1) {
-      minus.classList.add("is-disabled")  // Minimum atteint → "-" gris
+      minus.classList.add("is-disabled")
       plus.classList.add("is-active")
-    } else if (val >= 9) {
+    } else if (val >= max) {
       minus.classList.add("is-active")
-      plus.classList.add("is-disabled")   // Maximum atteint → "+" gris
+      plus.classList.add("is-disabled")
     } else {
-      minus.classList.add("is-active")    // Entre 1 et 9 → les deux verts
+      minus.classList.add("is-active")
       plus.classList.add("is-active")
     }
   }

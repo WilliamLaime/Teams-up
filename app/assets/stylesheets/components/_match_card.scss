@@ -33,6 +33,35 @@
     display: block; // supprime l'espace parasite sous l'image
   }
 
+  // ── Overlay sport — coin haut gauche de l'image ───
+  // Pill floutée avec emoji + nom du sport
+  .match-sport-overlay {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+
+    .match-sport-overlay-icon {
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+
+    .match-sport-overlay-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
+  }
+
   // ── Overlay "COMPLET" ──────────────────────────────
   // Bandeau sombre centré sur l'image quand le match est plein
   .match-full-overlay {

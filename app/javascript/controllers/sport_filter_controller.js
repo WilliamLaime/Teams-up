@@ -1,5 +1,6 @@
-// level_filter_controller.js
-// Gère le dropdown personnalisé pour le filtre de niveau (multi-sélection).
+// sport_filter_controller.js
+// Gère le dropdown personnalisé pour le filtre de sport (multi-sélection).
+// Calqué sur level_filter_controller.js pour une UX cohérente.
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -12,7 +13,7 @@ export default class extends Controller {
     // Ferme ce dropdown si un autre s'ouvre (custom event "filter:opened")
     this.handleOtherOpened = this.handleOtherOpened.bind(this)
     document.addEventListener("filter:opened", this.handleOtherOpened)
-    // Met à jour le label si des niveaux sont déjà dans l'URL
+    // Met à jour le label si des sports sont déjà dans l'URL
     this.updateLabel()
   }
 
@@ -25,7 +26,6 @@ export default class extends Controller {
   toggle(event) {
     event.stopPropagation()
     const dropdown = this.dropdownTarget
-    // On contrôle directement le style inline — pas de conflit CSS possible
     if (dropdown.style.display === "none") {
       // Prévient les autres dropdowns de se fermer
       document.dispatchEvent(new CustomEvent("filter:opened", { detail: { source: this } }))
@@ -43,36 +43,46 @@ export default class extends Controller {
     }
   }
 
-  // Ferme le dropdown si on clique ailleurs sur la page
+  // Ferme le dropdown si on clique ailleurs
   handleClickOutside(event) {
     if (!this.element.contains(event.target)) {
       this.dropdownTarget.style.display = "none"
     }
   }
 
-  // Appelé à chaque checkbox cochée/décochée — met à jour le label uniquement
-  // (le formulaire n'est soumis que via le bouton "Appliquer")
+  // Appelé à chaque checkbox cochée/décochée — met à jour le label
   change() {
     this.updateLabel()
   }
 
-  // Soumet le formulaire et ferme le dropdown — appelé par le bouton "Appliquer"
+  // Coche toutes les checkboxes si au moins une est décochée, sinon toutes les décoche
+  selectAll(event) {
+    event.stopPropagation()
+    const allChecked = this.checkboxTargets.every(cb => cb.checked)
+    this.checkboxTargets.forEach(cb => cb.checked = !allChecked)
+    this.updateLabel()
+  }
+
+  // Soumet le formulaire et ferme le dropdown
   apply(event) {
     event.stopPropagation()
     this.dropdownTarget.style.display = "none"
     this.element.closest("form").requestSubmit()
   }
 
-  // Met à jour le texte du trigger selon les cases cochées
+  // Met à jour le label du trigger selon les cases cochées
   updateLabel() {
     const checked = this.checkboxTargets.filter(cb => cb.checked)
 
     if (checked.length === 0) {
-      this.labelTarget.textContent = "Niveau"
+      // Aucun sport sélectionné → label par défaut
+      this.labelTarget.innerHTML = "Sport"
     } else if (checked.length === 1) {
-      this.labelTarget.textContent = checked[0].value
+      // Un seul sport : utilise data-label-html pour afficher l'icône image si besoin
+      this.labelTarget.innerHTML = checked[0].dataset.labelHtml
     } else {
-      this.labelTarget.textContent = `${checked.length} niveaux`
+      // Plusieurs sports → compteur
+      this.labelTarget.innerHTML = `${checked.length} sports`
     }
   }
 }

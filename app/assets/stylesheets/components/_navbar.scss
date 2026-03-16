@@ -55,7 +55,8 @@
   }
 
   // Au hover : la ligne s'étend jusqu'aux extrémités du texte
-  &:hover::after {
+  // Exclut le sport-switcher qui a son propre style pill
+  &:not(.sport-switcher):hover::after {
     width: calc(100% - 1.5rem); // 1.5rem = paddings gauche + droite (0.75rem × 2)
   }
 

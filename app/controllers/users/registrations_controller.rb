@@ -17,6 +17,17 @@ class Users::RegistrationsController < Devise::RegistrationsController
         profil_attrs[:avatar] = avatar if avatar.present?
 
         user.create_profil(profil_attrs)
+
+        # Ajoute les sports sélectionnés par l'utilisateur lors de l'inscription
+        sport_ids = params.dig(:user, :sport_ids).to_a.reject(&:blank?).map(&:to_i)
+        if sport_ids.any?
+          # On récupère uniquement les sports qui existent vraiment en base
+          sports = Sport.where(id: sport_ids)
+          user.sports = sports
+
+          # Le premier sport sélectionné devient le sport actif par défaut
+          user.update(current_sport_id: sports.first.id) if sports.any?
+        end
       end
     end
   end

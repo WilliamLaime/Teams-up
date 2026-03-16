@@ -86,7 +86,29 @@
         <%# / identité %>
 
 
-        <%# ── 2. Statistiques — en-tête hors card ────────────────────────────── %>
+        <%# ── 2. Sports pratiqués ──────────────────────────────────────────────── %>
+        <% user_sports = @profil_user.sports.order(:name) %>
+        <% if user_sports.any? %>
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+            <i data-lucide="trophy" style="width:14px; height:14px;"></i>
+            Sports pratiqués
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem;">
+            <% user_sports.each do |sport| %>
+              <%# Pill sport avec emoji — sport actif mis en avant %>
+              <span style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:999px; font-size:0.82rem; font-weight:700; <%= current_sport&.id == sport.id ? 'background:rgba(30,221,136,0.14); border:1px solid rgba(30,221,136,0.45); color:#1EDD88;' : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.75);' %>">
+                <%= sport_icon(sport, size: "1rem") %>
+                <%= sport.name %>
+                <%# Petit point vert si c'est le sport actif %>
+                <% if current_sport&.id == sport.id %>
+                  <span style="width:6px; height:6px; border-radius:50%; background:#1EDD88; flex-shrink:0;"></span>
+                <% end %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# ── 3. Statistiques — en-tête hors card ────────────────────────────── %>
         <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
           <i data-lucide="bar-chart-2" style="width:14px; height:14px;"></i>
           Statistiques

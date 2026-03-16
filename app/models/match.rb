@@ -14,6 +14,9 @@ class Match < ApplicationRecord
 
   # Le créateur du match (organisateur)
   belongs_to :user, optional: true
+
+  # Le sport associé à ce match (Football, Tennis, etc.)
+  belongs_to :sport, optional: true
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 

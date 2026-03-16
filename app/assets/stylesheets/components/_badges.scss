@@ -40,11 +40,11 @@
     border: 1px solid rgba(#f87171, 0.40);
   }
 
-  // Tout niveau → bleu
+  // Tout niveau → bleu discret (même logique que les autres niveaux)
   &.level-tout {
-    background: rgba($blue, 0.30);
-    color: lighten($blue, 25%);
-    border: 1px solid rgba($blue, 1);
+    background: rgba($blue, 0.15);
+    color: lighten($blue, 20%);
+    border: 1px solid rgba($blue, 0.40);
   }
 }
 

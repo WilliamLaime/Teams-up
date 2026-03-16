@@ -71,6 +71,37 @@
             <h2 class="match-form-section-title">Descriptif</h2>
           </div>
 
+          <%# Champ Sport — visible et pré-rempli avec le sport actif
+              L'utilisateur peut le modifier si besoin %>
+          <div class="mb-3">
+            <%= f.label :sport_id, class: "form-label" do %>Sport <span class="required-star">*</span><% end %>
+            <%
+              # Maps JSON passées au controller Stimulus pour adapter le compteur au sport/format
+              sports_defaults = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.default_player_count }
+              sports_max      = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.max_player_count }
+              # Pour le récap Stimulus : emoji + nom (image sports → juste le nom)
+              sports_names    = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = "#{sport_icon_text(s)} #{s.name}".strip }
+              # Formats disponibles par sport : { sportId => [{label, players}, ...] }
+              sports_formats  = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_formats }
+            %>
+            <%= f.select :sport_id,
+                options_from_collection_for_select(Sport.order(:name), :id,
+                  lambda { |s| s.icon.match?(/\.(png|jpg|svg|gif|webp)$/i) ? s.name : "#{s.icon} #{s.name}" },
+                  @match.sport_id),
+                { prompt: "Sélectionner un sport" },
+                { class: "form-select",
+                  required: true,
+                  data: {
+                    "match-form-target": "sportInput",
+                    "action": "change->match-form#updateSport",
+                    "defaults": sports_defaults.to_json,
+                    "max-players": sports_max.to_json,
+                    "sport-names": sports_names.to_json,
+                    "formats": sports_formats.to_json
+                  } } %>
+
+          </div>
+
           <%# Champ Titre — obligatoire
               data-match-form-target="titleInput" : Stimulus surveille ce champ
               data-action="input->match-form#updateTitle" : met à jour le récap à chaque frappe %>
@@ -210,6 +241,13 @@
           <div class="match-form-section-header">
             <div class="match-form-step-badge">4</div>
             <h2 class="match-form-section-title">Détails du match</h2>
+          </div>
+
+          <%# ── Sélecteur de format — visible uniquement pour les sports multi-formats ── %>
+          <div class="mb-4" data-match-form-target="formatWrapper" style="display:none;">
+            <label class="form-label d-block">Format <span class="required-star">*</span></label>
+            <%= f.hidden_field :format, data: { "match-form-target": "formatInput" } %>
+            <div class="match-level-buttons" data-match-form-target="formatButtons"></div>
           </div>
 
           <%# ── Compteur : Nombre de joueurs manquants ── %>
@@ -388,6 +426,19 @@
             <%= truncate(@match.description.to_s, length: 80) %>
           </p>
 
+          <%# ── Ligne Sport ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Sport</span>
+            <span class="recap-value" data-match-form-target="recapSport">
+              <%# Affiche l'emoji + nom du sport si sélectionné %>
+              <% if @match.sport %>
+                <%= sport_icon(@match.sport, size: "1rem") %> <%= @match.sport.name %>
+              <% else %>
+                —
+              <% end %>
+            </span>
+          </div>
+
           <%# ── Ligne Lieu ── %>
           <div class="match-recap-row">
             <span class="recap-label">Lieu</span>
@@ -413,6 +464,12 @@
               <%# strftime "%Hh%M" donne "21h15" %>
               <%= @match.time.present? ? @match.time.strftime("%Hh%M") : "—" %>
             </span>
+          </div>
+
+          <%# ── Ligne Format — masquée si sport mono-format ── %>
+          <div class="match-recap-row" data-match-form-target="recapFormatRow" style="display:none;">
+            <span class="recap-label">Format</span>
+            <span class="recap-value" data-match-form-target="recapFormat">—</span>
           </div>
 
           <%# ── Ligne Joueurs recherchés ── %>
