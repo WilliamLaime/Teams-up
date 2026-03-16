@@ -84,21 +84,61 @@
               # Formats disponibles par sport : { sportId => [{label, players}, ...] }
               sports_formats  = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_formats }
             %>
-            <%= f.select :sport_id,
-                options_from_collection_for_select(Sport.order(:name), :id,
-                  lambda { |s| s.icon.match?(/\.(png|jpg|svg|gif|webp)$/i) ? s.name : "#{s.icon} #{s.name}" },
-                  @match.sport_id),
-                { prompt: "Sélectionner un sport" },
-                { class: "form-select",
-                  required: true,
-                  data: {
-                    "match-form-target": "sportInput",
-                    "action": "change->match-form#updateSport",
-                    "defaults": sports_defaults.to_json,
-                    "max-players": sports_max.to_json,
-                    "sport-names": sports_names.to_json,
-                    "formats": sports_formats.to_json
-                  } } %>
+            <%#
+              Select caché — soumis avec le formulaire et cible Stimulus.
+              Le dropdown custom ci-dessous met à jour sa valeur et déclenche
+              un event "change" pour que Stimulus (updateSport) réagisse.
+            %>
+            <%= f.hidden_field :sport_id,
+                data: {
+                  "match-form-target": "sportInput",
+                  "defaults": sports_defaults.to_json,
+                  "max-players": sports_max.to_json,
+                  "sport-names": sports_names.to_json,
+                  "formats": sports_formats.to_json
+                } %>
+
+            <%# Dropdown custom — affiche les icônes image + emoji %>
+            <div style="position:relative;" data-controller="sport-picker">
+
+              <%# Trigger : affiche le sport sélectionné (ou le prompt)
+                  form-select = même style + chevron blanc que date/heure
+                  Le contenu intérieur est en flex via un <span> pour ne pas casser
+                  le background-image du chevron Bootstrap %>
+              <button type="button"
+                      class="form-select"
+                      data-sport-picker-target="trigger"
+                      data-action="click->sport-picker#toggle"
+                      style="cursor:pointer; text-align:left;">
+                <span class="d-flex align-items-center gap-2">
+                  <% if @match.sport %>
+                    <%= sport_icon(@match.sport, size: "1.1rem") %>
+                    <span><%= @match.sport.name %></span>
+                  <% else %>
+                    <span style="color:rgba(255,255,255,0.4);">Sélectionner un sport</span>
+                  <% end %>
+                </span>
+              </button>
+
+              <%# Panel dropdown avec tous les sports %>
+              <div data-sport-picker-target="dropdown"
+                   style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
+                          background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
+                          padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                <% Sport.order(:name).each do |sport| %>
+                  <%# data-active="true" = sport actuellement sélectionné → fond vert géré par le controller %>
+                  <button type="button"
+                          class="sport-picker-item w-100 d-flex align-items-center gap-2 text-start <%= 'sport-picker-item--active' if @match.sport_id == sport.id %>"
+                          data-action="click->sport-picker#select"
+                          data-sport-picker-target="item"
+                          data-sport-id="<%= sport.id %>"
+                          data-sport-name="<%= sport.name %>">
+                    <%= sport_icon(sport, size: "1.1rem") %>
+                    <span><%= sport.name %></span>
+                  </button>
+                <% end %>
+              </div>
+            </div>
 
           </div>
 
@@ -158,8 +198,9 @@
                   - data-match-form-target="placeInput" → récap Stimulus
                   - focus->place-search#showDefault     → ouvre le dropdown avec "Ma position" au clic
                   - data-action avec les actions séparées par un espace %>
+              <%# form-select = même chevron blanc que date/heure/sport %>
               <%= f.text_field :place,
-                  class: "form-control place-search-input",
+                  class: "form-select",
                   placeholder: "Ex: Urban Soccer, Bordeaux...",
                   autocomplete: "off",
                   required: true,
@@ -168,9 +209,6 @@
                     "match-form-target":   "placeInput",
                     "action": "input->place-search#search focus->place-search#showDefault input->match-form#updatePlace"
                   } %>
-
-              <%# Chevron visuel à droite de l'input pour indiquer le dropdown %>
-              <span class="place-search-chevron" aria-hidden="true">&#8964;</span>
 
               <%# Dropdown des suggestions — géré par place_search_controller.js %>
               <div data-place-search-target="dropdown"

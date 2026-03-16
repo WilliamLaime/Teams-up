@@ -94,22 +94,23 @@
         <% end %>
         <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
       </div>
-      <span class="match-card-date">
-        <i data-lucide="calendar" style="width:12px;height:12px;"></i>
-        <%= date_str %>
-      </span>
+      <%# Format + date côte à côte à droite %>
+      <div class="d-flex align-items-center gap-2">
+        <% if match.format.present? %>
+          <span class="match-card-date">
+            <i data-lucide="users" style="width:12px;height:12px;"></i>
+            <%= match.format %>
+          </span>
+        <% end %>
+        <span class="match-card-date">
+          <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+          <%= date_str %>
+        </span>
+      </div>
     </div>
 
     <%# Titre du match (tronqué à 2 lignes) %>
     <div class="match-card-title"><%= match.title %></div>
-
-    <%# Format — affiché uniquement pour les sports multi-formats %>
-    <% if match.format.present? %>
-      <div class="match-info-line">
-        <i data-lucide="users" style="width:13px;height:13px;"></i>
-        <span><%= match.format %></span>
-      </div>
-    <% end %>
 
     <%# Lieu %>
     <div class="match-info-line">

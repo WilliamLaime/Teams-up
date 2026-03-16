@@ -176,8 +176,8 @@ export default class extends Controller {
     // Le max devient le nombre exact de joueurs du format (ex: 3v3 → max 5)
     this.maxPlayers = fmt.players
 
-    // Met à jour le compteur de joueurs
-    const count = fmt.players
+    // Démarre toujours à 1 joueur manquant (l'utilisateur incrémente jusqu'au max)
+    const count = 1
     this.playersInputTarget.value       = count
     this.playersCountTarget.textContent = count
     this.recapPlayersTarget.textContent = count

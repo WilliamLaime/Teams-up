@@ -347,30 +347,20 @@
       color: $dark-text;
     }
 
-    // Icône calendrier de l'input date : même couleur que le texte
+    // Icône calendrier de l'input date : blanc plein
     &::-webkit-calendar-picker-indicator {
-      filter: invert(1); // Passe l'icône en clair (blanc/gris) sur fond sombre
-      opacity: 0.7;
+      filter: invert(1);
+      opacity: 1; // Blanc plein, plus lisible
       cursor: pointer;
     }
   }
 
-  // Input lieu : padding à droite pour laisser place au chevron
-  .place-search-input {
-    padding-right: 2.25rem;
+  // Flèche (chevron) des <select> Bootstrap en blanc
+  // Bootstrap génère un SVG gris (#343a40) en background-image — on le remplace par blanc
+  .form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
   }
 
-  // Chevron visuel à droite de l'input lieu
-  // On cible la hauteur exacte de .form-control Bootstrap : calc(1.5em + 0.75rem + 2px) ≈ 38px
-  .place-search-chevron {
-    position: absolute;
-    right: 0.75rem;
-    top: calc((1.5em + 0.75rem + 2px) / 2);  // Moitié exacte de la hauteur du .form-control
-    transform: translateY(-50%);              // Remonte de sa propre moitié → centré
-    color: $dark-muted;
-    font-size: 0.85rem;
-    pointer-events: none;  // Ne bloque pas les clics sur l'input
-  }
 
   // Dropdown de l'autocomplete lieu (style sombre)
   .dropdown-menu {
@@ -414,9 +404,9 @@
     width: 44px;
     height: 44px;
     border-radius: 0.5rem;
-    border: 2px solid rgba(255, 255, 255, 0.2); // Bordure grise par défaut
+    border: 2px solid rgba(255, 255, 255, 0.4); // Bordure blanche visible
     background: transparent;
-    color: $dark-text;
+    color: #ffffff; // Blanc pour une meilleure lisibilité
     font-size: 1.3rem;
     line-height: 1;
     display: flex;

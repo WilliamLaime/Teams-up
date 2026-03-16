@@ -203,3 +203,31 @@
     box-shadow: none;
   }
 }
+
+// ── Sport Picker (dropdown custom formulaire match) ──────────────────────────
+// Items du dropdown de sélection de sport dans le formulaire de création
+.sport-picker-item {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.12s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  // Sport actuellement sélectionné → fond vert subtil
+  &--active {
+    background: rgba($green, 0.1);
+    color: $green;
+
+    &:hover {
+      background: rgba($green, 0.15);
+    }
+  }
+}
