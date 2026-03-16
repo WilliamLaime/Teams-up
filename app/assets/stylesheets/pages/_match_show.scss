@@ -936,6 +936,18 @@
 }
 
 // Lien "Voir le profil complet" sous les tags
+// Message laissé par le joueur lors de sa demande
+.pending-modal-message {
+  font-size: 0.75rem;
+  color: $dark-muted;
+  font-style: italic;
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  i { margin-top: 2px; flex-shrink: 0; }
+}
+
 .pending-modal-profile-link {
   display: inline-flex;
   align-items: center;
@@ -1058,6 +1070,31 @@
   font-size: 0.82rem;
   color: $dark-muted;
   margin: 0;
+}
+
+// Label du champ message
+.join-modal-label {
+  font-size: 0.78rem;
+  color: $dark-muted;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+// Textarea message dans le modal rejoindre
+.join-modal-textarea {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+  font-size: 0.85rem;
+  resize: none;
+
+  &::placeholder { color: $dark-muted; }
+  &:focus {
+    border-color: $green !important;
+    box-shadow: 0 0 0 2px rgba($green, 0.2) !important;
+    background: rgba(255,255,255,0.07) !important;
+  }
 }
 
 // Boutons Oui / Non
