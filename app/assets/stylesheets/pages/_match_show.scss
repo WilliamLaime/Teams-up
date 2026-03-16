@@ -464,6 +464,51 @@
 }
 
 
+// Avatar groupé pour les joueurs présents IRL (sans compte app)
+// Cercle gris avec icone user + badge numérique en bas à droite
+.match-player-item--irl {
+  cursor: default; // pas cliquable
+
+  .match-player-avatar-irl {
+    position: relative; // pour positionner le badge (nécessaire pour le badge numérique)
+    display: inline-flex; // garde le wrapper en inline pour le badge positionné en absolu
+
+    // L'image SVG hérite du même style que les vrais avatars (.match-player-avatar)
+    img {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+  }
+
+  // Badge numérique (ex: "4") positionné en bas à droite de l'avatar
+  .match-player-irl-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px; // pill pour les nombres > 9
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid $dark-card-bg; // liseré sombre pour détacher du fond
+  }
+}
+
+// Label "Sur place" sous l'avatar groupé — discret
+.match-player-name--irl {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
 // ── 7. BLOC GESTION (organisateur) ────────────────
 
 .match-block-organizer {
