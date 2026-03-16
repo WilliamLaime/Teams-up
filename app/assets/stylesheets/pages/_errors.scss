@@ -1,0 +1,106 @@
+// ============================================================
+// Pages d'erreur (404, 500) — thème sombre cohérent avec l'app
+// ============================================================
+
+// Sur les pages d'erreur, on masque le footer (barre blanche en bas)
+body:has(.error-404-page) footer {
+  display: none;
+}
+
+// Conteneur principal : centré verticalement et horizontalement
+.error-404-page {
+  min-height: calc(100vh - 60px); // Prend tout l'espace sous la navbar
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-color: $dark-bg; // Fond sombre comme le reste de l'app
+}
+
+// Bloc central avec tout le contenu
+.error-404-container {
+  text-align: center;
+  max-width: 520px;
+}
+
+// Logo en haut du bloc, cliquable → retour accueil
+.error-404-logo {
+  height: 36px;
+  width: auto;
+  margin-bottom: 2rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// Le "404" géant en arrière-plan visuel
+.error-404-code {
+  font-size: clamp(6rem, 20vw, 10rem); // Responsive : grand sur desktop, raisonnable sur mobile
+  font-weight: 900;
+  line-height: 1;
+  color: $green;              // Vert de l'app
+  opacity: 0.15;              // Très transparent → effet "watermark" en arrière-plan
+  margin-bottom: -1rem;       // Tire vers le haut pour superposer l'icône
+  pointer-events: none;       // Pas cliquable
+  user-select: none;          // Pas sélectionnable
+}
+
+// Icône Lucide au centre (terrain, etc.)
+.error-404-icon {
+  margin-bottom: 1.5rem;
+
+  i {
+    width: 64px;
+    height: 64px;
+    color: $green;            // Vert pour rester dans le thème
+    opacity: 0.8;
+  }
+}
+
+// Titre de la page d'erreur
+.error-404-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: $dark-text;          // Texte clair sur fond sombre
+  margin-bottom: 1rem;
+}
+
+// Texte descriptif sous le titre
+.error-404-description {
+  font-size: 1rem;
+  color: $dark-muted;         // Texte secondaire atténué
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+// Groupe de boutons d'action
+.error-404-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;             // Passe en colonne sur mobile si besoin
+}
+
+// Bouton principal (vert — "Trouver un match")
+.error-404-btn-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+// Bouton secondaire (outline — "Accueil")
+.error-404-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: $dark-muted;
+  border-color: $dark-muted;
+
+  // Au survol, on éclaire légèrement
+  &:hover {
+    color: $dark-text;
+    border-color: $dark-text;
+    background-color: transparent;
+  }
+}

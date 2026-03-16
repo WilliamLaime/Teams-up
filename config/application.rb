@@ -34,5 +34,9 @@ module TeamUp
     # Langue par défaut de l'application : français
     # Utilisé par time_ago_in_words, les messages d'erreur, etc.
     config.i18n.default_locale = :fr
+
+    # Pages d'erreur personnalisées avec notre vrai layout (navbar + styles)
+    # Au lieu des pages statiques public/404.html, Rails utilisera notre ErrorsController
+    config.exceptions_app = routes
   end
 end

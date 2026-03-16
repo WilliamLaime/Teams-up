@@ -1,0 +1,39 @@
+<%# Page 500 — Erreur interne du serveur
+    Affichée quand quelque chose se passe mal côté serveur. %>
+
+<div class="error-404-page">
+  <div class="error-404-container">
+
+    <%# ── Logo ── %>
+    <%= link_to root_path do %>
+      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", class: "error-404-logo" %>
+    <% end %>
+
+    <%# ── Code d'erreur géant ── %>
+    <div class="error-404-code">500</div>
+
+    <%# ── Icône ── %>
+    <div class="error-404-icon">
+      <i data-lucide="server-crash"></i>
+    </div>
+
+    <%# ── Titre ── %>
+    <h1 class="error-404-title">Oups, quelque chose a planté !</h1>
+
+    <%# ── Description ── %>
+    <p class="error-404-description">
+      Une erreur inattendue s'est produite sur nos serveurs.
+      <br>
+      Notre équipe est sur le coup — réessaie dans quelques instants.
+    </p>
+
+    <%# ── Actions ── %>
+    <div class="error-404-actions">
+      <%= link_to root_path, class: "btn btn-primary btn-lg error-404-btn-main" do %>
+        <i data-lucide="home" style="width:18px;height:18px;"></i>
+        Retour à l'accueil
+      <% end %>
+    </div>
+
+  </div>
+</div>

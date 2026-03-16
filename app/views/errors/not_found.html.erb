@@ -1,0 +1,42 @@
+<%# Page 404 — Match introuvable ou ressource supprimée
+    Cette vue utilise le layout application.html.erb (navbar + footer inclus).
+    Elle s'affiche quand Rails ne trouve pas une ressource (ActiveRecord::RecordNotFound)
+    ou quand une route n'existe pas (ActionController::RoutingError). %>
+
+<div class="error-404-page">
+  <div class="error-404-container">
+
+    <%# ── Logo ── %>
+    <%= link_to root_path do %>
+      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", class: "error-404-logo" %>
+    <% end %>
+
+    <%# ── Code d'erreur géant ── %>
+    <div class="error-404-code">404</div>
+
+    <%# ── Icône terrain vide ── %>
+    <div class="error-404-icon">
+      <i data-lucide="map-off"></i>
+    </div>
+
+    <%# ── Titre ── %>
+    <h1 class="error-404-title">Ce match n'existe plus !</h1>
+
+    <%# ── Description ── %>
+    <p class="error-404-description">
+      Le match que tu cherches a été annulé, supprimé ou n'a jamais existé.
+      <br>
+      Pas de panique, il y a plein d'autres matchs qui t'attendent !
+    </p>
+
+    <%# ── Actions ── %>
+    <div class="error-404-actions">
+      <%# Bouton principal : retour à la liste des matchs (sans icône) %>
+      <%= link_to "Trouver un match", matches_path, class: "btn btn-primary btn-lg" %>
+
+      <%# Bouton secondaire : retour à l'accueil (bordure + texte vert, même taille) %>
+      <%= link_to "Accueil", root_path, class: "btn btn-outline-success btn-lg" %>
+    </div>
+
+  </div>
+</div>

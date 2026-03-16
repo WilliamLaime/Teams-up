@@ -77,4 +77,12 @@ Rails.application.routes.draw do
 
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
+
+  # ── Pages d'erreur personnalisées ──────────────────────────────────────────
+  # Ces routes sont utilisées par config.exceptions_app = routes (dans application.rb)
+  # Rails redirige automatiquement les erreurs vers ces URLs selon le code HTTP
+  # /404 → ressource introuvable (match supprimé, route inexistante)
+  # /500 → erreur serveur interne
+  match "/404", to: "errors#not_found",            via: :all
+  match "/500", to: "errors#internal_server_error", via: :all
 end
