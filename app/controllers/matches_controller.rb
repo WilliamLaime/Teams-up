@@ -3,12 +3,29 @@ class MatchesController < ApplicationController
   before_action :set_match, only: [:show, :edit, :update, :destroy]
 
   # GET /matches
-  # Affiche uniquement les matchs à venir (passés exclus), triés par date puis heure
-  # Accepte des paramètres de filtre : level, place, date, time, player_left, mine
+  # Deux modes :
+  #   - ?mine=1 → historique personnel (matchs en cours + terminés de l'user)
+  #   - par défaut → index public (matchs ouverts à l'inscription, ≥ 30 min)
   def index
-    # .upcoming = scope défini dans le modèle Match (filtre date+heure dans le futur)
-    @matches = policy_scope(Match).upcoming.order(date: :asc, time: :asc)
-    apply_filters
+    if params[:mine].present? && user_signed_in?
+      # Historique : TOUS les matchs de l'user (participants ou organisateur), triés du plus récent
+      @matches = policy_scope(Match)
+        .where(id: current_user.match_users.select(:match_id))
+        .order(date: :desc, time: :desc)
+
+      # Filtre statut :
+      #   ?status=completed → matchs terminés (> 1h après le début)
+      #   par défaut        → matchs "en cours" (pas encore terminés)
+      if params[:status] == "completed"
+        @matches = @matches.completed
+      else
+        @matches = @matches.active_for_user
+      end
+    else
+      # Index public : uniquement les matchs ouverts à l'inscription
+      @matches = policy_scope(Match).upcoming.order(date: :asc, time: :asc)
+      apply_filters
+    end
   end
 
   # GET /matches/:id
@@ -85,12 +102,6 @@ class MatchesController < ApplicationController
   def apply_filters
     # Recherche full-text — titre, ville, description ou prénom/nom du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
-
-    # Filtre "Mes matchs" — matchs où current_user est créateur OU participant
-    # current_user.match_users.select(:match_id) → sous-requête SQL (couvre créateur + participant)
-    if params[:mine].present? && user_signed_in?
-      @matches = @matches.where(id: current_user.match_users.select(:match_id))
-    end
 
     # Filtre par niveau — accepte plusieurs valeurs (WHERE level IN ('...', '...'))
     @matches = @matches.where(level: params[:levels]) if params[:levels].present?

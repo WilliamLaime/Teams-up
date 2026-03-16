@@ -118,8 +118,11 @@
       </div>
     <% end %>
 
-    <%# Bandeau "COMPLET" sur l'image si le match est plein %>
-    <% if match.full? %>
+    <%# Bandeau "TERMINÉ" sur l'image si le match est terminé (> 1h après le début) %>
+    <% if match.completed? %>
+      <div class="match-completed-overlay">Terminé</div>
+    <%# Bandeau "COMPLET" sur l'image si le match est plein (et pas encore terminé) %>
+    <% elsif match.full? %>
       <div class="match-full-overlay">Complet</div>
     <% end %>
 

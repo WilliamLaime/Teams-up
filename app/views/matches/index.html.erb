@@ -21,6 +21,22 @@
           </p>
           <%= link_to "Créer un match", new_match_path, class: "btn btn-primary btn-sm px-3 btn-cta-primary" %>
         </div>
+
+        <%# Onglets En cours / Terminés — uniquement dans le mode "mes matchs" %>
+        <%# Lien sans status = En cours ; status=completed = Terminés %>
+        <div class="matches-status-tabs">
+          <%= link_to matches_path(mine: 1),
+              class: "matches-status-tab #{'active' if params[:status].blank?}" do %>
+            <i data-lucide="play-circle" style="width:14px;height:14px;"></i>
+            En cours
+          <% end %>
+          <%= link_to matches_path(mine: 1, status: "completed"),
+              class: "matches-status-tab #{'active' if params[:status] == 'completed'}" do %>
+            <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+            Terminés
+          <% end %>
+        </div>
+
       <% else %>
         <h1 class="matches-index-title">Trouver un match</h1>
         <div class="d-flex align-items-center justify-content-between">
@@ -36,8 +52,10 @@
     </div>
 
     <%# ── Barre de filtres ────────────────────────────────────────────────── %>
+    <%# Masquée en mode "mes matchs" : les onglets En cours/Terminés remplacent les filtres %>
     <%# GET → les paramètres apparaissent dans l'URL (partageables) %>
-    <%= form_with url: matches_path, method: :get, local: true do |f| %>
+    <%= form_with url: matches_path, method: :get, local: true,
+        style: params[:mine].present? ? "display:none;" : "" do |f| %>
       <div class="matches-filters-bar">
 
         <%# ── Filtres pill (gauche) ─────────────────────────────────────── %>
@@ -207,7 +225,14 @@
       <div class="matches-empty-state">
         <i data-lucide="search-x" style="width:48px;height:48px;"></i>
         <p class="mt-3 mb-1">
-          <%= params[:mine].present? ? "Tu ne participes à aucun match pour l'instant." : "Aucun match ne correspond à ta recherche." %>
+          <%# Message adapté au contexte %>
+          <% if params[:mine].present? && params[:status] == "completed" %>
+            Tu n'as pas encore de matchs terminés.
+          <% elsif params[:mine].present? %>
+            Tu n'as aucun match en cours pour l'instant.
+          <% else %>
+            Aucun match ne correspond à ta recherche.
+          <% end %>
         </p>
         <% if user_signed_in? %>
           <%= link_to "Créer un match", new_match_path, class: "btn btn-primary mt-2" %>

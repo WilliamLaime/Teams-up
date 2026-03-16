@@ -28,6 +28,41 @@
       font-size: 0.95rem;
       margin: 0;
     }
+
+    // ── Onglets En cours / Terminés (mode "mes matchs") ──
+    .matches-status-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+
+      // Chaque onglet est un lien stylisé en pill
+      .matches-status-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.55);
+        background: transparent;
+        transition: all 0.15s ease;
+
+        &:hover {
+          color: rgba(255, 255, 255, 0.85);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        // Onglet actif : fond vert signature
+        &.active {
+          background: $primary;
+          border-color: $primary;
+          color: #111;
+        }
+      }
+    }
   }
 
   // ── Barre de filtres ──────────────────────────────
@@ -105,9 +140,9 @@
     position: relative;
   }
 
-  // Trigger hérite de .filter-pill-group — on retire juste les styles natifs du <button>
+  // Trigger hérite de .filter-pill-group — on aligne le background avec les autres pills
   .level-filter-trigger {
-    background: none;
+    background-color: $dark-surface;
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.9);
     cursor: pointer;
