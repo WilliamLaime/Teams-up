@@ -6,22 +6,24 @@
 .about-page {
   background-color: $dark-bg; // fond sombre global — empêche le blanc du body de transparaître derrière le SVG transparent
 
-  // ── Banner / Hero ────────────────────────────────
-  // Image abstract_perso en fond avec aplat noir léger par-dessus
+  // ── Banner + Section 1 fusionnées ───────────────
+  // Image de fond img_banner_qsn.png avec aplat sombre
   .about-banner {
     background:
-      linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), // aplat réduit — photo visible
-      image-url("sports/Football/herbe.jpg") center center / cover no-repeat;
-    padding: 100px 0;
-    padding-bottom: 8vw;  // place pour la moitié basse du SVG (hauteur SVG ≈ 15.8vw → moitié ≈ 8vw)
-    text-align: left;     // titre et sous-titre ferrés à gauche
-    position: relative;   // ancre le SVG absolu
-    overflow: visible;    // laisse le SVG déborder en dehors de la banner
+      linear-gradient(rgba(0,0,0,0.70), rgba(0,0,0,0.75)), // aplat sombre pour lisibilité
+      image-url("img_qsn/img_banner_qsn.png") center center / cover no-repeat;
+    padding: 100px 0 80px; // padding en haut pour le hero, en bas pour le contenu fusionné
+    text-align: left;
+
+    // Partie haute : titre + sous-titre du hero
+    .about-banner-top {
+      margin-bottom: 3rem; // espace avant le SVG séparateur
+    }
 
     // Titre principal
     .about-banner-title {
-      font-family: $display-font;  // Bebas Neue — même typo que les titres de sections
-      font-size: clamp(calc(2rem + 20px), 5vw, calc(3.5rem + 20px)); // +10px par rapport à l'original
+      font-family: $display-font;
+      font-size: clamp(calc(2rem + 20px), 5vw, calc(3.5rem + 20px));
       font-weight: 800;
       color: #fff;
       margin-bottom: 1rem;
@@ -32,7 +34,30 @@
       font-size: 1.1rem;
       color: rgba(255, 255, 255, 0.7);
       max-width: 600px;
-      margin: 0; // aligné à gauche comme le titre — pas de centrage auto
+      margin: 0;
+    }
+
+    // SVG décoratif centré entre les deux blocs de contenu
+    .about-qsn-banner {
+      position: static;      // plus absolu — dans le flux normal
+      transform: none;
+      line-height: 0;
+      margin: 0 0 3rem;      // espace sous le SVG avant le texte de section 1
+    }
+
+    .about-qsn-banner-img {
+      width: 100%;
+    }
+
+    // Contenu de l'ancienne section 1 — aligné à droite
+    .about-fragmenter-content {
+      text-align: right;
+
+      .about-section-title,
+      .about-section-text {
+        margin-left: auto; // pousse le bloc vers la droite
+        margin-right: 0;
+      }
     }
   }
 
@@ -47,13 +72,6 @@
 
     // Fond légèrement plus clair
     &--surface { background-color: $dark-surface; }
-
-    // Photo bris_glace en arrière-plan (section 1 - le problème)
-    &--fragmenter {
-      background:
-        linear-gradient(rgba(0,0,0,0.90), rgba(0,0,0,0.90)), // aplat 90% noir
-        image-url("img_qsn/fragmenter.jpg") center center / cover no-repeat;
-    }
 
     // Photo vestiaire abandonné en arrière-plan (section 2 - frustration)
     &--vestiaire {
@@ -125,31 +143,6 @@
     }
   }
 
-  // ── Élément graphique composant_qsn centré sur la jointure banner / section 1 ──
-  // Positionné en absolu DANS la banner → la photo herbe est derrière le haut du SVG
-  // translateY(50%) → la moitié basse déborde sur section 1 → photo fragmenter visible derrière
-  .about-qsn-banner {
-    position: absolute;        // positionné par rapport à .about-banner
-    bottom: 0;                 // collé au bas de la banner
-    left: 0;
-    width: 100%;
-    z-index: 10;               // au-dessus des deux sections
-    transform: translateY(50%); // décale vers le bas de sa propre moitié → centré sur la jointure
-    line-height: 0;            // supprime l'espace fantôme sous l'image inline
-  }
-
-  // L'image s'étire sur toute la largeur
-  .about-qsn-banner-img {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-
-  // Section 1 : padding-top pour que le texte ne soit pas masqué derrière le SVG
-  .about-section--fragmenter {
-    padding-top: calc(8vw + 20px); // remonté — moins d'espace entre le SVG et le texte
-    margin-top: -1px;              // bouche le pixel de gap entre la banner et cette section
-  }
 
   // ── Logo blanc dans la section "Origine" ─────────
   .about-origin-logo {

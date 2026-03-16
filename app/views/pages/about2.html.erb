@@ -1,0 +1,192 @@
+<%# =====================================================
+    Page "Qui sommes-nous ?" — VERSION 2
+    Scroll-snap : chaque section = 1 écran complet
+    ===================================================== %>
+
+<div class="about2-page" data-controller="scroll-snap">
+
+  <%# Glow vert fixe derrière tout le contenu — intensité pilotée par JS %>
+  <div class="a2-glow-bg"></div>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 1 — HERO
+      Fond : img_banner_qsn.png
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--img-1">
+
+    <div class="a2-section-inner text-center mx-auto">
+      <%# Logo blanc Teams-Up %>
+      <div class="a2-origin-logo justify-content-center">
+        <%= image_tag "img_footer/teamsup_picto_blanc.svg", alt: "", class: "a2-origin-picto" %>
+        <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", class: "a2-origin-texte" %>
+      </div>
+
+      <h1 class="a2-title">
+        est né d'une<br>
+        <span class="a2-accent">frustration.</span>
+      </h1>
+
+      <p class="a2-desc">
+        On voulait jouer. On avait le terrain, les crampons, la motivation.
+        Il manquait juste deux joueurs.
+      </p>
+    </div>
+
+    <%# Flèche animée vers la section suivante %>
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
+  </section>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 2 — LE CONSTAT
+      Fond : img_banner_qsn_2.png
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--img-2">
+
+    <div class="a2-section-inner a2-section-inner--right">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        <!-- Le constat -->
+      </div>
+
+      <h2 class="a2-title">
+        Le sport amateur
+        <span class="a2-accent">est fragmenté.</span>
+      </h2>
+
+      <p class="a2-desc">
+        Un groupe WhatsApp, un canal Discord, un post Instagram pour trouver quelqu'un.
+        Et au final...terrain vide, match annulé.
+      </p>
+      <p class="a2-desc">
+        On a tous vécu ça. Trop de canaux, pas assez de joueurs
+        au bon moment, au bon endroit.
+      </p>
+    </div>
+
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
+  </section>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 3 — L'ORIGINE
+      Fond : vestiaire_abandon.jpg
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--img-3">
+
+    <div class="a2-section-inner">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        <!-- Qui sommes-nous ? -->
+      </div>
+
+      <h2 class="a2-title">
+        On a voulu jouer,
+        <span class="a2-accent">alors on a créé l'outil.</span>
+      </h2>
+
+      <p class="a2-desc">
+        Une équipe qui en avait marre de chercher un remplaçant
+        à la dernière minute.
+      </p>
+    </div>
+
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
+  </section>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 4 — LA MISSION
+      Fond : sombre uni (pas d'image)
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--dark">
+
+    <div class="a2-section-inner text-center mx-auto">
+      <div class="hero-badge mx-auto" style="width:fit-content;">
+        <span class="hero-badge-dot"></span>
+        <!-- Notre mission -->
+      </div>
+
+      <h2 class="a2-title a2-title--xl">
+        <span class="a2-accent">Connecter</span> les joueurs<br>
+        qui veulent jouer,<br>
+        <span class="a2-accent">maintenant.</span>
+      </h2>
+
+      <p class="a2-desc">
+        Pas demain. Pas la semaine prochaine.<br>
+        Aujourd'hui, quand il manque quelqu'un sur le terrain.
+      </p>
+    </div>
+
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
+  </section>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 5 — LES VALEURS
+      Fond : players_waiting.png
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--img-5">
+
+    <div class="a2-section-inner text-center mx-auto" style="max-width: 90vw;">
+      <%# SVG texte section 5 %>
+      <%= image_tag "img_qsn/texte_qsn_5.svg", alt: "", class: "a2-hero-svg" %>
+    </div>
+
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
+  </section>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 6 — CTA FINAL
+      Fond : sombre uni (pas d'image)
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--surface">
+
+    <div class="container w-100">
+      <div class="row align-items-center g-5">
+
+        <%# Colonne gauche : texte %>
+        <div class="col-lg-6">
+          <h2 class="a2-title a2-title--lg">
+            Prêt à ne plus <br><span class="a2-accent">rater un match ?</span>
+          </h2>
+          <p class="a2-desc">
+            <!-- Rejoins des joueurs qui organisent leurs matchs en 30 secondes. -->
+          </p>
+        </div>
+
+        <%# Colonne droite : boutons CTA centrés dans la colonne %>
+        <div class="col-lg-6 d-flex flex-column align-items-center gap-3" style="transform: translateX(60px);">
+          <%= render "shared/btn_primary", url: matches_path, text: "Trouver un match" %>
+          <% unless user_signed_in? %>
+            <%= render "shared/btn_secondary", url: new_user_registration_path, text: "Créer un compte" %>
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+
+    <%# Pas de flèche sur la dernière section %>
+
+  </section>
+
+
+</div>
