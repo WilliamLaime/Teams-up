@@ -763,21 +763,30 @@
         <div class="join-modal-title">Rejoindre ce match ?</div>
         <p class="join-modal-subtitle"><%= @match.title %></p>
 
-        <%# Formulaire caché — le bouton "Oui" le soumet via form= %>
-        <%# Pas de champs visibles, juste l'action POST %>
+        <%# Formulaire avec champ message optionnel %>
         <%= form_with url: match_match_users_path(@match),
             method: :post,
-            id: "join-form",
-            class: "d-none" do |f| %>
+            id: "join-form" do |f| %>
+
+          <%# Textarea optionnelle pour laisser un message à l'organisateur %>
+          <div class="mt-3">
+            <%= f.label :message, "Laisser un message (optionnel)", class: "join-modal-label" %>
+            <%= f.text_area :message,
+                placeholder: "Présente-toi, ton niveau...",
+                rows: 3,
+                class: "form-control join-modal-textarea",
+                maxlength: 300 %>
+          </div>
+
         <% end %>
 
         <%# Boutons Oui / Non — Oui en premier à gauche, Non à droite %>
         <div class="d-flex gap-3 mt-4">
-          <%# Oui → soumet le formulaire caché %>
+          <%# Oui → soumet le formulaire %>
           <button type="submit"
                   form="join-form"
                   class="btn btn-primary flex-fill join-modal-btn-yes">
-            Oui
+            Rejoindre
           </button>
           <%# Non → ferme la modal sans soumettre %>
           <button type="button"
@@ -938,6 +947,13 @@
                     <span class="pending-modal-tag pending-modal-tag--level"><%= level %></span>
                     <span class="pending-modal-tag pending-modal-tag--role"><%= role_pref %></span>
                   </div>
+                  <%# Message optionnel laissé par le joueur lors de sa demande %>
+                  <% if mu.message.present? %>
+                    <div class="pending-modal-message">
+                      <i data-lucide="message-square" style="width:11px;height:11px;"></i>
+                      <%= mu.message %>
+                    </div>
+                  <% end %>
                   <%# Lien vers le profil complet (ouvre dans un nouvel onglet) %>
                   <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
                   <%= link_to user_profil_path(mu.user, from_match: @match.id),
