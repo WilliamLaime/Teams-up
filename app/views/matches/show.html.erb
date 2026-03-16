@@ -360,6 +360,28 @@
         <%
           # Calcul des joueurs en attente une seule fois pour ce bloc
           pending_mus = @match_users.select(&:pending?)
+
+          # Calcul du nombre de joueurs IRL (sans compte app) — fait ici pour l'afficher dans le titre
+          total_from_format = if @match.format.present? && @match.format.match?(/\d+v\d+/i)
+            @match.format.scan(/\d+/).map(&:to_i).sum
+          else
+            nil
+          end
+
+          irl_count = if total_from_format
+            [total_from_format - approved_users.count - @match.player_left.to_i, 0].max
+          else
+            0
+          end
+
+          can_join = user_signed_in? && !@current_match_user && !@match.full?
+
+          # Choisir aléatoirement un des deux avatars groupe
+          irl_svg_images = ["avatargroup_svg/picto_groupe_1.svg", "avatargroup_svg/picto_groupe_2.svg"]
+          irl_svg = irl_svg_images.sample
+
+          # Total affiché dans le titre = joueurs app approuvés + joueurs IRL
+          total_players_count = approved_users.count + irl_count
         %>
         <div class="match-block">
 
@@ -367,7 +389,7 @@
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h5 class="match-block-title mb-0">
               <i data-lucide="users" style="width:15px;height:15px;"></i>
-              Joueurs inscrits (<%= approved_users.count %>)
+              Joueurs inscrits (<%= total_players_count %>)
             </h5>
 
             <%# Bouton visible pour tous les organisateurs (peu importe le mode de validation)
@@ -388,6 +410,19 @@
           </div>
 
           <div class="match-players-grid">
+
+            <%# ── Avatar groupé pour les joueurs IRL — affiché EN PREMIER (à gauche) ── %>
+            <% if irl_count > 0 %>
+              <div class="match-player-item match-player-item--irl">
+                <div class="match-player-avatar-irl">
+                  <%# Image SVG aléatoire à la place de l'icône grise — style géré par le CSS %>
+                  <%= image_tag irl_svg, alt: "Joueurs sur place" %>
+                  <%# Badge avec le nombre de joueurs IRL %>
+                  <span class="match-player-irl-badge"><%= irl_count %></span>
+                </div>
+                <span class="match-player-name match-player-name--irl">Sur place</span>
+              </div>
+            <% end %>
 
             <%# ── Joueurs approuvés (organisateur inclus) ── %>
             <% approved_users.each do |mu| %>
@@ -445,8 +480,8 @@
               </div>
             <% end %>
 
-            <%# ── Slot vide cliquable si l'utilisateur connecté n'est pas encore inscrit ── %>
-            <% if user_signed_in? && !@current_match_user && !@match.full? %>
+            <%# Slot "Rejoindre" pour l'utilisateur connecté non inscrit %>
+            <% if can_join %>
               <div class="match-player-item match-player-empty"
                    data-bs-toggle="modal"
                    data-bs-target="#joinModal"
@@ -486,23 +521,23 @@
             <p class="match-spots-hook match-spots-hook--notice">Dépêchez-vous !</p>
           <% end %>
 
-          <%# Format du match — affiché uniquement pour les sports multi-formats %>
-          <% if @match.format.present? %>
-            <div class="match-recap-row" style="border-bottom:1px solid rgba(255,255,255,0.06); margin-bottom:0.75rem; padding-bottom:0.75rem;">
-              <span class="recap-label">Format</span>
-              <span class="recap-value"><%= @match.format %></span>
-            </div>
-          <% end %>
-
-          <%# Compteur de places
-              Places prises = total - player_left (places restantes à remplir) %>
-          <% spots_taken = 10 - @match.player_left.to_i %>
+          <%# Bloc format + places libres
+              Affiche le format du match (ex : "6v6") comme élément principal
+              et le nombre de places libres en dessous %>
           <div class="match-spots-display">
+
+            <%# Format affiché en grand — si pas de format, on affiche le total calculé %>
             <div class="match-spots-fraction">
-              <%= spots_taken %>
-              <span class="match-spots-sep">/</span>
-              10
+              <% if @match.format.present? %>
+                <%= @match.format %>
+              <% else %>
+                <%# Fallback : approuvés / total estimé %>
+                <% total_est = approved_users.count + @match.player_left.to_i %>
+                <%= approved_users.count %><span class="match-spots-sep">/</span><%= total_est %>
+              <% end %>
             </div>
+
+            <%# Nombre de places restantes %>
             <div class="match-spots-label">
               <% if @match.full? %>
                 <span style="color:#ff6b6b;">Complet</span>
@@ -512,6 +547,7 @@
                 libre<%= @match.player_left > 1 ? "s" : "" %>
               <% end %>
             </div>
+
           </div>
 
           <%# Action selon le statut de l'utilisateur %>
