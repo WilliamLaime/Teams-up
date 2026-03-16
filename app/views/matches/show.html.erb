@@ -88,7 +88,14 @@
       <div class="match-banner-left">
 
         <%# Badges %>
-        <div class="d-flex gap-2 mb-3 flex-wrap">
+        <div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+          <%# Badge sport — pill discrète emoji + nom, cohérente avec les badges niveau %>
+          <% if @match.sport %>
+            <span class="match-badge-sport" style="display:inline-flex;align-items:center;gap:0.3rem;">
+              <%= sport_icon(@match.sport, size: "0.9rem") %>
+              <%= @match.sport.name %>
+            </span>
+          <% end %>
           <% if @match.urgent? %>
             <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
@@ -102,6 +109,19 @@
         <%# Description %>
         <% if @match.description.present? %>
           <p class="match-banner-desc"><%= @match.description %></p>
+        <% end %>
+
+        <%# Format du match — affiché uniquement si renseigné (sports multi-formats) %>
+        <% if @match.format.present? %>
+          <div class="match-banner-datetime" style="margin-bottom:0.6rem;">
+            <div class="match-banner-datetime-icon">
+              <i data-lucide="users" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <div class="match-banner-datetime-label">Format</div>
+              <div class="match-banner-datetime-value"><%= @match.format %></div>
+            </div>
+          </div>
         <% end %>
 
         <%# Date & heure %>
@@ -415,9 +435,16 @@
             <p class="match-spots-hook match-spots-hook--notice">Dépêchez-vous !</p>
           <% end %>
 
+          <%# Format du match — affiché uniquement pour les sports multi-formats %>
+          <% if @match.format.present? %>
+            <div class="match-recap-row" style="border-bottom:1px solid rgba(255,255,255,0.06); margin-bottom:0.75rem; padding-bottom:0.75rem;">
+              <span class="recap-label">Format</span>
+              <span class="recap-value"><%= @match.format %></span>
+            </div>
+          <% end %>
+
           <%# Compteur de places
-              Five = 10 joueurs max
-              Places prises = 10 - player_left (places restantes à remplir) %>
+              Places prises = total - player_left (places restantes à remplir) %>
           <% spots_taken = 10 - @match.player_left.to_i %>
           <div class="match-spots-display">
             <div class="match-spots-fraction">

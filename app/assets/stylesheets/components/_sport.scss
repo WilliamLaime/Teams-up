@@ -1,0 +1,205 @@
+// =====================================================
+// SPORT — Styles pour tout ce qui touche à la sélection
+// et l'affichage des sports (navbar, inscription, badges)
+// =====================================================
+
+// ── Badge sport sur les cartes de matchs ──────────────────────────────────
+// Pill compacte en bleu nuit pour distinguer visuellement le sport du niveau
+.match-badge-sport {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+// ── Badge sport actif sur la page "Trouver un match" ─────────────────────
+// Affiché sous le titre pour montrer le contexte de filtrage actuel
+.sport-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  background: rgba($green, 0.12);
+  color: $green;
+  border: 1px solid rgba($green, 0.35);
+}
+
+// ── Sélecteur de sport dans la navbar ────────────────────────────────────
+// Pill "sélectionné" avec accent vert — cohérent avec les badges sport
+.sport-switcher {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem !important;
+  border-radius: 999px !important;
+  background: rgba($green, 0.12) !important;
+  border: 1.5px solid rgba($green, 0.4) !important;
+  text-decoration: none !important;
+  color: $green !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  // Chevron tourne quand le dropdown est ouvert (Bootstrap ajoute aria-expanded="true")
+  &[aria-expanded="true"] .sport-switcher-chevron {
+    transform: rotate(180deg);
+  }
+
+  &:hover, &:focus, &:active {
+    background: rgba($green, 0.2) !important;
+    border-color: rgba($green, 0.6) !important;
+    color: $green !important;
+    text-decoration: none !important;
+    outline: none !important;
+  }
+
+  .sport-switcher-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .sport-switcher-chevron {
+    transition: transform 0.2s ease;
+    opacity: 0.8;
+  }
+}
+
+// ── Dropdown des sports dans la navbar ───────────────────────────────────
+.sport-dropdown {
+  min-width: 200px;
+
+  // Chaque item sport (bouton dans le dropdown)
+  .sport-dropdown-item {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+
+    // Sport actif → couleur verte
+    &.sport-dropdown-item--active {
+      color: $green !important;
+      font-weight: 600;
+    }
+  }
+}
+
+// ── Bouton sans style (remplace <a href="#"> pour le dropdown avatar) ─────
+.btn-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+// ── Grille de sélection des sports (formulaire d'inscription) ─────────────
+// Boutons toggle visuels : emoji + nom, sélectionnable au clic
+.sport-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.6rem;
+}
+
+// Chaque bouton sport dans la grille
+.sport-select-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.75rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  user-select: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+
+  // État sélectionné → fond vert translucide + bordure verte
+  &.sport-select-item--selected {
+    background: rgba($green, 0.12);
+    border-color: rgba($green, 0.5);
+    color: $green;
+
+    .sport-select-name {
+      color: $green;
+    }
+  }
+
+  .sport-select-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+  }
+
+  .sport-select-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+    transition: color 0.15s;
+  }
+}
+
+// ── État caché (sports après le 3ème, avant "voir plus") ─────────────────
+.sport-select-item--hidden {
+  display: none;
+}
+
+// ── Lien "voir plus de sports" ────────────────────────────────────────────
+.sport-select-show-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.6rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $green;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 0.8; }
+}
+
+// ── Select sport dans les filtres (page matchs) ───────────────────────────
+// Même style que les autres filtres
+.filter-sport-select {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  max-width: 160px;
+
+  // Supprime le fond gris par défaut des select sur navigateur sombre
+  option {
+    background-color: $dark-surface;
+    color: $dark-text;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+}

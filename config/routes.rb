@@ -60,6 +60,10 @@ Rails.application.routes.draw do
     end
   end
 
+  # Route pour changer le sport actif de l'utilisateur
+  # POST /switch_sport/3 → passe au sport avec l'id 3
+  post "/switch_sport/:id", to: "sports#switch", as: :switch_sport
+
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
 end

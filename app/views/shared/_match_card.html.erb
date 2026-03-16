@@ -55,8 +55,15 @@
 
   <%# ── Image du terrain + overlays ──────────────────────────────────────── %>
   <div class="match-card-img-wrapper">
-    <%# Image locale choisie selon l'id du match (déterministe, varie entre les matchs) %>
     <%= image_tag cover_image, alt: "Terrain #{match.title}", class: "match-card-img" %>
+
+    <%# Badge sport — coin haut gauche de l'image %>
+    <% if match.sport %>
+      <div class="match-sport-overlay">
+        <%= sport_icon(match.sport, size: "0.85rem", css_class: "match-sport-overlay-icon") %>
+        <span class="match-sport-overlay-name"><%= match.sport.name %></span>
+      </div>
+    <% end %>
 
     <%# Bandeau "COMPLET" sur l'image si le match est plein %>
     <% if match.full? %>
@@ -79,9 +86,9 @@
   <%# ── Corps de la carte ─────────────────────────────────────────────────── %>
   <div class="match-card-body">
 
-    <%# Ligne 1 : badges (urgent + niveau) + date courte %>
+    <%# Ligne 1 : badges (sport + urgent + niveau) + date courte %>
     <div class="d-flex align-items-center justify-content-between mb-2">
-      <div class="d-flex gap-1">
+      <div class="d-flex gap-1 flex-wrap">
         <% if match.urgent? %>
           <span class="match-badge-urgent">🔥 Urgent</span>
         <% end %>
@@ -95,6 +102,14 @@
 
     <%# Titre du match (tronqué à 2 lignes) %>
     <div class="match-card-title"><%= match.title %></div>
+
+    <%# Format — affiché uniquement pour les sports multi-formats %>
+    <% if match.format.present? %>
+      <div class="match-info-line">
+        <i data-lucide="users" style="width:13px;height:13px;"></i>
+        <span><%= match.format %></span>
+      </div>
+    <% end %>
 
     <%# Lieu %>
     <div class="match-info-line">

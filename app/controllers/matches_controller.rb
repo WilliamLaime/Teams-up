@@ -33,6 +33,7 @@ class MatchesController < ApplicationController
     @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
+    @match.sport           = current_sport     # Sport : pré-rempli avec le sport actif
   end
 
   # POST /matches
@@ -105,6 +106,15 @@ class MatchesController < ApplicationController
 
     # Filtre par nombre de places disponibles minimum
     @matches = @matches.where("player_left >= ?", params[:player_left].to_i) if params[:player_left].present?
+
+    # Filtre par sport :
+    # - Si des sports sont sélectionnés dans les filtres (multi-select) → filtrer par ces sports
+    # - Sinon, pré-filtrer automatiquement par le sport actif de l'utilisateur
+    if params[:sport_ids].present?
+      @matches = @matches.where(sport_id: params[:sport_ids])
+    elsif current_sport.present?
+      @matches = @matches.where(sport_id: current_sport.id)
+    end
   end
 
   # Calcule l'heure par défaut : maintenant + 30 min, arrondie au prochain quart d'heure
@@ -126,6 +136,6 @@ class MatchesController < ApplicationController
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
-    params.require(:match).permit(:title, :description, :date, :time, :place, :level, :player_left, :validation_mode, :price_per_player)
+    params.require(:match).permit(:title, :description, :date, :time, :place, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format)
   end
 end
