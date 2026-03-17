@@ -18,8 +18,13 @@ class Notification < ApplicationRecord
   private
 
   def broadcast_notification_bell
-    # Remplace le fragment "notification_bell" dans la navbar de l'utilisateur destinataire
-    broadcast_replace_to(
+    # Met à jour le CONTENU du turbo_frame "notification_bell" dans la navbar.
+    # On utilise broadcast_update_to (et non broadcast_replace_to) pour conserver
+    # l'élément <turbo-frame id="notification_bell"> dans le DOM.
+    # Avec broadcast_replace_to, le frame entier était remplacé par le contenu du partial
+    # (qui n'a pas de turbo_frame wrapper), ce qui faisait disparaître l'id "notification_bell"
+    # du DOM → les broadcasts suivants ne trouvaient plus la cible → cloche figée/disparue.
+    broadcast_update_to(
       [user, :notifications],          # canal unique pour cet utilisateur
       target: "notification_bell",     # id du turbo_frame dans la navbar
       partial: "shared/notification_bell",

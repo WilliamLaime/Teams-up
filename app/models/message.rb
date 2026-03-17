@@ -48,7 +48,18 @@ class Message < ApplicationRecord
       locals: { message: self }      # on passe le message à la partielle
     )
 
-    # 2. Cible le panneau sticky chat (visible sur toutes les pages)
+    # 2. Met à jour la preview card (les 2 derniers messages affichés sous le header).
+    # On utilise broadcast_update_to pour remplacer le CONTENU du div#chat-preview-list-X
+    # sans perdre son id (contrairement à broadcast_replace_to qui supprimerait l'élément).
+    # Même stream que la modal → un seul abonnement turbo_stream_from suffit pour les deux.
+    broadcast_update_to(
+      "match_chat_#{match_id}",
+      target: "chat-preview-list-#{match_id}",  # id du conteneur de preview dans show.html.erb
+      partial: "matches/chat_preview_list",
+      locals: { match: match }
+    )
+
+    # 3. Cible le panneau sticky chat (visible sur toutes les pages)
     # On utilise un stream DIFFÉRENT ("match_chat_sticky_<id>") pour éviter que
     # les utilisateurs sur la page show du match reçoivent le message en double
     # (car ils seraient abonnés aux deux streams en même temps)

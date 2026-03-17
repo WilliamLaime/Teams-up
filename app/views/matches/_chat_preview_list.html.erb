@@ -1,0 +1,30 @@
+<%# Partial pour l'aperçu des 2 derniers messages dans la carte match show.
+    Utilisé :
+      1. Au rendu initial (dans show.html.erb)
+      2. Via broadcast Turbo Stream depuis message.rb (mise à jour en temps réel)
+    Variable attendue : match %>
+
+<% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
+<% preview_messages = match.messages.includes(:user).order(:created_at).last(2) %>
+
+<% if preview_messages.any? %>
+  <div class="match-chat-preview-list">
+    <% preview_messages.each do |msg| %>
+      <div class="match-chat-preview-item">
+        <%# Bulle avec initiales colorées %>
+        <div class="match-chat-preview-avatar"
+             style="background-color:<%= avatar_colors[msg.user_id % avatar_colors.length] %>;">
+          <%= msg.user.display_name.split.map(&:first).join.upcase.first(2) %>
+        </div>
+        <div class="match-chat-preview-content">
+          <span class="match-chat-preview-name"><%= msg.user.display_name %></span>
+          <span class="match-chat-preview-text">
+            <%= truncate(msg.content, length: 55) %>
+          </span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <p class="match-chat-empty-hint">Aucun message. Brise la glace !</p>
+<% end %>

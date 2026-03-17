@@ -62,11 +62,15 @@
       document.addEventListener("turbo:render", () => lucide.createIcons());
       document.addEventListener("turbo:frame-render", () => lucide.createIcons());
 
-      // Turbo Stream (ex: nouvelle notification via ActionCable) — l'événement "before-stream-render"
-      // se déclenche AVANT que le DOM soit modifié, donc on utilise setTimeout pour attendre
-      // que le remplacement du fragment soit terminé avant de ré-initialiser les icônes Lucide
-      document.addEventListener("turbo:before-stream-render", () => {
-        setTimeout(() => lucide.createIcons(), 0);
+      // Turbo Stream (ex: nouvelle notification via ActionCable) — on intercepte la fonction
+      // de rendu pour appeler lucide.createIcons() APRÈS que le DOM a été modifié.
+      // C'est plus fiable que setTimeout(0) qui pouvait s'exécuter avant la mise à jour du DOM.
+      document.addEventListener("turbo:before-stream-render", (event) => {
+        const originalRender = event.detail.render;
+        event.detail.render = function(streamElement) {
+          originalRender(streamElement); // mise à jour du DOM
+          lucide.createIcons();          // ré-initialise les icônes APRÈS le DOM
+        };
       });
     </script>
   </body>

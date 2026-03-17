@@ -13,47 +13,52 @@
   gap: 10px;
 }
 
-// ── Bouton rond — même style que btn-cta-secondary (fond sombre + bordure verte)
+// ── Bouton rond — fond orange pour plus de visibilité
 .sticky-chat-btn {
-  width: 44px;
-  height: 44px;
+  width: 56px;                     // légèrement agrandi
+  height: 56px;
   border-radius: 50%;
-  background-color: #1B1B1B;       // même fond que btn-cta-secondary
-  color: $green;                   // icône verte
-  border: 1.5px solid $green;      // bordure verte fine
+  background-color: #FF8C00;       // orange vif — plus voyant que le fond sombre
+  color: #fff;                     // icône blanche
+  border: none;                    // pas de bordure : le fond orange suffit
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease, box-shadow 0.2s ease,
-              background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 4px 16px rgba(255, 140, 0, 0.45); // halo orange
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   flex-shrink: 0;
   position: relative;              // nécessaire pour positionner le badge en absolu
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.08); // légère surbrillance blanche
-    color: #fff;                                  // icône blanche
-    border-color: rgba(255, 255, 255, 0.5);       // bordure blanche semi-transparente
-    transform: scale(1.06);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    background-color: #e07b00;     // orange plus sombre au survol
+    transform: scale(1.07);
+    box-shadow: 0 6px 20px rgba(255, 140, 0, 0.55);
   }
-  &:active { transform: scale(0.97); }
+  &:active { transform: scale(0.96); }
 }
 
 // ── Badge notification sur le bouton ─────────────────────────────────────────
-// Petit rond vert "à cheval" en haut à droite du bouton
-// Affiché par Stimulus quand des messages non lus existent dans la sidebar
+// Rond positionné en haut à GAUCHE du bouton
+// Vert = messages non lus non consultés (panneau fermé)
+// Orange = messages vus (panneau ouvert) — couleur change via Stimulus
 .sticky-chat-btn-badge {
   position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 11px;
-  height: 11px;
+  top: -4px;
+  left: -4px;                      // à gauche du bouton
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background-color: #FF8C00;       // orange vif pour la notification
-  border: 2px solid #1B1B1B;       // même couleur que le fond du bouton → effet de détachement
+  background-color: $green;        // vert par défaut (non lus, panneau fermé)
+  border: 2px solid #121212;       // bordure sombre → effet de détachement
   animation: unread-pulse 2s ease-in-out infinite;
+  transition: background-color 0.3s ease;
+
+  // Quand le panneau est ouvert : vert sans pulsation = messages vus
+  &--seen {
+    background-color: $green;
+    animation: none;               // plus de pulsation une fois vus
+  }
 }
 
 // ── Panneau principal ─────────────────────────────────────────────────────────
@@ -227,7 +232,7 @@
   height: 7px;
   min-width: 7px;
   border-radius: 50%;
-  background-color: #FF8C00;       // orange — cohérent avec le badge sur le bouton
+  background-color: $green;        // vert — cohérent avec le badge sur le bouton
   display: inline-block;
   flex-shrink: 0;
   animation: unread-pulse 2s ease-in-out infinite;
