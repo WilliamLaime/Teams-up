@@ -11,6 +11,10 @@
 @import "components/index";
 @import "pages/index";
 
+// Responsive — media queries pour mobile et tablette
+// Importé EN DERNIER pour pouvoir surcharger tous les styles précédents
+@import "components/responsive";
+
 // ── Sticky footer ───────────────────────────────────
 // body en colonne flex → main prend tout l'espace libre
 // → footer toujours collé en bas, même sur les pages courtes
@@ -20,4 +24,12 @@ body {
   flex-direction: column;
 
   main { flex: 1; }
+}
+
+// ── Empêche le scroll horizontal ────────────────────
+// Certains éléments dépassent légèrement du viewport (gradients avec left: -120px,
+// Bootstrap rows avec marges négatives, etc.) et créent une barre de scroll inutile.
+// overflow-x: hidden sur html ET body bloque ce scroll parasite.
+html, body {
+  overflow-x: hidden;
 }

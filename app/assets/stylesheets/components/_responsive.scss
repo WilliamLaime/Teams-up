@@ -1,0 +1,348 @@
+// =====================================================
+// RESPONSIVE — Adaptations mobile et tablette
+//
+// Ce fichier centralise TOUTES les media queries du site.
+// Il est importé EN DERNIER dans application.scss pour
+// pouvoir surcharger n'importe quel style précédent.
+//
+// Breakpoints Bootstrap utilisés :
+//   < 576px  → téléphones portrait (xs)
+//   < 768px  → téléphones paysage + portrait (xs + sm)
+//   < 992px  → tablettes portrait (xs + sm + md)
+// =====================================================
+
+
+// ═══════════════════════════════════════════════════════
+// TABLETTE (< 992px) — Ajustements intermédiaires
+// ═══════════════════════════════════════════════════════
+
+@media (max-width: 991px) {
+
+  // ── Navbar : menu ouvert sur mobile ────────────────
+  // Quand le hamburger est cliqué, le menu s'ouvre en dessous de la navbar.
+  // Bootstrap empile tous les <ul> verticalement — on nettoie le rendu.
+
+  // Séparation visuelle entre la navbar et le menu ouvert
+  .navbar-dark-custom .navbar-collapse {
+    padding: 0.5rem 0 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    margin-top: 0.5rem;
+  }
+
+  // ── Centrage des items via text-align (plus stable que align-items) ───────
+  // align-items: center sur un flex provoque des décalages quand un dropdown
+  // s'ouvre (Bootstrap modifie le layout). text-align: center est plus stable.
+  .navbar-dark-custom .navbar-nav {
+    align-items: stretch !important;     // chaque item prend toute la largeur
+  }
+
+  // Chaque lien de navigation est centré via text-align
+  .navbar-dark-custom .navbar-nav .nav-link,
+  .navbar-dark-custom .navbar-nav .nav-item > a,
+  .navbar-dark-custom .navbar-nav .nav-item > button {
+    text-align: center;
+    justify-content: center;            // pour les flex-items (boutons avec icônes)
+    width: 100%;
+  }
+
+  // Bloc sport (centre) : ajoute de l'espace EN BAS pour écarter "Créer un match"
+  .navbar-dark-custom .navbar-nav.mx-auto {
+    padding-bottom: 1rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  // Section droite (Créer un match + cloche + avatar) : items serrés entre eux
+  .navbar-dark-custom .navbar-nav.gap-4 {
+    gap: 0.1rem !important;             // items très proches (quasi collés)
+    width: 100%;
+  }
+
+  // Chaque item de la section droite : padding vertical minimal
+  .navbar-dark-custom .navbar-nav.gap-4 > .nav-item {
+    padding: 0.2rem 0;
+  }
+
+  // Le bouton "Créer un match" : inline, pas pleine largeur
+  .navbar-dark-custom .btn-cta-primary {
+    display: inline-flex !important;
+    width: auto !important;
+  }
+
+  // Wrapper du bouton "Créer un match" : centré
+  .navbar-dark-custom .nav-item:has(.btn-cta-primary) {
+    text-align: center;
+  }
+
+  // Cache l'animation de soulignement (faite pour l'horizontal)
+  .navbar-dark-custom .navbar-nav.mx-auto .nav-link::after {
+    display: none;
+  }
+
+  // Bouton sport switcher : largeur automatique (pas pleine largeur)
+  .navbar-dark-custom .nav-item .sport-switcher {
+    width: auto !important;   // annule le width: 100% du sélecteur générique ci-dessus
+    align-self: center;       // centré verticalement dans l'item
+  }
+
+  // Wrapper du bouton sport : centré
+  .navbar-dark-custom .nav-item:has(.sport-switcher) {
+    text-align: center;
+  }
+
+  // Dropdown sport : centré et largeur réduite
+  .navbar-dark-custom .sport-dropdown {
+    width: 220px;
+    margin: 0.25rem auto 0.5rem auto;   // centré horizontalement
+    text-align: left;                   // items lisibles à gauche dans le dropdown
+  }
+
+  // ── Hero : moins de padding vertical ───────────────
+  // Sur tablette, l'image hero est cachée (d-none d-lg-block) donc
+  // on n'a plus besoin du grand padding-bottom (qui absorbait la carte overlay).
+  .hero-section {
+    padding: 56px 0 72px;
+  }
+
+  // ── Sections accueil : espacement réduit ───────────
+  .matches-section,
+  .how-it-works-section,
+  .cta-section {
+    padding: 56px 0;
+  }
+
+  // ── Chat sticky : panneau plus étroit ──────────────
+  // 500px est trop large pour une tablette en portrait (768px de large).
+  // On passe à 400px pour laisser de l'espace autour.
+  .sticky-chat-panel {
+    width: 400px;
+  }
+
+  // ── Match show — Banner : empile les 2 colonnes ────
+  // .match-banner-content a left (infos) + right (boutons).
+  // Sur tablette, les boutons passent sous les infos.
+  .match-banner-content {
+    flex-direction: column;    // gauche puis droite, l'un sous l'autre
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .match-banner-right {
+    flex-direction: row;       // boutons côte à côte (pas en colonne)
+    flex-wrap: wrap;           // ils se rabattent si trop nombreux
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;               // prend toute la largeur disponible
+  }
+
+  // ── Filtres matchs : barre en colonne ──────────────
+  // La barre de filtres a une gauche (pills) et une droite (recherche + créer).
+  // Sur tablette, les deux groupes passent l'un sous l'autre.
+  .matches-index-page .matches-filters-bar {
+    flex-direction: column;    // empile les groupes
+    align-items: stretch;      // chaque groupe prend toute la largeur
+    gap: 0.65rem;
+  }
+
+  // Le groupe droit (recherche + bouton) : autorise le retour à la ligne
+  .matches-index-page .matches-filters-right {
+    flex-wrap: wrap;
+  }
+
+  // Le champ de recherche prend toute la largeur disponible
+  .matches-index-page .filter-search-wrap .filter-search-input {
+    width: 100%;
+  }
+
+  // ── Match form : la carte récap n'est plus sticky ──
+  // Sur tablette en portrait, la carte récap sticky peut masquer du contenu.
+  // On la remet dans le flux normal.
+  .match-recap-card {
+    position: static;
+    margin-top: 1.25rem;       // Espace entre le formulaire et la récap
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════
+// MOBILE (< 768px) — Téléphones en paysage et portrait
+// ═══════════════════════════════════════════════════════
+
+@media (max-width: 767px) {
+
+  // ── Marges gauche/droite de 20px sur tout le site ──
+  // Bootstrap met 12px par défaut — on passe à 20px pour
+  // donner plus de respiration sur les petits écrans.
+  .container,
+  .container-fluid {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  // ── Hero : padding réduit ──────────────────────────
+  // L'image hero est cachée sur mobile (d-none d-lg-block).
+  // La carte overlay qui débordait de l'image n'existe plus.
+  // On peut donc fortement réduire les paddings.
+  .hero-section {
+    padding: 40px 0 48px;
+  }
+
+  // Description : prend toute la largeur (max-width: 440px n'est plus utile)
+  .hero-section .hero-description {
+    max-width: 100%;
+  }
+
+  // ── Sections accueil : encore moins de padding ─────
+  .matches-section,
+  .how-it-works-section {
+    padding: 48px 0;
+  }
+
+  .cta-section {
+    padding: 48px 0;
+  }
+
+  // ── Chat mockup (CTA section) : pleine largeur ─────
+  // Le mockup de chat a max-width: 400px par défaut.
+  // Sur mobile, il prend toute la largeur disponible.
+  .cta-section .cta-chat-mockup {
+    max-width: 100%;
+  }
+
+  // ── Match show wrapper : moins de padding ──────────
+  .match-show-wrapper {
+    padding: 1.5rem 0 3rem;
+  }
+
+  // ── Match banner : ajustements supplémentaires ─────
+  // Réduit la hauteur minimale de la bannière sur mobile
+  .match-banner {
+    min-height: 260px;
+  }
+
+  // Topbar (retour + partage) : moins de marge en bas
+  .match-banner-topbar {
+    margin-bottom: 1rem;
+  }
+
+  // Boutons organisateur (Modifier, Supprimer...) : autorise le retour à la ligne
+  .match-banner-organizer-actions {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  // ── Auth card : padding réduit ──────────────────────
+  // 2.5rem de padding horizontal était beaucoup sur un petit écran.
+  .auth-card {
+    padding: 1.75rem 1.25rem;  // Réduit horizontalement
+    border-radius: 12px;
+  }
+
+  // ── Profil : section identité en colonne ───────────
+  // Sur mobile, l'avatar passe au-dessus du texte (nom, méta...).
+  .profil-page .profil-identity {
+    flex-direction: column;    // avatar au-dessus du texte
+    align-items: center;       // tout centré
+    text-align: center;
+  }
+
+  // La ligne méta (rôle, lieu...) se centre aussi
+  .profil-page .profil-meta-row {
+    justify-content: center;
+  }
+
+  // La ligne nom+icône se centre
+  .profil-page .profil-name-row {
+    justify-content: center;
+  }
+
+  // ── Profil match card : bouton "Détails" passe en bas
+  // Sur mobile, on permet au contenu de se réorganiser
+  .profil-page .profil-match-card {
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════
+// TÉLÉPHONE PORTRAIT (< 576px) — Petits écrans
+// ═══════════════════════════════════════════════════════
+
+@media (max-width: 575px) {
+
+  // ── Chat sticky : panneau pleine largeur ───────────
+  // Sur un téléphone de 375px de large, le panneau de 500px débordait
+  // complètement hors de l'écran. On le corrige ici :
+  //   → le conteneur s'étend de 12px à droite jusqu'à 12px à gauche
+  //   → le panneau prend 100% de la largeur du conteneur
+  .sticky-chat-container {
+    right: 12px;
+    bottom: 16px;
+    left: 12px;                // Le conteneur s'étend vers la gauche
+  }
+
+  .sticky-chat-panel {
+    width: 100%;               // Occupe tout l'espace entre left: 12px et right: 12px
+    height: 360px;             // Un peu moins haut pour laisser voir la page en dessous
+  }
+
+  // Sidebar un peu plus étroite pour laisser plus de place au chat
+  .sticky-chat-sidebar {
+    width: 110px;
+    min-width: 110px;
+  }
+
+  // ── Filtres matchs : pleine largeur ────────────────
+  // La zone de recherche prend toute la largeur disponible
+  .matches-index-page .filter-search-wrap {
+    width: 100%;
+    flex: 1;
+  }
+
+  .matches-index-page .filter-search-wrap .filter-search-input {
+    width: 100%;
+    flex: 1;
+  }
+
+  // Le groupe droit prend toute la largeur et espace les éléments
+  .matches-index-page .matches-filters-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  // ── Profil stats : valeur un peu plus petite ───────
+  .profil-page .profil-stat-value {
+    font-size: 1.75rem;        // Réduit depuis 2.2rem
+  }
+
+  // ── Auth preset avatar : 4 colonnes au lieu de 6 ───
+  // La grille de 6 avatars était trop petite sur téléphone.
+  // On passe à 4 colonnes pour que les avatars soient cliquables facilement.
+  .auth-card .avatar-preset-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  // ── Watermark "COMPLET" : taille adaptative ────────
+  // La taille fixe de 5rem était trop grande sur mobile.
+  .match-banner-full-overlay {
+    font-size: clamp(2.5rem, 12vw, 5rem);
+  }
+
+  // ── Match banner action buttons : empilés ──────────
+  .match-banner-action-btn {
+    width: 100%;               // Bouton pleine largeur sur très petits écrans
+    justify-content: center;
+  }
+
+  // ── Match show : blocs avec moins de padding ───────
+  .match-block {
+    padding: 1rem 1.1rem;
+  }
+
+  // ── Profil edit btn : pleine largeur ───────────────
+  .profil-page .profil-edit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
