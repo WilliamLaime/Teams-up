@@ -52,7 +52,8 @@ export default class extends Controller {
     "recapPlayers",      // Zone affichant le nombre de joueurs
     "recapLevel",        // Valeur du niveau dans la ligne
     "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
-    "recapPrice"         // Zone affichant le prix par joueur (en bas du récap, en blanc)
+    "recapPrice",        // Zone affichant le prix par joueur (en bas du récap, en blanc)
+    "formCol"            // Colonne gauche (col-lg-7) — sert à mesurer son bas pour l'alignement
   ]
 
   // ── connect() : appelé automatiquement au chargement de la page ──
@@ -75,6 +76,7 @@ export default class extends Controller {
     this.updatePrice()
     // Initialise les couleurs des boutons − et + selon la valeur de départ
     this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
+
   }
 
   // ══════════════════════════════════════════════════════════
@@ -159,6 +161,30 @@ export default class extends Controller {
       btn.textContent = fmt.label
       btn.dataset.players = fmt.players
       btn.dataset.label   = fmt.label
+      // Styles inline garantis (évite tout conflit Bootstrap/navigateur)
+      const isFirst = index === 0
+      btn.style.setProperty("padding", "0.5rem 1.1rem")
+      btn.style.setProperty("border-radius", "0.5rem")
+      btn.style.setProperty("font-size", "0.9rem")
+      btn.style.setProperty("cursor", "pointer")
+      btn.style.setProperty("border", isFirst ? "2px solid #1EDD88" : "2px solid rgba(255,255,255,0.4)", "important")
+      btn.style.setProperty("background", isFirst ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
+      btn.style.setProperty("color", isFirst ? "#1EDD88" : "rgba(255,255,255,0.9)", "important")
+      // Hover : vert au survol si non actif, retour à la normale en partant
+      btn.addEventListener("mouseover", () => {
+        if (!btn.classList.contains("active")) {
+          btn.style.setProperty("border", "2px solid #1EDD88", "important")
+          btn.style.setProperty("background", "rgba(30,221,136,0.08)", "important")
+          btn.style.setProperty("color", "#1EDD88", "important")
+        }
+      })
+      btn.addEventListener("mouseout", () => {
+        if (!btn.classList.contains("active")) {
+          btn.style.setProperty("border", "2px solid rgba(255,255,255,0.4)", "important")
+          btn.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
+          btn.style.setProperty("color", "rgba(255,255,255,0.9)", "important")
+        }
+      })
       // Au clic : sélectionne ce format
       btn.addEventListener("click", () => this._applyFormat(fmt, btn))
       container.appendChild(btn)
@@ -183,10 +209,14 @@ export default class extends Controller {
     this.recapPlayersTarget.textContent = count
     this.updateCounterButtons(count)
 
-    // Met à jour l'état "active" des boutons de format
+    // Met à jour l'état "active" des boutons de format avec styles inline
     if (clickedBtn) {
       this.formatButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
-        b.classList.toggle("active", b === clickedBtn)
+        const isActive = b === clickedBtn
+        b.classList.toggle("active", isActive)
+        b.style.setProperty("border", isActive ? "2px solid #1EDD88" : "2px solid rgba(255,255,255,0.4)", "important")
+        b.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
+        b.style.setProperty("color", isActive ? "#1EDD88" : "rgba(255,255,255,0.9)", "important")
       })
     }
   }
@@ -316,11 +346,18 @@ export default class extends Controller {
     this.levelInputTarget.value = value
 
     // 2. Retire la classe "active" de tous les boutons de niveau
+    //    + styles inline : garantit l'apparence même si le CSS est surchargé
     this.element.querySelectorAll(".match-level-btn").forEach(b => {
       b.classList.remove("active")
+      b.style.setProperty("border", "2px solid rgba(255,255,255,0.4)", "important")
+      b.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
+      b.style.setProperty("color", "rgba(255,255,255,0.9)", "important")
     })
-    // 3. Ajoute "active" seulement sur le bouton cliqué
+    // 3. Ajoute "active" + styles verts seulement sur le bouton cliqué
     btn.classList.add("active")
+    btn.style.setProperty("border", "2px solid #1EDD88", "important")
+    btn.style.setProperty("background", "rgba(30,221,136,0.12)", "important")
+    btn.style.setProperty("color", "#1EDD88", "important")
 
     // 4. Met à jour le récap (la ligne reste toujours visible)
     this.recapLevelTarget.textContent = value
