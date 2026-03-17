@@ -691,33 +691,14 @@
             <%# Abonnement Turbo Stream pour les nouveaux messages en temps réel %>
             <%= turbo_stream_from "match_chat_#{@match.id}" %>
 
-            <%# Aperçu des 2 derniers messages (pas de controller ici, il est sur le modal) %>
+            <%# Aperçu des 2 derniers messages — mis à jour en temps réel via Turbo Stream.
+                id="chat-preview-list-<match_id>" : cible du broadcast dans message.rb %>
             <div>
 
-              <%# Aperçu des 2 derniers messages %>
-              <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
-              <% if preview_messages.any? %>
-                <div class="match-chat-preview-list">
-                  <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
-                  <% preview_messages.each do |msg| %>
-                    <div class="match-chat-preview-item">
-                      <%# Bulle avec initiales colorées %>
-                      <div class="match-chat-preview-avatar"
-                           style="background-color:<%= avatar_colors[msg.user_id % avatar_colors.length] %>;">
-                        <%= msg.user.display_name.split.map(&:first).join.upcase.first(2) %>
-                      </div>
-                      <div class="match-chat-preview-content">
-                        <span class="match-chat-preview-name"><%= msg.user.display_name %></span>
-                        <span class="match-chat-preview-text">
-                          <%= truncate(msg.content, length: 55) %>
-                        </span>
-                      </div>
-                    </div>
-                  <% end %>
-                </div>
-              <% else %>
-                <p class="match-chat-empty-hint">Aucun message. Brise la glace !</p>
-              <% end %>
+              <%# Conteneur avec id unique — remplacé par broadcast_update_to à chaque nouveau message %>
+              <div id="chat-preview-list-<%= @match.id %>">
+                <%= render "matches/chat_preview_list", match: @match %>
+              </div>
 
               <%# Séparateur et lien vers le chat complet (ouvre la modal) %>
               <div class="match-chat-divider"></div>

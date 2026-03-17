@@ -19,7 +19,17 @@
       .reverse
   %>
 
-  <div data-controller="sticky-chat" class="sticky-chat-container">
+  <%# id="sticky-chat-global" + data-turbo-permanent : dit à Turbo Drive de NE PAS
+      remplacer cet élément lors des navigations de page.
+      Sans ça, chaque navigation Turbo recrée le sticky chat depuis zéro :
+      - la frame "sticky-chat-frame" repasse à "Sélectionne une conversation"
+      - le turbo_stream_from de la conversation ouverte est détruit
+      - l'abonnement ActionCable est perdu → les messages n'arrivent plus en temps réel
+      - seul un rechargement complet de la page permet de voir les nouveaux messages %>
+  <div id="sticky-chat-global"
+       data-controller="sticky-chat"
+       data-turbo-permanent
+       class="sticky-chat-container">
 
     <%# Abonnement au stream personnel de l'utilisateur
         Permet de recevoir les mises à jour des badges non-lus en temps réel
