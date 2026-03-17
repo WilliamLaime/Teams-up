@@ -122,7 +122,8 @@
                 Matchs joués
               </span>
               <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%= @profil_user.matchs.count %>
+                <%# @matchs_joues = matchs terminés (H+1) où l'user était "approved" (pas en attente/file d'attente) %>
+                <%= @matchs_joues %>
               </span>
             </div>
           </div>

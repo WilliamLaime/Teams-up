@@ -10,6 +10,15 @@ class ProfilsController < ApplicationController
     # @profil_user sert dans la vue pour afficher le bon utilisateur
     @profil_user = current_user
 
+    # Nombre de matchs réellement joués :
+    # - status "approved" → l'user était bien inscrit (pas en file d'attente ni en attente)
+    # - match terminé → date+heure du match < maintenant - 1h (H+1)
+    @matchs_joues = current_user.match_users
+                                .joins(:match)
+                                .where(status: "approved")
+                                .where("(matches.date + matches.time) < ?", Time.current - 1.hour)
+                                .count
+
     # Charge les 10 derniers avis MUTUELS reçus par l'utilisateur connecté
     # Un avis A→B n'est visible que si B→A existe pour le même match
     # includes évite les N+1 queries (charge reviewer + son profil en une requête)
@@ -42,6 +51,15 @@ class ProfilsController < ApplicationController
     skip_authorization
     @profil_user = User.find(params[:id])
     @profil = @profil_user.profil || @profil_user.build_profil
+
+    # Nombre de matchs réellement joués pour le profil public :
+    # - status "approved" → l'user était bien inscrit (pas en file d'attente ni en attente)
+    # - match terminé → date+heure du match < maintenant - 1h (H+1)
+    @matchs_joues = @profil_user.match_users
+                                .joins(:match)
+                                .where(status: "approved")
+                                .where("(matches.date + matches.time) < ?", Time.current - 1.hour)
+                                .count
 
     # Charge les 10 derniers avis MUTUELS reçus par cet utilisateur
     # Un avis A→B n'est visible que si B→A existe pour le même match
