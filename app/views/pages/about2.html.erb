@@ -42,60 +42,57 @@
 
 
   <%# ══════════════════════════════════════════════
-      SECTION 2 — LE CONSTAT
-      Fond : img_banner_qsn_2.png
+      SECTIONS 2 + 3 — LE CONSTAT + L'ORIGINE (côte à côte)
+      Les deux contenus sont affichés sur le même écran,
+      séparés par une ligne verticale : gauche = constat, droite = origine
       ══════════════════════════════════════════════ %>
-  <section class="a2-section a2-section--img-2">
+  <section class="a2-section a2-section--split">
 
-    <div class="a2-section-inner a2-section-inner--right">
-      <div class="hero-badge">
-        <span class="hero-badge-dot"></span>
-        <!-- Le constat -->
+    <%# Séparateur vertical au centre %>
+    <div class="a2-split-divider"></div>
+
+    <%# Colonne gauche — Le constat %>
+    <div class="a2-split-col a2-split-col--left">
+      <div class="a2-section-inner">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <!-- Le constat -->
+        </div>
+
+        <h2 class="a2-title">
+          Le sport amateur
+          <span class="a2-accent">est fragmenté.</span>
+        </h2>
+
+        <p class="a2-desc">
+          Un groupe WhatsApp, un canal Discord, un post Instagram pour trouver quelqu'un.
+          Et au final...terrain vide, match annulé.
+        </p>
+        <p class="a2-desc">
+          On a tous vécu ça. Trop de canaux, pas assez de joueurs
+          au bon moment, au bon endroit.
+        </p>
       </div>
-
-      <h2 class="a2-title">
-        Le sport amateur
-        <span class="a2-accent">est fragmenté.</span>
-      </h2>
-
-      <p class="a2-desc">
-        Un groupe WhatsApp, un canal Discord, un post Instagram pour trouver quelqu'un.
-        Et au final...terrain vide, match annulé.
-      </p>
-      <p class="a2-desc">
-        On a tous vécu ça. Trop de canaux, pas assez de joueurs
-        au bon moment, au bon endroit.
-      </p>
     </div>
 
-    <div class="a2-arrow">
-      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
-    </div>
+    <%# Colonne droite — L'origine %>
+    <div class="a2-split-col a2-split-col--right">
+      <div class="a2-section-inner">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <!-- Qui sommes-nous ? -->
+        </div>
 
-  </section>
+        <h2 class="a2-title">
+          On a voulu jouer,
+          <span class="a2-accent">alors on a créé l'outil.</span>
+        </h2>
 
-
-  <%# ══════════════════════════════════════════════
-      SECTION 3 — L'ORIGINE
-      Fond : vestiaire_abandon.jpg
-      ══════════════════════════════════════════════ %>
-  <section class="a2-section a2-section--img-3">
-
-    <div class="a2-section-inner">
-      <div class="hero-badge">
-        <span class="hero-badge-dot"></span>
-        <!-- Qui sommes-nous ? -->
+        <p class="a2-desc">
+          Une équipe qui en avait marre de chercher un remplaçant
+          à la dernière minute.
+        </p>
       </div>
-
-      <h2 class="a2-title">
-        On a voulu jouer,
-        <span class="a2-accent">alors on a créé l'outil.</span>
-      </h2>
-
-      <p class="a2-desc">
-        Une équipe qui en avait marre de chercher un remplaçant
-        à la dernière minute.
-      </p>
     </div>
 
     <div class="a2-arrow">

@@ -12,6 +12,20 @@ html.page-scroll-snap {
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
+
+  // scroll-padding-top : décale le point d'accroche vers le bas
+  // pour que la navbar fixe ne cache pas le haut des sections
+  scroll-padding-top: 65px;
+
+  // Fixe la navbar en haut du viewport pendant le scroll-snap
+  // Sans ça, la navbar disparaît dès le premier scroll
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+  }
 }
 
 
@@ -46,6 +60,7 @@ html.page-scroll-snap {
   // Section 1 — centrée horizontalement + glow vert
   &--img-1 {
     align-items: center;    // bloc de contenu centré horizontalement
+    padding-top: 65px;      // compense la hauteur de la navbar fixe
 
     &::before {
       content: "";
@@ -59,26 +74,24 @@ html.page-scroll-snap {
     }
   }
 
-  // Section 2 — teinte verte + texte ferré à droite
-  &--img-2 {
-    align-items: flex-end;
+  // Sections 2+3 — les deux contenus côte à côte sur un même écran
+  &--split {
+    flex-direction: row;    // colonnes horizontales au lieu de colonne verticale
+    align-items: stretch;   // chaque colonne prend toute la hauteur
+    padding: 0;
 
+    // Overlay global : vert à gauche, sombre à droite
     &::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(to right, rgba(8,100,58,0.60) 40%, rgba(8,100,58,0.30) 100%);
-      pointer-events: none;
-    }
-  }
-
-  // Section 3 — léger voile gauche pour lisibilité
-  &--img-3 {
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to right, rgba(0,0,0,0.25) 0%, transparent 60%);
+      background: linear-gradient(
+        to right,
+        rgba(8,100,58,0.55) 0%,
+        rgba(8,100,58,0.20) 50%,
+        rgba(0,0,0,0.20) 50%,
+        rgba(0,0,0,0.35) 100%
+      );
       pointer-events: none;
     }
   }
@@ -163,6 +176,67 @@ html.page-scroll-snap {
 
     .hero-badge { margin-left: auto; }
   }
+}
+
+
+// ── Colonnes du split (sections 2+3) ─────────────────
+// Chaque colonne occupe 50% de la largeur de l'écran
+.a2-split-col {
+  flex: 1;                  // chaque colonne = moitié de l'écran
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 3vw;
+  position: relative;
+  z-index: 1;
+
+  // Le contenu intérieur est plus compact dans une demi-colonne
+  .a2-section-inner {
+    max-width: 460px;       // moins large que la valeur par défaut (680px)
+    padding: 0 1vw;
+  }
+
+  // Colonne gauche — texte ferré à droite (vers le séparateur)
+  &--left {
+    .a2-section-inner {
+      text-align: right;
+      margin-left: auto;  // pousse le bloc vers la droite
+      margin-right: 0;
+
+      // Badge éventuel aligné à droite aussi
+      .hero-badge { margin-left: auto; }
+    }
+  }
+
+  // Colonne droite — séparateur subtil + texte ferré à gauche (vers le séparateur)
+  &--right {
+    border-left: 1px solid rgba(255,255,255,0.10);
+
+    .a2-section-inner {
+      text-align: left;
+      margin-left: 0;     // colle le bloc à gauche de la colonne
+      margin-right: auto;
+    }
+  }
+}
+
+// ── Séparateur vertical lumineux entre les deux colonnes ──
+.a2-split-divider {
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 50%;
+  width: 1px;
+  // Dégradé vertical pour que le trait s'efface aux extrémités
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255,255,255,0.18) 30%,
+    rgba(255,255,255,0.18) 70%,
+    transparent
+  );
+  z-index: 2;
+  pointer-events: none;
 }
 
 

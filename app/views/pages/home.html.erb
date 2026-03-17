@@ -63,31 +63,31 @@
           <%# Image hero : change selon le sport actif de l'utilisateur %>
           <% case current_sport&.name
              when "Football"
-               hero_src = "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=700&q=80"
-               hero_alt = "Chaussures de football"
+               hero_src = asset_path("img banner/banner_foot.jpeg")
+               hero_alt = "Terrain de football"
              when "Badminton"
-               hero_src = "https://images.unsplash.com/photo-1696250530563-70f39e532e10?w=700&q=80"
-               hero_alt = "Raquette de badminton"
+               hero_src = asset_path("img banner/banner_bad.jpeg")
+               hero_alt = "Joueur de badminton"
              when "Basketball"
-               hero_src = "https://images.unsplash.com/photo-1628779238951-be2c9f2a59f4?w=700&q=80"
-               hero_alt = "Ballon de basketball"
+               hero_src = asset_path("img banner/banner_basket.jpeg")
+               hero_alt = "Joueur de basketball"
              when "Handball"
-               hero_src = "https://images.unsplash.com/photo-1553627220-92f0446b6a5f?w=700&q=80"
-               hero_alt = "Ballon de handball"
+               hero_src = asset_path("img banner/banner_hand.jpeg")
+               hero_alt = "Joueur de handball"
              when "Padel"
-               hero_src = "https://images.unsplash.com/photo-1612534847738-b3af9bc31f0c?w=700&q=80"
-               hero_alt = "Raquette de padel"
+               hero_src = asset_path("img banner/banner_padel.jpeg")
+               hero_alt = "Joueur de padel"
              when "Volleyball"
-               hero_src = "https://images.unsplash.com/photo-1666901356149-93f2eb3ba5a2?w=700&q=80"
-               hero_alt = "Ballon de volley"
+               hero_src = asset_path("img banner/banner_volley.jpeg")
+               hero_alt = "Joueur de volley"
              when nil
                # Mode Multisport (aucun sport sélectionné) → image locale multisports
                hero_src = asset_path("sports/multisports-img.png")
                hero_alt = "Multisport"
              else
                # Tennis par défaut
-               hero_src = "https://images.unsplash.com/photo-1622163642998-1ea32b0bbc67?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8dGVubmlzfGVufDB8fDB8fHwy"
-               hero_alt = "Raquette de tennis"
+               hero_src = asset_path("img banner/banner_tennis.avif")
+               hero_alt = "Joueur de tennis"
              end %>
           <%= image_tag hero_src, alt: hero_alt, class: "hero-img" %>
 

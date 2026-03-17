@@ -14,24 +14,30 @@ export default class extends Controller {
     this.observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
-          const inner = entry.target.querySelector(".a2-section-inner")
-          if (!inner) return
+          // querySelectorAll pour gérer les sections avec plusieurs blocs intérieurs
+          // (ex: la section split avec 2 colonnes animées séparément)
+          const inners = entry.target.querySelectorAll(".a2-section-inner")
+          if (!inners.length) return
 
           if (entry.isIntersecting) {
-            // Section visible → slide up vers sa position
-            inner.classList.add("is-visible")
-            inner.classList.remove("is-above")
+            // Section visible → tous les blocs glissent vers leur position
+            inners.forEach(inner => {
+              inner.classList.add("is-visible")
+              inner.classList.remove("is-above")
+            })
 
           } else {
-            inner.classList.remove("is-visible")
+            inners.forEach(inner => {
+              inner.classList.remove("is-visible")
 
-            if (entry.boundingClientRect.top < 0) {
-              // Section au-dessus du viewport (déjà scrollée) → sort vers le haut
-              inner.classList.add("is-above")
-            } else {
-              // Section en dessous (pas encore atteinte) → reste en bas
-              inner.classList.remove("is-above")
-            }
+              if (entry.boundingClientRect.top < 0) {
+                // Section au-dessus du viewport (déjà scrollée) → sort vers le haut
+                inner.classList.add("is-above")
+              } else {
+                // Section en dessous (pas encore atteinte) → reste en bas
+                inner.classList.remove("is-above")
+              }
+            })
           }
         })
       },

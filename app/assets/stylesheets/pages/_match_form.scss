@@ -180,7 +180,7 @@
   // Pour enlever l'image, remplace tout par : background-color: $dark-bg;
   background:
     linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
-    image-url("sports/Football/herbe.jpg") center 25% / cover no-repeat;
+    image-url("sports/Football/herbe.webp") center 25% / cover no-repeat;
   padding: 2rem 0 2.25rem;
   // Séparateur subtil entre la banner et le formulaire
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
