@@ -29,7 +29,12 @@ body {
 // ── Empêche le scroll horizontal ────────────────────
 // Certains éléments dépassent légèrement du viewport (gradients avec left: -120px,
 // Bootstrap rows avec marges négatives, etc.) et créent une barre de scroll inutile.
-// overflow-x: hidden sur html ET body bloque ce scroll parasite.
-html, body {
+// IMPORTANT : on utilise "clip" sur le body (pas "hidden") car "hidden" crée un
+// scroll container qui casse position:sticky (le récap du formulaire de match).
+// "clip" coupe les débordements sans créer de scroll container.
+html {
   overflow-x: hidden;
+}
+body {
+  overflow-x: clip;
 }
