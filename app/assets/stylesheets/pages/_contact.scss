@@ -1,0 +1,170 @@
+// ═══════════════════════════════════════════════════
+//  PAGE CONTACT — _contact.scss
+//  Route : GET /contact
+// ═══════════════════════════════════════════════════
+
+.contact-page {
+  background-color: $dark-bg; // fond sombre global — cohérent avec le reste du site
+
+  // ── Bannière hero ────────────────────────────────
+  .contact-banner {
+    background:
+      linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.80)), // aplat sombre pour lisibilité
+      image-url("img_qsn/img_banner_qsn.png") center center / cover no-repeat; // même image que la page about
+    padding: 100px 0 80px;
+    text-align: left;
+  }
+
+  // Titre principal du hero
+  .contact-banner-title {
+    font-family: $display-font;
+    font-size: clamp(calc(2rem + 20px), 5vw, calc(3.5rem + 20px));
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+
+  // Sous-titre accroche
+  .contact-banner-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 600px;
+    margin: 0;
+  }
+
+  // ── Section principale ───────────────────────────
+  .contact-main {
+    padding: 72px 0;
+    background-color: $dark-bg;
+  }
+
+  // Titre de section (Prénom + Nom côte à côte sur mobile aussi)
+  .contact-section-title {
+    font-family: $display-font;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: $dark-text;
+    margin-bottom: 2rem;
+  }
+
+  // ── Cartes d'information (email, réseaux, délai) ─
+  .contact-info-card {
+    display: flex;           // icône + texte côte à côte
+    align-items: flex-start; // aligne en haut si le texte dépasse une ligne
+    gap: 1rem;               // espace entre l'icône et le texte
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background-color: $dark-surface;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+
+    // Icône Lucide — taille fixe + couleur verte
+    .contact-info-icon {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      stroke: $green; // Lucide utilise stroke pour la couleur
+      margin-top: 2px; // léger offset pour aligner avec le texte
+    }
+
+    // Label grisé au-dessus (ex : "Email")
+    .contact-info-label {
+      color: $dark-muted;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 0.25rem;
+    }
+
+    // Valeur principale (ex : "contact@team-up.fr")
+    .contact-info-value {
+      color: $dark-text;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+
+  // ── Réseaux sociaux dans la carte ───────────────
+  .contact-social {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .contact-social-link {
+    color: $dark-muted;
+    font-size: 1.1rem;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $green; // vert au survol — cohérent avec le site
+    }
+  }
+
+  // ── Formulaire de contact ────────────────────────
+  .contact-form {
+    // Pas de styles spéciaux sur le form lui-même — Bootstrap gère la grille
+  }
+
+  // Légende "* Champs obligatoires" — affichée au-dessus du formulaire
+  .contact-required-legend {
+    color: $dark-muted;
+    font-size: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  // Étoile verte — indicateur visuel de champ obligatoire
+  .contact-required {
+    color: $green;
+    margin-left: 2px;
+  }
+
+  // Label des champs
+  .contact-label {
+    display: block;
+    color: $dark-muted;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+  }
+
+  // Input et textarea — thème sombre uniforme
+  .contact-input {
+    display: block;
+    width: 100%;
+    padding: 0.65rem 1rem;
+    background-color: $dark-surface;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: $dark-text;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    // Supprime le fond blanc par défaut du navigateur (autocomplete)
+    &:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 1000px $dark-surface inset;
+      -webkit-text-fill-color: $dark-text;
+    }
+
+    // Focus : bordure verte + léger glow
+    &:focus {
+      outline: none;
+      border-color: $green;
+      box-shadow: 0 0 0 3px rgba(30, 221, 136, 0.15);
+    }
+
+    // Placeholder discret
+    &::placeholder {
+      color: rgba(255,255,255,0.25);
+    }
+  }
+
+  // Textarea spécifique — empêche le redimensionnement horizontal
+  .contact-textarea {
+    resize: vertical; // seulement en hauteur
+    min-height: 140px;
+  }
+
+}

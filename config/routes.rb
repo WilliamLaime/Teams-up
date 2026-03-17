@@ -11,6 +11,9 @@ Rails.application.routes.draw do
   # Page "Qui sommes-nous ?" — version 2 (expérimentale)
   get "about2", to: "pages#about2", as: :about2
 
+  # Page de contact
+  get "contact", to: "pages#contact", as: :contact
+
   # Routes pour les matchs (CRUD complet)
   # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.
   resources :matches do
