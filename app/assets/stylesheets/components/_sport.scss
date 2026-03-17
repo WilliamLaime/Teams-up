@@ -74,7 +74,28 @@
 
 // ── Dropdown des sports dans la navbar ───────────────────────────────────
 .sport-dropdown {
-  min-width: 200px;
+  min-width: 220px;
+
+  // Champ de recherche dans le dropdown
+  .sport-search-input {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 0.82rem;
+
+    // Placeholder légèrement transparent
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    // Focus : légère bordure verte pour indiquer l'état actif
+    &:focus {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba($green, 0.5);
+      box-shadow: none;
+      color: #fff;
+    }
+  }
 
   // Chaque item sport (bouton dans le dropdown)
   .sport-dropdown-item {

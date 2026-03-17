@@ -166,16 +166,14 @@
     </div>
 
     <%# Titre %>
-    <div class="match-card-title" style="<%= match.description.present? ? 'margin-bottom:6px; min-height:0; -webkit-line-clamp:1;' : '' %>">
+    <div class="match-card-title" style="margin-bottom:6px; min-height:0; -webkit-line-clamp:1;">
       <%= match.title %>
     </div>
 
-    <%# Description — 2 lignes max %>
-    <% if match.description.present? %>
-      <div style="font-size:0.75rem; color:rgba(255,255,255,0.65); margin-top:0; margin-bottom:18px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-        <%= match.description %>
-      </div>
-    <% end %>
+    <%# Description — toujours présente, hauteur fixe 2 lignes pour aligner toutes les cards %>
+    <div style="font-size:0.75rem; color:rgba(255,255,255,0.65); margin-top:0; margin-bottom:18px; line-height:1.4; height:2.1rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+      <%= match.description %>
+    </div>
 
     <%# Lieu %>
     <div class="match-info-line">

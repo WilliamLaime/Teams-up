@@ -53,10 +53,26 @@
               <i data-lucide="chevron-down" style="width:13px;height:13px;" class="sport-switcher-chevron"></i>
             </button>
 
-            <ul class="dropdown-menu sport-dropdown">
+            <%# data-controller active le filtrage Stimulus sur ce dropdown %>
+            <ul class="dropdown-menu sport-dropdown" data-controller="sport-search">
 
-              <%# ── Option Multisport (en premier, tous les sports) ── %>
-              <li>
+              <%# ── Barre de recherche en haut du dropdown ── %>
+              <li class="px-2 pb-1" data-action="click->sport-search#stopPropagation">
+                <input
+                  type="text"
+                  class="form-control form-control-sm sport-search-input"
+                  placeholder="Rechercher un sport..."
+                  data-sport-search-target="input"
+                  data-action="input->sport-search#filter"
+                  autocomplete="off"
+                >
+              </li>
+
+              <li><hr class="dropdown-divider my-1"></li>
+
+              <%# ── Option Multisport (tous les sports) ── %>
+              <%# data-sport-name permet au filtre de chercher "multisport" %>
+              <li data-sport-search-target="item" data-sport-name="multisport">
                 <%= button_to multisport_switch_path,
                     method: :post,
                     class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
@@ -71,8 +87,10 @@
 
               <li><hr class="dropdown-divider my-1"></li>
 
+              <%# ── Liste de tous les sports ── %>
               <% Sport.order(:name).each do |sport| %>
-                <li>
+                <%# data-sport-name est lu par le controller pour filtrer %>
+                <li data-sport-search-target="item" data-sport-name="<%= sport.name.downcase %>">
                   <%= button_to switch_sport_path(sport),
                       method: :post,
                       class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{'sport-dropdown-item--active' if current_sport&.id == sport.id}",
@@ -86,14 +104,6 @@
                 </li>
               <% end %>
 
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <%# "Gérer mes sports" — redirige vers la page de modification du profil %>
-                <%= link_to edit_profil_path, class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2" do %>
-                  <i data-lucide="settings" style="width:13px;height:13px;"></i>
-                  <span>Gérer mes sports</span>
-                <% end %>
-              </li>
             </ul>
           </li>
           <%# ── Fin sélecteur de sport ──────────────────────────────────── %>

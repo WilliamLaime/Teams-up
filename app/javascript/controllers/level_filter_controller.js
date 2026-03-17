@@ -31,29 +31,44 @@ export default class extends Controller {
       document.dispatchEvent(new CustomEvent("filter:opened", { detail: { source: this } }))
       dropdown.style.display = "flex"
       dropdown.style.flexDirection = "column"
+      // Réinitialise le flag de modification à l'ouverture
+      this.dirty = false
     } else {
-      dropdown.style.display = "none"
+      // Ferme et soumet si une checkbox a changé
+      this.closeAndSubmitIfDirty()
     }
   }
 
   // Ferme ce dropdown si un autre filtre vient de s'ouvrir
   handleOtherOpened(event) {
     if (event.detail.source !== this) {
-      this.dropdownTarget.style.display = "none"
+      // Soumet si une checkbox a changé avant de fermer
+      this.closeAndSubmitIfDirty()
     }
   }
 
   // Ferme le dropdown si on clique ailleurs sur la page
   handleClickOutside(event) {
     if (!this.element.contains(event.target)) {
-      this.dropdownTarget.style.display = "none"
+      // Soumet si une checkbox a changé avant de fermer
+      this.closeAndSubmitIfDirty()
     }
   }
 
-  // Appelé à chaque checkbox cochée/décochée — met à jour le label uniquement
-  // (le formulaire n'est soumis que via le bouton "Appliquer")
+  // Ferme le dropdown et soumet le formulaire si quelque chose a changé
+  closeAndSubmitIfDirty() {
+    this.dropdownTarget.style.display = "none"
+    if (this.dirty) {
+      this.dirty = false
+      this.element.closest("form").requestSubmit()
+    }
+  }
+
+  // Appelé à chaque checkbox cochée/décochée — met à jour le label et marque comme modifié
   change() {
     this.updateLabel()
+    // Marque que l'utilisateur a changé une sélection
+    this.dirty = true
   }
 
   // Soumet le formulaire et ferme le dropdown — appelé par le bouton "Appliquer"
