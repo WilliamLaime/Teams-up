@@ -1,0 +1,158 @@
+<%# =====================================================
+    PAGE CONTACT
+    Route : GET /contact
+    Page publique — accessible sans connexion
+    ===================================================== %>
+
+<div class="contact-page">
+
+  <%# ── Bannière hero ───────────────────────────────── %>
+  <section class="contact-banner">
+    <div class="container">
+      <h1 class="contact-banner-title">Contact</h1>
+      <p class="contact-banner-subtitle">
+        Une question, une suggestion ou un bug à signaler ?<br>
+        On est là pour t'écouter.
+      </p>
+    </div>
+  </section>
+
+  <%# ── Section principale : formulaire + infos ──────── %>
+  <section class="contact-main">
+    <div class="container">
+      <div class="row justify-content-center g-5">
+
+        <%# ── Colonne gauche : infos de contact ── %>
+        <div class="col-md-4">
+          <h2 class="contact-section-title">Nous contacter</h2>
+
+          <%# Carte email %>
+          <div class="contact-info-card">
+            <%# Icône Lucide mail %>
+            <i data-lucide="mail" class="contact-info-icon"></i>
+            <div>
+              <p class="contact-info-label">Email</p>
+              <p class="contact-info-value">contact@team-up.fr</p>
+            </div>
+          </div>
+
+          <%# Carte réseaux sociaux %>
+          <div class="contact-info-card">
+            <%# Icône Lucide users %>
+            <i data-lucide="users" class="contact-info-icon"></i>
+            <div>
+              <p class="contact-info-label">Réseaux sociaux</p>
+              <%# Liens vers les réseaux — "#" en attendant les vraies URLs %>
+              <div class="contact-social">
+                <a href="#" aria-label="Instagram" class="contact-social-link">
+                  <i class="fa-brands fa-instagram"></i>
+                </a>
+                <a href="#" aria-label="TikTok" class="contact-social-link">
+                  <i class="fa-brands fa-tiktok"></i>
+                </a>
+                <a href="#" aria-label="YouTube" class="contact-social-link">
+                  <i class="fa-brands fa-youtube"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <%# Carte délai de réponse %>
+          <div class="contact-info-card">
+            <%# Icône Lucide clock %>
+            <i data-lucide="clock" class="contact-info-icon"></i>
+            <div>
+              <p class="contact-info-label">Délai de réponse</p>
+              <p class="contact-info-value">Sous 48h en semaine</p>
+            </div>
+          </div>
+        </div>
+
+        <%# ── Colonne droite : formulaire de contact ── %>
+        <div class="col-md-7">
+          <h2 class="contact-section-title">Envoyer un message</h2>
+
+          <%# Formulaire — action="#" en attendant le backend email %>
+          <form class="contact-form" action="#" method="post">
+
+            <%# Ligne prénom + nom %>
+            <div class="row g-3 mb-3">
+              <div class="col-sm-6">
+                <label for="contact_prenom" class="contact-label">Prénom <span class="contact-required">*</span></label>
+                <input
+                  type="text"
+                  id="contact_prenom"
+                  name="contact[prenom]"
+                  class="contact-input"
+                  placeholder="Ton prénom"
+                  required
+                >
+              </div>
+              <div class="col-sm-6">
+                <label for="contact_nom" class="contact-label">Nom <span class="contact-required">*</span></label>
+                <input
+                  type="text"
+                  id="contact_nom"
+                  name="contact[nom]"
+                  class="contact-input"
+                  placeholder="Ton nom"
+                  required
+                >
+              </div>
+            </div>
+
+            <%# Email %>
+            <div class="mb-3">
+              <label for="contact_email" class="contact-label">Email <span class="contact-required">*</span></label>
+              <input
+                type="email"
+                id="contact_email"
+                name="contact[email]"
+                class="contact-input"
+                placeholder="ton@email.com"
+                required
+              >
+            </div>
+
+            <%# Sujet %>
+            <div class="mb-3">
+              <label for="contact_sujet" class="contact-label">Sujet <span class="contact-required">*</span></label>
+              <input
+                type="text"
+                id="contact_sujet"
+                name="contact[sujet]"
+                class="contact-input"
+                placeholder="De quoi s'agit-il ?"
+                required
+              >
+            </div>
+
+            <%# Message %>
+            <div class="mb-4">
+              <label for="contact_message" class="contact-label">Message <span class="contact-required">*</span></label>
+              <textarea
+                id="contact_message"
+                name="contact[message]"
+                class="contact-input contact-textarea"
+                placeholder="Ton message…"
+                rows="5"
+                required
+              ></textarea>
+            </div>
+
+            <%# Légende champs obligatoires %>
+            <p class="contact-required-legend"><span class="contact-required">*</span> Champs obligatoires</p>
+
+            <%# Bouton d'envoi — mêmes classes que le composant btn_primary %>
+            <button type="submit" class="btn btn-primary btn-lg px-4 btn-cta-primary">
+              Envoyer le message
+            </button>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</div>
