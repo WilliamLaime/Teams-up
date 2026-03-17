@@ -20,6 +20,26 @@ fr:
         invalid: "est invalide"
         confirmation: "ne correspond pas"
         not_a_number: "n'est pas un nombre"
+        too_long: "est trop long (maximum %{count} caractères)"
+        password_too_short: "est trop court (minimum %{count} caractères)"
+
+    # Noms des modèles traduits
+    models:
+      user: "utilisateur"
+      profil: "profil"
+
+    # Noms des attributs traduits (utilisés dans les messages d'erreur)
+    attributes:
+      user:
+        email: "E-mail"
+        password: "Mot de passe"
+        password_confirmation: "Confirmation du mot de passe"
+        first_name: "Prénom"
+        last_name: "Nom"
+      profil:
+        first_name: "Prénom"
+        last_name: "Nom"
+        avatar: "Avatar"
 
   # Traductions pour time_ago_in_words (utilisé dans les notifications)
   datetime:
