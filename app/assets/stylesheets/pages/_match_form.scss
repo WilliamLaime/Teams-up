@@ -382,6 +382,56 @@
 
 
 // ══════════════════════════════════════════════════════════
+// DROPDOWN HEURES (time_picker_controller)
+// Chaque ligne de l'heure dans le dropdown custom
+// ══════════════════════════════════════════════════════════
+
+// ── Dropdown custom heures/minutes (time_picker_controller) ─────────────
+// Classe .time-picker-dropdown sur le div — plus fiable qu'un sélecteur
+// d'attribut pour les pseudo-éléments scrollbar webkit.
+// Même style que .notif-list : scrollbar 4px verte, track transparent.
+.time-picker-dropdown {
+  background: #242624 !important;
+  padding: 0.3rem;
+
+  // Scrollbar fine verte — identique aux notifications
+  &::-webkit-scrollbar       { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+}
+
+// Chaque ligne heure — reset complet des styles bouton natifs
+.time-picker-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.85rem;
+  background: transparent !important;
+  border: none !important;
+  outline: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  box-shadow: none !important;
+
+  &:hover {
+    background: rgba($green, 0.12) !important;
+    color: $green;
+  }
+
+  // Item actuellement sélectionné
+  &--active {
+    color: $green !important;
+    font-weight: 700;
+    background: rgba($green, 0.1) !important;
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════
 // COMPTEUR JOUEURS : boutons − et + autour d'un chiffre
 // ══════════════════════════════════════════════════════════
 
@@ -453,9 +503,9 @@
 .match-level-btn {
   padding: 0.5rem 1.1rem;
   border-radius: 0.5rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.2); // Bordure grise par défaut
-  background: transparent;
-  color: $dark-muted;                            // Texte grisé par défaut
+  border: 2px solid rgba(255, 255, 255, 0.4);  // Bordure bien visible
+  background: rgba(255, 255, 255, 0.08);        // Fond clair pour le distinguer
+  color: rgba(255, 255, 255, 0.9);              // Texte presque blanc
   font-size: 0.9rem;
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
@@ -561,27 +611,12 @@
 // RÉCAPITULATIF : colonne droite (sticky)
 // ══════════════════════════════════════════════════════════
 
-// Carte principale du récapitulatif
+// Carte principale du récapitulatif — juste le style visuel, pas de sticky ici
 .match-recap-card {
-  background-color: $dark-card-bg; // #1a1c1a → même que les sections du formulaire
+  background-color: $dark-card-bg;
   border-radius: 8px;
   padding: 1.5rem;
   color: $dark-text;
-
-  // Sticky : reste visible pendant que l'utilisateur scrolle
-  // top: 20px → petit espace en haut du viewport (la navbar n'est pas fixed)
-  // La col-lg-5 parente s'étire à la hauteur de col-lg-7 (pas d'align-items-start),
-  // donc le sticky s'arrête naturellement au bas du dernier bloc à gauche.
-  position: sticky;
-  top: 20px;
-  align-self: flex-start; // empêche la carte elle-même de s'étirer sur toute la hauteur
-
-  // Sur desktop (≥ lg) : décale la carte vers le bas pour l'aligner avec
-  // la première section à gauche (compense la hauteur de .form-required-legend)
-  // Calcul : font-size 0.8rem × line-height 1.5 + margin-bottom 0.75rem = 1.95rem
-  @media (min-width: 992px) {
-    margin-top: 1.95rem;
-  }
 }
 
 // En-tête "📊 Récapitulatif"

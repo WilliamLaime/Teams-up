@@ -47,14 +47,14 @@
       </div>
     <% end %>
 
-    <%# align-items-start retiré : la col-lg-5 s'étire à la même hauteur que col-lg-7
-        ce qui permet à position:sticky de s'arrêter en bas du dernier bloc gauche %>
+    <%# row sans align-items-start : Bootstrap étire les deux colonnes à la même hauteur
+        (celle du formulaire, la plus grande). Ça donne au sticky l'espace pour glisser. %>
     <div class="row g-4">
 
       <%# ════════════════════════════════════════════════════
           COLONNE GAUCHE : les 4 sections du formulaire
           ════════════════════════════════════════════════════ %>
-      <div class="col-lg-7">
+      <div class="col-lg-7" data-match-form-target="formCol">
 
         <%# Légende : explication de l'astérisque %>
         <p class="form-required-legend">
@@ -257,17 +257,95 @@
             </div>
 
             <%# Champ Heure
-                time_select génère DEUX <select> :
-                  - match_time_4i → heures (0 à 23)
-                  - match_time_5i → minutes (00, 15, 30, 45 grâce à minute_step: 15)
-                Le data-action sur le div parent capture les changements des deux selects %>
+                Deux selects custom (au lieu de time_select) pour limiter les options :
+                  - Heures : 6h à 23h uniquement (pas de 0h-5h)
+                  - Minutes : 00, 15, 30, 45
+                Les noms time(4i) / time(5i) sont la convention Rails pour les champs composés %>
             <div class="col-md-6">
               <%= f.label :time, class: "form-label" do %>Heure de début <span class="required-star">*</span><% end %>
               <div class="d-flex gap-2"
                    data-action="change->match-form#updateTime">
-                <%= f.time_select :time,
-                    { minute_step: 15, default: @match.time, prompt: { hour: "H", minute: "Min" } },
-                    { class: "form-select" } %>
+
+                <%# ── Dropdown custom pour les heures (time_picker_controller) ── %>
+                <%# Affiche 5 heures à la fois + scroll — même pattern que sport-picker %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+
+                  <%# Input hidden time(4i) : valeur réelle soumise avec le formulaire %>
+                  <%= f.hidden_field "time(4i)",
+                      value: @match.time&.hour,
+                      data: { "time-picker-target": "input" } %>
+
+                  <%# Trigger : même rendu visuel que le form-select des minutes %>
+                  <button type="button"
+                          class="form-select w-100"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left; color:<%= @match.time ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                    <%= @match.time ? ("%02dh" % @match.time.hour) : "Heure" %>
+                  </button>
+
+                  <%# Dropdown : toutes les heures (0h-23h), 5 visibles + scroll %>
+                  <%# .time-picker-dropdown → scrollbar verte (même style que .notif-list) %>
+                  <div class="time-picker-dropdown"
+                       data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
+                              background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
+                              overflow-y:auto; max-height:200px; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                    <% (0..23).each do |h| %>
+                      <%# Styles inline garantis : évite tout conflit Bootstrap/navigateur %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.hour == h %>"
+                              style="display:block; width:100%; padding:0.5rem 0.85rem; background:<%= @match.time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important; border:none !important; outline:none; border-radius:6px; color:<%= @match.time&.hour == h ? '#1EDD88' : 'rgba(255,255,255,0.7)' %>; font-size:0.88rem; font-weight:<%= @match.time&.hour == h ? '700' : '500' %>; text-align:left; cursor:pointer; box-shadow:none !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= h %>"
+                              data-label="<%= "%02dh" % h %>">
+                        <%= "%02dh" % h %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                </div>
+
+                <%# ── Dropdown custom pour les minutes — même pattern que les heures ── %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+
+                  <%# Input hidden time(5i) : valeur réelle soumise avec le formulaire %>
+                  <%= f.hidden_field "time(5i)",
+                      value: @match.time&.min,
+                      data: { "time-picker-target": "input" } %>
+
+                  <%# Trigger : même rendu que le bouton heures %>
+                  <button type="button"
+                          class="form-select w-100"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left; color:<%= @match.time ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                    <%= @match.time ? ("%02d" % @match.time.min) : "Min" %>
+                  </button>
+
+                  <%# Dropdown : 4 options (quarts d'heure) %>
+                  <%# .time-picker-dropdown → même style scrollbar que les heures et les notifs %>
+                  <div class="time-picker-dropdown"
+                       data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
+                              background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
+                              overflow-y:auto; max-height:200px; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                    <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.min == val %>"
+                              style="display:block; width:100%; padding:0.5rem 0.85rem; background:<%= @match.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important; border:none !important; outline:none; border-radius:6px; color:<%= @match.time&.min == val ? '#1EDD88' : 'rgba(255,255,255,0.7)' %>; font-size:0.88rem; font-weight:<%= @match.time&.min == val ? '700' : '500' %>; text-align:left; cursor:pointer; box-shadow:none !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= val %>"
+                              data-label="<%= lbl %>">
+                        <%= lbl %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                </div>
+
               </div>
             </div>
 
@@ -349,8 +427,12 @@
                 La classe .active est ajoutée/retirée par Stimulus selon la sélection %>
             <div class="match-level-buttons">
               <% Match::LEVELS.each do |lvl| %>
+                <%# Styles inline garantis + hover via onmouseover/onmouseout (contourne !important du CSS) %>
                 <button type="button"
                         class="match-level-btn <%= 'active' if @match.level == lvl %>"
+                        style="padding:0.5rem 1.1rem; border-radius:0.5rem; font-size:0.9rem; cursor:pointer; border:<%= @match.level == lvl ? '2px solid #1EDD88' : '2px solid rgba(255,255,255,0.4)' %> !important; background:<%= @match.level == lvl ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.08)' %> !important; color:<%= @match.level == lvl ? '#1EDD88' : 'rgba(255,255,255,0.9)' %> !important;"
+                        onmouseover="if(!this.classList.contains('active')){this.style.setProperty('border','2px solid #1EDD88','important');this.style.setProperty('background','rgba(30,221,136,0.08)','important');this.style.setProperty('color','#1EDD88','important')}"
+                        onmouseout="if(!this.classList.contains('active')){this.style.setProperty('border','2px solid rgba(255,255,255,0.4)','important');this.style.setProperty('background','rgba(255,255,255,0.08)','important');this.style.setProperty('color','rgba(255,255,255,0.9)','important')}"
                         data-level="<%= lvl %>"
                         data-action="click->match-form#selectLevel">
                   <%= lvl %>
@@ -369,18 +451,19 @@
             <%= f.hidden_field :validation_mode, value: (@match.validation_mode || "automatic"),
                 id: "match_validation_mode" %>
 
-            <%# Toggle avec "Manuel" à gauche et "Automatique" à droite
-                - Toggle OFF (boule à gauche) = Manuel sélectionné
-                - Toggle ON  (boule à droite) = Automatique sélectionné %>
-            <div class="d-flex align-items-center gap-3 mt-2">
+            <%# Conteneur compact : fond + bordure, inline pour ne pas prendre toute la largeur %>
+            <div style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
+                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
+                        border-radius:10px; padding:0.55rem 0.9rem;">
 
-              <%# Label gauche "Manuel" — vert quand mode manuel actif %>
-              <span class="toggle-label <%= 'active-label' if @match.manual_validation? %>">Manuel</span>
+              <%# Label gauche : Manuel %>
+              <span style="font-size:0.82rem; font-weight:700; white-space:nowrap;
+                           color:<%= @match.manual_validation? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;">
+                ✋ Manuel
+              </span>
 
-              <%# Toggle pill visuel
-                  checked = Automatique (boule à droite, fond vert)
-                  unchecked = Manuel (boule à gauche) %>
-              <label class="pill-toggle" for="validation_toggle">
+              <%# Toggle pill %>
+              <label class="pill-toggle" for="validation_toggle" style="flex-shrink:0;">
                 <%= check_box_tag :validation_mode_toggle,
                     "automatic",
                     !@match.manual_validation?,
@@ -391,12 +474,14 @@
                       "action": "change->match-form#updateValidation"
                     },
                     onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'automatic' : 'manual'" %>
-                <%# Piste visuelle (fond + boule blanche via CSS) %>
                 <span class="pill-toggle-track"></span>
               </label>
 
-              <%# Label droit "Automatique" — vert quand mode automatique actif %>
-              <span class="toggle-label <%= 'active-label' unless @match.manual_validation? %>">Automatique</span>
+              <%# Label droit : Automatique %>
+              <span style="font-size:0.82rem; font-weight:700; white-space:nowrap;
+                           color:<%= @match.manual_validation? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;">
+                ⚡ Automatique
+              </span>
 
             </div>
           </div><%# fin toggle validation %>
@@ -418,6 +503,8 @@
                   min: 0,
                   step: 1,
                   value: (@match.price_per_player || 0),
+                  onfocus: "if(this.value === '0') this.value = ''",
+                  onblur:  "if(this.value === '') this.value = '0'",
                   data: {
                     "match-form-target": "priceInput",
                     "action": "input->match-form#updatePrice"
@@ -447,7 +534,10 @@
           Cette colonne reste visible pendant le scroll grâce à
           position: sticky dans _match_form.scss
           ════════════════════════════════════════════════════ %>
-      <div class="col-lg-5">
+      <%# position:sticky + align-self:flex-start : la colonne a sa hauteur naturelle
+          (celle de la carte) et reste visible en haut pendant le scroll.
+          Les deux colonnes finissent au même niveau car le row reste en stretch. %>
+      <div class="col-lg-5" style="position:sticky; top:20px; align-self:flex-start;">
         <div class="match-recap-card">
 
           <%# En-tête "Récapitulatif" avec icône %>
