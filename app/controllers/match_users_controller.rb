@@ -100,32 +100,45 @@ class MatchUsersController < ApplicationController
     Notification.create(user: user, message: message, link: match_path(@match))
   end
 
-  # Envoie le contenu mis à jour de la modal "Demandes en attente" à l'organisateur.
-  # Appelé quand un joueur envoie une demande (join_with_manual_validation).
-  # Si l'organisateur est sur la page du match, sa modal se met à jour et s'ouvre.
+  # Notifie l'organisateur en temps réel qu'une nouvelle demande manuelle est arrivée.
+  # Deux broadcasts :
+  #   1. Met à jour la liste #pending_modal_inner sur la show page (silencieux)
+  #   2. Envoie une modal de notification sur le canal personnel de l'organisateur
   def broadcast_pending_modal_to_organizer
+    orga = organizer_user
+    return unless orga
+
     # Recharge les demandes en attente depuis la base (inclut la nouvelle demande)
     pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
 
-    # Met à jour l'intérieur de #pending_modal_inner via Turbo Stream (ActionCable).
-    # broadcast_update_to (action="update") remplace uniquement le contenu HTML interne
-    # de la div cible → la div .modal-content.pending-modal-content est préservée
-    # (broadcast_replace_to l'aurait supprimée, cassant le style Bootstrap).
+    # Broadcast 1 : met à jour silencieusement la liste sur la show page
+    # (si l'orga est sur la show, il voit la liste à jour sans rechargement)
     Turbo::StreamsChannel.broadcast_update_to(
-      "match_#{@match.id}_organizer",           # canal d'écoute de l'organisateur
-      target: "pending_modal_inner",             # élément DOM ciblé dans show.html.erb
+      "match_#{@match.id}_organizer",
+      target: "pending_modal_inner",
       partial: "match_users/pending_modal_content",
       locals: { match: @match, pending_users: pending_users }
+    )
+
+    # Broadcast 2 : notification globale via le canal personnel de l'organisateur
+    # → apparaît peu importe la page où se trouve l'organisateur
+    Turbo::StreamsChannel.broadcast_update_to(
+      "user_#{orga.id}_notifications",
+      target: "global_notification_container",
+      partial: "match_users/new_request_notification",
+      locals: { match: @match, requesting_user: current_user, match_user: @match_user }
     )
   end
 
   # Notifie l'organisateur en temps réel qu'un joueur approuvé a quitté le match.
   # Appelé depuis destroy (uniquement si was_approved).
-  # Injecte une modal dans #player_left_notification_container côté organisateur.
   def broadcast_player_left_to_organizer(leaving_user)
+    orga = organizer_user
+    return unless orga
+
     Turbo::StreamsChannel.broadcast_update_to(
-      "match_#{@match.id}_organizer",              # canal d'écoute de l'organisateur
-      target: "player_left_notification_container", # conteneur dans show.html.erb
+      "user_#{orga.id}_notifications",
+      target: "global_notification_container",
       partial: "match_users/player_left_notification",
       locals: { match: @match, leaving_user: leaving_user }
     )
@@ -133,13 +146,15 @@ class MatchUsersController < ApplicationController
 
   # Notifie l'organisateur en temps réel qu'un joueur a rejoint automatiquement.
   # Appelé depuis join_automatically après le save et le decrement.
-  # Injecte une modal dans #auto_join_notification_container côté organisateur.
   def broadcast_auto_join_to_organizer
+    orga = organizer_user
+    return unless orga
+
     # On recharge le match pour avoir le player_left à jour (après decrement!)
     @match.reload
     Turbo::StreamsChannel.broadcast_update_to(
-      "match_#{@match.id}_organizer",             # canal d'écoute de l'organisateur
-      target: "auto_join_notification_container", # conteneur dans show.html.erb
+      "user_#{orga.id}_notifications",
+      target: "global_notification_container",
       partial: "match_users/auto_join_notification",
       locals: { match: @match, joining_user: current_user, match_user: @match_user }
     )
@@ -147,17 +162,19 @@ class MatchUsersController < ApplicationController
 
   # Envoie la notification de décision (accepté/refusé) au joueur concerné.
   # Appelé depuis approve et reject.
-  # Si le joueur est sur la page du match, une modal s'ouvre automatiquement.
   def broadcast_decision_to_participant(accepted:)
-    # Injecte la modal de décision dans #decision_notification_container.
-    # broadcast_update_to remplace le contenu interne du conteneur placeholder
-    # → la div#decision_notification_container reste dans le DOM.
     Turbo::StreamsChannel.broadcast_update_to(
-      "match_#{@match.id}_participant_#{@match_user.user_id}", # canal du joueur
-      target: "decision_notification_container",               # placeholder dans show.html.erb
+      "user_#{@match_user.user_id}_notifications",
+      target: "global_notification_container",
       partial: "match_users/decision_notification",
       locals: { accepted: accepted, match: @match }
     )
+  end
+
+  # Retourne l'user organisateur du match
+  # Utilisé par plusieurs méthodes de broadcast pour cibler le canal personnel de l'orga
+  def organizer_user
+    @match.organizer_match_user&.user
   end
 
   # Gère la promotion du prochain joueur en file d'attente quand une place se libère

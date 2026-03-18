@@ -1,5 +1,5 @@
 <%# Modal de notification de décision pour le joueur (User B).
-    Injectée dans #decision_notification_container en temps réel via Turbo Stream
+    Injectée dans #global_notification_container en temps réel via Turbo Stream
     (broadcast depuis MatchUsersController#approve ou #reject).
     Variables attendues : accepted (boolean), match %>
 
@@ -72,22 +72,23 @@
   </div>
 </div>
 
-<%# Ouvre la modal Bootstrap automatiquement quand le contenu est injecté par Turbo Stream.
-    Après fermeture de la modal, recharge la page pour refléter le nouveau statut du joueur
-    (chat accessible, statut "accepté" affiché, boutons mis à jour, etc.). %>
+<%# Ouvre la modal automatiquement dès injection par Turbo Stream.
+    À la fermeture :
+      - Si accepté → redirige vers la page du match (chat débloqué, statut mis à jour)
+      - Si refusé  → redirige vers la liste des matchs %>
 <script>
   (function() {
     var el = document.getElementById("decisionModal");
     if (el && typeof bootstrap !== "undefined") {
-      var modal = bootstrap.Modal.getOrCreateInstance(el);
-      modal.show();
-
+      bootstrap.Modal.getOrCreateInstance(el).show();
       if (typeof lucide !== "undefined") { lucide.createIcons(); }
 
-      // Recharge la page quand la modal est fermée (croix ou bouton)
-      // → le joueur voit son nouveau statut : chat débloqué, place confirmée, etc.
       el.addEventListener("hidden.bs.modal", function() {
-        window.location.reload();
+        <% if accepted %>
+          window.location.href = "<%= match_path(match) %>";
+        <% else %>
+          window.location.href = "<%= matches_path %>";
+        <% end %>
       }, { once: true });
     }
   })();
