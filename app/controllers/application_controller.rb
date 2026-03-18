@@ -71,6 +71,11 @@ class ApplicationController < ActionController::Base
   # session.delete retire le flag → la modal ne s'affiche qu'une fois par connexion
   def load_review_modal_data
     return unless user_signed_in?
+
+    # Sur la page show d'un match, on ne consomme pas le flag — la page a son propre bouton
+    # Le flag sera affiché sur la prochaine page visitée
+    return if controller_name == "matches" && action_name == "show"
+
     return unless session.delete(:show_review_modal)
 
     # Trouve les matchs terminés récents avec des joueurs non encore notés
@@ -114,17 +119,22 @@ class ApplicationController < ActionController::Base
       # A-t-on déjà voté pour l'homme du match de ce match ?
       has_voted = already_voted_match_ids.include?(match.id)
 
-      # On inclut le match si des reviews sont pending OU si le vote homme du match n'est pas fait
-      next unless pending_ids.any? || !has_voted
+      # Le vote homme du match n'a du sens que si des co-joueurs existent
+      # (évite d'afficher la section si le créateur est seul ou si co_player_ids est vide)
+      can_vote_homme = !has_voted && co_player_ids.any?
+
+      # On inclut le match si des reviews sont pending OU si on peut encore voter homme du match
+      next unless pending_ids.any? || can_vote_homme
 
       pending_users  = User.where(id: pending_ids).includes(:profil)
       all_co_players = User.where(id: co_player_ids).includes(:profil)
 
       result << {
         match:          match,
-        users:          pending_users,   # joueurs à noter (review)
-        all_co_players: all_co_players,  # tous les joueurs (vote homme du match)
-        has_voted:      has_voted        # true si déjà voté pour ce match
+        users:          pending_users,    # joueurs à noter (review)
+        all_co_players: all_co_players,   # tous les joueurs (vote homme du match)
+        has_voted:      has_voted,        # true si déjà voté pour ce match
+        can_vote_homme: can_vote_homme    # true si la section homme du match doit s'afficher
       }
     end
 

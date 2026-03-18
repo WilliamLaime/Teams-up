@@ -346,6 +346,18 @@
                 <div data-controller="countdown"
                      data-countdown-datetime-value="<%= match_datetime.iso8601 %>">
                 </div>
+
+                <%# Bouton "Laisser un avis" — sous le countdown quand le match est terminé %>
+                <% if @match.completed? && @match_pending_reviews.present? %>
+                  <%= link_to "#",
+                      class: "btn btn-cta-secondary btn-sm mt-3 w-100",
+                      style: "font-size:0.78rem;",
+                      data: { bs_toggle: "modal", bs_target: "#review-modal" } do %>
+                    <i data-lucide="star" style="width:13px;height:13px;"></i>
+                    Laisser un avis
+                  <% end %>
+                <% end %>
+
               <% end %>
 
             </div>
@@ -580,7 +592,7 @@
             <%# Nombre de places restantes — ou statut si match terminé %>
             <div class="match-spots-label">
               <% if @match.completed? %>
-                <span style="color:rgba(255,255,255,0.45);">Terminé</span>
+                <span style="color:rgba(255,255,255,0.45);">Match terminé</span>
               <% elsif @match.full? %>
                 <span style="color:#ff6b6b;">Complet</span>
               <% else %>
@@ -1126,6 +1138,11 @@
 
   <%# Conteneur pour la notification d'annulation du match par l'organisateur %>
   <div id="match_cancelled_notification_container"></div>
+<% end %>
+
+<%# ── Modal d'avis pour ce match (rendu uniquement si des avis sont en attente) %>
+<% if @match_pending_reviews.present? %>
+  <%= render "shared/review_modal", pending_review_matches: @match_pending_reviews, auto_open: false %>
 <% end %>
 
 <%# ══════════════════════════════════════════════════

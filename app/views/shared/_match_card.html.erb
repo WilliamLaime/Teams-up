@@ -20,8 +20,6 @@
       sports/Football/citydrone.webp
       sports/Football/Duel.webp
       sports/Football/Medellin.webp
-      sports/Football/herbe.webp
-      sports/Football/terrainight.jpg
     ],
     "tennis"     => %w[
       sports/Tennis/tennis1.webp
@@ -203,8 +201,13 @@
 
   <%# ── Pied de carte : bouton ────────────────────────────────────────────── %>
   <div class="match-card-footer">
-    <% if match.full? %>
-      <%# Match complet → bouton voir le match %>
+    <% if match.completed? %>
+      <%# Match terminé → bouton secondaire pour tous %>
+      <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+        Voir le match
+      <% end %>
+    <% elsif match.full? %>
+      <%# Match complet (pas encore terminé) → bouton secondaire %>
       <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
         Voir le match
       <% end %>
