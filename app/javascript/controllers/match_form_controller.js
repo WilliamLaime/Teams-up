@@ -34,6 +34,7 @@ export default class extends Controller {
     "levelInput",        // Input caché : niveau sélectionné (mis à jour par les boutons)
     "validationToggle",  // Checkbox du toggle Manuel/Automatique
     "priceInput",        // Champ numérique : prix par joueur
+    "bannerImageInput",  // Input caché : URL de l'image de la banner (soumise avec le formulaire)
 
     // ── Format ────────────────────────────────────────────
     "formatWrapper",     // Div englobant les boutons de format (affiché/caché selon sport)
@@ -66,6 +67,7 @@ export default class extends Controller {
 
     this.updateTitle()
     this.updateDescription()
+    // updateSport() appelle updateBanner() en interne
     this.updateSport()
     this.updatePlace()
     this.updateDate()
@@ -110,6 +112,32 @@ export default class extends Controller {
     }
   }
 
+  // ── Banner : change le fond de .match-new-banner selon le sport ──
+  // Choisit une image aléatoire dans le tableau du sport sélectionné
+  // et met à jour l'élément #match-new-banner (dans new.html.erb) + le champ caché
+  updateBanner() {
+    const select    = this.sportInputTarget
+    const sportId   = select.value
+    // Récupère la map { sportId => [url1, url2, ...] } passée en data-images
+    const imagesMap = JSON.parse(select.dataset.images || "{}")
+    const images    = imagesMap[sportId] || []
+
+    if (images.length === 0) return
+
+    // Choisit une image au hasard dans le tableau
+    const randomImg = images[Math.floor(Math.random() * images.length)]
+
+    // Met à jour le champ caché (sera sauvegardé en BDD à la soumission)
+    this.bannerImageInputTarget.value = randomImg
+
+    // Met à jour le fond de la banner dans new.html.erb (absent en edit → ok si null)
+    const bannerEl = document.getElementById("match-new-banner")
+    if (bannerEl) {
+      // Garde le gradient sombre par-dessus l'image pour la lisibilité
+      bannerEl.style.background = `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('${randomImg}') center 25% / cover no-repeat`
+    }
+  }
+
   // ── Sport : affiche les boutons de format + met à jour le récap ──
   updateSport() {
     const select  = this.sportInputTarget
@@ -147,6 +175,9 @@ export default class extends Controller {
       this.recapSportTarget.textContent = "—"
       this.formatWrapperTarget.style.display = "none"
     }
+
+    // Met à jour la banner selon le nouveau sport
+    this.updateBanner()
   }
 
   // Génère les boutons de format dans le conteneur dédié
@@ -257,18 +288,19 @@ export default class extends Controller {
   }
 
   // ── Heure (format : "21h15") ──────────────────────────────
-  // time_select génère deux <select> avec des IDs prévisibles :
-  //   match_time_4i → heures
-  //   match_time_5i → minutes
-  // On les trouve par leurs IDs depuis l'élément racine du contrôleur
+  // Les deux inputs cachés du time-picker ont des noms Rails prévisibles :
+  //   match[time(4i)] → heures
+  //   match[time(5i)] → minutes
+  // On les trouve via l'attribut name (plus fiable que l'ID car Rails peut
+  // ajouter un _ final à l'ID lors de la sanitisation des parenthèses)
   updateTime() {
-    const hourEl   = this.element.querySelector('[id$="_time_4i"]')
-    const minuteEl = this.element.querySelector('[id$="_time_5i"]')
+    const hourEl   = this.element.querySelector('[name="match[time(4i)]"]')
+    const minuteEl = this.element.querySelector('[name="match[time(5i)]"]')
 
-    if (hourEl && minuteEl && hourEl.value && minuteEl.value) {
+    if (hourEl && minuteEl && hourEl.value !== "" && minuteEl.value !== "") {
       // padStart(2, "0") : force "9" → "09" pour avoir "09h00"
-      const h = hourEl.value.padStart(2, "0")
-      const m = minuteEl.value.padStart(2, "0")
+      const h = String(hourEl.value).padStart(2, "0")
+      const m = String(minuteEl.value).padStart(2, "0")
       this.recapTimeTarget.textContent = `${h}h${m}`
     } else {
       this.recapTimeTarget.textContent = "—"

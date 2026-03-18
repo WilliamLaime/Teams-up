@@ -13,17 +13,32 @@ export default class extends Controller {
     // Ferme le dropdown si on clique en dehors
     this.handleClickOutside = this.handleClickOutside.bind(this)
     document.addEventListener("click", this.handleClickOutside)
+
+    // Ferme ce dropdown si un autre dropdown s'ouvre ailleurs sur la page
+    this.handleOtherOpen = (e) => {
+      if (e.detail.source !== this.element) {
+        this.dropdownTarget.style.display = "none"
+      }
+    }
+    document.addEventListener("dropdown:open", this.handleOtherOpen)
   }
 
   disconnect() {
     document.removeEventListener("click", this.handleClickOutside)
+    document.removeEventListener("dropdown:open", this.handleOtherOpen)
   }
 
   // Ouvre ou ferme le dropdown au clic sur le trigger
   toggle(event) {
     event.stopPropagation()
     const dropdown = this.dropdownTarget
-    dropdown.style.display = dropdown.style.display === "none" ? "block" : "none"
+    const isOpening = dropdown.style.display === "none"
+    dropdown.style.display = isOpening ? "block" : "none"
+
+    // Prévient les autres dropdowns qu'ils doivent se fermer
+    if (isOpening) {
+      document.dispatchEvent(new CustomEvent("dropdown:open", { detail: { source: this.element } }))
+    }
   }
 
   // Appelé quand l'utilisateur clique sur un sport dans la liste

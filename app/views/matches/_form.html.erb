@@ -86,6 +86,24 @@
               sports_names    = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = "#{sport_icon_text(s)} #{s.name}".strip }
               # Formats disponibles par sport : { sportId => [{label, players}, ...] }
               sports_formats  = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_formats }
+
+              # Images disponibles par sport — même liste que show.html.erb et _match_card.html.erb
+              # IMPORTANT : asset_path() lève une erreur si le fichier n'existe pas → ne lister que les vrais fichiers
+              _sport_images_data = {
+                "football"   => %w[sports/Football/ballon.webp sports/Football/citytoulouse.webp sports/Football/bresil.webp sports/Football/herbe.webp sports/Football/city1.webp sports/Football/citydrone.webp sports/Football/Duel.webp sports/Football/Medellin.webp],
+                "tennis"     => %w[sports/Tennis/tennis1.webp sports/Tennis/tennis2.webp sports/Tennis/tennis3.webp sports/Tennis/tennis4.webp sports/Tennis/tennis5.webp sports/Tennis/tennis6.webp],
+                "padel"      => %w[sports/Padel/padel1.webp sports/Padel/padel2.webp sports/Padel/padel3.webp sports/Padel/padel4.webp sports/Padel/padel5.webp sports/Padel/padel6.webp],
+                "volleyball" => %w[sports/Volley/volley1.webp sports/Volley/volley2.webp sports/Volley/volley3.webp sports/Volley/volley4.webp sports/Volley/volley5.webp sports/Volley/volley6.webp],
+                "basketball" => %w[sports/Basketball/basket1.webp sports/Basketball/basket2.webp sports/Basketball/basket3.webp sports/Basketball/basket4.webp sports/Basketball/basket5.webp sports/Basketball/basket6.webp],
+                "handball"   => %w[sports/Handball/handball1.webp sports/Handball/handball2.webp],
+                "badminton"  => %w[sports/Badminton/badminton1.webp sports/Badminton/badminton2.webp sports/Badminton/badminton3.webp sports/Badminton/badminton4.webp sports/Badminton/badminton5.webp sports/Badminton/badminton6.webp]
+              }
+              # Construit { sportId => ["/assets/sports/Football/ballon-abc123.webp", ...] }
+              # asset_path() génère l'URL avec fingerprint (cache-busting) → nécessaire en prod
+              sports_images_map = Sport.order(:name).each_with_object({}) do |s, h|
+                slug_imgs = _sport_images_data[s.slug] || _sport_images_data["football"]
+                h[s.id] = slug_imgs.map { |img| asset_path(img) }
+              end
             %>
             <%#
               Select caché — soumis avec le formulaire et cible Stimulus.
@@ -98,8 +116,16 @@
                   "defaults": sports_defaults.to_json,
                   "max-players": sports_max.to_json,
                   "sport-names": sports_names.to_json,
-                  "formats": sports_formats.to_json
+                  "formats": sports_formats.to_json,
+                  # images : { sportId => [url1, url2, ...] } — utilisé par Stimulus pour
+                  # changer l'image de la banner dynamiquement selon le sport sélectionné
+                  "images": sports_images_map.to_json
                 } %>
+
+            <%# Champ caché banner_image : stocke l'URL de l'image choisie (soumise avec le formulaire)
+                Stimulus met sa valeur à jour via updateBanner() quand le sport change %>
+            <%= f.hidden_field :banner_image,
+                data: { "match-form-target": "bannerImageInput" } %>
 
             <%# Dropdown custom — affiche les icônes image + emoji %>
             <div style="position:relative;" data-controller="sport-picker">
@@ -242,18 +268,50 @@
 
           <div class="row g-3">
 
-            <%# Champ Date %>
+            <%# Champ Date — dropdown calendrier custom (date_picker_controller) %>
             <div class="col-md-6">
               <%= f.label :date, class: "form-label" do %>Date du match <span class="required-star">*</span><% end %>
-              <%= f.date_field :date,
-                  class: "form-control",
-                  value: @match.date,
-                  required: true,
-                  min: Date.today.to_s,
-                  data: {
-                    "match-form-target": "dateInput",
-                    "action": "change->match-form#updateDate"
-                  } %>
+
+              <%# Conteneur du picker : même pattern que time-picker %>
+              <div style="position:relative;" data-controller="date-picker">
+
+                <%# Input caché : valeur réelle soumise avec le formulaire
+                    data-match-form-target → récap | data-action → updateDate au changement %>
+                <%= f.hidden_field :date,
+                    value: @match.date,
+                    data: {
+                      "date-picker-target": "input",
+                      "match-form-target":  "dateInput",
+                      "action":             "change->match-form#updateDate"
+                    } %>
+
+                <%# Trigger : bouton avec icône calendrier à droite au lieu du chevron %>
+                <button type="button"
+                        class="form-select w-100 dp-trigger"
+                        data-date-picker-target="trigger"
+                        data-action="click->date-picker#toggle"
+                        style="cursor:pointer; display:flex; align-items:center; background-image:none; padding-right:0.75rem;">
+                  <%# Span du texte — mis à jour par Stimulus sans toucher à l'icône %>
+                  <span data-date-picker-target="triggerText"
+                        style="color:<%= @match.date.present? ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                    <% if @match.date.present? %>
+                      <% fr_days = %w[Dim Lun Mar Mer Jeu Ven Sam]; fr_months = %w[jan. fév. mars avr. mai juin juil. août sept. oct. nov. déc.] %>
+                      <%= "#{fr_days[@match.date.wday]} #{@match.date.day} #{fr_months[@match.date.month - 1]} #{@match.date.year}" %>
+                    <% else %>
+                      Choisir une date
+                    <% end %>
+                  </span>
+                  <%# Icône calendrier — reste fixe, jamais remplacée par Stimulus %>
+                  <i data-lucide="calendar" style="width:14px;height:14px;color:white;flex-shrink:0;margin-left:auto;"></i>
+                </button>
+
+                <%# Dropdown calendrier — rempli dynamiquement par le controller JS %>
+                <div data-date-picker-target="dropdown"
+                     class="dp-dropdown"
+                     style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:400; min-width:280px;">
+                </div>
+
+              </div>
             </div>
 
             <%# Champ Heure
@@ -444,7 +502,14 @@
 
           <%# ── Toggle : Validation Manuel / Automatique ── %>
           <div class="mb-0">
-            <label class="form-label d-block">Validation des joueurs</label>
+            <label class="form-label d-block">
+              Validation des joueurs
+              <%# Infobulle CSS pure — même style que sur la page d'inscription %>
+              <span class="css-tooltip"
+                    data-tip="Vous avez la possibilité de valider manuellement ou automatiquement les personnes qui s'inscrivent à votre match.">
+                <i data-lucide="info" style="width:14px;height:14px;vertical-align:middle;"></i>
+              </span>
+            </label>
 
             <%# Champ caché : contient la vraie valeur envoyée avec le formulaire.
                 Mis à jour via onchange du toggle ci-dessous. %>
@@ -536,8 +601,9 @@
           ════════════════════════════════════════════════════ %>
       <%# position:sticky + align-self:flex-start : la colonne a sa hauteur naturelle
           (celle de la carte) et reste visible en haut pendant le scroll.
-          Les deux colonnes finissent au même niveau car le row reste en stretch. %>
-      <div class="col-lg-5" style="position:sticky; top:20px; align-self:flex-start;">
+          top:-1.5rem (négatif) : compense le margin-top:2rem de .match-recap-card
+          → au scroll, la carte apparaît à -1.5rem + 2rem = 0.5rem du haut de l'écran %>
+      <div class="col-lg-5" style="position:sticky; top:-16px; align-self:flex-start;">
         <div class="match-recap-card">
 
           <%# En-tête "Récapitulatif" avec icône %>

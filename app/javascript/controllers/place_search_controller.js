@@ -395,6 +395,14 @@ export default class extends Controller {
       this.venueIdTarget.value = button.dataset.venueId || ""
     }
 
+    // Notifie les autres contrôleurs (match-form#updatePlace) que la valeur a changé.
+    // Quand JS modifie .value directement, l'événement "input" ne se déclenche pas
+    // automatiquement — il faut le dispatcher manuellement.
+    this.inputTarget.dispatchEvent(new Event("input", { bubbles: true }))
+    // Cet événement déclenche aussi place-search#search qui programme un debounce.
+    // On l'annule immédiatement pour éviter que le dropdown se rouvre après la sélection.
+    clearTimeout(this.timeout)
+
     this.hideDropdown()
   }
 
@@ -405,6 +413,12 @@ export default class extends Controller {
 
     this.inputTarget.value = button.dataset.freeText
     if (this.hasVenueIdTarget) this.venueIdTarget.value = ""
+
+    // Même raison : dispatcher l'événement pour mettre à jour le récap,
+    // puis annuler le debounce de search() pour ne pas rouvrir le dropdown
+    this.inputTarget.dispatchEvent(new Event("input", { bubbles: true }))
+    clearTimeout(this.timeout)
+
     this.hideDropdown()
   }
 

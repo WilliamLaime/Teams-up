@@ -21,8 +21,6 @@
       sports/Football/citydrone.webp
       sports/Football/Duel.webp
       sports/Football/Medellin.webp
-      sports/Football/herbe.webp
-      sports/Football/terrainight.jpg
     ],
     "tennis"     => %w[
       sports/Tennis/tennis1.webp
@@ -72,8 +70,9 @@
   # Slug du sport, football par défaut si pas de sport associé
   sport_slug = @match.sport&.slug || "football"
   images = sport_images[sport_slug] || sport_images["football"]
-  # Image déterministe : même calcul que la card (id % nombre d'images)
-  cover_image_path = images[@match.id % images.length]
+  # Utilise l'image sauvegardée (choisie à la création) si elle existe,
+  # sinon fallback déterministe : même calcul que la card (id % nombre d'images)
+  cover_image_path = @match.banner_image.presence || images[@match.id % images.length]
 
   # Organisateur du match
   organizer_mu   = @match_users.find { |mu| mu.role == "organisateur" }
