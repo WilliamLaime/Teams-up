@@ -56,15 +56,36 @@ class MatchUsersController < ApplicationController
   # Approuver un joueur (réservé à l'organisateur via Pundit)
   def approve
     authorize @match_user
-    @match_user.update(status: "approved")
-    @match.decrement!(:player_left)
-    notify(@match_user.user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
 
-    # Broadcast en temps réel vers le joueur s'il est sur la page du match.
-    # Injecte la modal de décision dans son navigateur et l'ouvre automatiquement.
-    broadcast_decision_to_participant(accepted: true)
+    # Si le match est complet, on place le joueur en liste d'attente plutôt que de l'approuver
+    if @match.full?
+      @match_user.update(status: "waiting")
+      flash_msg = "#{@match_user.user.display_name} a été placé en liste d'attente (match complet)."
+    else
+      # Place normale disponible : on approuve et on décrémente le compteur
+      @match_user.update(status: "approved")
+      @match.decrement!(:player_left)
+      notify(@match_user.user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
+      # Broadcast en temps réel vers le joueur s'il est sur la page du match.
+      broadcast_decision_to_participant(accepted: true)
+      flash_msg = "#{@match_user.user.display_name} a été approuvé !"
+    end
 
-    redirect_to @match, notice: "#{@match_user.user.display_name} a été approuvé !"
+    # Recharge les demandes encore en attente pour mettre à jour la modal
+    pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
+
+    respond_to do |format|
+      # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.update(
+          "pending_modal_inner",
+          partial: "match_users/pending_modal_content",
+          locals: { match: @match, pending_users: pending_users }
+        )
+      end
+      # Fallback HTML classique (si Turbo n'est pas actif)
+      format.html { redirect_to @match, notice: flash_msg }
+    end
   end
 
   # PATCH /matches/:match_id/match_users/:id/reject
@@ -73,11 +94,24 @@ class MatchUsersController < ApplicationController
     authorize @match_user
     @match_user.update(status: "rejected")
     notify(@match_user.user, "❌ Ta demande pour \"#{@match.title}\" a été refusée.")
-
     # Broadcast en temps réel vers le joueur s'il est sur la page du match.
     broadcast_decision_to_participant(accepted: false)
 
-    redirect_to @match, notice: "#{@match_user.user.display_name} a été refusé."
+    # Recharge les demandes encore en attente pour mettre à jour la modal
+    pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
+
+    respond_to do |format|
+      # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.update(
+          "pending_modal_inner",
+          partial: "match_users/pending_modal_content",
+          locals: { match: @match, pending_users: pending_users }
+        )
+      end
+      # Fallback HTML classique
+      format.html { redirect_to @match, notice: "#{@match_user.user.display_name} a été refusé." }
+    end
   end
 
   private

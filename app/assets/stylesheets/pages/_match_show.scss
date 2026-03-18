@@ -1120,6 +1120,16 @@
 
     &:hover { background: $red; color: #fff; }
   }
+
+  // Match complet — bouton grisé avec icône horloge (joueur sera mis en attente)
+  &--disabled,
+  &--disabled:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: $dark-muted;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 }
 
 // Message si aucune demande (ne devrait pas s'afficher en pratique)

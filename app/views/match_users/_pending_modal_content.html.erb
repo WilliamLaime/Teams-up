@@ -78,12 +78,19 @@
         </div>
 
         <%# Boutons accepter (vert) / refuser (rouge) %>
+        <%# Si le match est complet, le bouton accepter est désactivé et grisé %>
         <div class="pending-modal-actions">
           <%= button_to approve_match_match_user_path(match, mu),
               method: :patch,
-              class: "pending-modal-btn pending-modal-btn--approve",
-              title: "Accepter" do %>
-            <i data-lucide="check" style="width:14px;height:14px;"></i>
+              class: "pending-modal-btn pending-modal-btn--approve #{"pending-modal-btn--disabled" if match.full?}",
+              title: match.full? ? "Match complet — sera mis en liste d'attente" : "Accepter",
+              disabled: match.full? do %>
+            <% if match.full? %>
+              <%# Icône horloge = "sera mis en attente" %>
+              <i data-lucide="clock" style="width:14px;height:14px;"></i>
+            <% else %>
+              <i data-lucide="check" style="width:14px;height:14px;"></i>
+            <% end %>
           <% end %>
           <%= button_to reject_match_match_user_path(match, mu),
               method: :patch,

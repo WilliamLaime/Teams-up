@@ -22,7 +22,13 @@ export default class extends Controller {
     // Ferme le panneau si on clique en dehors de l'élément sticky-chat
     // On stocke la référence pour pouvoir la retirer dans disconnect()
     this._handleOutsideClick = (event) => {
-      if (this.isOpen && !this.element.contains(event.target)) {
+      // On utilise composedPath() plutôt que contains(event.target) car Lucide
+      // remplace les <i> par des <svg> lors de createIcons() — l'élément original
+      // est retiré du DOM et contains() retourne false à tort, ce qui fermait
+      // le panneau immédiatement après l'avoir ouvert en cliquant sur l'icône.
+      // composedPath() capture le chemin AVANT tout remplacement DOM, donc fiable.
+      const clickedInside = event.composedPath().includes(this.element)
+      if (this.isOpen && !clickedInside) {
         this.close()
       }
     }
