@@ -41,9 +41,10 @@
     }
   }
 
-  // Bouton hug aligné à gauche — utilisé sur la page connexion
+  // Bouton hug centré — utilisé sur la page connexion
   .form-actions--center {
     display: flex;
+    justify-content: center;
 
     input[type="submit"],
     button[type="submit"] {

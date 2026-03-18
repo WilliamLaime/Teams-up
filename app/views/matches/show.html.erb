@@ -167,7 +167,7 @@
             <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
           <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
-<%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
+          <%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
         </div>
 
         <%# Titre %>
@@ -689,8 +689,10 @@
             <% end %>
 
           <% else %>
-            <%# Non connecté → vers inscription %>
-            <%= link_to new_user_registration_path, class: "btn btn-primary w-100 match-join-btn" do %>
+            <%# Non connecté → vers la page de connexion.
+                Devise redirigera automatiquement vers ce match après la connexion
+                grâce au store_location_for défini dans le contrôleur. %>
+            <%= link_to new_user_session_path, class: "btn btn-primary w-100 match-join-btn" do %>
               Rejoindre le match
             <% end %>
           <% end %>
@@ -762,8 +764,9 @@
               <div class="match-chat-blur-content">
                 <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
                 <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
-                <% if preview_messages.any? %>
-                  <div class="match-chat-preview-list">
+                <div class="match-chat-preview-list">
+                  <% if preview_messages.any? %>
+
                     <% preview_messages.each do |msg| %>
                       <div class="match-chat-preview-item">
                         <div class="match-chat-preview-avatar"
@@ -776,10 +779,10 @@
                         </div>
                       </div>
                     <% end %>
-                  </div>
-                <% else %>
-                  <%# Placeholder si aucun message encore %>
-                  <div class="match-chat-preview-list">
+
+                  <% else %>
+                    <%# Placeholder si aucun message encore %>
+
                     <div class="match-chat-preview-item">
                       <div class="match-chat-preview-avatar" style="background-color:#2E7D32;">JD</div>
                       <div class="match-chat-preview-content">
@@ -787,8 +790,9 @@
                         <span class="match-chat-preview-text">Rejoins le match pour discuter !</span>
                       </div>
                     </div>
-                  </div>
-                <% end %>
+
+                  <% end %>
+                </div>
               </div>
 
               <%# Overlay avec le bouton centré par-dessus le flou %>
