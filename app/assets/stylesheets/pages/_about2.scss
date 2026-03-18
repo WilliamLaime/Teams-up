@@ -1,0 +1,318 @@
+// ═══════════════════════════════════════════════════
+//  PAGE "QUI SOMMES-NOUS ?" — VERSION 2
+//  Fond fixe unique + texte qui monte par section
+// ═══════════════════════════════════════════════════
+
+
+// ── Scroll-snap sur <html> ───────────────────────────
+// Activé/désactivé par scroll_snap_controller.js via Stimulus
+// NOTE : le fond N'est PAS ici — background-attachment:fixed ne fonctionne
+// pas quand l'élément est lui-même le scroll container (quirk navigateur)
+html.page-scroll-snap {
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+
+  // scroll-padding-top : décale le point d'accroche vers le bas
+  // pour que la navbar fixe ne cache pas le haut des sections
+  scroll-padding-top: 65px;
+
+  // Fixe la navbar en haut du viewport pendant le scroll-snap
+  // Sans ça, la navbar disparaît dès le premier scroll
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+  }
+}
+
+
+// ── Wrapper — fond fixe ici ───────────────────────────
+// background-attachment: fixed fonctionne sur un élément enfant du scroll container
+.about2-page {
+  color: $dark-text;
+
+  // Image de fond unique, fixe relative au viewport (ne bouge pas au scroll)
+  background:
+    linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)),
+    image-url("img_qsn/img_qsn_3.png") center center / cover no-repeat fixed;
+}
+
+
+// ── Section de base ──────────────────────────────────
+// Chaque section = 1 écran, fond transparent (fond vient de .about2-page)
+.a2-section {
+  min-height: 100vh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;     // force l'arrêt à chaque section, pas de saut
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+
+  // ── Overlays de couleur par section ──
+  // Juste des teintes pour différencier chaque section, pas d'images
+
+  // Section 1 — centrée horizontalement + glow vert
+  &--img-1 {
+    align-items: center;    // bloc de contenu centré horizontalement
+    padding-top: 65px;      // compense la hauteur de la navbar fixe
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: -120px;
+      left: -120px;
+      width: 520px;
+      height: 520px;
+      background: radial-gradient(circle, rgba($green, 0.15) 0%, transparent 65%);
+      pointer-events: none;
+    }
+  }
+
+  // Sections 2+3 — les deux contenus côte à côte sur un même écran
+  &--split {
+    flex-direction: row;    // colonnes horizontales au lieu de colonne verticale
+    align-items: stretch;   // chaque colonne prend toute la hauteur
+    padding: 0;
+
+    // Overlay global : vert à gauche, sombre à droite
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to right,
+        rgba(8,100,58,0.55) 0%,
+        rgba(8,100,58,0.20) 50%,
+        rgba(0,0,0,0.20) 50%,
+        rgba(0,0,0,0.35) 100%
+      );
+      pointer-events: none;
+    }
+  }
+
+  // Section 4 — voile sombre + glow vert centré
+  &--dark {
+    background-color: rgba(0,0,0,0.45);
+    align-items: center;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba($green, 0.10) 0%, transparent 60%);
+      pointer-events: none;
+    }
+  }
+
+  // Section 5 — teinte verte (baissée), texte centré
+  &--img-5 {
+    align-items: center;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to left, rgba(8,100,58,0.60) 40%, rgba(8,100,58,0.30) 100%);
+      pointer-events: none;
+    }
+  }
+
+  // Section 6 — voile gauche pour le CTA
+  &--surface {
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(0,0,0,0.30) 0%, transparent 70%);
+      pointer-events: none;
+    }
+  }
+}
+
+
+// ── Contenu intérieur — animation slide-up ───────────
+// 3 états gérés par scroll_snap_controller.js :
+//   (défaut)    → texte en bas, invisible (pas encore scrollé)
+//   .is-visible → texte visible à sa place
+//   .is-above   → texte sorti vers le haut (section déjà passée)
+.a2-section-inner {
+  padding: 0 5vw;
+  max-width: 680px;
+  position: relative;
+  z-index: 1;
+
+  // État initial : caché en bas
+  opacity: 0;
+  transform: translateY(60px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+
+  // Texte à sa place
+  &.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  // Texte sorti vers le haut
+  &.is-above {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+
+  // Variante ferrée à droite
+  &--right {
+    margin-left: auto;
+    margin-right: 5vw;
+    text-align: right;
+
+    .hero-badge { margin-left: auto; }
+  }
+}
+
+
+// ── Colonnes du split (sections 2+3) ─────────────────
+// Chaque colonne occupe 50% de la largeur de l'écran
+.a2-split-col {
+  flex: 1;                  // chaque colonne = moitié de l'écran
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 3vw;
+  position: relative;
+  z-index: 1;
+
+  // Le contenu intérieur est plus compact dans une demi-colonne
+  .a2-section-inner {
+    max-width: 460px;       // moins large que la valeur par défaut (680px)
+    padding: 0 1vw;
+  }
+
+  // Colonne gauche — texte ferré à droite (vers le séparateur)
+  &--left {
+    .a2-section-inner {
+      text-align: right;
+      margin-left: auto;  // pousse le bloc vers la droite
+      margin-right: 0;
+
+      // Badge éventuel aligné à droite aussi
+      .hero-badge { margin-left: auto; }
+    }
+  }
+
+  // Colonne droite — séparateur subtil + texte ferré à gauche (vers le séparateur)
+  &--right {
+    border-left: 1px solid rgba(255,255,255,0.10);
+
+    .a2-section-inner {
+      text-align: left;
+      margin-left: 0;     // colle le bloc à gauche de la colonne
+      margin-right: auto;
+    }
+  }
+}
+
+// ── Séparateur vertical lumineux entre les deux colonnes ──
+.a2-split-divider {
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 50%;
+  width: 1px;
+  // Dégradé vertical pour que le trait s'efface aux extrémités
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255,255,255,0.18) 30%,
+    rgba(255,255,255,0.18) 70%,
+    transparent
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+
+// ── Flèche animée vers le bas ────────────────────────
+.a2-arrow {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.35);
+  z-index: 2;
+  animation: a2-bounce 2s ease-in-out infinite;
+}
+
+@keyframes a2-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(10px); }
+}
+
+
+// ── Titres — Bebas Neue ───────────────────────────────
+.a2-title {
+  font-family: $display-font;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0.03em;
+  color: #fff;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+
+  &--xl { font-size: clamp(3.5rem, 7vw, 6.5rem); }
+  &--lg { font-size: clamp(2.4rem, 4.5vw, 4rem); }
+}
+
+.a2-accent {
+  color: $green;
+}
+
+
+// ── Texte courant ─────────────────────────────────────
+.a2-desc {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.7;
+  max-width: 520px;
+  margin-bottom: 0.6rem;
+
+  &:last-of-type { margin-bottom: 0; }
+}
+
+
+// ── SVG hero sections ────────────────────────────────
+.a2-hero-svg {
+  width: 75vw;          // 3/4 de la largeur de l'écran
+  max-width: 1200px;
+  min-width: 320px;
+  height: auto;
+}
+
+
+// ── Logo origine (section 1) ──────────────────────────
+.a2-origin-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.a2-origin-picto {
+  height: 72px;       // agrandi (était 44px)
+  width: auto;
+  filter: drop-shadow(0 0 16px rgba($green, 0.6));
+}
+
+.a2-origin-texte {
+  height: 34px;       // agrandi (était 20px)
+  width: auto;
+}

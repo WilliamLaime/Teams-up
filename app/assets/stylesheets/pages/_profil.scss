@@ -287,6 +287,36 @@
   }
 
 
+  // ── WRAPPER DE CARTE + ORNEMENT DE RANG ──────────────────────────────────
+
+  // Wrapper qui crée le contexte de positionnement pour l'ornement
+  // overflow: visible permet aux losanges de dépasser au-dessus de la card
+  .profil-card-wrapper {
+    position: relative;
+    overflow: visible;
+  }
+
+  // Ornement de rang — centré sur le bord supérieur de la card
+  // translateY(-50%) : déplace le SVG vers le haut de la moitié de sa hauteur
+  // → le centre du SVG (là où sont les losanges) s'aligne sur la top border
+  .profil-tier-ornament {
+    position: absolute;
+    top: 0;                          // ancré au bord supérieur de la card
+    left: 0;
+    right: 0;                        // pleine largeur du wrapper
+    transform: translateY(-50%);     // losanges centrés sur le bord de la card
+    z-index: 10;                     // par-dessus la card et son contenu 3D
+    pointer-events: none;            // ne bloque pas les clics sur la card
+  }
+
+  // Image SVG de l'ornement — toujours égale à la largeur de la card
+  .profil-tier-ornament__img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+
   // ── CARTE RECTO / VERSO ────────────────────────────────────────────────
 
   // Wrapper externe : crée la perspective 3D — la largeur est gérée par la colonne Bootstrap

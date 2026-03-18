@@ -10,7 +10,6 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_14_140000) do
 ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
@@ -73,7 +72,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
-    t.string "image"
     t.string "format"
     t.string "level"
     t.string "place"
@@ -138,6 +136,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
     t.index ["user_id"], name: "index_profils_on_user_id"
   end
 
+  create_table "sports", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "icon"
+    t.string "name"
+    t.string "slug"
+    t.datetime "updated_at", null: false
+  end
+
   create_table "user_achievements", force: :cascade do |t|
     t.bigint "achievement_id", null: false
     t.datetime "created_at", null: false
@@ -146,12 +152,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_16_142407) do
     t.index ["achievement_id"], name: "index_user_achievements_on_achievement_id"
     t.index ["user_id", "achievement_id"], name: "index_user_achievements_on_user_id_and_achievement_id", unique: true
     t.index ["user_id"], name: "index_user_achievements_on_user_id"
-  create_table "sports", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.string "icon"
-    t.string "name"
-    t.string "slug"
-    t.datetime "updated_at", null: false
   end
 
   create_table "user_sports", force: :cascade do |t|

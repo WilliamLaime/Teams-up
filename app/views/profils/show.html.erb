@@ -24,8 +24,29 @@
           </div>
         </div>
 
+        <%# Sélection du SVG d'ornement selon le tier du joueur %>
+        <%
+          tier_ornament = case @profil.card_tier_class
+            when "card-tier-silver"   then "ornementation_gaming/2.argent.svg"
+            when "card-tier-gold"     then "ornementation_gaming/3.or.svg"
+            when "card-tier-platinum" then "ornementation_gaming/4.epique.svg"
+            when "card-tier-elite"    then "ornementation_gaming/5.legendaire.svg"
+            else                           "ornementation_gaming/1.bronze.svg"
+          end
+        %>
+
+        <%# Wrapper relatif pour positionner l'ornement au-dessus de la card %>
+        <div class="profil-card-wrapper mb-3">
+
+          <%# Ornement de rang — centré sur le bord supérieur de la card %>
+          <div class="profil-tier-ornament">
+            <%= image_tag tier_ornament,
+                alt: "Ornement #{@profil.card_tier_class}",
+                class: "profil-tier-ornament__img" %>
+          </div>
+
         <%# card_tier_class retourne "card-tier-bronze/silver/gold/platinum/elite" %>
-        <div data-controller="flip-card" class="profil-flip-card <%= @profil.card_tier_class %> mb-3">
+        <div data-controller="flip-card" class="profil-flip-card <%= @profil.card_tier_class %>">
           <div class="profil-flip-inner" data-flip-card-target="inner">
 
             <%# ══════════ RECTO : Identité + XP + Attributs ══════════ %>
@@ -257,6 +278,8 @@
 
           </div><%# / flip-inner %>
         </div><%# / flip-card %>
+
+        </div><%# / profil-card-wrapper %>
 
       </div><%# / col-lg-5 %>
 

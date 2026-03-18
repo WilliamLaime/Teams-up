@@ -1,146 +1,189 @@
 <%# =====================================================
-    Page "Qui sommes-nous ?" — about.html.erb
-    Route : GET /about → pages#about
+    Page "Qui sommes-nous ?" — VERSION 2
+    Scroll-snap : chaque section = 1 écran complet
     ===================================================== %>
 
-<div class="about-page">
+<div class="about2-page" data-controller="scroll-snap">
 
-  <%# ── BANNER / HERO ─────────────────────────────────────────────────────── %>
-  <%# position: relative + overflow: visible pour que le SVG absolu déborde en bas %>
-  <section class="about-banner">
-    <div class="container">
-      <%# "nous" en vert comme les mots-clés des autres sections %>
-      <h1 class="about-banner-title">Qui sommes-<span class="about-mission-label">nous</span> ?</h1>
-      <p class="about-banner-subtitle">
-        Une équipe qui en avait marre <br> de chercher un remplaçant à la dernière minute.
-      </p>
-    </div>
+  <%# Glow vert fixe derrière tout le contenu — intensité pilotée par JS %>
+  <div class="a2-glow-bg"></div>
 
-    <%# SVG positionné en absolu au bas de la banner, translateY(50%) le centre sur la jointure %>
-    <%# La moitié haute est sur la photo herbe, la moitié basse sur la photo fragmenter %>
-    <div class="about-qsn-banner">
-      <%= image_tag "elements_graphiques/composant_qsn.svg",
-          alt: "Qui sommes-nous",
-          class: "about-qsn-banner-img" %>
-    </div>
-  </section>
 
-  <%# ── SECTION 1 : Le problème ────────────────────────────────────────────── %>
-  <%# padding-top compensé pour que le texte ne soit pas caché derrière le SVG %>
-  <section class="about-section about-section--right about-section--fragmenter">
-    <div class="container">
-      <h2 class="about-section-title">Le sport <span class="about-mission-label">amateur</span><br> est fragmenté.</h2>
-      <p class="about-section-text">
-        Un groupe WhatsApp par équipe. Un canal Discord pour les amis. Un post Instagram pour trouver quelqu'un.
-        Et au final — <span class="about-mission-label">terrain vide, match annulé.</span>
-      </p>
-      <p class="about-section-text">
-        <span class="about-mission-label">On a tous vécu ça.</span><br>
-        Trop de canaux, pas assez de joueurs au bon moment, au bon endroit.
-      </p>
-    </div>
-  </section>
+  <%# ══════════════════════════════════════════════
+      SECTION 1 — HERO
+      Fond : img_banner_qsn.png
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--img-1">
 
-  <%# ── SECTION 2 : L'origine ──────────────────────────────────────────────── %>
-  <section class="about-section about-section--vestiaire">
-    <div class="container">
-      <%# Logo blanc à la place du texte "TeamUP" %>
-      <div class="about-origin-logo">
-        <%= image_tag "img_footer/teamsup_picto.svg", alt: "Teams-Up", class: "about-origin-logo-img" %>
-        <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", class: "about-origin-logo-img" %>
+    <div class="a2-section-inner text-center mx-auto">
+      <%# Logo blanc Teams-Up %>
+      <div class="a2-origin-logo justify-content-center">
+        <%= image_tag "img_footer/teamsup_picto_blanc.svg", alt: "", class: "a2-origin-picto" %>
+        <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", class: "a2-origin-texte" %>
       </div>
-      <h2 class="about-section-title">est né d'une <span class="about-mission-label">frustration.</span></h2>
-      <p class="about-section-text">
-        On voulait jouer. On avait le terrain, les crampons, la motivation.<br>
+
+      <h1 class="a2-title">
+        est né d'une<br>
+        <span class="a2-accent">frustration.</span>
+      </h1>
+
+      <p class="a2-desc">
+        On voulait jouer. On avait le terrain, les crampons, la motivation.
         Il manquait juste deux joueurs.
       </p>
-      <p class="about-section-text">
-        Deux heures de messages dans tous les sens. Résultat : match annulé.<br>
-        On s'est dit qu'il devait y avoir une meilleure façon de faire.
-      </p>
     </div>
+
+    <%# Flèche animée vers la section suivante %>
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
   </section>
 
-  <%# ── SECTION 3 : La mission ─────────────────────────────────────────────── %>
-  <section class="about-section about-section--right about-section--mission">
-    <div class="container">
-      <%# Accent vert sur le mot clé %>
-      <h2 class="about-section-title">
-        <%# "Notre mission :" en vert, le reste en blanc %>
-        <span class="about-mission-label about-mission-label--block">Notre mission :</span>
-        <span style="font-size: calc(1em - 20px);">connecter les joueurs qui veulent</span> <span class="about-mission-label" style="white-space: nowrap;">jouer, maintenant.</span>
+
+  <%# ══════════════════════════════════════════════
+      SECTIONS 2 + 3 — LE CONSTAT + L'ORIGINE (côte à côte)
+      Les deux contenus sont affichés sur le même écran,
+      séparés par une ligne verticale : gauche = constat, droite = origine
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--split">
+
+    <%# Séparateur vertical au centre %>
+    <div class="a2-split-divider"></div>
+
+    <%# Colonne gauche — Le constat %>
+    <div class="a2-split-col a2-split-col--left">
+      <div class="a2-section-inner">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <!-- Le constat -->
+        </div>
+
+        <h2 class="a2-title">
+          Le sport amateur
+          <span class="a2-accent">est fragmenté.</span>
+        </h2>
+
+        <p class="a2-desc">
+          Un groupe WhatsApp, un canal Discord, un post Instagram pour trouver quelqu'un.
+          Et au final...terrain vide, match annulé.
+        </p>
+        <p class="a2-desc">
+          On a tous vécu ça. Trop de canaux, pas assez de joueurs
+          au bon moment, au bon endroit.
+        </p>
+      </div>
+    </div>
+
+    <%# Colonne droite — L'origine %>
+    <div class="a2-split-col a2-split-col--right">
+      <div class="a2-section-inner">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <!-- Qui sommes-nous ? -->
+        </div>
+
+        <h2 class="a2-title">
+          On a voulu jouer,
+          <span class="a2-accent">alors on a créé l'outil.</span>
+        </h2>
+
+        <p class="a2-desc">
+          Une équipe qui en avait marre de chercher un remplaçant
+          à la dernière minute.
+        </p>
+      </div>
+    </div>
+
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
+  </section>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 4 — LA MISSION
+      Fond : sombre uni (pas d'image)
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--dark">
+
+    <div class="a2-section-inner text-center mx-auto">
+      <div class="hero-badge mx-auto" style="width:fit-content;">
+        <span class="hero-badge-dot"></span>
+        <!-- Notre mission -->
+      </div>
+
+      <h2 class="a2-title a2-title--xl">
+        <span class="a2-accent">Connecter</span> les joueurs<br>
+        qui veulent jouer,<br>
+        <span class="a2-accent">maintenant.</span>
       </h2>
-      <p class="about-section-text">
+
+      <p class="a2-desc">
         Pas demain. Pas la semaine prochaine.<br>
         Aujourd'hui, quand il manque quelqu'un sur le terrain.
       </p>
-      <p class="about-section-text about-section-text--strong">
-        Teams-UP, c'est la solution de remplacement la plus rapide.
-      </p>
     </div>
+
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
   </section>
 
-  <%# ── SECTION 4 : Les valeurs ────────────────────────────────────────────── %>
-  <%# about-rain-bg : wrapper qui porte l'animation CSS "pluie" de gouttes %>
-  <section class="about-section about-rain-bg">
-    <%# z-index: 10 pour être bien au-dessus de l'overlay ::after (z-index: 1) %>
-    <div class="container about-rain-content">
 
-      <%# align-items: stretch → les deux colonnes prennent la même hauteur %>
-      <div class="d-flex align-items-stretch flex-wrap about-values-row">
+  <%# ══════════════════════════════════════════════
+      SECTION 5 — LES VALEURS
+      Fond : players_waiting.png
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--img-5">
 
-        <%# SVG "Ce qui nous guide" à gauche %>
-        <div class="about-values-svg-wrap">
-          <%= image_tag "elements_graphiques/cequinousguide.svg",
-              alt: "Ce qui nous guide",
-              class: "about-values-svg" %>
+    <div class="a2-section-inner text-center mx-auto" style="max-width: 90vw;">
+      <%# SVG texte section 5 %>
+      <%= image_tag "img_qsn/texte_qsn_5.svg", alt: "", class: "a2-hero-svg" %>
+    </div>
+
+    <div class="a2-arrow">
+      <i data-lucide="chevron-down" style="width:32px;height:32px;"></i>
+    </div>
+
+  </section>
+
+
+  <%# ══════════════════════════════════════════════
+      SECTION 6 — CTA FINAL
+      Fond : sombre uni (pas d'image)
+      ══════════════════════════════════════════════ %>
+  <section class="a2-section a2-section--surface">
+
+    <div class="container w-100">
+      <div class="row align-items-center g-5">
+
+        <%# Colonne gauche : texte %>
+        <div class="col-lg-6">
+          <h2 class="a2-title a2-title--lg">
+            Prêt à ne plus <br><span class="a2-accent">rater un match ?</span>
+          </h2>
+          <p class="a2-desc">
+            <!-- Rejoins des joueurs qui organisent leurs matchs en 30 secondes. -->
+          </p>
         </div>
 
-        <%# Liste des valeurs à droite %>
-        <ul class="about-values-list flex-grow-1">
-          <li>
-            <span class="about-accent">Le jeu avant tout.</span>
-            On facilite le terrain, pas les bureaucraties.
-          </li>
-          <li>
-            <span class="about-accent">La réactivité.</span>
-            Chaque minute compte quand le coup d'envoi approche.
-          </li>
-          <li>
-            <span class="about-accent">La communauté.</span>
-            Chaque joueur ajouté renforce tout le réseau.
-          </li>
-        </ul>
+        <%# Colonne droite : boutons CTA centrés dans la colonne %>
+        <div class="col-lg-6 d-flex flex-column align-items-center gap-3" style="transform: translateX(60px);">
+          <%= render "shared/btn_primary", url: matches_path, text: "Trouver un match" %>
+          <% unless user_signed_in? %>
+            <%= render "shared/btn_secondary", url: new_user_registration_path, text: "Créer un compte" %>
+          <% end %>
+        </div>
 
       </div>
     </div>
+
+    <%# Pas de flèche sur la dernière section %>
+
   </section>
 
-  <%# ── SECTION 5 : L'équipe — fond players_waiting avec gradient ────────── %>
-  <section class="about-section about-section-players">
-    <div class="container">
-      <%# SVG typographique remplace le h2 texte %>
-      <%= image_tag "elements_graphiques/joueurs_typo.svg",
-          alt: "On est des joueurs, pas des spectateurs.",
-          class: "about-players-typo" %>
-      <p class="about-section-text">
-        Une équipe fondatrice passionnée de sport et convaincue que la technologie
-        <br>doit servir le terrain et pas l'inverse.
-      </p>
-      <p class="about-section-text about-section-text--strong">
-        On construit Teams-UP parce qu'on en avait besoin.
-      </p>
-    </div>
-  </section>
-
-  <%# ── CTA final ──────────────────────────────────────────────────────────── %>
-  <section class="about-cta">
-    <div class="container text-center">
-      <%# Bouton avec effet glow vert au hover %>
-      <%= link_to matches_path, class: "about-cta-btn" do %>
-        TROUVER UN MATCH
-      <% end %>
-    </div>
-  </section>
 
 </div>

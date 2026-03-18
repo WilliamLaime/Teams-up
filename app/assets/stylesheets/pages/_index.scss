@@ -1,7 +1,8 @@
 // Import page-specific CSS files here.
 @import "home";
 @import "match_form";     // Styles pour la création / modification d'un match
-@import "about";          // Page "Qui sommes-nous ?"
+@import "about";          // Page "Qui sommes-nous ?" — version 1 (conservée pour référence)
+@import "about2";         // Page "Qui sommes-nous ?" — version 2 (active)
 @import "notifications";  // Page toutes les notifications
 @import "match_show";
 @import "auth";          // Pages de connexion et d'inscription (thème sombre)
