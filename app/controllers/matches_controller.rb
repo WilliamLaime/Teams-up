@@ -1,6 +1,6 @@
 class MatchesController < ApplicationController
   # Retrouver le match avant les actions qui en ont besoin
-  before_action :set_match, only: [:show, :edit, :update, :destroy]
+  before_action :set_match, only: [:show, :edit, :update, :destroy, :calendar]
 
   # GET /matches
   # Deux modes :
@@ -94,6 +94,49 @@ class MatchesController < ApplicationController
     authorize @match
     @match.destroy
     redirect_to matches_path, notice: "Match supprimé."
+  end
+
+  # GET /matches/:id/calendar
+  # Génère et télécharge un fichier .ics pour ajouter le match à un calendrier externe
+  # Compatible avec Google Calendar, Apple Calendar et Outlook
+  def calendar
+    authorize @match, :show?
+
+    # Construit le datetime de début en combinant date + heure du match
+    start_dt = Time.zone.local(
+      @match.date.year, @match.date.month, @match.date.day,
+      @match.time.hour, @match.time.min, 0
+    )
+    # Durée par défaut : 1h30
+    end_dt = start_dt + 90.minutes
+
+    # Lieu : venue ou adresse libre
+    location = @match.place.presence || ""
+
+    # Description enrichie pour le calendrier
+    description = "Match #{@match.title} - Niveau : #{@match.level}"
+
+    # Contenu du fichier ICS (format standard iCalendar)
+    ics_content = <<~ICS
+      BEGIN:VCALENDAR
+      VERSION:2.0
+      PRODID:-//TeamUp//TeamUp//FR
+      BEGIN:VEVENT
+      UID:match-#{@match.id}@teamup
+      DTSTART:#{start_dt.utc.strftime('%Y%m%dT%H%M%SZ')}
+      DTEND:#{end_dt.utc.strftime('%Y%m%dT%H%M%SZ')}
+      SUMMARY:#{@match.title}
+      LOCATION:#{location}
+      DESCRIPTION:#{description}
+      END:VEVENT
+      END:VCALENDAR
+    ICS
+
+    # Envoie le fichier au navigateur comme téléchargement
+    send_data ics_content.strip,
+              type: "text/calendar; charset=utf-8",
+              disposition: "attachment",
+              filename: "match-#{@match.id}.ics"
   end
 
   private

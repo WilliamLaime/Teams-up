@@ -122,7 +122,9 @@ class MatchUsersController < ApplicationController
     if @match_user.save
       @match.decrement!(:player_left)
       notify(organizer, "#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
-      redirect_to @match, notice: "Tu as rejoint le match !"
+      # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" dans show.html.erb
+      flash[:show_calendar_modal] = true
+      redirect_to @match
     else
       redirect_to @match, alert: "Impossible de rejoindre le match."
     end

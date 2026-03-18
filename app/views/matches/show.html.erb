@@ -184,14 +184,76 @@
           date_str = d ? "#{fr_days[d.wday]} #{d.day} #{fr_months[d.month - 1]}" : "Date à définir"
           time_str = t ? t.strftime('%H:%M') : "—"
         %>
-        <div class="match-banner-datetime">
-          <div class="match-banner-datetime-icon">
-            <i data-lucide="clock" style="width:16px;height:16px;"></i>
+        <%# Wrapper flex pour aligner la date à gauche et le bouton calendrier à droite %>
+        <div class="match-banner-datetime-wrapper">
+          <div class="match-banner-datetime">
+            <div class="match-banner-datetime-icon">
+              <i data-lucide="clock" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <div class="match-banner-datetime-label">Date &amp; Heure</div>
+              <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
+            </div>
           </div>
-          <div>
-            <div class="match-banner-datetime-label">Date &amp; Heure</div>
-            <div class="match-banner-datetime-value"><%= date_str %> · <%= time_str %></div>
-          </div>
+
+          <%# Bouton "Ajouter au calendrier" — visible uniquement pour les participants %>
+          <% if is_participant && d.present? && t.present? %>
+            <%
+              # Construit les dates en UTC pour Google Calendar (format : YYYYMMDDTHHmmSSZ)
+              start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
+              end_dt   = start_dt + 90.minutes
+              gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+              gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+
+              # URL Google Calendar avec les paramètres pré-remplis
+              google_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
+                           "&text=#{CGI.escape(@match.title)}" \
+                           "&dates=#{gc_start}/#{gc_end}" \
+                           "&location=#{CGI.escape(@match.place.to_s)}" \
+                           "&details=#{CGI.escape("Match #{@match.title} - Niveau : #{@match.level}")}"
+            %>
+            <div class="dropdown match-calendar-dropdown">
+              <%# Bouton principal du dropdown %>
+              <button class="match-calendar-btn"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      title="Ajouter au calendrier">
+                <i data-lucide="calendar-plus" style="width:15px;height:15px;"></i>
+                <span>Calendrier</span>
+              </button>
+
+              <%# Menu déroulant avec les options de calendrier %>
+              <ul class="dropdown-menu match-calendar-menu">
+                <%# Google Calendar — ouvre dans un nouvel onglet %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= google_url %>"
+                     target="_blank"
+                     rel="noopener noreferrer">
+                    <span class="match-calendar-item-icon">🗓️</span>
+                    Google Calendar
+                  </a>
+                </li>
+                <%# Apple Calendar — télécharge le fichier .ics %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= calendar_match_path(@match) %>">
+                    <span class="match-calendar-item-icon">🍎</span>
+                    Apple Calendar
+                  </a>
+                </li>
+                <%# Outlook — télécharge le même fichier .ics, compatible Outlook %>
+                <li>
+                  <a class="dropdown-item match-calendar-item"
+                     href="<%= calendar_match_path(@match) %>">
+                    <span class="match-calendar-item-icon">📧</span>
+                    Outlook
+                  </a>
+                </li>
+              </ul>
+            </div>
+          <% end %>
         </div>
 
       </div>
@@ -1138,3 +1200,117 @@
     </div>
   </div>
 </div>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "DEMANDE ACCEPTÉE" — affiché automatiquement après avoir rejoint
+    Déclenché par flash[:show_calendar_modal] (posé par join_automatically)
+    Contient un bouton pour ajouter le match à un calendrier externe
+    ══════════════════════════════════════════════════ %>
+<% if flash[:show_calendar_modal] && @match.date.present? && @match.time.present? %>
+  <%
+    # Construit les URLs calendrier pour la modale
+    d = @match.date
+    t = @match.time
+    start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
+    end_dt   = start_dt + 90.minutes
+    gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+    gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+    google_cal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
+                     "&text=#{CGI.escape(@match.title)}" \
+                     "&dates=#{gc_start}/#{gc_end}" \
+                     "&location=#{CGI.escape(@match.place.to_s)}" \
+                     "&details=#{CGI.escape("Match #{@match.title} - Niveau : #{@match.level}")}"
+  %>
+
+  <div class="modal fade" id="joinedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content joined-modal-content">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="joined-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône de succès %>
+        <div class="joined-modal-icon">
+          <i data-lucide="circle-check-big" style="width:30px;height:30px;"></i>
+        </div>
+
+        <%# Titre %>
+        <div class="joined-modal-title">Demande acceptée !</div>
+
+        <%# Sous-titre personnalisé avec le nom du match %>
+        <p class="joined-modal-subtitle">
+          Tu as été accepté dans le match <strong><%= @match.title %></strong>. Bonne chance !
+        </p>
+
+        <%# Séparateur %>
+        <div class="joined-modal-separator"></div>
+
+        <%# Bouton "Ajouter à mon calendrier" — ouvre un dropdown vers Google/Apple/Outlook %>
+        <div class="dropdown joined-modal-cal-wrapper">
+          <button class="btn joined-modal-btn-calendar"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            <i data-lucide="calendar-plus" style="width:16px;height:16px;"></i>
+            Ajouter à mon calendrier
+          </button>
+
+          <%# Menu déroulant des options calendrier %>
+          <ul class="dropdown-menu match-calendar-menu w-100">
+            <%# Google Calendar — ouvre dans un nouvel onglet %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= google_cal_url %>"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                <span class="match-calendar-item-icon">🗓️</span>
+                Google Calendar
+              </a>
+            </li>
+            <%# Apple Calendar — télécharge le fichier .ics %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= calendar_match_path(@match) %>">
+                <span class="match-calendar-item-icon">🍎</span>
+                Apple Calendar
+              </a>
+            </li>
+            <%# Outlook — compatible avec le même fichier .ics %>
+            <li>
+              <a class="dropdown-item match-calendar-item"
+                 href="<%= calendar_match_path(@match) %>">
+                <span class="match-calendar-item-icon">📧</span>
+                Outlook
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <%# Bouton de fermeture principal %>
+        <button type="button"
+                class="btn joined-modal-btn-dismiss"
+                data-bs-dismiss="modal">
+          Super, j'ai compris !
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <%# Ouvre automatiquement la modale au chargement de la page %>
+  <script>
+    document.addEventListener("turbo:load", function openJoinedModal() {
+      var modalEl = document.getElementById("joinedModal");
+      if (modalEl) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+      document.removeEventListener("turbo:load", openJoinedModal);
+    });
+  </script>
+<% end %>

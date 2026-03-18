@@ -178,6 +178,70 @@
   gap: 1rem;
 }
 
+// Wrapper qui aligne le bloc date/heure et le bouton calendrier sur la même ligne
+.match-banner-datetime-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem; // même espacement que l'ancien .match-banner-datetime
+}
+
+// Bouton "Ajouter au calendrier" (affiché à droite de la date)
+.match-calendar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba($green, 0.4);
+  background: rgba($green, 0.08);
+  color: rgba(255,255,255,0.75);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  &:hover, &:focus {
+    background: rgba($green, 0.18);
+    border-color: rgba($green, 0.7);
+    color: #fff;
+    outline: none;
+  }
+}
+
+// Menu déroulant du calendrier
+.match-calendar-menu {
+  background: $dark-surface;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 0.4rem 0;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+// Chaque option dans le menu
+.match-calendar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover, &:focus {
+    background: rgba($green, 0.12);
+    color: #fff;
+  }
+
+  // Icône emoji à gauche du texte
+  .match-calendar-item-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+}
+
 // Bouton de partage carré
 .match-banner-share-btn {
   width: 40px;
@@ -1267,4 +1331,122 @@
   font-size: 0.78rem;
   font-weight: 600;
   color: $dark-muted;
+}
+
+
+// ─── Modale "Demande acceptée" ─────────────────────────────────────────────
+
+// Fond sombre de la modale
+.joined-modal-content {
+  background: $dark-surface;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 2rem 1.75rem 1.75rem;
+  text-align: center;
+  position: relative;
+  color: #fff;
+}
+
+// Croix de fermeture en haut à droite
+.joined-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255,255,255,0.07);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255,255,255,0.14); color: #fff; }
+}
+
+// Icône verte de succès
+.joined-modal-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: rgba($green, 0.15);
+  border: 2px solid rgba($green, 0.4);
+  color: $green;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.1rem;
+}
+
+// Titre principal
+.joined-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.4rem;
+}
+
+// Sous-titre / message
+.joined-modal-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+
+  strong { color: rgba(255,255,255,0.9); }
+}
+
+// Séparateur discret
+.joined-modal-separator {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin-bottom: 1.25rem;
+}
+
+// Wrapper du dropdown calendrier (pleine largeur)
+.joined-modal-cal-wrapper {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+// Bouton "Ajouter à mon calendrier" — vert plein
+.joined-modal-btn-calendar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: $green;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover, &:focus {
+    background: darken($green, 8%);
+    color: #fff;
+    outline: none;
+  }
+}
+
+// Bouton "Super, j'ai compris !" — discret contour
+.joined-modal-btn-dismiss {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255,255,255,0.1); color: #fff; }
 }

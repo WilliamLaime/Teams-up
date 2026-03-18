@@ -17,6 +17,11 @@ Rails.application.routes.draw do
   # Routes pour les matchs (CRUD complet)
   # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.
   resources :matches do
+    member do
+      # Télécharge le fichier ICS pour ajouter le match à un calendrier externe
+      get :calendar
+    end
+
     # Routes imbriquées pour gérer les inscriptions à un match
     # POST   /matches/:match_id/match_users          => rejoindre
     # DELETE /matches/:match_id/match_users/:id      => quitter
