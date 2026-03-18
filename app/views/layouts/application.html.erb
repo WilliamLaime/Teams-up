@@ -30,6 +30,16 @@
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
 
+    <%# ── Canal de notifications personnelles ──────────────────────────────────
+        Chaque user connecté écoute son propre canal Turbo Stream.
+        Toutes les notifications en temps réel (décision, annulation, joueur quitte,
+        invitation reçue) sont broadcastées sur ce canal depuis les controllers.
+        Le conteneur vide reçoit les modals injectées dynamiquement. %>
+    <% if user_signed_in? %>
+      <%= turbo_stream_from "user_#{current_user.id}_notifications" %>
+      <div id="global_notification_container"></div>
+    <% end %>
+
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
     <main>
       <%= yield %>

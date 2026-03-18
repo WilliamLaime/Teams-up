@@ -144,12 +144,11 @@ class MatchesController < ApplicationController
 
   # Envoie la notification d'annulation du match à un participant spécifique.
   # Appelé depuis destroy pour chaque participant avant la suppression du match.
-  # Si le joueur est sur la page du match, une modal s'ouvre automatiquement
-  # et le redirige vers la liste des matchs.
+  # La modal s'ouvre automatiquement peu importe la page où se trouve le joueur.
   def broadcast_match_cancelled_to_participant(participant_user)
     Turbo::StreamsChannel.broadcast_update_to(
-      "match_#{@match.id}_participant_#{participant_user.id}", # canal personnel du joueur
-      target: "match_cancelled_notification_container",        # conteneur dans show.html.erb
+      "user_#{participant_user.id}_notifications", # canal personnel du joueur
+      target: "global_notification_container",      # conteneur dans application.html.erb
       partial: "matches/match_cancelled_notification",
       locals: { match: @match }
     )

@@ -1,5 +1,5 @@
 <%# Modal de notification "un joueur a quitté" pour l'organisateur.
-    Injectée dans #player_left_notification_container en temps réel via Turbo Stream
+    Injectée dans #global_notification_container en temps réel via Turbo Stream
     (broadcast depuis MatchUsersController#destroy quand un joueur approuvé quitte le match).
     Variables attendues : leaving_user (User), match %>
 
@@ -57,21 +57,17 @@
   </div>
 </div>
 
-<%# Ouvre la modal Bootstrap automatiquement quand le contenu est injecté par Turbo Stream.
-    Après fermeture de la modal, recharge la page pour refléter le nouveau nombre de joueurs
-    (compteur mis à jour, grille des joueurs actualisée, etc.). %>
+<%# Ouvre la modal automatiquement dès injection par Turbo Stream.
+    À la fermeture → redirige vers la page du match (compteur et grille à jour). %>
 <script>
   (function() {
     var el = document.getElementById("playerLeftModal");
     if (el && typeof bootstrap !== "undefined") {
-      var modal = bootstrap.Modal.getOrCreateInstance(el);
-      modal.show();
-
+      bootstrap.Modal.getOrCreateInstance(el).show();
       if (typeof lucide !== "undefined") { lucide.createIcons(); }
 
-      // Recharge la page quand la modal est fermée → données joueurs à jour
       el.addEventListener("hidden.bs.modal", function() {
-        window.location.reload();
+        window.location.href = "<%= match_path(match) %>";
       }, { once: true });
     }
   })();

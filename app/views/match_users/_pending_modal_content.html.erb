@@ -1,6 +1,7 @@
 <%# Contenu interne de la modal "Demandes en attente" (organisateur).
-    Rendu initial via show.html.erb, mis à jour en direct via Turbo Stream
+    Rendu initial via show.html.erb, mis à jour silencieusement en direct via Turbo Stream
     (broadcast depuis MatchUsersController quand un joueur envoie une demande).
+    L'alerte à l'organisateur est gérée par _new_request_notification via le canal personnel.
     Variables attendues : match, pending_users %>
 
 <%# Croix de fermeture %>
@@ -101,19 +102,5 @@
 
 </div>
 
-<%# Ouvre la modal Bootstrap automatiquement.
-    Turbo Stream exécute les <script> du contenu mis à jour → la modal s'ouvre
-    dès que ce partial est injecté dans le DOM via le broadcast. %>
-<% if pending_users.any? %>
-  <script>
-    (function() {
-      var el = document.getElementById("pendingModal");
-      if (el && typeof bootstrap !== "undefined") {
-        // getOrCreateInstance évite les doublons d'instance Bootstrap
-        bootstrap.Modal.getOrCreateInstance(el).show();
-        // Ré-initialise les icônes Lucide présentes dans le nouveau contenu
-        if (typeof lucide !== "undefined") { lucide.createIcons(); }
-      }
-    })();
-  </script>
-<% end %>
+<%# La liste se met à jour silencieusement — l'alerte est gérée par _new_request_notification.
+    L'organisateur est notifié via sa modal globale et peut ouvrir #pendingModal manuellement. %>

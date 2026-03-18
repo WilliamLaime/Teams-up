@@ -1027,10 +1027,9 @@
     Permet de voir leur profil, leur niveau / rôle, et d'accepter ou refuser.
     ══════════════════════════════════════════════════ %>
 <% if @current_match_user&.role == "organisateur" %>
-  <%# Souscription Turbo Stream — reçoit les mises à jour en direct quand un joueur
-      envoie une demande (broadcast depuis MatchUsersController#join_with_manual_validation).
-      Quand le broadcast arrive, le contenu de #pending_modal_inner est remplacé
-      et la modal s'ouvre automatiquement (via le script dans le partial). %>
+  <%# Souscription Turbo Stream — reçoit les mises à jour en direct de la liste des demandes.
+      Quand un joueur envoie une demande, #pending_modal_inner est mis à jour silencieusement.
+      L'alerte à l'organisateur arrive via son canal personnel (layout application.html.erb). %>
   <%= turbo_stream_from "match_#{@match.id}_organizer" %>
 
   <% pending_modal_users = @match_users.select(&:pending?) %>
@@ -1051,14 +1050,6 @@
       </div>
     </div>
   </div>
-
-  <%# Conteneur vide — rempli par le broadcast Turbo Stream quand un joueur approuvé quitte.
-      Injecte la modal #playerLeftModal et l'ouvre automatiquement côté organisateur. %>
-  <div id="player_left_notification_container"></div>
-
-  <%# Conteneur vide — rempli par le broadcast Turbo Stream quand un joueur rejoint automatiquement.
-      Injecte la modal #autoJoinModal et l'ouvre automatiquement côté organisateur. %>
-  <div id="auto_join_notification_container"></div>
 
   <%# ══════════════════════════════════════════════════
       MODAL "SUPPRIMER CE MATCH ?" — organisateur uniquement
@@ -1122,23 +1113,8 @@
 
 <% end %>
 
-<%# ══════════════════════════════════════════════════
-    NOTIFICATIONS — pour tous les participants (hors organisateur)
-    Souscription Turbo Stream sur le canal personnel du joueur.
-    Reçoit :
-      - La décision de l'organisateur (accepté/refusé) si statut pending
-      - La notification d'annulation du match si l'organisateur supprime le match
-    ══════════════════════════════════════════════════ %>
-<% if user_signed_in? && @current_match_user && @current_match_user.role != "organisateur" %>
-  <%# Écoute le canal personnel de ce joueur pour ce match %>
-  <%= turbo_stream_from "match_#{@match.id}_participant_#{current_user.id}" %>
-
-  <%# Conteneur pour la décision (accepté/refusé) — uniquement pertinent si statut pending %>
-  <div id="decision_notification_container"></div>
-
-  <%# Conteneur pour la notification d'annulation du match par l'organisateur %>
-  <div id="match_cancelled_notification_container"></div>
-<% end %>
+<%# Les notifications aux participants (décision, annulation, etc.) sont désormais
+    gérées globalement via le canal personnel de chaque user dans application.html.erb. %>
 
 <%# ── Modal d'avis pour ce match (rendu uniquement si des avis sont en attente) %>
 <% if @match_pending_reviews.present? %>
