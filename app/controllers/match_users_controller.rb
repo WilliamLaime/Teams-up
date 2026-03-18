@@ -72,7 +72,8 @@ class MatchUsersController < ApplicationController
     end
 
     # Recharge les demandes encore en attente pour mettre à jour la modal
-    pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
+    # On charge aussi avatar_attachment et blob pour éviter des URLs cassées
+    pending_users = @match.match_users.where(status: "pending").includes(user: { profil: { avatar_attachment: :blob } })
 
     respond_to do |format|
       # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
@@ -98,7 +99,8 @@ class MatchUsersController < ApplicationController
     broadcast_decision_to_participant(accepted: false)
 
     # Recharge les demandes encore en attente pour mettre à jour la modal
-    pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
+    # On charge aussi avatar_attachment et blob pour éviter des URLs cassées
+    pending_users = @match.match_users.where(status: "pending").includes(user: { profil: { avatar_attachment: :blob } })
 
     respond_to do |format|
       # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
@@ -143,7 +145,8 @@ class MatchUsersController < ApplicationController
     return unless orga
 
     # Recharge les demandes en attente depuis la base (inclut la nouvelle demande)
-    pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
+    # On charge aussi avatar_attachment et blob pour éviter des URLs cassées
+    pending_users = @match.match_users.where(status: "pending").includes(user: { profil: { avatar_attachment: :blob } })
 
     # Broadcast 1 : met à jour silencieusement la liste sur la show page
     # (si l'orga est sur la show, il voit la liste à jour sans rechargement)
