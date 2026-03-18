@@ -82,15 +82,19 @@
               </div>
 
               <%# Boutons accepter (vert) / refuser (rouge) %>
+              <%# Le paramètre from_notification=1 indique au controller de rediriger
+                  vers la show page après action (pour donner un retour visuel clair). %>
               <div class="pending-modal-actions">
                 <%= button_to approve_match_match_user_path(match, mu),
                     method: :patch,
+                    params: { from_notification: "1" },
                     class: "pending-modal-btn pending-modal-btn--approve",
                     title: "Accepter" do %>
                   <i data-lucide="check" style="width:14px;height:14px;"></i>
                 <% end %>
                 <%= button_to reject_match_match_user_path(match, mu),
                     method: :patch,
+                    params: { from_notification: "1" },
                     class: "pending-modal-btn pending-modal-btn--reject",
                     title: "Refuser" do %>
                   <i data-lucide="x" style="width:14px;height:14px;"></i>
@@ -119,7 +123,7 @@
       if (typeof lucide !== "undefined") { lucide.createIcons(); }
 
       el.addEventListener("hidden.bs.modal", function() {
-        window.location.href = "<%= match_path(match) %>";
+        window.location.href = <%= match_path(match).to_json %>;
       }, { once: true });
     }
   })();

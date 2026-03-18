@@ -109,5 +109,20 @@
 
 </div>
 
+<%# Auto-fermeture : si plus aucun joueur en attente après un accepter/refuser,
+    on ferme #pendingModal automatiquement via Bootstrap. %>
+<% if pending_users.empty? %>
+  <script>
+    (function() {
+      // On attend que le DOM soit prêt (ce script s'exécute après l'injection Turbo Stream)
+      var modal = document.getElementById("pendingModal");
+      if (modal && typeof bootstrap !== "undefined") {
+        var bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) { bsModal.hide(); }
+      }
+    })();
+  </script>
+<% end %>
+
 <%# La liste se met à jour silencieusement — l'alerte est gérée par _new_request_notification.
     L'organisateur est notifié via sa modal globale et peut ouvrir #pendingModal manuellement. %>

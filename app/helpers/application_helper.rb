@@ -24,7 +24,11 @@ module ApplicationHelper
 
     if profil&.avatar&.attached?
       # ── Cas 1 : avatar uploadé ───────────────────────────────────────────
-      image_tag profil.avatar, class: css_class, alt: alt_text, style: style
+      # On utilise rails_blob_path (chemin relatif) plutôt que profil.avatar directement.
+      # Dans les contextes Turbo Stream broadcast, url_for peut générer une URL absolue
+      # avec un mauvais host (ex: example.com). rails_blob_path évite ce problème
+      # car il génère un chemin relatif qui fonctionne partout.
+      image_tag rails_blob_path(profil.avatar.blob), class: css_class, alt: alt_text, style: style
     else
       # ── Cas 2 : initiales sur fond coloré ───────────────────────────────
       first    = profil&.first_name&.first&.upcase

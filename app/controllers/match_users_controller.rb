@@ -57,6 +57,14 @@ class MatchUsersController < ApplicationController
   def approve
     authorize @match_user
 
+    # Garde idempotente : si le joueur n'est plus en attente (déjà traité),
+    # on ne fait rien pour éviter de décrémenter player_left plusieurs fois.
+    # Cela arrive quand l'organisateur clique plusieurs fois car la modal
+    # de notification (newRequestModal) ne se met pas à jour visuellement.
+    unless @match_user.pending?
+      return redirect_to @match
+    end
+
     # Si le match est complet, on place le joueur en liste d'attente plutôt que de l'approuver
     if @match.full?
       @match_user.update(status: "waiting")
@@ -76,13 +84,20 @@ class MatchUsersController < ApplicationController
     pending_users = @match.match_users.where(status: "pending").includes(user: { profil: { avatar_attachment: :blob } })
 
     respond_to do |format|
-      # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
       format.turbo_stream do
-        render turbo_stream: turbo_stream.update(
-          "pending_modal_inner",
-          partial: "match_users/pending_modal_content",
-          locals: { match: @match, pending_users: pending_users }
-        )
+        # Si l'action vient de la modal de notification (#newRequestModal),
+        # on redirige vers la page du match pour donner un retour visuel immédiat.
+        # Sinon (depuis #pendingModal sur la show page), on met à jour la liste en place.
+        if params[:from_notification].present?
+          redirect_to @match, notice: flash_msg
+        else
+          # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
+          render turbo_stream: turbo_stream.update(
+            "pending_modal_inner",
+            partial: "match_users/pending_modal_content",
+            locals: { match: @match, pending_users: pending_users }
+          )
+        end
       end
       # Fallback HTML classique (si Turbo n'est pas actif)
       format.html { redirect_to @match, notice: flash_msg }
@@ -93,26 +108,38 @@ class MatchUsersController < ApplicationController
   # Rejeter un joueur (réservé à l'organisateur via Pundit)
   def reject
     authorize @match_user
+
+    # Garde idempotente : si le joueur n'est plus en attente (déjà traité), on ne fait rien.
+    unless @match_user.pending?
+      return redirect_to @match
+    end
+
     @match_user.update(status: "rejected")
     notify(@match_user.user, "❌ Ta demande pour \"#{@match.title}\" a été refusée.")
     # Broadcast en temps réel vers le joueur s'il est sur la page du match.
     broadcast_decision_to_participant(accepted: false)
+    flash_msg = "#{@match_user.user.display_name} a été refusé."
 
     # Recharge les demandes encore en attente pour mettre à jour la modal
     # On charge aussi avatar_attachment et blob pour éviter des URLs cassées
     pending_users = @match.match_users.where(status: "pending").includes(user: { profil: { avatar_attachment: :blob } })
 
     respond_to do |format|
-      # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
       format.turbo_stream do
-        render turbo_stream: turbo_stream.update(
-          "pending_modal_inner",
-          partial: "match_users/pending_modal_content",
-          locals: { match: @match, pending_users: pending_users }
-        )
+        # Si l'action vient de la modal de notification, on redirige vers la show page.
+        if params[:from_notification].present?
+          redirect_to @match, notice: flash_msg
+        else
+          # Réponse Turbo Stream : met à jour #pending_modal_inner sans fermer la modal
+          render turbo_stream: turbo_stream.update(
+            "pending_modal_inner",
+            partial: "match_users/pending_modal_content",
+            locals: { match: @match, pending_users: pending_users }
+          )
+        end
       end
       # Fallback HTML classique
-      format.html { redirect_to @match, notice: "#{@match_user.user.display_name} a été refusé." }
+      format.html { redirect_to @match, notice: flash_msg }
     end
   end
 
