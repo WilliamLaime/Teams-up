@@ -24,6 +24,33 @@ export default class extends Controller {
   _cards = {}
 
   connect() {
+    // ── Nettoyage défensif ───────────────────────────────────────────────
+    // 1. Stoppe un éventuel timer précédent : si connect() est rappelé sans
+    //    disconnect() intermédiaire (ex : Turbo preview → page réelle), on évite
+    //    d'avoir deux setInterval actifs en même temps.
+    clearInterval(this._interval)
+
+    // 2. Vide le DOM : si l'élément vient du cache Turbo avec les flip-cards déjà
+    //    construites, on repart de zéro avant de les reconstruire.
+    this.element.innerHTML = ""
+
+    // ── Nettoyage avant mise en cache Turbo ──────────────────────────────
+    // turbo:before-cache se déclenche juste AVANT que Turbo sauvegarde la page.
+    // On vide l'élément à ce moment-là → la version en cache est vide.
+    // Résultat : quand Turbo restaure la page, connect() trouve un élément vide
+    // et reconstruit proprement → plus de timer en double.
+    //
+    // On retire d'abord l'ancien listener (si connect() est rappelé plusieurs fois)
+    // pour ne jamais avoir deux listeners sur le même document.
+    document.removeEventListener("turbo:before-cache", this._beforeCacheHandler)
+    this._beforeCacheHandler = () => {
+      clearInterval(this._interval)          // stoppe le timer
+      this.element.innerHTML = ""            // vide les flip-cards du DOM
+      this._cards = {}                       // réinitialise les références internes
+      this._prev  = { days: null, hours: null, minutes: null, seconds: null }
+    }
+    document.addEventListener("turbo:before-cache", this._beforeCacheHandler)
+
     const diff = new Date(this.datetimeValue) - new Date()
 
     // Match terminé (débuté il y a plus d'1h) → pas de flip clock, juste le statut
@@ -45,8 +72,11 @@ export default class extends Controller {
   }
 
   disconnect() {
-    // Évite les fuites mémoire en stoppant l'intervalle
+    // Stoppe le timer pour éviter les fuites mémoire
     clearInterval(this._interval)
+    // Retire le listener turbo:before-cache pour éviter qu'il reste actif
+    // après que le controller a été démonté (navigation vers une autre page)
+    document.removeEventListener("turbo:before-cache", this._beforeCacheHandler)
   }
 
   // ── Construction du DOM ────────────────────────────────────────────────
@@ -57,11 +87,6 @@ export default class extends Controller {
     title.className   = "countdown-title"
     title.textContent = "Commence dans"
     this.element.appendChild(title)
-
-    // Ligne de séparation
-    const sep = document.createElement("div")
-    sep.className = "countdown-sep"
-    this.element.appendChild(sep)
 
     // Conteneur flex qui aligne les 4 unités + les ":"
     const wrapper = document.createElement("div")

@@ -1008,11 +1008,11 @@
   align-items: center;
   gap: 0.3rem;
   font-size: 0.72rem;
-  color: $dark-muted;
+  color: $green;
   text-decoration: none;
   transition: color 0.15s;
 
-  &:hover { color: $green; }
+  &:hover { color: lighten($green, 10%); }
 }
 
 // Boutons accepter / refuser à droite de la ligne

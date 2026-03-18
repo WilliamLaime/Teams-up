@@ -1,0 +1,78 @@
+<%# Modal de notification "un joueur a quitté" pour l'organisateur.
+    Injectée dans #player_left_notification_container en temps réel via Turbo Stream
+    (broadcast depuis MatchUsersController#destroy quand un joueur approuvé quitte le match).
+    Variables attendues : leaving_user (User), match %>
+
+<div class="modal fade" id="playerLeftModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pending-modal-content" style="text-align:center;">
+
+      <%# Croix de fermeture %>
+      <button type="button"
+              class="pending-modal-close"
+              data-bs-dismiss="modal"
+              aria-label="Fermer">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+
+      <%# Calcul du nom affiché : "Prénom N." %>
+      <%
+        first       = leaving_user.profil&.first_name.presence || leaving_user.email.split("@").first
+        last_letter = leaving_user.profil&.last_name.presence&.first&.upcase
+        display     = last_letter ? "#{first} #{last_letter}." : first
+      %>
+
+      <%# Avatar du joueur + "Prénom N. a quitté" %>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:8px; padding-bottom:16px;">
+        <%# Avatar (photo ou initiales colorées) %>
+        <%= user_avatar_tag leaving_user, css_class: "pending-modal-avatar" %>
+        <%# Titre avec nom du joueur %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:0;">
+          <%= display %> a quitté
+        </div>
+      </div>
+
+      <%# Sous-titre : nom du match + info place %>
+      <div class="pending-modal-subtitle" style="margin-bottom:0;">
+        Il a quitté votre match <strong><%= match.title %></strong>.<br>
+        Une place est désormais disponible.
+      </div>
+
+      <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+      <%# Boutons d'action %>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 0 4px;">
+
+        <%# Bouton de fermeture principal %>
+        <button type="button"
+                class="btn btn-sm w-100"
+                style="background:rgba(255,150,50,0.12); color:#ff9632; border:1px solid rgba(255,150,50,0.3);"
+                data-bs-dismiss="modal">
+          OK, j'ai compris
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%# Ouvre la modal Bootstrap automatiquement quand le contenu est injecté par Turbo Stream.
+    Après fermeture de la modal, recharge la page pour refléter le nouveau nombre de joueurs
+    (compteur mis à jour, grille des joueurs actualisée, etc.). %>
+<script>
+  (function() {
+    var el = document.getElementById("playerLeftModal");
+    if (el && typeof bootstrap !== "undefined") {
+      var modal = bootstrap.Modal.getOrCreateInstance(el);
+      modal.show();
+
+      if (typeof lucide !== "undefined") { lucide.createIcons(); }
+
+      // Recharge la page quand la modal est fermée → données joueurs à jour
+      el.addEventListener("hidden.bs.modal", function() {
+        window.location.reload();
+      }, { once: true });
+    }
+  })();
+</script>

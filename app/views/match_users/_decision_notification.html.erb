@@ -1,0 +1,94 @@
+<%# Modal de notification de décision pour le joueur (User B).
+    Injectée dans #decision_notification_container en temps réel via Turbo Stream
+    (broadcast depuis MatchUsersController#approve ou #reject).
+    Variables attendues : accepted (boolean), match %>
+
+<div class="modal fade" id="decisionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pending-modal-content" style="text-align:center;">
+
+      <%# Croix de fermeture %>
+      <button type="button"
+              class="pending-modal-close"
+              data-bs-dismiss="modal"
+              aria-label="Fermer">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+
+      <%# Icône principale — check vert si accepté, X rouge si refusé %>
+      <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+        <div class="pending-modal-icon"
+             style="<%= accepted ? 'background:rgba(0,200,100,0.15);' : 'background:rgba(220,60,60,0.15);' %>">
+          <% if accepted %>
+            <i data-lucide="check-circle" style="width:24px;height:24px;color:#00c864;"></i>
+          <% else %>
+            <i data-lucide="x-circle" style="width:24px;height:24px;color:#dc3c3c;"></i>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Titre %>
+      <div class="pending-modal-title" style="font-size:1.1rem; margin-bottom:8px;">
+        <%= accepted ? "Demande acceptée !" : "Demande refusée" %>
+      </div>
+
+      <%# Message selon la décision %>
+      <div class="pending-modal-subtitle" style="margin-bottom:0;">
+        <% if accepted %>
+          Tu as été accepté dans le match <strong><%= match.title %></strong>. Bonne chance !
+        <% else %>
+          Ta demande pour rejoindre <strong><%= match.title %></strong> n'a pas été retenue.
+        <% end %>
+      </div>
+
+      <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+      <%# Boutons d'action %>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 0 4px;">
+
+        <% if accepted %>
+          <%# Bouton "Ajouter à mon calendrier" — fonctionnalité à configurer plus tard %>
+          <button type="button"
+                  class="btn btn-sm w-100"
+                  style="background:rgba(0,200,100,0.12); color:#00c864; border:1px solid rgba(0,200,100,0.3); cursor:not-allowed; opacity:0.65;"
+                  disabled
+                  title="Fonctionnalité à venir">
+            <i data-lucide="calendar-plus" style="width:14px;height:14px; margin-right:6px;"></i>
+            Ajouter à mon calendrier
+          </button>
+        <% end %>
+
+        <%# Bouton de fermeture principal %>
+        <button type="button"
+                class="btn btn-sm w-100"
+                style="<%= accepted ? 'background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);' : 'background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);' %>"
+                data-bs-dismiss="modal">
+          <%= accepted ? "Super, j'ai compris !" : "OK, fermer" %>
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%# Ouvre la modal Bootstrap automatiquement quand le contenu est injecté par Turbo Stream.
+    Après fermeture de la modal, recharge la page pour refléter le nouveau statut du joueur
+    (chat accessible, statut "accepté" affiché, boutons mis à jour, etc.). %>
+<script>
+  (function() {
+    var el = document.getElementById("decisionModal");
+    if (el && typeof bootstrap !== "undefined") {
+      var modal = bootstrap.Modal.getOrCreateInstance(el);
+      modal.show();
+
+      if (typeof lucide !== "undefined") { lucide.createIcons(); }
+
+      // Recharge la page quand la modal est fermée (croix ou bouton)
+      // → le joueur voit son nouveau statut : chat débloqué, place confirmée, etc.
+      el.addEventListener("hidden.bs.modal", function() {
+        window.location.reload();
+      }, { once: true });
+    }
+  })();
+</script>

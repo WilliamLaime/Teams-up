@@ -35,10 +35,20 @@ class MatchUsersController < ApplicationController
   def destroy
     authorize @match_user
 
+    # Sauvegarde l'utilisateur et son statut avant destruction
+    # (après @match_user.destroy, ces infos ne sont plus accessibles)
+    leaving_user = @match_user.user
+    was_approved = @match_user.approved?
+
     # Si le joueur avait une place approuvée, on gère la file d'attente
-    promote_next_in_line if @match_user.approved?
+    promote_next_in_line if was_approved
 
     @match_user.destroy
+
+    # Notifie l'organisateur en temps réel si un joueur approuvé a quitté
+    # (pas de notif si pending/waiting/rejected — ces cas ne libèrent pas de place)
+    broadcast_player_left_to_organizer(leaving_user) if was_approved
+
     redirect_to @match, notice: "Tu as quitté le match."
   end
 
@@ -49,6 +59,11 @@ class MatchUsersController < ApplicationController
     @match_user.update(status: "approved")
     @match.decrement!(:player_left)
     notify(@match_user.user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
+
+    # Broadcast en temps réel vers le joueur s'il est sur la page du match.
+    # Injecte la modal de décision dans son navigateur et l'ouvre automatiquement.
+    broadcast_decision_to_participant(accepted: true)
+
     redirect_to @match, notice: "#{@match_user.user.display_name} a été approuvé !"
   end
 
@@ -58,6 +73,10 @@ class MatchUsersController < ApplicationController
     authorize @match_user
     @match_user.update(status: "rejected")
     notify(@match_user.user, "❌ Ta demande pour \"#{@match.title}\" a été refusée.")
+
+    # Broadcast en temps réel vers le joueur s'il est sur la page du match.
+    broadcast_decision_to_participant(accepted: false)
+
     redirect_to @match, notice: "#{@match_user.user.display_name} a été refusé."
   end
 
@@ -79,6 +98,52 @@ class MatchUsersController < ApplicationController
     return unless user
 
     Notification.create(user: user, message: message, link: match_path(@match))
+  end
+
+  # Envoie le contenu mis à jour de la modal "Demandes en attente" à l'organisateur.
+  # Appelé quand un joueur envoie une demande (join_with_manual_validation).
+  # Si l'organisateur est sur la page du match, sa modal se met à jour et s'ouvre.
+  def broadcast_pending_modal_to_organizer
+    # Recharge les demandes en attente depuis la base (inclut la nouvelle demande)
+    pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
+
+    # Met à jour l'intérieur de #pending_modal_inner via Turbo Stream (ActionCable).
+    # broadcast_update_to (action="update") remplace uniquement le contenu HTML interne
+    # de la div cible → la div .modal-content.pending-modal-content est préservée
+    # (broadcast_replace_to l'aurait supprimée, cassant le style Bootstrap).
+    Turbo::StreamsChannel.broadcast_update_to(
+      "match_#{@match.id}_organizer",           # canal d'écoute de l'organisateur
+      target: "pending_modal_inner",             # élément DOM ciblé dans show.html.erb
+      partial: "match_users/pending_modal_content",
+      locals: { match: @match, pending_users: pending_users }
+    )
+  end
+
+  # Notifie l'organisateur en temps réel qu'un joueur approuvé a quitté le match.
+  # Appelé depuis destroy (uniquement si was_approved).
+  # Injecte une modal dans #player_left_notification_container côté organisateur.
+  def broadcast_player_left_to_organizer(leaving_user)
+    Turbo::StreamsChannel.broadcast_update_to(
+      "match_#{@match.id}_organizer",              # canal d'écoute de l'organisateur
+      target: "player_left_notification_container", # conteneur dans show.html.erb
+      partial: "match_users/player_left_notification",
+      locals: { match: @match, leaving_user: leaving_user }
+    )
+  end
+
+  # Envoie la notification de décision (accepté/refusé) au joueur concerné.
+  # Appelé depuis approve et reject.
+  # Si le joueur est sur la page du match, une modal s'ouvre automatiquement.
+  def broadcast_decision_to_participant(accepted:)
+    # Injecte la modal de décision dans #decision_notification_container.
+    # broadcast_update_to remplace le contenu interne du conteneur placeholder
+    # → la div#decision_notification_container reste dans le DOM.
+    Turbo::StreamsChannel.broadcast_update_to(
+      "match_#{@match.id}_participant_#{@match_user.user_id}", # canal du joueur
+      target: "decision_notification_container",               # placeholder dans show.html.erb
+      partial: "match_users/decision_notification",
+      locals: { accepted: accepted, match: @match }
+    )
   end
 
   # Gère la promotion du prochain joueur en file d'attente quand une place se libère
@@ -113,6 +178,11 @@ class MatchUsersController < ApplicationController
     @match_user.status = "pending"
     @match_user.save
     notify(organizer, "#{current_user.display_name} veut rejoindre votre match \"#{@match.title}\"")
+
+    # Broadcast en temps réel vers l'organisateur s'il est sur la page du match.
+    # Met à jour le contenu de #pending_modal_inner et ouvre la modal automatiquement.
+    broadcast_pending_modal_to_organizer
+
     redirect_to @match, notice: "Ta demande a été envoyée à l'organisateur !"
   end
 
