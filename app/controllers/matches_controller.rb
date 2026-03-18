@@ -1,4 +1,8 @@
 class MatchesController < ApplicationController
+  # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
+  # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
+  skip_before_action :authenticate_user!, only: [:index, :show]
+
   # Retrouver le match avant les actions qui en ont besoin
   before_action :set_match, only: [:show, :edit, :update, :destroy]
 
@@ -34,6 +38,10 @@ class MatchesController < ApplicationController
     # Récupère les participants du match avec leur profil (évite les N+1 dans la vue)
     @match_users = @match.match_users.includes(user: :profil)
     authorize @match
+
+    # Si l'utilisateur n'est pas connecté, on mémorise l'URL du match.
+    # Devise s'en servira pour rediriger automatiquement ici après la connexion.
+    store_location_for(:user, match_path(@match)) unless user_signed_in?
 
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match
     @current_match_user = @match.match_users.find_by(user: current_user)

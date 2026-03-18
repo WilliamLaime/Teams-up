@@ -217,7 +217,9 @@
         <%= match.user == current_user ? "Voir ton match" : btn_label %>
       <% end %>
     <% else %>
-      <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
+      <%# Non connecté → on va quand même vers la page du match (accessible sans connexion).
+          La connexion sera demandée uniquement si l'utilisateur clique sur "Rejoindre". %>
+      <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
         <%= btn_label %>
       <% end %>
     <% end %>
