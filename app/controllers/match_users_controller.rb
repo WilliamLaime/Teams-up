@@ -223,6 +223,9 @@ class MatchUsersController < ApplicationController
     if @match_user.save
       @match.decrement!(:player_left)
       notify(organizer, "#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
+      # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" dans show.html.erb
+      flash[:show_calendar_modal] = true
+      redirect_to @match
 
       # Notifie l'organisateur en temps réel s'il est sur la page du match.
       # Injecte la modal #autoJoinModal dans son navigateur et l'ouvre automatiquement.
