@@ -121,12 +121,12 @@ class MatchUsersController < ApplicationController
     )
 
     # Broadcast 2 : notification globale via le canal personnel de l'organisateur
-    # → apparaît peu importe la page où se trouve l'organisateur
+    # → affiche directement la liste avec boutons accepter/refuser, peu importe la page
     Turbo::StreamsChannel.broadcast_update_to(
       "user_#{orga.id}_notifications",
       target: "global_notification_container",
       partial: "match_users/new_request_notification",
-      locals: { match: @match, requesting_user: current_user, match_user: @match_user }
+      locals: { match: @match, pending_users: pending_users }
     )
   end
 
