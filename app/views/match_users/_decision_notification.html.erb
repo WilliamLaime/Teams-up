@@ -3,7 +3,10 @@
     (broadcast depuis MatchUsersController#approve ou #reject).
     Variables attendues : accepted (boolean), match %>
 
-<div class="modal fade" id="decisionModal" tabindex="-1" aria-hidden="true">
+<%# data-auto-open / data-redirect-url : ouverture et redirection gérées par application.html.erb %>
+<div class="modal fade" id="decisionModal" tabindex="-1" aria-hidden="true"
+     data-auto-open="true"
+     data-redirect-url="<%= accepted ? match_path(match) : matches_path %>">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content pending-modal-content" style="text-align:center;">
 
@@ -72,24 +75,4 @@
   </div>
 </div>
 
-<%# Ouvre la modal automatiquement dès injection par Turbo Stream.
-    À la fermeture :
-      - Si accepté → redirige vers la page du match (chat débloqué, statut mis à jour)
-      - Si refusé  → redirige vers la liste des matchs %>
-<script>
-  (function() {
-    var el = document.getElementById("decisionModal");
-    if (el && typeof bootstrap !== "undefined") {
-      bootstrap.Modal.getOrCreateInstance(el).show();
-      if (typeof lucide !== "undefined") { lucide.createIcons(); }
-
-      el.addEventListener("hidden.bs.modal", function() {
-        <% if accepted %>
-          window.location.href = "<%= match_path(match) %>";
-        <% else %>
-          window.location.href = "<%= matches_path %>";
-        <% end %>
-      }, { once: true });
-    }
-  })();
-</script>
+<%# Ouverture et redirection gérées par application.html.erb via data-auto-open / data-redirect-url. %>

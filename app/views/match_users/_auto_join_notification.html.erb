@@ -3,7 +3,10 @@
     (broadcast depuis MatchUsersController#join_automatically).
     Variables attendues : joining_user (User), match, match_user (MatchUser) %>
 
-<div class="modal fade" id="autoJoinModal" tabindex="-1" aria-hidden="true">
+<%# data-auto-open / data-redirect-url : ouverture et redirection gérées par application.html.erb %>
+<div class="modal fade" id="autoJoinModal" tabindex="-1" aria-hidden="true"
+     data-auto-open="true"
+     data-redirect-url="<%= match_path(match) %>">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content pending-modal-content" style="text-align:center;">
 
@@ -70,18 +73,4 @@
   </div>
 </div>
 
-<%# Ouvre la modal automatiquement dès injection par Turbo Stream.
-    À la fermeture → redirige vers la page du match (compteur et grille à jour). %>
-<script>
-  (function() {
-    var el = document.getElementById("autoJoinModal");
-    if (el && typeof bootstrap !== "undefined") {
-      bootstrap.Modal.getOrCreateInstance(el).show();
-      if (typeof lucide !== "undefined") { lucide.createIcons(); }
-
-      el.addEventListener("hidden.bs.modal", function() {
-        window.location.href = "<%= match_path(match) %>";
-      }, { once: true });
-    }
-  })();
-</script>
+<%# Ouverture et redirection gérées par application.html.erb via data-auto-open / data-redirect-url. %>
