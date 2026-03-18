@@ -90,7 +90,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_18_083812) do
     t.string "format"
     t.bigint "homme_du_match_id"
     t.string "level"
-    t.integer "max_supporters", default: 0
     t.string "place"
     t.integer "player_left"
     t.integer "price_per_player", default: 0
