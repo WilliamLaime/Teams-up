@@ -253,6 +253,16 @@
 .match-show-wrapper {
   background-color: $dark-bg;
   padding: 2.5rem 0 4rem;
+
+  // Sur grand écran, la colonne droite est sticky :
+  // elle reste calée en haut pendant le scroll de la colonne gauche
+  @media (min-width: 992px) {
+    .col-lg-4 {
+      align-self: flex-start;   // empêche la colonne de s'étirer sur toute la hauteur
+      position: sticky;
+      top: 1.5rem;              // distance depuis le haut de la fenêtre lors du scroll
+    }
+  }
 }
 
 

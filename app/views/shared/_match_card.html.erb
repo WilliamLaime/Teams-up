@@ -75,8 +75,9 @@
   # On récupère la liste d'images correspondante (ou football si slug inconnu)
   images = sport_images[sport_slug] || sport_images["football"]
 
-  # Rotation déterministe : le même match aura toujours la même image
-  cover_image = images[match.id % images.length]
+  # Utilise l'image sauvegardée à la création si elle existe,
+  # sinon rotation déterministe : le même match aura toujours la même image
+  cover_image = match.banner_image.presence || images[match.id % images.length]
 
   # Classe CSS du badge de niveau
   level_css = case match.level

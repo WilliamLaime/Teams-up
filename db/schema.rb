@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_17_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_18_083812) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -83,12 +83,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_17_120001) do
   end
 
   create_table "matches", force: :cascade do |t|
+    t.string "banner_image"
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
     t.string "format"
     t.bigint "homme_du_match_id"
     t.string "level"
+    t.integer "max_supporters", default: 0
     t.string "place"
     t.integer "player_left"
     t.integer "price_per_player", default: 0

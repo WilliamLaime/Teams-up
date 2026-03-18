@@ -28,9 +28,10 @@
   // Photo du terrain
   .match-card-img {
     width: 100%;
-    height: 160px;
-    object-fit: cover;
-    display: block; // supprime l'espace parasite sous l'image
+    height: 200px;          // hauteur augmentée pour voir plus de l'image
+    object-fit: cover;      // remplit le cadre sans déformer
+    object-position: center 25%; // cadre sur le haut-centre (sujet souvent en haut)
+    display: block;         // supprime l'espace parasite sous l'image
   }
 
   // ── Overlay sport — coin haut gauche de l'image ───
