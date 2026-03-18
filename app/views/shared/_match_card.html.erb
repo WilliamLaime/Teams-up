@@ -20,8 +20,6 @@
       sports/Football/citydrone.webp
       sports/Football/Duel.webp
       sports/Football/Medellin.webp
-      sports/Football/herbe.webp
-      sports/Football/terrainight.jpg
     ],
     "tennis"     => %w[
       sports/Tennis/tennis1.webp
@@ -75,8 +73,9 @@
   # On récupère la liste d'images correspondante (ou football si slug inconnu)
   images = sport_images[sport_slug] || sport_images["football"]
 
-  # Rotation déterministe : le même match aura toujours la même image
-  cover_image = images[match.id % images.length]
+  # Utilise l'image sauvegardée à la création si elle existe,
+  # sinon rotation déterministe : le même match aura toujours la même image
+  cover_image = match.banner_image.presence || images[match.id % images.length]
 
   # Classe CSS du badge de niveau
   level_css = case match.level
@@ -202,8 +201,13 @@
 
   <%# ── Pied de carte : bouton ────────────────────────────────────────────── %>
   <div class="match-card-footer">
-    <% if match.full? %>
-      <%# Match complet → bouton voir le match %>
+    <% if match.completed? %>
+      <%# Match terminé → bouton secondaire pour tous %>
+      <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+        Voir le match
+      <% end %>
+    <% elsif match.full? %>
+      <%# Match complet (pas encore terminé) → bouton secondaire %>
       <%= link_to match_path(match), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
         Voir le match
       <% end %>
@@ -213,7 +217,9 @@
         <%= match.user == current_user ? "Voir ton match" : btn_label %>
       <% end %>
     <% else %>
-      <%= link_to new_user_registration_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
+      <%# Non connecté → on va quand même vers la page du match (accessible sans connexion).
+          La connexion sera demandée uniquement si l'utilisateur clique sur "Rejoindre". %>
+      <%= link_to match_path(match), class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
         <%= btn_label %>
       <% end %>
     <% end %>

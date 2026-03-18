@@ -58,15 +58,22 @@ $fc-fold:   rgba(0, 0, 0, 0.25);          // ligne de pliage centrale (subtile)
 }
 
 .countdown-sep {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin-bottom: 0.8rem;
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: none !important;
+}
+
+.countdown-title {
+  border: none !important;
 }
 
 .countdown-wrapper {
   display: flex;
   align-items: flex-end;     // aligne le bas des tuiles et des ":" ensemble
   justify-content: center;
+  border: none !important;
 }
 
 // ── Séparateur ":" entre les unités ─────────────────

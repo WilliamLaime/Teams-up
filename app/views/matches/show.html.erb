@@ -8,6 +8,21 @@
       5. Modal chat complet (participants seulement)
     ===================================================== %>
 
+<%# Désactive le cache Turbo pour cette page.
+    Sans ça, Turbo sauvegarde le DOM APRÈS que Stimulus a construit les flip-cards.
+    Quand l'utilisateur revient (flèche arrière puis avant), Turbo affiche le cache
+    (avec flip-cards déjà construites) ET charge la page fraîche → deux timers visibles.
+    "no-cache" force Turbo à toujours charger depuis le serveur → un seul timer garanti. %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+  <%# Fix barre .countdown-sep : le SCSS corrigé n'est pas encore compilé par Sprockets.
+      Ce style inline est servi dynamiquement par Rails (jamais mis en cache par le navigateur)
+      → écrase immédiatement le CSS compilé jusqu'au prochain redémarrage du serveur. %>
+  <style>
+    .countdown-sep { display: none !important; height: 0 !important; margin: 0 !important; }
+  </style>
+<% end %>
+
 <%# ── Données calculées une seule fois en haut ── %>
 <%
   # Images par sport — même logique que _match_card.html.erb pour cohérence
@@ -21,8 +36,6 @@
       sports/Football/citydrone.webp
       sports/Football/Duel.webp
       sports/Football/Medellin.webp
-      sports/Football/herbe.webp
-      sports/Football/terrainight.jpg
     ],
     "tennis"     => %w[
       sports/Tennis/tennis1.webp
@@ -72,8 +85,9 @@
   # Slug du sport, football par défaut si pas de sport associé
   sport_slug = @match.sport&.slug || "football"
   images = sport_images[sport_slug] || sport_images["football"]
-  # Image déterministe : même calcul que la card (id % nombre d'images)
-  cover_image_path = images[@match.id % images.length]
+  # Utilise l'image sauvegardée (choisie à la création) si elle existe,
+  # sinon fallback déterministe : même calcul que la card (id % nombre d'images)
+  cover_image_path = @match.banner_image.presence || images[@match.id % images.length]
 
   # Organisateur du match
   organizer_mu   = @match_users.find { |mu| mu.role == "organisateur" }
@@ -153,7 +167,7 @@
             <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
           <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
-<%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
+          <%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
         </div>
 
         <%# Titre %>
@@ -295,12 +309,17 @@
               <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
               Modifier
             <% end %>
-            <%= button_to match_path(@match),
-                method: :delete,
-                class: "match-banner-action-btn match-banner-action-btn--danger",
-                data: { turbo_confirm: "Supprimer définitivement ce match ?" } do %>
+            <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
+            <button type="button"
+                    class="match-banner-action-btn match-banner-action-btn--danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteMatchModal">
               <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
               Supprimer
+            </button>
+
+            <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+            <%= form_with url: match_path(@match), method: :delete, id: "delete-match-form" do %>
             <% end %>
           </div>
         <% end %>
@@ -389,6 +408,18 @@
                 <div data-controller="countdown"
                      data-countdown-datetime-value="<%= match_datetime.iso8601 %>">
                 </div>
+
+                <%# Bouton "Laisser un avis" — sous le countdown quand le match est terminé %>
+                <% if @match.completed? && @match_pending_reviews.present? %>
+                  <%= link_to "#",
+                      class: "btn btn-cta-secondary btn-sm mt-3 w-100",
+                      style: "font-size:0.78rem;",
+                      data: { bs_toggle: "modal", bs_target: "#review-modal" } do %>
+                    <i data-lucide="star" style="width:13px;height:13px;"></i>
+                    Laisser un avis
+                  <% end %>
+                <% end %>
+
               <% end %>
 
             </div>
@@ -623,7 +654,7 @@
             <%# Nombre de places restantes — ou statut si match terminé %>
             <div class="match-spots-label">
               <% if @match.completed? %>
-                <span style="color:rgba(255,255,255,0.45);">Terminé</span>
+                <span style="color:rgba(255,255,255,0.45);">Match terminé</span>
               <% elsif @match.full? %>
                 <span style="color:#ff6b6b;">Complet</span>
               <% else %>
@@ -653,11 +684,18 @@
                   <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
                   Tu es inscrit
                 </div>
-                <%= button_to match_match_user_path(@match, @current_match_user),
-                    method: :delete,
-                    class: "btn btn-outline-danger btn-sm w-100 mt-2",
-                    data: { turbo_confirm: "Quitter ce match ?" } do %>
+                <%# Bouton qui ouvre la modal de confirmation — pas de turbo_confirm natif %>
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm w-100 mt-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#leaveMatchModal">
                   Quitter le match
+                </button>
+
+                <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+                <%= form_with url: match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    id: "leave-match-form" do %>
                 <% end %>
 
               <% elsif @current_match_user.pending? %>
@@ -678,6 +716,12 @@
                   <i data-lucide="list" style="width:14px;height:14px;"></i>
                   En file d'attente
                 </div>
+                <%# Bouton pour quitter la file d'attente %>
+                <%= button_to match_match_user_path(@match, @current_match_user),
+                    method: :delete,
+                    class: "btn btn-outline-secondary btn-sm w-100 mt-2" do %>
+                  Quitter la file
+                <% end %>
 
               <% elsif @current_match_user.rejected? %>
                 <%# Refusé %>
@@ -707,8 +751,10 @@
             <% end %>
 
           <% else %>
-            <%# Non connecté → vers inscription %>
-            <%= link_to new_user_registration_path, class: "btn btn-primary w-100 match-join-btn" do %>
+            <%# Non connecté → vers la page de connexion.
+                Devise redirigera automatiquement vers ce match après la connexion
+                grâce au store_location_for défini dans le contrôleur. %>
+            <%= link_to new_user_session_path, class: "btn btn-primary w-100 match-join-btn" do %>
               Rejoindre le match
             <% end %>
           <% end %>
@@ -780,8 +826,9 @@
               <div class="match-chat-blur-content">
                 <% preview_messages = @match.messages.includes(:user).order(:created_at).last(2) %>
                 <% avatar_colors = %w[#2E7D32 #1565C0 #6A1B9A #AD1457 #E65100 #00695C] %>
-                <% if preview_messages.any? %>
-                  <div class="match-chat-preview-list">
+                <div class="match-chat-preview-list">
+                  <% if preview_messages.any? %>
+
                     <% preview_messages.each do |msg| %>
                       <div class="match-chat-preview-item">
                         <div class="match-chat-preview-avatar"
@@ -794,10 +841,10 @@
                         </div>
                       </div>
                     <% end %>
-                  </div>
-                <% else %>
-                  <%# Placeholder si aucun message encore %>
-                  <div class="match-chat-preview-list">
+
+                  <% else %>
+                    <%# Placeholder si aucun message encore %>
+
                     <div class="match-chat-preview-item">
                       <div class="match-chat-preview-avatar" style="background-color:#2E7D32;">JD</div>
                       <div class="match-chat-preview-content">
@@ -805,8 +852,9 @@
                         <span class="match-chat-preview-text">Rejoins le match pour discuter !</span>
                       </div>
                     </div>
-                  </div>
-                <% end %>
+
+                  <% end %>
+                </div>
               </div>
 
               <%# Overlay avec le bouton centré par-dessus le flou %>
@@ -836,6 +884,67 @@
     </div>
   </div>
 </div>
+
+
+<%# ══════════════════════════════════════════════════
+    MODAL "QUITTER LE MATCH" — confirmation avant suppression
+    Déclenchée par le bouton "Quitter le match" (joueur approuvé)
+    ══════════════════════════════════════════════════ %>
+<% if user_signed_in? && @current_match_user&.approved? && @current_match_user.role != "organisateur" %>
+  <div class="modal fade" id="leaveMatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="pending-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône d'avertissement %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(220,60,60,0.15);">
+            <i data-lucide="log-out" style="width:22px;height:22px; color:#dc3c3c;"></i>
+          </div>
+        </div>
+
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Quitter ce match ?
+        </div>
+
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          Tu vas quitter <strong><%= @match.title %></strong>.<br>
+          Ta place sera libérée et tu ne pourras plus accéder au chat.
+        </div>
+
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire delete #leave-match-form %>
+          <button type="submit"
+                  form="leave-match-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(220,60,60,0.15); color:#dc3c3c; border:1px solid rgba(220,60,60,0.35);">
+            Oui, quitter
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
 
 
 <%# ══════════════════════════════════════════════════
@@ -873,11 +982,14 @@
           <%# Textarea optionnelle pour laisser un message à l'organisateur %>
           <div class="mt-3">
             <%= f.label :message, "Laisser un message (optionnel)", class: "join-modal-label" %>
+            <%# onkeydown : Enter (sans Shift) soumet le formulaire au lieu de créer une ligne.
+                Shift+Enter conserve le comportement normal (retour à la ligne). %>
             <%= f.text_area :message,
                 placeholder: "Présente-toi, ton niveau...",
                 rows: 3,
                 class: "form-control join-modal-textarea",
-                maxlength: 300 %>
+                maxlength: 300,
+                onkeydown: "if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.requestSubmit();}" %>
           </div>
 
         <% end %>
@@ -981,11 +1093,39 @@
     Permet de voir leur profil, leur niveau / rôle, et d'accepter ou refuser.
     ══════════════════════════════════════════════════ %>
 <% if @current_match_user&.role == "organisateur" %>
+  <%# Souscription Turbo Stream — reçoit les mises à jour en direct de la liste des demandes.
+      Quand un joueur envoie une demande, #pending_modal_inner est mis à jour silencieusement.
+      L'alerte à l'organisateur arrive via son canal personnel (layout application.html.erb). %>
+  <%= turbo_stream_from "match_#{@match.id}_organizer" %>
+
   <% pending_modal_users = @match_users.select(&:pending?) %>
 
   <div class="modal fade" id="pendingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content pending-modal-content">
+      <%# id="pending_modal_inner" : ciblé par le broadcast Turbo Stream pour
+          mettre à jour le contenu sans toucher l'élément Bootstrap #pendingModal %>
+      <div class="modal-content pending-modal-content" id="pending_modal_inner">
+
+        <%# Le contenu de la modal est extrait dans un partial réutilisable.
+            Ce même partial est rendu via Turbo Stream quand un joueur envoie une demande,
+            ce qui met à jour #pending_modal_inner en direct et ouvre la modal automatiquement. %>
+        <%= render "match_users/pending_modal_content",
+                   match: @match,
+                   pending_users: pending_modal_users %>
+
+      </div>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════
+      MODAL "SUPPRIMER CE MATCH ?" — organisateur uniquement
+      Même style que la modal "Quitter ce match".
+      Déclenché par le bouton "Supprimer" dans la bannière.
+      Le bouton "Confirmer" soumet le formulaire caché #delete-match-form.
+      ══════════════════════════════════════════════════ %>
+  <div class="modal fade" id="deleteMatchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
 
         <%# Croix de fermeture %>
         <button type="button"
@@ -995,120 +1135,56 @@
           <i data-lucide="x" style="width:16px;height:16px;"></i>
         </button>
 
-        <%# En-tête — icône + titre + nombre de demandes %>
-        <div class="pending-modal-header">
-          <div class="pending-modal-icon">
-            <i data-lucide="users" style="width:22px;height:22px;"></i>
-          </div>
-          <div>
-            <div class="pending-modal-title">Demandes en attente</div>
-            <div class="pending-modal-subtitle">
-              <%= pending_modal_users.count %> joueur<%= pending_modal_users.count > 1 ? "s" : "" %> souhaite<%= pending_modal_users.count > 1 ? "nt" : "" %> rejoindre
-            </div>
+        <%# Icône d'avertissement %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(220,60,60,0.15);">
+            <i data-lucide="trash-2" style="width:22px;height:22px; color:#dc3c3c;"></i>
           </div>
         </div>
 
-        <%# Séparateur %>
-        <div class="pending-modal-divider"></div>
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Supprimer ce match ?
+        </div>
 
-        <%# Liste des joueurs en attente %>
-        <div class="pending-modal-list">
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          Tu vas supprimer définitivement <strong><%= @match.title %></strong>.<br>
+          Tous les joueurs inscrits seront informés de l'annulation.
+        </div>
 
-          <% if pending_modal_users.any? %>
-            <% pending_modal_users.each do |mu| %>
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
 
-              <%# Ligne d'un joueur en attente %>
-              <div class="pending-modal-row">
-
-                <%# Avatar cliquable → ouvre le profil dans un nouvel onglet %>
-                <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
-                <%= link_to user_profil_path(mu.user, from_match: @match.id),
-                    class: "pending-modal-avatar-link",
-                    target: "_blank",
-                    title: "Voir le profil" do %>
-                  <%# Avatar dans la modale ou initiales colorées %>
-                  <%= user_avatar_tag mu.user, css_class: "pending-modal-avatar" %>
-                <% end %>
-
-                <%# Infos du joueur : nom + niveau + rôle + lien profil %>
-                <div class="pending-modal-info">
-                  <%
-                    first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
-                    last_name   = mu.user.profil&.last_name.presence
-                    full_name   = last_name ? "#{first} #{last_name}" : first
-                    level       = mu.user.profil&.level.presence  || "Niveau non renseigné"
-                    role_pref   = mu.user.profil&.role.presence   || "Rôle non renseigné"
-                  %>
-                  <div class="pending-modal-name"><%= full_name %></div>
-                  <div class="pending-modal-tags">
-                    <span class="pending-modal-tag pending-modal-tag--level"><%= level %></span>
-                    <span class="pending-modal-tag pending-modal-tag--role"><%= role_pref %></span>
-                  </div>
-                  <%# Message optionnel laissé par le joueur lors de sa demande %>
-                  <% if mu.message.present? %>
-                    <div class="pending-modal-message">
-                      <i data-lucide="message-square" style="width:11px;height:11px;"></i>
-                      <%= mu.message %>
-                    </div>
-                  <% end %>
-                  <%# Lien vers le profil complet (ouvre dans un nouvel onglet) %>
-                  <%# from_match permet au profil d'afficher un bouton "Retour au match" %>
-                  <%= link_to user_profil_path(mu.user, from_match: @match.id),
-                      class: "pending-modal-profile-link",
-                      target: "_blank" do %>
-                    <i data-lucide="external-link" style="width:11px;height:11px;"></i>
-                    Voir le profil complet
-                  <% end %>
-                </div>
-
-                <%# Boutons accepter (vert) / refuser (rouge) %>
-                <div class="pending-modal-actions">
-                  <%= button_to approve_match_match_user_path(@match, mu),
-                      method: :patch,
-                      class: "pending-modal-btn pending-modal-btn--approve",
-                      title: "Accepter" do %>
-                    <i data-lucide="check" style="width:14px;height:14px;"></i>
-                  <% end %>
-                  <%= button_to reject_match_match_user_path(@match, mu),
-                      method: :patch,
-                      class: "pending-modal-btn pending-modal-btn--reject",
-                      title: "Refuser" do %>
-                    <i data-lucide="x" style="width:14px;height:14px;"></i>
-                  <% end %>
-                </div>
-
-              </div>
-
-            <% end %>
-          <% else %>
-            <p class="pending-modal-empty">Aucune demande en attente pour le moment.</p>
-          <% end %>
-
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire DELETE #delete-match-form %>
+          <button type="submit"
+                  form="delete-match-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(220,60,60,0.15); color:#dc3c3c; border:1px solid rgba(220,60,60,0.35);">
+            Oui, supprimer
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
         </div>
 
       </div>
     </div>
   </div>
 
-  <%# Ouvre automatiquement la modale dès que l'organisateur arrive sur la page
-      — uniquement s'il y a au moins une demande en attente %>
-  <% if pending_modal_users.any? %>
-    <script>
-      // "turbo:load" se déclenche à chaque navigation Turbo (remplace DOMContentLoaded)
-      document.addEventListener("turbo:load", function openPendingModal() {
-        var modalEl = document.getElementById("pendingModal");
-        if (modalEl) {
-          // getOrCreateInstance réutilise l'instance Bootstrap existante
-          // → évite que le backdrop reste bloqué quand on ferme avec la croix
-          var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-          modal.show();
-        }
-        // On retire l'écouteur pour ne l'exécuter qu'une seule fois par visite
-        document.removeEventListener("turbo:load", openPendingModal);
-      });
-    </script>
-  <% end %>
+<% end %>
 
+<%# Les notifications aux participants (décision, annulation, etc.) sont désormais
+    gérées globalement via le canal personnel de chaque user dans application.html.erb. %>
+
+<%# ── Modal d'avis pour ce match (rendu uniquement si des avis sont en attente) %>
+<% if @match_pending_reviews.present? %>
+  <%= render "shared/review_modal", pending_review_matches: @match_pending_reviews, auto_open: false %>
 <% end %>
 
 <%# ══════════════════════════════════════════════════

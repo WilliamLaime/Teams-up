@@ -22,7 +22,9 @@
         → Tu peux changer le titre, le sous-titre, ajouter une
           image de fond, des icônes, etc.
       ══════════════════════════════════════════════════════════ %>
-  <div class="match-new-banner">
+  <%# id="match-new-banner" → Stimulus le trouve via document.getElementById pour
+      changer le background dynamiquement selon le sport sélectionné %>
+  <div class="match-new-banner" id="match-new-banner">
     <div class="container">
 
       <%# Lien retour vers la liste des matchs %>

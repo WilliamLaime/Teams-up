@@ -1,0 +1,62 @@
+<%# Modal de notification "match annulé par l'organisateur" pour tous les participants.
+    Injectée dans #match_cancelled_notification_container en temps réel via Turbo Stream
+    (broadcast depuis MatchesController#destroy avant la suppression du match).
+    Variable attendue : match (Match) %>
+
+<div class="modal fade" id="matchCancelledModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pending-modal-content" style="text-align:center;">
+
+      <%# Icône d'alerte %>
+      <div style="display:flex; justify-content:center; padding-top:24px; padding-bottom:8px;">
+        <div style="width:52px; height:52px; border-radius:50%; background:rgba(220,53,69,0.15); display:flex; align-items:center; justify-content:center;">
+          <i data-lucide="x-circle" style="width:26px; height:26px; color:#dc3545;"></i>
+        </div>
+      </div>
+
+      <%# Titre %>
+      <div class="pending-modal-title" style="font-size:1.1rem; padding-bottom:4px;">
+        Match annulé
+      </div>
+
+      <%# Sous-titre : nom du match %>
+      <div class="pending-modal-subtitle" style="margin-bottom:0;">
+        L'organisateur a annulé le match <strong><%= match.title %></strong>.<br>
+        Ta place a été libérée.
+      </div>
+
+      <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+      <%# Bouton de retour à la liste %>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 0 4px;">
+        <button type="button"
+                class="btn btn-sm w-100"
+                style="background:rgba(220,53,69,0.12); color:#dc3545; border:1px solid rgba(220,53,69,0.3);"
+                id="cancelledModalOkBtn">
+          Retour aux matchs
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%# Ouvre la modal automatiquement quand le contenu est injecté par Turbo Stream.
+    La modal est statique (backdrop + keyboard disabled) : l'user ne peut pas la fermer autrement
+    qu'en cliquant sur le bouton. Au clic, redirige vers la liste des matchs. %>
+<script>
+  (function() {
+    var el = document.getElementById("matchCancelledModal");
+    if (el && typeof bootstrap !== "undefined") {
+      var modal = bootstrap.Modal.getOrCreateInstance(el);
+      modal.show();
+
+      if (typeof lucide !== "undefined") { lucide.createIcons(); }
+
+      // Au clic sur le bouton → redirige vers la liste des matchs
+      document.getElementById("cancelledModalOkBtn").addEventListener("click", function() {
+        window.location.href = "<%= matches_path %>";
+      });
+    }
+  })();
+</script>

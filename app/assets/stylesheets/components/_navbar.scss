@@ -209,3 +209,16 @@
   }
 
 }
+
+// Scrollbar verte pour la modal d'avis — identique à .notif-list dans le dropdown
+.review-modal-body {
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+}
+
+// Empêche Bootstrap d'ajouter un padding-right au body quand une modal s'ouvre
+// (évite le décalage/marge grise visible sur la droite de la page)
+body.modal-open {
+  padding-right: 0 !important;
+}

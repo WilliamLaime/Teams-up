@@ -1,4 +1,8 @@
 class MatchesController < ApplicationController
+  # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
+  # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
+  skip_before_action :authenticate_user!, only: [:index, :show]
+
   # Retrouver le match avant les actions qui en ont besoin
   before_action :set_match, only: [:show, :edit, :update, :destroy, :calendar]
 
@@ -35,8 +39,42 @@ class MatchesController < ApplicationController
     @match_users = @match.match_users.includes(user: :profil)
     authorize @match
 
+    # Si l'utilisateur n'est pas connecté, on mémorise l'URL du match.
+    # Devise s'en servira pour rediriger automatiquement ici après la connexion.
+    store_location_for(:user, match_path(@match)) unless user_signed_in?
+
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match
     @current_match_user = @match.match_users.find_by(user: current_user)
+
+    # Calcule les avis en attente pour CE match (pour le bouton "Laisser un avis")
+    # Conditions : match terminé + connecté + participant approuvé
+    if user_signed_in? && @match.completed? && @current_match_user&.approved?
+      # Co-joueurs approuvés dans ce match (sauf current_user)
+      co_player_ids = @match.match_users
+                            .where(status: "approved")
+                            .where.not(user_id: current_user.id)
+                            .pluck(:user_id)
+
+      # Joueurs déjà notés par current_user dans CE match
+      already_reviewed = Avis.where(reviewer_id: current_user.id, match_id: @match.id)
+                             .pluck(:reviewed_user_id)
+
+      # Joueurs pas encore notés
+      pending_ids    = co_player_ids - already_reviewed
+      has_voted      = MatchVote.where(voter_id: current_user.id, match_id: @match.id).exists?
+      can_vote_homme = !has_voted && co_player_ids.any?
+
+      # On prépare les données seulement s'il reste quelque chose à faire
+      if pending_ids.any? || can_vote_homme
+        @match_pending_reviews = [{
+          match:          @match,
+          users:          User.where(id: pending_ids).includes(:profil),
+          all_co_players: User.where(id: co_player_ids).includes(:profil),
+          has_voted:      has_voted,
+          can_vote_homme: can_vote_homme
+        }]
+      end
+    end
   end
 
   # GET /matches/new
@@ -89,9 +127,23 @@ class MatchesController < ApplicationController
   end
 
   # DELETE /matches/:id
-  # Supprime un match
+  # Supprime un match et notifie tous les participants en temps réel
   def destroy
     authorize @match
+
+    # Récupère tous les participants inscrits (hors organisateur) avant destruction.
+    # On exclut les "rejected" car ils n'ont plus de place et ne sont plus actifs.
+    # IMPORTANT : on broadcast AVANT @match.destroy → le canal ActionCable doit encore exister.
+    participants = @match.match_users
+      .where.not(role: "organisateur")
+      .where(status: ["approved", "pending", "waiting"])
+      .includes(:user)
+
+    # Notifie chaque participant en temps réel si il est sur la page du match
+    participants.each do |mu|
+      broadcast_match_cancelled_to_participant(mu.user)
+    end
+
     @match.destroy
     redirect_to matches_path, notice: "Match supprimé."
   end
@@ -140,6 +192,18 @@ class MatchesController < ApplicationController
   end
 
   private
+
+  # Envoie la notification d'annulation du match à un participant spécifique.
+  # Appelé depuis destroy pour chaque participant avant la suppression du match.
+  # La modal s'ouvre automatiquement peu importe la page où se trouve le joueur.
+  def broadcast_match_cancelled_to_participant(participant_user)
+    Turbo::StreamsChannel.broadcast_update_to(
+      "user_#{participant_user.id}_notifications", # canal personnel du joueur
+      target: "global_notification_container",      # conteneur dans application.html.erb
+      partial: "matches/match_cancelled_notification",
+      locals: { match: @match }
+    )
+  end
 
   # Applique tous les filtres optionnels sur @matches selon les params reçus
   def apply_filters
@@ -190,6 +254,6 @@ class MatchesController < ApplicationController
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
-    params.require(:match).permit(:title, :description, :date, :time, :place, :venue_id, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format)
+    params.require(:match).permit(:title, :description, :date, :time, :place, :venue_id, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format, :banner_image)
   end
 end

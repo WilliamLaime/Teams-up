@@ -12,6 +12,14 @@ export default class extends Controller {
     this.handleClickOutside = this.handleClickOutside.bind(this)
     document.addEventListener("click", this.handleClickOutside)
 
+    // Ferme ce dropdown si un autre dropdown s'ouvre ailleurs sur la page
+    this.handleOtherOpen = (e) => {
+      if (e.detail.source !== this.element) {
+        this.dropdownTarget.style.display = "none"
+      }
+    }
+    document.addEventListener("dropdown:open", this.handleOtherOpen)
+
     // Injecte la CSS scrollbar directement dans le <head> — garanti même si
     // Sprockets ne charge pas encore le fichier SCSS compilé en développement.
     // Même style que .notif-list : 4px, vert, track transparent.
@@ -45,13 +53,26 @@ export default class extends Controller {
 
   disconnect() {
     document.removeEventListener("click", this.handleClickOutside)
+    document.removeEventListener("dropdown:open", this.handleOtherOpen)
   }
 
   // Ouvre ou ferme le dropdown au clic sur le trigger
   toggle(event) {
     event.stopPropagation()
     const d = this.dropdownTarget
-    d.style.display = d.style.display === "none" ? "block" : "none"
+    const isOpening = d.style.display === "none"
+    d.style.display = isOpening ? "block" : "none"
+
+    if (isOpening) {
+      // Prévient les autres dropdowns qu'ils doivent se fermer
+      document.dispatchEvent(new CustomEvent("dropdown:open", { detail: { source: this.element } }))
+      const activeItem = d.querySelector(".time-picker-item--active")
+      if (activeItem) {
+        // Calcul manuel pour centrer dans le conteneur scrollable :
+        // scrollTop = position de l'item - (hauteur visible / 2) + (hauteur item / 2)
+        d.scrollTop = activeItem.offsetTop - (d.clientHeight / 2) + (activeItem.offsetHeight / 2)
+      }
+    }
   }
 
   // Appelé au clic sur une heure dans la liste

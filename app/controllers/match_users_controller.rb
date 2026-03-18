@@ -35,10 +35,20 @@ class MatchUsersController < ApplicationController
   def destroy
     authorize @match_user
 
+    # Sauvegarde l'utilisateur et son statut avant destruction
+    # (après @match_user.destroy, ces infos ne sont plus accessibles)
+    leaving_user = @match_user.user
+    was_approved = @match_user.approved?
+
     # Si le joueur avait une place approuvée, on gère la file d'attente
-    promote_next_in_line if @match_user.approved?
+    promote_next_in_line if was_approved
 
     @match_user.destroy
+
+    # Notifie l'organisateur en temps réel si un joueur approuvé a quitté
+    # (pas de notif si pending/waiting/rejected — ces cas ne libèrent pas de place)
+    broadcast_player_left_to_organizer(leaving_user) if was_approved
+
     redirect_to @match, notice: "Tu as quitté le match."
   end
 
@@ -49,6 +59,11 @@ class MatchUsersController < ApplicationController
     @match_user.update(status: "approved")
     @match.decrement!(:player_left)
     notify(@match_user.user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
+
+    # Broadcast en temps réel vers le joueur s'il est sur la page du match.
+    # Injecte la modal de décision dans son navigateur et l'ouvre automatiquement.
+    broadcast_decision_to_participant(accepted: true)
+
     redirect_to @match, notice: "#{@match_user.user.display_name} a été approuvé !"
   end
 
@@ -58,6 +73,10 @@ class MatchUsersController < ApplicationController
     authorize @match_user
     @match_user.update(status: "rejected")
     notify(@match_user.user, "❌ Ta demande pour \"#{@match.title}\" a été refusée.")
+
+    # Broadcast en temps réel vers le joueur s'il est sur la page du match.
+    broadcast_decision_to_participant(accepted: false)
+
     redirect_to @match, notice: "#{@match_user.user.display_name} a été refusé."
   end
 
@@ -79,6 +98,83 @@ class MatchUsersController < ApplicationController
     return unless user
 
     Notification.create(user: user, message: message, link: match_path(@match))
+  end
+
+  # Notifie l'organisateur en temps réel qu'une nouvelle demande manuelle est arrivée.
+  # Deux broadcasts :
+  #   1. Met à jour la liste #pending_modal_inner sur la show page (silencieux)
+  #   2. Envoie une modal de notification sur le canal personnel de l'organisateur
+  def broadcast_pending_modal_to_organizer
+    orga = organizer_user
+    return unless orga
+
+    # Recharge les demandes en attente depuis la base (inclut la nouvelle demande)
+    pending_users = @match.match_users.where(status: "pending").includes(user: :profil)
+
+    # Broadcast 1 : met à jour silencieusement la liste sur la show page
+    # (si l'orga est sur la show, il voit la liste à jour sans rechargement)
+    Turbo::StreamsChannel.broadcast_update_to(
+      "match_#{@match.id}_organizer",
+      target: "pending_modal_inner",
+      partial: "match_users/pending_modal_content",
+      locals: { match: @match, pending_users: pending_users }
+    )
+
+    # Broadcast 2 : notification globale via le canal personnel de l'organisateur
+    # → apparaît peu importe la page où se trouve l'organisateur
+    Turbo::StreamsChannel.broadcast_update_to(
+      "user_#{orga.id}_notifications",
+      target: "global_notification_container",
+      partial: "match_users/new_request_notification",
+      locals: { match: @match, requesting_user: current_user, match_user: @match_user }
+    )
+  end
+
+  # Notifie l'organisateur en temps réel qu'un joueur approuvé a quitté le match.
+  # Appelé depuis destroy (uniquement si was_approved).
+  def broadcast_player_left_to_organizer(leaving_user)
+    orga = organizer_user
+    return unless orga
+
+    Turbo::StreamsChannel.broadcast_update_to(
+      "user_#{orga.id}_notifications",
+      target: "global_notification_container",
+      partial: "match_users/player_left_notification",
+      locals: { match: @match, leaving_user: leaving_user }
+    )
+  end
+
+  # Notifie l'organisateur en temps réel qu'un joueur a rejoint automatiquement.
+  # Appelé depuis join_automatically après le save et le decrement.
+  def broadcast_auto_join_to_organizer
+    orga = organizer_user
+    return unless orga
+
+    # On recharge le match pour avoir le player_left à jour (après decrement!)
+    @match.reload
+    Turbo::StreamsChannel.broadcast_update_to(
+      "user_#{orga.id}_notifications",
+      target: "global_notification_container",
+      partial: "match_users/auto_join_notification",
+      locals: { match: @match, joining_user: current_user, match_user: @match_user }
+    )
+  end
+
+  # Envoie la notification de décision (accepté/refusé) au joueur concerné.
+  # Appelé depuis approve et reject.
+  def broadcast_decision_to_participant(accepted:)
+    Turbo::StreamsChannel.broadcast_update_to(
+      "user_#{@match_user.user_id}_notifications",
+      target: "global_notification_container",
+      partial: "match_users/decision_notification",
+      locals: { accepted: accepted, match: @match }
+    )
+  end
+
+  # Retourne l'user organisateur du match
+  # Utilisé par plusieurs méthodes de broadcast pour cibler le canal personnel de l'orga
+  def organizer_user
+    @match.organizer_match_user&.user
   end
 
   # Gère la promotion du prochain joueur en file d'attente quand une place se libère
@@ -113,6 +209,11 @@ class MatchUsersController < ApplicationController
     @match_user.status = "pending"
     @match_user.save
     notify(organizer, "#{current_user.display_name} veut rejoindre votre match \"#{@match.title}\"")
+
+    # Broadcast en temps réel vers l'organisateur s'il est sur la page du match.
+    # Met à jour le contenu de #pending_modal_inner et ouvre la modal automatiquement.
+    broadcast_pending_modal_to_organizer
+
     redirect_to @match, notice: "Ta demande a été envoyée à l'organisateur !"
   end
 
@@ -125,6 +226,12 @@ class MatchUsersController < ApplicationController
       # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" dans show.html.erb
       flash[:show_calendar_modal] = true
       redirect_to @match
+
+      # Notifie l'organisateur en temps réel s'il est sur la page du match.
+      # Injecte la modal #autoJoinModal dans son navigateur et l'ouvre automatiquement.
+      broadcast_auto_join_to_organizer
+
+      redirect_to @match, notice: "Tu as rejoint le match !"
     else
       redirect_to @match, alert: "Impossible de rejoindre le match."
     end

@@ -4,6 +4,25 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # Noms de fichiers autorisés pour les avatars prédéfinis (évite les injections de chemin)
   VALID_PRESET_AVATARS = %w[01 02 3 4 5 6 7 8 9 10 11 12].freeze
 
+  # Action appelée quand l'utilisateur arrive sur la page d'inscription (GET)
+  # Si l'utilisateur arrive directement (pas depuis la page de connexion),
+  # on efface la "stored location" de Devise pour éviter une redirection non désirée
+  # vers une page protégée (ex: "trouver un match") après inscription.
+  # Cas souhaités :
+  #   - homepage → S'inscrire → homepage ✓
+  #   - matches (protégé) → connexion → S'inscrire → matches ✓
+  def new
+    if came_from_sign_in?
+      # L'utilisateur vient de la page de connexion : on garde la stored location
+      # (il voulait accéder à une page protégée avant d'être redirigé)
+    else
+      # Arrivée directe sur l'inscription : on efface la stored location
+      # pour que la redirection post-inscription aille vers l'accueil
+      session.delete("user_return_to")
+    end
+    super
+  end
+
   def create
     # ── Validation serveur : au moins un sport requis ─────────────────────────
     sport_ids = params.dig(:user, :sport_ids).to_a.reject(&:blank?)
@@ -70,6 +89,19 @@ class Users::RegistrationsController < Devise::RegistrationsController
         filename:     "avatar_#{preset_name}.png",
         content_type: "image/png"
       }
+    end
+  end
+
+  # Retourne true si l'utilisateur arrive sur la page d'inscription depuis la page de connexion.
+  # On compare le chemin du referer HTTP avec le chemin de la page de connexion Devise.
+  def came_from_sign_in?
+    return false unless request.referer.present?
+
+    begin
+      # On compare uniquement le chemin (path) pour ignorer le domaine
+      URI.parse(request.referer).path == new_user_session_path
+    rescue URI::InvalidURIError
+      false
     end
   end
 

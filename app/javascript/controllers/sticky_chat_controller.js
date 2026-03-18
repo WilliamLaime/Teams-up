@@ -19,6 +19,15 @@ export default class extends Controller {
   connect() {
     this.isOpen = false
 
+    // Ferme le panneau si on clique en dehors de l'élément sticky-chat
+    // On stocke la référence pour pouvoir la retirer dans disconnect()
+    this._handleOutsideClick = (event) => {
+      if (this.isOpen && !this.element.contains(event.target)) {
+        this.close()
+      }
+    }
+    document.addEventListener("click", this._handleOutsideClick)
+
     // Options de l'observer stockées pour pouvoir reconnecter après lucide.createIcons()
     this._observerOptions = {
       subtree: true,       // surveille tous les descendants
@@ -55,6 +64,8 @@ export default class extends Controller {
   disconnect() {
     // Nettoyage : on arrête l'observation quand le controller est détruit
     if (this._observer) this._observer.disconnect()
+    // Retire le listener de clic extérieur
+    document.removeEventListener("click", this._handleOutsideClick)
   }
 
   // ── Mettre à jour la visibilité et la couleur du badge sur le bouton ────────

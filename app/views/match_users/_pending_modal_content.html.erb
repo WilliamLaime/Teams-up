@@ -1,0 +1,106 @@
+<%# Contenu interne de la modal "Demandes en attente" (organisateur).
+    Rendu initial via show.html.erb, mis à jour silencieusement en direct via Turbo Stream
+    (broadcast depuis MatchUsersController quand un joueur envoie une demande).
+    L'alerte à l'organisateur est gérée par _new_request_notification via le canal personnel.
+    Variables attendues : match, pending_users %>
+
+<%# Croix de fermeture %>
+<button type="button"
+        class="pending-modal-close"
+        data-bs-dismiss="modal"
+        aria-label="Fermer">
+  <i data-lucide="x" style="width:16px;height:16px;"></i>
+</button>
+
+<%# En-tête — icône + titre + nombre de demandes %>
+<div class="pending-modal-header">
+  <div class="pending-modal-icon">
+    <i data-lucide="users" style="width:22px;height:22px;"></i>
+  </div>
+  <div>
+    <div class="pending-modal-title">Demandes en attente</div>
+    <div class="pending-modal-subtitle">
+      <%= pending_users.count %> joueur<%= pending_users.count > 1 ? "s" : "" %>
+      souhaite<%= pending_users.count > 1 ? "nt" : "" %> rejoindre
+    </div>
+  </div>
+</div>
+
+<%# Séparateur %>
+<div class="pending-modal-divider"></div>
+
+<%# Liste des joueurs en attente %>
+<div class="pending-modal-list">
+
+  <% if pending_users.any? %>
+    <% pending_users.each do |mu| %>
+
+      <%# Ligne d'un joueur en attente %>
+      <div class="pending-modal-row">
+
+        <%# Avatar cliquable → ouvre le profil dans un nouvel onglet %>
+        <%= link_to user_profil_path(mu.user, from_match: match.id),
+            class: "pending-modal-avatar-link",
+            target: "_blank",
+            title: "Voir le profil" do %>
+          <%= user_avatar_tag mu.user, css_class: "pending-modal-avatar" %>
+        <% end %>
+
+        <%# Infos du joueur : nom, niveau, rôle, message optionnel %>
+        <div class="pending-modal-info">
+          <%
+            first     = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+            last_name = mu.user.profil&.last_name.presence
+            full_name = last_name ? "#{first} #{last_name}" : first
+            level     = mu.user.profil&.level.presence  || "Niveau non renseigné"
+            role_pref = mu.user.profil&.role.presence   || "Rôle non renseigné"
+          %>
+          <div class="pending-modal-name"><%= full_name %></div>
+          <div class="pending-modal-tags">
+            <span class="pending-modal-tag pending-modal-tag--level"><%= level %></span>
+            <span class="pending-modal-tag pending-modal-tag--role"><%= role_pref %></span>
+          </div>
+          <%# Message optionnel laissé par le joueur lors de sa demande %>
+          <% if mu.message.present? %>
+            <div class="pending-modal-message">
+              <i data-lucide="message-square" style="width:11px;height:11px;"></i>
+              <%= mu.message %>
+            </div>
+          <% end %>
+          <%# Lien vers le profil complet — couleur verte (#1EDD88) %>
+          <%= link_to user_profil_path(mu.user, from_match: match.id),
+              class: "pending-modal-profile-link",
+              style: "color:#1EDD88;",
+              target: "_blank" do %>
+            <i data-lucide="external-link" style="width:11px;height:11px; color:#1EDD88;"></i>
+            Voir le profil complet
+          <% end %>
+        </div>
+
+        <%# Boutons accepter (vert) / refuser (rouge) %>
+        <div class="pending-modal-actions">
+          <%= button_to approve_match_match_user_path(match, mu),
+              method: :patch,
+              class: "pending-modal-btn pending-modal-btn--approve",
+              title: "Accepter" do %>
+            <i data-lucide="check" style="width:14px;height:14px;"></i>
+          <% end %>
+          <%= button_to reject_match_match_user_path(match, mu),
+              method: :patch,
+              class: "pending-modal-btn pending-modal-btn--reject",
+              title: "Refuser" do %>
+            <i data-lucide="x" style="width:14px;height:14px;"></i>
+          <% end %>
+        </div>
+
+      </div>
+
+    <% end %>
+  <% else %>
+    <p class="pending-modal-empty">Aucune demande en attente pour le moment.</p>
+  <% end %>
+
+</div>
+
+<%# La liste se met à jour silencieusement — l'alerte est gérée par _new_request_notification.
+    L'organisateur est notifié via sa modal globale et peut ouvrir #pendingModal manuellement. %>

@@ -30,6 +30,16 @@
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
 
+    <%# ── Canal de notifications personnelles ──────────────────────────────────
+        Chaque user connecté écoute son propre canal Turbo Stream.
+        Toutes les notifications en temps réel (décision, annulation, joueur quitte,
+        invitation reçue) sont broadcastées sur ce canal depuis les controllers.
+        Le conteneur vide reçoit les modals injectées dynamiquement. %>
+    <% if user_signed_in? %>
+      <%= turbo_stream_from "user_#{current_user.id}_notifications" %>
+      <div id="global_notification_container"></div>
+    <% end %>
+
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
     <main>
       <%= yield %>
@@ -45,7 +55,14 @@
     <%# Modal post-match : s'affiche à la 1ère connexion après un match terminé %>
     <%# @pending_review_matches est chargé par ApplicationController#load_review_modal_data %>
     <% if user_signed_in? && @pending_review_matches.present? %>
-      <%= render "shared/review_modal" %>
+      <%= render "shared/review_modal", pending_review_matches: @pending_review_matches %>
+      <%# Script séparé : ouvre la modal automatiquement après connexion %>
+      <script>
+        document.addEventListener("DOMContentLoaded", function() {
+          var el = document.getElementById("review-modal");
+          if (el) { new bootstrap.Modal(el).show(); }
+        });
+      </script>
     <% end %>
 
     <%# Modals provenant des vues (ex: modal avis profil) %>

@@ -1,0 +1,90 @@
+<%# Modal de notification "nouvelle demande manuelle" pour l'organisateur.
+    Injectée dans #global_notification_container en temps réel via Turbo Stream
+    (broadcast depuis MatchUsersController#join_with_manual_validation).
+    Variables attendues : requesting_user (User), match (Match), match_user (MatchUser) %>
+
+<div class="modal fade" id="newRequestModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pending-modal-content" style="text-align:center;">
+
+      <%# Croix de fermeture %>
+      <button type="button"
+              class="pending-modal-close"
+              data-bs-dismiss="modal"
+              aria-label="Fermer">
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      </button>
+
+      <%# Calcul du nom affiché : "Prénom N." %>
+      <%
+        first       = requesting_user.profil&.first_name.presence || requesting_user.email.split("@").first
+        last_letter = requesting_user.profil&.last_name.presence&.first&.upcase
+        display     = last_letter ? "#{first} #{last_letter}." : first
+      %>
+
+      <%# Avatar du joueur %>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:8px; padding-bottom:16px;">
+        <%= user_avatar_tag requesting_user, css_class: "pending-modal-avatar" %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:0;">
+          Nouvelle demande !
+        </div>
+      </div>
+
+      <%# Sous-titre : qui veut rejoindre quel match %>
+      <div class="pending-modal-subtitle" style="margin-bottom:0;">
+        <strong><%= display %></strong> veut rejoindre votre match <strong><%= match.title %></strong>.
+      </div>
+
+      <%# Message optionnel du joueur %>
+      <% if match_user.message.present? %>
+        <div style="margin:16px 0 0; padding:12px 16px; background:rgba(255,255,255,0.05); border-radius:8px; border:1px solid rgba(255,255,255,0.1); text-align:left;">
+          <div style="font-size:0.75rem; color:#aaa; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="message-circle" style="width:13px;height:13px;"></i>
+            Message de <%= display %>
+          </div>
+          <div style="font-size:0.9rem; color:#eee; font-style:italic;">
+            "<%= match_user.message %>"
+          </div>
+        </div>
+      <% end %>
+
+      <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+      <%# Boutons d'action %>
+      <div class="d-flex gap-3" style="padding:16px 0 4px;">
+        <%# Voir les demandes → redirige vers la show du match %>
+        <button type="button"
+                class="btn btn-sm flex-fill"
+                style="background:rgba(255,150,50,0.12); color:#ff9632; border:1px solid rgba(255,150,50,0.3);"
+                id="newRequestGoBtn">
+          Voir les demandes
+        </button>
+        <%# Plus tard → ferme la modal sans redirection %>
+        <button type="button"
+                class="btn btn-sm flex-fill"
+                style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                data-bs-dismiss="modal">
+          Plus tard
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%# Ouvre la modal automatiquement dès injection par Turbo Stream.
+    "Voir les demandes" → redirige vers la show du match.
+    "Plus tard" → ferme simplement (data-bs-dismiss). %>
+<script>
+  (function() {
+    var el = document.getElementById("newRequestModal");
+    if (el && typeof bootstrap !== "undefined") {
+      bootstrap.Modal.getOrCreateInstance(el).show();
+      if (typeof lucide !== "undefined") { lucide.createIcons(); }
+
+      document.getElementById("newRequestGoBtn").addEventListener("click", function() {
+        window.location.href = "<%= match_path(match) %>";
+      });
+    }
+  })();
+</script>

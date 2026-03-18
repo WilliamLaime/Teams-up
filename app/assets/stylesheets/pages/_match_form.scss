@@ -221,6 +221,117 @@
 
 
 // ══════════════════════════════════════════════════════════════
+// DATE PICKER — Calendrier custom (date_picker_controller.js)
+// Même DA que les dropdowns time-picker et sport-picker
+// ══════════════════════════════════════════════════════════════
+
+.dp-dropdown {
+  background: #242624;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 0.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  user-select: none;
+}
+
+// En-tête : navigation mois précédent / mois+année / mois suivant
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.25rem 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.4rem;
+}
+
+.dp-month-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dp-nav-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+
+  &:hover {
+    color: #1EDD88;
+    background: rgba(30, 221, 136, 0.1);
+  }
+}
+
+// Grille 7 colonnes (Lu Ma Me Je Ve Sa Di + les jours)
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+// Noms des jours (Lu, Ma…)
+.dp-day-name {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0.2rem 0;
+}
+
+// Case vide (avant le 1er du mois)
+.dp-day--empty {
+  background: none !important;
+  border: none !important;
+  cursor: default;
+}
+
+// Bouton jour
+.dp-day {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: center;
+  padding: 0.35rem 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover:not(:disabled):not(.dp-day--selected) {
+    background: rgba(30, 221, 136, 0.1);
+    color: #1EDD88;
+  }
+
+  // Dates passées (désactivées)
+  &--past, &:disabled {
+    color: rgba(255, 255, 255, 0.2);
+    cursor: default;
+    pointer-events: none;
+  }
+
+  // Aujourd'hui (anneau vert discret)
+  &--today:not(.dp-day--selected) {
+    color: #1EDD88;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(30, 221, 136, 0.4);
+  }
+
+  // Jour sélectionné (fond vert plein)
+  &--selected {
+    background: #1EDD88 !important;
+    color: #111 !important;
+    font-weight: 700;
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
 // Styles pour la page de création / modification d'un match
 // ══════════════════════════════════════════════════════════════
 // Ce fichier utilise les variables définies dans config/_colors.scss :
@@ -612,11 +723,14 @@
 // ══════════════════════════════════════════════════════════
 
 // Carte principale du récapitulatif — juste le style visuel, pas de sticky ici
+// margin-top : décale le bloc pour l'aligner avec la section "Descriptif" de la colonne gauche,
+// qui est précédée par la légende "* Champs obligatoires" (font 0.8rem + margin-bottom 0.75rem ≈ 2rem)
 .match-recap-card {
   background-color: $dark-card-bg;
   border-radius: 8px;
   padding: 1.5rem;
   color: $dark-text;
+  margin-top: 2rem; // aligne le récap avec le bloc Descriptif au chargement de la page (= hauteur de la légende "* Champs obligatoires")
 }
 
 // En-tête "📊 Récapitulatif"
