@@ -4,7 +4,11 @@
     Affiche directement la liste des joueurs en attente avec boutons accepter/refuser.
     Variables attendues : match (Match), pending_users (collection MatchUser avec user:profil) %>
 
-<div class="modal fade" id="newRequestModal" tabindex="-1" aria-hidden="true">
+<%# data-auto-open : ouverture automatique gérée par le handler turbo:before-stream-render dans application.html.erb %>
+<%# data-redirect-url : à la fermeture, redirige vers la page du match pour voir la liste à jour %>
+<div class="modal fade" id="newRequestModal" tabindex="-1" aria-hidden="true"
+     data-auto-open="true"
+     data-redirect-url="<%= match_path(match) %>">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content pending-modal-content">
 
@@ -113,18 +117,6 @@
   </div>
 </div>
 
-<%# Ouvre la modal automatiquement dès injection par Turbo Stream.
-    À la fermeture → redirige vers la page du match (liste à jour). %>
-<script>
-  (function() {
-    var el = document.getElementById("newRequestModal");
-    if (el && typeof bootstrap !== "undefined") {
-      bootstrap.Modal.getOrCreateInstance(el).show();
-      if (typeof lucide !== "undefined") { lucide.createIcons(); }
-
-      el.addEventListener("hidden.bs.modal", function() {
-        window.location.href = <%= match_path(match).to_json %>;
-      }, { once: true });
-    }
-  })();
-</script>
+<%# L'ouverture et la redirection à la fermeture sont gérées automatiquement
+    par le handler turbo:before-stream-render dans application.html.erb
+    via les attributs data-auto-open et data-redirect-url ci-dessus. %>

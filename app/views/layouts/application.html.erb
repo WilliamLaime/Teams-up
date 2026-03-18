@@ -82,13 +82,33 @@
       document.addEventListener("turbo:frame-render", () => lucide.createIcons());
 
       // Turbo Stream (ex: nouvelle notification via ActionCable) — on intercepte la fonction
-      // de rendu pour appeler lucide.createIcons() APRÈS que le DOM a été modifié.
-      // C'est plus fiable que setTimeout(0) qui pouvait s'exécuter avant la mise à jour du DOM.
+      // de rendu pour appeler lucide.createIcons() et ouvrir les modals APRÈS que le DOM a été modifié.
+      // C'est plus fiable que les <script> inline qui ne s'exécutent pas toujours avec Turbo Stream.
       document.addEventListener("turbo:before-stream-render", (event) => {
         const originalRender = event.detail.render;
         event.detail.render = function(streamElement) {
           originalRender(streamElement); // mise à jour du DOM
-          lucide.createIcons();          // ré-initialise les icônes APRÈS le DOM
+
+          lucide.createIcons(); // ré-initialise les icônes APRÈS le DOM
+
+          // Ouvre automatiquement toute modal marquée data-auto-open="true"
+          // (injectée via Turbo Stream depuis les partials de notification)
+          document.querySelectorAll("[data-auto-open='true']").forEach(function(el) {
+            // Retire l'attribut pour éviter de ré-ouvrir si le DOM est re-rendu
+            el.removeAttribute("data-auto-open");
+
+            if (typeof bootstrap !== "undefined") {
+              bootstrap.Modal.getOrCreateInstance(el).show();
+
+              // Si une URL de redirection est définie, on redirige à la fermeture
+              var redirectUrl = el.getAttribute("data-redirect-url");
+              if (redirectUrl) {
+                el.addEventListener("hidden.bs.modal", function() {
+                  window.location.href = redirectUrl;
+                }, { once: true });
+              }
+            }
+          });
         };
       });
     </script>
