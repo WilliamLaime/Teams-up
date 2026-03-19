@@ -16,6 +16,13 @@
   // Le padding bottom est géré par .footer-bottom qui a son propre fond
   padding: 20px 0 0;
 
+  // ── Gap entre les colonnes sur mobile ─────────────
+  @media (max-width: 767.98px) {
+    .row > [class*="col-"] {
+      margin-bottom: 24px; // espace vertical entre logo, liens et réseaux sociaux
+    }
+  }
+
   // ── Logo : picto + texte SVG côte à côte ─────────
   .footer-logo {
     text-decoration: none;
@@ -52,8 +59,15 @@
     padding: 0;
     margin: 0;
     display: flex;
-    flex-wrap: wrap;         // passe à la ligne sur mobile
+    flex-wrap: wrap;
     gap: 0.5rem 1.5rem;
+
+    // Sur mobile : liens empilés verticalement et centrés
+    @media (max-width: 767.98px) {
+      flex-direction: column;  // un lien par ligne
+      align-items: center;     // centré horizontalement
+      gap: 0.6rem;             // espace vertical entre chaque lien
+    }
 
     li a {
       color: $dark-muted;

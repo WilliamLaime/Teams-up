@@ -28,6 +28,8 @@
       automatiquement jusqu'à la première erreur de formulaire si elle existe %>
   <body data-controller="scroll-to-error">
     <%= render "shared/navbar" %>
+    <%# Bande sous la navbar : sport switcher (connecté) ou boutons auth (non connecté) — mobile uniquement %>
+    <%= render "shared/mobile_sub_navbar" %>
     <%= render "shared/flashes" %>
 
     <%# ── Canal de notifications personnelles ──────────────────────────────────

@@ -18,6 +18,13 @@ class MessagesController < ApplicationController
     if @message.save
       # 🎮 Vérifier les achievements liés aux messages envoyés
       AchievementService.new(current_user).check(:message_sent)
+
+      # Met à jour last_read_at de l'expéditeur pour qu'il ne voie pas
+      # son propre message comme "non lu" dans la sidebar sticky chat.
+      # Sans ça, le badge notification reste allumé même quand on parle seul.
+      sender_mu = @match.match_users.find_by(user: current_user)
+      sender_mu&.update_column(:last_read_at, Time.current)
+
       # Le broadcast est géré automatiquement par after_create_commit dans le modèle
       # On réinitialise le formulaire via Turbo Stream (vide le champ texte)
       respond_to do |format|

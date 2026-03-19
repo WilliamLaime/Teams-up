@@ -1,199 +1,165 @@
 <%# =====================================================
-    NAVBAR — Thème sombre avec accents verts
-    - Utilisateur non connecté : liens + "Se connecter" + "S'inscrire"
-    - Utilisateur connecté     : liens + "Créer un match" + cloche + avatar
-    ===================================================== %>
+   NAVBAR — Thème sombre avec accents verts
+   Structure simplifiée : plus de collapse/burger
+   - Logo à gauche
+   - Liens centre → d-none d-lg-flex (desktop uniquement)
+   - Actions droite → toujours visibles (cloche + avatar)
+   ===================================================== %>
 
-<nav class="navbar navbar-expand-lg navbar-dark-custom">
+<nav class="navbar navbar-dark-custom">
   <div class="container">
 
-    <%# ── Logo ── %>
+    <%# ── Logo (toujours visible) ── %>
     <%= link_to root_path, class: "navbar-brand" do %>
-      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", style: "height: 28px; width: auto;" %>
+      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", class: "navbar-logo" %>
     <% end %>
 
-    <%# ── Bouton hamburger (mobile) ── %>
-    <button class="navbar-toggler" type="button"
-            data-bs-toggle="collapse" data-bs-target="#navbarMain"
-            aria-controls="navbarMain" aria-expanded="false" aria-label="Menu">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <%# ── Liens du centre (desktop uniquement, cachés sur mobile) ── %>
+    <ul class="navbar-nav d-none d-lg-flex flex-row mx-auto gap-1 align-items-center">
+      <li class="nav-item">
+        <%# "active" si on est sur /matches SANS le filtre ?mine=true %>
+        <%= link_to matches_path, class: "nav-link #{current_page?(matches_path) && params[:mine].blank? ? 'active' : ''}" do %>
+          Trouver un match
+        <% end %>
+      </li>
+      <li class="nav-item">
+        <%= link_to about_path, class: "nav-link" do %>
+          Qui sommes-nous ?
+        <% end %>
+      </li>
 
-    <div class="collapse navbar-collapse" id="navbarMain">
+      <% if user_signed_in? %>
+        <%# ── Sélecteur de sport actif (desktop centre) ─────────────────────── %>
+        <li class="nav-item dropdown">
+          <button class="nav-link sport-switcher d-flex align-items-center gap-1"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            <% if multisport_mode? %>
+              <%= image_tag "sports/multisports.png", style: "width:1rem;height:1rem;object-fit:contain;", class: "sport-switcher-icon" %>
+            <% elsif current_sport %>
+              <%= sport_icon(current_sport, size: "1rem", css_class: "sport-switcher-icon") %>
+            <% end %>
+            <span class="sport-switcher-name"><%= multisport_mode? ? "Multisport" : (current_sport&.name || "Sport") %></span>
+            <i data-lucide="chevron-down" style="width:13px;height:13px;" class="sport-switcher-chevron"></i>
+          </button>
 
-      <%# ── Liens du centre ── %>
-      <ul class="navbar-nav mx-auto gap-1 align-items-center">
-        <li class="nav-item">
-          <%# "active" si on est sur /matches SANS le filtre ?mine=true %>
-          <%= link_to matches_path, class: "nav-link #{current_page?(matches_path) && params[:mine].blank? ? 'active' : ''}" do %>
-            Trouver un match
-          <% end %>
-        </li>
-        <li class="nav-item">
-          <%= link_to about_path, class: "nav-link" do %>
-            Qui sommes-nous ?
-          <% end %>
-        </li>
-
-        <% if user_signed_in? %>
-          <%# ── Sélecteur de sport actif ─────────────────────────────────── %>
-          <%# Bouton nav-link standard, même couleur que les autres liens %>
-          <li class="nav-item dropdown">
-            <button class="nav-link sport-switcher d-flex align-items-center gap-1"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
-              <% if multisport_mode? %>
-                <%# Icône multisport quand le mode "tous les sports" est actif %>
-                <%= image_tag "sports/multisports.png", style: "width:1rem;height:1rem;object-fit:contain;", class: "sport-switcher-icon" %>
-              <% elsif current_sport %>
-                <%= sport_icon(current_sport, size: "1rem", css_class: "sport-switcher-icon") %>
+          <ul class="dropdown-menu sport-dropdown" data-controller="sport-search">
+            <li class="px-2 pb-1" data-action="click->sport-search#stopPropagation">
+              <input type="text" class="form-control form-control-sm sport-search-input"
+                placeholder="Rechercher un sport..."
+                data-sport-search-target="input"
+                data-action="input->sport-search#filter"
+                autocomplete="off">
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li data-sport-search-target="item" data-sport-name="multisport">
+              <%= button_to multisport_switch_path, method: :post,
+                  class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
+                  form: { "data-turbo": "false" } do %>
+                <%= image_tag "sports/multisports.png", style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
+                <span>Multisport</span>
+                <% if multisport_mode? %>
+                  <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
+                <% end %>
               <% end %>
-              <span class="sport-switcher-name"><%= multisport_mode? ? "Multisport" : (current_sport&.name || "Sport") %></span>
-              <i data-lucide="chevron-down" style="width:13px;height:13px;" class="sport-switcher-chevron"></i>
-            </button>
-
-            <%# data-controller active le filtrage Stimulus sur ce dropdown %>
-            <ul class="dropdown-menu sport-dropdown" data-controller="sport-search">
-
-              <%# ── Barre de recherche en haut du dropdown ── %>
-              <li class="px-2 pb-1" data-action="click->sport-search#stopPropagation">
-                <input
-                  type="text"
-                  class="form-control form-control-sm sport-search-input"
-                  placeholder="Rechercher un sport..."
-                  data-sport-search-target="input"
-                  data-action="input->sport-search#filter"
-                  autocomplete="off"
-                >
-              </li>
-
-              <li><hr class="dropdown-divider my-1"></li>
-
-              <%# ── Option Multisport (tous les sports) ── %>
-              <%# data-sport-name permet au filtre de chercher "multisport" %>
-              <li data-sport-search-target="item" data-sport-name="multisport">
-                <%= button_to multisport_switch_path,
-                    method: :post,
-                    class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <% Sport.order(:name).each do |sport| %>
+              <li data-sport-search-target="item" data-sport-name="<%= sport.name.downcase %>">
+                <%= button_to switch_sport_path(sport), method: :post,
+                    class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{'sport-dropdown-item--active' if current_sport&.id == sport.id}",
                     form: { "data-turbo": "false" } do %>
-                  <%= image_tag "sports/multisports.png", style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
-                  <span>Multisport</span>
-                  <% if multisport_mode? %>
+                  <%= sport_icon(sport, size: "1.1rem") %>
+                  <span><%= sport.name %></span>
+                  <% if current_sport&.id == sport.id %>
                     <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
                   <% end %>
                 <% end %>
               </li>
-
-              <li><hr class="dropdown-divider my-1"></li>
-
-              <%# ── Liste de tous les sports ── %>
-              <% Sport.order(:name).each do |sport| %>
-                <%# data-sport-name est lu par le controller pour filtrer %>
-                <li data-sport-search-target="item" data-sport-name="<%= sport.name.downcase %>">
-                  <%= button_to switch_sport_path(sport),
-                      method: :post,
-                      class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{'sport-dropdown-item--active' if current_sport&.id == sport.id}",
-                      form: { "data-turbo": "false" } do %>
-                    <%= sport_icon(sport, size: "1.1rem") %>
-                    <span><%= sport.name %></span>
-                    <% if current_sport&.id == sport.id %>
-                      <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
-                    <% end %>
-                  <% end %>
-                </li>
-              <% end %>
-
-            </ul>
-          </li>
-          <%# ── Fin sélecteur de sport ──────────────────────────────────── %>
-        <% end %>
-      </ul>
-
-      <%# ── Actions à droite ── %>
-      <ul class="navbar-nav align-items-center gap-4">
-
-        <% if user_signed_in? %>
-
-          <%# Bouton principal : Créer un match (vert primary) %>
-          <li class="nav-item">
-            <%= link_to new_match_path, class: "btn btn-primary btn-sm px-3 btn-cta-primary d-flex align-items-center gap-1" do %>
-              Créer un match
             <% end %>
-          </li>
+          </ul>
+        </li>
+        <%# ── Fin sélecteur sport desktop ── %>
+      <% end %>
+    </ul>
 
-          <%# ── Cloche notifications (temps réel via Turbo) ── %>
-          <%#
+    <%# ══════════════════════════════════════════════════════
+        ACTIONS DROITE — toujours visibles (mobile + desktop)
+        On affiche/cache certains éléments avec d-none/d-lg-block
+        ══════════════════════════════════════════════════════ %>
+    <div class="d-flex align-items-center gap-3 ms-auto ms-lg-0">
+
+      <% if user_signed_in? %>
+
+        <%# Bouton "Créer un match" — desktop uniquement %>
+        <div class="d-none d-lg-block">
+          <%= link_to new_match_path, class: "btn btn-primary btn-sm px-3 btn-cta-primary d-flex align-items-center gap-1" do %>
+            Créer un match
+          <% end %>
+        </div>
+
+        <%# ── Cloche notifications (UNE seule instance, temps réel via Turbo) ──
             turbo_stream_from : s'abonne au canal ActionCable de l'utilisateur.
-            Canal : [current_user, :notifications] → "notifications_user_42"
-            Quand une notif est créée, Turbo remplace le turbo_frame ci-dessous.
-          %>
-          <%= turbo_stream_from current_user, :notifications %>
+            turbo_frame_tag   : ce fragment est remplacé à chaque nouvelle notif. %>
+        <%= turbo_stream_from current_user, :notifications %>
+        <div class="nav-item dropdown">
+          <%= turbo_frame_tag "notification_bell" do %>
+            <%= render "shared/notification_bell" %>
+          <% end %>
+        </div>
 
-          <%#
-            turbo_frame_tag : seul ce fragment est remplacé à chaque nouvelle notif.
-            Le contenu (cloche + dropdown) vit dans _notification_bell.html.erb
-          %>
-          <li class="nav-item dropdown">
-            <%= turbo_frame_tag "notification_bell" do %>
-              <%= render "shared/notification_bell" %>
+        <%# ── Avatar + dropdown utilisateur (mobile + desktop) ── %>
+        <div class="nav-item dropdown">
+          <button type="button"
+                  class="d-flex align-items-center gap-2 text-decoration-none btn-reset"
+                  id="userDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            <% display_name = current_user.profil &&
+                [current_user.profil.first_name, current_user.profil.last_name]
+                  .compact.join(" ").presence %>
+            <%# Nom affiché uniquement sur desktop %>
+            <% if display_name %>
+              <span class="navbar-user-name d-none d-lg-inline"><%= display_name %></span>
             <% end %>
-          </li>
-          <%# ── Fin cloche ── %>
+            <%# Avatar ou initiales colorées %>
+            <%= user_avatar_tag current_user,
+                css_class: "avatar",
+                style: "object-fit:cover;",
+                alt: display_name || current_user.email %>
+          </button>
 
-          <%# ── Avatar + dropdown utilisateur ── %>
-          <li class="nav-item dropdown">
-            <button type="button" class="d-flex align-items-center gap-2 text-decoration-none btn-reset"
-               id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-              <% display_name = current_user.profil &&
-                  [current_user.profil.first_name, current_user.profil.last_name]
-                    .compact.join(" ").presence %>
-              <% if display_name %>
-                <span class="navbar-user-name d-none d-sm-inline"><%= display_name %></span>
-              <% end %>
-              <%# Affiche l'avatar ou les initiales colorées si pas de photo %>
-              <%= user_avatar_tag current_user,
-                  css_class: "avatar",
-                  style: "object-fit:cover;",
-                  alt: display_name || current_user.email %>
-            </button>
-
-            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-              <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-                <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
-              <% end %>
-              <%= link_to edit_user_registration_path,
-                  class: "dropdown-item d-flex align-items-center gap-2" do %>
-                <i data-lucide="settings" style="width:14px;height:14px;"></i> Mon compte
-              <% end %>
-              <div class="dropdown-divider"></div>
-              <%= link_to destroy_user_session_path,
-                  data: { turbo_method: :delete },
-                  class: "dropdown-item text-danger d-flex align-items-center gap-2" do %>
-                <i data-lucide="log-out" style="width:14px;height:14px;"></i> Se déconnecter
-              <% end %>
-            </div>
-          </li>
-
-        <% else %>
-          <%# Utilisateur non connecté %>
-
-          <%# Lien simple : Se connecter — texte vert avec surlignage %>
-          <li class="nav-item">
-            <%= link_to "Se connecter", new_user_session_path, class: "btn-cta-link" %>
-          </li>
-
-          <%# Bouton primaire : S'inscrire (vert) %>
-          <li class="nav-item">
-            <%= link_to new_user_registration_path,
-                class: "btn btn-primary btn-sm px-3 btn-cta-primary d-flex align-items-center gap-1" do %>
-              S'inscrire
+          <%# Dropdown desktop : Mon profil / Mon compte / Déconnexion %>
+          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
             <% end %>
-          </li>
+            <%= link_to edit_user_registration_path,
+                class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i data-lucide="settings" style="width:14px;height:14px;"></i> Mon compte
+            <% end %>
+            <div class="dropdown-divider"></div>
+            <%= link_to destroy_user_session_path,
+                data: { turbo_method: :delete },
+                class: "dropdown-item text-danger d-flex align-items-center gap-2" do %>
+              <i data-lucide="log-out" style="width:14px;height:14px;"></i> Se déconnecter
+            <% end %>
+          </div>
+        </div>
 
-        <% end %>
-      </ul>
+      <% else %>
+        <%# ── Non connecté — desktop uniquement (mobile → dans la sub-navbar) ── %>
+        <div class="d-none d-lg-flex align-items-center gap-3">
+          <%= link_to "Se connecter", new_user_session_path, class: "btn-cta-link" %>
+          <%= link_to new_user_registration_path,
+              class: "btn btn-primary btn-sm px-3 btn-cta-primary d-flex align-items-center gap-1" do %>
+            S'inscrire
+          <% end %>
+        </div>
+      <% end %>
 
-    </div>
+    </div><%# fin actions droite %>
+
   </div>
 </nav>

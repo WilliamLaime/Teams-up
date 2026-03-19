@@ -148,9 +148,12 @@ export default class extends Controller {
   // ── Raccourci clavier ──────────────────────────────────────────────────────
 
   // Envoie le message avec Entrée (sans Shift)
+  // Bloqué si le champ est vide ou ne contient que des espaces
   handleKeydown(event) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault()
+      // Ne soumet pas si le champ est vide
+      if (this.hasInputTarget && this.inputTarget.value.trim() === "") return
       this.element.querySelector("form").requestSubmit()
     }
   }

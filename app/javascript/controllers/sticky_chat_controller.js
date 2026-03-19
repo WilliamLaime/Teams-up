@@ -50,6 +50,15 @@ export default class extends Controller {
     this._observer = new MutationObserver((mutations) => {
       this.updateBadge()
 
+      // Vérifie si le trigger d'ouverture auto a été activé
+      // Quand l'organisateur crée un match, le broadcast remplit ce div
+      // → on ouvre le panneau et on vide le trigger pour éviter les re-déclenchements
+      const trigger = document.getElementById("sticky-chat-open-trigger")
+      if (trigger && trigger.textContent.trim() !== "") {
+        this.open()
+        trigger.textContent = "" // Réinitialise pour éviter de re-déclencher
+      }
+
       // Si Turbo Stream a injecté de nouveaux nœuds (ex: item sidebar remplacé),
       // il faut ré-initialiser Lucide — les nouveaux <i data-lucide="..."> ne sont
       // pas convertis en SVG automatiquement après un remplacement Turbo Stream

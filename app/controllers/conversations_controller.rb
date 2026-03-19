@@ -19,7 +19,15 @@ class ConversationsController < ApplicationController
   def show
     skip_authorization
 
-    @match = Match.find(params[:id])
+    # find_by au lieu de find : si le match a été supprimé, on retourne une page vide
+    # plutôt que de crasher (cas possible quand le sticky chat est data-turbo-permanent
+    # et contient encore un lien vers un match qui n'existe plus)
+    @match = Match.find_by(id: params[:id])
+    unless @match
+      # Match supprimé — retourne une frame vide plutôt que de crasher
+      render inline: '<turbo-frame id="sticky-chat-frame"><div class="sticky-chat-no-selection"><p>Cette conversation n\'existe plus.</p></div></turbo-frame>'
+      return
+    end
 
     # Vérifie que l'utilisateur a le droit d'accéder à ce chat
     match_user = @match.match_users.find_by(user: current_user)
@@ -54,8 +62,9 @@ class ConversationsController < ApplicationController
   def dismiss
     skip_authorization
 
-    # Trouve le match et la participation de l'utilisateur
-    @match = Match.find(params[:id])
+    # Trouve le match et la participation de l'utilisateur (find_by pour éviter le crash si supprimé)
+    @match = Match.find_by(id: params[:id])
+    return head(:not_found) unless @match
     match_user = @match.match_users.find_by(user: current_user)
 
     # Marque la conversation comme dismissée avec un timestamp

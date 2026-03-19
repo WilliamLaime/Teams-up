@@ -92,10 +92,12 @@ class AchievementService
     send_notification(achievement)
   end
 
-  # Ajoute de l'XP au profil et recalcule le niveau
+  # Ajoute de l'XP au profil, recalcule le niveau, puis broadcast la mise à jour.
+  # broadcast_xp_update est appelé EN DERNIER pour que xp_level soit déjà à jour.
   def award_xp(amount)
     @profil.increment!(:xp, amount)
     @profil.recalculate_level!
+    @profil.broadcast_xp_update
   end
 
   # Crée une notification pour informer l'utilisateur de son achievement

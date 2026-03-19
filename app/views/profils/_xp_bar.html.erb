@@ -1,0 +1,38 @@
+<%# ── Barre XP temps réel ──────────────────────────────────────────────────
+    Partial ciblé par les broadcasts Turbo Stream quand l'XP change.
+    Variables attendues :
+      - profil      : objet Profil
+      - profil_user : objet User (pour le comptage achievements)
+    ────────────────────────────────────────────────────────────────────────── %>
+<%
+  xp_floor        = profil.xp_for_current_level
+  xp_ceiling      = profil.xp_for_next_level
+  profil_xp_total = profil.xp || 0
+  profil_percent  = profil.xp_progress_percent
+  xp_in_level     = profil_xp_total - xp_floor
+  xp_range        = xp_ceiling - xp_floor
+  badge_color     = profil.level_badge_color
+  unlocked_count  = profil_user.user_achievements.count
+  total_count     = Achievement.count
+%>
+
+<%# id ciblé par broadcast_replace_to depuis Profil model %>
+<div id="profil-xp-bar-<%= profil.id %>" style="margin-bottom:0.4rem;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.25rem;">
+    <span style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.4);">
+      Progression
+    </span>
+    <span style="font-size:0.68rem; color:rgba(255,255,255,0.4); font-weight:600;">
+      <%= xp_in_level %> / <%= xp_range %> XP
+      · 🏆 <%= unlocked_count %>/<%= total_count %>
+    </span>
+  </div>
+  <div class="progress" style="height:6px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden;">
+    <div class="progress-bar bg-<%= badge_color %>"
+         role="progressbar"
+         style="width:<%= [profil_percent, 2].max %>%; transition: width 0.6s ease;"
+         aria-valuenow="<%= profil_percent %>"
+         aria-valuemin="0" aria-valuemax="100">
+    </div>
+  </div>
+</div>

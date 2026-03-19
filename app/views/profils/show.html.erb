@@ -1,5 +1,12 @@
 <%# ── Page profil utilisateur ─────────────────────────────────────────────── %>
 
+<%# Abonnement temps réel à la barre XP — uniquement sur son propre profil
+    Quand l'XP change (achievement débloqué), Turbo Stream remplace la barre
+    et le badge de niveau sans recharger la page %>
+<% if current_user == @profil_user %>
+  <%= turbo_stream_from "profil_xp_#{@profil.user_id}" %>
+<% end %>
+
 <%# data-controller ici = hors de tout transform CSS → position:fixed fonctionne %>
 <div class="profil-page" data-controller="achievement-modal" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
   <div class="container" style="position:relative; z-index:1;">
@@ -78,7 +85,6 @@
                         <h1 style="font-size:1.15rem; font-weight:800; color:#fff; margin:0; line-height:1.2;">
                           <%= @profil_user.display_name %>
                         </h1>
-                        <i data-lucide="badge-check" style="width:15px; height:15px; color:#1EDD88; flex-shrink:0;"></i>
                       </div>
                       <% if current_user == @profil_user %>
                         <%= link_to edit_profil_path, style: "flex-shrink:0; display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700; color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:0.2rem 0.6rem; text-decoration:none; white-space:nowrap;" do %>
@@ -116,7 +122,10 @@
                         <span style="font-size:0.68rem; color:rgba(255,255,255,0.35);">Pas encore noté</span>
                       <% end %>
                       <span style="color:rgba(255,255,255,0.25); font-size:0.75rem;">·</span>
-                      <span class="badge bg-<%= badge_color %>" style="font-size:0.72rem; font-weight:800; padding:0.25rem 0.55rem; border-radius:999px;">
+                      <%# id ciblé par broadcast pour mettre à jour le niveau en temps réel %>
+                      <span id="profil-level-badge-<%= @profil.id %>"
+                            class="badge bg-<%= badge_color %>"
+                            style="font-size:0.72rem; font-weight:800; padding:0.25rem 0.55rem; border-radius:999px;">
                         Lvl <%= profil_xp_level %>
                       </span>
                     </div>
@@ -125,37 +134,8 @@
                 </div>
                 <%# / identité %>
 
-                <%# ── Barre XP compacte ──────────────────────────────────────────── %>
-                <%
-                  xp_floor        = @profil.xp_for_current_level
-                  xp_ceiling      = @profil.xp_for_next_level
-                  profil_xp_total = @profil.xp || 0
-                  profil_percent  = @profil.xp_progress_percent
-                  xp_in_level     = profil_xp_total - xp_floor
-                  xp_range        = xp_ceiling - xp_floor
-                %>
-                <div style="margin-bottom:0.4rem;">
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.25rem;">
-                    <span style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.4);">
-                      Progression
-                    </span>
-                    <span style="font-size:0.68rem; color:rgba(255,255,255,0.4); font-weight:600;">
-                      <%= xp_in_level %> / <%= xp_range %> XP
-                      <% unlocked_count = @profil_user.user_achievements.count %>
-                      <% total_count    = Achievement.count %>
-                      · 🏆 <%= unlocked_count %>/<%= total_count %>
-                    </span>
-                  </div>
-                  <div class="progress" style="height:6px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden;">
-                    <div class="progress-bar bg-<%= badge_color %>"
-                         role="progressbar"
-                         style="width:<%= [profil_percent, 2].max %>%; transition: width 0.6s ease;"
-                         aria-valuenow="<%= profil_percent %>"
-                         aria-valuemin="0" aria-valuemax="100">
-                    </div>
-                  </div>
-                </div>
-                <%# / barre XP %>
+                <%# ── Barre XP compacte — rendue via partial pour mise à jour temps réel ── %>
+                <%= render "profils/xp_bar", profil: @profil, profil_user: @profil_user %>
 
                 <%# ── Sports pratiqués ──────────────────────────────────────────────── %>
                 <% user_sports = @profil_user.sports.order(:name) %>
@@ -323,7 +303,7 @@
 
 
       <%# ══════════════════════ COLONNE DROITE (col-lg-7) ══════════════════ %>
-      <%# Mes matchs + Avis des joueurs (système dynamique)                   %>
+      <%# Mes matchs + Avis des joueurs (système dynamique) %>
       <%# ══════════════════════════════════════════════════════════════════════ %>
       <div class="col-lg-7">
 

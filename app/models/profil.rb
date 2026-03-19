@@ -78,6 +78,28 @@ class Profil < ApplicationRecord
     end
   end
 
+  # Diffuse la mise à jour de la barre XP et du badge niveau en temps réel.
+  # Appelé depuis AchievementService#award_xp après increment! ET recalculate_level!
+  # pour garantir que xp_level est déjà à jour au moment du broadcast.
+  def broadcast_xp_update
+    stream = "profil_xp_#{user_id}"
+
+    # 1. Remplace toute la barre XP (chiffres + barre de progression + achievements)
+    broadcast_replace_to(
+      stream,
+      target: "profil-xp-bar-#{id}",
+      partial: "profils/xp_bar",
+      locals: { profil: self, profil_user: user }
+    )
+
+    # 2. Met à jour le badge "Lvl X" (change uniquement lors d'une montée de niveau)
+    broadcast_update_to(
+      stream,
+      target: "profil-level-badge-#{id}",
+      html: "Lvl #{xp_level || 1}"
+    )
+  end
+
   # Classe CSS du tier de la carte — détermine les ornements du contour
   # Niveaux 1-2 : bronze, 3-4 : silver, 5-6 : or, 7-8 : platine, 9-10 : élite
   def card_tier_class

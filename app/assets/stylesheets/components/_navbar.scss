@@ -15,8 +15,9 @@
   align-items: center;
   padding: 0;
 
-  img {
-    height: 30px;
+  // Taille desktop
+  .navbar-logo {
+    height: 28px;
     width: auto;
   }
 }
@@ -221,4 +222,95 @@
 // (évite le décalage/marge grise visible sur la droite de la page)
 body.modal-open {
   padding-right: 0 !important;
+}
+
+// ── Alignement mobile : logo + cloche + avatar sur la même ligne ───────────
+@media (max-width: 991.98px) {
+  // Force l'alignement vertical centré sur tous les éléments du container
+  .navbar-dark-custom > .container {
+    align-items: center;
+    display: flex;
+  }
+
+  // Supprime les paddings Bootstrap du brand qui décalent l'alignement
+  .navbar-dark-custom .navbar-brand {
+    padding-top: 0;
+    padding-bottom: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  // Logo réduit sur mobile — sans inline style bloquant
+  .navbar-dark-custom .navbar-brand .navbar-logo {
+    height: 18px;
+  }
+}
+
+// ── Bande sous la navbar (mobile uniquement, d-lg-none) ────────────────────
+// Fond identique à la navbar, séparateur bas discret
+.mobile-sub-navbar {
+  background-color: $dark-bg;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 0;
+
+  // Bouton pill pour le sélecteur de sport mobile
+  .mobile-sport-btn {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+  }
+
+  // ── Dropdown sport : fond sombre (même style que .navbar-dark-custom) ──
+  // Nécessaire car ce dropdown est hors du sélecteur .navbar-dark-custom
+  .dropdown-menu {
+    background-color: $dark-surface;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    padding: 0.5rem;
+    min-width: 220px;
+  }
+
+  .dropdown-item {
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: background 0.15s;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+  }
+
+  .dropdown-divider {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  // Input de recherche dans le dropdown sport
+  .sport-search-input {
+    background-color: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+
+    &::placeholder { color: rgba(255, 255, 255, 0.35); }
+    &:focus {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: $green;
+      box-shadow: none;
+      color: #fff;
+    }
+  }
 }

@@ -347,28 +347,32 @@
 
         <%# ──────────────────────────────────────
             BLOC ORGANISATEUR (Capitaine) + COUNTDOWN
-            Divisé en 2 colonnes : gauche = capitaine, droite = timer
             ────────────────────────────────────── %>
-        <div class="match-block">
+
+        <%# ── Calcul du datetime commun (utilisé par les 2 layouts) ── %>
+        <% if @match.date.present? && @match.time.present? %>
+          <% match_datetime = Time.zone.local(
+               @match.date.year, @match.date.month, @match.date.day,
+               @match.time.hour, @match.time.min, 0
+             ) %>
+        <% end %>
+
+        <%# ════════════════════════════════════════
+            VERSION DESKTOP (md+) : 2 colonnes côte à côte
+            ════════════════════════════════════════ %>
+        <div class="match-block d-none d-md-block">
           <div class="row g-0 align-items-center">
 
             <%# ── Colonne gauche : info capitaine ── %>
             <div class="col-6" style="border-right:1px solid rgba(255,255,255,0.07); padding-right:1.25rem;">
-
               <h5 class="match-block-title">
                 <i data-lucide="shield" style="width:15px;height:15px;"></i>
                 Capitaine
               </h5>
-
               <div class="d-flex align-items-center justify-content-between gap-3">
-
-                <%# Identité %>
                 <div class="d-flex align-items-center gap-3">
-                  <%# Avatar de l'organisateur ou initiales colorées si pas de photo %>
                   <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
-
                   <div>
-                    <%# Nom complet ou email si pas de profil %>
                     <div class="match-organizer-name">
                       <% if organizer&.profil %>
                         <%= [organizer.profil.first_name, organizer.profil.last_name]
@@ -380,36 +384,19 @@
                     <div class="match-organizer-tag">Organisateur</div>
                   </div>
                 </div>
-
-                <%# Bouton voir profil %>
                 <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
                   <i data-lucide="user" style="width:13px;height:13px;"></i>
                   Voir profil
                 <% end %>
-
               </div>
             </div>
-            <%# / colonne gauche %>
 
             <%# ── Colonne droite : countdown timer ── %>
             <div class="col-6" style="padding-left:1.25rem;">
-
-              <%# Calcule le datetime ISO du match pour le passer au Stimulus controller %>
-              <% if @match.date.present? && @match.time.present? %>
-                <%
-                  match_datetime = Time.zone.local(
-                    @match.date.year, @match.date.month, @match.date.day,
-                    @match.time.hour, @match.time.min, 0
-                  )
-                %>
-
-                <%# Le controller Stimulus construit tout le DOM (flip-cards, labels, titre) %>
-                <%# Voir app/javascript/controllers/countdown_controller.js %>
+              <% if match_datetime %>
                 <div data-controller="countdown"
                      data-countdown-datetime-value="<%= match_datetime.iso8601 %>">
                 </div>
-
-                <%# Bouton "Laisser un avis" — sous le countdown quand le match est terminé %>
                 <% if @match.completed? && @match_pending_reviews.present? %>
                   <%= link_to "#",
                       class: "btn btn-cta-secondary btn-sm mt-3 w-100",
@@ -419,14 +406,61 @@
                     Laisser un avis
                   <% end %>
                 <% end %>
-
               <% end %>
-
             </div>
-            <%# / colonne droite %>
 
           </div>
         </div>
+
+        <%# ════════════════════════════════════════
+            VERSION MOBILE (< md) : 2 blocs empilés
+            ════════════════════════════════════════ %>
+
+        <%# Bloc 1 : Capitaine %>
+        <div class="match-block d-md-none">
+          <h5 class="match-block-title">
+            <i data-lucide="shield" style="width:15px;height:15px;"></i>
+            Capitaine
+          </h5>
+          <div class="d-flex align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+              <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
+              <div>
+                <div class="match-organizer-name">
+                  <% if organizer&.profil %>
+                    <%= [organizer.profil.first_name, organizer.profil.last_name]
+                          .compact.join(" ").presence || organizer.email %>
+                  <% else %>
+                    <%= organizer&.email || "Organisateur" %>
+                  <% end %>
+                </div>
+                <div class="match-organizer-tag">Organisateur</div>
+              </div>
+            </div>
+            <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
+              <i data-lucide="user" style="width:13px;height:13px;"></i>
+              Voir profil
+            <% end %>
+          </div>
+        </div>
+
+        <%# Bloc 2 : Timer (nouveau bloc séparé sous le capitaine) %>
+        <% if match_datetime %>
+          <div class="match-block d-md-none">
+            <div data-controller="countdown"
+                 data-countdown-datetime-value="<%= match_datetime.iso8601 %>">
+            </div>
+            <% if @match.completed? && @match_pending_reviews.present? %>
+              <%= link_to "#",
+                  class: "btn btn-cta-secondary btn-sm mt-3 w-100",
+                  style: "font-size:0.78rem;",
+                  data: { bs_toggle: "modal", bs_target: "#review-modal" } do %>
+                <i data-lucide="star" style="width:13px;height:13px;"></i>
+                Laisser un avis
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
 
 
         <%# ──────────────────────────────────────

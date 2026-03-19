@@ -36,6 +36,11 @@
         sans recharger la page (broadcast depuis Message model) %>
     <%= turbo_stream_from "user_conversations_#{current_user.id}" %>
 
+    <%# Trigger caché pour l'ouverture automatique du panneau
+        Quand l'organisateur crée un match, un broadcast met à jour son contenu
+        Le MutationObserver Stimulus le détecte et appelle open() %>
+    <div id="sticky-chat-open-trigger" style="display:none;"></div>
+
     <%# ── Panneau principal (sidebar + chat) ──────────────────────────────── %>
     <div class="sticky-chat-panel" data-sticky-chat-target="panel">
 
@@ -52,16 +57,17 @@
           </button>
         </div>
 
-        <%# Liste des conversations %>
-        <div class="sticky-chat-sidebar-list">
+        <%# Liste des conversations
+            id="sticky-chat-sidebar-list" → ciblé par les broadcasts Turbo Stream
+            quand une nouvelle conversation apparaît (approval, auto-join, création match) %>
+        <div class="sticky-chat-sidebar-list" id="sticky-chat-sidebar-list">
           <% if sticky_convos.any? %>
-            <%# Chaque item est rendu via le partial partagé
-                Ce même partial est utilisé pour les mises à jour Turbo Stream %>
             <% sticky_convos.each do |mu| %>
               <%= render "shared/sticky_convo_item", match: mu.match, match_user: mu %>
             <% end %>
           <% else %>
-            <div class="sticky-chat-sidebar-empty">
+            <%# id="sticky-chat-sidebar-empty" → supprimé par broadcast quand une conv arrive %>
+            <div class="sticky-chat-sidebar-empty" id="sticky-chat-sidebar-empty">
               <div>💬</div>
               <p>Rejoins un match !</p>
             </div>

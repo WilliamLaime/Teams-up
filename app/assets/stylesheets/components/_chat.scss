@@ -324,6 +324,12 @@
     padding: 8px 16px;
     font-size: 0.9rem;
 
+    // iOS Safari zoome automatiquement sur tout input < 16px.
+    // On force 16px sur mobile pour bloquer le zoom dès le départ.
+    @media (max-width: 991.98px) {
+      font-size: 16px;
+    }
+
     &::placeholder { color: $dark-muted; }
 
     &:focus {
