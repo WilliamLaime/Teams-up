@@ -521,8 +521,8 @@
                         background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
                         border-radius:10px; padding:0.55rem 0.9rem;">
 
-              <%# Label gauche : Manuel %>
-              <span style="font-size:0.82rem; font-weight:700; white-space:nowrap;
+              <%# Label gauche : Manuel — id pour que le JS puisse changer sa couleur %>
+              <span id="label_manuel" style="font-size:0.82rem; font-weight:700; white-space:nowrap;
                            color:<%= @match.manual_validation? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;">
                 ✋ Manuel
               </span>
@@ -538,12 +538,16 @@
                       "match-form-target": "validationToggle",
                       "action": "change->match-form#updateValidation"
                     },
-                    onchange: "document.getElementById('match_validation_mode').value = this.checked ? 'automatic' : 'manual'" %>
+                    onchange: "
+                      document.getElementById('match_validation_mode').value = this.checked ? 'automatic' : 'manual';
+                      document.getElementById('label_manuel').style.color      = this.checked ? 'rgba(255,255,255,0.4)' : '#1EDD88';
+                      document.getElementById('label_automatique').style.color = this.checked ? '#1EDD88' : 'rgba(255,255,255,0.4)';
+                    " %>
                 <span class="pill-toggle-track"></span>
               </label>
 
-              <%# Label droit : Automatique %>
-              <span style="font-size:0.82rem; font-weight:700; white-space:nowrap;
+              <%# Label droit : Automatique — id pour que le JS puisse changer sa couleur %>
+              <span id="label_automatique" style="font-size:0.82rem; font-weight:700; white-space:nowrap;
                            color:<%= @match.manual_validation? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;">
                 ⚡ Automatique
               </span>
