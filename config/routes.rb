@@ -6,10 +6,7 @@ Rails.application.routes.draw do
   root to: "pages#home"
 
   # Page "Qui sommes-nous ?"
-  get "about", to: "pages#about", as: :about
-
-  # Page "Qui sommes-nous ?" — version 2 (expérimentale)
-  get "about2", to: "pages#about2", as: :about2
+  get "quisommesnous", to: "pages#about", as: :about
 
   # Page de contact
   get "contact", to: "pages#contact", as: :contact
