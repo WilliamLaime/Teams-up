@@ -7,8 +7,10 @@
 <% unread_count = current_user.notifications.unread.count %>
 
 <%# Bouton cloche — badge rouge si notifications non lues %>
-<a class="nav-link px-2" href="#"
-   id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+<%# Bouton (pas un lien) car il n'y a pas de navigation — centrage flex de l'icône %>
+<button type="button"
+        class="nav-link px-2 d-flex align-items-center justify-content-center border-0 bg-transparent"
+        id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
   <%# Le span position-relative est collé à la taille de l'icône (inline-flex)
       pour que le badge se positionne par rapport à la cloche et non au lien entier %>
   <span class="position-relative d-inline-flex">
@@ -21,7 +23,7 @@
       </span>
     <% end %>
   </span>
-</a>
+</button>
 
 <%#
   Dropdown — data-controller branche le contrôleur Stimulus "notification-dropdown".
