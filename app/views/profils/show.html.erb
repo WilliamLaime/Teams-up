@@ -20,38 +20,25 @@
     <div class="row g-4 align-items-start">
 
       <%# ══════════════════════ COLONNE GAUCHE (col-lg-5) ══════════════════ %>
-      <%# Carte flip gaming + Homme du match                                  %>
+      <%# Carte flip gaming + Homme du match %>
       <%# ══════════════════════════════════════════════════════════════════════ %>
       <div class="col-lg-5">
 
-        <%# ── Titre "Identité" hors de la card ──────────────────────────────── %>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
-            <i data-lucide="user" style="width:14px; height:14px;"></i>
-            Identité
-          </div>
-        </div>
 
-        <%# Sélection du SVG d'ornement selon le tier du joueur %>
+        <%# Sélection du PNG de card selon le tier du joueur %>
         <%
-          tier_ornament = case @profil.card_tier_class
-            when "card-tier-silver"   then "ornementation_gaming/2.argent.svg"
-            when "card-tier-gold"     then "ornementation_gaming/3.or.svg"
-            when "card-tier-platinum" then "ornementation_gaming/4.epique.svg"
-            when "card-tier-elite"    then "ornementation_gaming/5.legendaire.svg"
-            else                           "ornementation_gaming/1.bronze.svg"
+          # Sélection du SVG de card selon le tier du joueur
+          card_svg = case @profil.card_tier_class
+            when "card-tier-silver"   then "card_profil_svg/2.card-silver.svg"
+            when "card-tier-gold"     then "card_profil_svg/3.card_or.svg"
+            when "card-tier-platinum" then "card_profil_svg/4.card_epique.svg"
+            when "card-tier-elite"    then "card_profil_svg/5.card_legendaire.svg"
+            else                           "card_profil_svg/1.card_bronze.svg"
           end
         %>
 
         <%# Wrapper relatif — data-controller ici pour cibler ornement + inner %>
         <div class="profil-card-wrapper mb-3" data-controller="flip-card">
-
-          <%# Ornement de rang — centré sur le bord supérieur, s'anime avec le flip %>
-          <div class="profil-tier-ornament" data-flip-card-target="ornament">
-            <%= image_tag tier_ornament,
-                alt: "Ornement #{@profil.card_tier_class}",
-                class: "profil-tier-ornament__img" %>
-          </div>
 
           <%# card_tier_class retourne "card-tier-bronze/silver/gold/platinum/elite" %>
           <div class="profil-flip-card <%= @profil.card_tier_class %>">
@@ -59,6 +46,10 @@
 
               <%# ══════════ RECTO : Identité + XP + Sports + Stats + Description ══════════ %>
               <div class="profil-flip-front">
+                <%# Image SVG de la card — fond absolu derrière le contenu %>
+                <%= image_tag card_svg, class: "profil-card-frame", alt: "" %>
+                <%# Wrapper de contenu — zoom pour réduire légèrement tout l'intérieur %>
+                <div class="profil-card-content">
 
                 <%# ── Identité (avatar compact + nom + meta) ───────────────────── %>
                 <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:0.6rem;">
@@ -191,15 +182,17 @@
                 </div>
                 <div class="row g-2 mb-2" style="--bs-gutter-y:0.35rem;">
                   <div class="col-6">
-                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.5rem 0.75rem;">
-                      <div style="font-size:0.6rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs joués</div>
-                      <div style="font-size:1.6rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.matchs.count %></div>
+                    <%# Case réduite : padding et font-size diminués %>
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.35rem 0.6rem;">
+                      <div style="font-size:0.58rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs joués</div>
+                      <div style="font-size:1.2rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.matchs.count %></div>
                     </div>
                   </div>
                   <div class="col-6">
-                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.5rem 0.75rem;">
-                      <div style="font-size:0.6rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs créés</div>
-                      <div style="font-size:1.6rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.match_users.where(role: "organisateur").count %></div>
+                    <%# Case réduite : padding et font-size diminués %>
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.35rem 0.6rem;">
+                      <div style="font-size:0.58rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs créés</div>
+                      <div style="font-size:1.2rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.match_users.where(role: "organisateur").count %></div>
                     </div>
                   </div>
                 </div>
@@ -210,7 +203,8 @@
                   <i data-lucide="file-text" style="width:14px; height:14px;"></i>
                   Description
                 </div>
-                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.45rem 0.7rem; margin-bottom:0.4rem; max-height:56px; overflow:hidden;">
+                <%# Description réduite : max-height diminué, padding compact %>
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.3rem 0.6rem; margin-bottom:0.4rem; max-height:44px; overflow:hidden;">
                   <% if @profil.description.present? %>
                     <p style="font-size:0.78rem; color:rgba(255,255,255,0.65); line-height:1.5; margin:0;"><%= @profil.description %></p>
                   <% else %>
@@ -224,13 +218,15 @@
                 </div>
                 <%# / description %>
 
-                <%# Bouton flip vers l'armoire à trophées %>
-                <div style="margin-top:auto; padding-top:0.4rem; display:flex; justify-content:flex-end;">
+                <%# Bouton flip — à l'intérieur du contenu, aligné à droite sous la description %>
+                <div style="display:flex; justify-content:flex-end; margin-top:calc(0.5rem + 10px);">
                   <button class="profil-flip-btn" data-action="click->flip-card#flip">
                     <i data-lucide="trophy" style="width:11px; height:11px;"></i>
                     Armoire à trophées
                   </button>
                 </div>
+
+                </div><%# / profil-card-content %>
 
               </div>
               <%# / recto %>
@@ -238,6 +234,8 @@
 
               <%# ══════════ VERSO : Armoire à trophées ══════════ %>
               <div class="profil-flip-back">
+                <%= image_tag card_svg, class: "profil-card-frame", alt: "" %>
+                <div class="profil-card-content">
 
                 <%# ── Titre ──────────────────────────────────────────────────── %>
                 <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
@@ -264,14 +262,15 @@
                   Clique sur un badge pour l'inspecter.
                 </p>
 
-                <%# Bouton retour %>
-                <div style="margin-top:auto; padding-top:0.85rem; display:flex; justify-content:flex-end;">
+                <%# Bouton retour — même positionnement que le bouton recto %>
+                <div style="display:flex; justify-content:flex-end; margin-top:calc(0.5rem + 10px);">
                   <button class="profil-flip-btn" data-action="click->flip-card#flip">
                     <i data-lucide="rotate-ccw" style="width:11px; height:11px;"></i>
                     Retour au profil
                   </button>
                 </div>
 
+                </div><%# / profil-card-content %>
               </div>
               <%# / verso %>
 
@@ -282,7 +281,7 @@
 
         <%# Homme du match — affiché uniquement si au moins 1 titre %>
         <% if @profil.homme_du_match_count.to_i > 0 %>
-          <div class="row g-3 mb-3">
+          <div class="row g-3 mb-3" style="margin-top:-50px;">
             <div class="col-12">
               <div class="match-block" style="display:flex; align-items:center; gap:0.75rem;">
                 <span style="font-size:1.6rem; line-height:1;">🏆</span>

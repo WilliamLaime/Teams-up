@@ -22,10 +22,10 @@
 
 <%# Pour les boutons "retour" : history.back() pour revenir à la page précédente %>
 <% if direction == "back" %>
-  <a href="#" class="<%= link_classes %>" onclick="history.back(); return false;">
+  <button type="button" class="<%= link_classes %>" onclick="history.back()" style="background:none; border:none; padding:0; cursor:pointer;">
     <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
     <%= label %>
-  </a>
+  </button>
 <%# Pour les boutons "forward" : lien classique vers l'url fournie %>
 <% else %>
   <%= link_to url, class: link_classes do %>

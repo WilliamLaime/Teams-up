@@ -287,35 +287,13 @@
   }
 
 
-  // ── WRAPPER DE CARTE + ORNEMENT DE RANG ──────────────────────────────────
+  // ── WRAPPER DE CARTE ──────────────────────────────────────────────────────
 
-  // Wrapper qui crée le contexte de positionnement pour l'ornement
-  // overflow: visible permet aux losanges de dépasser au-dessus de la card
+  // Wrapper — margin-top négatif pour remonter la card et aligner l'ornement
   .profil-card-wrapper {
     position: relative;
     overflow: visible;
-  }
-
-  // Ornement de rang — centré sur le bord supérieur de la card
-  // Scale 1.12 : agrandi pour que les pointes arrivent aux angles de la card
-  // Transition synchronisée avec le flip de la carte (même durée + easing)
-  .profil-tier-ornament {
-    position: absolute;
-    top: 0;                          // ancré au bord supérieur de la card
-    left: 0;
-    right: 0;                        // pleine largeur du wrapper
-    transform: translateY(-50%) scaleX(1);
-    z-index: 10;                     // par-dessus la card et son contenu 3D
-    pointer-events: none;            // ne bloque pas les clics sur la card
-    transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1); // même timing que le flip
-  }
-
-  // Image SVG de l'ornement — légèrement plus large que la card
-  .profil-tier-ornament__img {
-    display: block;
-    width: 112%;                     // déborde pour atteindre les angles
-    margin-left: -6%;                // centré malgré le 112%
-    height: auto;
+    margin-top: -2.5rem;
   }
 
 
@@ -331,7 +309,7 @@
   .profil-flip-inner {
     position: relative;
     width: 100%;
-    height: 490px;             // 490px : carte raccourcie, attributs plus visuels (barres 8px)
+    height: 570px;             // 570px : card agrandie pour respirer avec le SVG de fond
     transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
     transform-style: preserve-3d;  // Active le rendu 3D des enfants
 
@@ -341,25 +319,75 @@
     }
   }
 
-  // Styles partagés par les 2 faces
+  // Styles partagés par les 2 faces — le fond vient de img.profil-card-frame
   .profil-flip-front,
   .profil-flip-back {
     position: absolute;
-    inset: 0;                  // = top:0; right:0; bottom:0; left:0;
+    inset: 0;
     display: flex;
-    flex-direction: column;    // Permet le margin-top:auto sur le bouton flip
-    backface-visibility: hidden;          // Cache la face opposée pendant la rotation
-    -webkit-backface-visibility: hidden;  // Préfixe pour Safari
-    background-color: $dark-surface;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 0 0 16px 16px; // Haut plat, bas arrondi
-    padding: 1.25rem;
-    overflow-y: auto;          // Scroll interne si le contenu déborde
+    flex-direction: column;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    overflow: visible;                   // l'ornement SVG peut dépasser en haut
+  }
+
+  // Image SVG de la card — positionnée en fond absolu, couvre toute la face
+  .profil-card-frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    object-fit: fill;                    // étire le SVG pour remplir exactement la card
+  }
+
+  // Div de contenu — cadre le texte à l'intérieur du SVG
+  // margin : espace entre le texte et les bordures du cadre SVG
+  // margin-top : dépasse l'ornement (diamants) + la bordure haute
+  .profil-card-content {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-height: 0;                       // ← Fix flexbox : sans ça, overflow-y:auto ne fonctionne pas
+    display: flex;
+    flex-direction: column;
+    margin: calc(3.5rem + 30px) calc(1.5rem + 10px) 1.2rem; // top +10px supplémentaires
+    overflow-y: auto;
+    font-size: 0.93em;                   // réduit légèrement tout le contenu
+  }
+
+  // Ornements plus grands → marge haute augmentée
+  .card-tier-platinum .profil-card-content {
+    margin-top: calc(4.5rem + 30px);     // +10px supplémentaires
+  }
+
+  .card-tier-elite .profil-card-content {
+    // Bordures latérales du SVG légendaire plus épaisses → marges augmentées de tous les côtés
+    margin: calc(5.5rem + 30px) calc(2.5rem + 10px) 2rem;
+  }
+
+  // SVG légendaire beaucoup plus haut → container agrandi proportionnellement
+  .card-tier-elite .profil-flip-inner {
+    height: 670px;
   }
 
   // Le verso commence retourné de 180° → il est caché par défaut
   .profil-flip-back {
     transform: rotateY(180deg);
+    pointer-events: none; // désactivé par défaut (face cachée)
+  }
+
+  // Quand la carte est retournée :
+  // - le recto devient la face cachée → on désactive ses clics
+  // - le verso devient la face visible → on réactive ses clics
+  .profil-flip-inner.is-flipped {
+    .profil-flip-front { pointer-events: none; }
+    .profil-flip-back  { pointer-events: all; }
   }
 
   // Bouton "Voir les stats" / "Retour au profil"
@@ -385,96 +413,15 @@
   }
 
 
-  // ── TIERS DE CARTE — contour évolutif selon le niveau XP ─────────────────
-  // Chaque tier ajoute des ornements visuels de plus en plus élaborés.
-  // La classe est posée sur .profil-flip-card et sélectionne les faces enfants.
+  // ── TIERS DE CARTE — le visuel est géré par le SVG de fond ──────────────────
+  // Les box-shadow et border-color CSS sont supprimés : le SVG gère la bordure.
+  // Seuls les effets de lueur externe (::before) sont conservés pour les hauts tiers.
 
-  // ── Tier 1 : Bronze (Niveau 1-2) — contour cuivré discret ─────────────────
-  .card-tier-bronze .profil-flip-front,
-  .card-tier-bronze .profil-flip-back {
-    border-color: rgba(180, 110, 50, 0.35);
-  }
+  // Tier 3 : Or — pas d'effet de lueur, le SVG suffit
 
-  // ── Tier 2 : Silver (Niveau 3-4) — contour argenté + lueur ────────────────
-  .card-tier-silver .profil-flip-front,
-  .card-tier-silver .profil-flip-back {
-    border-color: rgba(200, 200, 220, 0.5);
-    box-shadow: 0 0 20px rgba(200, 200, 220, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  }
+  // ── Tier 4 : Platinum (Niveau 7-8) — pas d'effet de lueur, le SVG suffit
 
-  // ── Tier 3 : Gold (Niveau 5-6) — contour or + coins lumineux ──────────────
-  .card-tier-gold .profil-flip-front,
-  .card-tier-gold .profil-flip-back {
-    border-color: rgba(255, 210, 60, 0.65);
-    box-shadow: 0 0 28px rgba(255, 210, 60, 0.18);
-  }
-
-  // Halos aux 4 coins via le pseudo-élément ::before
-  .card-tier-gold .profil-flip-front::before,
-  .card-tier-gold .profil-flip-back::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 0 0 16px 16px;
-    background:
-      radial-gradient(ellipse 70px 70px at 0%   0%,   rgba(255, 210, 60, 0.14) 0%, transparent 70%),
-      radial-gradient(ellipse 70px 70px at 100% 0%,   rgba(255, 210, 60, 0.14) 0%, transparent 70%),
-      radial-gradient(ellipse 70px 70px at 0%   100%, rgba(255, 210, 60, 0.10) 0%, transparent 70%),
-      radial-gradient(ellipse 70px 70px at 100% 100%, rgba(255, 210, 60, 0.10) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  // ── Tier 4 : Platinum (Niveau 7-8) — contour violet/bleu + halos intenses ─
-  .card-tier-platinum .profil-flip-front,
-  .card-tier-platinum .profil-flip-back {
-    border-color: rgba(130, 100, 255, 0.7);
-    box-shadow:
-      0 0 30px rgba(130, 100, 255, 0.22),
-      0 0 60px rgba(75, 143, 245, 0.08),
-      inset 0 1px 0 rgba(130, 100, 255, 0.12);
-  }
-
-  .card-tier-platinum .profil-flip-front::before,
-  .card-tier-platinum .profil-flip-back::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 0 0 16px 16px;
-    background:
-      radial-gradient(ellipse 90px 90px at 0%   0%,   rgba(130, 100, 255, 0.18) 0%, transparent 65%),
-      radial-gradient(ellipse 90px 90px at 100% 0%,   rgba(75,  143, 245, 0.18) 0%, transparent 65%),
-      radial-gradient(ellipse 90px 90px at 0%   100%, rgba(155,  89, 182, 0.15) 0%, transparent 65%),
-      radial-gradient(ellipse 90px 90px at 100% 100%, rgba(130, 100, 255, 0.15) 0%, transparent 65%);
-    pointer-events: none;
-  }
-
-  // ── Tier 5 : Élite (Niveau 9-10) — vert pulsant + halos complets ──────────
-  @keyframes elite-glow {
-    0%, 100% { box-shadow: 0 0 30px rgba(30, 221, 136, 0.35), 0 0 60px rgba(30, 221, 136, 0.12); }
-    50%       { box-shadow: 0 0 55px rgba(30, 221, 136, 0.55), 0 0 90px rgba(30, 221, 136, 0.22); }
-  }
-
-  .card-tier-elite .profil-flip-front,
-  .card-tier-elite .profil-flip-back {
-    border-color: rgba(30, 221, 136, 0.85);
-    animation: elite-glow 2.5s ease-in-out infinite;
-  }
-
-  .card-tier-elite .profil-flip-front::before,
-  .card-tier-elite .profil-flip-back::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 0 0 16px 16px;
-    background:
-      radial-gradient(ellipse 100px 100px at 0%   0%,   rgba(30, 221, 136, 0.20) 0%, transparent 60%),
-      radial-gradient(ellipse 100px 100px at 100% 0%,   rgba(255, 215,   0, 0.16) 0%, transparent 60%),
-      radial-gradient(ellipse 100px 100px at 0%   100%, rgba(255, 215,   0, 0.14) 0%, transparent 60%),
-      radial-gradient(ellipse 100px 100px at 100% 100%, rgba(30, 221, 136, 0.20) 0%, transparent 60%),
-      // Halo central en haut (ornement top)
-      radial-gradient(ellipse 80px 35px  at 50%  0%,   rgba(30, 221, 136, 0.12) 0%, transparent 70%);
-    pointer-events: none;
-  }
+  // ── Tier 5 : Élite (Niveau 9-10) — pas d'effet de lueur, le SVG suffit
 
 
   // ── UTILITAIRES ───────────────────────────────────────────────────────
