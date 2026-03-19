@@ -43,7 +43,10 @@ Rails.application.routes.draw do
   # GET  /profil      => voir mon profil
   # GET  /profil/edit => modifier mon profil
   # PUT  /profil      => sauvegarder les modifications
-  resource :profil, only: [:show, :edit, :update]
+  resource :profil, only: [:show, :edit, :update] do
+    # PATCH /profil/spend_stat?attribute=attr_attack => dépenser un point de stat
+    patch :spend_stat, on: :member
+  end
 
   # Route pour voir le profil public d'un autre utilisateur
   # GET /users/:id/profil => voir le profil de l'utilisateur avec cet id

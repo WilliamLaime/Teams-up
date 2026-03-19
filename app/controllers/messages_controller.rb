@@ -16,6 +16,8 @@ class MessagesController < ApplicationController
     )
 
     if @message.save
+      # 🎮 Vérifier les achievements liés aux messages envoyés
+      AchievementService.new(current_user).check(:message_sent)
       # Le broadcast est géré automatiquement par after_create_commit dans le modèle
       # On réinitialise le formulaire via Turbo Stream (vide le champ texte)
       respond_to do |format|

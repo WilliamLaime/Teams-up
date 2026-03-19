@@ -19,6 +19,9 @@ class User < ApplicationRecord
   has_many :match_users, dependent: :destroy
   has_many :matchs, through: :match_users
   has_many :notifications, dependent: :destroy
+  # Relation vers les achievements débloqués par cet utilisateur
+  has_many :user_achievements, dependent: :destroy
+  has_many :achievements, through: :user_achievements
 
   # Sports pratiqués par l'utilisateur (relation many-to-many via user_sports)
   has_many :user_sports, dependent: :destroy
