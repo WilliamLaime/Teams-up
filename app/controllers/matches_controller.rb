@@ -26,8 +26,8 @@ class MatchesController < ApplicationController
         @matches = @matches.active_for_user
       end
     else
-      # Index public : uniquement les matchs ouverts à l'inscription
-      @matches = policy_scope(Match).upcoming.order(date: :asc, time: :asc)
+      # Index public : uniquement les matchs ouverts à l'inscription et publics
+      @matches = policy_scope(Match).upcoming.publicly_visible.order(date: :asc, time: :asc)
       apply_filters
     end
   end

@@ -563,6 +563,88 @@
   }
 }
 
+// ── Tooltip hover sur les badges de l'armoire à trophées ─────────────────────
+
+// Carte tooltip positionnée EN DESSOUS du badge
+// → évite le problème de l'ornement (z-index 3D) qui bloquait la tooltip en haut
+.achievement-hover-tip {
+  position: absolute;
+  top: calc(100% + 8px);               // 8px sous le badge
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px); // léger décalage initial pour l'animation
+  opacity: 0;
+  pointer-events: none;                // ne bloque pas les clics
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 100;
+
+  // Style carte sombre
+  background: #1a1e1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  width: 160px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+
+  // Petite flèche pointant VERS LE HAUT (vers le badge)
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;                      // au-dessus de la tooltip
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-bottom-color: #1a1e1a;     // flèche vers le haut
+  }
+}
+
+// Affiche la tooltip au survol du badge
+[data-action*="achievement-modal#open"]:hover .achievement-hover-tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0); // descend doucement en place
+}
+
+// Emoji affiché en grand dans la tooltip
+.achievement-hover-tip__emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+// Nom du badge — blanc, gras
+.achievement-hover-tip__name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+// Description — grise, plus petite
+.achievement-hover-tip__desc {
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.3;
+  margin-bottom: 0.4rem;
+}
+
+// Pied de tooltip : XP + statut côte à côte
+.achievement-hover-tip__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 0.35rem;
+}
+
+// XP en vert
+.achievement-hover-tip__xp {
+  color: #1EDD88;
+}
+
 // ── Modal Achievement — carte RONDE avec tilt 3D + shine + flottement ────────
 
 // Flottement idle : la carte lévite doucement

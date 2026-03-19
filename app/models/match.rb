@@ -48,6 +48,9 @@ class Match < ApplicationRecord
   # Dès l'heure du match → match "verrouillé" : retiré de l'index, on ne peut plus rejoindre
   scope :upcoming, -> { where("(date + time) > ?", Time.current) }
 
+  # Scope visibilité : exclut les matchs privés de l'affichage public
+  scope :publicly_visible, -> { where(visibility: "public").or(where(visibility: nil)) }
+
   # Scope historique : matchs terminés (débutés il y a plus d'1h)
   scope :completed, -> { where("(date + time) < ?", Time.current - 1.hour) }
 

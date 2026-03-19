@@ -23,15 +23,15 @@ class PagesController < ApplicationController
 
   private
 
-  # Compte total de tous les matchs disponibles (pas complets, dans le futur)
+  # Compte total de tous les matchs disponibles (pas complets, dans le futur, publics)
   # Utilisé pour le badge "X matchs disponibles" dans le hero
   def load_available_matches_count
-    Match.upcoming.where("player_left > 0").count
+    Match.upcoming.publicly_visible.where("player_left > 0").count
   end
 
-  # Récupère les 3 prochains matchs à venir, filtrés par sport actif si connecté
+  # Récupère les 3 prochains matchs à venir publics, filtrés par sport actif si connecté
   def load_upcoming_matches
-    matches = Match.upcoming.order(date: :asc, time: :asc)
+    matches = Match.upcoming.publicly_visible.order(date: :asc, time: :asc)
     # Si l'utilisateur est connecté et a un sport actif, on filtre par ce sport
     matches = matches.where(sport_id: current_sport.id) if current_sport.present?
     matches.limit(3)
@@ -40,9 +40,10 @@ class PagesController < ApplicationController
   # Match affiché dans la carte hero (droite) :
   # - jamais complet (player_left > 0)
   # - le plus proche dans le temps
+  # - public uniquement
   # - filtré par sport actif si connecté (cohérent avec la section "Matchs à proximité")
   def load_hero_match
-    matches = Match.upcoming.where("player_left > 0").order(date: :asc, time: :asc)
+    matches = Match.upcoming.publicly_visible.where("player_left > 0").order(date: :asc, time: :asc)
     matches = matches.where(sport_id: current_sport.id) if current_sport.present?
     matches.first
   end
