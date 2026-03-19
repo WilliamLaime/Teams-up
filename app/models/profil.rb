@@ -8,4 +8,7 @@ class Profil < ApplicationRecord
   # Active Storage — permet d'attacher une photo de profil
   # La photo est stockée sur Cloudinary (configuré dans config/storage.yml)
   has_one_attached :avatar
+
+  # Niveau et rôle par sport — un enregistrement par sport pratiqué
+  has_many :sport_profils, dependent: :destroy
 end

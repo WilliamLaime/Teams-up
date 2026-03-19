@@ -213,6 +213,35 @@
   &:hover { opacity: 0.8; }
 }
 
+// ── Pills de niveau par sport (formulaire profil) ────────────────────────
+// Boutons cliquables : Débutant / Intermédiaire / Avancé
+.level-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.55);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: rgba($green, 0.5);
+    color: $green;
+    background: rgba($green, 0.08);
+  }
+
+  // Pill sélectionnée → fond vert translucide
+  &--active {
+    background: rgba($green, 0.14);
+    border-color: rgba($green, 0.6);
+    color: $green;
+  }
+}
+
 // ── Select sport dans les filtres (page matchs) ───────────────────────────
 // Même style que les autres filtres
 .filter-sport-select {

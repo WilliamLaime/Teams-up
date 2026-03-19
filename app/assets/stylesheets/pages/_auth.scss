@@ -254,196 +254,198 @@
   }
 
 
-  // ── Bloc choix d'avatar (photo personnelle OU preset) ────
-  .auth-avatar-block {
-    // ── Onglets "Ma photo" / "Avatars" ──────────────────
-    .auth-tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+}
+
+// ── Bloc choix d'avatar (photo personnelle OU preset) ──────────────────────
+// Styles extraits hors de .auth-card pour être réutilisables partout
+// (page d'inscription ET formulaire d'édition du profil)
+.auth-avatar-block {
+  // ── Onglets "Ma photo" / "Avatars" ──────────────────
+  .auth-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  // Bouton d'onglet inactif
+  .auth-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.75);
+      border-color: rgba(255, 255, 255, 0.2);
     }
+  }
 
-    // Bouton d'onglet inactif
-    .auth-tab {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
-      padding: 0.45rem 0.75rem;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: transparent;
-      color: rgba(255, 255, 255, 0.45);
-      font-size: 0.82rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
+  // Onglet actif : fond vert
+  .auth-tab-active {
+    background-color: rgba($green, 0.15);
+    border-color: $green;
+    color: $green;
+  }
 
-      &:hover {
-        color: rgba(255, 255, 255, 0.75);
-        border-color: rgba(255, 255, 255, 0.2);
-      }
-    }
+  // ── Panneau centré (commun aux 2 panneaux) ───────────
+  .auth-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-    // Onglet actif : fond vert
-    .auth-tab-active {
-      background-color: rgba($green, 0.15);
+  // ── Panneau "Ma photo" ───────────────────────────────
+
+  // Wrapper pour positionner le badge EN DEHORS du cercle overflow:hidden
+  .avatar-upload-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  // Cercle cliquable — overflow:hidden pour arrondir la preview
+  .avatar-upload-circle {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background-color: $dark-surface;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s ease;
+
+    &:hover {
       border-color: $green;
-      color: $green;
+
+      .avatar-placeholder-icon { color: rgba(255, 255, 255, 0.7); }
     }
+  }
 
-    // ── Panneau centré (commun aux 2 panneaux) ───────────
-    .auth-panel {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+  // Icône caméra + texte "Photo" (placeholder par défaut)
+  .avatar-placeholder-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.7rem;
+    pointer-events: none;
+    transition: color 0.2s;
+  }
 
-    // ── Panneau "Ma photo" ───────────────────────────────
+  // Image de prévisualisation (remplie par le JS ou pré-chargée)
+  .avatar-preview-img {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 50%;
+  }
 
-    // Wrapper pour positionner le badge EN DEHORS du cercle overflow:hidden
-    .avatar-upload-wrapper {
-      position: relative;
-      display: inline-block; // Taille calquée sur le label enfant
-    }
+  // Badge caméra vert — positionné sur le wrapper (HORS overflow:hidden)
+  .avatar-upload-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 26px;
+    height: 26px;
+    background-color: $green;
+    border-radius: 50%;
+    border: 2px solid $dark-card-bg;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111111;
+    pointer-events: none;
+  }
 
-    // Cercle cliquable — overflow:hidden pour arrondir la preview
-    .avatar-upload-circle {
-      width: 96px;
-      height: 96px;
-      border-radius: 50%;
-      background-color: $dark-surface;
-      border: 2px dashed rgba(255, 255, 255, 0.2);
-      cursor: pointer;
-      overflow: hidden; // Arrondit la photo mais isole le badge
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: border-color 0.2s ease;
+  // ── Panneau "Avatars prédéfinis" ─────────────────────
 
-      &:hover {
-        border-color: $green;
+  // Zone de prévisualisation de l'avatar sélectionné
+  .avatar-preset-selected-wrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: $dark-surface;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+  }
 
-        .avatar-placeholder-icon { color: rgba(255, 255, 255, 0.7); }
-      }
-    }
+  // Icône smile affichée avant toute sélection
+  .avatar-preset-placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    // Icône caméra + texte "Photo" (placeholder par défaut)
-    .avatar-placeholder-icon {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      color: rgba(255, 255, 255, 0.4);
-      font-size: 0.7rem;
-      pointer-events: none;
-      transition: color 0.2s;
-    }
+  // Grande preview de l'avatar cliqué
+  .avatar-preset-preview-img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+  }
 
-    // Image de prévisualisation (remplie par le JS)
-    .avatar-preview-img {
-      width: 96px;
-      height: 96px;
-      object-fit: cover;
-      border-radius: 50%;
-    }
+  // Grille des 12 avatars (6 colonnes)
+  .avatar-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+  }
 
-    // Badge caméra vert — positionné sur le wrapper (HORS overflow:hidden)
-    // → reste visible même quand une photo est prévisualisée dans le cercle
-    .avatar-upload-badge {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 26px;
-      height: 26px;
-      background-color: $green;
-      border-radius: 50%;
-      border: 2px solid $dark-card-bg; // Petit filet pour le détacher du cercle
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #111111;
-      pointer-events: none;
-    }
+  // Miniature d'un avatar dans la grille
+  .avatar-preset-item {
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+    overflow: hidden;
+    aspect-ratio: 1;
 
-    // ── Panneau "Avatars prédéfinis" ─────────────────────
-
-    // Zone de prévisualisation de l'avatar sélectionné
-    .avatar-preset-selected-wrap {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background-color: $dark-surface;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 0.85rem;
-      overflow: hidden;
-    }
-
-    // Icône smile affichée avant toute sélection
-    .avatar-preset-placeholder {
-      color: rgba(255, 255, 255, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    // Grande preview de l'avatar cliqué
-    .avatar-preset-preview-img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 50%;
-    }
-
-    // Grille des 12 avatars (6 colonnes)
-    .avatar-preset-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 0.5rem;
-      width: 100%;
-    }
-
-    // Miniature d'un avatar dans la grille
-    .avatar-preset-item {
-      border-radius: 50%;
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: border-color 0.15s ease, transform 0.15s ease;
-      overflow: hidden;
-      aspect-ratio: 1;
-
-      &:hover {
-        border-color: rgba($green, 0.5);
-        transform: scale(1.08);
-      }
-    }
-
-    // Avatar sélectionné : bordure verte pleine
-    .avatar-item-selected {
-      border-color: $green;
-      box-shadow: 0 0 0 2px rgba($green, 0.3);
+    &:hover {
+      border-color: rgba($green, 0.5);
       transform: scale(1.08);
     }
+  }
 
-    // Image dans la miniature
-    .avatar-preset-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+  // Avatar sélectionné : bordure verte pleine
+  .avatar-item-selected {
+    border-color: $green;
+    box-shadow: 0 0 0 2px rgba($green, 0.3);
+    transform: scale(1.08);
+  }
 
-    // Texte d'aide sous les deux panneaux
-    .avatar-upload-hint {
-      color: rgba(255, 255, 255, 0.3);
-      font-size: 0.72rem;
-      margin-top: 0.6rem;
-      text-align: center;
-    }
+  // Image dans la miniature
+  .avatar-preset-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  // Texte d'aide sous les deux panneaux
+  .avatar-upload-hint {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.72rem;
+    margin-top: 0.6rem;
+    text-align: center;
   }
 }
 

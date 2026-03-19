@@ -33,31 +33,12 @@
               <i data-lucide="badge-check" style="width:18px; height:18px; color:#1EDD88; flex-shrink:0;"></i>
             </div>
 
-            <%# Rôle + localisation + badge niveau %>
+            <%# Localisation %>
             <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.85rem;">
-              <% if @profil.role.present? %>
-                <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; color:rgba(255,255,255,0.55);">
-                  <i data-lucide="shield" style="width:12px; height:12px; color:rgba(255,255,255,0.2);"></i>
-                  <%= @profil.role %>
-                </span>
-                <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">·</span>
-              <% end %>
               <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; color:rgba(255,255,255,0.55);">
                 <i data-lucide="map-pin" style="width:12px; height:12px; color:rgba(255,255,255,0.2);"></i>
                 <%= @profil.localisation.presence || "Localisation non renseignée" %>
               </span>
-              <% if @profil.level.present? %>
-                <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">·</span>
-                <%
-                  level_css = case @profil.level
-                    when "Débutant"      then "level-debutant"
-                    when "Intermédiaire" then "level-intermediaire"
-                    when "Avancé"        then "level-avance"
-                    else                      "level-tout"
-                  end
-                %>
-                <span class="match-badge-level <%= level_css %>"><%= @profil.level %></span>
-              <% end %>
             </div>
 
             <%# Note moyenne — calculée depuis les vrais avis en base %>
@@ -90,20 +71,52 @@
         <%# ── 2. Sports pratiqués ──────────────────────────────────────────────── %>
         <% user_sports = @profil_user.sports.order(:name) %>
         <% if user_sports.any? %>
+          <%# Construit une map sport_id => sport_profil pour accès rapide %>
+          <% sport_profils_map = @profil.sport_profils.index_by(&:sport_id) %>
+
           <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
             <i data-lucide="trophy" style="width:14px; height:14px;"></i>
             Sports pratiqués
           </div>
-          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem;">
+
+          <%# Pills compactes : une pill par sport avec niveau et rôle intégrés %>
+          <div style="display:flex; flex-wrap:wrap; gap:0.45rem; margin-bottom:1.5rem;">
             <% user_sports.each do |sport| %>
-              <%# Pill sport avec emoji — sport actif mis en avant %>
-              <span style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:999px; font-size:0.82rem; font-weight:700; <%= current_sport&.id == sport.id ? 'background:rgba(30,221,136,0.14); border:1px solid rgba(30,221,136,0.45); color:#1EDD88;' : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.75);' %>">
-                <%= sport_icon(sport, size: "1rem") %>
-                <%= sport.name %>
-                <%# Petit point vert si c'est le sport actif %>
-                <% if current_sport&.id == sport.id %>
-                  <span style="width:6px; height:6px; border-radius:50%; background:#1EDD88; flex-shrink:0;"></span>
+              <% sp = sport_profils_map[sport.id] %>
+              <% is_active = current_sport&.id == sport.id %>
+
+              <%# Pill sport — verte si sport actif, grisée sinon %>
+              <span style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.35rem 0.75rem; border-radius:999px; font-size:0.8rem; font-weight:600; <%= is_active ? 'background:rgba(30,221,136,0.12); border:1px solid rgba(30,221,136,0.4); color:#1EDD88;' : 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.7);' %>">
+
+                <%# Icône sport %>
+                <%= sport_icon(sport, size: "0.95rem") %>
+
+                <%# Nom du sport %>
+                <span><%= sport.name %></span>
+
+                <%# Badge niveau — séparé par un tiret si présent %>
+                <% if sp&.level.present? %>
+                  <%
+                    lvl_color = case sp.level
+                      when "Débutant"      then "rgba(34,197,94,0.8)"
+                      when "Intermédiaire" then "rgba(59,130,246,0.8)"
+                      when "Avancé"        then "rgba(245,158,11,0.9)"
+                    end
+                  %>
+                  <span style="color:rgba(255,255,255,0.25);">·</span>
+                  <span style="font-size:0.72rem; font-weight:700; color:<%= lvl_color %>;">
+                    <%= sp.level %>
+                  </span>
                 <% end %>
+
+                <%# Rôle — séparé par un tiret si présent %>
+                <% if sp&.role.present? %>
+                  <span style="color:rgba(255,255,255,0.2);">·</span>
+                  <span style="font-size:0.75rem; font-weight:500; color:rgba(255,255,255,0.45);">
+                    <%= sp.role %>
+                  </span>
+                <% end %>
+
               </span>
             <% end %>
           </div>

@@ -36,82 +36,115 @@
         Photo de profil
       </div>
 
-      <%# ── Card avatar ─────────────────────────────────────────────────── %>
-      <%# data-controller connecte le Stimulus avatar-preview pour la prévisualisation %>
-      <div class="match-block" data-controller="avatar-preview">
+      <%#
+        Bloc avatar — deux onglets : "Ma photo" (upload) et "Avatars" (prédéfinis)
+        avatar-choice gère la bascule entre les deux panneaux
+        avatar-preview gère la prévisualisation de la photo uploadée
+      %>
+      <div class="match-block auth-avatar-block"
+           data-controller="avatar-choice avatar-preview">
 
-        <%# Cercle cliquable — cliquer dessus déclenche le champ fichier caché %>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:1rem; padding:0.5rem 0;">
+        <%# ── Onglets ── %>
+        <div class="auth-tabs">
+          <button type="button"
+                  class="auth-tab auth-tab-active"
+                  data-avatar-choice-target="photoTab"
+                  data-action="click->avatar-choice#showPhoto">
+            <i data-lucide="image" style="width:14px;height:14px;"></i>
+            Ma photo
+          </button>
+          <button type="button"
+                  class="auth-tab"
+                  data-avatar-choice-target="avatarTab"
+                  data-action="click->avatar-choice#showAvatars">
+            <i data-lucide="smile" style="width:14px;height:14px;"></i>
+            Avatars
+          </button>
+        </div>
 
-          <%# Wrapper positionné pour le badge caméra vert %>
-          <div style="position:relative; display:inline-block; cursor:pointer;"
-               onclick="this.closest('[data-controller]').querySelector('input[type=file]').click()">
+        <%# ── Panneau "Ma photo" ── %>
+        <div data-avatar-choice-target="photoPanel" class="auth-panel">
 
-            <%# Photo actuelle (si elle existe) — cachée dès qu'une nouvelle est sélectionnée %>
-            <% if profil.avatar.attached? %>
-              <%# Image de prévisualisation (remplie par le JS après sélection) %>
-              <div data-avatar-preview-target="preview" style="display:block;">
-                <%# image_tag génère proprement la balise img avec les data-attributes Stimulus %>
-                <%= image_tag url_for(profil.avatar),
-                    alt: "Photo de profil",
-                    style: "width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:block;",
-                    data: { "avatar-preview-target": "image" } %>
-              </div>
-              <%# Placeholder caché par défaut quand photo existante %>
+          <div class="avatar-upload-wrapper">
+            <%# Cercle cliquable — déclenche l'input file %>
+            <label for="profil_avatar" class="avatar-upload-circle">
+              <%# Placeholder (caché si avatar existant ou après sélection) %>
               <div data-avatar-preview-target="placeholder"
-                   style="display:none; width:100px; height:100px; border-radius:50%; background:#242624; border:2px dashed rgba(255,255,255,0.2); align-items:center; justify-content:center; flex-direction:column; gap:5px;">
-                <i data-lucide="user" style="width:28px; height:28px; color:rgba(255,255,255,0.3);"></i>
-                <span style="font-size:0.68rem; color:rgba(255,255,255,0.3);">Photo</span>
+                   class="avatar-placeholder-icon"
+                   style="<%= profil.avatar.attached? ? 'display:none;' : '' %>">
+                <i data-lucide="camera" style="width:26px;height:26px;"></i>
+                <span>Photo</span>
               </div>
-            <% else %>
-              <%# Aucune photo — on affiche le placeholder ──────────────── %>
-              <%# Le JS le cachera dès qu'une photo est choisie %>
-              <div data-avatar-preview-target="placeholder"
-                   style="width:100px; height:100px; border-radius:50%; background:#242624; border:2px dashed rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:5px; transition:border-color 0.2s;">
-                <i data-lucide="user" style="width:28px; height:28px; color:rgba(255,255,255,0.3);"></i>
-                <span style="font-size:0.68rem; color:rgba(255,255,255,0.3);">Photo</span>
+              <%# Preview — pré-remplie avec l'avatar existant si présent %>
+              <div data-avatar-preview-target="preview"
+                   style="<%= profil.avatar.attached? ? 'display:block;' : 'display:none;' %>">
+                <% if profil.avatar.attached? %>
+                  <%= image_tag url_for(profil.avatar),
+                      alt: "Photo de profil",
+                      class: "avatar-preview-img",
+                      data: { "avatar-preview-target": "image" } %>
+                <% else %>
+                  <img data-avatar-preview-target="image"
+                       alt="Aperçu de ta photo"
+                       class="avatar-preview-img">
+                <% end %>
               </div>
-              <%# Zone de prévisualisation — cachée jusqu'à ce qu'une photo soit sélectionnée %>
-              <div data-avatar-preview-target="preview" style="display:none;">
-                <img data-avatar-preview-target="image"
-                     alt="Aperçu de ta photo"
-                     style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:block;">
+            </label>
+
+            <%# Badge caméra vert %>
+            <div class="avatar-upload-badge">
+              <i data-lucide="camera" style="width:13px;height:13px;"></i>
+            </div>
+          </div>
+
+          <%# Input file caché — Rails génère id="profil_avatar" automatiquement %>
+          <%= f.file_field :avatar,
+              accept: "image/*",
+              class: "d-none",
+              data: {
+                "avatar-choice-target": "fileInput",
+                "avatar-preview-target": "input",
+                action: "change->avatar-preview#preview"
+              } %>
+
+          <small class="avatar-upload-hint">JPG, PNG ou GIF — max 5 Mo</small>
+        </div>
+
+        <%# ── Panneau "Avatars prédéfinis" (caché par défaut) ── %>
+        <% avatar_names = ["01", "02", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"] %>
+        <div data-avatar-choice-target="avatarPanel" class="auth-panel" style="display:none;">
+
+          <%# Grande preview de l'avatar sélectionné %>
+          <div class="avatar-preset-selected-wrap">
+            <div class="avatar-preset-placeholder" data-avatar-choice-target="presetPlaceholder">
+              <i data-lucide="smile" style="width:28px;height:28px;"></i>
+            </div>
+            <img data-avatar-choice-target="presetPreview"
+                 class="avatar-preset-preview-img"
+                 alt="Avatar sélectionné"
+                 style="display:none;">
+          </div>
+
+          <%# Grille des 12 avatars %>
+          <div class="avatar-preset-grid">
+            <% avatar_names.each do |name| %>
+              <div class="avatar-preset-item"
+                   data-avatar-choice-target="avatarItem"
+                   data-avatar-name="<%= name %>"
+                   data-avatar-src="<%= asset_path("avatar_png/#{name}.png") %>"
+                   data-action="click->avatar-choice#selectAvatar">
+                <%= image_tag "avatar_png/#{name}.png",
+                    alt: "Avatar #{name}",
+                    class: "avatar-preset-img" %>
               </div>
             <% end %>
-
-            <%# Badge caméra vert en bas à droite du cercle %>
-            <div style="position:absolute; bottom:2px; right:2px; width:28px; height:28px; background:#1EDD88; border-radius:50%; border:2px solid #1a1c1a; display:flex; align-items:center; justify-content:center;">
-              <i data-lucide="camera" style="width:13px; height:13px; color:#111111;"></i>
-            </div>
-
-          </div>
-          <%# / wrapper positionné %>
-
-          <%# Texte d'aide sous le cercle %>
-          <div style="text-align:center;">
-            <p style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin:0 0 0.25rem;">
-              Clique pour changer ta photo
-            </p>
-            <p style="font-size:0.7rem; color:rgba(255,255,255,0.25); margin:0;">
-              JPG, PNG ou GIF — max 5 Mo
-            </p>
           </div>
 
+          <small class="avatar-upload-hint">Clique sur un avatar pour le sélectionner</small>
         </div>
-        <%# / flex colonnes %>
 
-        <%# Champ fichier caché — déclenché par le clic sur le cercle %>
-        <%#
-          data-avatar-preview-target="input" : cible JS du controller
-          data-action : déclenche preview() au changement de fichier
-        %>
-        <%= f.file_field :avatar,
-            accept: "image/*",
-            style: "display:none;",
-            data: {
-              "avatar-preview-target": "input",
-              action: "change->avatar-preview#preview"
-            } %>
+        <%# Input caché — reçoit le nom du preset sélectionné (ex: "01", "3"...) %>
+        <input type="hidden" name="profil[preset_avatar]" data-avatar-choice-target="presetInput">
 
       </div>
       <%# / match-block avatar %>
@@ -127,24 +160,162 @@
       <%# Champ caché : signale au controller que les sports ont été soumis %>
       <input type="hidden" name="user[sports_submitted]" value="1">
 
-      <%# Grille cliquable — sport-select Stimulus controller gère la sélection %>
-      <div class="match-block" data-controller="sport-select">
-        <div class="sport-select-grid">
-          <% Sport.order(:name).each do |sport| %>
-            <label class="sport-select-item <%= 'sport-select-item--selected' if current_user.sport_ids.include?(sport.id) %>"
-                   data-sport-select-target="item"
-                   data-action="click->sport-select#toggle">
-              <% if current_user.sport_ids.include?(sport.id) %>
-                <input type="checkbox" name="user[sport_ids][]" value="<%= sport.id %>" class="d-none" data-sport-select-target="checkbox" checked>
-              <% else %>
-                <input type="checkbox" name="user[sport_ids][]" value="<%= sport.id %>" class="d-none" data-sport-select-target="checkbox">
-              <% end %>
-              <%= sport_icon(sport, size: "1.6rem", css_class: "sport-select-icon") %>
-              <span class="sport-select-name"><%= sport.name %></span>
-            </label>
-          <% end %>
+      <%#
+        Grille cliquable — sport-select Stimulus controller gère :
+        1) la sélection des sports (checkboxes)
+        2) l'affichage dynamique des lignes niveau/rôle en dessous
+      %>
+      <div data-controller="sport-select">
+
+        <%# ── Grille de sélection des sports ── %>
+        <div class="match-block">
+          <div class="sport-select-grid">
+            <% Sport.order(:name).each do |sport| %>
+              <%# data-sport-id : utilisé par le controller pour retrouver la ligne niveau/rôle %>
+              <label class="sport-select-item <%= 'sport-select-item--selected' if current_user.sport_ids.include?(sport.id) %>"
+                     data-sport-select-target="item"
+                     data-sport-id="<%= sport.id %>"
+                     data-action="click->sport-select#toggle">
+                <% if current_user.sport_ids.include?(sport.id) %>
+                  <input type="checkbox" name="user[sport_ids][]" value="<%= sport.id %>" class="d-none" data-sport-select-target="checkbox" checked>
+                <% else %>
+                  <input type="checkbox" name="user[sport_ids][]" value="<%= sport.id %>" class="d-none" data-sport-select-target="checkbox">
+                <% end %>
+                <%= sport_icon(sport, size: "1.6rem", css_class: "sport-select-icon") %>
+                <span class="sport-select-name"><%= sport.name %></span>
+              </label>
+            <% end %>
+          </div>
         </div>
+
+        <%#
+          Section Niveau & Rôle par sport — carrousel : une seule card, flèches gauche/droite
+          Visible uniquement si au moins un sport est sélectionné (géré par Stimulus)
+        %>
+        <%
+          # Construit une map sport_id => sport_profil pour pré-remplir les champs
+          sport_profils_map = profil.sport_profils.index_by(&:sport_id)
+        %>
+        <div data-sport-select-target="levelsSection"
+             style="display:<%= current_user.sports.any? ? 'block' : 'none' %>; margin-top:1.25rem;">
+
+          <%# En-tête de section %>
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+            <i data-lucide="sliders" style="width:14px; height:14px;"></i>
+            Niveau & Rôle par sport
+          </div>
+
+          <%# Card unique carrousel %>
+          <div class="match-block">
+
+            <%# ── Navigation carrousel ── %>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+
+              <%# Flèche gauche %>
+              <button type="button"
+                      data-sport-select-target="prevBtn"
+                      data-action="click->sport-select#prevSport"
+                      style="background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.6); padding:0.2rem 0.4rem; border-radius:6px; transition:color 0.15s;"
+                      title="Sport précédent">
+                <i data-lucide="chevron-left" style="width:18px; height:18px;"></i>
+              </button>
+
+              <%# Nom + icône du sport actuel + compteur %>
+              <div style="display:flex; align-items:center; gap:0.5rem; flex:1; justify-content:center;">
+                <span data-sport-select-target="carouselIcon" style="font-size:1.1rem; line-height:1;"></span>
+                <span data-sport-select-target="carouselName" style="font-size:0.9rem; font-weight:700; color:#fff;"></span>
+                <span data-sport-select-target="carouselCounter" style="font-size:0.72rem; color:rgba(255,255,255,0.35); font-weight:500;"></span>
+              </div>
+
+              <%# Flèche droite %>
+              <button type="button"
+                      data-sport-select-target="nextBtn"
+                      data-action="click->sport-select#nextSport"
+                      style="background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.6); padding:0.2rem 0.4rem; border-radius:6px; transition:color 0.15s;"
+                      title="Sport suivant">
+                <i data-lucide="chevron-right" style="width:18px; height:18px;"></i>
+              </button>
+
+            </div>
+            <%# / navigation %>
+
+            <%# Séparateur %>
+            <div style="height:1px; background:rgba(255,255,255,0.07); margin-bottom:1rem;"></div>
+
+            <%#
+              Champs niveau/rôle pour chaque sport — un seul visible à la fois (géré par Stimulus)
+              data-sport-name et data-sport-icon : lus par le controller pour l'en-tête carrousel
+            %>
+            <% Sport.order(:name).each do |sport| %>
+              <% sp = sport_profils_map[sport.id] %>
+
+              <div data-sport-select-target="levelRow"
+                   data-sport-id="<%= sport.id %>"
+                   style="display:none;">
+
+                <%#
+                  Label caché — lu par le controller Stimulus pour afficher
+                  l'icône + le nom du sport dans l'en-tête du carrousel.
+                  On évite ainsi de stocker du HTML dans un data-attribut (problème d'échappement).
+                %>
+                <span class="sport-carousel-label" style="display:none;" aria-hidden="true">
+                  <%= sport_icon(sport, size: "1.1rem") %>
+                  <span><%= sport.name %></span>
+                </span>
+
+                <%# Controller sport-level : gère le clic sur les pills %>
+                <div data-controller="sport-level">
+
+                  <%# Champ caché — stocke le niveau sélectionné %>
+                  <input type="hidden"
+                         name="sport_profils[<%= sport.id %>][level]"
+                         value="<%= sp&.level %>"
+                         data-sport-level-target="input">
+
+                  <%# Label niveau %>
+                  <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">Niveau</p>
+
+                  <%# Pills de niveau %>
+                  <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.85rem;">
+                    <% ["Débutant", "Intermédiaire", "Avancé"].each do |lvl| %>
+                      <button type="button"
+                              class="level-pill <%= 'level-pill--active' if sp&.level == lvl %>"
+                              data-sport-level-target="pill"
+                              data-action="click->sport-level#select"
+                              data-value="<%= lvl %>">
+                        <%= lvl %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                  <%# Label rôle %>
+                  <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">
+                    Rôle <span style="color:rgba(255,255,255,0.2); font-weight:400; text-transform:none;">(optionnel)</span>
+                  </p>
+
+                  <%# Champ rôle %>
+                  <input type="text"
+                         name="sport_profils[<%= sport.id %>][role]"
+                         value="<%= sp&.role %>"
+                         class="form-control edit-form-input"
+                         placeholder="Ex: Attaquant, Gardien, Libero..."
+                         style="font-size:0.82rem;">
+
+                </div>
+                <%# / sport-level controller %>
+
+              </div>
+              <%# / levelRow %>
+            <% end %>
+
+          </div>
+          <%# / card carrousel %>
+
+        </div>
+        <%# / levelsSection %>
+
       </div>
+      <%# / sport-select controller %>
       <%# / sports %>
 
     </div>
@@ -186,23 +357,6 @@
                 class: "form-control edit-form-input",
                 placeholder: "Ton nom de famille",
                 required: true %>
-          </div>
-
-          <%# Rôle préféré (poste sur le terrain) %>
-          <div class="col-md-6">
-            <%= f.label :role, "Rôle préféré", class: "edit-form-label" %>
-            <%= f.text_field :role,
-                class: "form-control edit-form-input",
-                placeholder: "Ex: Attaquant, Gardien..." %>
-          </div>
-
-          <%# Niveau de jeu %>
-          <div class="col-md-6">
-            <%= f.label :level, "Niveau", class: "edit-form-label" %>
-            <%= f.select :level,
-                ["Débutant", "Intermédiaire", "Avancé"],
-                { include_blank: "Choisir ton niveau" },
-                class: "form-select edit-form-input" %>
           </div>
 
         </div>

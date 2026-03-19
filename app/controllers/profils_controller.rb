@@ -1,4 +1,6 @@
 class ProfilsController < ApplicationController
+  # Noms de fichiers autorisés pour les avatars prédéfinis
+  VALID_PRESET_AVATARS = %w[01 02 3 4 5 6 7 8 9 10 11 12].freeze
   # Retrouver le profil de l'utilisateur connecté avant chaque action
   # On exclut show_user car il charge le profil d'un autre utilisateur
   before_action :set_profil, except: [:show_user]
@@ -105,6 +107,31 @@ class ProfilsController < ApplicationController
       current_user.sport_ids = params.dig(:user, :sport_ids) || []
     end
 
+    # Met à jour les niveaux et rôles par sport
+    # params[:sport_profils] = { "sport_id" => { level: "...", role: "..." }, ... }
+    if params[:sport_profils].present?
+      selected_sport_ids = (params.dig(:user, :sport_ids) || []).map(&:to_i)
+
+      params[:sport_profils].each do |sport_id, sp_params|
+        # On ne sauvegarde que les sports réellement sélectionnés
+        next unless selected_sport_ids.include?(sport_id.to_i)
+
+        # find_or_initialize_by : met à jour si existe, crée sinon
+        sp = SportProfil.find_or_initialize_by(profil: @profil, sport_id: sport_id.to_i)
+        sp.level = sp_params[:level].presence
+        sp.role  = sp_params[:role].presence
+        sp.save!
+      end
+
+      # Supprime les SportProfil des sports désélectionnés
+      @profil.sport_profils.where.not(sport_id: selected_sport_ids).destroy_all
+    end
+
+    # Gère l'avatar : photo uploadée OU avatar prédéfini
+    # On le résout avant update() pour l'inclure dans le même save
+    avatar = resolve_avatar
+    @profil.avatar.attach(avatar) if avatar.present?
+
     if @profil.update(profil_params)
       redirect_to profil_path, notice: "Profil mis à jour avec succès !"
     else
@@ -150,6 +177,30 @@ class ProfilsController < ApplicationController
          .where("(date + time) > ?", Time.current - 7.days - 1.hour)
          .order(date: :desc)
          .first
+  end
+
+  # Résout l'avatar à attacher au profil :
+  # - Cas 1 : l'user a uploadé une photo → on retourne le fichier
+  # - Cas 2 : l'user a choisi un avatar prédéfini → on ouvre le PNG depuis les assets
+  # - Cas 3 : rien de nouveau → nil (l'avatar existant reste inchangé)
+  def resolve_avatar
+    avatar_file = params.dig(:profil, :avatar)
+    preset_name = params.dig(:profil, :preset_avatar)
+
+    if avatar_file.present?
+      # Photo uploadée directement (géré aussi par profil_params, mais on le gère ici
+      # pour rester cohérent avec la logique preset)
+      nil # profil_params s'en occupe via :avatar
+
+    elsif preset_name.present? && VALID_PRESET_AVATARS.include?(preset_name)
+      # Avatar prédéfini : ouvre le fichier PNG depuis les assets
+      preset_path = Rails.root.join("app", "assets", "images", "avatar_png", "#{preset_name}.png")
+      {
+        io:           File.open(preset_path),
+        filename:     "avatar_#{preset_name}.png",
+        content_type: "image/png"
+      }
+    end
   end
 
   # Liste blanche des paramètres autorisés pour modifier le profil
