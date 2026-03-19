@@ -20,4 +20,9 @@ body {
   flex-direction: column;
 
   main { flex: 1; }
+
+  // Fond sombre sur tout le body pour les pages sombres (notifications, etc.)
+  &.bg-dark-page {
+    background-color: #111111;
+  }
 }

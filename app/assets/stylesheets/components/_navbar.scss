@@ -166,4 +166,20 @@
     }
   }
 
+  // Bouton poubelle dans le dropdown — class: "notif-trash-btn" va sur le <button>
+  .notif-trash-btn {
+    background: transparent;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    color: rgba(255, 255, 255, 0.4); // couleur normale
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    &:hover {
+      color: #ff6b6b; // rouge au hover
+    }
+  }
+
 }

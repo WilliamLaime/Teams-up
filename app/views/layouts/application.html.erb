@@ -24,7 +24,7 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
 
-  <body>
+  <body class="<%= content_for(:body_class) %>">
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
 
@@ -51,6 +51,14 @@
       // 3. Après la mise à jour d'un turbo_frame (ex: cloche de notifications)
       //    C'est cet événement qui se déclenche quand un turbo_stream remplace un frame
       document.addEventListener("turbo:frame-render", initLucide);
+
+      // 4. Après une action Turbo Stream (ex: suppression d'une notification, "tout lire")
+      //    On intercepte le rendu du stream et on laisse Turbo finir d'abord,
+      //    puis on ré-initialise Lucide avec un court délai.
+      document.addEventListener("turbo:before-stream-render", function(event) {
+        // Laisse Turbo appliquer toutes les actions DOM, puis re-init Lucide
+        setTimeout(initLucide, 0);
+      });
     </script>
   </body>
 </html>

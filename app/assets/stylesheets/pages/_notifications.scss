@@ -1,0 +1,129 @@
+// ── Page Notifications ───────────────────────────────
+// Thème sombre, même fond que la home page
+
+.notifications-page {
+  background-color: $dark-bg;
+  // Couvre tout l'espace entre la navbar et le footer sans laisser apparaître le fond blanc du body
+  min-height: 100%;
+  padding-bottom: 3rem;
+  // Démarre directement sous la navbar (pas de margin-top)
+  margin-top: 0;
+
+  // Titre de la page
+  h2 {
+    color: $dark-text;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  // Panneau principal — un seul bloc arrondi qui contient toutes les notifs
+  .notif-panel {
+    background-color: $dark-surface;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  // Chaque ligne de notification
+  .notif-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    // La <form class="button_to"> du bouton mark_read — flex child direct de .notif-row
+    form.button_to {
+      flex: 1;
+      display: flex;
+      min-width: 0;
+    }
+
+    // Zone cliquable (icône + texte) — le <button> à l'intérieur de la form
+    .notif-row-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      text-align: left;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      // Icône
+      .notif-icon {
+        flex-shrink: 0;
+        color: rgba(255, 255, 255, 0.35);
+
+        &.unread {
+          color: $green;
+        }
+      }
+
+      // Texte principal
+      .notif-message {
+        color: $dark-text;
+        font-size: 0.9rem;
+        line-height: 1.4;
+
+        &.read {
+          color: rgba(255, 255, 255, 0.6);
+          font-weight: 400;
+        }
+
+        &.unread {
+          color: $dark-text;
+          font-weight: 600;
+        }
+      }
+
+      // Heure
+      .notif-time {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.78rem;
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+    }
+
+    // Bouton poubelle — la form est positionnée via Bootstrap (ms-auto etc.)
+    .notif-delete-btn {
+      background: transparent;  // supprime le fond blanc du navigateur
+      border: none;             // supprime la bordure du navigateur
+      padding: 0.5rem 1.25rem;
+      color: rgba(255, 255, 255, 0.25);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+
+      &:hover {
+        color: #ff6b6b;
+      }
+    }
+  }
+
+  // Bouton "Tout marquer comme lu"
+  .btn-mark-all {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: $dark-text;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.4);
+      color: white;
+    }
+  }
+
+  // État vide
+  .empty-state {
+    color: rgba(255, 255, 255, 0.4);
+  }
+}

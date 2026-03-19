@@ -1,0 +1,21 @@
+<%#
+  Réponse Turbo Stream pour "Tout marquer comme lu".
+  Exécute deux actions simultanément sans recharger la page :
+  1. Met à jour la cloche dans la navbar (badge + bouton "Tout lire" disparaissent)
+  2. Met à jour la section de la page notifications si elle est visible (bouton + liste)
+     → Turbo Stream ignore silencieusement si l'élément n'existe pas dans le DOM actuel
+%>
+
+<%# Met à jour le contenu de la cloche %>
+<%= turbo_stream.update "notification_bell" do %>
+  <%= render "shared/notification_bell" %>
+<% end %>
+
+<%#
+  Met à jour le contenu de la section notifications sur la page index.
+  turbo_stream.update remplace l'innerHTML du wrapper sans toucher le <div> lui-même.
+  Si l'élément "notifications-index-section" n'est pas dans le DOM (ex: autre page), rien ne se passe.
+%>
+<%= turbo_stream.update "notifications-index-section" do %>
+  <%= render "notifications_index_section", notifications: @notifications %>
+<% end %>

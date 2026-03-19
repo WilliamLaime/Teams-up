@@ -1,0 +1,30 @@
+<%#
+  Réponse Turbo Stream pour la suppression d'une notification.
+  On cible uniquement les éléments nécessaires pour garder le dropdown ouvert.
+%>
+
+<%# Recalcule le nombre de notifications non lues après suppression %>
+<% unread_count = current_user.notifications.unread.count %>
+
+<%# 1. Supprime la ligne de la notification (ex: id="notification_1") %>
+<%= turbo_stream.remove dom_id(@notification) %>
+
+<%# 2. Met à jour le badge dans la cloche (nombre ou vide) %>
+<%= turbo_stream.update "notif-badge" do %>
+  <% if unread_count > 0 %>
+    <span class="position-absolute badge rounded-pill bg-danger"
+          style="font-size:0.6rem; top:2px; right:2px;">
+      <%= unread_count %>
+    </span>
+  <% end %>
+<% end %>
+
+<%# 3. Met à jour le header (bouton "Tout lire" apparaît/disparaît selon unread_count) %>
+<%= turbo_stream.update "notif-header" do %>
+  <strong class="small text-white">Notifications</strong>
+  <% if unread_count > 0 %>
+    <%= button_to "Tout lire", mark_all_read_notifications_path,
+        method: :patch,
+        class: "btn btn-link btn-sm p-0 text-decoration-none text-primary small" %>
+  <% end %>
+<% end %>

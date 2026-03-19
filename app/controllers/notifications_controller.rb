@@ -19,6 +19,22 @@ class NotificationsController < ApplicationController
     redirect_to @notification.link || notifications_path
   end
 
+  # DELETE /notifications/:id
+  # Supprime une notification sans naviguer (Turbo Stream)
+  def destroy
+    @notification = Notification.find(params[:id])
+    # Pundit vérifie que la notification appartient bien à l'utilisateur connecté
+    authorize @notification
+
+    @notification.destroy
+
+    # Turbo Stream : supprime l'élément du DOM sans recharger la page
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_back fallback_location: notifications_path }
+    end
+  end
+
   # PATCH /notifications/mark_all_read
   # Marque toutes les notifications de l'utilisateur comme lues
   def mark_all_read
@@ -26,6 +42,14 @@ class NotificationsController < ApplicationController
     authorize :notification, :mark_all_read?
 
     current_user.notifications.unread.update_all(read: true)
-    redirect_to notifications_path, notice: "Toutes les notifications ont été marquées comme lues."
+
+    # On recharge les notifications (toutes lues maintenant) pour le Turbo Stream
+    @notifications = policy_scope(Notification).order(created_at: :desc)
+
+    # Turbo Stream : met à jour le DOM sans recharger la page
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to notifications_path, notice: "Toutes les notifications ont été marquées comme lues." }
+    end
   end
 end

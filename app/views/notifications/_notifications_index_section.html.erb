@@ -1,0 +1,81 @@
+<%#
+  Partial pour la section principale de la page notifications.
+  Utilisé dans index.html.erb et mark_all_read.turbo_stream.erb.
+  Reçoit la variable locale `notifications`.
+%>
+
+<%# Bouton "Tout marquer comme lu" — visible seulement si des notifs sont non lues %>
+<% if notifications.any? { |n| !n.read? } %>
+  <div class="mb-3 d-flex justify-content-end">
+    <%= button_to "Tout marquer comme lu", mark_all_read_notifications_path,
+        method: :patch,
+        class: "btn btn-outline-secondary btn-sm btn-mark-all d-flex align-items-center gap-1" do %>
+      <i data-lucide="check-check" style="width:14px;height:14px;"></i> Tout lire
+    <% end %>
+  </div>
+<% end %>
+
+<% if notifications.any? %>
+  <%# Panneau arrondi unique contenant toutes les notifications %>
+  <div class="notif-panel">
+    <% notifications.each do |notif| %>
+
+      <%#
+        Chaque ligne a un id DOM unique (ex: "notification_1").
+        Turbo Stream utilise cet id pour supprimer l'élément du DOM.
+      %>
+      <div id="<%= dom_id(notif) %>" class="notif-row">
+
+        <%#
+          Zone cliquable : marque la notification comme lue et redirige.
+          data-turbo-frame="_top" → Turbo navigue au niveau de la page entière.
+        %>
+        <%= button_to mark_read_notification_path(notif), method: :patch,
+            class: "notif-row-btn",
+            data: { turbo_frame: "_top" } do %>
+
+          <%# Icône selon statut %>
+          <% if notif.read? %>
+            <i data-lucide="check-circle" class="notif-icon" style="width:20px;height:20px;"></i>
+          <% else %>
+            <i data-lucide="bell-dot" class="notif-icon unread" style="width:20px;height:20px;"></i>
+          <% end %>
+
+          <%# Texte + heure %>
+          <div>
+            <div class="notif-message <%= notif.read? ? 'read' : 'unread' %>">
+              <%= notif.message %>
+            </div>
+            <div class="notif-time">
+              <i data-lucide="clock" style="width:11px;height:11px;"></i>
+              <%= time_ago_in_words(notif.created_at) %>
+            </div>
+          </div>
+
+        <% end %>
+
+        <%#
+          Bouton poubelle : button_to génère une <form class="notif-delete-form">
+          avec un <button class="notif-delete-btn"> à l'intérieur.
+          On utilise form: { class: } pour la form et class: pour le bouton.
+        %>
+        <%# form_class: classes Bootstrap sur la <form> pour pousser à droite %>
+        <%= button_to notification_path(notif), method: :delete,
+            class: "notif-delete-btn",
+            form_class: "ms-auto d-flex align-items-center flex-shrink-0",
+            title: "Supprimer cette notification" do %>
+          <i data-lucide="trash-2" style="width:15px;height:15px;"></i>
+        <% end %>
+
+      </div>
+
+    <% end %>
+  </div>
+
+<% else %>
+  <%# État vide %>
+  <div class="empty-state text-center py-5">
+    <i data-lucide="inbox" style="width:48px;height:48px;"></i>
+    <p class="mt-3">Tu n'as aucune notification pour le moment.</p>
+  </div>
+<% end %>
