@@ -9,11 +9,6 @@ class NotificationPolicy < ApplicationPolicy
     owner?
   end
 
-  # Supprimer une notification : seulement si elle appartient à l'utilisateur
-  def destroy?
-    record.user == user
-  end
-
   # Marquer toutes les notifications comme lues : tout utilisateur connecté
   def mark_all_read?
     true

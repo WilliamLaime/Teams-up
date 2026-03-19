@@ -16,21 +16,6 @@
       <%# ── COLONNE GAUCHE : Carte de joueur + progression des tiers ──────── %>
       <div class="col-lg-5">
 
-        <%# ── Titre "Identité" hors de la card, même style que "Mes matchs" ── %>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
-            <i data-lucide="user" style="width:14px; height:14px;"></i>
-            Identité
-        <%# ── 1. Identité — directement sur le fond, pas de card ──────────── %>
-        <div class="d-flex align-items-start gap-4 mb-4">
-
-          <%# Avatar — inline styles pour forcer le cercle et les dimensions %>
-          <div style="flex-shrink:0;">
-            <%# Avatar ou initiales colorées (Prénom + Nom) %>
-            <%= user_avatar_tag @profil_user,
-                style: "width:82px; height:82px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:400; flex-shrink:0;" %>
-          </div>
-        </div>
 
         <%# Sélection du SVG d'ornement selon le tier du joueur %>
         <%
@@ -59,6 +44,8 @@
 
             <%# ══════════ RECTO : Identité + XP + Attributs ══════════ %>
             <div class="profil-flip-front">
+              <%# profil-flip-face-inner gère le scroll — overflow sur la face elle-même casse backface-visibility dans Chrome %>
+              <div class="profil-flip-face-inner">
 
               <%# ── Identité (avatar compact + nom + meta) ───────────────────── %>
               <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:0.6rem;">
@@ -121,11 +108,8 @@
                     <% end %>
                   </div>
 
-                  <%# Note + XP level badge sur la même ligne %>
+                  <%# Badge niveau XP %>
                   <div style="display:flex; align-items:center; gap:0.55rem;">
-                    <span style="color:#1EDD88; font-size:0.8rem;">★★★★★</span>
-                    <span style="font-size:0.75rem; font-weight:700; color:#fff;">4.8</span>
-                    <span style="color:rgba(255,255,255,0.25); font-size:0.75rem;">·</span>
                     <%
                       badge_color     = @profil.level_badge_color
                       profil_xp_level = @profil.xp_level || 1
@@ -241,25 +225,14 @@
                 </button>
               </div>
 
+              </div><%# / profil-flip-face-inner recto %>
             </div>
             <%# / recto %>
-            <%# Note moyenne — calculée depuis les vrais avis en base %>
-            <% if @profil.avis_count.to_i > 0 %>
-              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.85rem;">
-                <%# Affiche les étoiles pleines/vides selon la moyenne arrondie %>
-                <span style="color:#1EDD88; font-size:0.9rem; letter-spacing:0.05em;">
-                  <% full_stars  = @profil.average_rating.to_f.floor %>
-                  <% empty_stars = 5 - full_stars %>
-                  <%= "★" * full_stars %><span style="color:rgba(255,255,255,0.2);"><%= "★" * empty_stars %></span>
-                </span>
-                <span style="font-size:0.82rem; font-weight:700; color:#fff;"><%= @profil.average_rating %></span>
-                <span style="font-size:0.78rem; color:rgba(255,255,255,0.4);">(<%= @profil.avis_count %> avis)</span>
-              </div>
-            <% end %>
-
 
             <%# ══════════ VERSO : Armoire à trophées ══════════ %>
             <div class="profil-flip-back">
+              <%# profil-flip-face-inner gère le scroll — overflow sur la face elle-même casse backface-visibility dans Chrome %>
+              <div class="profil-flip-face-inner">
 
               <%# ── Titre ──────────────────────────────────────────────────── %>
               <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
@@ -293,25 +266,8 @@
                   Retour au profil
                 </button>
               </div>
-        <%# ── 3. Statistiques — en-tête hors card ────────────────────────────── %>
-        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-          <i data-lucide="bar-chart-2" style="width:14px; height:14px;"></i>
-          Statistiques
-        </div>
-        <div class="row g-3 mb-3">
 
-          <div class="col-6">
-            <div class="match-block" style="display:flex; flex-direction:column; gap:0.4rem;">
-              <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.07em;">
-                Matchs joués
-              </span>
-              <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%# @matchs_joues = matchs terminés (H+1) où l'user était "approved" (pas en attente/file d'attente) %>
-                <%= @matchs_joues %>
-              </span>
-            </div>
-          </div>
-
+              </div><%# / profil-flip-face-inner verso %>
             </div>
             <%# / verso %>
 
@@ -319,7 +275,6 @@
         </div><%# / flip-card %>
 
         </div><%# / profil-card-wrapper %>
-        </div>
         <%# Ligne supplémentaire : Homme du match — affichée uniquement si au moins 1 titre %>
         <% if @profil.homme_du_match_count.to_i > 0 %>
           <div class="row g-3 mb-3">
@@ -365,22 +320,6 @@
               .order(date: :asc, time: :asc)
               .first(3)
 
-            sport_images = {
-              "football"   => %w[sports/Football/ballon.jpg sports/Football/citytoulouse.jpg sports/Football/bresil.jpg
-                                 sports/Football/herbe.jpg sports/Football/city1.jpg sports/Football/citydrone.jpg
-                                 sports/Football/Duel.jpg sports/Football/Medellin.jpg sports/Football/terrainight.jpg],
-              "tennis"     => %w[sports/Tennis/tennis1.jpg sports/Tennis/tennis2.jpg sports/Tennis/tennis3.jpg
-                                 sports/Tennis/tennis4.jpg sports/Tennis/tennis5.jpg sports/Tennis/tennis6.jpg],
-              "padel"      => %w[sports/Padel/padel1.jpg sports/Padel/padel2.jpg sports/Padel/padel3.jpg
-                                 sports/Padel/padel4.jpg sports/Padel/padel5.jpg sports/Padel/padel6.jpg],
-              "volleyball" => %w[sports/Volley/volley1.jpg sports/Volley/volley2.jpg sports/Volley/volley3.jpg
-                                 sports/Volley/volley4.jpg sports/Volley/volley5.jpg sports/Volley/volley6.jpg],
-              "basketball" => %w[sports/Basketball/basket1.jpg sports/Basketball/basket2.jpg sports/Basketball/basket3.jpg
-                                 sports/Basketball/basket4.jpg sports/Basketball/basket5.jpg sports/Basketball/basket6.jpg],
-              "handball"   => %w[sports/Handball/handball1.jpg sports/Handball/handball2.jpg],
-              "badminton"  => %w[sports/Badminton/badminton1.jpg sports/Badminton/badminton2.jpg sports/Badminton/badminton3.jpg
-                                 sports/Badminton/badminton4.jpg sports/Badminton/badminton5.jpg sports/Badminton/badminton6.jpg]
-            }
           %>
           <% if upcoming_matches.any? %>
             <div style="display:flex; flex-direction:column; gap:0.65rem;">
@@ -498,71 +437,7 @@
         </div>
         <%# / match-block %>
 
-        <%# ── Avis des joueurs ──────────────────────────────────────────────── %>
-        <div style="margin-top:1.5rem;">
-
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-            <i data-lucide="star" style="width:14px; height:14px;"></i>
-            Avis des joueurs
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:0.65rem;">
-
-            <div class="match-block" style="padding:0.85rem 1rem;">
-              <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-                <img src="https://i.pravatar.cc/80?u=marc_l" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;" alt="Marc L.">
-                <div>
-                  <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">Marc L.</div>
-                  <div style="color:#1EDD88; font-size:0.75rem; line-height:1; margin-top:0.15rem;">★★★★★</div>
-                </div>
-              </div>
-              <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">Très bon joueur, ponctuel et fair-play. À bientôt sur le terrain !</p>
-            </div>
-
-            <div class="match-block" style="padding:0.85rem 1rem;">
-              <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-                <img src="https://i.pravatar.cc/80?u=sophie_t" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;" alt="Sophie T.">
-                <div>
-                  <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">Sophie T.</div>
-                  <div style="color:#1EDD88; font-size:0.75rem; line-height:1; margin-top:0.15rem;">★★★★<span style="color:rgba(255,255,255,0.2);">★</span></div>
-                </div>
-              </div>
-              <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">Excellent coéquipier, toujours disponible. On se revoit sur le terrain !</p>
-            </div>
-
-            <div class="match-block" style="padding:0.85rem 1rem;">
-              <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-                <img src="https://i.pravatar.cc/80?u=julian_d" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;" alt="Julian D.">
-                <div>
-                  <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">Julian D.</div>
-                  <div style="color:#1EDD88; font-size:0.75rem; line-height:1; margin-top:0.15rem;">★★★★★</div>
-                </div>
-              </div>
-              <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">Bonne communication et technique. Physique au top, recommandé !</p>
-            </div>
-
-        <%# ── 4. Description — en-tête hors card ─────────────────────────────── %>
-        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-          <i data-lucide="file-text" style="width:14px; height:14px;"></i>
-          Description
-        </div>
-        <div class="match-block mb-3">
-          <% if @profil.description.present? %>
-            <p style="font-size:0.88rem; color:rgba(255,255,255,0.7); line-height:1.65; margin:0;">
-              <%= @profil.description %>
-            </p>
-          <% else %>
-            <p style="font-size:0.88rem; color:rgba(255,255,255,0.4); margin:0;">
-              Pas encore de description.
-              <%# Lien "Ajouter" uniquement si c'est son propre profil %>
-              <% if current_user == @profil_user %>
-                <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
-              <% end %>
-            </p>
-          <% end %>
-        </div>
-
-        <%# ── 5. Titre avis des joueurs (hors card) ────────────────────────── %>
+        <%# ── Avis des joueurs ────────────────────────────────────────────────── %>
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
           <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
             <i data-lucide="star" style="width:14px; height:14px;"></i>
@@ -680,9 +555,11 @@
           <% if @avis.any? %>
             <% @avis.each do |avis| %>
               <div class="match-block" style="padding:0.85rem 1rem;">
+
+                <%# En-tête : avatar + nom + étoiles %>
                 <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
 
-                  <%# Avatar du reviewer (celui qui a laissé l'avis) %>
+                  <%# Avatar du reviewer %>
                   <% if avis.reviewer.profil&.avatar&.attached? %>
                     <%= image_tag avis.reviewer.profil.avatar,
                         style: "width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;",
@@ -699,16 +576,31 @@
                     <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">
                       <%= avis.reviewer.display_name %>
                     </div>
-                    <%# Étoiles colorées selon la note %>
+                    <%# Étoiles colorées selon la note (1 à 5) %>
                     <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
                       <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:rgba(255,255,255,0.2);"><%= "★" * (5 - avis.rating) %></span>
                     </div>
                   </div>
+
                 </div>
 
-          <div style="margin-top:0.85rem; text-align:center;">
-            <button type="button" style="background:none; border:none; padding:0; font-size:0.8rem; font-weight:600; color:#1EDD88; cursor:pointer;">Voir les 26 avis →</button>
-          </div>
+                <%# Contenu de l'avis (texte libre) %>
+                <% if avis.content.present? %>
+                  <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
+                    <%= avis.content %>
+                  </p>
+                <% end %>
+
+              </div>
+            <% end %>
+
+          <% else %>
+            <%# Aucun avis pour le moment %>
+            <div style="padding:1.25rem; text-align:center; color:rgba(255,255,255,0.35); font-size:0.85rem;">
+              <i data-lucide="star" style="width:22px;height:22px;margin-bottom:0.4rem;display:block;margin-left:auto;margin-right:auto;"></i>
+              Aucun avis pour le moment.
+            </div>
+          <% end %>
 
         </div><%# / avis %>
 
@@ -792,27 +684,6 @@
             <div class="achievement-modal-back-description"
                  data-achievement-modal-target="description"></div>
           </div>
-                <%# Commentaire (optionnel) %>
-                <% if avis.content.present? %>
-                  <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
-                    <%= avis.content %>
-                  </p>
-                <% end %>
-              </div>
-            <% end %>
-
-          <% else %>
-            <%# État vide — message adapté selon le contexte %>
-            <div class="match-block" style="padding:1.25rem; text-align:center; color:rgba(255,255,255,0.35);">
-              <i data-lucide="message-circle" style="width:24px; height:24px; margin-bottom:0.4rem; opacity:0.4;"></i>
-              <% if defined?(@hidden_review_from_this_user) && @hidden_review_from_this_user %>
-                <%# L'autre user a noté mais son avis est masqué tant que l'échange n'est pas mutuel %>
-                <p style="font-size:0.82rem; margin:0; color:rgba(245,158,11,0.6);">Avis masqué — laissez votre avis pour le débloquer.</p>
-              <% else %>
-                <p style="font-size:0.82rem; margin:0;">Pas encore d'avis.</p>
-              <% end %>
-            </div>
-          <% end %>
 
           </div><%# / card %>
         </div><%# / scene %>

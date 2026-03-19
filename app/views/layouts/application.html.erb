@@ -24,10 +24,9 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   </head>
 
-  <body class="<%= content_for(:body_class) %>">
   <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
       automatiquement jusqu'à la première erreur de formulaire si elle existe %>
-  <body data-controller="scroll-to-error">
+  <body class="<%= content_for(:body_class) %>" data-controller="scroll-to-error">
     <%= render "shared/navbar" %>
     <%= render "shared/flashes" %>
 
@@ -101,16 +100,6 @@
             if (typeof bootstrap !== "undefined") {
               bootstrap.Modal.getOrCreateInstance(el).show();
 
-      // 3. Après la mise à jour d'un turbo_frame (ex: cloche de notifications)
-      //    C'est cet événement qui se déclenche quand un turbo_stream remplace un frame
-      document.addEventListener("turbo:frame-render", initLucide);
-
-      // 4. Après une action Turbo Stream (ex: suppression d'une notification, "tout lire")
-      //    On intercepte le rendu du stream et on laisse Turbo finir d'abord,
-      //    puis on ré-initialise Lucide avec un court délai.
-      document.addEventListener("turbo:before-stream-render", function(event) {
-        // Laisse Turbo appliquer toutes les actions DOM, puis re-init Lucide
-        setTimeout(initLucide, 0);
               // Si une URL de redirection est définie, on redirige à la fermeture
               var redirectUrl = el.getAttribute("data-redirect-url");
               if (redirectUrl) {

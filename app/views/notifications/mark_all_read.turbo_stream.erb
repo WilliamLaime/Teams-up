@@ -17,5 +17,5 @@
   Si l'élément "notifications-index-section" n'est pas dans le DOM (ex: autre page), rien ne se passe.
 %>
 <%= turbo_stream.update "notifications-index-section" do %>
-  <%= render "notifications_index_section", notifications: @notifications %>
+  <%= render "notifications_page_list", notifications: @notifications %>
 <% end %>

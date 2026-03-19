@@ -1,0 +1,68 @@
+<%#
+  Partial : liste des notifications avec le thème "notif-page-*".
+  Utilisé dans index.html.erb et mark_all_read.turbo_stream.erb.
+  Reçoit la variable locale `notifications`.
+%>
+
+<% if notifications.any? %>
+  <div class="notif-page-list">
+    <% notifications.each do |notif| %>
+
+      <%#
+        id DOM unique (ex: "notification_1") — Turbo Stream supprime cet
+        élément directement depuis le dropdown ou la page.
+      %>
+      <div id="<%= dom_id(notif) %>" class="notif-page-wrapper">
+
+        <%# Bouton principal : marque comme lue puis redirige vers le lien de la notif %>
+        <%= button_to mark_read_notification_path(notif), method: :patch,
+            class: "notif-page-item w-100 text-start border-0 p-0 #{notif.read? ? 'is-read' : 'is-unread'}" do %>
+          <div class="d-flex align-items-start gap-3 px-4 py-3">
+
+            <%# Icône : cloche verte si non lue, check grisé si lue %>
+            <div class="notif-page-icon flex-shrink-0 mt-1">
+              <% if notif.read? %>
+                <i data-lucide="check-circle" style="width:18px;height:18px;color:rgba(255,255,255,0.3);"></i>
+              <% else %>
+                <i data-lucide="bell-dot" style="width:18px;height:18px;" class="text-primary"></i>
+              <% end %>
+            </div>
+
+            <%# Message + date %>
+            <div class="flex-grow-1">
+              <div class="notif-page-message <%= notif.read? ? 'read' : 'unread' %>">
+                <%= notif.message %>
+              </div>
+              <small class="notif-page-time">
+                <i data-lucide="clock" style="width:11px;height:11px;"></i>
+                <%= time_ago_in_words(notif.created_at) %>
+              </small>
+            </div>
+
+            <%# Point vert "nouveau" à droite pour les non lues %>
+            <% unless notif.read? %>
+              <span class="notif-page-dot flex-shrink-0 mt-2"></span>
+            <% end %>
+
+          </div>
+        <% end %>
+
+        <%# Bouton supprimer — positionné en absolu (via .notif-page-wrapper position:relative) %>
+        <%= button_to notification_path(notif), method: :delete,
+            class: "notif-delete-btn",
+            title: "Supprimer" do %>
+          <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+        <% end %>
+
+      </div>
+
+    <% end %>
+  </div>
+
+<% else %>
+  <%# État vide %>
+  <div class="notif-page-empty text-center py-5">
+    <i data-lucide="inbox" style="width:48px;height:48px;color:rgba(255,255,255,0.2);"></i>
+    <p class="mt-3">Tu n'as aucune notification pour le moment.</p>
+  </div>
+<% end %>

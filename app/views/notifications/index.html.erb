@@ -1,54 +1,32 @@
-<%# Page listant toutes les notifications de l'utilisateur connecté %>
-<%# Fond sombre sur le body pour éviter la barre blanche entre navbar et contenu %>
-<% content_for :body_class, "bg-dark-page" %>
-
-<div class="notifications-page">
-  <div class="container py-4">
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-
-        <%# Bouton retour — history.back() fiable peu importe le Referer %>
-        <button onclick="history.back()" class="nav-button nav-button--back mb-3" style="background:none;border:none;padding:0;cursor:pointer;">
-          <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Retour
-        </button>
-
-        <%# Titre %>
-        <h2 class="mb-4">Notifications</h2>
-
-        <%#
-          Ce wrapper a un id "notifications-index-section".
-          Turbo Stream peut le mettre à jour sans recharger la page.
-        %>
-        <div id="notifications-index-section">
-          <%= render "notifications_index_section", notifications: @notifications %>
-        </div>
-
 <%# Page : toutes les notifications de l'utilisateur connecté %>
+<% content_for :body_class, "bg-dark-page" %>
 
 <div class="notifications-page">
   <div class="container py-5">
     <div class="row justify-content-center">
       <div class="col-lg-7 col-md-9">
 
-        <%# ── En-tête ── %>
+        <%# ── En-tête : titre + badge non lues + bouton "Tout lire" ── %>
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div class="d-flex align-items-center gap-2">
-            <%# Lien retour %>
-            <%# javascript:history.back() = retourner à la page précédente dans l'historique du navigateur %>
+
+            <%# Flèche retour %>
             <%= link_to "javascript:history.back()", class: "notif-page-back" do %>
               <i data-lucide="arrow-left" style="width:18px;height:18px;"></i>
             <% end %>
+
             <h1 class="notif-page-title mb-0">Notifications</h1>
-            <%# Badge avec le nombre de non lues %>
+
+            <%# Badge "X non lues" à côté du titre %>
             <% unread = @notifications.count { |n| !n.read? } %>
             <% if unread > 0 %>
               <span class="notif-page-badge"><%= unread %> non lue<%= unread > 1 ? "s" : "" %></span>
             <% end %>
+
           </div>
 
           <%# Bouton "Tout lire" — visible seulement s'il y a des non lues %>
           <% if unread > 0 %>
-            <%# Avec block, on ne passe pas le texte en 1er arg — il vient du block %>
             <%= button_to mark_all_read_notifications_path,
                 method: :patch,
                 class: "btn btn-outline-primary btn-sm d-flex align-items-center gap-1" do %>
@@ -56,69 +34,16 @@
               Tout lire
             <% end %>
           <% end %>
+
         </div>
 
-        <%# ── Liste des notifications ── %>
-        <% if @notifications.any? %>
-          <div class="notif-page-list">
-            <% @notifications.each do |notif| %>
-
-              <%# Wrapper relatif pour pouvoir positionner la croix en absolu %>
-              <div class="notif-page-wrapper">
-
-                <%# Bouton principal : marque comme lue puis redirige %>
-                <%= button_to mark_read_notification_path(notif), method: :patch,
-                    class: "notif-page-item w-100 text-start border-0 p-0 #{notif.read? ? 'is-read' : 'is-unread'}" do %>
-                  <div class="d-flex align-items-start gap-3 px-4 py-3">
-
-                    <%# Icône : cloche verte si non lue, check grisé si lue %>
-                    <div class="notif-page-icon flex-shrink-0 mt-1">
-                      <% if notif.read? %>
-                        <i data-lucide="check-circle" style="width:18px;height:18px;color:rgba(255,255,255,0.3);"></i>
-                      <% else %>
-                        <i data-lucide="bell-dot" style="width:18px;height:18px;" class="text-primary"></i>
-                      <% end %>
-                    </div>
-
-                    <%# Message + date %>
-                    <div class="flex-grow-1">
-                      <div class="notif-page-message <%= notif.read? ? 'read' : 'unread' %>">
-                        <%= notif.message %>
-                      </div>
-                      <small class="notif-page-time">
-                        <i data-lucide="clock" style="width:11px;height:11px;"></i>
-                        <%= time_ago_in_words(notif.created_at) %>
-                      </small>
-                    </div>
-
-                    <%# Point vert "nouveau" à droite pour les non lues %>
-                    <% unless notif.read? %>
-                      <span class="notif-page-dot flex-shrink-0 mt-2"></span>
-                    <% end %>
-
-                  </div>
-                <% end %>
-
-                <%# Bouton supprimer (croix) — positionné en absolu dans le wrapper %>
-                <%# C'est un formulaire séparé car button_to génère déjà un <form> %>
-                <%= button_to notification_path(notif), method: :delete,
-                    class: "notif-delete-btn",
-                    title: "Supprimer" do %>
-                  <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
-                <% end %>
-
-              </div>
-
-            <% end %>
-          </div>
-
-        <% else %>
-          <%# État vide %>
-          <div class="notif-page-empty text-center py-5">
-            <i data-lucide="inbox" style="width:48px;height:48px;color:rgba(255,255,255,0.2);"></i>
-            <p class="mt-3">Tu n'as aucune notification pour le moment.</p>
-          </div>
-        <% end %>
+        <%#
+          Wrapper "notifications-index-section" :
+          Turbo Stream le met à jour après "Tout lire" sans recharger la page.
+        %>
+        <div id="notifications-index-section">
+          <%= render "notifications_page_list", notifications: @notifications %>
+        </div>
 
       </div>
     </div>

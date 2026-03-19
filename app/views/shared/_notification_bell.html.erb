@@ -6,34 +6,20 @@
 
 <% unread_count = current_user.notifications.unread.count %>
 
-<%# Bouton cloche — <button> au lieu de <a href="#"> (meilleure sémantique) %>
-<%# data-bs-auto-close="outside" : ne se ferme que si on clique EN DEHORS %>
-<%# Permet de supprimer une notif sans fermer le dropdown %>
+<%# Bouton cloche — data-bs-auto-close="outside" : reste ouvert quand on supprime une notif %>
 <button class="nav-link notif-bell-link position-relative px-2 border-0 bg-transparent"
         id="notifDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
   <i data-lucide="bell" class="notif-bell-icon" style="width:20px;height:20px;"></i>
-  <%# id="notif-badge" permet de mettre à jour uniquement le badge sans toucher le dropdown %>
+  <%# id="notif-badge" : cible Turbo Stream pour mettre à jour uniquement le badge %>
   <span id="notif-badge">
     <% if unread_count > 0 %>
       <span class="position-absolute badge rounded-pill bg-danger"
             style="font-size:0.6rem; top:2px; right:2px;">
-<%# Bouton cloche — badge rouge si notifications non lues %>
-<a class="nav-link px-2" href="#"
-   id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-  <%# Le span position-relative est collé à la taille de l'icône (inline-flex)
-      pour que le badge se positionne par rapport à la cloche et non au lien entier %>
-  <span class="position-relative d-inline-flex">
-    <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
-    <% if unread_count > 0 %>
-      <%# Badge rouge au coin supérieur droit de la cloche %>
-      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-            style="font-size:0.6rem;">
         <%= unread_count %>
       </span>
     <% end %>
   </span>
 </button>
-</a>
 
 <%# Dropdown — classe notif-dropdown pour le style sombre défini dans _navbar.scss %>
 <div class="dropdown-menu dropdown-menu-end notif-dropdown" aria-labelledby="notifDropdown">
@@ -42,8 +28,7 @@
   <div id="notif-header" class="notif-header d-flex justify-content-between align-items-center px-3 py-2">
     <strong class="small text-white">Notifications</strong>
     <% if unread_count > 0 %>
-      <%# text-primary = couleur verte (Bootstrap $primary overridé) %>
-      <%# turbo_frame: "_top" pour sortir du turbo_frame "notification_bell" et naviguer en pleine page %>
+      <%# turbo_frame: "_top" pour sortir du turbo_frame "notification_bell" %>
       <%= button_to "Tout lire", mark_all_read_notifications_path,
           method: :patch,
           data: { turbo_frame: "_top" },
@@ -54,22 +39,20 @@
   <%# Liste des 30 dernières notifications — zone scrollable %>
   <% recent_notifs = current_user.notifications.recent.limit(30) %>
   <% if recent_notifs.any? %>
-  <div class="notif-list">
-    <% recent_notifs.each do |notif| %>
+    <div class="notif-list">
+      <% recent_notifs.each do |notif| %>
 
-      <%#
-        Chaque notification a un id DOM unique (ex: "notification_1").
-        Turbo Stream peut supprimer cet élément directement depuis le dropdown.
-      %>
-      <div id="<%= dom_id(notif) %>" class="notif-item <%= notif.read? ? '' : 'unread' %>">
-        <div class="d-flex align-items-center">
+        <%#
+          notif-item-wrapper : position:relative pour que notif-delete-btn
+          soit positionné en absolu dans le coin haut droit.
+          id DOM unique pour que Turbo Stream puisse supprimer cet élément.
+        %>
+        <div id="<%= dom_id(notif) %>" class="notif-item-wrapper">
 
-          <%#
-            Zone cliquable : marque la notification comme lue.
-            turbo_frame: "_top" → Turbo navigue au niveau de la page entière.
-          %>
+          <%# Zone cliquable : marque comme lue et redirige vers le lien %>
+          <%# notif-item + unread : fond vert léger si non lue, transparent sinon %>
           <%= button_to mark_read_notification_path(notif), method: :patch,
-              class: "flex-grow-1 w-100 text-start border-0 p-0 bg-transparent",
+              class: "notif-item w-100 text-start border-0 p-0 #{'unread' unless notif.read?}",
               data: { turbo_frame: "_top" } do %>
             <div class="d-flex align-items-start gap-2 px-3 py-2">
               <%# Icône : check grisé si lue, cloche verte si non lue %>
@@ -79,7 +62,6 @@
                 <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary"></i>
               <% end %>
               <div>
-                <%# Texte : blanc atténué si lue, blanc gras si non lue %>
                 <div class="<%= notif.read? ? 'fw-normal' : 'fw-semibold' %>"
                      style="font-size:0.82rem;white-space:normal;line-height:1.3;color:<%= notif.read? ? 'rgba(255,255,255,0.55)' : 'white' %>;">
                   <%= notif.message %>
@@ -92,82 +74,37 @@
           <% end %>
 
           <%#
-            Bouton poubelle : supprime la notification via Turbo Stream.
-            Reste dans le dropdown sans navigation.
+            Bouton poubelle — positionné en absolu dans le coin supérieur droit
+            via CSS .notif-delete-btn (position:absolute; top:5px; right:5px)
+            data-turbo-frame="_top" : traite la réponse au niveau global (pas dans le frame)
           %>
-          <%# data-turbo-frame="_top" : sort la soumission du turbo_frame "notification_bell"
-              pour que la réponse turbo_stream soit bien traitée au niveau global %>
-          <%# notif-trash-btn : couleur et hover gérés en CSS (sans inline style) %>
           <%= button_to notification_path(notif), method: :delete,
-              class: "notif-trash-btn",
+              class: "notif-delete-btn",
               title: "Supprimer",
               data: { turbo_frame: "_top" } do %>
             <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
           <% end %>
 
         </div>
-      </div>
 
-      <%# Wrapper relatif pour positionner la croix de suppression en absolu %>
-      <div class="notif-item-wrapper">
+      <% end %>
+    </div>
 
-        <%# Cliquer marque la notif comme lue — classe "unread" = fond vert léger %>
-        <%# data-turbo-frame="_top" : navigation pleine page pour sortir du turbo_frame "notification_bell" %>
-        <%= button_to mark_read_notification_path(notif), method: :patch,
-            class: "w-100 text-start border-0 p-0 notif-item #{notif.read? ? '' : 'unread'}",
-            data: { turbo_frame: "_top" } do %>
-          <div class="d-flex align-items-start gap-2 px-3 py-2">
-            <%# Icône : check grisé si lue, cloche verte si non lue %>
-            <% if notif.read? %>
-              <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:rgba(255,255,255,0.4);"></i>
-            <% else %>
-              <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary"></i>
-            <% end %>
-            <div>
-              <%# Texte : blanc/gris si lue, blanc gras si non lue %>
-              <div class="<%= notif.read? ? '' : 'fw-semibold' %>"
-                   style="font-size:0.82rem;white-space:normal;line-height:1.3;color:<%= notif.read? ? 'rgba(255,255,255,0.5)' : '#fff' %>;">
-                <%= notif.message %>
-              </div>
-              <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
-                <%= time_ago_in_words(notif.created_at) %>
-              </small>
-            </div>
-          </div>
-        <% end %>
-
-        <%# Croix de suppression — formulaire séparé (ne peut pas être imbriqué dans button_to) %>
-        <%= button_to notification_path(notif), method: :delete,
-            class: "notif-delete-btn",
-            title: "Supprimer",
-            data: { turbo_frame: "_top" } do %>
-          <i data-lucide="trash-2" style="width:11px;height:11px;"></i>
-        <% end %>
-
-      </div>
-    <% end %>
-  </div>
   <% else %>
-    <%# État vide — aucune notification %>
+    <%# État vide %>
     <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
       <i data-lucide="inbox" style="width:22px;height:22px;"></i>
       <div class="small mt-1">Aucune notification</div>
     </div>
   <% end %>
 
-  <%# Lien en bas du dropdown vers la page complète des notifications %>
+  <%# Lien vers la page complète des notifications %>
   <div class="border-top border-secondary mt-1 pt-1 px-2 pb-1">
     <%= link_to notifications_path,
         class: "d-block text-center small text-decoration-none text-primary py-1",
         data: { turbo_frame: "_top" } do %>
       Voir toutes les notifications
     <% end %>
-  <%# Pied de dropdown : lien vers toutes les notifications %>
-  <div class="notif-footer text-center py-1">
-    <%# data-turbo-frame="_top" pour sortir du turbo_frame et naviguer vers la page complète %>
-    <%= link_to "Voir toutes les notifications", notifications_path,
-        class: "dropdown-item notif-see-all text-center small py-2",
-        data: { turbo_frame: "_top" } %>
   </div>
 
 </div>
