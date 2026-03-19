@@ -27,16 +27,37 @@ class NotificationsController < ApplicationController
     authorize @notification
 
     @notification.destroy
-    redirect_to notifications_path
+
+    # JSON → depuis le fetch Stimulus (supprime du DOM, dropdown reste ouvert)
+    # HTML → accès direct à l'URL (redirige vers la page notifications)
+    respond_to do |format|
+      format.json { head :ok }
+      format.html { redirect_to notifications_path }
+    end
   end
 
   # PATCH /notifications/mark_all_read
   # Marque toutes les notifications de l'utilisateur comme lues
   def mark_all_read
-    # On utilise authorize avec un symbole car il n'y a pas de record unique ici
     authorize :notification, :mark_all_read?
-
     current_user.notifications.unread.update_all(read: true)
-    redirect_to notifications_path, notice: "Toutes les notifications ont été marquées comme lues."
+    broadcast_bell_update
+    respond_to do |format|
+      format.json { head :ok }
+      format.html { redirect_to notifications_path, notice: "Toutes les notifications ont été marquées comme lues." }
+    end
+  end
+
+  private
+
+  # Met à jour la cloche dans la navbar via ActionCable pour tous les onglets ouverts.
+  # Nécessaire car update_all bypasse les callbacks du modèle Notification.
+  def broadcast_bell_update
+    Turbo::StreamsChannel.broadcast_update_to(
+      [current_user, :notifications],
+      target: "notification_bell",
+      partial: "shared/notification_bell",
+      locals: { current_user: current_user }
+    )
   end
 end

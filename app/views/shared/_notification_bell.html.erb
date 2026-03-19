@@ -23,18 +23,33 @@
   </span>
 </a>
 
-<%# Dropdown — classe notif-dropdown pour le style sombre défini dans _navbar.scss %>
-<div class="dropdown-menu dropdown-menu-end notif-dropdown" aria-labelledby="notifDropdown">
+<%#
+  Dropdown — data-controller branche le contrôleur Stimulus "notification-dropdown".
+  Ce contrôleur intercepte le "Tout lire" et met à jour le DOM sans fermer le dropdown
+  ni naviguer vers une autre page.
+%>
+<div class="dropdown-menu dropdown-menu-end notif-dropdown"
+     aria-labelledby="notifDropdown"
+     data-controller="notification-dropdown">
 
   <%# En-tête : titre + bouton "Tout lire" si nécessaire %>
   <div class="notif-header d-flex justify-content-between align-items-center px-3 py-2">
     <strong class="small text-white">Notifications</strong>
     <% if unread_count > 0 %>
-      <%# text-primary = couleur verte (Bootstrap $primary overridé) %>
-      <%# turbo_frame: "_top" pour sortir du turbo_frame "notification_bell" et naviguer en pleine page %>
+      <%#
+        Bouton "Tout lire" :
+        - form: { data: { action: ... } } → Stimulus intercepte le submit du formulaire
+        - data: { notification_dropdown_target: "markAllBtn" } → permet au contrôleur
+          de retrouver et supprimer ce bouton après l'action
+        - Plus de turbo_frame "_top" : on ne veut plus naviguer vers /notifications
+      %>
       <%= button_to "Tout lire", mark_all_read_notifications_path,
           method: :patch,
-          data: { turbo_frame: "_top" },
+          form: { data: { action: "submit->notification-dropdown#markAllRead" } },
+          data: {
+            notification_dropdown_target: "markAllBtn",
+            action: "click->notification-dropdown#stopClickPropagation"
+          },
           class: "btn btn-link btn-sm p-0 text-decoration-none text-primary small" %>
     <% end %>
   </div>
@@ -44,8 +59,14 @@
   <% if recent_notifs.any? %>
   <div class="notif-list">
     <% recent_notifs.each do |notif| %>
-      <%# Wrapper relatif pour positionner la croix de suppression en absolu %>
-      <div class="notif-item-wrapper">
+      <%#
+        Wrapper de chaque notification.
+        Pour les non lues : data-notification-dropdown-target="unreadItem"
+        permet au contrôleur de les mettre à jour visuellement après "Tout lire".
+      %>
+      <%# La classe "notif-unread-item" est utilisée par le contrôleur Stimulus
+          pour retrouver les notifications non lues lors du "Tout lire" %>
+      <div class="notif-item-wrapper <%= 'notif-unread-item' unless notif.read? %>">
 
         <%# Cliquer marque la notif comme lue — classe "unread" = fond vert léger %>
         <%# data-turbo-frame="_top" : navigation pleine page pour sortir du turbo_frame "notification_bell" %>
@@ -60,8 +81,11 @@
               <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary"></i>
             <% end %>
             <div>
-              <%# Texte : blanc/gris si lue, blanc gras si non lue %>
-              <div class="<%= notif.read? ? '' : 'fw-semibold' %>"
+              <%#
+                Classe "notif-msg" utilisée par le contrôleur Stimulus pour
+                passer le texte en grisé après "Tout lire".
+              %>
+              <div class="notif-msg <%= notif.read? ? '' : 'fw-semibold' %>"
                    style="font-size:0.82rem;white-space:normal;line-height:1.3;color:<%= notif.read? ? 'rgba(255,255,255,0.5)' : '#fff' %>;">
                 <%= notif.message %>
               </div>
@@ -72,11 +96,20 @@
           </div>
         <% end %>
 
-        <%# Croix de suppression — formulaire séparé (ne peut pas être imbriqué dans button_to) %>
+        <%#
+          Croix de suppression — formulaire séparé (ne peut pas être imbriqué dans button_to).
+          form: { data: { action: ... } } → Stimulus intercepte le submit du formulaire
+          sans naviguer ni fermer le dropdown.
+        %>
+        <%#
+          data: { action: "click->..." } → stoppe la propagation du click AVANT
+          que Bootstrap ne le reçoive et ferme le dropdown.
+        %>
         <%= button_to notification_path(notif), method: :delete,
             class: "notif-delete-btn",
             title: "Supprimer",
-            data: { turbo_frame: "_top" } do %>
+            form: { data: { action: "submit->notification-dropdown#deleteNotif" } },
+            data: { action: "click->notification-dropdown#stopClickPropagation" } do %>
           <i data-lucide="trash-2" style="width:11px;height:11px;"></i>
         <% end %>
 
