@@ -4,7 +4,7 @@ class MatchesController < ApplicationController
   skip_before_action :authenticate_user!, only: [:index, :show]
 
   # Retrouver le match avant les actions qui en ont besoin
-  before_action :set_match, only: [:show, :edit, :update, :destroy, :calendar]
+  before_action :set_match, only: [:show, :edit, :update, :destroy, :calendar, :make_public]
 
   # GET /matches
   # Deux modes :
@@ -35,6 +35,22 @@ class MatchesController < ApplicationController
   # GET /matches/:id
   # Affiche le détail d'un match
   def show
+    # ── Contrôle d'accès pour les matchs privés ──────────────────────────────
+    # Un match privé n'est accessible que :
+    #   - Par l'organisateur (toujours)
+    #   - Par quelqu'un ayant le bon token dans l'URL (?token=xxx)
+    if @match.private?
+      is_organizer    = user_signed_in? && @match.user == current_user
+      has_valid_token = params[:token].present? && params[:token] == @match.private_token
+      # Un participant déjà inscrit (peu importe le statut) peut toujours accéder au match
+      is_participant  = user_signed_in? && @match.match_users.exists?(user: current_user)
+      unless is_organizer || has_valid_token || is_participant
+        skip_authorization
+        redirect_to root_path, alert: "Ce match est privé. Vous avez besoin du lien d'invitation pour y accéder."
+        return
+      end
+    end
+
     # Récupère les participants du match avec leur profil (évite les N+1 dans la vue)
     @match_users = @match.match_users.includes(user: :profil)
     authorize @match
@@ -150,6 +166,14 @@ class MatchesController < ApplicationController
     redirect_to matches_path, notice: "Match supprimé."
   end
 
+  # PATCH /matches/:id/make_public
+  # Passe un match privé en public — réservé à l'organisateur
+  def make_public
+    authorize @match
+    @match.update!(visibility: "public")
+    redirect_to @match, notice: "Le match est maintenant ouvert au public !"
+  end
+
   # GET /matches/:id/calendar
   # Génère et télécharge un fichier .ics pour ajouter le match à un calendrier externe
   # Compatible avec Google Calendar, Apple Calendar et Outlook
@@ -256,6 +280,6 @@ class MatchesController < ApplicationController
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
-    params.require(:match).permit(:title, :description, :date, :time, :place, :venue_id, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format, :banner_image)
+    params.require(:match).permit(:title, :description, :date, :time, :place, :venue_id, :level, :player_left, :validation_mode, :price_per_player, :sport_id, :format, :banner_image, :visibility)
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_19_111913) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_19_151235) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -105,6 +105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_19_111913) do
     t.string "place"
     t.integer "player_left"
     t.integer "price_per_player", default: 0
+    t.string "private_token"
     t.bigint "sport_id"
     t.time "time"
     t.string "title"
@@ -112,7 +113,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_19_111913) do
     t.bigint "user_id"
     t.string "validation_mode", default: "automatic"
     t.bigint "venue_id"
+    t.string "visibility", default: "public", null: false
     t.index ["homme_du_match_id"], name: "index_matches_on_homme_du_match_id"
+    t.index ["private_token"], name: "index_matches_on_private_token", unique: true
     t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["user_id"], name: "index_matches_on_user_id"
     t.index ["venue_id"], name: "index_matches_on_venue_id"

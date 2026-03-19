@@ -17,6 +17,8 @@ Rails.application.routes.draw do
     member do
       # Télécharge le fichier ICS pour ajouter le match à un calendrier externe
       get :calendar
+      # Passe un match privé en public (organisateur uniquement)
+      patch :make_public
     end
 
     # Routes imbriquées pour gérer les inscriptions à un match

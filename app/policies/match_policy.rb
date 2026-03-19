@@ -20,6 +20,11 @@ class MatchPolicy < ApplicationPolicy
     owner?
   end
 
+  # Seul l'organisateur peut passer son match privé en public
+  def make_public?
+    owner?
+  end
+
   private
 
   # Vérifie que l'utilisateur connecté est le créateur du match
@@ -28,10 +33,17 @@ class MatchPolicy < ApplicationPolicy
   end
 
   class Scope < ApplicationPolicy::Scope
-    # Définit quels matchs sont visibles dans la liste
-    # Tout le monde peut voir tous les matchs
+    # Définit quels matchs sont visibles dans l'index :
+    # - Les matchs publics → visibles par tous
+    # - Les matchs privés → uniquement si l'user en est l'organisateur
     def resolve
-      scope.all
+      if user
+        scope.where(visibility: ["public", nil])
+             .or(scope.where(user: user))
+      else
+        # Visiteur non connecté → uniquement les matchs publics
+        scope.where(visibility: ["public", nil])
+      end
     end
   end
 end

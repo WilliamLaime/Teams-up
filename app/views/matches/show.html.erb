@@ -322,6 +322,55 @@
             <%= form_with url: match_path(@match), method: :delete, id: "delete-match-form" do %>
             <% end %>
           </div>
+
+          <%# ── Bloc lien privé — affiché uniquement si le match est privé ── %>
+          <% if @match.private? %>
+            <div style="margin-top:0.75rem; display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem;">
+
+              <%# Indicateur "Match privé" %>
+              <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
+                           color:#f59e0b; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3);
+                           border-radius:999px; padding:0.2rem 0.65rem;">
+                <i data-lucide="lock" style="width:11px; height:11px;"></i>
+                Match privé
+              </span>
+
+              <%# Bouton copier le lien d'invitation %>
+              <%
+                # Lien complet avec le token — à partager aux invités
+                private_url = match_url(@match, token: @match.private_token)
+              %>
+              <%# data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique %>
+              <button type="button"
+                      data-url="<%= private_url %>"
+                      onclick="
+                        navigator.clipboard.writeText(this.dataset.url);
+                        this.textContent = '✓ Lien copié !';
+                        setTimeout(() => { this.textContent = '📋 Copier le lien'; }, 2000);
+                      "
+                      style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
+                             color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15);
+                             border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
+                📋 Copier le lien
+              </button>
+
+              <%# Bouton "Ouvrir au public" — ouvre la modal de confirmation %>
+              <button type="button"
+                      data-bs-toggle="modal"
+                      data-bs-target="#makePublicModal"
+                      style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
+                             color:#1EDD88; background:rgba(30,221,136,0.1); border:1px solid rgba(30,221,136,0.3);
+                             border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
+                <i data-lucide="globe" style="width:11px; height:11px;"></i>
+                Ouvrir au public
+              </button>
+
+              <%# Formulaire PATCH caché — soumis uniquement depuis la modal de confirmation %>
+              <%= form_with url: make_public_match_path(@match), method: :patch, id: "make-public-form" do %>
+              <% end %>
+
+            </div>
+          <% end %>
         <% end %>
 
       </div>
@@ -1177,6 +1226,66 @@
     </div>
   </div>
 
+  <%# ══════════════════════════════════════════════════
+      MODAL "OUVRIR AU PUBLIC ?" — organisateur uniquement
+      Confirmation avant de rendre le match visible sur l'index.
+      ══════════════════════════════════════════════════ %>
+  <% if @match.private? %>
+  <div class="modal fade" id="makePublicModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content pending-modal-content" style="text-align:center;">
+
+        <%# Croix de fermeture %>
+        <button type="button"
+                class="pending-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Fermer">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+
+        <%# Icône %>
+        <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+          <div class="pending-modal-icon" style="background:rgba(30,221,136,0.12);">
+            <i data-lucide="globe" style="width:22px;height:22px; color:#1EDD88;"></i>
+          </div>
+        </div>
+
+        <%# Titre %>
+        <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px;">
+          Ouvrir ce match au public ?
+        </div>
+
+        <%# Sous-titre %>
+        <div class="pending-modal-subtitle">
+          <strong><%= @match.title %></strong> sera visible par tous les joueurs.<br>
+          N'importe qui pourra s'inscrire pour compléter les places restantes.
+        </div>
+
+        <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+        <%# Boutons d'action %>
+        <div class="d-flex gap-3" style="padding: 16px 0 4px;">
+          <%# Confirmer → soumet le formulaire PATCH #make-public-form %>
+          <button type="submit"
+                  form="make-public-form"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);">
+            Oui, ouvrir au public
+          </button>
+          <%# Annuler → ferme la modal %>
+          <button type="button"
+                  class="btn btn-sm flex-fill"
+                  style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                  data-bs-dismiss="modal">
+            Annuler
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <% end %>
+
 <% end %>
 
 <%# Les notifications aux participants (décision, annulation, etc.) sont désormais
@@ -1194,7 +1303,7 @@
     ══════════════════════════════════════════════════ %>
 <div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true"
      data-controller="share"
-     data-share-url-value="<%= match_url(@match) %>">
+     data-share-url-value="<%= @match.private? ? match_url(@match, token: @match.private_token) : match_url(@match) %>">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content share-modal-content">
 

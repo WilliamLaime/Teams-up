@@ -521,9 +521,12 @@
                         background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
                         border-radius:10px; padding:0.55rem 0.9rem;">
 
-              <%# Label gauche : Manuel — id pour que le JS puisse changer sa couleur %>
-              <span id="label_manuel" style="font-size:0.82rem; font-weight:700; white-space:nowrap;
-                           color:<%= @match.manual_validation? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;">
+              <%# Label gauche : Manuel — cliquable, vert si sélectionné %>
+              <span id="label_manuel"
+                    onclick="document.getElementById('validation_toggle').checked = false; document.getElementById('validation_toggle').dispatchEvent(new Event('change'));"
+                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
+                           color:<%= @match.manual_validation? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
+                           transition:color 0.15s;">
                 ✋ Manuel
               </span>
 
@@ -546,14 +549,70 @@
                 <span class="pill-toggle-track"></span>
               </label>
 
-              <%# Label droit : Automatique — id pour que le JS puisse changer sa couleur %>
-              <span id="label_automatique" style="font-size:0.82rem; font-weight:700; white-space:nowrap;
-                           color:<%= @match.manual_validation? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;">
+              <%# Label droit : Automatique — cliquable, vert si sélectionné %>
+              <span id="label_automatique"
+                    onclick="document.getElementById('validation_toggle').checked = true; document.getElementById('validation_toggle').dispatchEvent(new Event('change'));"
+                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
+                           color:<%= @match.manual_validation? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;
+                           transition:color 0.15s;">
                 ⚡ Automatique
               </span>
 
             </div>
           </div><%# fin toggle validation %>
+
+          <%# ── Toggle : Visibilité Public / Privé ── %>
+          <%# Champ caché mis à jour par JS selon la position du toggle %>
+          <%= hidden_field_tag "match[visibility]", @match.visibility.presence || "public", id: "match_visibility" %>
+
+          <div class="mb-0 mt-3">
+            <label class="form-label d-block">
+              Visibilité du match
+              <span class="css-tooltip"
+                    data-tip="Un match privé n'est accessible que via le lien d'invitation. Vous pouvez l'ouvrir au public à tout moment pour compléter les places restantes.">
+                <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
+              </span>
+            </label>
+
+            <div style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
+                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
+                        border-radius:10px; padding:0.55rem 0.9rem;">
+
+              <%# Label gauche : Privé — cliquable, vert si sélectionné %>
+              <span id="label_prive"
+                    onclick="document.getElementById('visibility_toggle').checked = false; document.getElementById('visibility_toggle').dispatchEvent(new Event('change'));"
+                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
+                           color:<%= @match.private? ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
+                           transition:color 0.15s;">
+                🔒 Privé
+              </span>
+
+              <%# Toggle pill — coché = public (par défaut), décoché = privé %>
+              <label class="pill-toggle" for="visibility_toggle" style="flex-shrink:0;">
+                <%= check_box_tag :visibility_toggle,
+                    "public",
+                    !@match.private?,
+                    class: "pill-toggle-input",
+                    id: "visibility_toggle",
+                    onchange: "
+                      document.getElementById('match_visibility').value   = this.checked ? 'public' : 'private';
+                      document.getElementById('label_prive').style.color  = this.checked ? 'rgba(255,255,255,0.4)' : '#1EDD88';
+                      document.getElementById('label_public').style.color = this.checked ? '#1EDD88' : 'rgba(255,255,255,0.4)';
+                    " %>
+                <span class="pill-toggle-track"></span>
+              </label>
+
+              <%# Label droit : Public — cliquable, vert si sélectionné %>
+              <span id="label_public"
+                    onclick="document.getElementById('visibility_toggle').checked = true; document.getElementById('visibility_toggle').dispatchEvent(new Event('change'));"
+                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
+                           color:<%= @match.private? ? 'rgba(255,255,255,0.4)' : '#1EDD88' %>;
+                           transition:color 0.15s;">
+                🌍 Public
+              </span>
+
+            </div>
+          </div><%# fin toggle visibilité %>
 
           <%# ── Ligne séparatrice ── %>
           <hr class="my-4">

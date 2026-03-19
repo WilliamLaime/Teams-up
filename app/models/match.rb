@@ -58,6 +58,24 @@ class Match < ApplicationRecord
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
 
+  # ── Visibilité ───────────────────────────────────────────────────────────────
+  # "public"  → visible sur l'index, inscriptions ouvertes à tous
+  # "private" → accessible uniquement via le lien avec token
+  VISIBILITY_OPTIONS = ["public", "private"].freeze
+
+  # Génère le token avant la création si le match est privé
+  before_create :generate_private_token, if: :private?
+
+  # Retourne vrai si le match est privé
+  def private?
+    visibility == "private"
+  end
+
+  # Retourne vrai si le match est public
+  def public?
+    visibility == "public" || visibility.blank?
+  end
+
   # Niveaux disponibles (freeze = tableau immuable, bonne pratique Ruby)
   LEVELS = ["Tout niveau", "Débutant", "Intermédiaire", "Avancé"].freeze
 
@@ -120,6 +138,18 @@ class Match < ApplicationRecord
   end
 
   private
+
+  # Génère un token URL-safe unique (ex: "aB3xZ9qR")
+  # Boucle jusqu'à trouver un token qui n'existe pas encore en base
+  def generate_private_token
+    loop do
+      token = SecureRandom.urlsafe_base64(8)
+      unless Match.exists?(private_token: token)
+        self.private_token = token
+        break
+      end
+    end
+  end
 
   # Construit un DateTime combinant les champs date et time du match
   def build_datetime

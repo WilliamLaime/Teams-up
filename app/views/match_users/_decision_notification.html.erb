@@ -49,16 +49,55 @@
       <%# Boutons d'action %>
       <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px 0 4px;">
 
-        <% if accepted %>
-          <%# Bouton "Ajouter à mon calendrier" — fonctionnalité à configurer plus tard %>
-          <button type="button"
-                  class="btn btn-sm w-100"
-                  style="background:rgba(0,200,100,0.12); color:#00c864; border:1px solid rgba(0,200,100,0.3); cursor:not-allowed; opacity:0.65;"
-                  disabled
-                  title="Fonctionnalité à venir">
-            <i data-lucide="calendar-plus" style="width:14px;height:14px; margin-right:6px;"></i>
-            Ajouter à mon calendrier
-          </button>
+        <% if accepted && match.date.present? && match.time.present? %>
+          <%
+            # Construit les URLs calendrier à partir des infos du match
+            start_dt = Time.zone.local(match.date.year, match.date.month, match.date.day, match.time.hour, match.time.min, 0)
+            end_dt   = start_dt + 90.minutes
+            gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+            gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
+            google_cal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
+                             "&text=#{CGI.escape(match.title)}" \
+                             "&dates=#{gc_start}/#{gc_end}" \
+                             "&location=#{CGI.escape(match.place.to_s)}" \
+                             "&details=#{CGI.escape("Match #{match.title} - Niveau : #{match.level}")}"
+          %>
+          <%# Dropdown calendrier — même fonctionnement que sur la show du match %>
+          <div class="dropdown w-100">
+            <button class="btn btn-sm w-100"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                    style="background:rgba(0,200,100,0.12); color:#00c864; border:1px solid rgba(0,200,100,0.3); display:flex; align-items:center; justify-content:center; gap:6px;">
+              <i data-lucide="calendar-plus" style="width:14px;height:14px;"></i>
+              Ajouter à mon calendrier
+            </button>
+            <ul class="dropdown-menu match-calendar-menu w-100">
+              <li>
+                <a class="dropdown-item match-calendar-item"
+                   href="<%= google_cal_url %>"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                  <span class="match-calendar-item-icon">🗓️</span>
+                  Google Calendar
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item match-calendar-item"
+                   href="<%= calendar_match_path(match) %>">
+                  <span class="match-calendar-item-icon">🍎</span>
+                  Apple Calendar
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item match-calendar-item"
+                   href="<%= calendar_match_path(match) %>">
+                  <span class="match-calendar-item-icon">📧</span>
+                  Outlook
+                </a>
+              </li>
+            </ul>
+          </div>
         <% end %>
 
         <%# Bouton de fermeture principal %>

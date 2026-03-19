@@ -27,17 +27,6 @@ class MatchUsersController < ApplicationController
       join_with_manual_validation(organizer)
     else
       # Mode automatique : accepté immédiatement
-      @match_user.status = "approved"
-      if @match_user.save
-        @match.decrement!(:player_left)
-        notify_organizer("#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
-        # 🎮 Vérifier les achievements liés à l'inscription à un match
-        AchievementService.new(current_user).check(:first_join)
-        AchievementService.new(current_user).check(:match_joined)
-        redirect_to @match, notice: "Tu as rejoint le match !"
-      else
-        redirect_to @match, alert: "Impossible de rejoindre le match."
-      end
       join_automatically(organizer)
     end
   end
@@ -61,7 +50,13 @@ class MatchUsersController < ApplicationController
     # (pas de notif si pending/waiting/rejected — ces cas ne libèrent pas de place)
     broadcast_player_left_to_organizer(leaving_user) if was_approved
 
-    redirect_to @match, notice: "Tu as quitté le match."
+    # Match privé → retour à l'index (le joueur n'a plus accès sans token)
+    # Match public → retour à la show du match
+    if @match.private?
+      redirect_to matches_path, notice: "Tu as quitté le match."
+    else
+      redirect_to @match, notice: "Tu as quitté le match."
+    end
   end
 
   # PATCH /matches/:match_id/match_users/:id/approve
@@ -269,14 +264,19 @@ class MatchUsersController < ApplicationController
     end
   end
 
+  # Retourne les options de redirect pour le match — inclut le token si match privé
+  def match_redirect_options
+    @match.private? ? { token: @match.private_token } : {}
+  end
+
   # Cas 1 : Le match est complet → mise en file d'attente
   def join_waiting_list(organizer)
     @match_user.status = "waiting"
     if @match_user.save
       notify(organizer, "#{current_user.display_name} s'est inscrit en file d'attente pour \"#{@match.title}\"")
-      redirect_to @match, notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
+      redirect_to match_path(@match, **match_redirect_options), notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
     else
-      redirect_to @match, alert: "Impossible de rejoindre la file d'attente."
+      redirect_to match_path(@match, **match_redirect_options), alert: "Impossible de rejoindre la file d'attente."
     end
   end
 
@@ -290,7 +290,7 @@ class MatchUsersController < ApplicationController
     # Met à jour le contenu de #pending_modal_inner et ouvre la modal automatiquement.
     broadcast_pending_modal_to_organizer
 
-    redirect_to @match, notice: "Ta demande a été envoyée à l'organisateur !"
+    redirect_to match_path(@match, **match_redirect_options), notice: "Ta demande a été envoyée à l'organisateur !"
   end
 
   # Cas 3 : Validation automatique → accepté immédiatement
@@ -307,9 +307,9 @@ class MatchUsersController < ApplicationController
 
       # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" dans show.html.erb
       flash[:show_calendar_modal] = true
-      redirect_to @match, notice: "Tu as rejoint le match !"
+      redirect_to match_path(@match, **match_redirect_options), notice: "Tu as rejoint le match !"
     else
-      redirect_to @match, alert: "Impossible de rejoindre le match."
+      redirect_to match_path(@match, **match_redirect_options), alert: "Impossible de rejoindre le match."
     end
   end
 end
