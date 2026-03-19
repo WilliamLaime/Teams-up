@@ -9,7 +9,8 @@
     <div class="row align-items-center">
 
       <%# ── Logo : picto SVG + texte SVG côte à côte ── %>
-      <div class="col-md-4">
+      <%# justify-content-center sur mobile, justify-content-md-start sur desktop %>
+      <div class="col-md-4 d-flex justify-content-center justify-content-md-start">
         <%= link_to root_path, class: "footer-logo" do %>
           <%# Icône picto blanc Teams-Up %>
           <%= image_tag "img_footer/teamsup_picto_blanc.svg", alt: "", height: 32, class: "footer-logo-picto" %>
@@ -30,9 +31,10 @@
       </div>
 
       <%# ── Réseaux sociaux ── %>
-      <div class="col-md-4 d-flex justify-content-md-end">
+      <%# justify-content-center sur mobile, justify-content-md-end sur desktop %>
+      <div class="col-md-4 d-flex justify-content-center justify-content-md-end">
         <%# Font Awesome pour les réseaux sociaux (Lucide n'a pas TikTok) %>
-        <div class="footer-social d-flex gap-3">
+        <div class="footer-social d-flex gap-4">
           <a href="#" aria-label="Instagram">
             <i class="fa-brands fa-instagram fa-lg"></i>
           </a>
