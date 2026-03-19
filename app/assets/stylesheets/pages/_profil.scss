@@ -278,6 +278,205 @@
   }
 
 
+  // ── ATTRIBUTS RPG ─────────────────────────────────────────────────────
+
+  // Animation pulse pour le badge "points à distribuer"
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+  }
+
+
+  // ── WRAPPER DE CARTE + ORNEMENT DE RANG ──────────────────────────────────
+
+  // Wrapper qui crée le contexte de positionnement pour l'ornement
+  // overflow: visible permet aux losanges de dépasser au-dessus de la card
+  .profil-card-wrapper {
+    position: relative;
+    overflow: visible;
+  }
+
+  // Ornement de rang — centré sur le bord supérieur de la card
+  // Scale 1.12 : agrandi pour que les pointes arrivent aux angles de la card
+  // Transition synchronisée avec le flip de la carte (même durée + easing)
+  .profil-tier-ornament {
+    position: absolute;
+    top: 0;                          // ancré au bord supérieur de la card
+    left: 0;
+    right: 0;                        // pleine largeur du wrapper
+    transform: translateY(-50%) scaleX(1);
+    z-index: 10;                     // par-dessus la card et son contenu 3D
+    pointer-events: none;            // ne bloque pas les clics sur la card
+    transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1); // même timing que le flip
+  }
+
+  // Image SVG de l'ornement — légèrement plus large que la card
+  .profil-tier-ornament__img {
+    display: block;
+    width: 112%;                     // déborde pour atteindre les angles
+    margin-left: -6%;                // centré malgré le 112%
+    height: auto;
+  }
+
+
+  // ── CARTE RECTO / VERSO ────────────────────────────────────────────────
+
+  // Wrapper externe : crée la perspective 3D — la largeur est gérée par la colonne Bootstrap
+  .profil-flip-card {
+    perspective: 1200px;
+    width: 100%;
+  }
+
+  // Div interne : c'est elle qui "tourne" quand on ajoute is-flipped
+  .profil-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 490px;             // 490px : carte raccourcie, attributs plus visuels (barres 8px)
+    transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;  // Active le rendu 3D des enfants
+
+    // Classe ajoutée par Stimulus au clic → déclenche la rotation
+    &.is-flipped {
+      transform: rotateY(180deg);
+    }
+  }
+
+  // Styles partagés par les 2 faces
+  .profil-flip-front,
+  .profil-flip-back {
+    position: absolute;
+    inset: 0;                  // = top:0; right:0; bottom:0; left:0;
+    display: flex;
+    flex-direction: column;    // Permet le margin-top:auto sur le bouton flip
+    backface-visibility: hidden;          // Cache la face opposée pendant la rotation
+    -webkit-backface-visibility: hidden;  // Préfixe pour Safari
+    background-color: $dark-surface;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 0 0 16px 16px; // Haut plat, bas arrondi
+    padding: 1.25rem;
+    overflow-y: auto;          // Scroll interne si le contenu déborde
+  }
+
+  // Le verso commence retourné de 180° → il est caché par défaut
+  .profil-flip-back {
+    transform: rotateY(180deg);
+  }
+
+  // Bouton "Voir les stats" / "Retour au profil"
+  .profil-flip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+
+    &:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.09);
+    }
+  }
+
+
+  // ── TIERS DE CARTE — contour évolutif selon le niveau XP ─────────────────
+  // Chaque tier ajoute des ornements visuels de plus en plus élaborés.
+  // La classe est posée sur .profil-flip-card et sélectionne les faces enfants.
+
+  // ── Tier 1 : Bronze (Niveau 1-2) — contour cuivré discret ─────────────────
+  .card-tier-bronze .profil-flip-front,
+  .card-tier-bronze .profil-flip-back {
+    border-color: rgba(180, 110, 50, 0.35);
+  }
+
+  // ── Tier 2 : Silver (Niveau 3-4) — contour argenté + lueur ────────────────
+  .card-tier-silver .profil-flip-front,
+  .card-tier-silver .profil-flip-back {
+    border-color: rgba(200, 200, 220, 0.5);
+    box-shadow: 0 0 20px rgba(200, 200, 220, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  // ── Tier 3 : Gold (Niveau 5-6) — contour or + coins lumineux ──────────────
+  .card-tier-gold .profil-flip-front,
+  .card-tier-gold .profil-flip-back {
+    border-color: rgba(255, 210, 60, 0.65);
+    box-shadow: 0 0 28px rgba(255, 210, 60, 0.18);
+  }
+
+  // Halos aux 4 coins via le pseudo-élément ::before
+  .card-tier-gold .profil-flip-front::before,
+  .card-tier-gold .profil-flip-back::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 0 0 16px 16px;
+    background:
+      radial-gradient(ellipse 70px 70px at 0%   0%,   rgba(255, 210, 60, 0.14) 0%, transparent 70%),
+      radial-gradient(ellipse 70px 70px at 100% 0%,   rgba(255, 210, 60, 0.14) 0%, transparent 70%),
+      radial-gradient(ellipse 70px 70px at 0%   100%, rgba(255, 210, 60, 0.10) 0%, transparent 70%),
+      radial-gradient(ellipse 70px 70px at 100% 100%, rgba(255, 210, 60, 0.10) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  // ── Tier 4 : Platinum (Niveau 7-8) — contour violet/bleu + halos intenses ─
+  .card-tier-platinum .profil-flip-front,
+  .card-tier-platinum .profil-flip-back {
+    border-color: rgba(130, 100, 255, 0.7);
+    box-shadow:
+      0 0 30px rgba(130, 100, 255, 0.22),
+      0 0 60px rgba(75, 143, 245, 0.08),
+      inset 0 1px 0 rgba(130, 100, 255, 0.12);
+  }
+
+  .card-tier-platinum .profil-flip-front::before,
+  .card-tier-platinum .profil-flip-back::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 0 0 16px 16px;
+    background:
+      radial-gradient(ellipse 90px 90px at 0%   0%,   rgba(130, 100, 255, 0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 90px 90px at 100% 0%,   rgba(75,  143, 245, 0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 90px 90px at 0%   100%, rgba(155,  89, 182, 0.15) 0%, transparent 65%),
+      radial-gradient(ellipse 90px 90px at 100% 100%, rgba(130, 100, 255, 0.15) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  // ── Tier 5 : Élite (Niveau 9-10) — vert pulsant + halos complets ──────────
+  @keyframes elite-glow {
+    0%, 100% { box-shadow: 0 0 30px rgba(30, 221, 136, 0.35), 0 0 60px rgba(30, 221, 136, 0.12); }
+    50%       { box-shadow: 0 0 55px rgba(30, 221, 136, 0.55), 0 0 90px rgba(30, 221, 136, 0.22); }
+  }
+
+  .card-tier-elite .profil-flip-front,
+  .card-tier-elite .profil-flip-back {
+    border-color: rgba(30, 221, 136, 0.85);
+    animation: elite-glow 2.5s ease-in-out infinite;
+  }
+
+  .card-tier-elite .profil-flip-front::before,
+  .card-tier-elite .profil-flip-back::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 0 0 16px 16px;
+    background:
+      radial-gradient(ellipse 100px 100px at 0%   0%,   rgba(30, 221, 136, 0.20) 0%, transparent 60%),
+      radial-gradient(ellipse 100px 100px at 100% 0%,   rgba(255, 215,   0, 0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 100px 100px at 0%   100%, rgba(255, 215,   0, 0.14) 0%, transparent 60%),
+      radial-gradient(ellipse 100px 100px at 100% 100%, rgba(30, 221, 136, 0.20) 0%, transparent 60%),
+      // Halo central en haut (ornement top)
+      radial-gradient(ellipse 80px 35px  at 50%  0%,   rgba(30, 221, 136, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+
   // ── UTILITAIRES ───────────────────────────────────────────────────────
 
   .profil-link-green {
@@ -361,5 +560,270 @@
       caret-color: $dark-text;
       transition: background-color 5000s ease-in-out 0s !important;
     }
+  }
+}
+
+// ── Modal Achievement — carte RONDE avec tilt 3D + shine + flottement ────────
+
+// Flottement idle : la carte lévite doucement
+@keyframes achievement-float {
+  0%, 100% { transform: translateY(0px)   scale(1); }
+  50%       { transform: translateY(-10px) scale(1.02); }
+}
+
+// Entrée : jaillit de l'écran vers l'utilisateur
+@keyframes achievement-enter {
+  from { transform: scale(0.55) translateY(30px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);    opacity: 1; }
+}
+
+// ── Emoji volant (hero animation : du badge vers le centre de l'écran) ────────
+// Créé et supprimé en JS — ne doit jamais déborder ni être cliquable
+.achievement-flyer {
+  display: block;
+  text-align: center;
+  will-change: transform;
+  filter: drop-shadow(0 6px 28px rgba(0, 0, 0, 0.75));
+  // Léger flou de vitesse au départ, s'efface à l'arrivée
+  // (purement décoratif — le filtre CSS ne peut pas s'animer avec transform)
+}
+
+// ── Overlay ───────────────────────────────────────────────────────────────────
+.achievement-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+
+  &.is-open {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+// ── Wrapper centré ────────────────────────────────────────────────────────────
+// L'opacité et le transform sont gérés en JS (hero animation depuis le badge)
+.achievement-modal-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 3rem 2rem;
+  user-select: none;
+  opacity: 0; // JS le met à 1 lors de l'ouverture
+  will-change: transform, opacity; // optimise la perf GPU
+}
+
+// Bouton ×
+.achievement-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  &:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+}
+
+// Indice
+.achievement-modal-hint {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.28);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  letter-spacing: 0.05em;
+}
+
+// ── Ligne flèches + scène ─────────────────────────────────────────────────────
+.achievement-modal-flip-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+// ── Boutons flèche gauche / droite ────────────────────────────────────────────
+.achievement-modal-arrow {
+  // Cercle semi-transparent comme le bouton fermer
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+
+  // Légère pression au clic
+  &:active { transform: scale(0.9); }
+}
+
+// ── Scène 3D ──────────────────────────────────────────────────────────────────
+.achievement-modal-scene {
+  width: 260px;
+  height: 260px;
+  perspective: 800px;
+  cursor: grab;
+
+  // Flottement idle — stoppé pendant le drag via JS
+  animation: achievement-float 3.5s ease-in-out infinite;
+
+  &:active { cursor: grabbing; animation-play-state: paused; }
+}
+
+// ── Carte 3D ronde ────────────────────────────────────────────────────────────
+.achievement-modal-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+// ── Faces : RONDES comme les badges ──────────────────────────────────────────
+.achievement-modal-front,
+.achievement-modal-back {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;          // CERCLE PARFAIT
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  overflow: hidden;            // le shine ne déborde pas du cercle
+}
+
+// ── RECTO ─────────────────────────────────────────────────────────────────────
+.achievement-modal-front {
+  background: radial-gradient(circle at 40% 35%, rgba(80,80,80,0.35), rgba(20,20,20,0.9));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 0 0 6px rgba(255,255,255,0.04),
+    0 20px 60px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.achievement-modal-emoji {
+  font-size: 90px;
+  line-height: 1;
+  display: block;
+  text-align: center;
+  filter: drop-shadow(0 6px 20px rgba(0,0,0,0.6));
+}
+
+// ── VERSO ─────────────────────────────────────────────────────────────────────
+.achievement-modal-back {
+  background: radial-gradient(circle at 60% 65%, rgba(30,221,136,0.08), rgba(10,10,10,0.97));
+  border: 1px solid rgba(30, 221, 136, 0.2);
+  box-shadow:
+    0 0 0 6px rgba(30,221,136,0.04),
+    0 20px 60px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(30,221,136,0.1);
+  transform: rotateY(180deg);
+  padding: 2rem;
+  text-align: center;
+  gap: 0.6rem;
+}
+
+.achievement-modal-back-emoji {
+  font-size: 32px;
+  line-height: 1;
+  opacity: 0.5;
+}
+
+.achievement-modal-back-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.achievement-modal-back-description {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.5;
+}
+
+.achievement-modal-back-xp {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1EDD88;
+  text-shadow: 0 0 16px rgba(30, 221, 136, 0.5);
+}
+
+// ── Reflet lumineux qui suit la souris ────────────────────────────────────────
+.achievement-modal-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+
+// ── Bandeau verrouillé / déverrouillé ────────────────────────────────────────
+.achievement-modal-locked,
+.achievement-modal-unlocked {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+}
+
+.achievement-modal-locked {
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.achievement-modal-unlocked {
+  color: #1EDD88;
+  background: rgba(30, 221, 136, 0.1);
+  border: 1px solid rgba(30, 221, 136, 0.3);
+}
+
+// ── Bordure verte lumineuse quand déverrouillé ────────────────────────────────
+.achievement-modal-card.is-unlocked {
+  .achievement-modal-front,
+  .achievement-modal-back {
+    border: 2px solid #1EDD88;
+    box-shadow:
+      0 0 0 4px rgba(30, 221, 136, 0.18),   // halo intérieur
+      0 0 30px rgba(30, 221, 136, 0.45),     // glow moyen
+      0 0 70px rgba(30, 221, 136, 0.2),      // glow large
+      0 20px 60px rgba(0, 0, 0, 0.6);
   }
 }

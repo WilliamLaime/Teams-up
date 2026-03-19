@@ -1,151 +1,301 @@
 <%# ── Page profil utilisateur ─────────────────────────────────────────────── %>
 
-<%# Fond sombre forcé en inline pour bypass le cache CSS %>
-<div class="profil-page" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
+<%# data-controller ici = hors de tout transform CSS → position:fixed fonctionne %>
+<div class="profil-page" data-controller="achievement-modal" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
   <div class="container" style="position:relative; z-index:1;">
 
     <%# ── Lien retour ──────────────────────────────────────────────────────── %>
-    <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-4" %>
+    <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
 
-    <div class="row g-4">
+    <%# ══════════════════════════════════════════════════════════════════════ %>
+    <%# LAYOUT : carte gaming à gauche (5/12) | matchs + avis à droite (7/12) %>
+    <%# ══════════════════════════════════════════════════════════════════════ %>
+    <div class="row g-4 align-items-start">
 
-      <%# ════════════════════════ COLONNE GAUCHE (7/12) ════════════════════════ %>
-      <div class="col-lg-7">
+      <%# ══════════════════════ COLONNE GAUCHE (col-lg-5) ══════════════════ %>
+      <%# Carte flip gaming + Homme du match                                  %>
+      <%# ══════════════════════════════════════════════════════════════════════ %>
+      <div class="col-lg-5">
 
-        <%# ── 1. Identité — directement sur le fond, pas de card ──────────── %>
-        <div class="d-flex align-items-start gap-4 mb-4">
+        <%# ── Titre "Identité" hors de la card ──────────────────────────────── %>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+            <i data-lucide="user" style="width:14px; height:14px;"></i>
+            Identité
+          </div>
+        </div>
 
-          <%# Avatar — inline styles pour forcer le cercle et les dimensions %>
-          <div style="flex-shrink:0;">
-            <%# Avatar ou initiales colorées (Prénom + Nom) %>
-            <%= user_avatar_tag @profil_user,
-                style: "width:82px; height:82px; border-radius:50%; object-fit:cover; border:3px solid #1EDD88; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:400; flex-shrink:0;" %>
+        <%# Sélection du SVG d'ornement selon le tier du joueur %>
+        <%
+          tier_ornament = case @profil.card_tier_class
+            when "card-tier-silver"   then "ornementation_gaming/2.argent.svg"
+            when "card-tier-gold"     then "ornementation_gaming/3.or.svg"
+            when "card-tier-platinum" then "ornementation_gaming/4.epique.svg"
+            when "card-tier-elite"    then "ornementation_gaming/5.legendaire.svg"
+            else                           "ornementation_gaming/1.bronze.svg"
+          end
+        %>
+
+        <%# Wrapper relatif — data-controller ici pour cibler ornement + inner %>
+        <div class="profil-card-wrapper mb-3" data-controller="flip-card">
+
+          <%# Ornement de rang — centré sur le bord supérieur, s'anime avec le flip %>
+          <div class="profil-tier-ornament" data-flip-card-target="ornament">
+            <%= image_tag tier_ornament,
+                alt: "Ornement #{@profil.card_tier_class}",
+                class: "profil-tier-ornament__img" %>
           </div>
 
-          <%# Infos : nom, rôle, localisation, bouton %>
-          <div style="flex:1; min-width:0;">
+          <%# card_tier_class retourne "card-tier-bronze/silver/gold/platinum/elite" %>
+          <div class="profil-flip-card <%= @profil.card_tier_class %>">
+            <div class="profil-flip-inner" data-flip-card-target="inner">
 
-            <%# Nom + icône vérifié %>
-            <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.3rem;">
-              <h1 style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; line-height:1.2;">
-                <%= @profil_user.display_name %>
-              </h1>
-              <i data-lucide="badge-check" style="width:18px; height:18px; color:#1EDD88; flex-shrink:0;"></i>
-            </div>
+              <%# ══════════ RECTO : Identité + XP + Sports + Stats + Description ══════════ %>
+              <div class="profil-flip-front">
 
-            <%# Rôle + localisation + badge niveau %>
-            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.85rem;">
-              <% if @profil.role.present? %>
-                <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; color:rgba(255,255,255,0.55);">
-                  <i data-lucide="shield" style="width:12px; height:12px; color:rgba(255,255,255,0.2);"></i>
-                  <%= @profil.role %>
-                </span>
-                <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">·</span>
-              <% end %>
-              <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.8rem; color:rgba(255,255,255,0.55);">
-                <i data-lucide="map-pin" style="width:12px; height:12px; color:rgba(255,255,255,0.2);"></i>
-                <%= @profil.localisation.presence || "Localisation non renseignée" %>
-              </span>
-              <% if @profil.level.present? %>
-                <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">·</span>
+                <%# ── Identité (avatar compact + nom + meta) ───────────────────── %>
+                <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:0.6rem;">
+
+                  <%# Avatar — réduit à 64px %>
+                  <div style="flex-shrink:0;">
+                    <% if @profil.avatar.attached? %>
+                      <%= image_tag @profil.avatar,
+                          alt: "Photo de #{@profil_user.display_name}",
+                          style: "width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid #1EDD88; display:block;" %>
+                    <% else %>
+                      <div style="width:64px; height:64px; border-radius:50%; border:2px solid rgba(255,255,255,0.12); background:#242624; display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; color:rgba(255,255,255,0.4);">
+                        <%= @profil.first_name&.first&.upcase || "?" %>
+                      </div>
+                    <% end %>
+                  </div>
+
+                  <%# Infos à droite de l'avatar %>
+                  <div style="flex:1; min-width:0;">
+
+                    <%# Nom + vérifié + bouton modifier %>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-bottom:0.2rem;">
+                      <div style="display:flex; align-items:center; gap:0.35rem;">
+                        <h1 style="font-size:1.15rem; font-weight:800; color:#fff; margin:0; line-height:1.2;">
+                          <%= @profil_user.display_name %>
+                        </h1>
+                        <i data-lucide="badge-check" style="width:15px; height:15px; color:#1EDD88; flex-shrink:0;"></i>
+                      </div>
+                      <% if current_user == @profil_user %>
+                        <%= link_to edit_profil_path, style: "flex-shrink:0; display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700; color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:0.2rem 0.6rem; text-decoration:none; white-space:nowrap;" do %>
+                          <i data-lucide="pencil" style="width:10px; height:10px;"></i>
+                          Modifier
+                        <% end %>
+                      <% end %>
+                    </div>
+
+                    <%# Rôle + localisation + badge niveau de jeu %>
+                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.35rem;">
+                      <% if @profil.role.present? %>
+                        <span style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
+                          <%= @profil.role %>
+                        </span>
+                        <span style="color:rgba(255,255,255,0.18); font-size:0.75rem;">·</span>
+                      <% end %>
+                      <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:rgba(255,255,255,0.5);">
+                        <i data-lucide="map-pin" style="width:10px; height:10px; color:rgba(255,255,255,0.18);"></i>
+                        <%= @profil.localisation.presence || "—" %>
+                      </span>
+                      <% if @profil.level.present? %>
+                        <span style="color:rgba(255,255,255,0.18); font-size:0.75rem;">·</span>
+                        <%
+                          level_css = case @profil.level
+                            when "Débutant"      then "level-debutant"
+                            when "Intermédiaire" then "level-intermediaire"
+                            when "Avancé"        then "level-avance"
+                            else                      "level-tout"
+                          end
+                        %>
+                        <span class="match-badge-level <%= level_css %>" style="font-size:0.6rem; padding:0.1rem 0.4rem;"><%= @profil.level %></span>
+                      <% end %>
+                    </div>
+
+                    <%# Note (vraie moyenne depuis les avis) + XP level badge %>
+                    <div style="display:flex; align-items:center; gap:0.55rem;">
+                      <%
+                        avg   = @profil.average_rating.to_f
+                        full  = avg.floor
+                        empty = 5 - full
+                        badge_color     = @profil.level_badge_color
+                        profil_xp_level = @profil.xp_level || 1
+                      %>
+                      <% if @profil.avis_count.to_i > 0 %>
+                        <%# Étoiles colorées selon la vraie moyenne %>
+                        <span style="color:#1EDD88; font-size:0.8rem;"><%= "★" * full %><span style="color:rgba(255,255,255,0.2);"><%= "★" * empty %></span></span>
+                        <span style="font-size:0.75rem; font-weight:700; color:#fff;"><%= avg.round(1) %></span>
+                        <span style="font-size:0.68rem; color:rgba(255,255,255,0.35);">(<%= @profil.avis_count %> avis)</span>
+                      <% else %>
+                        <%# Aucun avis — étoiles grisées %>
+                        <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">★★★★★</span>
+                        <span style="font-size:0.68rem; color:rgba(255,255,255,0.35);">Pas encore noté</span>
+                      <% end %>
+                      <span style="color:rgba(255,255,255,0.25); font-size:0.75rem;">·</span>
+                      <span class="badge bg-<%= badge_color %>" style="font-size:0.72rem; font-weight:800; padding:0.25rem 0.55rem; border-radius:999px;">
+                        Lvl <%= profil_xp_level %>
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+                <%# / identité %>
+
+                <%# ── Barre XP compacte ──────────────────────────────────────────── %>
                 <%
-                  level_css = case @profil.level
-                    when "Débutant"      then "level-debutant"
-                    when "Intermédiaire" then "level-intermediaire"
-                    when "Avancé"        then "level-avance"
-                    else                      "level-tout"
-                  end
+                  xp_floor        = @profil.xp_for_current_level
+                  xp_ceiling      = @profil.xp_for_next_level
+                  profil_xp_total = @profil.xp || 0
+                  profil_percent  = @profil.xp_progress_percent
+                  xp_in_level     = profil_xp_total - xp_floor
+                  xp_range        = xp_ceiling - xp_floor
                 %>
-                <span class="match-badge-level <%= level_css %>"><%= @profil.level %></span>
-              <% end %>
-            </div>
+                <div style="margin-bottom:0.4rem;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.25rem;">
+                    <span style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.4);">
+                      Progression
+                    </span>
+                    <span style="font-size:0.68rem; color:rgba(255,255,255,0.4); font-weight:600;">
+                      <%= xp_in_level %> / <%= xp_range %> XP
+                      <% unlocked_count = @profil_user.user_achievements.count %>
+                      <% total_count    = Achievement.count %>
+                      · 🏆 <%= unlocked_count %>/<%= total_count %>
+                    </span>
+                  </div>
+                  <div class="progress" style="height:6px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden;">
+                    <div class="progress-bar bg-<%= badge_color %>"
+                         role="progressbar"
+                         style="width:<%= [profil_percent, 2].max %>%; transition: width 0.6s ease;"
+                         aria-valuenow="<%= profil_percent %>"
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                  </div>
+                </div>
+                <%# / barre XP %>
 
-            <%# Note moyenne — calculée depuis les vrais avis en base %>
-            <% if @profil.avis_count.to_i > 0 %>
-              <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.85rem;">
-                <%# Affiche les étoiles pleines/vides selon la moyenne arrondie %>
-                <span style="color:#1EDD88; font-size:0.9rem; letter-spacing:0.05em;">
-                  <% full_stars  = @profil.average_rating.to_f.floor %>
-                  <% empty_stars = 5 - full_stars %>
-                  <%= "★" * full_stars %><span style="color:rgba(255,255,255,0.2);"><%= "★" * empty_stars %></span>
-                </span>
-                <span style="font-size:0.82rem; font-weight:700; color:#fff;"><%= @profil.average_rating %></span>
-                <span style="font-size:0.78rem; color:rgba(255,255,255,0.4);">(<%= @profil.avis_count %> avis)</span>
-              </div>
-            <% end %>
-
-            <%# Bouton modifier le profil — visible uniquement pour le propriétaire du profil %>
-            <% if current_user == @profil_user %>
-              <%= link_to edit_profil_path, class: "btn btn-primary btn-sm btn-cta-primary", style: "display:inline-flex; align-items:center; gap:0.4rem;" do %>
-                <i data-lucide="pencil" style="width:12px; height:12px;"></i>
-                Modifier le profil
-              <% end %>
-            <% end %>
-
-          </div>
-        </div>
-        <%# / identité %>
-
-
-        <%# ── 2. Sports pratiqués ──────────────────────────────────────────────── %>
-        <% user_sports = @profil_user.sports.order(:name) %>
-        <% if user_sports.any? %>
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-            <i data-lucide="trophy" style="width:14px; height:14px;"></i>
-            Sports pratiqués
-          </div>
-          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem;">
-            <% user_sports.each do |sport| %>
-              <%# Pill sport avec emoji — sport actif mis en avant %>
-              <span style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:999px; font-size:0.82rem; font-weight:700; <%= current_sport&.id == sport.id ? 'background:rgba(30,221,136,0.14); border:1px solid rgba(30,221,136,0.45); color:#1EDD88;' : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.75);' %>">
-                <%= sport_icon(sport, size: "1rem") %>
-                <%= sport.name %>
-                <%# Petit point vert si c'est le sport actif %>
-                <% if current_sport&.id == sport.id %>
-                  <span style="width:6px; height:6px; border-radius:50%; background:#1EDD88; flex-shrink:0;"></span>
+                <%# ── Sports pratiqués ──────────────────────────────────────────────── %>
+                <% user_sports = @profil_user.sports.order(:name) %>
+                <% if user_sports.any? %>
+                  <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.45rem;">
+                    <i data-lucide="trophy" style="width:14px; height:14px;"></i>
+                    Sports pratiqués
+                  </div>
+                  <div style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.5rem;">
+                    <% user_sports.each do |sport| %>
+                      <span style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.85rem; border-radius:999px; font-size:0.82rem; font-weight:700; <%= current_sport&.id == sport.id ? 'background:rgba(30,221,136,0.14); border:1px solid rgba(30,221,136,0.45); color:#1EDD88;' : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.75);' %>">
+                        <%= sport_icon(sport, size: "1rem") %>
+                        <%= sport.name %>
+                        <% if current_sport&.id == sport.id %>
+                          <span style="width:6px; height:6px; border-radius:50%; background:#1EDD88; flex-shrink:0;"></span>
+                        <% end %>
+                      </span>
+                    <% end %>
+                  </div>
                 <% end %>
-              </span>
-            <% end %>
-          </div>
-        <% end %>
 
-        <%# ── 3. Statistiques — en-tête hors card ────────────────────────────── %>
-        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-          <i data-lucide="bar-chart-2" style="width:14px; height:14px;"></i>
-          Statistiques
-        </div>
-        <div class="row g-3 mb-3">
+                <%# ── Statistiques ─────────────────────────────────────────────────── %>
+                <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.4rem;">
+                  <i data-lucide="bar-chart-2" style="width:14px; height:14px;"></i>
+                  Statistiques
+                </div>
+                <div class="row g-2 mb-2" style="--bs-gutter-y:0.35rem;">
+                  <div class="col-6">
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.5rem 0.75rem;">
+                      <div style="font-size:0.6rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs joués</div>
+                      <div style="font-size:1.6rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.matchs.count %></div>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.5rem 0.75rem;">
+                      <div style="font-size:0.6rem; font-weight:700; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.07em;">Matchs créés</div>
+                      <div style="font-size:1.6rem; font-weight:800; color:#fff; line-height:1.1;"><%= @profil_user.match_users.where(role: "organisateur").count %></div>
+                    </div>
+                  </div>
+                </div>
+                <%# / statistiques %>
 
-          <div class="col-6">
-            <div class="match-block" style="display:flex; flex-direction:column; gap:0.4rem;">
-              <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.07em;">
-                Matchs joués
-              </span>
-              <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%# @matchs_joues = matchs terminés (H+1) où l'user était "approved" (pas en attente/file d'attente) %>
-                <%= @matchs_joues %>
-              </span>
-            </div>
-          </div>
+                <%# ── Description ───────────────────────────────────────────────────── %>
+                <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.35rem;">
+                  <i data-lucide="file-text" style="width:14px; height:14px;"></i>
+                  Description
+                </div>
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:0.45rem 0.7rem; margin-bottom:0.4rem; max-height:56px; overflow:hidden;">
+                  <% if @profil.description.present? %>
+                    <p style="font-size:0.78rem; color:rgba(255,255,255,0.65); line-height:1.5; margin:0;"><%= @profil.description %></p>
+                  <% else %>
+                    <p style="font-size:0.78rem; color:rgba(255,255,255,0.3); margin:0;">
+                      Pas encore de description.
+                      <% if current_user == @profil_user %>
+                        <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
+                      <% end %>
+                    </p>
+                  <% end %>
+                </div>
+                <%# / description %>
 
-          <div class="col-6">
-            <div class="match-block" style="display:flex; flex-direction:column; gap:0.4rem;">
-              <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.07em;">
-                Matchs créés
-              </span>
-              <span style="font-size:2.2rem; font-weight:800; color:#fff; line-height:1;">
-                <%= @profil_user.match_users.where(role: "organisateur").count %>
-              </span>
-            </div>
-          </div>
+                <%# Bouton flip vers l'armoire à trophées %>
+                <div style="margin-top:auto; padding-top:0.4rem; display:flex; justify-content:flex-end;">
+                  <button class="profil-flip-btn" data-action="click->flip-card#flip">
+                    <i data-lucide="trophy" style="width:11px; height:11px;"></i>
+                    Armoire à trophées
+                  </button>
+                </div>
 
-        </div>
-        <%# Ligne supplémentaire : Homme du match — affichée uniquement si au moins 1 titre %>
+              </div>
+              <%# / recto %>
+
+
+              <%# ══════════ VERSO : Armoire à trophées ══════════ %>
+              <div class="profil-flip-back">
+
+                <%# ── Titre ──────────────────────────────────────────────────── %>
+                <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+                  <i data-lucide="trophy" style="width:14px; height:14px;"></i>
+                  Armoire à trophées
+                </div>
+
+                <%# Récupère tous les achievements et ceux déverrouillés %>
+                <%
+                  all_achievements = Achievement.order(:category, :xp_reward)
+                  unlocked_ids     = @profil_user.user_achievements.pluck(:achievement_id)
+                %>
+
+                <%# Grille — chaque badge déclenche achievement-modal#open via le helper %>
+                <div style="display:flex; flex-wrap:wrap; gap:0.55rem; margin-bottom:0.5rem;">
+                  <% all_achievements.each do |achievement| %>
+                    <% is_unlocked = unlocked_ids.include?(achievement.id) %>
+                    <%= achievement_badge(achievement, is_unlocked: is_unlocked, size: 44) %>
+                  <% end %>
+                </div>
+
+                <%# Légende %>
+                <p style="font-size:0.62rem; color:rgba(255,255,255,0.22); margin-bottom:0;">
+                  Clique sur un badge pour l'inspecter.
+                </p>
+
+                <%# Bouton retour %>
+                <div style="margin-top:auto; padding-top:0.85rem; display:flex; justify-content:flex-end;">
+                  <button class="profil-flip-btn" data-action="click->flip-card#flip">
+                    <i data-lucide="rotate-ccw" style="width:11px; height:11px;"></i>
+                    Retour au profil
+                  </button>
+                </div>
+
+              </div>
+              <%# / verso %>
+
+            </div><%# / flip-inner %>
+          </div><%# / flip-card %>
+
+        </div><%# / profil-card-wrapper %>
+
+        <%# Homme du match — affiché uniquement si au moins 1 titre %>
         <% if @profil.homme_du_match_count.to_i > 0 %>
           <div class="row g-3 mb-3">
             <div class="col-12">
               <div class="match-block" style="display:flex; align-items:center; gap:0.75rem;">
-                <%# Icône trophée ambre %>
                 <span style="font-size:1.6rem; line-height:1;">🏆</span>
                 <div>
                   <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.07em; display:block;">
@@ -159,17 +309,21 @@
             </div>
           </div>
         <% end %>
-        <%# / stats %>
+
+      </div><%# / col-lg-5 %>
 
 
-        <%# ── 3. Mes matchs — en-tête hors card ──────────────────────────────── %>
+      <%# ══════════════════════ COLONNE DROITE (col-lg-7) ══════════════════ %>
+      <%# Mes matchs + Avis des joueurs (système dynamique)                   %>
+      <%# ══════════════════════════════════════════════════════════════════════ %>
+      <div class="col-lg-7">
+
+        <%# ── Mes matchs — en-tête hors card ──────────────────────────────── %>
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
           <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
             <i data-lucide="calendar" style="width:14px; height:14px;"></i>
-            <%# Titre adapté : "Mes matchs" si c'est son profil, sinon le prénom de l'organisateur %>
             <%= current_user == @profil_user ? "Mes matchs" : "Matchs de #{@profil_user.display_name}" %>
           </div>
-          <%# Lien "Voir tout" uniquement sur son propre profil %>
           <% if current_user == @profil_user %>
             <%= link_to "Voir tout", matches_path(mine: true), style: "font-size:0.8rem; font-weight:600; color:#1EDD88; text-decoration:none;" %>
           <% end %>
@@ -177,7 +331,7 @@
         <div class="match-block">
 
           <%
-            # Récupère les 3 prochains matchs de l'utilisateur affiché (créateur ou participant)
+            # Récupère les 3 prochains matchs de l'utilisateur affiché
             upcoming_matches = @profil_user.matchs
               .where("(date + time) > ?", Time.current)
               .order(date: :asc, time: :asc)
@@ -188,74 +342,48 @@
             <div style="display:flex; flex-direction:column; gap:0.65rem;">
               <% upcoming_matches.each do |match| %>
                 <%
-                  # Images disponibles par sport — dossier sports/ dans assets/images/
+                  # Images disponibles par sport
                   sport_images = {
                     "football"   => %w[
-                      sports/Football/ballon.webp
-                      sports/Football/citytoulouse.webp
-                      sports/Football/bresil.webp
-                      sports/Football/herbe.webp
-                      sports/Football/city1.webp
-                      sports/Football/citydrone.webp
-                      sports/Football/Duel.webp
-                      sports/Football/Medellin.webp
-                      sports/Football/herbe.webp
-                      sports/Football/terrainight.jpg
+                      sports/Football/ballon.webp sports/Football/citytoulouse.webp
+                      sports/Football/bresil.webp sports/Football/herbe.webp
+                      sports/Football/city1.webp  sports/Football/citydrone.webp
+                      sports/Football/Duel.webp   sports/Football/Medellin.webp
                     ],
                     "tennis"     => %w[
-                      sports/Tennis/tennis1.webp
-                      sports/Tennis/tennis2.webp
-                      sports/Tennis/tennis3.webp
-                      sports/Tennis/tennis4.webp
-                      sports/Tennis/tennis5.webp
-                      sports/Tennis/tennis6.webp
+                      sports/Tennis/tennis1.webp sports/Tennis/tennis2.webp
+                      sports/Tennis/tennis3.webp sports/Tennis/tennis4.webp
+                      sports/Tennis/tennis5.webp sports/Tennis/tennis6.webp
                     ],
                     "padel"      => %w[
-                      sports/Padel/padel1.webp
-                      sports/Padel/padel2.webp
-                      sports/Padel/padel3.webp
-                      sports/Padel/padel4.webp
-                      sports/Padel/padel5.webp
-                      sports/Padel/padel6.webp
+                      sports/Padel/padel1.webp sports/Padel/padel2.webp
+                      sports/Padel/padel3.webp sports/Padel/padel4.webp
+                      sports/Padel/padel5.webp sports/Padel/padel6.webp
                     ],
                     "volleyball" => %w[
-                      sports/Volley/volley1.webp
-                      sports/Volley/volley2.webp
-                      sports/Volley/volley3.webp
-                      sports/Volley/volley4.webp
-                      sports/Volley/volley5.webp
-                      sports/Volley/volley6.webp
+                      sports/Volley/volley1.webp sports/Volley/volley2.webp
+                      sports/Volley/volley3.webp sports/Volley/volley4.webp
+                      sports/Volley/volley5.webp sports/Volley/volley6.webp
                     ],
                     "basketball" => %w[
-                      sports/Basketball/basket1.webp
-                      sports/Basketball/basket2.webp
-                      sports/Basketball/basket3.webp
-                      sports/Basketball/basket4.webp
-                      sports/Basketball/basket5.webp
-                      sports/Basketball/basket6.webp
+                      sports/Basketball/basket1.webp sports/Basketball/basket2.webp
+                      sports/Basketball/basket3.webp sports/Basketball/basket4.webp
+                      sports/Basketball/basket5.webp sports/Basketball/basket6.webp
                     ],
                     "handball"   => %w[
-                      sports/Handball/handball1.webp
-                      sports/Handball/handball2.webp
+                      sports/Handball/handball1.webp sports/Handball/handball2.webp
                     ],
                     "badminton"  => %w[
-                      sports/Badminton/badminton1.webp
-                      sports/Badminton/badminton2.webp
-                      sports/Badminton/badminton3.webp
-                      sports/Badminton/badminton4.webp
-                      sports/Badminton/badminton5.webp
-                      sports/Badminton/badminton6.webp
+                      sports/Badminton/badminton1.webp sports/Badminton/badminton2.webp
+                      sports/Badminton/badminton3.webp sports/Badminton/badminton4.webp
+                      sports/Badminton/badminton5.webp sports/Badminton/badminton6.webp
                     ]
                   }
 
-                  # Slug du sport du match, football par défaut
                   sport_slug = match.sport&.slug || "football"
                   images = sport_images[sport_slug] || sport_images["football"]
-
-                  # Rotation déterministe par id du match
                   cover = images[match.id % images.length]
 
-                  # Classe CSS du badge niveau
                   lvl_css = case match.level
                     when "Débutant"      then "level-debutant"
                     when "Intermédiaire" then "level-intermediaire"
@@ -263,12 +391,11 @@
                     else                      "level-tout"
                   end
 
-                  # Date formatée en français
                   fr_days = %w[Dim Lun Mar Mer Jeu Ven Sam]
                   date_str = match.date ? "#{fr_days[match.date.wday]} #{match.date.strftime('%d/%m')}" : "—"
                 %>
 
-                <%# Card horizontale — 1 match = 1 card %>
+                <%# Card horizontale — 1 match = 1 ligne %>
                 <div style="display:flex; align-items:center; gap:0.9rem; padding:0.75rem 0.85rem; background-color:#242624; border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
 
                   <%# Miniature terrain %>
@@ -323,43 +450,17 @@
         </div>
         <%# / mes matchs %>
 
-      </div>
-      <%# / col-lg-7 %>
 
+        <%# ── Avis des joueurs (système dynamique) ──────────────────────────── %>
 
-      <%# ════════════════════════ COLONNE DROITE (5/12) ════════════════════════ %>
-      <div class="col-lg-5">
-
-        <%# ── 4. Description — en-tête hors card ─────────────────────────────── %>
-        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-          <i data-lucide="file-text" style="width:14px; height:14px;"></i>
-          Description
-        </div>
-        <div class="match-block mb-3">
-          <% if @profil.description.present? %>
-            <p style="font-size:0.88rem; color:rgba(255,255,255,0.7); line-height:1.65; margin:0;">
-              <%= @profil.description %>
-            </p>
-          <% else %>
-            <p style="font-size:0.88rem; color:rgba(255,255,255,0.4); margin:0;">
-              Pas encore de description.
-              <%# Lien "Ajouter" uniquement si c'est son propre profil %>
-              <% if current_user == @profil_user %>
-                <%= link_to "Ajouter", edit_profil_path, style: "color:#1EDD88; font-weight:600; text-decoration:none;" %>
-              <% end %>
-            </p>
-          <% end %>
-        </div>
-
-        <%# ── 5. Titre avis des joueurs (hors card) ────────────────────────── %>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+        <%# Titre + bouton "Laisser un avis" %>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1.5rem; margin-bottom:0.75rem;">
           <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
             <i data-lucide="star" style="width:14px; height:14px;"></i>
             Avis des joueurs
           </div>
 
           <%# Bouton "Laisser un avis" — visible uniquement si un match commun éligible existe %>
-          <%# @eligible_match est nil sur son propre profil, donc bouton jamais affiché %>
           <% if defined?(@eligible_match) && @eligible_match.present? %>
             <button type="button"
                     data-bs-toggle="modal"
@@ -371,12 +472,9 @@
           <% end %>
         </div>
 
-        <%# ── Hint : avis en attente (visible uniquement sur son propre profil) ── %>
-        <%# Affiche un message + raccourcis si l'user a des avis non-mutuels bloqués %>
+        <%# ── Hint : avis en attente (visible sur son propre profil) ────── %>
         <% if current_user == @profil_user && @pending_avis_count.to_i > 0 %>
           <div style="padding:0.75rem 0.9rem; margin-bottom:0.75rem; background:rgba(30,221,136,0.07); border:1px solid rgba(30,221,136,0.2); border-radius:8px;">
-
-            <%# Ligne titre %>
             <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
               <i data-lucide="lock" style="width:14px; height:14px; color:#1EDD88; flex-shrink:0;"></i>
               <p style="margin:0; font-size:0.78rem; color:rgba(255,255,255,0.65); line-height:1.4;">
@@ -386,21 +484,16 @@
               </p>
             </div>
 
-            <%# Pills des joueurs à noter — clic → profil du joueur %>
-            <%# On affiche max 5 pills + un badge "et N autres" si besoin %>
             <% if @pending_reviewers.any? %>
               <%
-                max_pills   = 5
-                visible     = @pending_reviewers.first(max_pills)
+                max_pills    = 5
+                visible      = @pending_reviewers.first(max_pills)
                 hidden_count = @pending_reviewers.count - visible.count
               %>
               <div style="display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center;">
-
                 <% visible.each do |reviewer| %>
-                  <%# Chaque pill est un lien vers le profil du joueur avec le bouton "Laisser un avis" %>
                   <%= link_to user_profil_path(reviewer),
                       style: "display:inline-flex; align-items:center; gap:0.4rem; padding:0.3rem 0.7rem; background:rgba(30,221,136,0.12); border:1px solid rgba(30,221,136,0.35); border-radius:999px; text-decoration:none; transition:background 0.15s;" do %>
-                    <%# Mini avatar %>
                     <% if reviewer.profil&.avatar&.attached? %>
                       <%= image_tag reviewer.profil.avatar,
                           style: "width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0;",
@@ -416,26 +509,19 @@
                     <i data-lucide="star" style="width:11px; height:11px; color:#1EDD88; flex-shrink:0;"></i>
                   <% end %>
                 <% end %>
-
-                <%# Badge "+ N autres" si plus de 5 joueurs en attente %>
                 <% if hidden_count > 0 %>
                   <span style="font-size:0.72rem; font-weight:600; color:rgba(30,221,136,0.6); padding:0.3rem 0.5rem; white-space:nowrap;">
                     + <%= hidden_count %> autre<%= hidden_count > 1 ? "s" : "" %>
                   </span>
                 <% end %>
-
               </div>
             <% end %>
-
           </div>
         <% end %>
 
-        <%# ── Teaser : l'autre user t'a noté, note-le pour voir son avis ────── %>
-        <%# Visible uniquement sur le profil de quelqu'un d'autre qui a déjà noté %>
+        <%# ── Teaser : l'autre user t'a noté ──────────────────────────────── %>
         <% if defined?(@hidden_review_from_this_user) && @hidden_review_from_this_user %>
           <div style="padding:0.75rem 0.9rem; margin-bottom:0.75rem; background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.2); border-radius:8px;">
-
-            <%# Message %>
             <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
               <i data-lucide="eye-off" style="width:14px; height:14px; color:#f59e0b; flex-shrink:0;"></i>
               <p style="margin:0; font-size:0.78rem; color:rgba(255,255,255,0.65); line-height:1.4;">
@@ -443,8 +529,6 @@
                 vous a laissé un avis — laissez-lui le vôtre pour le débloquer.
               </p>
             </div>
-
-            <%# Bouton "Laisser un avis" — ouvre la modal si un match éligible existe %>
             <% if @eligible_match.present? %>
               <button type="button"
                       data-bs-toggle="modal"
@@ -454,48 +538,37 @@
                 Laisser un avis à <%= @profil_user.display_name %>
               </button>
             <% else %>
-              <%# Fenêtre expirée : impossible de noter mais on garde le message informatif %>
               <span style="font-size:0.72rem; color:rgba(255,255,255,0.35);">
                 La fenêtre de 7 jours est expirée.
               </span>
             <% end %>
-
           </div>
         <% end %>
 
-        <%# Chaque avis = 1 card indépendante — données réelles depuis la base %>
+        <%# ── Liste des avis (données réelles) ──────────────────────────── %>
         <div style="display:flex; flex-direction:column; gap:0.65rem;">
-
           <% if @avis.any? %>
             <% @avis.each do |avis| %>
               <div class="match-block" style="padding:0.85rem 1rem;">
                 <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-
-                  <%# Avatar du reviewer (celui qui a laissé l'avis) %>
                   <% if avis.reviewer.profil&.avatar&.attached? %>
                     <%= image_tag avis.reviewer.profil.avatar,
                         style: "width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;",
                         alt: avis.reviewer.display_name %>
                   <% else %>
-                    <%# Fallback : initiale sur fond sombre %>
                     <div style="width:36px; height:36px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
                       <%= avis.reviewer.display_name.first.upcase %>
                     </div>
                   <% end %>
-
                   <div>
-                    <%# Nom du reviewer %>
                     <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">
                       <%= avis.reviewer.display_name %>
                     </div>
-                    <%# Étoiles colorées selon la note %>
                     <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
                       <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:rgba(255,255,255,0.2);"><%= "★" * (5 - avis.rating) %></span>
                     </div>
                   </div>
                 </div>
-
-                <%# Commentaire (optionnel) %>
                 <% if avis.content.present? %>
                   <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
                     <%= avis.content %>
@@ -505,21 +578,18 @@
             <% end %>
 
           <% else %>
-            <%# État vide — message adapté selon le contexte %>
             <div class="match-block" style="padding:1.25rem; text-align:center; color:rgba(255,255,255,0.35);">
               <i data-lucide="message-circle" style="width:24px; height:24px; margin-bottom:0.4rem; opacity:0.4;"></i>
               <% if defined?(@hidden_review_from_this_user) && @hidden_review_from_this_user %>
-                <%# L'autre user a noté mais son avis est masqué tant que l'échange n'est pas mutuel %>
                 <p style="font-size:0.82rem; margin:0; color:rgba(245,158,11,0.6);">Avis masqué — laissez votre avis pour le débloquer.</p>
               <% else %>
                 <p style="font-size:0.82rem; margin:0;">Pas encore d'avis.</p>
               <% end %>
             </div>
           <% end %>
-
         </div>
 
-        <%# Lien "Voir tous les avis" uniquement si plus de 10 avis %>
+        <%# Lien "Voir tous les avis" si plus de 10 avis %>
         <% if @profil.avis_count.to_i > 10 %>
           <div style="margin-top:0.85rem; text-align:center;">
             <span style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.4);">
@@ -528,9 +598,7 @@
           </div>
         <% end %>
 
-        <%# ── Modal formulaire d'avis ────────────────────────────────────────── %>
-        <%# Rendu via content_for :modals → injecté dans le layout HORS de tout stacking context %>
-        <%# Nécessaire pour que Bootstrap gère correctement le backdrop et le z-index du modal %>
+        <%# ── Modal formulaire d'avis ────────────────────────────────────── %>
         <% if defined?(@eligible_match) && @eligible_match.present? %>
           <% content_for :modals do %>
           <div class="modal fade" id="modal-avis-<%= @profil_user.id %>" tabindex="-1" aria-hidden="true">
@@ -545,24 +613,18 @@
                 </div>
 
                 <div class="modal-body">
-                  <%# Formulaire d'avis — soumis en HTML classique vers POST /users/:id/avis %>
                   <%= form_with url: user_avis_path(@profil_user), method: :post,
                       data: { controller: "star-rating" } do |f| %>
 
-                    <%# Match lié à l'avis (champ caché) %>
                     <%= hidden_field_tag "avis[match_id]", @eligible_match.id %>
-
-                    <%# Champ caché pour la note — rempli par le Stimulus star-rating %>
                     <%= hidden_field_tag "avis[rating]", "",
                         data: { "star-rating-target": "input" } %>
 
-                    <%# Info match %>
                     <p style="font-size:0.78rem; color:rgba(255,255,255,0.45); margin-bottom:1rem;">
                       Suite au match : <strong style="color:rgba(255,255,255,0.7);"><%= @eligible_match.title %></strong>
                       du <%= @eligible_match.date&.strftime("%d/%m/%Y") %>
                     </p>
 
-                    <%# Sélection des étoiles via Stimulus star-rating %>
                     <div style="margin-bottom:1rem;">
                       <label style="font-size:0.8rem; color:rgba(255,255,255,0.6); display:block; margin-bottom:0.4rem;">Note *</label>
                       <div style="display:flex; gap:0.35rem; font-size:1.8rem; cursor:pointer;"
@@ -575,7 +637,6 @@
                       </div>
                     </div>
 
-                    <%# Commentaire optionnel %>
                     <div style="margin-bottom:1.25rem;">
                       <label style="font-size:0.8rem; color:rgba(255,255,255,0.6); display:block; margin-bottom:0.4rem;">
                         Commentaire <span style="color:rgba(255,255,255,0.3);">(optionnel)</span>
@@ -586,7 +647,6 @@
                           style: "width:100%; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; padding:0.6rem 0.75rem; font-size:0.82rem; resize:none;" %>
                     </div>
 
-                    <%# Boutons %>
                     <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
                       <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
                               style="color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:0.4rem 1rem;">
@@ -609,9 +669,89 @@
         <% end %>
         <%# / modal avis %>
 
-      </div>
-      <%# / col-lg-5 %>
+      </div><%# / col-lg-7 %>
 
-    </div>
-  </div>
-</div>
+    </div><%# / row principal %>
+
+  </div><%# / container %>
+
+  <%# ══ MODAL achievement — EN DEHORS de tout transform CSS ════════════════ %>
+  <div class="achievement-modal-overlay"
+       data-achievement-modal-target="overlay"
+  >
+
+    <div class="achievement-modal-wrapper" data-achievement-modal-target="wrapper">
+
+      <button class="achievement-modal-close"
+              data-action="click->achievement-modal#close"
+              aria-label="Fermer">
+        <i data-lucide="x" style="width:18px;height:18px;"></i>
+      </button>
+
+      <p class="achievement-modal-hint">
+        <i data-lucide="move-horizontal" style="width:13px;height:13px;vertical-align:middle;"></i>
+        Attrape et fais glisser pour retourner
+      </p>
+
+      <div class="achievement-modal-flip-row">
+
+        <button class="achievement-modal-arrow"
+                data-action="click->achievement-modal#flipLeft"
+                aria-label="Retourner à gauche">
+          <i data-lucide="chevron-left" style="width:22px;height:22px;"></i>
+        </button>
+
+        <div class="achievement-modal-scene"
+             data-action="mousedown->achievement-modal#dragStart touchstart->achievement-modal#dragStart">
+
+          <div class="achievement-modal-card" data-achievement-modal-target="card">
+
+          <%# RECTO : gros emoji + reflet lumineux %>
+          <div class="achievement-modal-front">
+            <div class="achievement-modal-shine"
+                 data-achievement-modal-target="shine"></div>
+            <span class="achievement-modal-emoji"
+                  data-achievement-modal-target="emoji">🏅</span>
+          </div>
+
+          <%# VERSO : infos %>
+          <div class="achievement-modal-back">
+            <div class="achievement-modal-shine"
+                 data-achievement-modal-target="shine"></div>
+            <div class="achievement-modal-locked"
+                 data-achievement-modal-target="locked"
+                 style="display:none;">
+              <i data-lucide="lock" style="width:12px;height:12px;"></i>
+              Verrouillé
+            </div>
+            <div class="achievement-modal-unlocked"
+                 data-achievement-modal-target="unlocked"
+                 style="display:none;">
+              <i data-lucide="check-circle" style="width:12px;height:12px;"></i>
+              Déverrouillé
+            </div>
+            <span class="achievement-modal-back-emoji"
+                  data-achievement-modal-target="emoji">🏅</span>
+            <div class="achievement-modal-back-name"
+                 data-achievement-modal-target="name"></div>
+            <div class="achievement-modal-back-xp"
+                 data-achievement-modal-target="xp"></div>
+            <div class="achievement-modal-back-description"
+                 data-achievement-modal-target="description"></div>
+          </div>
+
+          </div><%# / card %>
+        </div><%# / scene %>
+
+        <button class="achievement-modal-arrow"
+                data-action="click->achievement-modal#flipRight"
+                aria-label="Retourner à droite">
+          <i data-lucide="chevron-right" style="width:22px;height:22px;"></i>
+        </button>
+
+      </div><%# / flip-row %>
+
+    </div><%# / wrapper %>
+  </div><%# / overlay %>
+
+</div><%# / profil-page %>
