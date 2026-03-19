@@ -1,4 +1,60 @@
 module ApplicationHelper
+  # Génère un badge achievement avec le style exactement issu du Figma TeamUp :
+  # — cercle plein (border-radius 9999px), fond rgba(255,255,255,0.05)
+  # — glow blanc quand déverrouillé, grayscale + opacité réduite quand verrouillé
+  # — emoji centré à 28px (adapté à la taille du badge dans l'armoire)
+  def achievement_badge(achievement, is_unlocked:, size: 48)
+    emoji      = achievement.icon_emoji.presence || "🏅"
+    emoji_size = (size * 0.58).round  # taille de police proportionnelle au badge
+
+    # Style : cercle semi-transparent + bordure verte + glow si déverrouillé
+    if is_unlocked
+      bg     = "rgba(255,255,255,0.07)"
+      border = "2px solid #1EDD88"
+      shadow = "0 0 0 3px rgba(30,221,136,0.15), 0 0 14px rgba(30,221,136,0.4)"
+      opacity = "1"
+      filter  = "none"
+    else
+      bg      = "rgba(255,255,255,0.03)"
+      border  = "1px solid rgba(255,255,255,0.06)"
+      shadow  = "none"
+      opacity = "0.28"
+      filter  = "grayscale(1)"
+    end
+
+    content_tag(:div,
+      data: {
+        # Tooltip Bootstrap au survol
+        bs_toggle:    "tooltip",
+        bs_placement: "top",
+        bs_title:     achievement.name,
+        # Stimulus : ouvre la modal et passe les données du badge
+        action:                              "click->achievement-modal#open",
+        achievement_modal_emoji_param:       emoji,
+        achievement_modal_name_param:        achievement.name,
+        achievement_modal_description_param: achievement.description,
+        achievement_modal_xp_param:          achievement.xp_reward,
+        achievement_modal_unlocked_param:    is_unlocked.to_s
+      },
+      style: [
+        "width:#{size}px; height:#{size}px;",
+        "border-radius:9999px;",
+        "display:flex; align-items:center; justify-content:center;",
+        "background:#{bg};",
+        "border:#{border};",
+        "box-shadow:#{shadow};",
+        "opacity:#{opacity};",
+        "filter:#{filter};",
+        "cursor:default; flex-shrink:0;",
+        "transition: box-shadow 0.2s, opacity 0.2s, filter 0.2s;"
+      ].join(" ")
+    ) do
+      # Emoji natif centré, taille proportionnelle au badge
+      content_tag(:span, emoji,
+        style: "font-size:#{emoji_size}px; line-height:1; display:block; text-align:center;"
+      )
+    end
+  end
   # ── Avatar utilisateur ────────────────────────────────────────────────────
   # Affiche l'avatar d'un utilisateur :
   #   - Si un avatar est attaché → image normale
