@@ -75,6 +75,8 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  # Ouvre les emails dans le navigateur au lieu de les envoyer (utile pour tester la confirmation d'email)
+  gem "letter_opener"
 end
 
 group :test do

@@ -2,7 +2,7 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable,
+         :recoverable, :rememberable, :validatable, :confirmable
          :omniauthable, omniauth_providers: [:google_oauth2] # Activation de la connexion via Google
   # dependent: :destroy supprime le profil automatiquement quand l'user est supprimé
   has_one :profil, dependent: :destroy
@@ -11,6 +11,19 @@ class User < ApplicationRecord
   # mais permettent au formulaire d'inscription de les recevoir
   # et au controller de les transmettre au Profil.
   attr_accessor :first_name, :last_name
+
+  # Regexp de validation du mot de passe :
+  # (?=.*[A-Z])   => au moins 1 lettre majuscule
+  # (?=.*\d)      => au moins 1 chiffre
+  # (?=.*[[:punct:]]) => au moins 1 symbole (!, @, #, $, etc.)
+  PASSWORD_REGEX = /\A(?=.*[A-Z])(?=.*\d)(?=.*[[:punct:]])/
+
+  validates :password,
+    format: {
+      with: PASSWORD_REGEX,
+      message: "doit contenir au moins une majuscule, un chiffre et un symbole"
+    },
+    if: :password_required? # Méthode Devise : n'exécute la validation que si le mot de passe est renseigné
 
   # Validations uniquement à la création du compte (on: :create)
   # Sans ça, Devise crée l'User même si le prénom/nom est vide,
