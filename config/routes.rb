@@ -54,10 +54,22 @@ Rails.application.routes.draw do
   # GET /users/:id/profil => voir le profil de l'utilisateur avec cet id
   get "users/:id/profil", to: "profils#show_user", as: :user_profil
 
-  # Routes pour les avis (imbriquées sous users)
-  # POST /users/:user_id/avis => laisser un avis à un joueur
+  # Routes pour les avis et les amis (imbriquées sous users)
+  # POST   /users/:user_id/avis                => laisser un avis à un joueur
+  # POST   /users/:user_id/friendship          => envoyer une demande d'ami
+  # DELETE /users/:user_id/friendship          => annuler la demande / retirer l'ami
+  # PATCH  /users/:user_id/friendship/accept   => accepter la demande reçue
+  # PATCH  /users/:user_id/friendship/decline  => refuser la demande reçue
   resources :users, only: [] do
     resources :avis, only: [:create]
+    # Ressource singulière — les actions accept/decline sont des routes collection
+    # car la ressource singulière n'a pas d'id dans l'URL
+    resource :friendship, only: [:create, :destroy] do
+      collection do
+        patch :accept
+        patch :decline
+      end
+    end
   end
 
   # Routes pour les notifications

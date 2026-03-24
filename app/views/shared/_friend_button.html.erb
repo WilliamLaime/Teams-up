@@ -1,0 +1,99 @@
+<%# Bouton de relation ami — affiché sur le profil d'un autre utilisateur
+    Gère 4 états :
+      1. Déjà amis (accepted) → badge "Amis" + bouton "Retirer" si c'est moi qui ai initié
+      2. Demande envoyée par moi (pending sent) → "En attente" + bouton "Annuler"
+      3. Demande reçue de cet utilisateur (pending received) → boutons "Accepter" / "Refuser"
+      4. Aucune relation → bouton "Ajouter"
+
+    Paramètres locaux :
+      - profil_user              : l'utilisateur dont on consulte le profil
+      - already_friends          : boolean
+      - pending_sent             : boolean — j'ai envoyé une demande à cette personne
+      - pending_received         : boolean — cette personne m'a envoyé une demande
+      - friendship_initiated_by_me : objet Friendship si c'est moi qui ai initié %>
+
+<% if user_signed_in? && current_user != profil_user %>
+
+  <%# ── État 1 : on est déjà amis ── %>
+  <% if already_friends %>
+    <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+      <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700;
+                   color:#1EDD88; border:1px solid rgba(30,221,136,0.3); border-radius:999px;
+                   padding:0.2rem 0.65rem;">
+        <i data-lucide="user-check" style="width:11px; height:11px;"></i>
+        Amis
+      </span>
+      <%# Bouton retirer uniquement si c'est moi qui ai initié %>
+      <% if friendship_initiated_by_me&.accepted? %>
+        <%= button_to user_friendship_path(profil_user),
+              method: :delete,
+              style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                      font-weight:700; color:rgba(255,255,255,0.35);
+                      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+                      border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+          <i data-lucide="user-minus" style="width:10px; height:10px;"></i>
+          Retirer
+        <% end %>
+      <% end %>
+    </div>
+
+  <%# ── État 2 : j'ai envoyé une demande, en attente de réponse ── %>
+  <% elsif pending_sent %>
+    <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+      <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700;
+                   color:rgba(255,255,255,0.45); border:1px solid rgba(255,255,255,0.15);
+                   border-radius:999px; padding:0.2rem 0.65rem;">
+        <i data-lucide="clock" style="width:11px; height:11px;"></i>
+        En attente
+      </span>
+      <%# Bouton pour annuler la demande envoyée %>
+      <%= button_to user_friendship_path(profil_user),
+            method: :delete,
+            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                    font-weight:700; color:rgba(255,100,100,0.7);
+                    background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
+                    border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+        <i data-lucide="x" style="width:10px; height:10px;"></i>
+        Annuler
+      <% end %>
+    </div>
+
+  <%# ── État 3 : cette personne m'a envoyé une demande, je dois répondre ── %>
+  <% elsif pending_received %>
+    <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+      <%# Bouton Accepter %>
+      <%= button_to accept_user_friendship_path(profil_user),
+            method: :patch,
+            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                    font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
+                    border:1px solid rgba(30,221,136,0.3); border-radius:999px;
+                    padding:0.2rem 0.65rem; cursor:pointer;" do %>
+        <i data-lucide="check" style="width:11px; height:11px;"></i>
+        Accepter
+      <% end %>
+      <%# Bouton Refuser %>
+      <%= button_to decline_user_friendship_path(profil_user),
+            method: :patch,
+            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                    font-weight:700; color:rgba(255,100,100,0.7);
+                    background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
+                    border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+        <i data-lucide="x" style="width:11px; height:11px;"></i>
+        Refuser
+      <% end %>
+    </div>
+
+  <%# ── État 4 : aucune relation, bouton "Ajouter" ── %>
+  <% else %>
+    <%= button_to user_friendship_path(profil_user),
+          method: :post,
+          style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                  font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
+                  border:1px solid rgba(30,221,136,0.3); border-radius:999px;
+                  padding:0.2rem 0.65rem; cursor:pointer;" do %>
+      <i data-lucide="user-plus" style="width:11px; height:11px;"></i>
+      Ajouter
+    <% end %>
+  <% end %>
+
+<% end %>

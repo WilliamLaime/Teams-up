@@ -85,6 +85,14 @@
                           <i data-lucide="pencil" style="width:10px; height:10px;"></i>
                           Modifier
                         <% end %>
+                      <% else %>
+                        <%# Bouton ami avec tous les états — visible uniquement sur le profil d'un autre %>
+                        <%= render "shared/friend_button",
+                              profil_user: @profil_user,
+                              already_friends: @already_friends,
+                              pending_sent: @pending_sent,
+                              pending_received: @pending_received,
+                              friendship_initiated_by_me: @friendship_initiated_by_me %>
                       <% end %>
                     </div>
 
@@ -659,6 +667,13 @@
           <% end %><%# / content_for :modals %>
         <% end %>
         <%# / modal avis %>
+
+        <%# ── Section Amis ────────────────────────────────────────────────── %>
+        <%# Sur son propre profil on passe les demandes en attente reçues
+            Sur le profil d'un autre on ne les passe pas (nil → section masquée) %>
+        <%= render "profils/friends_list",
+              friends: @all_friends,
+              pending_requests: (current_user == @profil_user ? @pending_friend_requests : nil) %>
 
       </div><%# / col-lg-7 %>
 

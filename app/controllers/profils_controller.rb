@@ -12,6 +12,15 @@ class ProfilsController < ApplicationController
     # @profil_user sert dans la vue pour afficher le bon utilisateur
     @profil_user = current_user
 
+    # Charge tous les amis acceptés de l'utilisateur connecté
+    @all_friends = current_user.all_friends.includes(:profil)
+
+    # Charge les demandes d'ami en attente reçues par l'utilisateur connecté
+    # (pour afficher les boutons Accepter / Refuser sur son propre profil)
+    @pending_friend_requests = current_user.inverse_friendships
+                                            .pending
+                                            .includes(user: :profil)
+
     # Nombre de matchs réellement joués :
     # - status "approved" → l'user était bien inscrit (pas en file d'attente ni en attente)
     # - match terminé → date+heure du match < maintenant - 1h (H+1)
@@ -53,6 +62,21 @@ class ProfilsController < ApplicationController
     skip_authorization
     @profil_user = User.find(params[:id])
     @profil = @profil_user.profil || @profil_user.build_profil
+
+    # Charge tous les amis du profil affiché
+    @all_friends = @profil_user.all_friends.includes(:profil)
+
+    # Vérifie le statut de la relation entre current_user et ce profil
+    if user_signed_in? && current_user != @profil_user
+      # Sont-ils amis (demande acceptée) ?
+      @already_friends = current_user.friends_with?(@profil_user)
+      # current_user a-t-il envoyé une demande en attente à ce profil ?
+      @pending_sent = current_user.pending_request_sent_to?(@profil_user)
+      # Ce profil a-t-il envoyé une demande en attente à current_user ?
+      @pending_received = current_user.pending_request_from?(@profil_user)
+      # La friendship initiée par current_user (pour Annuler ou Retirer)
+      @friendship_initiated_by_me = current_user.friendships.find_by(friend_id: @profil_user.id)
+    end
 
     # Nombre de matchs réellement joués pour le profil public :
     # - status "approved" → l'user était bien inscrit (pas en file d'attente ni en attente)

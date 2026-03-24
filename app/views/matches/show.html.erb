@@ -422,13 +422,15 @@
                 <div class="d-flex align-items-center gap-3">
                   <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
                   <div>
-                    <div class="match-organizer-name">
+                    <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
                       <% if organizer&.profil %>
                         <%= [organizer.profil.first_name, organizer.profil.last_name]
                               .compact.join(" ").presence || organizer.email %>
                       <% else %>
                         <%= organizer&.email || "Organisateur" %>
                       <% end %>
+                      <%# Icône "Ami" si on est amis avec l'organisateur %>
+                      <%= render "shared/friend_badge", already_friends: @organizer_friend_status %>
                     </div>
                     <div class="match-organizer-tag">Organisateur</div>
                   </div>
@@ -475,13 +477,15 @@
             <div class="d-flex align-items-center gap-3">
               <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
               <div>
-                <div class="match-organizer-name">
+                <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
                   <% if organizer&.profil %>
                     <%= [organizer.profil.first_name, organizer.profil.last_name]
                           .compact.join(" ").presence || organizer.email %>
                   <% else %>
                     <%= organizer&.email || "Organisateur" %>
                   <% end %>
+                  <%# Icône "Ami" si on est amis avec l'organisateur (version mobile) %>
+                  <%= render "shared/friend_badge", already_friends: @organizer_friend_status %>
                 </div>
                 <div class="match-organizer-tag">Organisateur</div>
               </div>

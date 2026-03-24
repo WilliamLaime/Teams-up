@@ -62,6 +62,14 @@ class MatchesController < ApplicationController
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match
     @current_match_user = @match.match_users.find_by(user: current_user)
 
+    # Vérifie si current_user est ami avec l'organisateur (pour afficher l'icône ami)
+    if user_signed_in?
+      organizer_user = @match_users.find { |mu| mu.role == "organisateur" }&.user
+      @organizer_friend_status = organizer_user.present? &&
+                                  current_user != organizer_user &&
+                                  current_user.friends_with?(organizer_user)
+    end
+
     # Calcule les avis en attente pour CE match (pour le bouton "Laisser un avis")
     # Conditions : match terminé + connecté + participant approuvé
     if user_signed_in? && @match.completed? && @current_match_user&.approved?

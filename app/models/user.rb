@@ -40,6 +40,43 @@ class User < ApplicationRecord
   # Sport actuellement actif (dernier sport sélectionné dans la navbar)
   belongs_to :current_sport, class_name: "Sport", optional: true
 
+  # ── Système d'amis ────────────────────────────────────────────────────────
+  # Demandes d'ami initiées par cet utilisateur (il a cliqué "Ajouter")
+  has_many :friendships, dependent: :destroy
+  has_many :friends, through: :friendships
+
+  # Demandes d'ami reçues par cet utilisateur (quelqu'un lui a envoyé une demande)
+  has_many :inverse_friendships, class_name: "Friendship", foreign_key: "friend_id", dependent: :destroy
+  has_many :inverse_friends, through: :inverse_friendships, source: :user
+
+  # Vérifie si self et other_user sont amis (demande acceptée dans un sens ou l'autre)
+  def friends_with?(other_user)
+    friendships.accepted.exists?(friend_id: other_user.id) ||
+      inverse_friendships.accepted.exists?(user_id: other_user.id)
+  end
+
+  # Retourne tous les amis dont la demande a été acceptée (dans les deux sens)
+  def all_friends
+    accepted_sent     = friendships.accepted.pluck(:friend_id)
+    accepted_received = inverse_friendships.accepted.pluck(:user_id)
+    User.where(id: accepted_sent + accepted_received)
+  end
+
+  # Vérifie si self a déjà envoyé une demande en attente à other_user
+  def pending_request_sent_to?(other_user)
+    friendships.pending.exists?(friend_id: other_user.id)
+  end
+
+  # Vérifie si other_user a envoyé une demande en attente à self
+  def pending_request_from?(other_user)
+    inverse_friendships.pending.exists?(user_id: other_user.id)
+  end
+
+  # Retourne la demande d'ami en attente reçue de other_user (pour pouvoir l'accepter/refuser)
+  def pending_friendship_from(other_user)
+    inverse_friendships.pending.find_by(user_id: other_user.id)
+  end
+
   # Retourne "Prénom Nom" si renseigné, sinon l'email
   # Utilisé partout dans les vues pour afficher l'identité d'un joueur
   def display_name

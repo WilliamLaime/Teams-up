@@ -1,0 +1,11 @@
+<%# Petite icône "Ami" affichée à côté d'un nom quand on est amis avec cette personne
+    Paramètre local : already_friends (boolean) %>
+<% if local_assigns[:already_friends] %>
+  <span title="Vous êtes amis"
+        style="display:inline-flex; align-items:center; justify-content:center;
+               width:18px; height:18px; border-radius:50%;
+               background:rgba(30,221,136,0.15); border:1px solid rgba(30,221,136,0.4);
+               flex-shrink:0; vertical-align:middle;">
+    <i data-lucide="user-check" style="width:10px; height:10px; color:#1EDD88;"></i>
+  </span>
+<% end %>
