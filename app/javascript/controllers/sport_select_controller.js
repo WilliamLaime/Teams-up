@@ -20,6 +20,15 @@ export default class extends Controller {
   connect() {
     // Index du sport actuellement affiché dans le carrousel
     this.currentIndex = 0
+    // Restaure l'état visuel des sports déjà cochés (après une erreur de formulaire)
+    // Le HTML a rendu les checkboxes avec checked=true, mais la classe --selected
+    // doit aussi être ajoutée sur le label parent pour que ce soit visible
+    this.itemTargets.forEach(item => {
+      const checkbox = item.querySelector("input[type='checkbox']")
+      if (checkbox?.checked) {
+        item.classList.add("sport-select-item--selected")
+      }
+    })
     this.syncCarousel()
   }
 

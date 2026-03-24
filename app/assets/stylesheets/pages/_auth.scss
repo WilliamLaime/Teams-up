@@ -521,6 +521,31 @@
   }
 }
 
+// ── Bouton oeil pour afficher/masquer le mot de passe ────────────────────
+// Utilise Bootstrap input-group : le bouton est collé à droite de l'input
+// Pas besoin de position absolute — Bootstrap gère l'alignement
+
+// Bouton oeil — flotte EN DESSUS de l'input, positionné en absolu dans le div relatif
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;       // Distance depuis le bord droit de l'input
+  top: 50%;             // Centré verticalement
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+  z-index: 2;           // Par-dessus l'input
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.85);
+  }
+}
+
 // ── Étoile obligatoire verte (page inscription) ──────────────────────────
 // Déclarée hors de .auth-card pour battre la spécificité de Bootstrap sur abbr
 // simple_form génère <abbr title="required">*</abbr> dans les labels

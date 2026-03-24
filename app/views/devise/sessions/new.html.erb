@@ -17,11 +17,27 @@
                     autofocus: true,
                     input_html: { autocomplete: "email", placeholder: "votre@email.com" } %>
 
-        <%# Champ Mot de passe %>
-        <%= f.input :password,
-                    label: "Mot de passe",
-                    required: false,
-                    input_html: { autocomplete: "current-password", placeholder: "••••••••" } %>
+        <%# Champ Mot de passe avec bouton oeil pour afficher/masquer %>
+        <div class="mb-3" data-controller="password-toggle">
+          <label class="form-label" for="user_password">Mot de passe</label>
+          <%# position:relative ici → le bouton absolu se positionne par rapport à CE div %>
+          <div style="position: relative;">
+            <input type="password"
+                   name="user[password]"
+                   id="user_password"
+                   class="form-control"
+                   placeholder="••••••••"
+                   autocomplete="current-password"
+                   data-password-toggle-target="input">
+            <button type="button"
+                    class="password-toggle-btn"
+                    data-action="click->password-toggle#toggle"
+                    data-password-toggle-target="button"
+                    aria-label="Afficher le mot de passe">
+              <i data-lucide="eye" style="width:18px;height:18px;"></i>
+            </button>
+          </div>
+        </div>
 
         <%# Case à cocher "Se souvenir de moi" (si activé dans Devise) %>
         <%= f.input :remember_me, as: :boolean if devise_mapping.rememberable? %>

@@ -20,8 +20,11 @@
         <div class="col-12 col-md-5">
 
           <%# ── Bloc choix d'avatar ──────────────────────────────────────────── %>
+          <%# data-avatar-choice-previous-preset-value → transmet le preset soumis avant l'erreur au controller Stimulus %>
+          <% previous_preset = params.dig(:user, :preset_avatar).to_s %>
           <div class="auth-avatar-block mb-4"
-               data-controller="avatar-choice avatar-preview">
+               data-controller="avatar-choice avatar-preview"
+               data-avatar-choice-previous-preset-value="<%= previous_preset %>">
 
             <%# Onglets "Ma photo" / "Avatars" %>
             <div class="auth-tabs">
@@ -116,8 +119,10 @@
               <small class="avatar-upload-hint">Clique sur un avatar pour le sélectionner</small>
             </div>
 
-            <%# Input caché → reçoit le nom du fichier preset sélectionné %>
-            <input type="hidden" name="user[preset_avatar]" data-avatar-choice-target="presetInput">
+            <%# Input caché → reçoit le nom du fichier preset sélectionné (pré-rempli si erreur) %>
+            <input type="hidden" name="user[preset_avatar]"
+                   value="<%= previous_preset %>"
+                   data-avatar-choice-target="presetInput">
 
           </div>
           <%# ── Fin bloc avatar ────────────────────────────────────────────── %>
@@ -139,17 +144,22 @@
             <%# Grille des sports — chaque bouton est un checkbox visuel %>
             <%# Les 4 premiers sont visibles, les suivants cachés jusqu'au clic "voir plus" %>
             <div class="sport-select-grid">
+              <%# On récupère les sport_ids soumis avant erreur (tableau de strings ex: ["1","3"]) %>
+              <% previously_selected = params.dig(:user, :sport_ids).to_a.map(&:to_s) %>
               <% Sport.order(:name).each_with_index do |sport, index| %>
-                <label class="sport-select-item <%= 'sport-select-item--hidden' if index >= 4 %>"
+                <% was_selected = previously_selected.include?(sport.id.to_s) %>
+                <%# Si le sport était coché avant l'erreur : on l'affiche même s'il est après la 4ème position %>
+                <label class="sport-select-item <%= 'sport-select-item--hidden' if index >= 4 && !was_selected %> <%= 'sport-select-item--selected' if was_selected %>"
                        data-sport-select-target="item"
                        data-action="click->sport-select#toggle">
-                  <%# Checkbox caché — soumis avec le formulaire %>
-                  <input type="checkbox"
-                         name="user[sport_ids][]"
-                         value="<%= sport.id %>"
-                         class="d-none"
-                         data-sport-select-target="checkbox">
-                  <%# Icône + nom du sport %>
+                  <%# Checkbox : checked si ce sport était sélectionné avant l'erreur %>
+                  <%# tag.input gère l'attribut booléen checked proprement (checked: true/false) %>
+                  <%= tag.input type: "checkbox",
+                                name: "user[sport_ids][]",
+                                value: sport.id,
+                                class: "d-none",
+                                checked: was_selected,
+                                data: { "sport-select-target": "checkbox" } %>
                   <%= sport_icon(sport, size: "1.6rem", css_class: "sport-select-icon") %>
                   <span class="sport-select-name"><%= sport.name %></span>
                 </label>
@@ -228,16 +238,58 @@
                         required: true,
                         input_html: { autocomplete: "email", placeholder: "votre@email.com" } %>
 
-            <%= f.input :password,
-                        label: "Mot de passe",
-                        required: true,
-                        hint: ("#{@minimum_password_length} caractères minimum" if @minimum_password_length),
-                        input_html: { autocomplete: "new-password", placeholder: "••••••••" } %>
+            <%# Champ mot de passe avec bouton oeil ──────────────────────── %>
+            <div class="mb-3" data-controller="password-toggle">
+              <label class="form-label" for="user_password">
+                Mot de passe <abbr title="required">*</abbr>
+              </label>
+              <%# position:relative ici → le bouton absolu se positionne par rapport à CE div %>
+              <div style="position: relative;">
+                <input type="password"
+                       name="user[password]"
+                       id="user_password"
+                       class="form-control"
+                       placeholder="••••••••"
+                       autocomplete="new-password"
+                       data-password-toggle-target="input">
+                <%# Bouton flottant à droite — par-dessus l'input, pas à côté %>
+                <button type="button"
+                        class="password-toggle-btn"
+                        data-action="click->password-toggle#toggle"
+                        data-password-toggle-target="button"
+                        aria-label="Afficher le mot de passe">
+                  <i data-lucide="eye" style="width:18px;height:18px;"></i>
+                </button>
+              </div>
+              <% if @minimum_password_length %>
+                <div class="form-text">
+                  <%= @minimum_password_length %> caractères minimum
+                </div>
+              <% end %>
+            </div>
 
-            <%= f.input :password_confirmation,
-                        label: "Confirmer le mot de passe",
-                        required: true,
-                        input_html: { autocomplete: "new-password", placeholder: "••••••••" } %>
+            <%# Champ confirmation mot de passe avec bouton oeil ────────────── %>
+            <div class="mb-3" data-controller="password-toggle">
+              <label class="form-label" for="user_password_confirmation">
+                Confirmer le mot de passe <abbr title="required">*</abbr>
+              </label>
+              <div style="position: relative;">
+                <input type="password"
+                       name="user[password_confirmation]"
+                       id="user_password_confirmation"
+                       class="form-control"
+                       placeholder="••••••••"
+                       autocomplete="new-password"
+                       data-password-toggle-target="input">
+                <button type="button"
+                        class="password-toggle-btn"
+                        data-action="click->password-toggle#toggle"
+                        data-password-toggle-target="button"
+                        aria-label="Afficher le mot de passe">
+                  <i data-lucide="eye" style="width:18px;height:18px;"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
           <%# ── Bouton S'inscrire + lien Se connecter sous les inputs ──────── %>

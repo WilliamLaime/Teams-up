@@ -14,6 +14,36 @@ export default class extends Controller {
     "presetPlaceholder" // Icône placeholder affiché avant toute sélection
   ]
 
+  // Valeur transmise depuis la vue : nom du preset soumis avant une erreur de formulaire
+  // data-avatar-choice-previous-preset-value="01" par exemple
+  static values = { previousPreset: String }
+
+  // Appelé automatiquement par Stimulus quand le controller est attaché au DOM
+  connect() {
+    // Si un preset avait été sélectionné avant l'erreur, on le restaure
+    if (this.previousPresetValue) {
+      // Bascule sur l'onglet "Avatars" pour montrer la sélection
+      this.switchPanel(false)
+
+      // Trouve l'item correspondant dans la grille et le marque comme sélectionné
+      const item = this.avatarItemTargets.find(
+        el => el.dataset.avatarName === this.previousPresetValue
+      )
+      if (item) {
+        item.classList.add("avatar-item-selected")
+
+        // Affiche la grande preview de l'avatar restauré
+        const src = item.dataset.avatarSrc
+        if (src) {
+          this.presetPreviewTarget.src = src
+          this.presetPreviewTarget.style.display = "block"
+          // Cache le placeholder (icône smile)
+          this.presetPlaceholderTarget.style.display = "none"
+        }
+      }
+    }
+  }
+
   // Bascule vers le panneau "Ma photo"
   showPhoto() {
     this.switchPanel(true)
