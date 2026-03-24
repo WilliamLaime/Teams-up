@@ -2,7 +2,8 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
+         :recoverable, :rememberable, :validatable,
+         :omniauthable, omniauth_providers: [:google_oauth2] # Activation de la connexion via Google
   # dependent: :destroy supprime le profil automatiquement quand l'user est supprimé
   has_one :profil, dependent: :destroy
 
@@ -45,5 +46,39 @@ class User < ApplicationRecord
   def display_name
     full = [profil&.first_name, profil&.last_name].compact.join(' ').strip
     full.present? ? full : email
+  end
+
+  # Méthode appelée lors du retour depuis Google OAuth
+  # Elle cherche un user existant avec le même uid+provider, ou le crée
+  def self.from_omniauth(auth)
+    # On cherche d'abord un user déjà connecté avec ce compte Google
+    # Si pas trouvé, on en crée un nouveau (find_or_create_by)
+    user = where(provider: auth.provider, uid: auth.uid).first
+
+    # Si l'user existe déjà via OAuth, on le retourne directement
+    return user if user
+
+    # Sinon, on cherche par email (cas où l'user a un compte classique avec ce même email)
+    user = find_by(email: auth.info.email)
+
+    if user
+      # L'user a un compte classique, on y associe son compte Google
+      user.update(provider: auth.provider, uid: auth.uid)
+    else
+      # Nouvel utilisateur : on crée le compte avec un mot de passe aléatoire
+      # (il n'en aura pas besoin puisqu'il se connectera toujours via Google)
+      user = create!(
+        email:    auth.info.email,
+        provider: auth.provider,
+        uid:      auth.uid,
+        password: Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
+        # first_name et last_name sont des attributs virtuels pour créer le Profil
+        # On les récupère depuis les données Google
+        first_name: auth.info.first_name.presence || auth.info.name&.split(" ")&.first || "Google",
+        last_name:  auth.info.last_name.presence  || auth.info.name&.split(" ")&.last  || "User"
+      )
+    end
+
+    user
   end
 end

@@ -48,6 +48,8 @@ gem "cloudinary"
 gem "sprockets-rails"
 gem "bootstrap", "~> 5.3"
 gem "devise"
+gem "omniauth-google-oauth2"          # Provider OAuth pour Google
+gem "omniauth-rails_csrf_protection"  # Protection CSRF obligatoire avec OmniAuth sur Rails
 gem "autoprefixer-rails"
 gem "font-awesome-sass", "~> 6.1"
 gem "simple_form", github: "heartcombo/simple_form"

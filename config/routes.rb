@@ -1,6 +1,9 @@
 Rails.application.routes.draw do
   # controllers: indique à Devise d'utiliser notre controller personnalisé pour l'inscription
-  devise_for :users, controllers: { registrations: "users/registrations" }
+  devise_for :users, controllers: {
+    registrations:       "users/registrations",      # Controller personnalisé pour l'inscription
+    omniauth_callbacks:  "users/omniauth_callbacks"  # Controller pour gérer le retour de Google OAuth
+  }
 
   # Page d'accueil
   root to: "pages#home"
