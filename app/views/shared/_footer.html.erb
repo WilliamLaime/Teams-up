@@ -22,9 +22,9 @@
       <%# ── Liens navigation centrés ── %>
       <div class="col-md-4 d-flex align-items-center justify-content-center">
         <ul class="footer-links">
-          <%# "#" = lien temporaire, à remplacer quand les pages seront créées %>
-          <li><%= link_to "Confidentialité", "#" %></li>
-          <li><%= link_to "Conditions", "#" %></li>
+          <%# Liens vers les pages légales %>
+          <li><%= link_to "Confidentialité", confidentialite_path %></li>
+          <li><%= link_to "Conditions", conditions_path %></li>
           <%# Lien vers la vraie page de contact %>
           <li><%= link_to "Contact", contact_path %></li>
           <%# "Qui sommes-nous ?" visible uniquement sur mobile (d-md-none) %>

@@ -14,6 +14,12 @@ Rails.application.routes.draw do
   # Page de contact
   get "contact", to: "pages#contact", as: :contact
 
+  # Page Politique de confidentialité (RGPD)
+  get "confidentialite", to: "pages#confidentialite", as: :confidentialite
+
+  # Page Conditions générales d'utilisation
+  get "conditions", to: "pages#conditions", as: :conditions
+
   # Routes pour les matchs (CRUD complet)
   # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.
   resources :matches do

@@ -1,0 +1,198 @@
+<%# =====================================================
+    PAGE POLITIQUE DE CONFIDENTIALITÉ (RGPD)
+    Route : GET /confidentialite
+    Page publique — accessible sans connexion
+    Conforme au Règlement Général sur la Protection des Données
+    ===================================================== %>
+
+<div class="legal-page">
+
+  <%# ── Bannière ────────────────────────────────────── %>
+  <section class="legal-banner">
+    <div class="container">
+      <h1 class="legal-banner-title">Politique de confidentialité</h1>
+      <p class="legal-banner-subtitle">Dernière mise à jour : mars 2025</p>
+    </div>
+  </section>
+
+  <%# ── Contenu principal ───────────────────────────── %>
+  <section class="legal-content">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+          <%# Intro %>
+          <p class="legal-intro">
+            La protection de vos données personnelles est une priorité pour Team-Up.
+            Cette politique explique quelles données nous collectons, pourquoi, et quels sont vos droits.
+            Elle s'applique à toutes les personnes utilisant notre site et notre application.
+          </p>
+
+          <%# ── 1. Responsable du traitement ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">1. Responsable du traitement</h2>
+            <p>
+              Le responsable du traitement de vos données personnelles est <strong>Team-Up</strong>,
+              joignable à l'adresse : <a href="mailto:contact@team-up.fr">contact@team-up.fr</a>.
+            </p>
+          </div>
+
+          <%# ── 2. Données collectées ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">2. Données que nous collectons</h2>
+            <p>Lors de votre inscription et utilisation de Team-Up, nous collectons les données suivantes :</p>
+            <ul class="legal-list">
+              <%# Identité %>
+              <li><strong>Identité :</strong> prénom, nom, adresse e-mail, photo de profil (optionnelle)</li>
+              <%# Profil sportif %>
+              <li><strong>Profil sportif :</strong> sport(s) pratiqué(s), niveau de jeu, statistiques de matchs</li>
+              <%# Activité sur l'application %>
+              <li><strong>Activité :</strong> matchs créés ou rejoints, avis reçus et donnés, messages échangés</li>
+              <%# Données techniques %>
+              <li><strong>Données techniques :</strong> adresse IP, type de navigateur, pages visitées (via cookies)</li>
+              <%# Données Google si connexion via Google %>
+              <li><strong>Connexion Google (optionnelle) :</strong> identifiant Google, adresse e-mail associée à votre compte Google</li>
+            </ul>
+          </div>
+
+          <%# ── 3. Finalités et bases légales ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">3. Pourquoi nous utilisons vos données</h2>
+            <table class="legal-table">
+              <thead>
+                <tr>
+                  <th>Finalité</th>
+                  <th>Base légale</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Créer et gérer votre compte</td>
+                  <td>Exécution du contrat</td>
+                </tr>
+                <tr>
+                  <td>Vous mettre en relation avec d'autres joueurs</td>
+                  <td>Exécution du contrat</td>
+                </tr>
+                <tr>
+                  <td>Envoyer des notifications (nouvelles demandes, matchs, avis)</td>
+                  <td>Exécution du contrat</td>
+                </tr>
+                <tr>
+                  <td>Améliorer l'application (statistiques d'usage)</td>
+                  <td>Intérêt légitime</td>
+                </tr>
+                <tr>
+                  <td>Respecter nos obligations légales</td>
+                  <td>Obligation légale</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <%# ── 4. Durée de conservation ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">4. Durée de conservation</h2>
+            <p>Vos données sont conservées :</p>
+            <ul class="legal-list">
+              <%# Compte actif %>
+              <li><strong>Compte actif :</strong> pendant toute la durée de votre utilisation de Team-Up</li>
+              <%# Après suppression du compte %>
+              <li><strong>Après suppression de votre compte :</strong> 3 ans maximum (pour répondre à d'éventuelles obligations légales)</li>
+              <%# Données de connexion %>
+              <li><strong>Données de connexion (logs) :</strong> 12 mois maximum</li>
+            </ul>
+          </div>
+
+          <%# ── 5. Partage des données ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">5. Partage de vos données</h2>
+            <p>
+              Nous ne vendons jamais vos données. Elles peuvent être partagées uniquement avec :
+            </p>
+            <ul class="legal-list">
+              <%# Autres utilisateurs %>
+              <li><strong>Autres joueurs Team-Up :</strong> votre prénom, photo de profil et statistiques sont visibles sur votre profil public</li>
+              <%# Hébergeur %>
+              <li><strong>Notre hébergeur :</strong> pour faire fonctionner l'application techniquement</li>
+              <%# Google si OAuth %>
+              <li><strong>Google :</strong> uniquement si vous choisissez de vous connecter via Google</li>
+            </ul>
+          </div>
+
+          <%# ── 6. Cookies ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">6. Cookies</h2>
+            <p>Team-Up utilise des cookies essentiels au fonctionnement du service :</p>
+            <ul class="legal-list">
+              <%# Session %>
+              <li><strong>Cookie de session :</strong> maintient votre connexion entre les pages</li>
+              <%# CSRF %>
+              <li><strong>Cookie CSRF :</strong> protège vos actions contre les attaques (sécurité)</li>
+            </ul>
+            <p>
+              Nous n'utilisons pas de cookies publicitaires ou de suivi tiers.
+            </p>
+          </div>
+
+          <%# ── 7. Vos droits RGPD ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">7. Vos droits</h2>
+            <p>Conformément au RGPD, vous disposez des droits suivants :</p>
+            <ul class="legal-list">
+              <%# Droit d'accès %>
+              <li><strong>Droit d'accès :</strong> obtenir une copie de vos données</li>
+              <%# Droit de rectification %>
+              <li><strong>Droit de rectification :</strong> corriger des données inexactes</li>
+              <%# Droit à l'effacement %>
+              <li><strong>Droit à l'effacement :</strong> supprimer votre compte et vos données (« droit à l'oubli »)</li>
+              <%# Droit à la portabilité %>
+              <li><strong>Droit à la portabilité :</strong> recevoir vos données dans un format lisible</li>
+              <%# Droit d'opposition %>
+              <li><strong>Droit d'opposition :</strong> vous opposer à certains traitements</li>
+              <%# Droit à la limitation %>
+              <li><strong>Droit à la limitation :</strong> limiter l'utilisation de vos données</li>
+            </ul>
+            <p>
+              Pour exercer ces droits, contactez-nous à :
+              <a href="mailto:contact@team-up.fr">contact@team-up.fr</a>.
+              Nous répondrons dans un délai de 30 jours.
+            </p>
+            <p>
+              Vous avez également le droit de déposer une réclamation auprès de la
+              <strong>CNIL</strong> (Commission Nationale de l'Informatique et des Libertés) :
+              <a href="https://www.cnil.fr" target="_blank" rel="noopener">www.cnil.fr</a>.
+            </p>
+          </div>
+
+          <%# ── 8. Sécurité ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">8. Sécurité</h2>
+            <p>
+              Nous mettons en œuvre des mesures techniques et organisationnelles pour protéger vos données :
+              chiffrement HTTPS, mots de passe hashés, accès restreint aux données.
+            </p>
+          </div>
+
+          <%# ── 9. Modifications ── %>
+          <div class="legal-section">
+            <h2 class="legal-section-title">9. Modifications de cette politique</h2>
+            <p>
+              Cette politique peut être mise à jour. En cas de modification importante,
+              nous vous en informerons par e-mail ou via une notification dans l'application.
+              La date de dernière mise à jour est toujours indiquée en haut de cette page.
+            </p>
+          </div>
+
+          <%# ── Contact ── %>
+          <div class="legal-contact-block">
+            <p>Une question sur vos données ?</p>
+            <%= link_to "Nous contacter", contact_path, class: "btn btn-primary" %>
+          </div>
+
+        </div><%# fin col %>
+      </div><%# fin row %>
+    </div><%# fin container %>
+  </section>
+
+</div><%# fin legal-page %>

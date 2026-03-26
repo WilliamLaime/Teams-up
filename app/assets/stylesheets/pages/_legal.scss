@@ -1,0 +1,190 @@
+// ═══════════════════════════════════════════════════
+//  PAGES LÉGALES — _legal.scss
+//  Utilisé pour : Confidentialité (/confidentialite)
+//                 Conditions (/conditions)
+// ═══════════════════════════════════════════════════
+
+.legal-page {
+  background-color: $dark-bg; // fond sombre cohérent avec le reste du site
+  color: $dark-text;           // texte clair sur fond sombre
+  min-height: 100vh;
+
+  // ── Bannière en haut de page ────────────────────
+  .legal-banner {
+    background:
+      linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.80)),
+      image-url("img_qsn/img_banner_qsn.png") center center / cover no-repeat;
+    padding: 100px 0 60px;
+    text-align: left;
+  }
+
+  // Titre h1 dans la bannière
+  .legal-banner-title {
+    font-family: $display-font;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  // Date de mise à jour sous le titre
+  .legal-banner-subtitle {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  // ── Section du contenu ───────────────────────────
+  .legal-content {
+    padding: 60px 0 80px;
+  }
+
+  // Paragraphe d'introduction
+  .legal-intro {
+    font-size: 1.1rem;
+    color: $dark-muted;
+    line-height: 1.8;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid $dark-surface; // séparateur discret
+  }
+
+  // ── Bloc pour chaque section numérotée ──────────
+  .legal-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid $dark-surface; // ligne séparatrice entre sections
+
+    &:last-of-type {
+      border-bottom: none; // pas de ligne après la dernière section
+    }
+  }
+
+  // Titre h2 de chaque section
+  .legal-section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+
+  // Titre h3 (sous-section)
+  .legal-subsection-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $dark-text;
+    margin-top: 1.2rem;
+    margin-bottom: 0.6rem;
+  }
+
+  // Paragraphes courants
+  p {
+    color: $dark-muted;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+
+  // Liens dans le texte
+  a {
+    color: $green; // couleur principale Team-Up
+    text-decoration: underline;
+
+    &:hover {
+      color: lighten($green, 10%);
+    }
+  }
+
+  // Listes à puces
+  .legal-list {
+    color: $dark-muted;
+    line-height: 1.8;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+
+    // Texte en gras dans les listes
+    strong {
+      color: $dark-text;
+    }
+  }
+
+  // ── Tableau (utilisé pour les bases légales RGPD) ──
+  .legal-table {
+    width: 100%;
+    color: $dark-muted;
+    border-collapse: separate;     // nécessaire pour border-radius sur le tableau
+    border-spacing: 0;             // pas d'espace entre les cellules
+    border: 1px solid rgba($green, 0.35);   // bordure externe légèrement verte
+    border-radius: 8px;            // coins arrondis sur l'ensemble du tableau
+    overflow: hidden;              // masque les coins des cellules qui dépassent
+
+    thead th {
+      background-color: #0a0a0a;   // noir profond pour l'en-tête
+      color: $dark-text;
+      font-weight: 600;
+      border-bottom: 1px solid rgba($green, 0.4); // séparation verte entre header et body
+      border-right: 1px solid rgba($green, 0.2);  // séparation entre colonnes
+
+      &:last-child {
+        border-right: none; // pas de bordure sur la dernière colonne
+      }
+    }
+
+    td {
+      background-color: #111111;   // fond noir légèrement plus clair que l'en-tête
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba($green, 0.15); // lignes horizontales vertes subtiles
+      border-right: 1px solid rgba($green, 0.15);  // séparation verticale entre colonnes
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+
+    th {
+      padding: 14px 18px;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none; // pas de bordure sous la dernière ligne
+    }
+
+    tbody tr:hover td {
+      background-color: rgba($green, 0.04); // léger highlight vert au survol
+    }
+  }
+
+  // ── Bloc "Nous contacter" en bas de page ─────────
+  .legal-contact-block {
+    margin-top: 3rem;
+    padding: 2rem;
+    background-color: $dark-card-bg;
+    border-radius: 12px;
+    text-align: center;
+
+    p {
+      font-size: 1.1rem;
+      color: $dark-text;
+      margin-bottom: 1rem;
+    }
+
+    // Bouton vert avec texte noir — bien lisible sur fond sombre
+    .btn-primary {
+      text-decoration: none; // supprime le soulignement hérité des liens <a>
+      background-color: $green;
+      border-color: $green;
+      color: #111111;         // texte noir sur vert pour un bon contraste
+      font-weight: 600;
+      padding: 10px 28px;
+      border-radius: 8px;
+
+      &:hover {
+        background-color: darken($green, 8%);
+        border-color: darken($green, 8%);
+        color: #111111;
+      }
+    }
+  }
+}
