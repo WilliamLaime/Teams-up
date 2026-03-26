@@ -50,6 +50,18 @@ class Users::RegistrationsController < Devise::RegistrationsController
       return
     end
 
+    # ── Validation serveur : type et taille de l'avatar uploadé ──────────────
+    # On vérifie AVANT la création du compte pour éviter qu'un utilisateur
+    # envoie un fichier malveillant ou trop lourd en renommant son extension en .jpg
+    avatar_file = params.dig(:user, :avatar)
+    if avatar_file.present? && !valid_avatar_file?(avatar_file)
+      build_resource(sign_up_params)
+      resource.errors.add(:base, "La photo de profil doit être un JPG, PNG ou GIF de moins de 5 Mo.")
+      clean_up_passwords resource
+      respond_with resource
+      return
+    end
+
     super do |user|
       if user.persisted?
         profil_attrs = {
@@ -119,6 +131,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
     rescue URI::InvalidURIError
       false
     end
+  end
+
+  # Vérifie que le fichier uploadé est bien une image autorisée et dans la limite de taille
+  # Utilisé avant la création du compte pour bloquer les fichiers invalides côté serveur
+  def valid_avatar_file?(file)
+    allowed_types = %w[image/jpeg image/png image/gif]
+    allowed_types.include?(file.content_type) && file.size <= 5.megabytes
   end
 
   # Paramètres autorisés pour la création du compte

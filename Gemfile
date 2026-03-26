@@ -56,6 +56,7 @@ gem "simple_form", github: "heartcombo/simple_form"
 gem "sassc-rails"
 gem "pundit"
 gem "rack-attack" # Protection contre le brute force et le spam
+gem "active_storage_validations" # Validation du type et de la taille des fichiers uploadés
 gem "csv"
 
 group :development, :test do
