@@ -261,11 +261,10 @@
                   <i data-lucide="eye" style="width:18px;height:18px;"></i>
                 </button>
               </div>
-              <% if @minimum_password_length %>
-                <div class="form-text">
-                  <%= @minimum_password_length %> caractères minimum
-                </div>
-              <% end %>
+              <%# Affiche toutes les règles du mot de passe sous le champ %>
+              <div class="form-text">
+                <%= @minimum_password_length %> caractères minimum, dont 1 majuscule, 1 chiffre et 1 symbole (!, @, #...)
+              </div>
             </div>
 
             <%# Champ confirmation mot de passe avec bouton oeil ────────────── %>

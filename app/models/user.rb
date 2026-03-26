@@ -16,12 +16,13 @@ class User < ApplicationRecord
   # (?=.*[A-Z])   => au moins 1 lettre majuscule
   # (?=.*\d)      => au moins 1 chiffre
   # (?=.*[[:punct:]]) => au moins 1 symbole (!, @, #, $, etc.)
-  PASSWORD_REGEX = /\A(?=.*[A-Z])(?=.*\d)(?=.*[[:punct:]])/
+  # \z ancre la fin de la chaîne (sans ça, la regex ne valide que le début)
+  PASSWORD_REGEX = /\A(?=.*[A-Z])(?=.*\d)(?=.*[[:punct:]])\z/
 
   validates :password,
     format: {
       with: PASSWORD_REGEX,
-      message: "doit contenir au moins une majuscule, un chiffre et un symbole"
+      message: "doit contenir au moins 6 caractères, une majuscule, un chiffre et un symbole"
     },
     if: :password_required? # Méthode Devise : n'exécute la validation que si le mot de passe est renseigné
 

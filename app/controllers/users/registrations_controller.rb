@@ -83,7 +83,10 @@ class Users::RegistrationsController < Devise::RegistrationsController
     elsif preset_name.present? && VALID_PRESET_AVATARS.include?(preset_name)
       # Cas 2 : l'utilisateur a choisi un avatar prédéfini
       # On ouvre le fichier PNG depuis assets et on l'attache via Active Storage
-      preset_path = Rails.root.join("app", "assets", "images", "avatar_png", "#{preset_name}.png")
+      # File.basename supprime tout composant de répertoire (ex: "../secret" → "secret")
+      # C'est une protection supplémentaire en plus de la liste blanche ci-dessus
+      safe_name = File.basename(preset_name)
+      preset_path = Rails.root.join("app", "assets", "images", "avatar_png", "#{safe_name}.png")
       {
         io:           File.open(preset_path),
         filename:     "avatar_#{preset_name}.png",
