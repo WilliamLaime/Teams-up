@@ -9,6 +9,19 @@ class Profil < ApplicationRecord
   # La photo est stockée sur Cloudinary (configuré dans config/storage.yml)
   has_one_attached :avatar
 
+  # Validation de l'avatar — uniquement si un nouveau fichier est attaché (optionnel sinon)
+  # content_type : bloque tout ce qui n'est pas JPG, PNG ou GIF
+  # size : bloque les fichiers > 5 Mo
+  validates :avatar,
+    content_type: {
+      in: %w[image/jpeg image/png image/gif],
+      message: "doit être un fichier JPG, PNG ou GIF"
+    },
+    size: {
+      less_than: 5.megabytes,
+      message: "ne doit pas dépasser 5 Mo"
+    }
+
   # Niveau et rôle par sport — un enregistrement par sport pratiqué
   has_many :sport_profils, dependent: :destroy
 

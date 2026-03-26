@@ -139,6 +139,15 @@ class ProfilsController < ApplicationController
     # Pundit vérifie l'autorisation avant de sauvegarder
     authorize @profil
 
+    # ── Validation serveur : type et taille de l'avatar uploadé ──────────────
+    # On vérifie AVANT la sauvegarde pour bloquer les fichiers invalides
+    avatar_file = params.dig(:profil, :avatar)
+    if avatar_file.present? && !valid_avatar_file?(avatar_file)
+      @profil.errors.add(:avatar, "doit être un fichier JPG, PNG ou GIF de moins de 5 Mo")
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     # Met à jour les sports si la section sport était présente dans le formulaire
     # Le champ caché user[sports_submitted]=1 indique que la section a été soumise
     if params.dig(:user, :sports_submitted)
@@ -186,6 +195,13 @@ class ProfilsController < ApplicationController
   # Si le profil n'existe pas encore, on le crée automatiquement
   def set_profil
     @profil = current_user.profil || current_user.build_profil
+  end
+
+  # Vérifie que le fichier uploadé est bien une image autorisée et dans la limite de taille
+  # Utilisé avant la sauvegarde pour bloquer les fichiers invalides côté serveur
+  def valid_avatar_file?(file)
+    allowed_types = %w[image/jpeg image/png image/gif]
+    allowed_types.include?(file.content_type) && file.size <= 5.megabytes
   end
 
   # Cherche un match où current_user et other_user ont joué ensemble,
