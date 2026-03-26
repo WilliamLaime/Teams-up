@@ -109,6 +109,14 @@ Rails.application.routes.draw do
   # GET /venues/search?q=...&lat=...&lon=... → retourne JSON
   get "venues/search", to: "venues#search", as: :search_venues
 
+  # ── Espace Admin ───────────────────────────────────────────────────────────
+  # GET /admin          → redirige vers le dashboard
+  # GET /admin/dashboard → tableau de bord avec les KPIs
+  namespace :admin do
+    root to: "dashboard#show"
+    resource :dashboard, only: [:show]
+  end
+
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
 

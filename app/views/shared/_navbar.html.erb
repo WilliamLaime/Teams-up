@@ -28,6 +28,16 @@
         <% end %>
       </li>
 
+      <%# Lien Admin — visible uniquement pour les utilisateurs admin %>
+      <% if current_user&.admin? %>
+        <li class="nav-item">
+          <%= link_to admin_root_path, class: "nav-link" do %>
+            <i data-lucide="shield" style="width:14px; height:14px; color:#1EDD88; vertical-align:middle;"></i>
+            Admin
+          <% end %>
+        </li>
+      <% end %>
+
       <% if user_signed_in? %>
         <%# ── Sélecteur de sport actif (desktop centre) ─────────────────────── %>
         <li class="nav-item dropdown">

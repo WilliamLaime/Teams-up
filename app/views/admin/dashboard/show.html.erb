@@ -1,0 +1,258 @@
+<%# ── Dashboard Admin ─────────────────────────────────────────────────────── %>
+<%# Accessible uniquement aux admins (protégé par Admin::BaseController) %>
+
+<%# Fond pleine largeur identique à la homepage (#111111) %>
+<div style="background-color:#111111; min-height:100vh;">
+<div class="container py-4">
+
+  <%# ── En-tête ──────────────────────────────────────────────────────────── %>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i data-lucide="layout-dashboard" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
+      Dashboard <span style="color:#1EDD88;">Admin</span>
+    </h1>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 1 — UTILISATEURS %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i data-lucide="users" style="width:15px; height:15px; color:#1EDD88;"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      Utilisateurs
+    </span>
+  </div>
+
+  <div class="row g-3 mb-4">
+
+    <%# Card — Total utilisateurs %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:#1EDD88;"><%= @total_users %></div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Inscrits au total</div>
+      </div>
+    </div>
+
+    <%# Card — Nouveaux ce mois %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:#fff;"><%= @users_this_month %></div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Nouveaux ce mois</div>
+      </div>
+    </div>
+
+    <%# Card — Répartition par genre %>
+    <div class="col-12 col-md-6">
+      <div class="match-block h-100">
+        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:0.6rem;">
+          Répartition par genre
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <% @users_by_genre.each do |genre, count| %>
+            <span class="badge" style="background:rgba(30,221,136,0.15); color:#1EDD88; font-size:0.8rem; padding:0.4rem 0.7rem; border-radius:6px;">
+              <%= genre.presence || "Non renseigné" %> — <%= count %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 2 — MATCHS %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i data-lucide="trophy" style="width:15px; height:15px; color:#1EDD88;"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      Matchs
+    </span>
+  </div>
+
+  <div class="row g-3 mb-4">
+
+    <%# Card — Total matchs %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:#1EDD88;"><%= @total_matches %></div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Matchs créés</div>
+      </div>
+    </div>
+
+    <%# Card — Matchs complétés %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:#fff;"><%= @completed_matches %></div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Matchs terminés</div>
+      </div>
+    </div>
+
+    <%# Card — Matchs à venir %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:#fff;"><%= @upcoming_matches %></div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Matchs à venir</div>
+      </div>
+    </div>
+
+    <%# Card — Matchs par sport %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100">
+        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:0.6rem;">
+          Par sport
+        </div>
+        <% if @matches_by_sport.any? %>
+          <% @matches_by_sport.sort_by { |_, v| -v }.each do |sport, count| %>
+            <div class="d-flex justify-content-between align-items-center" style="font-size:0.82rem; margin-bottom:0.3rem;">
+              <span style="color:rgba(255,255,255,0.7);"><%= sport %></span>
+              <span style="font-weight:700; color:#1EDD88;"><%= count %></span>
+            </div>
+          <% end %>
+        <% else %>
+          <span style="font-size:0.8rem; color:rgba(255,255,255,0.3);">Aucun match</span>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 3 — AVIS %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i data-lucide="star" style="width:15px; height:15px; color:#1EDD88;"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      Avis
+    </span>
+  </div>
+
+  <div class="row g-3 mb-4">
+
+    <%# Card — Total avis %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:#1EDD88;"><%= @total_avis %></div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Avis laissés</div>
+      </div>
+    </div>
+
+    <%# Card — Note moyenne globale %>
+    <div class="col-6 col-md-3">
+      <div class="match-block h-100 text-center">
+        <div style="font-size:2rem; font-weight:800; color:#fff;">
+          <%= @average_rating.present? ? "#{@average_rating} ★" : "—" %>
+        </div>
+        <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Note moyenne globale</div>
+      </div>
+    </div>
+
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 4 — TOP JOUEURS %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i data-lucide="medal" style="width:15px; height:15px; color:#1EDD88;"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      Top 5 joueurs
+    </span>
+  </div>
+
+  <div class="match-block mb-4">
+    <% if @top_players.any? %>
+      <table class="table table-dark table-hover mb-0" style="font-size:0.85rem;">
+        <thead>
+          <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <th style="border-color:rgba(255,255,255,0.07);">#</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Joueur</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Note moyenne</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Nombre d'avis</th>
+            <th style="border-color:rgba(255,255,255,0.07);">XP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @top_players.each_with_index do |profil, index| %>
+            <tr>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4);"><%= index + 1 %></td>
+              <td style="border-color:rgba(255,255,255,0.07);">
+                <%# Lien vers le profil public du joueur %>
+                <%= link_to user_profil_path(profil.user), style: "color:#fff; text-decoration:none;" do %>
+                  <%= profil.first_name %> <%= profil.last_name %>
+                <% end %>
+              </td>
+              <td style="border-color:rgba(255,255,255,0.07); color:#1EDD88; font-weight:700;">
+                <%= profil.average_rating&.round(2) %> ★
+              </td>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+                <%= profil.avis_count %>
+              </td>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+                <%= profil.xp || 0 %> XP
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.3); margin:0;">Aucun avis enregistré pour le moment.</p>
+    <% end %>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+  <%# SECTION 5 — DERNIERS INSCRITS %>
+  <%# ══════════════════════════════════════════════════════════════════════ %>
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i data-lucide="user-plus" style="width:15px; height:15px; color:#1EDD88;"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      Derniers inscrits
+    </span>
+  </div>
+
+  <div class="match-block">
+    <table class="table table-dark table-hover mb-0" style="font-size:0.85rem;">
+      <thead>
+        <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+          <th style="border-color:rgba(255,255,255,0.07);">Nom</th>
+          <th style="border-color:rgba(255,255,255,0.07);">Email</th>
+          <th style="border-color:rgba(255,255,255,0.07);">Genre</th>
+          <th style="border-color:rgba(255,255,255,0.07);">Inscrit le</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @recent_users.each do |user| %>
+          <tr>
+            <td style="border-color:rgba(255,255,255,0.07);">
+              <%# Affiche le prénom + nom si le profil existe, sinon l'email %>
+              <% if user.profil %>
+                <%= link_to user_profil_path(user), style: "color:#fff; text-decoration:none;" do %>
+                  <%= user.profil.first_name %> <%= user.profil.last_name %>
+                <% end %>
+              <% else %>
+                <span style="color:rgba(255,255,255,0.4);">Sans profil</span>
+              <% end %>
+            </td>
+            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+              <%= user.email %>
+            </td>
+            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+              <%= user.genre.presence || "—" %>
+            </td>
+            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+              <%# Affiche la date au format jour/mois/année %>
+              <%= user.created_at.strftime("%d/%m/%Y") %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+<%# / container %>
+</div>
+<%# / fond pleine largeur %>
