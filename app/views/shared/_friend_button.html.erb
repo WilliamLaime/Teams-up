@@ -23,17 +23,15 @@
         <i data-lucide="user-check" style="width:11px; height:11px;"></i>
         Amis
       </span>
-      <%# Bouton retirer uniquement si c'est moi qui ai initié %>
-      <% if friendship_initiated_by_me&.accepted? %>
-        <%= button_to user_friendship_path(profil_user),
-              method: :delete,
-              style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                      font-weight:700; color:rgba(255,255,255,0.35);
-                      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
-                      border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
-          <i data-lucide="user-minus" style="width:10px; height:10px;"></i>
-          Retirer
-        <% end %>
+      <%# Bouton retirer toujours visible quand on est amis (que ce soit moi ou l'autre qui ait initié) %>
+      <%= button_to user_friendship_path(profil_user),
+            method: :delete,
+            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                    font-weight:700; color:rgba(255,255,255,0.35);
+                    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+                    border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+        <i data-lucide="user-minus" style="width:10px; height:10px;"></i>
+        Retirer
       <% end %>
     </div>
 

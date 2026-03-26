@@ -98,6 +98,35 @@
           </div>
         <% end %>
 
+        <%# Boutons Accepter / Refuser pour les demandes d'ami en attente %>
+        <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
+          <div class="d-flex gap-2 px-3 pb-2"
+               data-action="click->notification-dropdown#stopClickPropagation">
+            <%# Accepter — navigation pleine page (data-turbo-frame="_top") %>
+            <%= button_to accept_user_friendship_path(notif.actor),
+                  method: :patch,
+                  data: { turbo_frame: "_top" },
+                  style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                          font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
+                          border:1px solid rgba(30,221,136,0.3); border-radius:999px;
+                          padding:0.2rem 0.65rem; cursor:pointer;" do %>
+              <i data-lucide="check" style="width:10px; height:10px;"></i>
+              Accepter
+            <% end %>
+            <%# Refuser — navigation pleine page %>
+            <%= button_to decline_user_friendship_path(notif.actor),
+                  method: :patch,
+                  data: { turbo_frame: "_top" },
+                  style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                          font-weight:700; color:rgba(255,100,100,0.7);
+                          background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
+                          border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+              <i data-lucide="x" style="width:10px; height:10px;"></i>
+              Refuser
+            <% end %>
+          </div>
+        <% end %>
+
         <%#
           Croix de suppression — formulaire séparé (ne peut pas être imbriqué dans button_to).
           form: { data: { action: ... } } → Stimulus intercepte le submit du formulaire

@@ -1,6 +1,10 @@
 class Notification < ApplicationRecord
   belongs_to :user
 
+  # actor : l'utilisateur à l'origine de la notification (optionnel)
+  # Ex: pour "friend_request", c'est celui qui a envoyé la demande
+  belongs_to :actor, class_name: "User", optional: true
+
   # Scope pour récupérer uniquement les notifications non lues
   scope :unread, -> { where(read: false) }
 

@@ -4,9 +4,11 @@ class FriendshipPolicy < ApplicationPolicy
     user.present?
   end
 
-  # Annuler une demande (supprimer l'amitié) : uniquement celui qui a initié
+  # Annuler/retirer une amitié :
+  # - Celui qui a initié la demande peut toujours supprimer (pending ou accepted)
+  # - Celui qui a accepté peut aussi retirer (uniquement si accepted)
   def destroy?
-    user.present? && record.user == user
+    user.present? && (record.user == user || (record.friend == user && record.accepted?))
   end
 
   # Accepter une demande : uniquement le destinataire (friend)

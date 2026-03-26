@@ -673,7 +673,8 @@
             Sur le profil d'un autre on ne les passe pas (nil → section masquée) %>
         <%= render "profils/friends_list",
               friends: @all_friends,
-              pending_requests: (current_user == @profil_user ? @pending_friend_requests : nil) %>
+              pending_requests: (current_user == @profil_user ? @pending_friend_requests : nil),
+              own_profile: (current_user == @profil_user) %>
 
       </div><%# / col-lg-7 %>
 

@@ -1,7 +1,8 @@
 <%# Section "Amis" affichée sur la page de profil
     Paramètres locaux :
       - friends                : collection d'utilisateurs amis (acceptés)
-      - pending_requests       : demandes en attente reçues (nil sur le profil des autres) %>
+      - pending_requests       : demandes en attente reçues (nil sur le profil des autres)
+      - own_profile            : true si on affiche son propre profil (affiche le bouton Retirer) %>
 
 <%# ── Demandes d'ami en attente (visible uniquement sur son propre profil) ── %>
 <% if local_assigns[:pending_requests]&.any? %>
@@ -78,25 +79,41 @@
       <%# Grille de pilules pour chaque ami %>
       <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
         <% friends.each do |friend| %>
-          <%= link_to user_profil_path(friend),
-                style: "display:inline-flex; align-items:center; gap:0.5rem; padding:0.3rem 0.7rem;
-                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
-                        border-radius:999px; text-decoration:none;" do %>
-            <% if friend.profil&.avatar&.attached? %>
-              <%= image_tag friend.profil.avatar,
-                    style: "width:22px; height:22px; border-radius:50%; object-fit:cover; flex-shrink:0;",
-                    alt: friend.display_name %>
-            <% else %>
-              <span style="width:22px; height:22px; border-radius:50%; background:#333;
-                           display:inline-flex; align-items:center; justify-content:center;
-                           font-size:0.6rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
-                <%= friend.display_name.first.upcase %>
+          <%# Chaque ami : lien vers son profil + bouton Retirer (uniquement sur son propre profil) %>
+          <div style="display:inline-flex; align-items:center; gap:0.25rem;">
+            <%= link_to user_profil_path(friend),
+                  style: "display:inline-flex; align-items:center; gap:0.5rem; padding:0.3rem 0.7rem;
+                          background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+                          border-radius:999px; text-decoration:none;" do %>
+              <% if friend.profil&.avatar&.attached? %>
+                <%= image_tag friend.profil.avatar,
+                      style: "width:22px; height:22px; border-radius:50%; object-fit:cover; flex-shrink:0;",
+                      alt: friend.display_name %>
+              <% else %>
+                <span style="width:22px; height:22px; border-radius:50%; background:#333;
+                             display:inline-flex; align-items:center; justify-content:center;
+                             font-size:0.6rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                  <%= friend.display_name.first.upcase %>
+                </span>
+              <% end %>
+              <span style="font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.75); white-space:nowrap;">
+                <%= friend.display_name %>
               </span>
             <% end %>
-            <span style="font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.75); white-space:nowrap;">
-              <%= friend.display_name %>
-            </span>
-          <% end %>
+            <%# Bouton Retirer visible uniquement sur son propre profil %>
+            <% if local_assigns[:own_profile] %>
+              <%= button_to user_friendship_path(friend),
+                    method: :delete,
+                    style: "display:inline-flex; align-items:center; justify-content:center;
+                            width:20px; height:20px; padding:0;
+                            color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.04);
+                            border:1px solid rgba(255,255,255,0.08); border-radius:50%;
+                            cursor:pointer; flex-shrink:0;",
+                    title: "Retirer #{friend.display_name} de vos amis" do %>
+                <i data-lucide="x" style="width:10px; height:10px;"></i>
+              <% end %>
+            <% end %>
+          </div>
         <% end %>
       </div>
     <% else %>
