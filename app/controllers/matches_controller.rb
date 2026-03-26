@@ -27,7 +27,8 @@ class MatchesController < ApplicationController
       end
     else
       # Index public : uniquement les matchs ouverts à l'inscription et publics
-      @matches = policy_scope(Match).upcoming.publicly_visible.order(date: :asc, time: :asc)
+      # visible_for_genre filtre les matchs "féminin" pour ne les montrer qu'aux femmes
+      @matches = policy_scope(Match).upcoming.publicly_visible.visible_for_genre(current_user).order(date: :asc, time: :asc)
       apply_filters
     end
   end

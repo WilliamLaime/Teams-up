@@ -58,6 +58,18 @@ class Match < ApplicationRecord
   # (upcoming + verrouillés + en train de se jouer)
   scope :active_for_user, -> { where("(date + time) >= ?", Time.current - 1.hour) }
 
+  # Scope : filtre les matchs selon le genre de l'utilisateur
+  # - user nil (visiteur non connecté) → exclut les matchs féminins
+  # - user.genre == "femme" → voit tous les matchs (ouverts + féminins)
+  # - user.genre == "homme" ou "autre" → ne voit pas les matchs réservés aux femmes
+  scope :visible_for_genre, ->(user) {
+    if user.nil? || user.genre != "femme"
+      where("genre_restriction = ? OR genre_restriction IS NULL", "tous")
+    else
+      all
+    end
+  }
+
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
 

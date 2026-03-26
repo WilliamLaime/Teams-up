@@ -428,6 +428,59 @@
 
 
       <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# SECTION 4 : Genre ────────────────────────────────────────────── %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+
+      <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+        <i data-lucide="user-check" style="width:14px; height:14px;"></i>
+        Genre
+      </div>
+
+      <div class="match-block mb-4">
+        <%# Champ caché qui soumet la valeur via user[genre] (pas profil[genre]) %>
+        <%# Le genre est stocké sur le modèle User, pas Profil %>
+        <input type="hidden" name="user[genre]" id="profil_genre_value" value="<%= current_user.genre %>">
+
+        <%# 3 boutons : Femme / Homme / Autre — pré-sélectionne le genre actuel %>
+        <div class="d-flex gap-2 flex-wrap profil-genre-btn-group">
+          <% [["femme", "Femme"], ["homme", "Homme"], ["autre", "Autre"]].each do |valeur, libelle| %>
+            <% est_selectionne = current_user.genre == valeur %>
+            <button type="button"
+                    class="profil-genre-btn btn"
+                    data-genre="<%= valeur %>"
+                    style="padding:0.45rem 1.1rem; border-radius:0.5rem; font-size:0.9rem;
+                           border: 2px solid <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.3)' %>;
+                           background: <%= est_selectionne ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.06)' %>;
+                           color: <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.85)' %>;">
+              <%= libelle %>
+            </button>
+          <% end %>
+        </div>
+
+        <%# Script JS : gère la sélection des boutons et met à jour le champ caché %>
+        <script>
+          document.querySelectorAll('.profil-genre-btn-group .profil-genre-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              // Met à jour le champ caché avec le genre cliqué
+              document.getElementById('profil_genre_value').value = btn.dataset.genre;
+              // Réinitialise le style de tous les boutons
+              document.querySelectorAll('.profil-genre-btn-group .profil-genre-btn').forEach(function(b) {
+                b.style.border = '2px solid rgba(255,255,255,0.3)';
+                b.style.background = 'rgba(255,255,255,0.06)';
+                b.style.color = 'rgba(255,255,255,0.85)';
+              });
+              // Active le style vert sur le bouton sélectionné
+              btn.style.border = '2px solid #1EDD88';
+              btn.style.background = 'rgba(30,221,136,0.12)';
+              btn.style.color = '#1EDD88';
+            });
+          });
+        </script>
+      </div>
+      <%# / genre %>
+
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
       <%# BOUTONS D'ACTION ──────────────────────────────────────────────── %>
       <%# ─────────────────────────────────────────────────────────────────── %>
 

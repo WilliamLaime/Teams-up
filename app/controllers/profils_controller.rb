@@ -175,6 +175,12 @@ class ProfilsController < ApplicationController
       @profil.sport_profils.where.not(sport_id: selected_sport_ids).destroy_all
     end
 
+    # Sauvegarde le genre sur l'utilisateur connecté (le genre est sur User, pas Profil)
+    # params[:user][:genre] est envoyé par le champ caché name="user[genre]" du formulaire
+    if params.dig(:user, :genre).present? && User::GENRES.include?(params.dig(:user, :genre))
+      current_user.update(genre: params.dig(:user, :genre))
+    end
+
     # Gère l'avatar : photo uploadée OU avatar prédéfini
     # On le résout avant update() pour l'inclure dans le même save
     avatar = resolve_avatar

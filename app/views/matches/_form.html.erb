@@ -614,9 +614,12 @@
             </div>
           </div><%# fin toggle visibilité %>
 
-          <%# ── Restriction de genre ───────────────────────────────────────── %>
-          <%# "tous" : tout le monde peut rejoindre (défaut) %>
-          <%# "feminin" : uniquement les joueuses (genre "femme") %>
+          <%# ── Toggle : Restriction de genre Tous / Féminin ── %>
+          <%# Champ caché mis à jour par JS selon la position du toggle %>
+          <%= f.hidden_field :genre_restriction,
+              value: (@match.genre_restriction.presence || "tous"),
+              id: "match_genre_restriction" %>
+
           <div class="mb-0 mt-3">
             <label class="form-label d-block">
               Restriction de genre
@@ -626,44 +629,46 @@
               </span>
             </label>
 
-            <%# Champ caché mis à jour par les boutons ci-dessous %>
-            <%= f.hidden_field :genre_restriction,
-                value: (@match.genre_restriction.presence || "tous"),
-                id: "match_genre_restriction" %>
+            <%# Toggle : coché = féminin, décoché = tous (par défaut) %>
+            <div style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
+                        background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
+                        border-radius:10px; padding:0.55rem 0.9rem;">
 
-            <%# Boutons de sélection — data-value lu par le script ci-dessous %>
-            <div class="d-flex gap-2 flex-wrap genre-restriction-btn-group">
-              <% [["tous", "Tous"], ["feminin", "Féminin uniquement"]].each do |valeur, libelle| %>
-                <% est_actif = (@match.genre_restriction.presence || "tous") == valeur %>
-                <button type="button"
-                        class="genre-restriction-btn btn"
-                        data-value="<%= valeur %>"
-                        style="padding:0.45rem 1.1rem; border-radius:0.5rem; font-size:0.85rem;
-                               border: 2px solid <%= est_actif ? '#1EDD88' : 'rgba(255,255,255,0.3)' %>;
-                               background: <%= est_actif ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.06)' %>;
-                               color: <%= est_actif ? '#1EDD88' : 'rgba(255,255,255,0.85)' %>;">
-                  <%= libelle %>
-                </button>
-              <% end %>
+              <%# Label gauche : Tous — cliquable, vert si sélectionné %>
+              <span id="label_genre_tous"
+                    onclick="document.getElementById('genre_restriction_toggle').checked = false; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
+                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
+                           color:<%= (@match.genre_restriction.presence || 'tous') == 'tous' ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
+                           transition:color 0.15s;">
+                🌍 Tous
+              </span>
+
+              <%# Toggle pill — décoché = tous, coché = féminin %>
+              <label class="pill-toggle" for="genre_restriction_toggle" style="flex-shrink:0;">
+                <%= check_box_tag :genre_restriction_toggle,
+                    "feminin",
+                    (@match.genre_restriction == "feminin"),
+                    class: "pill-toggle-input",
+                    id: "genre_restriction_toggle",
+                    onchange: "
+                      document.getElementById('match_genre_restriction').value         = this.checked ? 'feminin' : 'tous';
+                      document.getElementById('label_genre_tous').style.color     = this.checked ? 'rgba(255,255,255,0.4)' : '#1EDD88';
+                      document.getElementById('label_genre_feminin').style.color  = this.checked ? '#1EDD88' : 'rgba(255,255,255,0.4)';
+                    " %>
+                <span class="pill-toggle-track"></span>
+              </label>
+
+              <%# Label droit : Féminin — cliquable, vert si sélectionné %>
+              <span id="label_genre_feminin"
+                    onclick="document.getElementById('genre_restriction_toggle').checked = true; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
+                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
+                           color:<%= @match.genre_restriction == 'feminin' ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
+                           transition:color 0.15s;">
+                ♀ Féminin uniquement
+              </span>
+
             </div>
-
-            <%# Script de sélection — pas d'ERB dans les handlers pour éviter les injections %>
-            <script>
-              document.querySelectorAll('.genre-restriction-btn-group .genre-restriction-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                  document.getElementById('match_genre_restriction').value = btn.dataset.value;
-                  document.querySelectorAll('.genre-restriction-btn-group .genre-restriction-btn').forEach(function(b) {
-                    b.style.border = '2px solid rgba(255,255,255,0.3)';
-                    b.style.background = 'rgba(255,255,255,0.06)';
-                    b.style.color = 'rgba(255,255,255,0.85)';
-                  });
-                  btn.style.border = '2px solid #1EDD88';
-                  btn.style.background = 'rgba(30,221,136,0.12)';
-                  btn.style.color = '#1EDD88';
-                });
-              });
-            </script>
-          </div><%# fin restriction de genre %>
+          </div><%# fin toggle restriction de genre %>
 
           <%# ── Ligne séparatrice ── %>
           <hr class="my-4">
