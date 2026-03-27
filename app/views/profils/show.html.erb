@@ -98,13 +98,25 @@
                           Modifier
                         <% end %>
                       <% else %>
-                        <%# Bouton ami avec tous les états — visible uniquement sur le profil d'un autre %>
-                        <%= render "shared/friend_button",
-                              profil_user: @profil_user,
-                              already_friends: @already_friends,
-                              pending_sent: @pending_sent,
-                              pending_received: @pending_received,
-                              friendship_initiated_by_me: @friendship_initiated_by_me %>
+                        <%# Boutons action — visibles uniquement sur le profil d'un autre %>
+                        <div style="display:flex; align-items:center; gap:0.4rem; flex-shrink:0;">
+                          <%# Bouton ami avec tous les états %>
+                          <%= render "shared/friend_button",
+                                profil_user: @profil_user,
+                                already_friends: @already_friends,
+                                pending_sent: @pending_sent,
+                                pending_received: @pending_received,
+                                friendship_initiated_by_me: @friendship_initiated_by_me %>
+
+                          <%# Bouton "Envoyer un message" — ouvre ou crée la conv privée %>
+                          <%= button_to private_conversations_path(recipient_id: @profil_user.id),
+                              method: :post,
+                              class: "btn btn-sm d-flex align-items-center gap-1",
+                              style: "background:rgba(30,221,136,0.12); border:1px solid rgba(30,221,136,0.3); color:#1EDD88; font-size:0.72rem; font-weight:700; padding:0.25rem 0.6rem; border-radius:999px; white-space:nowrap;" do %>
+                            <i data-lucide="message-circle" style="width:11px;height:11px;"></i>
+                            Message
+                          <% end %>
+                        </div>
                       <% end %>
                     </div>
 
@@ -892,3 +904,35 @@
   </div><%# / overlay %>
 
 </div><%# / profil-page %>
+
+<%# ── Ouverture automatique du chat si redirection depuis le bouton "Message" ──
+    Le PrivateConversationsController redirige vers ?open_chat=:id après création
+    Ce script ouvre la modale, charge la conversation et active l'onglet Messages %>
+<% if params[:open_chat].present? && user_signed_in? && current_user != @profil_user %>
+  <script>
+    // turbo:load se déclenche après chaque navigation Turbo ET après DOMContentLoaded
+    // C'est l'événement correct à utiliser avec Turbo Drive (DOMContentLoaded ne se
+    // déclenche pas lors des navigations Turbo suivantes)
+    document.addEventListener("turbo:load", function openChatOnLoad() {
+      var modal = document.getElementById("global-chat-modal");
+      if (!modal || typeof bootstrap === "undefined") return;
+
+      // Active l'onglet "Messages" en simulant un clic sur le bouton Stimulus
+      // (data-tab="messages" — pas d'id dédié, on cherche par attribut)
+      var tabBtn = document.querySelector("[data-tab='messages']");
+      if (tabBtn) tabBtn.click();
+
+      // Charge la conversation dans le turbo frame de droite
+      var frame = document.getElementById("sticky-chat-frame");
+      if (frame) {
+        frame.setAttribute("src", "/private_conversations/" + <%= params[:open_chat].to_i.to_json %>);
+      }
+
+      // Ouvre la modale Bootstrap
+      bootstrap.Modal.getOrCreateInstance(modal).show();
+
+      // Retire l'écouteur pour éviter qu'il se déclenche lors des navigations suivantes
+      document.removeEventListener("turbo:load", openChatOnLoad);
+    }, { once: true });
+  </script>
+<% end %>

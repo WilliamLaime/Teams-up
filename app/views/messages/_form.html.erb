@@ -1,6 +1,20 @@
-<%# Formulaire d'envoi de message — réinitialisé après chaque envoi via Turbo Stream %>
-<%# Pas de data-controller ici — on utilise celui de la carte parente (chat_controller.js) %>
-<%= form_with model: [match, message], class: "chat-form d-flex gap-2 align-items-center w-100", data: { chat_target: "form" } do |f| %>
+<%# Formulaire d'envoi de message — réinitialisé après chaque envoi via Turbo Stream
+    Accepte soit un match (chat de groupe) soit une private_conversation (chat privé)
+    Variables attendues :
+      - message            : objet Message.new
+      - match              : objet Match (ou nil si conversation privée)
+      - private_conversation : objet PrivateConversation (ou nil si chat match) %>
+
+<%# Détermine l'URL de soumission selon le type de conversation %>
+<% if local_assigns[:private_conversation] && private_conversation.present?
+     # Message privé → POST /private_conversations/:id/messages
+     form_model = [private_conversation, message]
+   else
+     # Message de match → POST /matches/:match_id/messages
+     form_model = [match, message]
+   end %>
+
+<%= form_with model: form_model, class: "chat-form d-flex gap-2 align-items-center w-100", data: { chat_target: "form" } do |f| %>
   <%# Champ texte — flex-grow-1 pour prendre toute la largeur disponible %>
   <%= f.text_field :content,
       placeholder: "Écrire un message...",

@@ -104,6 +104,14 @@ Rails.application.routes.draw do
     end
   end
 
+  # Routes pour les conversations privées (1-to-1 entre deux utilisateurs)
+  # POST /private_conversations             => crée ou retrouve la conversation (depuis un profil)
+  # GET  /private_conversations/:id         => charge le chat dans le panneau sticky
+  # POST /private_conversations/:id/messages => envoie un message privé
+  resources :private_conversations, only: [:show, :create] do
+    resources :messages, only: [:create]
+  end
+
   # Route multisport EN PREMIER — doit être avant /:id sinon "all" est capturé comme un id
   post "/switch_sport/all", to: "sports#multisport", as: :multisport_switch
 

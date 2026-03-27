@@ -1,0 +1,60 @@
+<%# ── Partial : un item de conversation privée dans la sidebar ────────────────
+    Variables attendues :
+      - conversation  : objet PrivateConversation
+      - current_user  : l'utilisateur connecté (passé explicitement car partial hors contexte)
+    Ce partial est rendu :
+      1. Directement depuis _sticky_chat.html.erb (chargement initial)
+      2. Via broadcast Turbo Stream depuis Message model (mise à jour du badge non-lu)
+%>
+
+<%# L'autre participant (pas current_user) %>
+<% other = conversation.other_user(current_user) %>
+<% last_msg = conversation.messages.last %>
+<% unread = conversation.unread_for?(current_user) %>
+
+<%# Conteneur de l'item — id ciblé par les broadcasts Turbo Stream %>
+<div class="sticky-chat-convo-item-wrapper" id="private-convo-<%= conversation.id %>">
+
+  <%# Lien vers le chat privé (ouvre dans la colonne droite de la modale)
+      turbo_prefetch: false → évite le prefetch au survol qui marquerait comme lu %>
+  <%= link_to private_conversation_path(conversation),
+      data: {
+        turbo_frame: "sticky-chat-frame",
+        action: "click->sticky-chat#selectConvo",
+        turbo_prefetch: false
+      },
+      class: "sticky-chat-convo-link",
+      id: "private-convo-link-#{conversation.id}" do %>
+
+    <%# Petit avatar de l'autre utilisateur %>
+    <%= user_avatar_tag other,
+        css_class: "chat-avatar-img",
+        style: "width:26px;height:26px;min-width:26px;border-radius:50%;object-fit:cover;flex-shrink:0;overflow:hidden;" %>
+
+    <div class="sticky-chat-convo-info">
+
+      <%# Nom de l'autre utilisateur + badge non-lu %>
+      <div class="sticky-chat-convo-title-row">
+        <span class="sticky-chat-convo-title">
+          <%= truncate(other.display_name || other.email, length: 18) %>
+        </span>
+        <%# Petit rond vert = message non lu %>
+        <% if unread %>
+          <span class="sticky-chat-unread-dot" title="Nouveau message"></span>
+        <% end %>
+      </div>
+
+      <%# Aperçu du dernier message %>
+      <div class="sticky-chat-convo-preview">
+        <% if last_msg %>
+          <%= truncate(last_msg.content, length: 22) %>
+        <% else %>
+          Aucun message
+        <% end %>
+      </div>
+
+    </div>
+
+  <% end %>
+
+</div>

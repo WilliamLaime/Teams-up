@@ -1,72 +1,103 @@
 class MessagesController < ApplicationController
   # authenticate_user! est déjà appliqué globalement dans ApplicationController
 
-  # Charge le match et vérifie que l'utilisateur a le droit de participer au chat
-  before_action :set_match_and_check_access
+  # Charge le contexte (match ou conversation privée) et vérifie les droits
+  before_action :set_context_and_check_access
 
   def create
-    # On gère l'autorisation manuellement dans set_match_and_check_access
-    # skip_authorization indique à Pundit qu'on a bien vérifié les droits
     skip_authorization
 
-    # Crée un nouveau message associé au match et à l'utilisateur connecté
-    @message = @match.messages.build(
-      content: message_params[:content],
-      user: current_user
-    )
+    if @match
+      # ── Message de match ──────────────────────────────────────────────────
+      @message = @match.messages.build(
+        content: message_params[:content],
+        user: current_user
+      )
 
-    if @message.save
-      # 🎮 Vérifier les achievements liés aux messages envoyés
-      AchievementService.new(current_user).check(:message_sent)
+      if @message.save
+        # Vérifier les achievements liés aux messages envoyés
+        AchievementService.new(current_user).check(:message_sent)
 
-      # Met à jour last_read_at de l'expéditeur pour qu'il ne voie pas
-      # son propre message comme "non lu" dans la sidebar sticky chat.
-      # Sans ça, le badge notification reste allumé même quand on parle seul.
-      sender_mu = @match.match_users.find_by(user: current_user)
-      sender_mu&.update_column(:last_read_at, Time.current)
+        # Met à jour last_read_at de l'expéditeur pour éviter le badge non-lu sur soi-même
+        sender_mu = @match.match_users.find_by(user: current_user)
+        sender_mu&.update_column(:last_read_at, Time.current)
 
-      # Le broadcast est géré automatiquement par after_create_commit dans le modèle
-      # On réinitialise le formulaire via Turbo Stream (vide le champ texte)
-      respond_to do |format|
-        format.turbo_stream do
-          # On envoie DEUX mises à jour Turbo Stream :
-          # 1. "chat-form"        → formulaire dans la modal sur la page show du match
-          # 2. "sticky-chat-form" → formulaire dans le panneau sticky (toutes les pages)
-          # Si l'un des deux éléments n'existe pas dans la page, Turbo l'ignore silencieusement
-          render turbo_stream: [
-            turbo_stream.update(
-              "chat-form",
-              partial: "messages/form",
-              locals: { match: @match, message: Message.new }
-            ),
-            turbo_stream.update(
+        # Le broadcast est géré par after_create_commit dans le modèle
+        # On réinitialise les formulaires via Turbo Stream (vide le champ texte)
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: [
+              turbo_stream.update("chat-form",
+                partial: "messages/form",
+                locals: { match: @match, message: Message.new }
+              ),
+              turbo_stream.update("sticky-chat-form",
+                partial: "messages/form",
+                locals: { match: @match, message: Message.new }
+              )
+            ]
+          end
+          format.html { redirect_to @match }
+        end
+      else
+        redirect_to @match, alert: "Impossible d'envoyer le message."
+      end
+
+    elsif @conversation
+      # ── Message privé ────────────────────────────────────────────────────
+      @message = @conversation.messages.build(
+        content: message_params[:content],
+        user: current_user
+      )
+
+      if @message.save
+        # Met à jour le timestamp de lecture de l'expéditeur
+        # pour ne pas voir son propre message comme non-lu
+        @conversation.mark_read_for!(current_user)
+
+        # Réinitialise le formulaire via Turbo Stream
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.update(
               "sticky-chat-form",
               partial: "messages/form",
-              locals: { match: @match, message: Message.new }
+              locals: {
+                match: nil,
+                message: Message.new,
+                private_conversation: @conversation
+              }
             )
-          ]
+          end
+          format.html { redirect_to private_conversation_path(@conversation) }
         end
-        format.html { redirect_to @match }
+      else
+        redirect_to root_path, alert: "Impossible d'envoyer le message."
       end
-    else
-      # En cas d'erreur, on redirige simplement (message trop long, vide, etc.)
-      redirect_to @match, alert: "Impossible d'envoyer le message."
     end
   end
 
   private
 
-  # Charge le match depuis l'URL et vérifie que l'utilisateur est participant approuvé
-  def set_match_and_check_access
-    @match = Match.find(params[:match_id])
+  # ── Charge le contexte : match ou conversation privée ─────────────────────
+  def set_context_and_check_access
+    if params[:match_id]
+      # Message de match — comportement existant
+      @match = Match.find(params[:match_id])
+      match_user = @match.match_users.find_by(user: current_user)
 
-    # Récupère l'inscription de l'utilisateur à ce match
-    match_user = @match.match_users.find_by(user: current_user)
+      # Seuls les participants approuvés et organisateurs peuvent écrire
+      return if match_user && (match_user.approved? || match_user.role == "organisateur")
 
-    # Seuls les participants approuvés et les organisateurs peuvent écrire
-    return if match_user && (match_user.approved? || match_user.role == "organisateur")
+      redirect_to @match, alert: "Tu dois être participant du match pour écrire dans le chat."
 
-    redirect_to @match, alert: "Tu dois être participant du match pour écrire dans le chat."
+    elsif params[:private_conversation_id]
+      # Message privé — vérifie que current_user est sender ou recipient
+      @conversation = PrivateConversation.find(params[:private_conversation_id])
+
+      unless [@conversation.sender_id, @conversation.recipient_id].include?(current_user.id)
+        redirect_to root_path, alert: "Accès refusé."
+      end
+    end
   end
 
   # Filtre les paramètres autorisés pour un message
