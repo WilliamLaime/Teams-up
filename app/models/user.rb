@@ -3,6 +3,7 @@ class User < ApplicationRecord
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
+         :confirmable,  # Envoie un email de confirmation à l'inscription — bloque la connexion tant que l'email n'est pas vérifié
          :omniauthable, omniauth_providers: [:google_oauth2] # Activation de la connexion via Google
   # dependent: :destroy supprime le profil automatiquement quand l'user est supprimé
   has_one :profil, dependent: :destroy
@@ -132,6 +133,9 @@ class User < ApplicationRecord
         provider: auth.provider,
         uid: auth.uid,
         password: Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
+        # confirmed_at renseigné maintenant → l'email Google est déjà vérifié par Google,
+        # pas besoin de renvoyer un email de confirmation depuis notre app
+        confirmed_at: Time.current,
         # first_name et last_name sont des attributs virtuels pour créer le Profil
         # On les récupère depuis les données Google
         first_name: auth.info.first_name.presence || auth.info.name&.split&.first || "Google",

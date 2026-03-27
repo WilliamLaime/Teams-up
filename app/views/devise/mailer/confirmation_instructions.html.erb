@@ -1,5 +1,68 @@
-<p>Welcome <%= @email %>!</p>
+<%# ── Email de confirmation de compte ─────────────────────────────────────── %>
+<%# Envoyé automatiquement par Devise après l'inscription %>
+<%# Inline CSS obligatoire dans les emails — les clients mail ignorent les feuilles de style externes %>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #111111; padding: 40px 20px; min-height: 100vh;">
 
-<p>You can confirm your account email through the link below:</p>
+  <%# Carte centrale %>
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
 
-<p><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
+    <%# En-tête avec logo et couleur de l'app %>
+    <div style="background-color: #111111; padding: 28px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <span style="font-size: 1.6rem; font-weight: 800; color: #f0f0f0; letter-spacing: -0.5px;">
+        TEAMS<span style="color: #1EDD88;">-UP</span>
+      </span>
+    </div>
+
+    <%# Corps du message %>
+    <div style="padding: 36px 40px;">
+
+      <%# Icône de bienvenue %>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; background-color: rgba(30, 221, 136, 0.12); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">
+          ✉️
+        </div>
+      </div>
+
+      <%# Titre %>
+      <h1 style="color: #f0f0f0; font-size: 1.4rem; font-weight: 700; text-align: center; margin: 0 0 8px 0;">
+        Confirme ton adresse email
+      </h1>
+
+      <%# Sous-titre avec l'email de l'utilisateur %>
+      <p style="color: rgba(255,255,255,0.45); font-size: 0.9rem; text-align: center; margin: 0 0 28px 0;">
+        Bienvenue sur Team-Up, <strong style="color: rgba(255,255,255,0.7);"><%= @email %></strong> !
+      </p>
+
+      <%# Message principal %>
+      <p style="color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.6; margin: 0 0 28px 0;">
+        Tu es à un clic de rejoindre la communauté. Clique sur le bouton ci-dessous pour confirmer ton adresse email et activer ton compte.
+      </p>
+
+      <%# Bouton CTA centré %>
+      <div style="text-align: center; margin-bottom: 28px;">
+        <%= link_to confirmation_url(@resource, confirmation_token: @token),
+            style: "display: inline-block; background-color: #1EDD88; color: #111111; font-weight: 700; font-size: 1rem; padding: 14px 36px; border-radius: 50px; text-decoration: none; letter-spacing: 0.3px;" do %>
+          Confirmer mon compte
+        <% end %>
+      </div>
+
+      <%# Lien texte de secours si le bouton ne fonctionne pas %>
+      <p style="color: rgba(255,255,255,0.3); font-size: 0.78rem; text-align: center; margin: 0;">
+        Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur :<br>
+        <span style="color: rgba(30, 221, 136, 0.6); word-break: break-all;">
+          <%= confirmation_url(@resource, confirmation_token: @token) %>
+        </span>
+      </p>
+
+    </div>
+
+    <%# Pied de page %>
+    <div style="background-color: #111111; padding: 20px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 0;">
+        Si tu n'as pas créé de compte sur Teams-Up, ignore cet email.<br>
+        © <%= Date.today.year %> Teams-Up — Tous droits réservés.
+      </p>
+    </div>
+
+  </div>
+</div>

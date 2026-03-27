@@ -1,20 +1,43 @@
-<h2>Resend confirmation instructions</h2>
+<%# ── Page "Renvoyer l'email de confirmation" ─────────────────────────────── %>
+<%# Affichée quand l'utilisateur n'a pas reçu son email ou que le lien a expiré %>
+<div class="auth-page">
+  <div class="auth-card">
 
-<%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-  <%= f.error_notification %>
-  <%= f.full_error :confirmation_token %>
+    <%# Icône + titre dans le style de l'app %>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <i data-lucide="mail-check" style="width:20px;height:20px;color:var(--green, #1EDD88);"></i>
+      <h2 class="mb-0"><span class="accent">Confirmer</span> ton email</h2>
+    </div>
 
-  <div class="form-inputs">
-    <%= f.input :email,
-                required: true,
-                autofocus: true,
-                value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
-                input_html: { autocomplete: "email" } %>
+    <%# Texte explicatif %>
+    <p style="color:rgba(255,255,255,0.45); font-size:0.88rem; margin-bottom:1.5rem;">
+      Tu n'as pas reçu l'email de confirmation ? Saisis ton adresse et on te renvoie un lien.
+    </p>
+
+    <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
+      <%= f.error_notification %>
+      <%= f.full_error :confirmation_token %>
+
+      <div class="form-inputs">
+        <%= f.input :email,
+                    label: "Email",
+                    required: true,
+                    autofocus: true,
+                    value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
+                    input_html: { autocomplete: "email", placeholder: "votre@email.com" } %>
+      </div>
+
+      <%# Bouton d'envoi centré %>
+      <div class="form-actions form-actions--center mt-3">
+        <%= f.button :submit, "Renvoyer le lien de confirmation" %>
+      </div>
+    <% end %>
+
+    <%# Séparateur + liens secondaires %>
+    <hr class="auth-divider">
+    <div class="auth-links">
+      <%= render "devise/shared/links" %>
+    </div>
+
   </div>
-
-  <div class="form-actions">
-    <%= f.button :submit, "Resend confirmation instructions" %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+</div>

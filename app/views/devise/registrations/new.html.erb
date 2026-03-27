@@ -338,6 +338,7 @@
                         class="password-toggle-btn"
                         data-action="click->password-toggle#toggle"
                         data-password-toggle-target="button"
+                        tabindex="-1"
                         aria-label="Afficher le mot de passe">
                   <i data-lucide="eye" style="width:18px;height:18px;"></i>
                 </button>
@@ -346,6 +347,12 @@
               <div class="form-text">
                 <%= @minimum_password_length %> caractères minimum, dont 1 majuscule, 1 chiffre et 1 symbole (!, @, #...)
               </div>
+              <%# Affiche l'erreur inline si le mot de passe ne respecte pas les règles %>
+              <% if resource.errors[:password].any? %>
+                <span class="invalid-feedback d-block">
+                  <%= resource.errors[:password].first %>
+                </span>
+              <% end %>
             </div>
 
             <%# Champ confirmation mot de passe avec bouton oeil ────────────── %>
@@ -365,10 +372,17 @@
                         class="password-toggle-btn"
                         data-action="click->password-toggle#toggle"
                         data-password-toggle-target="button"
+                        tabindex="-1"
                         aria-label="Afficher le mot de passe">
                   <i data-lucide="eye" style="width:18px;height:18px;"></i>
                 </button>
               </div>
+              <%# Affiche l'erreur inline si les mots de passe ne correspondent pas %>
+              <% if resource.errors[:password_confirmation].any? %>
+                <span class="invalid-feedback d-block">
+                  <%= resource.errors[:password_confirmation].first %>
+                </span>
+              <% end %>
             </div>
           </div>
 

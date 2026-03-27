@@ -25,7 +25,7 @@ Devise.setup do |config|
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
   # L'adresse qui apparaît comme expéditeur dans les emails Devise
-  config.mailer_sender = ENV.fetch("MAILER_FROM", "noreply@team-up.fr")
+  config.mailer_sender = ENV.fetch("MAILER_FROM", "noreply@teams-up-sport.fr")
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
