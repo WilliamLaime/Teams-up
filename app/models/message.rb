@@ -2,70 +2,103 @@ class Message < ApplicationRecord
   # Un message appartient à un utilisateur (l'expéditeur)
   belongs_to :user
 
-  # Un message appartient à un match (la conversation de groupe)
-  belongs_to :match
+  # Un message appartient soit à un match (groupe), soit à une conversation privée
+  # Les deux sont optionnels pour permettre l'un ou l'autre
+  belongs_to :match, optional: true
+  belongs_to :private_conversation, optional: true
 
   # Validation : le contenu est obligatoire et limité à 1000 caractères
   validates :content, presence: true, length: { maximum: 1000 }
 
-  # Après la création d'un message, on le diffuse en temps réel
-  # via Turbo Streams sur le stream spécifique au match
-  # Cela met à jour la liste des messages sur toutes les pages ouvertes
-  after_create_commit :broadcast_message, :reactivate_dismissed_conversations, :broadcast_unread_notifications
+  # Validation : un message doit appartenir à un match OU une conversation privée
+  validate :belongs_to_match_or_private_conversation
+
+  # Après la création d'un message, on le diffuse en temps réel via Turbo Streams
+  after_create_commit :broadcast_message, :broadcast_unread_notifications
+
+  # Callback uniquement pour les messages de match (réactive si dismissé)
+  after_create_commit :reactivate_dismissed_conversations, if: :match_id?
 
   private
 
+  # ── Validation : match_id OU private_conversation_id doit être présent ────
+  def belongs_to_match_or_private_conversation
+    if match_id.blank? && private_conversation_id.blank?
+      errors.add(:base, "Un message doit appartenir à un match ou une conversation privée")
+    end
+  end
+
+  # ── Diffuse les badges non-lus dans la sidebar ────────────────────────────
   def broadcast_unread_notifications
-    # Pour chaque participant du match SAUF l'expéditeur :
-    # met à jour l'item de sidebar avec le badge non-lu (petit rond vert)
-    # via le stream personnel "user_conversations_<id>" de chaque participant
-    match.match_users.where.not(user_id: user_id).each do |mu|
+    if match_id?
+      # Message de match : notifie tous les participants SAUF l'expéditeur
+      match.match_users.where.not(user_id: user_id).each do |mu|
+        Turbo::StreamsChannel.broadcast_replace_to(
+          "user_conversations_#{mu.user_id}",   # stream personnel du destinataire
+          target: "sticky-convo-#{match_id}",   # l'item à remplacer dans sa sidebar
+          partial: "shared/sticky_convo_item",
+          locals: { match: match, match_user: mu }
+        )
+      end
+    elsif private_conversation_id?
+      # Message privé : notifie uniquement le destinataire (pas l'expéditeur)
+      recipient = private_conversation.other_user(user)
       Turbo::StreamsChannel.broadcast_replace_to(
-        "user_conversations_#{mu.user_id}",   # stream personnel du destinataire
-        target: "sticky-convo-#{match_id}",   # l'item à remplacer dans sa sidebar
-        partial: "shared/sticky_convo_item",
-        locals: { match: match, match_user: mu }
+        "user_conversations_#{recipient.id}",        # stream personnel du destinataire
+        target: "private-convo-#{private_conversation_id}", # l'item à remplacer dans sa sidebar
+        partial: "shared/private_convo_item",
+        locals: { conversation: private_conversation, current_user: recipient }
       )
     end
   end
 
+  # ── Réactive les conversations de match dismissées ────────────────────────
   def reactivate_dismissed_conversations
-    # Si des participants avaient dismissé cette conversation (bouton poubelle),
-    # on réinitialise leur chat_dismissed_at → la conversation réapparaîtra
-    # au prochain chargement de page pour ces utilisateurs
     match.match_users.where.not(chat_dismissed_at: nil).update_all(chat_dismissed_at: nil)
   end
 
+  # ── Diffuse le message en temps réel dans la zone de chat ─────────────────
   def broadcast_message
-    # Diffuse le nouveau message en l'ajoutant à la fin de la liste (#chat-messages)
-    # Tous les abonnés au stream "match_chat_<id>" le reçoivent instantanément
+    if match_id?
+      broadcast_match_message
+    elsif private_conversation_id?
+      broadcast_private_message
+    end
+  end
 
+  # ── Broadcast pour les messages de match ──────────────────────────────────
+  def broadcast_match_message
     # 1. Cible la modal du chat sur la page show du match
     broadcast_append_to(
-      "match_chat_#{match_id}",      # nom du stream (unique par match)
-      target: "chat-messages",       # id de la zone de messages dans la modal
-      partial: "messages/message",   # la vue partielle à rendre
-      locals: { message: self }      # on passe le message à la partielle
+      "match_chat_#{match_id}",
+      target: "chat-messages",
+      partial: "messages/message",
+      locals: { message: self }
     )
 
-    # 2. Met à jour la preview card (les 2 derniers messages affichés sous le header).
-    # On utilise broadcast_update_to pour remplacer le CONTENU du div#chat-preview-list-X
-    # sans perdre son id (contrairement à broadcast_replace_to qui supprimerait l'élément).
-    # Même stream que la modal → un seul abonnement turbo_stream_from suffit pour les deux.
+    # 2. Met à jour la preview card des 2 derniers messages
     broadcast_update_to(
       "match_chat_#{match_id}",
-      target: "chat-preview-list-#{match_id}", # id du conteneur de preview dans show.html.erb
+      target: "chat-preview-list-#{match_id}",
       partial: "matches/chat_preview_list",
       locals: { match: match }
     )
 
-    # 3. Cible le panneau sticky chat (visible sur toutes les pages)
-    # On utilise un stream DIFFÉRENT ("match_chat_sticky_<id>") pour éviter que
-    # les utilisateurs sur la page show du match reçoivent le message en double
-    # (car ils seraient abonnés aux deux streams en même temps)
+    # 3. Cible le chat sticky (stream différent pour éviter les doublons)
     broadcast_append_to(
-      "match_chat_sticky_#{match_id}",  # stream distinct du modal
-      target: "sticky-chat-messages",   # id de la zone de messages dans le sticky chat
+      "match_chat_sticky_#{match_id}",
+      target: "sticky-chat-messages",
+      partial: "messages/message",
+      locals: { message: self }
+    )
+  end
+
+  # ── Broadcast pour les messages privés ────────────────────────────────────
+  def broadcast_private_message
+    # Ajoute le message dans la zone de chat des DEUX participants
+    broadcast_append_to(
+      "private_chat_#{private_conversation_id}",  # stream unique par conversation
+      target: "sticky-chat-messages",             # même id que le chat match
       partial: "messages/message",
       locals: { message: self }
     )

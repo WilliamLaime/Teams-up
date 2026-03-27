@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_27_091812) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_27_121516) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -148,10 +148,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_27_091812) do
   create_table "messages", force: :cascade do |t|
     t.text "content"
     t.datetime "created_at", null: false
-    t.bigint "match_id", null: false
+    t.bigint "match_id"
+    t.bigint "private_conversation_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["match_id"], name: "index_messages_on_match_id"
+    t.index ["private_conversation_id"], name: "index_messages_on_private_conversation_id"
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
@@ -165,6 +167,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_27_091812) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["user_id"], name: "index_notifications_on_user_id"
+  end
+
+  create_table "private_conversations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "recipient_id", null: false
+    t.datetime "recipient_last_read_at"
+    t.bigint "sender_id", null: false
+    t.datetime "sender_last_read_at"
+    t.datetime "updated_at", null: false
+    t.index ["sender_id", "recipient_id"], name: "index_private_conversations_on_sender_id_and_recipient_id", unique: true
   end
 
   create_table "profils", force: :cascade do |t|
@@ -431,8 +443,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_27_091812) do
   add_foreign_key "matches", "users", column: "homme_du_match_id"
   add_foreign_key "matches", "venues"
   add_foreign_key "messages", "matches"
+  add_foreign_key "messages", "private_conversations"
   add_foreign_key "messages", "users"
   add_foreign_key "notifications", "users"
+  add_foreign_key "private_conversations", "users", column: "recipient_id"
+  add_foreign_key "private_conversations", "users", column: "sender_id"
   add_foreign_key "profils", "users"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

@@ -1,12 +1,14 @@
-<%# ── Chat sticky — panneau flottant avec sidebar + zone de chat ──────────────
+<%# ── Chat global — modale Bootstrap (sidebar conversations + zone chat) ────────
+    Remplace l'ancien panneau sticky flottant en bas à droite.
+    L'icône dans la navbar ouvre cette modale via data-bs-toggle="modal".
     Structure :
-      [bouton] → clic → panneau s'ouvre
-      [sidebar conversations | zone chat]
-    Notifications : badge non-lu mis à jour en temps réel via ActionCable
+      [sidebar avec 2 onglets (Matchs / Messages) | zone chat turbo-frame]
+    Notifications : badge non-lu sur l'icône navbar géré en temps réel via ActionCable
 %>
 <% if user_signed_in? %>
 
-  <%# Récupère les match_users actifs (non-dismissés, matchs non terminés) %>
+  <%# ── Conversations de matchs (onglet "Matchs") ──────────────────────────
+      Récupère les match_users actifs (non-dismissés, matchs non terminés) %>
   <%
     active_match_users = current_user.match_users
       .where("status = 'approved' OR role = 'organisateur'")
@@ -19,97 +21,150 @@
       .reverse
   %>
 
+  <%# ── Conversations privées (onglet "Messages") ───────────────────────────
+      Récupère toutes les conversations privées où current_user est sender ou recipient %>
+  <%
+    private_convos = PrivateConversation
+      .where("sender_id = ? OR recipient_id = ?", current_user.id, current_user.id)
+      .includes(:messages, sender: :profil, recipient: :profil)
+      .order(updated_at: :desc)
+  %>
+
   <%# id="sticky-chat-global" + data-turbo-permanent : dit à Turbo Drive de NE PAS
       remplacer cet élément lors des navigations de page.
-      Sans ça, chaque navigation Turbo recrée le sticky chat depuis zéro :
-      - la frame "sticky-chat-frame" repasse à "Sélectionne une conversation"
-      - le turbo_stream_from de la conversation ouverte est détruit
-      - l'abonnement ActionCable est perdu → les messages n'arrivent plus en temps réel
-      - seul un rechargement complet de la page permet de voir les nouveaux messages %>
+      Sans ça, chaque navigation Turbo détruit les abonnements ActionCable
+      et les messages n'arrivent plus en temps réel. %>
   <div id="sticky-chat-global"
        data-controller="sticky-chat"
-       data-turbo-permanent
-       class="sticky-chat-container">
+       data-turbo-permanent>
 
     <%# Abonnement au stream personnel de l'utilisateur
         Permet de recevoir les mises à jour des badges non-lus en temps réel
-        sans recharger la page (broadcast depuis Message model) %>
+        (broadcast depuis Message model pour les matchs et les convs privées) %>
     <%= turbo_stream_from "user_conversations_#{current_user.id}" %>
 
-    <%# Trigger caché pour l'ouverture automatique du panneau
+    <%# Trigger caché pour l'ouverture automatique de la modale
         Quand l'organisateur crée un match, un broadcast met à jour son contenu
-        Le MutationObserver Stimulus le détecte et appelle open() %>
+        Le MutationObserver Stimulus le détecte et appelle bootstrap.Modal.show() %>
     <div id="sticky-chat-open-trigger" style="display:none;"></div>
 
-    <%# ── Panneau principal (sidebar + chat) ──────────────────────────────── %>
-    <div class="sticky-chat-panel" data-sticky-chat-target="panel">
+    <%# Indicateur d'onglet actif — peut être mis à jour par Turbo Stream
+        (ex: depuis le profil → ouvre directement l'onglet Messages) %>
+    <span id="sticky-chat-tab-indicator" style="display:none;"></span>
 
-      <%# ── Colonne gauche : liste des conversations ──────────────────────── %>
-      <div class="sticky-chat-sidebar">
+    <%# ── Modale Bootstrap ─────────────────────────────────────────────────── %>
+    <div class="modal fade" id="global-chat-modal" tabindex="-1"
+         aria-labelledby="chatModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content chat-modal-content">
 
-        <%# En-tête de la sidebar %>
-        <div class="sticky-chat-sidebar-header">
-          <span>Chats</span>
-          <button class="sticky-chat-close-btn"
-                  data-action="click->sticky-chat#close"
-                  title="Fermer">
-            <i data-lucide="x" style="width:14px;height:14px;"></i>
-          </button>
-        </div>
+          <%# Le contenu est divisé en deux colonnes : sidebar | chat
+              pas de modal-header classique — l'en-tête est intégré dans la sidebar %>
+          <div class="modal-body p-0 d-flex chat-modal-body">
 
-        <%# Liste des conversations
-            id="sticky-chat-sidebar-list" → ciblé par les broadcasts Turbo Stream
-            quand une nouvelle conversation apparaît (approval, auto-join, création match) %>
-        <div class="sticky-chat-sidebar-list" id="sticky-chat-sidebar-list">
-          <% if sticky_convos.any? %>
-            <% sticky_convos.each do |mu| %>
-              <%= render "shared/sticky_convo_item", match: mu.match, match_user: mu %>
-            <% end %>
-          <% else %>
-            <%# id="sticky-chat-sidebar-empty" → supprimé par broadcast quand une conv arrive %>
-            <div class="sticky-chat-sidebar-empty" id="sticky-chat-sidebar-empty">
-              <div>💬</div>
-              <p>Rejoins un match !</p>
+            <%# ── Colonne gauche : sidebar avec onglets ─────────────────────── %>
+            <div class="sticky-chat-sidebar">
+
+              <%# ── Onglets de navigation (Matchs / Messages) ───────────────── %>
+              <%# Gestion par Stimulus (sticky-chat#switchTab) — pas data-bs-toggle
+                  car Bootstrap Tab entre en conflit avec data-turbo-permanent %>
+              <div class="sticky-chat-tabs">
+                <%# Onglet "Matchs" — actif par défaut (classe "active" gérée par Stimulus) %>
+                <button class="sticky-chat-tab active"
+                        type="button"
+                        data-tab="matchs"
+                        data-action="click->sticky-chat#switchTab">
+                  Matchs
+                  <%# Point vert non-lus — caché par défaut, affiché par updateBadge() %>
+                  <span class="sticky-chat-tab-badge" id="badge-tab-matchs" style="display:none;"></span>
+                </button>
+                <%# Onglet "Messages" (conversations privées) %>
+                <button class="sticky-chat-tab"
+                        type="button"
+                        data-tab="messages"
+                        data-action="click->sticky-chat#switchTab">
+                  Messages
+                  <span class="sticky-chat-tab-badge" id="badge-tab-messages" style="display:none;"></span>
+                </button>
+                <%# Bouton fermer — pousse à droite avec ms-auto %>
+                <button class="sticky-chat-close-btn ms-auto"
+                        data-bs-dismiss="modal"
+                        title="Fermer">
+                  <i data-lucide="x" style="width:14px;height:14px;"></i>
+                </button>
+              </div>
+
+              <%# ── Contenu des onglets — géré par Stimulus, pas Bootstrap Tab ── %>
+              <div class="sticky-chat-tab-content">
+
+                <%# ── Onglet Matchs — visible par défaut (sticky-chat-pane--active) %>
+                <div class="sticky-chat-pane sticky-chat-pane--active" id="tab-matchs">
+
+                  <%# IMPORTANT : #sticky-chat-sidebar-list doit TOUJOURS être présent
+                      dans le DOM, même quand la liste est vide.
+                      Les broadcasts Turbo Stream (match_user.rb → broadcast_prepend_to)
+                      ciblent cet id pour ajouter une conversation en temps réel.
+                      Si l'élément n'existe pas lors du broadcast, rien ne s'affiche. %>
+                  <div id="sticky-chat-sidebar-list">
+                    <% if sticky_convos.any? %>
+                      <% sticky_convos.each do |mu| %>
+                        <%= render "shared/sticky_convo_item", match: mu.match, match_user: mu %>
+                      <% end %>
+                    <% else %>
+                      <%# id="sticky-chat-sidebar-empty" supprimé par broadcast quand une conv arrive %>
+                      <div class="sticky-chat-sidebar-empty" id="sticky-chat-sidebar-empty">
+                        <div>⚽</div>
+                        <p>Rejoins un match pour chatter !</p>
+                      </div>
+                    <% end %>
+                  </div>
+
+                </div>
+
+                <%# ── Onglet Messages (conversations privées) — caché par défaut %>
+                <div class="sticky-chat-pane" id="tab-messages">
+                  <%# IMPORTANT : #private-chat-sidebar-list doit TOUJOURS être présent
+                      pour que les broadcasts Turbo Stream puissent y insérer des items. %>
+                  <div id="private-chat-sidebar-list">
+                    <% if private_convos.any? %>
+                      <% private_convos.each do |conv| %>
+                        <%= render "shared/private_convo_item",
+                            conversation: conv,
+                            current_user: current_user %>
+                      <% end %>
+                    <% else %>
+                      <div class="sticky-chat-sidebar-empty" id="private-chat-sidebar-empty">
+                        <div>💬</div>
+                        <p>Aucun message privé</p>
+                        <p style="font-size:0.68rem;">Visite le profil d'un joueur pour lui écrire !</p>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+              </div>
+              <%# ── Fin contenu onglets ── %>
+
             </div>
-          <% end %>
-        </div>
+            <%# ── Fin sidebar ── %>
 
-      </div>
-      <%# ── Fin sidebar ── %>
+            <%# ── Colonne droite : chat sélectionné (Turbo Frame) ───────────── %>
+            <div class="sticky-chat-content">
+              <turbo-frame id="sticky-chat-frame" class="sticky-chat-frame-wrapper">
+                <div class="sticky-chat-no-selection">
+                  <div style="font-size: 1.8rem;">💬</div>
+                  <p>Sélectionne une conversation</p>
+                </div>
+              </turbo-frame>
+            </div>
 
-      <%# ── Colonne droite : chat sélectionné (Turbo Frame) ─────────────────── %>
-      <div class="sticky-chat-content">
-        <turbo-frame id="sticky-chat-frame" class="sticky-chat-frame-wrapper">
-          <div class="sticky-chat-no-selection">
-            <div style="font-size: 1.8rem;">💬</div>
-            <p>Sélectionne une conversation</p>
           </div>
-        </turbo-frame>
+          <%# ── Fin modal-body ── %>
+
+        </div>
       </div>
-
     </div>
-    <%# ── Fin panneau ── %>
-
-    <%# ── Bouton rond ─────────────────────────────────────────────────────── %>
-    <button class="sticky-chat-btn"
-            data-action="click->sticky-chat#toggle"
-            data-sticky-chat-target="button"
-            title="Ouvrir les conversations">
-
-      <%# Badge notification — petit rond vert à cheval sur le bouton
-          Caché par défaut, Stimulus le montre s'il y a des messages non lus
-          (détecté via MutationObserver sur les .sticky-chat-unread-dot de la sidebar) %>
-      <span class="sticky-chat-btn-badge"
-            data-sticky-chat-target="badge"
-            style="display:none;"></span>
-
-      <i data-lucide="message-circle"
-         data-sticky-chat-target="iconOpen"
-         style="width:20px;height:20px;"></i>
-      <i data-lucide="x"
-         data-sticky-chat-target="iconClose"
-         style="width:20px;height:20px;display:none;"></i>
-    </button>
+    <%# ── Fin modale ── %>
 
   </div>
 

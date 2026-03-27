@@ -1,0 +1,58 @@
+<%# ── Chat privé — chargé dans la colonne droite de la modale ────────────────
+    Variables attendues :
+      - @conversation : objet PrivateConversation
+      - @messages     : liste des messages (ordonnés par created_at)
+      - @message      : Message.new (pour le formulaire d'envoi)
+    Structure identique à conversations/show.html.erb mais pour le chat privé
+%>
+
+<%= turbo_frame_tag "sticky-chat-frame" do %>
+
+  <div data-controller="chat"
+       data-chat-current-user-id-value="<%= current_user.id %>"
+       data-chat-conversation-id-value="<%= @conversation.id %>"
+       class="sticky-chat-inner">
+
+    <%# Abonnement Turbo Stream — reçoit les nouveaux messages en temps réel %>
+    <%= turbo_stream_from "private_chat_#{@conversation.id}" %>
+
+    <%# En-tête : avatar + nom de l'autre utilisateur %>
+    <% other = @conversation.other_user(current_user) %>
+    <div class="sticky-chat-chat-header">
+      <%# Petit avatar de l'autre utilisateur %>
+      <%= user_avatar_tag other,
+          css_class: "chat-avatar-img",
+          style: "width:20px;height:20px;min-width:20px;border-radius:50%;object-fit:cover;overflow:hidden;flex-shrink:0;" %>
+      <%= truncate(other.display_name || other.email, length: 25) %>
+    </div>
+
+    <%# Zone scrollable des messages
+        id="sticky-chat-messages" : cible du broadcast Turbo Stream (message.rb) %>
+    <div class="sticky-chat-messages-zone"
+         id="sticky-chat-messages"
+         data-chat-target="messages">
+
+      <% if @messages.any? %>
+        <%= render @messages %>
+      <% else %>
+        <%# Message vide initial — supprimé par chat_controller quand on envoie le 1er message %>
+        <div class="chat-empty text-center py-3" id="chat-empty">
+          <div style="font-size: 1.5rem;">👋</div>
+          <p class="small">Dis bonjour !</p>
+        </div>
+      <% end %>
+
+    </div>
+
+    <%# Formulaire d'envoi
+        id="sticky-chat-form" : réinitialisé par MessagesController après envoi %>
+    <div class="sticky-chat-form-zone" id="sticky-chat-form">
+      <%= render "messages/form",
+          match: nil,
+          message: @message,
+          private_conversation: @conversation %>
+    </div>
+
+  </div>
+
+<% end %>

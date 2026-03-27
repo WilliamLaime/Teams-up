@@ -1,49 +1,33 @@
-// Controller Stimulus pour le chat sticky global
+// Controller Stimulus pour le chat global (modale navbar)
 // Rôles :
-//   1. Ouvrir / fermer le panneau
-//   2. Changer l'icône du bouton
-//   3. Mettre en surbrillance la conversation active dans la sidebar
-//   4. Afficher / masquer le badge de notification sur le bouton
+//   1. Switcher les onglets Matchs / Messages (pas Bootstrap Tab — conflit turbo-permanent)
+//   2. Mettre à jour le badge vert sur l'icône navbar après chaque navigation Turbo
+//   3. Mettre à jour les badges verts sur chaque onglet
+//   4. Mettre en surbrillance la conversation active dans la sidebar
+//   5. Ré-initialiser les icônes Lucide après les mises à jour Turbo Stream
+//   6. Ouvrir automatiquement la modale si un trigger broadcast est reçu
 
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = [
-    "panel",     // div.sticky-chat-panel
-    "button",    // bouton rond vert
-    "iconOpen",  // icône message-circle (état fermé)
-    "iconClose", // icône x (état ouvert)
-    "badge"      // petit rond vert "à cheval" sur le bouton (badge non-lu)
-  ]
 
   connect() {
-    this.isOpen = false
+    // Badge initial au chargement de la page
+    this.updateBadge()
 
-    // Ferme le panneau si on clique en dehors de l'élément sticky-chat
-    // On stocke la référence pour pouvoir la retirer dans disconnect()
-    this._handleOutsideClick = (event) => {
-      // On utilise composedPath() plutôt que contains(event.target) car Lucide
-      // remplace les <i> par des <svg> lors de createIcons() — l'élément original
-      // est retiré du DOM et contains() retourne false à tort, ce qui fermait
-      // le panneau immédiatement après l'avoir ouvert en cliquant sur l'icône.
-      // composedPath() capture le chemin AVANT tout remplacement DOM, donc fiable.
-      const clickedInside = event.composedPath().includes(this.element)
-      if (this.isOpen && !clickedInside) {
-        this.close()
-      }
-    }
-    document.addEventListener("click", this._handleOutsideClick)
+    // Après chaque navigation Turbo, la navbar est recréée dans le DOM.
+    // Le badge #chat-navbar-badge repart à display:none → il faut le remettre à jour.
+    // On stocke la référence pour pouvoir l'enlever dans disconnect().
+    this._handleTurboRender = () => this.updateBadge()
+    document.addEventListener("turbo:render", this._handleTurboRender)
 
     // Options de l'observer stockées pour pouvoir reconnecter après lucide.createIcons()
     this._observerOptions = {
-      subtree: true,       // surveille tous les descendants
-      childList: true,     // détecte ajouts/suppressions de nœuds
-      attributes: true,    // détecte changements d'attributs (ex: display)
+      subtree: true,
+      childList: true,
+      attributes: true,
       attributeFilter: ["style", "class"]
     }
-
-    // Vérifie immédiatement si des messages non lus existent dans la sidebar
-    this.updateBadge()
 
     // MutationObserver : surveille les changements dans le container
     // (Turbo Streams ajoutent/retirent des .sticky-chat-unread-dot en temps réel)
@@ -51,104 +35,95 @@ export default class extends Controller {
       this.updateBadge()
 
       // Vérifie si le trigger d'ouverture auto a été activé
-      // Quand l'organisateur crée un match, le broadcast remplit ce div
-      // → on ouvre le panneau et on vide le trigger pour éviter les re-déclenchements
       const trigger = document.getElementById("sticky-chat-open-trigger")
       if (trigger && trigger.textContent.trim() !== "") {
-        this.open()
-        trigger.textContent = "" // Réinitialise pour éviter de re-déclencher
+        const modal = document.getElementById("global-chat-modal")
+        if (modal && typeof bootstrap !== "undefined") {
+          bootstrap.Modal.getOrCreateInstance(modal).show()
+        }
+        trigger.textContent = ""
       }
 
-      // Si Turbo Stream a injecté de nouveaux nœuds (ex: item sidebar remplacé),
-      // il faut ré-initialiser Lucide — les nouveaux <i data-lucide="..."> ne sont
-      // pas convertis en SVG automatiquement après un remplacement Turbo Stream
+      // Si Turbo Stream a injecté de nouveaux nœuds, ré-initialise Lucide
       const hasNewNodes = mutations.some(m => m.addedNodes.length > 0)
       if (hasNewNodes && typeof lucide !== "undefined") {
-        // IMPORTANT : on déconnecte l'observer AVANT d'appeler lucide.createIcons()
-        // car createIcons() remplace les <i> par des <svg>, ce qui ajouterait de nouveaux
-        // nœuds et déclencherait une boucle infinie → page freeze
+        // Déconnecte d'abord pour éviter la boucle infinie (createIcons → mutation → createIcons…)
         this._observer.disconnect()
         lucide.createIcons()
-        // On reconnecte l'observer après la mise à jour des icônes
         this._observer.observe(this.element, this._observerOptions)
       }
     })
     this._observer.observe(this.element, this._observerOptions)
+
+    // Ré-initialise Lucide quand la modale s'ouvre
+    const modal = document.getElementById("global-chat-modal")
+    if (modal) {
+      modal.addEventListener("shown.bs.modal", () => {
+        if (typeof lucide !== "undefined") lucide.createIcons()
+      })
+    }
   }
 
   disconnect() {
-    // Nettoyage : on arrête l'observation quand le controller est détruit
     if (this._observer) this._observer.disconnect()
-    // Retire le listener de clic extérieur
-    document.removeEventListener("click", this._handleOutsideClick)
+    // Retire le listener turbo:render pour éviter les fuites mémoire
+    document.removeEventListener("turbo:render", this._handleTurboRender)
   }
 
-  // ── Mettre à jour la visibilité et la couleur du badge sur le bouton ────────
-  // Règle d'affichage :
-  //   - Messages non lus + panneau FERMÉ → vert + pulsation (attire l'attention)
-  //   - Messages non lus + panneau OUVERT → orange + sans pulsation (vus, pas urgent)
-  //   - Aucun message non lu              → caché
+  // ── Switcher entre les onglets Matchs et Messages ─────────────────────────
+  // Appelé par data-action="click->sticky-chat#switchTab" sur chaque bouton onglet.
+  // On gère tout manuellement car Bootstrap Tab entre en conflit avec data-turbo-permanent.
+  switchTab(event) {
+    const tabName = event.currentTarget.dataset.tab // "matchs" ou "messages"
+
+    // Met à jour la classe "active" sur les boutons d'onglet
+    this.element.querySelectorAll(".sticky-chat-tab").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tab === tabName)
+    })
+
+    // Affiche le bon pane, cache les autres
+    this.element.querySelectorAll(".sticky-chat-pane").forEach(pane => {
+      pane.classList.toggle("sticky-chat-pane--active", pane.id === `tab-${tabName}`)
+    })
+  }
+
+  // ── Mettre à jour tous les badges de notification ─────────────────────────
+  // Appelé à l'init, après chaque mutation DOM et après chaque navigation Turbo.
   updateBadge() {
-    if (!this.hasBadgeTarget) return
+    // ── Badge onglet "Matchs" ──────────────────────────────────────────────
+    const matchsPane = document.getElementById("tab-matchs")
+    const hasUnreadMatchs = matchsPane
+      ? matchsPane.querySelectorAll(".sticky-chat-unread-dot").length > 0
+      : false
 
-    // Cherche s'il existe des points de notification dans la sidebar
-    const hasUnread = this.element.querySelectorAll(".sticky-chat-unread-dot").length > 0
+    const badgeMatchs = document.getElementById("badge-tab-matchs")
+    if (badgeMatchs) badgeMatchs.style.display = hasUnreadMatchs ? "inline-block" : "none"
 
-    if (!hasUnread) {
-      // Aucun non-lu → on cache le badge
-      this.badgeTarget.style.display = "none"
-      return
+    // ── Badge onglet "Messages" ────────────────────────────────────────────
+    const messagesPane = document.getElementById("tab-messages")
+    const hasUnreadMessages = messagesPane
+      ? messagesPane.querySelectorAll(".sticky-chat-unread-dot").length > 0
+      : false
+
+    const badgeMessages = document.getElementById("badge-tab-messages")
+    if (badgeMessages) badgeMessages.style.display = hasUnreadMessages ? "inline-block" : "none"
+
+    // ── Badge global sur l'icône navbar (#chat-navbar-badge) ──────────────
+    // Visible dès qu'il y a des non-lus dans l'un ou l'autre onglet.
+    // On requête par ID (pas de target Stimulus) car la navbar est en dehors
+    // du scope de ce controller.
+    const navBadge = document.getElementById("chat-navbar-badge")
+    if (navBadge) {
+      navBadge.style.display = (hasUnreadMatchs || hasUnreadMessages) ? "block" : "none"
     }
-
-    // Il y a des non-lus → on affiche le badge
-    this.badgeTarget.style.display = "block"
-
-    // Panneau ouvert = messages vus (orange, sans pulsation)
-    // Panneau fermé  = messages pas encore vus (vert, pulsation)
-    this.badgeTarget.classList.toggle("sticky-chat-btn-badge--seen", this.isOpen)
-  }
-
-  // ── Basculer ouvert / fermé ──────────────────────────────────────────────
-  toggle() {
-    this.isOpen ? this.close() : this.open()
-  }
-
-  // ── Ouvrir le panneau ─────────────────────────────────────────────────────
-  open() {
-    this.setState(true)
-  }
-
-  // ── Fermer le panneau ─────────────────────────────────────────────────────
-  close() {
-    this.setState(false)
-  }
-
-  // ── Applique l'état ouvert/fermé (évite la duplication entre open et close) ──
-  setState(isOpen) {
-    this.isOpen = isOpen
-    // Ajoute ou retire la classe CSS selon l'état
-    this.panelTarget.classList.toggle("sticky-chat-panel--open", isOpen)
-    this.updateIcons(isOpen)
-    // Réinitialise les icônes Lucide dans le panneau après ouverture
-    if (isOpen && typeof lucide !== "undefined") lucide.createIcons()
-    // Met à jour le badge (caché si ouvert, visible si fermé + non-lus)
-    this.updateBadge()
-  }
-
-  // ── Met à jour l'icône du bouton (message-circle ↔ croix) ─────────────────
-  updateIcons(isOpen) {
-    if (this.hasIconOpenTarget)  this.iconOpenTarget.style.display  = isOpen ? "none"  : "block"
-    if (this.hasIconCloseTarget) this.iconCloseTarget.style.display = isOpen ? "block" : "none"
   }
 
   // ── Sélectionner une conversation (highlight dans la sidebar) ─────────────
-  // Appelé par data-action="click->sticky-chat#selectConvo" sur chaque lien
+  // Appelé par data-action="click->sticky-chat#selectConvo" sur chaque lien.
   selectConvo(event) {
-    // Retire la classe active sur tous les liens de conversation
     this.element.querySelectorAll(".sticky-chat-convo-link").forEach(link => {
       link.classList.remove("sticky-chat-convo-link--active")
     })
-    // Ajoute la classe active sur le lien cliqué
     event.currentTarget.classList.add("sticky-chat-convo-link--active")
   }
 }

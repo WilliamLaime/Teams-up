@@ -110,6 +110,20 @@
           <% end %>
         </div>
 
+        <%# ── Bouton chat — ouvre la modale globale des conversations ──
+            Le badge vert (#chat-navbar-badge) est géré par le Stimulus controller
+            sticky-chat : il s'affiche quand il y a des messages non lus. %>
+        <div class="nav-item">
+          <button type="button"
+                  class="nav-chat-btn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#global-chat-modal"
+                  title="Mes conversations">
+            <i data-lucide="message-circle" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
+            <span id="chat-navbar-badge" class="nav-chat-badge" style="display:none;"></span>
+          </button>
+        </div>
+
         <%# ── Avatar + dropdown utilisateur (mobile + desktop) ── %>
         <div class="nav-item dropdown">
           <button type="button"
