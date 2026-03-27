@@ -4,6 +4,12 @@ import "controllers"
 import "@popperjs/core"
 import * as bootstrap from "bootstrap"
 
+// Ré-initialise les icônes Lucide après chaque mise à jour d'un turbo_frame
+// (ex: le bouton ami se met à jour en live → les nouveaux <i data-lucide="..."> doivent être convertis en SVG)
+document.addEventListener("turbo:frame-render", () => {
+  if (window.lucide) window.lucide.createIcons()
+})
+
 // Initialise les tooltips Bootstrap sur chaque navigation Turbo
 // Turbo remplace le DOM sans recharger la page — on doit donc ré-initialiser à chaque fois
 document.addEventListener("turbo:load", () => {

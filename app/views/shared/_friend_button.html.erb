@@ -12,7 +12,10 @@
       - pending_received         : boolean — cette personne m'a envoyé une demande
       - friendship_initiated_by_me : objet Friendship si c'est moi qui ai initié %>
 
-<% if user_signed_in? && current_user != profil_user %>
+<%= turbo_frame_tag "friend_button_#{profil_user.id}" do %>
+
+<%# current_user.present? fonctionne aussi bien en contexte request normal qu'en broadcast ActionCable %>
+<% if current_user.present? && current_user != profil_user %>
 
   <%# ── État 1 : on est déjà amis ── %>
   <% if already_friends %>
@@ -24,8 +27,10 @@
         Amis
       </span>
       <%# Bouton retirer toujours visible quand on est amis (que ce soit moi ou l'autre qui ait initié) %>
+      <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
       <%= button_to user_friendship_path(profil_user),
             method: :delete,
+            data: { turbo_frame: "_top" },
             style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
                     font-weight:700; color:rgba(255,255,255,0.35);
                     background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
@@ -45,8 +50,10 @@
         En attente
       </span>
       <%# Bouton pour annuler la demande envoyée %>
+      <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
       <%= button_to user_friendship_path(profil_user),
             method: :delete,
+            data: { turbo_frame: "_top" },
             style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
                     font-weight:700; color:rgba(255,100,100,0.7);
                     background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
@@ -60,8 +67,10 @@
   <% elsif pending_received %>
     <div style="display:inline-flex; align-items:center; gap:0.4rem;">
       <%# Bouton Accepter %>
+      <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
       <%= button_to accept_user_friendship_path(profil_user),
             method: :patch,
+            data: { turbo_frame: "_top" },
             style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
                     font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
                     border:1px solid rgba(30,221,136,0.3); border-radius:999px;
@@ -70,8 +79,10 @@
         Accepter
       <% end %>
       <%# Bouton Refuser %>
+      <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
       <%= button_to decline_user_friendship_path(profil_user),
             method: :patch,
+            data: { turbo_frame: "_top" },
             style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
                     font-weight:700; color:rgba(255,100,100,0.7);
                     background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
@@ -83,8 +94,10 @@
 
   <%# ── État 4 : aucune relation, bouton "Ajouter" ── %>
   <% else %>
+    <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
     <%= button_to user_friendship_path(profil_user),
           method: :post,
+          data: { turbo_frame: "_top" },
           style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
                   font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
                   border:1px solid rgba(30,221,136,0.3); border-radius:999px;
@@ -94,4 +107,6 @@
     <% end %>
   <% end %>
 
-<% end %>
+<% end %><%# fin if current_user.present? %>
+
+<% end %><%# fin turbo_frame_tag friend_button %>

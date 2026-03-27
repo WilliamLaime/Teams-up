@@ -7,6 +7,18 @@
   <%= turbo_stream_from "profil_xp_#{@profil.user_id}" %>
 <% end %>
 
+<%# Abonnement au stream du bouton ami — reçoit les mises à jour en temps réel
+    quand la relation change (demande envoyée, acceptée, refusée, retirée) %>
+<% if user_signed_in? && current_user != @profil_user %>
+  <%= turbo_stream_from "friend_button_#{current_user.id}_#{@profil_user.id}" %>
+<% end %>
+
+<%# Abonnement au stream de la liste d'amis — uniquement sur son propre profil
+    Met à jour la liste en temps réel quand une amitié est acceptée ou supprimée %>
+<% if user_signed_in? && current_user == @profil_user %>
+  <%= turbo_stream_from "friends_list_#{@profil_user.id}" %>
+<% end %>
+
 <%# data-controller ici = hors de tout transform CSS → position:fixed fonctionne %>
 <div class="profil-page" data-controller="achievement-modal" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
   <div class="container" style="position:relative; z-index:1;">
@@ -671,10 +683,13 @@
         <%# ── Section Amis ────────────────────────────────────────────────── %>
         <%# Sur son propre profil on passe les demandes en attente reçues
             Sur le profil d'un autre on ne les passe pas (nil → section masquée) %>
-        <%= render "profils/friends_list",
-              friends: @all_friends,
-              pending_requests: (current_user == @profil_user ? @pending_friend_requests : nil),
-              own_profile: (current_user == @profil_user) %>
+        <%# turbo_frame_tag — permet la mise à jour en temps réel de la liste d'amis via ActionCable %>
+        <%= turbo_frame_tag "friends_list_#{@profil_user.id}" do %>
+          <%= render "profils/friends_list",
+                friends: @all_friends,
+                pending_requests: (current_user == @profil_user ? @pending_friend_requests : nil),
+                own_profile: (current_user == @profil_user) %>
+        <% end %>
 
       </div><%# / col-lg-7 %>
 

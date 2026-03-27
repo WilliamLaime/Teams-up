@@ -39,8 +39,10 @@
 
             <%# Boutons Accepter / Refuser %>
             <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+              <%# data-turbo-frame="_top" → force navigation complète pour afficher le toast flash %>
               <%= button_to accept_user_friendship_path(friendship.user),
                     method: :patch,
+                    data: { turbo_frame: "_top" },
                     style: "display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem;
                             font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
                             border:1px solid rgba(30,221,136,0.3); border-radius:999px;
@@ -48,8 +50,10 @@
                 <i data-lucide="check" style="width:10px; height:10px;"></i>
                 Accepter
               <% end %>
+              <%# data-turbo-frame="_top" → force navigation complète pour afficher le toast flash %>
               <%= button_to decline_user_friendship_path(friendship.user),
                     method: :patch,
+                    data: { turbo_frame: "_top" },
                     style: "display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem;
                             font-weight:700; color:rgba(255,100,100,0.7);
                             background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
@@ -102,8 +106,10 @@
             <% end %>
             <%# Bouton Retirer visible uniquement sur son propre profil %>
             <% if local_assigns[:own_profile] %>
+              <%# data-turbo-frame="_top" → force navigation complète pour afficher le toast flash %>
               <%= button_to user_friendship_path(friend),
                     method: :delete,
+                    data: { turbo_frame: "_top" },
                     style: "display:inline-flex; align-items:center; justify-content:center;
                             width:20px; height:20px; padding:0;
                             color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.04);
