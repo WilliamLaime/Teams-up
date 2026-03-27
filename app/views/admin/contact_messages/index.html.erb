@@ -1,0 +1,238 @@
+<%# ── Admin : Messages de contact ───────────────────────────────────────── %>
+<%# Liste tous les messages reçus via le formulaire /contact %>
+<%# Accessible uniquement aux admins (protégé par Admin::BaseController) %>
+
+<%# Fond pleine largeur identique au dashboard admin %>
+<div style="background-color:#111111; min-height:100vh;">
+<div class="container py-4">
+
+  <%# ── En-tête ── %>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i data-lucide="mail" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
+      Espace <span style="color:#1EDD88;">Admin</span>
+    </h1>
+  </div>
+
+  <%# ── Navigation par onglets centrée — partial partagé ── %>
+  <%= render "admin/shared/nav", active_tab: :formulaires %>
+
+  <%# ── Flash notices (succès / erreur) ── %>
+  <% if notice %>
+    <div class="alert alert-success mb-3" style="background:rgba(30,221,136,0.1); border:1px solid rgba(30,221,136,0.3); color:#1EDD88;">
+      <%= notice %>
+    </div>
+  <% end %>
+  <% if alert %>
+    <div class="alert alert-danger mb-3" style="background:rgba(220,53,69,0.1); border:1px solid rgba(220,53,69,0.3); color:#ff6b6b;">
+      <%= alert %>
+    </div>
+  <% end %>
+
+  <%# ── Tableau des messages ── %>
+  <div class="match-block">
+    <% if @contact_messages.any? %>
+      <table class="table table-dark table-hover mb-0" style="font-size:0.85rem;">
+        <thead>
+          <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <th style="border-color:rgba(255,255,255,0.07);">Statut</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Expéditeur</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Email</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Sujet</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Reçu le</th>
+            <th style="border-color:rgba(255,255,255,0.07);">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @contact_messages.each do |msg| %>
+            <%# Ligne légèrement estompée si le message est déjà lu %>
+            <tr style="<%= msg.lu? ? "opacity:0.6;" : "" %>">
+
+              <%# Colonne statut : point vert = non lu, gris = lu %>
+              <td style="border-color:rgba(255,255,255,0.07); vertical-align:middle;">
+                <% if msg.lu? %>
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.2);"></span>
+                <% else %>
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#1EDD88;"></span>
+                <% end %>
+              </td>
+
+              <%# Prénom + Nom — en gras si non lu %>
+              <td style="border-color:rgba(255,255,255,0.07); color:#fff; font-weight:<%= msg.lu? ? "400" : "600" %>;">
+                <%= msg.prenom %> <%= msg.nom %>
+              </td>
+
+              <%# Email cliquable (ouvre le client mail) %>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+                <%= mail_to msg.email, msg.email, style: "color:rgba(255,255,255,0.6);" %>
+              </td>
+
+              <%# Sujet du message %>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.8);">
+                <%= msg.sujet %>
+              </td>
+
+              <%# Date de réception formatée en français %>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); white-space:nowrap;">
+                <%= msg.created_at.strftime("%d/%m/%Y à %Hh%M") %>
+              </td>
+
+              <%# Colonne actions : Lire + Lu/Non lu %>
+              <td style="border-color:rgba(255,255,255,0.07);">
+                <div class="d-flex gap-2 align-items-center">
+
+                  <%# Bouton "Lire" — ouvre la modale du message correspondant %>
+                  <%# data-bs-target pointe vers la modale identifiée par l'id du message %>
+                  <button type="button"
+                          class="btn btn-sm"
+                          style="font-size:0.75rem; padding:0.25rem 0.6rem; background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modal-message-<%= msg.id %>">
+                    <i data-lucide="eye" style="width:12px; height:12px; display:inline;"></i>
+                    Lire
+                  </button>
+
+                  <%# Bouton pour basculer l'état lu/non-lu %>
+                  <%= button_to toggle_lu_admin_contact_message_path(msg),
+                                method: :patch,
+                                class: "btn btn-sm",
+                                style: "font-size:0.75rem; padding:0.25rem 0.6rem; border:1px solid; #{msg.lu? ? "background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.4); border-color:rgba(255,255,255,0.1);" : "background:transparent; color:rgba(255,255,255,0.35); border-color:rgba(255,255,255,0.1);"}" do %>
+                    <% if msg.lu? %>
+                      <i data-lucide="mail" style="width:12px; height:12px; display:inline;"></i>
+                      Non lu
+                    <% else %>
+                      <i data-lucide="mail-check" style="width:12px; height:12px; display:inline;"></i>
+                      Lu
+                    <% end %>
+                  <% end %>
+
+                </div>
+              </td>
+
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+    <% else %>
+      <%# État vide — aucun message reçu %>
+      <div class="text-center py-5">
+        <i data-lucide="inbox" style="width:40px; height:40px; color:rgba(255,255,255,0.2); margin-bottom:1rem; display:block; margin-left:auto; margin-right:auto;"></i>
+        <p style="color:rgba(255,255,255,0.3); margin:0;">Aucun message de contact pour le moment.</p>
+      </div>
+    <% end %>
+  </div>
+
+</div>
+<%# / container %>
+</div>
+<%# / fond pleine largeur %>
+
+<%# ════════════════════════════════════════════════════════════════════════════ %>
+<%# MODALES — une par message, rendues en dehors du tableau pour éviter %>
+<%# les problèmes de z-index et de positionnement liés au tableau HTML %>
+<%# ════════════════════════════════════════════════════════════════════════════ %>
+
+<% @contact_messages.each do |msg| %>
+  <%# Chaque modale a un id unique basé sur l'id du message %>
+  <div class="modal fade"
+       id="modal-message-<%= msg.id %>"
+       tabindex="-1"
+       aria-labelledby="modal-label-<%= msg.id %>"
+       aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="background:#1a1c1a; border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:#fff;">
+
+        <%# ── En-tête de la modale ── %>
+        <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.07); padding:1.25rem 1.5rem;">
+          <div class="d-flex align-items-center gap-2">
+            <i data-lucide="mail" style="width:16px; height:16px; color:#1EDD88;"></i>
+            <h5 class="modal-title" id="modal-label-<%= msg.id %>"
+                style="margin:0; font-size:1rem; font-weight:600; color:#fff;">
+              <%= msg.sujet %>
+            </h5>
+          </div>
+          <%# Bouton fermer (croix Bootstrap) %>
+          <button type="button"
+                  class="btn-close btn-close-white"
+                  data-bs-dismiss="modal"
+                  aria-label="Fermer"></button>
+        </div>
+
+        <%# ── Corps de la modale ── %>
+        <div class="modal-body" style="padding:1.5rem;">
+
+          <%# Infos expéditeur %>
+          <div class="d-flex flex-wrap gap-4 mb-4" style="font-size:0.85rem;">
+            <div>
+              <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Expéditeur</span>
+              <span style="color:#fff; font-weight:600;"><%= msg.prenom %> <%= msg.nom %></span>
+            </div>
+            <div>
+              <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Email</span>
+              <%= mail_to msg.email, msg.email, style: "color:#1EDD88; font-weight:500;" %>
+            </div>
+            <div>
+              <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Reçu le</span>
+              <span style="color:rgba(255,255,255,0.6);"><%= msg.created_at.strftime("%d/%m/%Y à %Hh%M") %></span>
+            </div>
+          </div>
+
+          <%# Message complet %>
+          <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:1rem 1.25rem; margin-bottom:1.5rem;">
+            <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:0.6rem;">Message</span>
+            <%# simple_format convertit les retours à la ligne en <p> pour une meilleure lisibilité %>
+            <div style="color:rgba(255,255,255,0.85); font-size:0.92rem; line-height:1.7;">
+              <%= simple_format msg.message, style: "margin:0;" %>
+            </div>
+          </div>
+
+          <%# ── Formulaire de réponse ── %>
+          <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:1.25rem;">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <i data-lucide="reply" style="width:14px; height:14px; color:#1EDD88;"></i>
+              <span style="color:#fff; font-size:0.9rem; font-weight:600;">Répondre à <%= msg.prenom %></span>
+            </div>
+
+            <%# form_with pointe vers l'action reply de ce message %>
+            <%# data-turbo="false" → soumission classique sans Turbo (plus simple) %>
+            <%= form_with url: reply_admin_contact_message_path(msg), method: :post, data: { turbo: false } do |f| %>
+
+              <%# Textarea de la réponse %>
+              <div class="mb-3">
+                <%= f.text_area :reply_body,
+                    rows: 5,
+                    placeholder: "Écris ta réponse ici…",
+                    required: true,
+                    style: "width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; padding:0.7rem 1rem; font-size:0.9rem; resize:vertical; outline:none;",
+                    "data-autofocus": true %>
+              </div>
+
+              <%# Boutons d'action %>
+              <div class="d-flex justify-content-end gap-2">
+                <%# Annuler — ferme la modale sans rien faire %>
+                <button type="button"
+                        class="btn btn-sm"
+                        style="background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                        data-bs-dismiss="modal">
+                  Annuler
+                </button>
+                <%# Envoyer la réponse %>
+                <%= f.submit "Envoyer la réponse",
+                    class: "btn btn-sm",
+                    style: "background:#1EDD88; color:#111; border:none; font-weight:600;" %>
+              </div>
+
+            <% end %>
+          </div>
+
+        </div>
+        <%# / modal-body %>
+
+      </div>
+      <%# / modal-content %>
+    </div>
+    <%# / modal-dialog %>
+  </div>
+  <%# / modal %>
+<% end %>

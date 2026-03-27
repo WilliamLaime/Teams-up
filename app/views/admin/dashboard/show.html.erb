@@ -9,9 +9,12 @@
   <div class="d-flex align-items-center gap-2 mb-4">
     <i data-lucide="layout-dashboard" style="width:22px; height:22px; color:#1EDD88;"></i>
     <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
-      Dashboard <span style="color:#1EDD88;">Admin</span>
+      Espace <span style="color:#1EDD88;">Admin</span>
     </h1>
   </div>
+
+  <%# ── Navigation par onglets centrée — partial partagé avec toutes les pages admin ── %>
+  <%= render "admin/shared/nav", active_tab: :dashboard %>
 
   <%# ══════════════════════════════════════════════════════════════════════ %>
   <%# SECTION 1 — UTILISATEURS %>

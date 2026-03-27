@@ -12,7 +12,9 @@ class PagesController < ApplicationController
   end
 
   def contact
-    # Pas de données à charger — page statique
+    # Initialise un objet vide pour que form_with puisse construire le formulaire
+    # Cet objet sera aussi utilisé pour ré-afficher les erreurs si le POST échoue
+    @contact_message = ContactMessage.new
   end
 
   def confidentialite

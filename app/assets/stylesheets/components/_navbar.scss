@@ -103,6 +103,44 @@
   border: 2px solid rgba(255,255,255,0.15);
 }
 
+// Wrapper relatif autour de l'avatar — nécessaire pour positionner le point vert
+.navbar-avatar-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+// Point vert de notification admin (positionné en haut à droite de l'avatar)
+.navbar-admin-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: $green;
+  // Anneau sombre pour le faire ressortir sur n'importe quel fond
+  box-shadow: 0 0 0 2px $dark-bg;
+
+  // Légère animation de pulsation pour attirer l'œil
+  animation: admin-dot-pulse 2.5s ease-in-out infinite;
+}
+
+// Variante inline (dans le dropdown à côté de "Administration")
+.navbar-admin-dot--inline {
+  position: static;       // annule le positionnement absolu
+  width: 8px;
+  height: 8px;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+
+// Animation pulsation douce du point vert
+@keyframes admin-dot-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
 // Nom d'utilisateur en blanc
 .navbar-dark-custom .navbar-user-name {
   color: rgba(255,255,255,0.85);

@@ -11,8 +11,9 @@ Rails.application.routes.draw do
   # Page "Qui sommes-nous ?"
   get "quisommesnous", to: "pages#about", as: :about
 
-  # Page de contact
-  get "contact", to: "pages#contact", as: :contact
+  # Page de contact — GET affiche le formulaire, POST traite l'envoi
+  get  "contact", to: "pages#contact",         as: :contact
+  post "contact", to: "contact_messages#create"
 
   # Page Politique de confidentialité (RGPD)
   get "confidentialite", to: "pages#confidentialite", as: :confidentialite
@@ -121,6 +122,17 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: "dashboard#show"
     resource :dashboard, only: [:show]
+
+    # Messages reçus via le formulaire /contact
+    # GET  /admin/contact_messages          => liste tous les messages
+    # PATCH /admin/contact_messages/:id/toggle_lu => bascule lu/non-lu
+    resources :contact_messages, only: [:index] do
+      member do
+        patch :toggle_lu
+        # POST /admin/contact_messages/:id/reply → envoie un email de réponse
+        post :reply
+      end
+    end
   end
 
   # Vérification de santé de l'application
