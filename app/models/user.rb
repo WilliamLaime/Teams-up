@@ -16,8 +16,10 @@ class User < ApplicationRecord
   # (?=.*[A-Z])   => au moins 1 lettre majuscule
   # (?=.*\d)      => au moins 1 chiffre
   # (?=.*[[:punct:]]) => au moins 1 symbole (!, @, #, $, etc.)
-  # \z ancre la fin de la chaîne (sans ça, la regex ne valide que le début)
-  PASSWORD_REGEX = /\A(?=.*[A-Z])(?=.*\d)(?=.*[[:punct:]])\z/
+  # \A...\z ancrent le début et la fin de la chaîne
+  # .* entre les lookaheads et \z est indispensable : il "consomme" le reste du string
+  # Sans ce .*, la regex exige que la chaîne soit vide entre \A et \z → validation toujours échouée
+  PASSWORD_REGEX = /\A(?=.*[A-Z])(?=.*\d)(?=.*[[:punct:]]).*\z/
 
   validates :password,
             format: {

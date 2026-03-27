@@ -1,27 +1,96 @@
-<h2>Change your password</h2>
+<%# ── Page "Réinitialiser le mot de passe" ────────────────────────────────────── %>
+<%# L'utilisateur arrive ici après avoir cliqué sur le lien reçu par email %>
+<%# Même structure visuelle que les autres pages auth (auth-page / auth-card) %>
+<div class="auth-page">
+  <div class="auth-card">
 
-<%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-  <%= f.error_notification %>
+    <%# Icône verrou + titre — même style que "Mot de passe oublié" %>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <i data-lucide="lock-keyhole" style="width:20px;height:20px;color:var(--green, #1EDD88);"></i>
+      <h2 class="mb-0"><span class="accent">Nouveau</span> mot de passe</h2>
+    </div>
 
-  <%= f.input :reset_password_token, as: :hidden %>
-  <%= f.full_error :reset_password_token %>
+    <%# Texte d'instruction %>
+    <p style="color:rgba(255,255,255,0.45); font-size:0.88rem; margin-bottom:1.5rem;">
+      Choisis un nouveau mot de passe sécurisé pour ton compte.
+    </p>
 
-  <div class="form-inputs">
-    <%= f.input :password,
-                label: "New password",
-                required: true,
-                autofocus: true,
-                hint: ("#{@minimum_password_length} characters minimum" if @minimum_password_length),
-                input_html: { autocomplete: "new-password" } %>
-    <%= f.input :password_confirmation,
-                label: "Confirm your new password",
-                required: true,
-                input_html: { autocomplete: "new-password" } %>
+    <%# Formulaire Devise — méthode PUT avec le token caché dans l'URL %>
+    <%= simple_form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
+      <%= f.error_notification %>
+
+      <%# Token caché transmis depuis le lien email — indispensable pour valider la requête %>
+      <%= f.input :reset_password_token, as: :hidden %>
+      <%= f.full_error :reset_password_token %>
+
+      <div class="form-inputs">
+
+        <%# Champ "Nouveau mot de passe" avec bouton oeil pour afficher/masquer %>
+        <div class="mb-3" data-controller="password-toggle">
+          <label class="form-label" for="user_password">Nouveau mot de passe</label>
+          <%# Règles du mot de passe — affiché en blanc pour être bien visible %>
+          <small style="color:rgba(255,255,255,0.65); font-size:0.82rem;" class="d-block mb-1">
+            6 caractères minimum · 1 majuscule · 1 chiffre · 1 caractère spécial
+          </small>
+          <%# position:relative → le bouton absolu se positionne par rapport à CE div %>
+          <div style="position: relative;">
+            <input type="password"
+                   name="user[password]"
+                   id="user_password"
+                   class="form-control"
+                   placeholder="••••••••"
+                   autocomplete="new-password"
+                   autofocus
+                   data-password-toggle-target="input">
+            <%# Bouton pour afficher/masquer le mot de passe via Stimulus %>
+            <button type="button"
+                    class="password-toggle-btn"
+                    data-action="click->password-toggle#toggle"
+                    data-password-toggle-target="button"
+                    aria-label="Afficher le mot de passe">
+              <i data-lucide="eye" style="width:18px;height:18px;"></i>
+            </button>
+          </div>
+        </div>
+
+        <%# Champ "Confirmation du mot de passe" avec bouton oeil %>
+        <div class="mb-3" data-controller="password-toggle">
+          <label class="form-label" for="user_password_confirmation">Confirmer le mot de passe</label>
+          <div style="position: relative;">
+            <input type="password"
+                   name="user[password_confirmation]"
+                   id="user_password_confirmation"
+                   class="form-control"
+                   placeholder="••••••••"
+                   autocomplete="new-password"
+                   data-password-toggle-target="input">
+            <%# Bouton oeil indépendant pour la confirmation %>
+            <button type="button"
+                    class="password-toggle-btn"
+                    data-action="click->password-toggle#toggle"
+                    data-password-toggle-target="button"
+                    aria-label="Afficher le mot de passe">
+              <i data-lucide="eye" style="width:18px;height:18px;"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <%# Bouton de soumission centré %>
+      <div class="form-actions form-actions--center mt-3">
+        <%= f.button :submit, "Changer mon mot de passe" %>
+      </div>
+
+    <% end %>
+
+    <%# Séparateur %>
+    <hr class="auth-divider">
+
+    <%# Liens secondaires (retour connexion, etc.) %>
+    <div class="auth-links">
+      <%= render "devise/shared/links" %>
+    </div>
+
   </div>
-
-  <div class="form-actions">
-    <%= f.button :submit, "Change my password" %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+</div>
