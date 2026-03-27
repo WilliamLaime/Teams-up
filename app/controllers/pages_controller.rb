@@ -39,7 +39,9 @@ class PagesController < ApplicationController
 
   # Récupère les 3 prochains matchs à venir publics, filtrés par sport actif si connecté
   def load_upcoming_matches
-    matches = Match.upcoming.publicly_visible.order(date: :asc, time: :asc)
+    matches = Match.upcoming.publicly_visible
+                   .visible_for_genre(current_user)  # Cache les matchs "femme uniquement" aux non-femmes
+                   .order(date: :asc, time: :asc)
     # Si l'utilisateur est connecté et a un sport actif, on filtre par ce sport
     matches = matches.where(sport_id: current_sport.id) if current_sport.present?
     matches.limit(3)
@@ -51,7 +53,10 @@ class PagesController < ApplicationController
   # - public uniquement
   # - filtré par sport actif si connecté (cohérent avec la section "Matchs à proximité")
   def load_hero_match
-    matches = Match.upcoming.publicly_visible.where("player_left > 0").order(date: :asc, time: :asc)
+    matches = Match.upcoming.publicly_visible
+                   .visible_for_genre(current_user)  # Cache les matchs "femme uniquement" aux non-femmes
+                   .where("player_left > 0")
+                   .order(date: :asc, time: :asc)
     matches = matches.where(sport_id: current_sport.id) if current_sport.present?
     matches.first
   end
