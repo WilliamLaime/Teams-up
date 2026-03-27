@@ -329,6 +329,68 @@
       <%# ══════════════════════════════════════════════════════════════════════ %>
       <div class="col-lg-7">
 
+        <%# ── Demandes d'ami en attente — visible uniquement sur son propre profil ── %>
+        <%# On affiche ce bloc en haut de la colonne droite, au-dessus des matchs %>
+        <% if current_user == @profil_user && @pending_friend_requests&.any? %>
+          <div style="margin-bottom:1.5rem;">
+            <%# Titre de la section avec icône et compteur %>
+            <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
+                        text-transform:uppercase; letter-spacing:0.08em; color:#f59e0b;
+                        margin-bottom:0.75rem;">
+              <i data-lucide="user-plus" style="width:14px; height:14px;"></i>
+              Demandes reçues (<%= @pending_friend_requests.count %>)
+            </div>
+            <div class="match-block" style="padding:1rem;">
+              <div style="display:flex; flex-direction:column; gap:0.6rem;">
+                <% @pending_friend_requests.each do |friendship| %>
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
+                    <%# Lien vers le profil de l'expéditeur — data-turbo-frame="_top" pour navigation complète %>
+                    <%= link_to user_profil_path(friendship.user),
+                          data: { turbo_frame: "_top" },
+                          style: "display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; flex:1; min-width:0;" do %>
+                      <% if friendship.user.profil&.avatar&.attached? %>
+                        <%= image_tag friendship.user.profil.avatar,
+                              style: "width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0;",
+                              alt: friendship.user.display_name %>
+                      <% else %>
+                        <span style="width:30px; height:30px; border-radius:50%; background:#333;
+                                     display:inline-flex; align-items:center; justify-content:center;
+                                     font-size:0.65rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                          <%= friendship.user.display_name.first.upcase %>
+                        </span>
+                      <% end %>
+                      <span style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        <%= friendship.user.display_name %>
+                      </span>
+                    <% end %>
+                    <%# Boutons Accepter / Refuser %>
+                    <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                      <%= button_to accept_user_friendship_path(friendship.user), method: :patch,
+                            data: { turbo_frame: "_top" },
+                            style: "display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem;
+                                    font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
+                                    border:1px solid rgba(30,221,136,0.3); border-radius:999px;
+                                    padding:0.2rem 0.6rem; cursor:pointer;" do %>
+                        <i data-lucide="check" style="width:10px; height:10px;"></i>
+                        Accepter
+                      <% end %>
+                      <%= button_to decline_user_friendship_path(friendship.user), method: :patch,
+                            data: { turbo_frame: "_top" },
+                            style: "display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem;
+                                    font-weight:700; color:rgba(255,100,100,0.7);
+                                    background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
+                                    border-radius:999px; padding:0.2rem 0.6rem; cursor:pointer;" do %>
+                        <i data-lucide="x" style="width:10px; height:10px;"></i>
+                        Refuser
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
         <%# ── Mes matchs — en-tête hors card ──────────────────────────────── %>
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
           <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
@@ -556,10 +618,17 @@
           </div>
         <% end %>
 
-        <%# ── Liste des avis (données réelles) ──────────────────────────── %>
+        <%# ── Liste des avis — 3 affichés par défaut, le reste en collapse Bootstrap ── %>
+        <%
+          # On sépare les 3 premiers avis des suivants
+          avis_visibles = @avis.first(3)
+          avis_caches   = @avis.drop(3)
+        %>
         <div style="display:flex; flex-direction:column; gap:0.65rem;">
           <% if @avis.any? %>
-            <% @avis.each do |avis| %>
+
+            <%# Les 3 premiers avis toujours visibles %>
+            <% avis_visibles.each do |avis| %>
               <div class="match-block" style="padding:0.85rem 1rem;">
                 <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
                   <% if avis.reviewer.profil&.avatar&.attached? %>
@@ -588,7 +657,62 @@
               </div>
             <% end %>
 
+            <%# S'il y a plus de 3 avis, on les cache dans un collapse Bootstrap %>
+            <% if avis_caches.any? %>
+              <%# Zone masquée — id unique par profil pour éviter les conflits %>
+              <div class="collapse" id="more-avis-<%= @profil_user.id %>">
+                <div style="display:flex; flex-direction:column; gap:0.65rem;">
+                  <% avis_caches.each do |avis| %>
+                    <div class="match-block" style="padding:0.85rem 1rem;">
+                      <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
+                        <% if avis.reviewer.profil&.avatar&.attached? %>
+                          <%= image_tag avis.reviewer.profil.avatar,
+                              style: "width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;",
+                              alt: avis.reviewer.display_name %>
+                        <% else %>
+                          <div style="width:36px; height:36px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                            <%= avis.reviewer.display_name.first.upcase %>
+                          </div>
+                        <% end %>
+                        <div>
+                          <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">
+                            <%= avis.reviewer.display_name %>
+                          </div>
+                          <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
+                            <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:rgba(255,255,255,0.2);"><%= "★" * (5 - avis.rating) %></span>
+                          </div>
+                        </div>
+                      </div>
+                      <% if avis.content.present? %>
+                        <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
+                          <%= avis.content %>
+                        </p>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+
+              <%# Bouton qui ouvre/ferme le collapse et change son texte au clic %>
+              <div style="margin-top:0.25rem; text-align:center;">
+                <button class="btn btn-sm"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#more-avis-<%= @profil_user.id %>"
+                        aria-expanded="false"
+                        aria-controls="more-avis-<%= @profil_user.id %>"
+                        style="font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.5);
+                               background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+                               border-radius:999px; padding:0.3rem 1rem;"
+                        data-label-more="Voir plus d'avis (<%= avis_caches.size %>)"
+                        data-label-less="Voir moins d'avis"
+                        onclick="this.textContent = (this.getAttribute('aria-expanded') === 'true') ? this.dataset.labelMore : this.dataset.labelLess">
+                  Voir plus d'avis (<%= avis_caches.size %>)
+                </button>
+              </div>
+            <% end %>
+
           <% else %>
+            <%# Aucun avis pour l'instant %>
             <div class="match-block" style="padding:1.25rem; text-align:center; color:rgba(255,255,255,0.35);">
               <i data-lucide="message-circle" style="width:24px; height:24px; margin-bottom:0.4rem; opacity:0.4;"></i>
               <% if defined?(@hidden_review_from_this_user) && @hidden_review_from_this_user %>
@@ -599,15 +723,6 @@
             </div>
           <% end %>
         </div>
-
-        <%# Lien "Voir tous les avis" si plus de 10 avis %>
-        <% if @profil.avis_count.to_i > 10 %>
-          <div style="margin-top:0.85rem; text-align:center;">
-            <span style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.4);">
-              Voir les <%= @profil.avis_count %> avis →
-            </span>
-          </div>
-        <% end %>
 
         <%# ── Modal formulaire d'avis ────────────────────────────────────── %>
         <% if defined?(@eligible_match) && @eligible_match.present? %>
@@ -685,9 +800,9 @@
             Sur le profil d'un autre on ne les passe pas (nil → section masquée) %>
         <%# turbo_frame_tag — permet la mise à jour en temps réel de la liste d'amis via ActionCable %>
         <%= turbo_frame_tag "friends_list_#{@profil_user.id}" do %>
+          <%# pending_requests n'est plus passé ici — les demandes sont affichées en haut de colonne %>
           <%= render "profils/friends_list",
                 friends: @all_friends,
-                pending_requests: (current_user == @profil_user ? @pending_friend_requests : nil),
                 own_profile: (current_user == @profil_user) %>
         <% end %>
 

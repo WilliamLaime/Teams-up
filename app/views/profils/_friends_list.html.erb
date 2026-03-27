@@ -1,73 +1,8 @@
 <%# Section "Amis" affichée sur la page de profil
     Paramètres locaux :
-      - friends                : collection d'utilisateurs amis (acceptés)
-      - pending_requests       : demandes en attente reçues (nil sur le profil des autres)
-      - own_profile            : true si on affiche son propre profil (affiche le bouton Retirer) %>
-
-<%# ── Demandes d'ami en attente (visible uniquement sur son propre profil) ── %>
-<% if local_assigns[:pending_requests]&.any? %>
-  <div style="margin-top:1.75rem;">
-    <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
-                text-transform:uppercase; letter-spacing:0.08em; color:#f59e0b;
-                margin-bottom:0.75rem;">
-      <i data-lucide="user-plus" style="width:14px; height:14px;"></i>
-      Demandes reçues (<%= pending_requests.count %>)
-    </div>
-
-    <div class="match-block" style="padding:1rem;">
-      <div style="display:flex; flex-direction:column; gap:0.6rem;">
-        <% pending_requests.each do |friendship| %>
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
-            <%# Lien vers le profil de l'expéditeur %>
-            <%= link_to user_profil_path(friendship.user),
-                  style: "display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; flex:1; min-width:0;" do %>
-              <% if friendship.user.profil&.avatar&.attached? %>
-                <%= image_tag friendship.user.profil.avatar,
-                      style: "width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0;",
-                      alt: friendship.user.display_name %>
-              <% else %>
-                <span style="width:30px; height:30px; border-radius:50%; background:#333;
-                             display:inline-flex; align-items:center; justify-content:center;
-                             font-size:0.65rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
-                  <%= friendship.user.display_name.first.upcase %>
-                </span>
-              <% end %>
-              <span style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                <%= friendship.user.display_name %>
-              </span>
-            <% end %>
-
-            <%# Boutons Accepter / Refuser %>
-            <div style="display:flex; gap:0.4rem; flex-shrink:0;">
-              <%# data-turbo-frame="_top" → force navigation complète pour afficher le toast flash %>
-              <%= button_to accept_user_friendship_path(friendship.user),
-                    method: :patch,
-                    data: { turbo_frame: "_top" },
-                    style: "display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem;
-                            font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
-                            border:1px solid rgba(30,221,136,0.3); border-radius:999px;
-                            padding:0.2rem 0.6rem; cursor:pointer;" do %>
-                <i data-lucide="check" style="width:10px; height:10px;"></i>
-                Accepter
-              <% end %>
-              <%# data-turbo-frame="_top" → force navigation complète pour afficher le toast flash %>
-              <%= button_to decline_user_friendship_path(friendship.user),
-                    method: :patch,
-                    data: { turbo_frame: "_top" },
-                    style: "display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem;
-                            font-weight:700; color:rgba(255,100,100,0.7);
-                            background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
-                            border-radius:999px; padding:0.2rem 0.6rem; cursor:pointer;" do %>
-                <i data-lucide="x" style="width:10px; height:10px;"></i>
-                Refuser
-              <% end %>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    </div>
-  </div>
-<% end %>
+      - friends      : collection d'utilisateurs amis (acceptés)
+      - own_profile  : true si on affiche son propre profil (affiche le bouton Retirer)
+    Note : les demandes en attente sont gérées directement dans show.html.erb, au-dessus des matchs %>
 
 <%# ── Liste des amis acceptés ── %>
 <div style="margin-top:1.75rem;">
@@ -85,7 +20,9 @@
         <% friends.each do |friend| %>
           <%# Chaque ami : lien vers son profil + bouton Retirer (uniquement sur son propre profil) %>
           <div style="display:inline-flex; align-items:center; gap:0.25rem;">
+            <%# data-turbo-frame="_top" → navigation complète au lieu de naviguer dans le turbo_frame %>
             <%= link_to user_profil_path(friend),
+                  data: { turbo_frame: "_top" },
                   style: "display:inline-flex; align-items:center; gap:0.5rem; padding:0.3rem 0.7rem;
                           background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
                           border-radius:999px; text-decoration:none;" do %>
