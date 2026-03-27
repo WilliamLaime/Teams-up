@@ -614,7 +614,10 @@
             </div>
           </div><%# fin toggle visibilité %>
 
-          <%# ── Toggle : Restriction de genre Tous / Féminin ── %>
+          <%# ── Toggle : Restriction de genre Tous / Femme ── %>
+          <%# Affiché uniquement pour les utilisatrices femmes — seules elles peuvent créer un match "femme uniquement" %>
+          <% if current_user.genre == "femme" %>
+
           <%# Champ caché mis à jour par JS selon la position du toggle %>
           <%= f.hidden_field :genre_restriction,
               value: (@match.genre_restriction.presence || "tous"),
@@ -664,11 +667,13 @@
                     style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
                            color:<%= @match.genre_restriction == 'feminin' ? '#1EDD88' : 'rgba(255,255,255,0.4)' %>;
                            transition:color 0.15s;">
-                ♀ Féminin uniquement
+                ♀ Femme uniquement
               </span>
 
             </div>
           </div><%# fin toggle restriction de genre %>
+
+          <% end %><%# fin condition current_user.genre == "femme" %>
 
           <%# ── Ligne séparatrice ── %>
           <hr class="my-4">

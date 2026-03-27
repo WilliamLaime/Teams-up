@@ -40,11 +40,11 @@ class FriendshipsController < ApplicationController
       # et l'actor_id = current_user → pour afficher les boutons Accepter/Refuser
       # directement dans la notification sans aller sur le profil
       Notification.create(
-        user:       @friend,
-        message:    "👋 #{current_user.display_name} vous a envoyé une demande d'ami.",
-        link:       user_profil_path(current_user),
+        user: @friend,
+        message: "👋 #{current_user.display_name} vous a envoyé une demande d'ami.",
+        link: user_profil_path(current_user),
         notif_type: "friend_request",
-        actor_id:   current_user.id
+        actor_id: current_user.id
       )
       redirect_back fallback_location: user_profil_path(@friend),
                     notice: "Demande d'ami envoyée à #{@friend.display_name} !"

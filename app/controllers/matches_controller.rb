@@ -125,6 +125,9 @@ class MatchesController < ApplicationController
   def create
     @match = Match.new(match_params)
     @match.user = current_user
+    # Sécurité : seules les femmes peuvent créer un match "femme uniquement"
+    # Si un non-femme envoie cette valeur (ex: via requête HTTP directe), on la remet à "tous"
+    @match.genre_restriction = "tous" unless current_user.genre == "femme"
     authorize @match
 
     if @match.save
@@ -150,6 +153,8 @@ class MatchesController < ApplicationController
   # Met à jour un match existant
   def update
     authorize @match
+    # Sécurité : seules les femmes peuvent modifier un match en "femme uniquement"
+    params[:match][:genre_restriction] = "tous" if params.dig(:match, :genre_restriction) == "feminin" && current_user.genre != "femme"
     if @match.update(match_params)
       redirect_to @match, notice: "Match mis à jour avec succès !"
     else
