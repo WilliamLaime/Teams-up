@@ -135,17 +135,23 @@
     display: block;
     width: 100%;
     padding: 0.65rem 1rem;
-    background-color: $dark-surface;
+    // !important nécessaire pour battre le fond blanc par défaut du navigateur
+    background-color: $dark-surface !important;
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 8px;
-    color: $dark-text;
+    color: $dark-text !important;
     font-size: 0.95rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
-    // Supprime le fond blanc par défaut du navigateur (autocomplete)
-    &:-webkit-autofill {
-      -webkit-box-shadow: 0 0 0 1000px $dark-surface inset;
-      -webkit-text-fill-color: $dark-text;
+    // Autofill navigateur (Chrome, Safari, Edge) — tous les états
+    // Le navigateur injecte un fond jaune/bleu qu'on écrase avec box-shadow
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 1000px $dark-surface inset !important;
+      -webkit-text-fill-color: $dark-text !important;
+      caret-color: $dark-text; // curseur de saisie visible
     }
 
     // Focus : bordure verte + léger glow

@@ -1,0 +1,70 @@
+// ── Styles de l'espace Admin ──────────────────────────────────────────────
+// Utilisés pour le dashboard et toutes les sous-pages admin
+
+// ── Navigation par onglets ────────────────────────────────────────────────
+
+// Conteneur des onglets — affiché centré dans la page
+.admin-nav-tabs {
+  display: inline-flex;         // Rétrécit à la taille de son contenu
+  gap: 0.35rem;                 // Espace entre les onglets
+  background: rgba(255, 255, 255, 0.04);  // Fond très légèrement éclairé
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.3rem;
+}
+
+// Onglet individuel — inactif par défaut
+.admin-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.4rem;
+  border-radius: 9px;           // Légèrement arrondi, imbriqué dans le conteneur
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+
+  // Survol — légère mise en avant
+  &:hover {
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.06);
+    text-decoration: none;
+  }
+
+  // Icône Lucide dans l'onglet
+  i[data-lucide] {
+    flex-shrink: 0;
+  }
+}
+
+// Onglet actif — fond vert translucide + bordure verte
+.admin-nav-tab--active {
+  background: rgba($green, 0.14);
+  border-color: rgba($green, 0.45);
+  color: $green;
+  font-weight: 600;
+
+  &:hover {
+    color: $green;
+    background: rgba($green, 0.18);
+  }
+}
+
+// Badge compteur sur l'onglet (messages non lus)
+.admin-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: $green;
+  color: #111;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+}

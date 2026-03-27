@@ -72,83 +72,72 @@
         <div class="col-md-7">
           <h2 class="contact-section-title">Envoyer un message</h2>
 
-          <%# Formulaire — action="#" en attendant le backend email %>
-          <form class="contact-form" action="#" method="post">
+          <%# Formulaire connecté au backend via form_with %>
+          <%# model: @contact_message → Rails connaît la route (POST /contact) et gère le CSRF token %>
+          <%= form_with model: @contact_message, url: contact_path,
+                        local: true, class: "contact-form" do |f| %>
+
+            <%# Affiche les erreurs de validation si le formulaire a été resoumis avec des erreurs %>
+            <% if @contact_message.errors.any? %>
+              <div class="alert alert-danger mb-3" role="alert">
+                <strong>Corrige les erreurs suivantes :</strong>
+                <ul class="mb-0 mt-1">
+                  <% @contact_message.errors.full_messages.each do |msg| %>
+                    <li><%= msg %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
 
             <%# Ligne prénom + nom %>
             <div class="row g-3 mb-3">
               <div class="col-sm-6">
-                <label for="contact_prenom" class="contact-label">Prénom <span class="contact-required">*</span></label>
-                <input
-                  type="text"
-                  id="contact_prenom"
-                  name="contact[prenom]"
-                  class="contact-input"
-                  placeholder="Ton prénom"
-                  required
-                >
+                <%# f.label génère un <label> lié au champ :prenom %>
+                <%= f.label :prenom, class: "contact-label" do %>
+                  Prénom <span class="contact-required">*</span>
+                <% end %>
+                <%= f.text_field :prenom, class: "contact-input", placeholder: "Ton prénom", required: true %>
               </div>
               <div class="col-sm-6">
-                <label for="contact_nom" class="contact-label">Nom <span class="contact-required">*</span></label>
-                <input
-                  type="text"
-                  id="contact_nom"
-                  name="contact[nom]"
-                  class="contact-input"
-                  placeholder="Ton nom"
-                  required
-                >
+                <%= f.label :nom, class: "contact-label" do %>
+                  Nom <span class="contact-required">*</span>
+                <% end %>
+                <%= f.text_field :nom, class: "contact-input", placeholder: "Ton nom", required: true %>
               </div>
             </div>
 
             <%# Email %>
             <div class="mb-3">
-              <label for="contact_email" class="contact-label">Email <span class="contact-required">*</span></label>
-              <input
-                type="email"
-                id="contact_email"
-                name="contact[email]"
-                class="contact-input"
-                placeholder="ton@email.com"
-                required
-              >
+              <%= f.label :email, class: "contact-label" do %>
+                Email <span class="contact-required">*</span>
+              <% end %>
+              <%= f.email_field :email, class: "contact-input", placeholder: "ton@email.com", required: true %>
             </div>
 
             <%# Sujet %>
             <div class="mb-3">
-              <label for="contact_sujet" class="contact-label">Sujet <span class="contact-required">*</span></label>
-              <input
-                type="text"
-                id="contact_sujet"
-                name="contact[sujet]"
-                class="contact-input"
-                placeholder="De quoi s'agit-il ?"
-                required
-              >
+              <%= f.label :sujet, class: "contact-label" do %>
+                Sujet <span class="contact-required">*</span>
+              <% end %>
+              <%= f.text_field :sujet, class: "contact-input", placeholder: "De quoi s'agit-il ?", required: true %>
             </div>
 
             <%# Message %>
             <div class="mb-4">
-              <label for="contact_message" class="contact-label">Message <span class="contact-required">*</span></label>
-              <textarea
-                id="contact_message"
-                name="contact[message]"
-                class="contact-input contact-textarea"
-                placeholder="Ton message…"
-                rows="5"
-                required
-              ></textarea>
+              <%= f.label :message, class: "contact-label" do %>
+                Message <span class="contact-required">*</span>
+              <% end %>
+              <%= f.text_area :message, class: "contact-input contact-textarea",
+                             placeholder: "Ton message…", rows: 5, required: true %>
             </div>
 
             <%# Légende champs obligatoires %>
             <p class="contact-required-legend"><span class="contact-required">*</span> Champs obligatoires</p>
 
-            <%# Bouton d'envoi — mêmes classes que le composant btn_primary %>
-            <button type="submit" class="btn btn-primary btn-lg px-4 btn-cta-primary">
-              Envoyer le message
-            </button>
+            <%# Bouton d'envoi %>
+            <%= f.submit "Envoyer le message", class: "btn btn-primary btn-lg px-4 btn-cta-primary" %>
 
-          </form>
+          <% end %>
         </div>
 
       </div>

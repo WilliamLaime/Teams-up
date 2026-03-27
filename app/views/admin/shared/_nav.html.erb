@@ -1,0 +1,31 @@
+<%# ── Navigation par onglets de l'espace Admin ──────────────────────────── %>
+<%# Partial partagé entre toutes les pages admin %>
+<%# Paramètre attendu : active_tab — soit :dashboard soit :formulaires %>
+
+<%# Compte les messages non lus pour le badge sur l'onglet Formulaires %>
+<% unread_count = ContactMessage.unread.count %>
+
+<%# Onglets centrés, style cohérent avec le reste du site (auth-tab) %>
+<div class="d-flex justify-content-center mb-5">
+  <div class="admin-nav-tabs">
+
+    <%# ── Onglet Dashboard ── %>
+    <%= link_to admin_root_path,
+                class: "admin-nav-tab #{active_tab == :dashboard ? "admin-nav-tab--active" : ""}" do %>
+      <i data-lucide="layout-dashboard" style="width:15px; height:15px;"></i>
+      Dashboard
+    <% end %>
+
+    <%# ── Onglet Formulaires (messages de contact) ── %>
+    <%= link_to admin_contact_messages_path,
+                class: "admin-nav-tab #{active_tab == :formulaires ? "admin-nav-tab--active" : ""}" do %>
+      <i data-lucide="mail" style="width:15px; height:15px;"></i>
+      Formulaires
+      <%# Badge vert si des messages non lus existent %>
+      <% if unread_count > 0 %>
+        <span class="admin-nav-badge"><%= unread_count %></span>
+      <% end %>
+    <% end %>
+
+  </div>
+</div>

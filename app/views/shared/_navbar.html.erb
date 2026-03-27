@@ -124,11 +124,18 @@
             <% if display_name %>
               <span class="navbar-user-name d-none d-lg-inline"><%= display_name %></span>
             <% end %>
-            <%# Avatar ou initiales colorées %>
-            <%= user_avatar_tag current_user,
-                css_class: "avatar",
-                style: "object-fit:cover;",
-                alt: display_name || current_user.email %>
+            <%# Avatar + point vert si admin avec des messages non lus %>
+            <% has_unread_messages = current_user.admin? && ContactMessage.unread.any? %>
+            <span class="navbar-avatar-wrapper">
+              <%= user_avatar_tag current_user,
+                  css_class: "avatar",
+                  style: "object-fit:cover;",
+                  alt: display_name || current_user.email %>
+              <%# Point vert visible uniquement si admin + messages non lus %>
+              <% if has_unread_messages %>
+                <span class="navbar-admin-dot" aria-label="Messages non lus"></span>
+              <% end %>
+            </span>
           </button>
 
           <%# Dropdown desktop : Mon profil / Mon compte / Admin (si admin) / Déconnexion %>
@@ -144,7 +151,12 @@
             <% if current_user&.admin? %>
               <div class="dropdown-divider"></div>
               <%= link_to admin_root_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-                <i data-lucide="shield" style="width:14px;height:14px;"></i> Administration
+                <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                Administration
+                <%# Point vert à droite si des messages de contact ne sont pas lus %>
+                <% if has_unread_messages %>
+                  <span class="navbar-admin-dot navbar-admin-dot--inline ms-auto" aria-label="Messages non lus"></span>
+                <% end %>
               <% end %>
             <% end %>
             <div class="dropdown-divider"></div>

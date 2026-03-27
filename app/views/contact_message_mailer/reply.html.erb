@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      /* Styles inline pour maximiser la compatibilité email */
+      body        { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:0; }
+      .wrapper    { max-width:600px; margin:0 auto; background:#fff; border-radius:8px; overflow:hidden; }
+      .header     { background:#111111; padding:24px 32px; }
+      .header img { height:28px; }
+      .body       { padding:32px; color:#333; line-height:1.6; }
+      .reply-box  { background:#f9f9f9; border-left:3px solid #1EDD88; padding:16px 20px; border-radius:4px; margin-bottom:24px; font-size:15px; white-space:pre-wrap; }
+      .original   { margin-top:32px; border-top:1px solid #eee; padding-top:24px; color:#888; font-size:13px; }
+      .original p { margin:4px 0; }
+      .footer     { background:#f4f4f4; text-align:center; padding:16px; font-size:12px; color:#aaa; }
+      h2          { color:#111; margin-top:0; }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+
+      <%# ── En-tête avec logo ── %>
+      <div class="header">
+        <span style="color:#1EDD88; font-size:1.2rem; font-weight:700; letter-spacing:0.05em;">Team-Up</span>
+      </div>
+
+      <%# ── Corps de l'email ── %>
+      <div class="body">
+        <h2>Bonjour <%= @contact_message.prenom %>,</h2>
+
+        <p>
+          Merci pour ton message concernant <strong>"<%= @contact_message.sujet %>"</strong>.
+          Voici notre réponse :
+        </p>
+
+        <%# Texte de la réponse rédigée par l'admin %>
+        <div class="reply-box"><%= @reply_body %></div>
+
+        <%# Message original en citation %>
+        <div class="original">
+          <p><strong>Ton message original :</strong></p>
+          <p><em><%= @contact_message.message %></em></p>
+          <p style="margin-top:8px; color:#bbb; font-size:12px;">
+            Envoyé le <%= @contact_message.created_at.strftime("%d/%m/%Y à %Hh%M") %>
+          </p>
+        </div>
+      </div>
+
+      <%# ── Pied de page ── %>
+      <div class="footer">
+        © <%= Time.current.year %> Team-Up — Ne pas répondre directement à cet email.
+      </div>
+
+    </div>
+  </body>
+</html>
