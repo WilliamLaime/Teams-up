@@ -6,8 +6,8 @@ class MatchVotesController < ApplicationController
 
     # Construit le vote avec le joueur connecté comme votant
     @vote = MatchVote.new(
-      voter:        current_user,
-      match:        @match,
+      voter: current_user,
+      match: @match,
       voted_for_id: match_vote_params[:voted_for_id]
     )
 

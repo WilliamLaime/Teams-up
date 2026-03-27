@@ -57,15 +57,15 @@ namespace :db do
 
       # Construire le hash à insérer
       batch << {
-        name:        row["Nom de l'installation sportive"]&.strip,
-        sport_type:  row["Type d'équipement sportif"]&.strip,
-        city:        row["Commune nom"]&.strip,
-        address:     row["Adresse"]&.strip,
+        name: row["Nom de l'installation sportive"]&.strip,
+        sport_type: row["Type d'équipement sportif"]&.strip,
+        city: row["Commune nom"]&.strip,
+        address: row["Adresse"]&.strip,
         postal_code: row["Code Postal"]&.strip,
-        longitude:   lon,
-        latitude:    lat,
-        created_at:  now,
-        updated_at:  now
+        longitude: lon,
+        latitude: lat,
+        created_at: now,
+        updated_at: now
       }
 
       imported += 1
@@ -74,7 +74,7 @@ namespace :db do
       if batch.size >= batch_size
         Venue.insert_all(batch)
         batch = []
-        print "."  # Affiche un point pour montrer la progression
+        print "." # Affiche un point pour montrer la progression
         $stdout.flush
       end
     end

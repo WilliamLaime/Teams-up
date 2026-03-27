@@ -5,7 +5,7 @@ module ApplicationHelper
   # — emoji centré à 28px (adapté à la taille du badge dans l'armoire)
   def achievement_badge(achievement, is_unlocked:, size: 48)
     emoji      = achievement.icon_emoji.presence || "🏅"
-    emoji_size = (size * 0.58).round  # taille de police proportionnelle au badge
+    emoji_size = (size * 0.58).round # taille de police proportionnelle au badge
 
     # Style du cercle — on n'applique PAS opacity sur le wrapper car ça affecterait
     # aussi la tooltip enfant. On met opacity + filter uniquement sur l'emoji span.
@@ -13,7 +13,7 @@ module ApplicationHelper
       bg           = "rgba(255,255,255,0.07)"
       border       = "2px solid #1EDD88"
       shadow       = "0 0 0 3px rgba(30,221,136,0.15), 0 0 14px rgba(30,221,136,0.4)"
-      emoji_style  = ""  # aucun filtre — emoji plein
+      emoji_style  = "" # aucun filtre — emoji plein
     else
       bg           = "rgba(255,255,255,0.03)"
       border       = "1px solid rgba(255,255,255,0.06)"
@@ -23,51 +23,52 @@ module ApplicationHelper
     end
 
     content_tag(:div,
-      data: {
-        # Stimulus : ouvre la modal et passe les données du badge
-        action:                              "click->achievement-modal#open",
-        achievement_modal_emoji_param:       emoji,
-        achievement_modal_name_param:        achievement.name,
-        achievement_modal_description_param: achievement.description,
-        achievement_modal_xp_param:          achievement.xp_reward,
-        achievement_modal_unlocked_param:    is_unlocked.to_s
-      },
-      style: [
-        "width:#{size}px; height:#{size}px;",
-        "border-radius:9999px;",
-        "display:flex; align-items:center; justify-content:center;",
-        "background:#{bg};",
-        "border:#{border};",
-        "box-shadow:#{shadow};",
-        "cursor:pointer; flex-shrink:0;",
-        "position:relative;",  # nécessaire pour positionner la tooltip
-        "transition: box-shadow 0.2s, filter 0.2s;"
-      ].join(" ")
-    ) do
+                data: {
+                  # Stimulus : ouvre la modal et passe les données du badge
+                  action: "click->achievement-modal#open",
+                  achievement_modal_emoji_param: emoji,
+                  achievement_modal_name_param: achievement.name,
+                  achievement_modal_description_param: achievement.description,
+                  achievement_modal_xp_param: achievement.xp_reward,
+                  achievement_modal_unlocked_param: is_unlocked.to_s
+                },
+                style: [
+                  "width:#{size}px; height:#{size}px;",
+                  "border-radius:9999px;",
+                  "display:flex; align-items:center; justify-content:center;",
+                  "background:#{bg};",
+                  "border:#{border};",
+                  "box-shadow:#{shadow};",
+                  "cursor:pointer; flex-shrink:0;",
+                  "position:relative;", # nécessaire pour positionner la tooltip
+                  "transition: box-shadow 0.2s, filter 0.2s;"
+                ].join(" ")) do
       # Emoji centré — opacity/grayscale portés ici pour ne pas affecter la tooltip
+      transition_style = "transition: opacity 0.2s, filter 0.2s;"
       emoji_span = content_tag(:span, emoji,
-        style: "font-size:#{emoji_size}px; line-height:1; display:block; text-align:center; #{emoji_style} transition: opacity 0.2s, filter 0.2s;"
-      )
+                               style: "font-size:#{emoji_size}px; line-height:1; display:block; " \
+                                      "text-align:center; #{emoji_style} #{transition_style}")
 
       # Tooltip au survol : nom, description, XP et statut
       xp_label     = is_unlocked ? "+#{achievement.xp_reward} XP" : "#{achievement.xp_reward} XP"
       status_label = is_unlocked ? "✓ Débloqué" : "✕ Verrouillé"
-      status_color = is_unlocked ? "#1EDD88" : "#ff4d4d"  # vert si débloqué, rouge si verrouillé
+      status_color = is_unlocked ? "#1EDD88" : "#ff4d4d" # vert si débloqué, rouge si verrouillé
 
       tooltip = content_tag(:div, class: "achievement-hover-tip") do
         content_tag(:div, emoji, class: "achievement-hover-tip__emoji") +
-        content_tag(:div, achievement.name, class: "achievement-hover-tip__name") +
-        content_tag(:div, achievement.description, class: "achievement-hover-tip__desc") +
-        content_tag(:div, class: "achievement-hover-tip__footer") do
-          content_tag(:span, xp_label,    class: "achievement-hover-tip__xp") +
-          content_tag(:span, status_label, class: "achievement-hover-tip__status",
-                      style: "color:#{status_color};")
-        end
+          content_tag(:div, achievement.name, class: "achievement-hover-tip__name") +
+          content_tag(:div, achievement.description, class: "achievement-hover-tip__desc") +
+          content_tag(:div, class: "achievement-hover-tip__footer") do
+            content_tag(:span, xp_label, class: "achievement-hover-tip__xp") +
+              content_tag(:span, status_label, class: "achievement-hover-tip__status",
+                                               style: "color:#{status_color};")
+          end
       end
 
       emoji_span + tooltip
     end
   end
+
   # ── Avatar utilisateur ────────────────────────────────────────────────────
   # Affiche l'avatar d'un utilisateur :
   #   - Si un avatar est attaché → image normale
@@ -86,7 +87,7 @@ module ApplicationHelper
     colors = %w[#E63946 #2A9D8F #E76F51 #457B9D #6A4C93 #F4A261 #264653 #2B9348 #C77DFF #FF6B6B]
 
     # Couleur choisie de façon déterministe selon l'id de l'utilisateur
-    color = colors[(user.id.to_i) % colors.length]
+    color = colors[user.id.to_i % colors.length]
 
     profil    = user.try(:profil)
     alt_text  = alt || user.try(:display_name) || user.email
@@ -106,15 +107,15 @@ module ApplicationHelper
       initials = user.email&.first&.upcase || "?" if initials.blank?
 
       content_tag :div, initials,
-        class: css_class,
-        alt:   alt_text,
-        style: [
-          "background-color:#{color};",
-          "color:#fff;",
-          "display:flex;align-items:center;justify-content:center;",
-          "font-weight:400;font-size:0.7em;",
-          style
-        ].compact.join(" ")
+                  class: css_class,
+                  alt: alt_text,
+                  style: [
+                    "background-color:#{color};",
+                    "color:#fff;",
+                    "display:flex;align-items:center;justify-content:center;",
+                    "font-weight:400;font-size:0.7em;",
+                    style
+                  ].compact.join(" ")
     end
   end
 
@@ -123,6 +124,7 @@ module ApplicationHelper
   # Utilisé partout où on affiche l'icône d'un sport
   def sport_icon(sport, size: "1.1em", css_class: nil)
     return "" unless sport
+
     if sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i)
       image_tag sport.icon,
                 alt: sport.name,
@@ -136,6 +138,7 @@ module ApplicationHelper
   # Texte brut pour les attributs data-* et les options de select (pas de HTML)
   def sport_icon_text(sport)
     return "" unless sport
+
     sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i) ? "" : sport.icon
   end
 
@@ -144,10 +147,12 @@ module ApplicationHelper
   # Le navigateur la décode dans dataset.labelHtml avant de la passer à innerHTML.
   def sport_icon_html_attr(sport, size: "1rem")
     return "" unless sport
+
     if sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i)
       # On construit le tag manuellement pour retourner une string ordinaire (non safe)
       src = asset_path(sport.icon)
-      "<img src=\"#{src}\" alt=\"#{sport.name}\" style=\"width:#{size};height:#{size};object-fit:contain;vertical-align:middle;\"> #{sport.name}"
+      img_style = "width:#{size};height:#{size};object-fit:contain;vertical-align:middle;"
+      "<img src=\"#{src}\" alt=\"#{sport.name}\" style=\"#{img_style}\"> #{sport.name}"
     else
       "#{sport.icon} #{sport.name}"
     end

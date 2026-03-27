@@ -54,7 +54,7 @@ class Message < ApplicationRecord
     # Même stream que la modal → un seul abonnement turbo_stream_from suffit pour les deux.
     broadcast_update_to(
       "match_chat_#{match_id}",
-      target: "chat-preview-list-#{match_id}",  # id du conteneur de preview dans show.html.erb
+      target: "chat-preview-list-#{match_id}", # id du conteneur de preview dans show.html.erb
       partial: "matches/chat_preview_list",
       locals: { match: match }
     )

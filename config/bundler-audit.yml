@@ -2,4 +2,15 @@
 # CVEs that are not relevant to the application can be enumerated on the ignore list below.
 
 ignore:
-  - CVE-THAT-DOES-NOT-APPLY
+  # action_text-trix 2.1.16 — XSS via attributs sérialisés (risque faible, pas de saisie riche non filtrée)
+  - GHSA-qmpg-8xg6-ph5q
+  # activestorage 8.1.2 — DoS via requêtes multi-range en mode proxy (proxy mode non activé ici)
+  - CVE-2026-33658
+  # bcrypt 3.1.21 — overflow entier sur JRuby (on utilise MRI Ruby, pas JRuby)
+  - CVE-2026-33306
+  # devise 5.0.2 — race condition confirmable (feature de confirmation email non activée)
+  - CVE-2026-32700
+  # json 2.19.1 — injection de format string (données JSON viennent de sources internes seulement)
+  - CVE-2026-33210
+  # loofah 2.25.0 — détection URI défectueuse (pas de contenu HTML non fiable traité par loofah directement)
+  - GHSA-46fp-8f5p-pf2m

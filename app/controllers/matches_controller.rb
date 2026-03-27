@@ -1,10 +1,10 @@
 class MatchesController < ApplicationController
   # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
   # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
-  skip_before_action :authenticate_user!, only: [:index, :show]
+  skip_before_action :authenticate_user!, only: %i[index show]
 
   # Retrouver le match avant les actions qui en ont besoin
-  before_action :set_match, only: [:show, :edit, :update, :destroy, :calendar, :make_public]
+  before_action :set_match, only: %i[show edit update destroy calendar make_public]
 
   # GET /matches
   # Deux modes :
@@ -14,8 +14,8 @@ class MatchesController < ApplicationController
     if params[:mine].present? && user_signed_in?
       # Historique : TOUS les matchs de l'user (participants ou organisateur), triés du plus récent
       @matches = policy_scope(Match)
-        .where(id: current_user.match_users.select(:match_id))
-        .order(date: :desc, time: :desc)
+                 .where(id: current_user.match_users.select(:match_id))
+                 .order(date: :desc, time: :desc)
 
       # Filtre statut :
       #   ?status=completed → matchs terminés (> 1h après le début)
@@ -27,7 +27,12 @@ class MatchesController < ApplicationController
       end
     else
       # Index public : uniquement les matchs ouverts à l'inscription et publics
-      @matches = policy_scope(Match).upcoming.publicly_visible.order(date: :asc, time: :asc)
+      # visible_for_genre filtre les matchs "féminin" pour ne les montrer qu'aux femmes
+      @matches = policy_scope(Match)
+                 .upcoming
+                 .publicly_visible
+                 .visible_for_genre(current_user)
+                 .order(date: :asc, time: :asc)
       apply_filters
     end
   end
@@ -66,39 +71,39 @@ class MatchesController < ApplicationController
     if user_signed_in?
       organizer_user = @match_users.find { |mu| mu.role == "organisateur" }&.user
       @organizer_friend_status = organizer_user.present? &&
-                                  current_user != organizer_user &&
-                                  current_user.friends_with?(organizer_user)
+                                 current_user != organizer_user &&
+                                 current_user.friends_with?(organizer_user)
     end
 
     # Calcule les avis en attente pour CE match (pour le bouton "Laisser un avis")
     # Conditions : match terminé + connecté + participant approuvé
-    if user_signed_in? && @match.completed? && @current_match_user&.approved?
-      # Co-joueurs approuvés dans ce match (sauf current_user)
-      co_player_ids = @match.match_users
-                            .where(status: "approved")
-                            .where.not(user_id: current_user.id)
-                            .pluck(:user_id)
+    return unless user_signed_in? && @match.completed? && @current_match_user&.approved?
 
-      # Joueurs déjà notés par current_user dans CE match
-      already_reviewed = Avis.where(reviewer_id: current_user.id, match_id: @match.id)
-                             .pluck(:reviewed_user_id)
+    # Co-joueurs approuvés dans ce match (sauf current_user)
+    co_player_ids = @match.match_users
+                          .where(status: "approved")
+                          .where.not(user_id: current_user.id)
+                          .pluck(:user_id)
 
-      # Joueurs pas encore notés
-      pending_ids    = co_player_ids - already_reviewed
-      has_voted      = MatchVote.where(voter_id: current_user.id, match_id: @match.id).exists?
-      can_vote_homme = !has_voted && co_player_ids.any?
+    # Joueurs déjà notés par current_user dans CE match
+    already_reviewed = Avis.where(reviewer_id: current_user.id, match_id: @match.id)
+                           .pluck(:reviewed_user_id)
 
-      # On prépare les données seulement s'il reste quelque chose à faire
-      if pending_ids.any? || can_vote_homme
-        @match_pending_reviews = [{
-          match:          @match,
-          users:          User.where(id: pending_ids).includes(:profil),
-          all_co_players: User.where(id: co_player_ids).includes(:profil),
-          has_voted:      has_voted,
-          can_vote_homme: can_vote_homme
-        }]
-      end
-    end
+    # Joueurs pas encore notés
+    pending_ids    = co_player_ids - already_reviewed
+    has_voted      = MatchVote.where(voter_id: current_user.id, match_id: @match.id).exists?
+    can_vote_homme = !has_voted && co_player_ids.any?
+
+    # On prépare les données seulement s'il reste quelque chose à faire
+    return unless pending_ids.any? || can_vote_homme
+
+    @match_pending_reviews = [{
+      match: @match,
+      users: User.where(id: pending_ids).includes(:profil),
+      all_co_players: User.where(id: co_player_ids).includes(:profil),
+      has_voted: has_voted,
+      can_vote_homme: can_vote_homme
+    }]
   end
 
   # GET /matches/new
@@ -112,7 +117,7 @@ class MatchesController < ApplicationController
     @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
-    @match.sport           = current_sport     # Sport : pré-rempli avec le sport actif
+    @match.sport           = current_sport # Sport : pré-rempli avec le sport actif
   end
 
   # POST /matches
@@ -161,9 +166,9 @@ class MatchesController < ApplicationController
     # On exclut les "rejected" car ils n'ont plus de place et ne sont plus actifs.
     # IMPORTANT : on broadcast AVANT @match.destroy → le canal ActionCable doit encore exister.
     participants = @match.match_users
-      .where.not(role: "organisateur")
-      .where(status: ["approved", "pending", "waiting"])
-      .includes(:user)
+                         .where.not(role: "organisateur")
+                         .where(status: ["approved", "pending", "waiting"])
+                         .includes(:user)
 
     # Notifie chaque participant en temps réel si il est sur la page du match
     participants.each do |mu|
@@ -233,7 +238,7 @@ class MatchesController < ApplicationController
   def broadcast_match_cancelled_to_participant(participant_user)
     Turbo::StreamsChannel.broadcast_update_to(
       "user_#{participant_user.id}_notifications", # canal personnel du joueur
-      target: "global_notification_container",      # conteneur dans application.html.erb
+      target: "global_notification_container", # conteneur dans application.html.erb
       partial: "matches/match_cancelled_notification",
       locals: { match: @match }
     )
@@ -292,7 +297,7 @@ class MatchesController < ApplicationController
       :title, :description, :date, :time, :place, :venue_id,
       :level, :player_left, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
-      :genre_restriction  # Restriction de genre : "tous" ou "feminin"
+      :genre_restriction # Restriction de genre : "tous" ou "feminin"
     )
   end
 end

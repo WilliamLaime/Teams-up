@@ -64,9 +64,9 @@ class MessagesController < ApplicationController
     match_user = @match.match_users.find_by(user: current_user)
 
     # Seuls les participants approuvés et les organisateurs peuvent écrire
-    unless match_user && (match_user.approved? || match_user.role == "organisateur")
-      redirect_to @match, alert: "Tu dois être participant du match pour écrire dans le chat."
-    end
+    return if match_user && (match_user.approved? || match_user.role == "organisateur")
+
+    redirect_to @match, alert: "Tu dois être participant du match pour écrire dans le chat."
   end
 
   # Filtre les paramètres autorisés pour un message

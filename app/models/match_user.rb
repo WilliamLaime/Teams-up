@@ -9,11 +9,11 @@ class MatchUser < ApplicationRecord
   # ── Callbacks Turbo Stream pour le sticky chat ──────────────────────────────
   # Quand un utilisateur est créé en tant qu'organisateur → ajoute la conv en temps réel
   after_create_commit :broadcast_new_convo_to_sidebar,
-    if: -> { role == "organisateur" }
+                      if: -> { role == "organisateur" }
 
   # Quand un joueur passe à "approved" → ajoute la conv en temps réel dans sa sidebar
   after_update_commit :broadcast_new_convo_to_sidebar,
-    if: -> { saved_change_to_status? && status == "approved" }
+                      if: -> { saved_change_to_status? && status == "approved" }
 
   # Helpers pour vérifier le statut facilement
   def approved?
@@ -56,24 +56,24 @@ class MatchUser < ApplicationRecord
     broadcast_remove_to(stream, target: "sticky-chat-sidebar-empty")
 
     # Pour l'organisateur (création de match) : ouvre le panneau et charge la conv automatiquement
-    if role == "organisateur"
-      # Récupère le chemin vers la conversation du match
-      convo_path = Rails.application.routes.url_helpers.conversation_path(match)
+    return unless role == "organisateur"
 
-      # Remplace le turbo-frame par un nouveau avec src= pour que Turbo charge la conv
-      broadcast_replace_to(
-        stream,
-        target: "sticky-chat-frame",
-        html: "<turbo-frame id=\"sticky-chat-frame\" src=\"#{convo_path}\" loading=\"eager\"></turbo-frame>"
-      )
+    # Récupère le chemin vers la conversation du match
+    convo_path = Rails.application.routes.url_helpers.conversation_path(match)
 
-      # Met à jour le trigger caché — détecté par le MutationObserver Stimulus
-      # qui appellera open() pour ouvrir le panneau
-      broadcast_update_to(
-        stream,
-        target: "sticky-chat-open-trigger",
-        html: match.id.to_s
-      )
-    end
+    # Remplace le turbo-frame par un nouveau avec src= pour que Turbo charge la conv
+    broadcast_replace_to(
+      stream,
+      target: "sticky-chat-frame",
+      html: "<turbo-frame id=\"sticky-chat-frame\" src=\"#{convo_path}\" loading=\"eager\"></turbo-frame>"
+    )
+
+    # Met à jour le trigger caché — détecté par le MutationObserver Stimulus
+    # qui appellera open() pour ouvrir le panneau
+    broadcast_update_to(
+      stream,
+      target: "sticky-chat-open-trigger",
+      html: match.id.to_s
+    )
   end
 end

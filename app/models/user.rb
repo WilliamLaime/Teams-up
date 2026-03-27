@@ -20,11 +20,11 @@ class User < ApplicationRecord
   PASSWORD_REGEX = /\A(?=.*[A-Z])(?=.*\d)(?=.*[[:punct:]])\z/
 
   validates :password,
-    format: {
-      with: PASSWORD_REGEX,
-      message: "doit contenir au moins 6 caractères, une majuscule, un chiffre et un symbole"
-    },
-    if: :password_required? # Méthode Devise : n'exécute la validation que si le mot de passe est renseigné
+            format: {
+              with: PASSWORD_REGEX,
+              message: "doit contenir au moins 6 caractères, une majuscule, un chiffre et un symbole"
+            },
+            if: :password_required? # Méthode Devise : n'exécute la validation que si le mot de passe est renseigné
 
   # Validations uniquement à la création du compte (on: :create)
   # Sans ça, Devise crée l'User même si le prénom/nom est vide,
@@ -55,7 +55,7 @@ class User < ApplicationRecord
   has_many :avis_recus,  class_name: "Avis", foreign_key: "reviewed_user_id", dependent: :destroy
 
   # Votes "homme du match" donnés par cet utilisateur
-  has_many :votes_donnes, class_name: "MatchVote", foreign_key: "voter_id",      dependent: :destroy
+  has_many :votes_donnes, class_name: "MatchVote", foreign_key: "voter_id", dependent: :destroy
   # Votes "homme du match" reçus par cet utilisateur
   has_many :votes_recus,  class_name: "MatchVote", foreign_key: "voted_for_id", dependent: :destroy
 
@@ -126,14 +126,14 @@ class User < ApplicationRecord
       # Nouvel utilisateur : on crée le compte avec un mot de passe aléatoire
       # (il n'en aura pas besoin puisqu'il se connectera toujours via Google)
       user = create!(
-        email:    auth.info.email,
+        email: auth.info.email,
         provider: auth.provider,
-        uid:      auth.uid,
+        uid: auth.uid,
         password: Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
         # first_name et last_name sont des attributs virtuels pour créer le Profil
         # On les récupère depuis les données Google
-        first_name: auth.info.first_name.presence || auth.info.name&.split(" ")&.first || "Google",
-        last_name:  auth.info.last_name.presence  || auth.info.name&.split(" ")&.last  || "User"
+        first_name: auth.info.first_name.presence || auth.info.name&.split&.first || "Google",
+        last_name: auth.info.last_name.presence || auth.info.name&.split&.last || "User"
       )
     end
 

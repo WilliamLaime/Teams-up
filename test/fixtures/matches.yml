@@ -1,0 +1,12 @@
+# Match appartenant à l'utilisateur one — utilisé dans MatchPolicyTest
+one:
+  title: Match de test
+  date: <%= Date.today + 1.day %>
+  time: "18:00:00"
+  player_left: 4
+  level: "Débutant"
+  visibility: public
+  validation_mode: automatic
+  genre_restriction: tous
+  user: one
+  sport: one

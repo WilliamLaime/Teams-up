@@ -22,12 +22,13 @@ class Sport < ApplicationRecord
   def available_formats
     case slug
     when "football"   then [{ label: "5v5",  players: 9  }]
-    when "tennis"     then [{ label: "1v1",  players: 1  }, { label: "2v2", players: 3  }]
+    when "tennis"     then [{ label: "1v1",  players: 1  }, { label: "2v2", players: 3 }]
     when "padel"      then [{ label: "2v2",  players: 3  }]
     when "volleyball" then [{ label: "3v3",  players: 5  }, { label: "6v6", players: 11 }]
-    when "basketball" then [{ label: "1v1", players: 1 }, { label: "2v2", players: 3 }, { label: "3v3", players: 5 }, { label: "5v5", players: 9 }]
+    when "basketball" then [{ label: "1v1", players: 1 }, { label: "2v2", players: 3 }, { label: "3v3", players: 5 },
+                            { label: "5v5", players: 9 }]
     when "handball"   then [{ label: "6v6",  players: 11 }]
-    when "badminton"  then [{ label: "1v1",  players: 1  }, { label: "2v2", players: 3  }]
+    when "badminton"  then [{ label: "1v1",  players: 1  }, { label: "2v2", players: 3 }]
     else                   [{ label: "Libre", players: 4 }]
     end
   end

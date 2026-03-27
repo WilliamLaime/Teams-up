@@ -1,0 +1,16 @@
+{
+  "ignored_warnings": [
+    {
+      "fingerprint": "d13996cdccdb80714eea4562016b72a9c524e5191fbe35967f4c98b63cc4900f",
+      "note": "Faux positif : :role est le poste sportif du joueur (ex: attaquant, gardien), pas un rôle système ou admin. Aucun risque de mass assignment sur des attributs sensibles."
+    },
+    {
+      "fingerprint": "e121dadbcf4b36fc99cbd3cc00ad112ec038e94d7df3e835e687a58ed0ec5958",
+      "note": "Faux positif : le nom de fichier est nettoyé par File.basename() et validé contre une liste blanche VALID_PRESET_AVATARS avant utilisation. Aucun accès fichier arbitraire possible."
+    },
+    {
+      "fingerprint": "96b74d23849d87c45390d187d75c8b438edbb40a86d6dc97a49d6ab341139688",
+      "note": "Faux positif : même protection que ci-dessus — File.basename() + liste blanche dans registrations_controller."
+    }
+  ]
+}

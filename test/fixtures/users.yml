@@ -1,0 +1,12 @@
+# Utilisateur propriétaire de match — utilisé dans MatchPolicyTest
+# encrypted_password = BCrypt hash de "password123"
+one:
+  email: user_one@example.com
+  encrypted_password: $2a$12$LCAWYKIw8W.NUBkSuZQMUO3AgaEGbwpnc7agZk5AK5vxkKRqmsLIS
+  admin: false
+
+# Autre utilisateur — utilisé dans MatchPolicyTest
+two:
+  email: user_two@example.com
+  encrypted_password: $2a$12$LCAWYKIw8W.NUBkSuZQMUO3AgaEGbwpnc7agZk5AK5vxkKRqmsLIS
+  admin: false

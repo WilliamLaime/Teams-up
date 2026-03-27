@@ -8,12 +8,12 @@ class ConversationsController < ApplicationController
 
     # Récupère les IDs des matchs où l'utilisateur est approuvé OU organisateur
     participant_match_ids = current_user.match_users
-      .where("status = 'approved' OR role = 'organisateur'")
-      .pluck(:match_id)
+                                        .where("status = 'approved' OR role = 'organisateur'")
+                                        .pluck(:match_id)
 
     @conversations = Match
-      .where(id: participant_match_ids)
-      .order(created_at: :desc)
+                     .where(id: participant_match_ids)
+                     .order(created_at: :desc)
   end
 
   def show
@@ -25,7 +25,9 @@ class ConversationsController < ApplicationController
     @match = Match.find_by(id: params[:id])
     unless @match
       # Match supprimé — retourne une frame vide plutôt que de crasher
-      render inline: '<turbo-frame id="sticky-chat-frame"><div class="sticky-chat-no-selection"><p>Cette conversation n\'existe plus.</p></div></turbo-frame>'
+      render inline: '<turbo-frame id="sticky-chat-frame">' \
+                     '<div class="sticky-chat-no-selection">' \
+                     "<p>Cette conversation n\\'existe plus.</p></div></turbo-frame>"
       return
     end
 
@@ -65,6 +67,7 @@ class ConversationsController < ApplicationController
     # Trouve le match et la participation de l'utilisateur (find_by pour éviter le crash si supprimé)
     @match = Match.find_by(id: params[:id])
     return head(:not_found) unless @match
+
     match_user = @match.match_users.find_by(user: current_user)
 
     # Marque la conversation comme dismissée avec un timestamp

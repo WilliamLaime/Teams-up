@@ -130,11 +130,11 @@ class ApplicationController < ActionController::Base
       all_co_players = User.where(id: co_player_ids).includes(:profil)
 
       result << {
-        match:          match,
-        users:          pending_users,    # joueurs à noter (review)
-        all_co_players: all_co_players,   # tous les joueurs (vote homme du match)
-        has_voted:      has_voted,        # true si déjà voté pour ce match
-        can_vote_homme: can_vote_homme    # true si la section homme du match doit s'afficher
+        match: match,
+        users: pending_users, # joueurs à noter (review)
+        all_co_players: all_co_players, # tous les joueurs (vote homme du match)
+        has_voted: has_voted, # true si déjà voté pour ce match
+        can_vote_homme: can_vote_homme # true si la section homme du match doit s'afficher
       }
     end
 

@@ -49,7 +49,7 @@ class AchievementService
     message_count = Message.where(user: @user).count
     grant("first_message") if message_count >= 1
     grant("messages_10")   if message_count >= 10
-    grant("messages_50")   if message_count >= 50  # Voix du stade
+    grant("messages_50")   if message_count >= 50 # Voix du stade
   end
 
   # Vérifie les achievements liés à la création de matchs
@@ -58,15 +58,13 @@ class AchievementService
     organized_count = @user.match_users.where(role: "organisateur").count
     grant("first_match_created") if organized_count >= 1
     grant("organized_3")         if organized_count >= 3
-    grant("organized_10")        if organized_count >= 10  # Général des terrains
+    grant("organized_10")        if organized_count >= 10 # Général des terrains
   end
 
   # Vérifie les achievements liés au profil (complétion + avatar + description)
   def check_profile_complete
     # Profil entièrement complété (avatar + description + téléphone)
-    if @profil.avatar.attached? && @profil.description.present? && @profil.phone.present?
-      grant("profile_complete")
-    end
+    grant("profile_complete") if @profil.avatar.attached? && @profil.description.present? && @profil.phone.present?
     # Avatar ajouté
     grant("avatar_added")         if @profil.avatar.attached?
     # Description rédigée
@@ -103,9 +101,9 @@ class AchievementService
   # Crée une notification pour informer l'utilisateur de son achievement
   def send_notification(achievement)
     Notification.create!(
-      user:    @user,
+      user: @user,
       message: "🏆 Achievement débloqué : #{achievement.name} (+#{achievement.xp_reward} XP)",
-      link:    "/profil"
+      link: "/profil"
     )
   end
 end

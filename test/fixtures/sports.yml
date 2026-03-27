@@ -1,0 +1,5 @@
+# Fixture sport pour les tests
+one:
+  name: Football
+  slug: football
+  icon: ⚽

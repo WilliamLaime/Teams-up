@@ -13,14 +13,14 @@ class Profil < ApplicationRecord
   # content_type : bloque tout ce qui n'est pas JPG, PNG ou GIF
   # size : bloque les fichiers > 5 Mo
   validates :avatar,
-    content_type: {
-      in: %w[image/jpeg image/png image/gif],
-      message: "doit être un fichier JPG, PNG ou GIF"
-    },
-    size: {
-      less_than: 5.megabytes,
-      message: "ne doit pas dépasser 5 Mo"
-    }
+            content_type: {
+              in: %w[image/jpeg image/png image/gif],
+              message: "doit être un fichier JPG, PNG ou GIF"
+            },
+            size: {
+              less_than: 5.megabytes,
+              message: "ne doit pas dépasser 5 Mo"
+            }
 
   # Niveau et rôle par sport — un enregistrement par sport pratiqué
   has_many :sport_profils, dependent: :destroy
@@ -28,7 +28,7 @@ class Profil < ApplicationRecord
   # ─── SYSTÈME XP & NIVEAUX ───────────────────────────────────────────────────
   # Seuils d'XP cumulés pour atteindre chaque niveau
   # Index 0 = Niveau 1 (0 XP), Index 1 = Niveau 2 (100 XP), etc.
-  LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2500, 4000, 6000, 10000].freeze
+  LEVEL_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2500, 4000, 6000, 10_000].freeze
 
   # ─── ATTRIBUTS RPG ──────────────────────────────────────────────────────────
   # Les 8 attributs sur lesquels le joueur peut dépenser ses points de stats
@@ -54,7 +54,7 @@ class Profil < ApplicationRecord
   # Utilisé pour la barre de progression Bootstrap
   def xp_progress_percent
     range = xp_for_next_level - xp_for_current_level
-    return 100 if range <= 0  # Niveau max atteint
+    return 100 if range <= 0 # Niveau max atteint
 
     current_progress = (xp || 0) - xp_for_current_level
     [(current_progress.to_f / range * 100).round, 100].min
@@ -121,7 +121,7 @@ class Profil < ApplicationRecord
     elsif lvl >= 7 then "card-tier-platinum"
     elsif lvl >= 5 then "card-tier-gold"
     elsif lvl >= 3 then "card-tier-silver"
-    else                 "card-tier-bronze"
+    else "card-tier-bronze"
     end
   end
 end

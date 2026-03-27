@@ -28,15 +28,6 @@
         <% end %>
       </li>
 
-      <%# Lien Admin — visible uniquement pour les utilisateurs admin %>
-      <% if current_user&.admin? %>
-        <li class="nav-item">
-          <%= link_to admin_root_path, class: "nav-link" do %>
-            <i data-lucide="shield" style="width:14px; height:14px; color:#1EDD88; vertical-align:middle;"></i>
-            Admin
-          <% end %>
-        </li>
-      <% end %>
 
       <% if user_signed_in? %>
         <%# ── Sélecteur de sport actif (desktop centre) ─────────────────────── %>
@@ -140,7 +131,7 @@
                 alt: display_name || current_user.email %>
           </button>
 
-          <%# Dropdown desktop : Mon profil / Mon compte / Déconnexion %>
+          <%# Dropdown desktop : Mon profil / Mon compte / Admin (si admin) / Déconnexion %>
           <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
             <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
@@ -148,6 +139,13 @@
             <%= link_to edit_user_registration_path,
                 class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="settings" style="width:14px;height:14px;"></i> Mon compte
+            <% end %>
+            <%# Lien Admin — visible uniquement pour les administrateurs %>
+            <% if current_user&.admin? %>
+              <div class="dropdown-divider"></div>
+              <%= link_to admin_root_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+                <i data-lucide="shield" style="width:14px;height:14px;"></i> Administration
+              <% end %>
             <% end %>
             <div class="dropdown-divider"></div>
             <%= link_to destroy_user_session_path,

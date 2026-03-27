@@ -10,7 +10,7 @@ class Avis < ApplicationRecord
 
   # Un seul avis possible par reviewer pour la même personne dans le même match
   validates :reviewer_id, uniqueness: {
-    scope: [:reviewed_user_id, :match_id],
+    scope: %i[reviewed_user_id match_id],
     message: "Vous avez déjà laissé un avis pour ce joueur dans ce match."
   }
 
@@ -31,7 +31,7 @@ class Avis < ApplicationRecord
 
   # Avis mutuels : l'avis A→B n'est visible que si B→A existe pour le même match.
   # On vérifie l'existence d'un avis inverse (même match, reviewer/reviewed inversés).
-  scope :mutual, -> {
+  scope :mutual, lambda {
     where(
       "EXISTS (
         SELECT 1 FROM avis a2
@@ -44,7 +44,7 @@ class Avis < ApplicationRecord
 
   # Avis non-mutuels : l'autre personne n'a pas encore rendu la pareille.
   # Utile pour afficher un compteur "avis en attente" sur son propre profil.
-  scope :non_mutual, -> {
+  scope :non_mutual, lambda {
     where.not(
       "EXISTS (
         SELECT 1 FROM avis a2
@@ -62,9 +62,10 @@ class Avis < ApplicationRecord
   # Empêche un utilisateur de se noter lui-même
   def cannot_review_yourself
     return unless reviewer_id.present? && reviewed_user_id.present?
-    if reviewer_id == reviewed_user_id
-      errors.add(:base, "Vous ne pouvez pas vous noter vous-même.")
-    end
+
+    return unless reviewer_id == reviewed_user_id
+
+    errors.add(:base, "Vous ne pouvez pas vous noter vous-même.")
   end
 
   # Vérifie que les deux joueurs ont participé au match avec le statut "approved"
@@ -77,9 +78,9 @@ class Avis < ApplicationRecord
     end
 
     # Le joueur noté doit aussi avoir été approuvé dans ce match
-    unless match.match_users.exists?(user_id: reviewed_user_id, status: "approved")
-      errors.add(:base, "Ce joueur n'a pas participé à ce match.")
-    end
+    return if match.match_users.exists?(user_id: reviewed_user_id, status: "approved")
+
+    errors.add(:base, "Ce joueur n'a pas participé à ce match.")
   end
 
   # Vérifie que le match est terminé ET dans la fenêtre de 7 jours
@@ -99,9 +100,9 @@ class Avis < ApplicationRecord
     ) + 1.hour
 
     # La fenêtre de 7 jours court à partir de la fin du match
-    if Time.current > match_end_time + 7.days
-      errors.add(:base, "La fenêtre de 7 jours pour laisser un avis est dépassée.")
-    end
+    return unless Time.current > match_end_time + 7.days
+
+    errors.add(:base, "La fenêtre de 7 jours pour laisser un avis est dépassée.")
   end
 
   # ── Recalcul de la moyenne ─────────────────────────────────────────────────
@@ -116,7 +117,7 @@ class Avis < ApplicationRecord
   # Recalcule la moyenne et le compteur d'avis mutuels pour un utilisateur donné
   def recalculate_for(user)
     profil = user.profil
-    return unless profil  # sécurité : si l'utilisateur n'a pas encore de profil
+    return unless profil # sécurité : si l'utilisateur n'a pas encore de profil
 
     # Seuls les avis mutuels comptent pour la moyenne affichée
     all_ratings = Avis.mutual.where(reviewed_user_id: user.id).pluck(:rating)

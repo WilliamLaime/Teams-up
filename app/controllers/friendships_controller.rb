@@ -12,7 +12,8 @@ class FriendshipsController < ApplicationController
 
     # Si on est déjà amis (demande acceptée), on ne fait rien
     if current_user.friends_with?(@friend)
-      redirect_back fallback_location: user_profil_path(@friend), alert: "Vous êtes déjà amis avec #{@friend.display_name}."
+      redirect_back fallback_location: user_profil_path(@friend),
+                    alert: "Vous êtes déjà amis avec #{@friend.display_name}."
       return
     end
 
@@ -29,9 +30,9 @@ class FriendshipsController < ApplicationController
     if @friendship.save
       # Envoie une notification au destinataire
       Notification.create(
-        user:    @friend,
+        user: @friend,
         message: "👋 #{current_user.display_name} vous a envoyé une demande d'ami.",
-        link:    user_profil_path(current_user)
+        link: user_profil_path(current_user)
       )
       redirect_back fallback_location: user_profil_path(@friend),
                     notice: "Demande d'ami envoyée à #{@friend.display_name} !"
@@ -60,9 +61,9 @@ class FriendshipsController < ApplicationController
 
     # Notifie l'expéditeur que sa demande a été acceptée
     Notification.create(
-      user:    @sender,
+      user: @sender,
       message: "🎉 #{current_user.display_name} a accepté votre demande d'ami !",
-      link:    user_profil_path(current_user)
+      link: user_profil_path(current_user)
     )
 
     redirect_back fallback_location: profil_path,

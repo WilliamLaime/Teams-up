@@ -6,11 +6,11 @@ class Match < ApplicationRecord
   # et dans l'email de l'utilisateur créateur (via la relation belongs_to :user)
   # prefix: true → trouve aussi les mots partiels (ex: "Pari" trouve "Paris")
   pg_search_scope :search_by_title_place_and_creator,
-    against: [:title, :place, :description],
-    associated_against: {
-      profil: [:first_name, :last_name]  # Cherche aussi par prénom/nom du créateur via user → profil
-    },
-    using: { tsearch: { prefix: true } }
+                  against: %i[title place description],
+                  associated_against: {
+                    profil: %i[first_name last_name] # Cherche aussi par prénom/nom du créateur via user → profil
+                  },
+                  using: { tsearch: { prefix: true } }
 
   # Le créateur du match (organisateur)
   belongs_to :user, optional: true
@@ -42,7 +42,7 @@ class Match < ApplicationRecord
   #   - mise à jour → remplace la carte existante (replace)
   #   - suppression → retire la carte de la page (remove)
   # La vue s'abonne avec <%= turbo_stream_from "matches" %>
-  broadcasts_to ->(match) { "matches" }
+  broadcasts_to ->(_match) { "matches" }
 
   # Scope public : matchs ouverts à l'inscription (pas encore commencés)
   # Dès l'heure du match → match "verrouillé" : retiré de l'index, on ne peut plus rejoindre
@@ -57,6 +57,18 @@ class Match < ApplicationRecord
   # Scope "en cours" pour mes matchs : matchs pas encore terminés
   # (upcoming + verrouillés + en train de se jouer)
   scope :active_for_user, -> { where("(date + time) >= ?", Time.current - 1.hour) }
+
+  # Scope : filtre les matchs selon le genre de l'utilisateur
+  # - user nil (visiteur non connecté) → exclut les matchs féminins
+  # - user.genre == "femme" → voit tous les matchs (ouverts + féminins)
+  # - user.genre == "homme" ou "autre" → ne voit pas les matchs réservés aux femmes
+  scope :visible_for_genre, lambda { |user|
+    if user.nil? || user.genre != "femme"
+      where("genre_restriction = ? OR genre_restriction IS NULL", "tous")
+    else
+      all
+    end
+  }
 
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
@@ -96,7 +108,7 @@ class Match < ApplicationRecord
             numericality: { only_integer: true, greater_than: 0, message: "doit être au moins 1" }
 
   # Validation : le match doit être prévu au minimum 30 minutes à l'avance
-  validate :match_must_be_at_least_30min_in_future, on: [:create, :update]
+  validate :match_must_be_at_least_30min_in_future, on: %i[create update]
 
   # Retourne vrai si le match est en mode validation manuelle
   def manual_validation?
@@ -116,6 +128,7 @@ class Match < ApplicationRecord
   # Retourne vrai si le match a lieu dans moins de 2 heures (et n'est pas encore passé)
   def urgent?
     return false unless date.present? && time.present?
+
     dt = build_datetime
     dt > Time.current && dt <= Time.current + 2.hours
   end
@@ -123,6 +136,7 @@ class Match < ApplicationRecord
   # Retourne vrai si le match est déjà passé (date+heure dépassées)
   def past?
     return false unless date.present? && time.present?
+
     build_datetime < Time.current
   end
 
@@ -135,6 +149,7 @@ class Match < ApplicationRecord
   # Retourne vrai si le match est en cours (débuté mais pas encore terminé = < 1h)
   def in_progress?
     return false unless date.present? && time.present?
+
     dt = build_datetime
     dt <= Time.current && dt > Time.current - 1.hour
   end
@@ -142,6 +157,7 @@ class Match < ApplicationRecord
   # Retourne vrai si le match est terminé (débuté il y a plus d'1h)
   def completed?
     return false unless date.present? && time.present?
+
     build_datetime < Time.current - 1.hour
   end
 
@@ -167,8 +183,9 @@ class Match < ApplicationRecord
   # Vérifie que le match est prévu au moins 30 min dans le futur
   def match_must_be_at_least_30min_in_future
     return unless date.present? && time.present?
-    if build_datetime < Time.current + 30.minutes
-      errors.add(:base, "Le match doit être prévu au moins 30 minutes à l'avance.")
-    end
+
+    return unless build_datetime < Time.current + 30.minutes
+
+    errors.add(:base, "Le match doit être prévu au moins 30 minutes à l'avance.")
   end
 end

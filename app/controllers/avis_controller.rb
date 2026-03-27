@@ -7,11 +7,11 @@ class AvisController < ApplicationController
 
     # Construit l'avis avec le reviewer = l'utilisateur connecté
     @avis = Avis.new(
-      reviewer:      current_user,
+      reviewer: current_user,
       reviewed_user: @reviewed_user,
-      match_id:      avis_params[:match_id],
-      rating:        avis_params[:rating],
-      content:       avis_params[:content]
+      match_id: avis_params[:match_id],
+      rating: avis_params[:rating],
+      content: avis_params[:content]
     )
 
     # Pundit vérifie l'autorisation de base (pas se noter soi-même, connecté)
@@ -20,7 +20,10 @@ class AvisController < ApplicationController
     # Répond en HTML (depuis le profil) ou JSON (depuis la modal AJAX)
     respond_to do |format|
       if @avis.save
-        format.html { redirect_back(fallback_location: user_profil_path(@reviewed_user), notice: "Votre avis a bien été enregistré !") }
+        format.html do
+          redirect_back(fallback_location: user_profil_path(@reviewed_user),
+                        notice: "Votre avis a bien été enregistré !")
+        end
         format.json { render json: { success: true } }
       else
         # En cas d'erreur, affiche le premier message d'erreur du modèle

@@ -2,7 +2,7 @@ class MatchUsersController < ApplicationController
   # Retrouver le match parent avant chaque action
   before_action :set_match
   # Retrouver l'inscription spécifique pour approve, reject et destroy
-  before_action :set_match_user, only: [:destroy, :approve, :reject]
+  before_action :set_match_user, only: %i[destroy approve reject]
 
   # POST /matches/:match_id/match_users
   # Rejoindre un match (ou rejoindre la file d'attente si le match est complet)
@@ -79,9 +79,7 @@ class MatchUsersController < ApplicationController
     # on ne fait rien pour éviter de décrémenter player_left plusieurs fois.
     # Cela arrive quand l'organisateur clique plusieurs fois car la modal
     # de notification (newRequestModal) ne se met pas à jour visuellement.
-    unless @match_user.pending?
-      return redirect_to @match
-    end
+    return redirect_to @match unless @match_user.pending?
 
     # Si le match est complet, on place le joueur en liste d'attente plutôt que de l'approuver
     if @match.full?
@@ -128,9 +126,7 @@ class MatchUsersController < ApplicationController
     authorize @match_user
 
     # Garde idempotente : si le joueur n'est plus en attente (déjà traité), on ne fait rien.
-    unless @match_user.pending?
-      return redirect_to @match
-    end
+    return redirect_to @match unless @match_user.pending?
 
     @match_user.update(status: "rejected")
     notify(@match_user.user, "❌ Ta demande pour \"#{@match.title}\" a été refusée.")
@@ -285,7 +281,8 @@ class MatchUsersController < ApplicationController
     @match_user.status = "waiting"
     if @match_user.save
       notify(organizer, "#{current_user.display_name} s'est inscrit en file d'attente pour \"#{@match.title}\"")
-      redirect_to match_path(@match, **match_redirect_options), notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
+      redirect_to match_path(@match, **match_redirect_options),
+                  notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
     else
       redirect_to match_path(@match, **match_redirect_options), alert: "Impossible de rejoindre la file d'attente."
     end

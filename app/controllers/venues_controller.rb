@@ -38,21 +38,21 @@ class VenuesController < ApplicationController
       # Étape 1 : chercher dans un rayon de ~30km (0.27° ≈ 30km, car 1° ≈ 111km)
       delta = 0.27
       candidates = venues
-        .where(latitude:  (lat - delta)..(lat + delta),
-               longitude: (lon - delta)..(lon + delta))
-        .order(distance_sql)
-        .limit(60)
-        .to_a
-        .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
+                   .where(latitude: (lat - delta)..(lat + delta),
+                          longitude: (lon - delta)..(lon + delta))
+                   .order(distance_sql)
+                   .limit(60)
+                   .to_a
+                   .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
 
       # Étape 2 : aucun résultat dans les 30km → élargit à toute la France
       # Exemple : l'user cherche "Le Five" depuis une ville qui n'en a pas → on cherche plus loin
       if candidates.empty?
         candidates = venues
-          .order(distance_sql)
-          .limit(60)
-          .to_a
-          .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
+                     .order(distance_sql)
+                     .limit(60)
+                     .to_a
+                     .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
       end
 
       venues = candidates.first(8)
@@ -60,21 +60,21 @@ class VenuesController < ApplicationController
       # Pas de GPS → tri par pertinence : noms plus courts d'abord (plus proches de la requête),
       # puis alphabétique. Ex: "LE FIVE BORDEAUX" (16 chars) avant "LE FIVE / COMPLEXE..." (30 chars)
       venues = venues.order(Arel.sql("LENGTH(name), name")).limit(60).to_a
-               .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
-               .first(8)
+                     .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
+                     .first(8)
     end
 
     # Retourne le JSON avec uniquement les champs utiles pour le frontend
     render json: venues.map { |v|
       {
-        id:          v.id,
-        name:        v.name,
-        sport_type:  v.sport_type,
-        address:     v.address,
-        city:        v.city,
+        id: v.id,
+        name: v.name,
+        sport_type: v.sport_type,
+        address: v.address,
+        city: v.city,
         postal_code: v.postal_code,
-        longitude:   v.longitude,
-        latitude:    v.latitude
+        longitude: v.longitude,
+        latitude: v.latitude
       }
     }
   end
