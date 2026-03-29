@@ -173,4 +173,18 @@
     min-height: 140px;
   }
 
+  // État invalide — bordure rouge Bootstrap visible malgré le style custom
+  // Nécessaire car .contact-input écrase la border-color avec un shorthand
+  .contact-input.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15); // glow rouge cohérent avec le glow vert du focus
+  }
+
+  // Message d'erreur sous le champ invalide
+  .invalid-feedback {
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+  }
+
 }

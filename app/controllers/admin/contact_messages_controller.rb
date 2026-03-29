@@ -27,6 +27,27 @@ module Admin
       end
     end
 
+    # DELETE /admin/contact_messages/:id
+    # Supprime un message de contact et retire sa ligne du tableau via Turbo Stream
+    def destroy
+      @contact_message = ContactMessage.find(params[:id])
+      @contact_message.destroy
+
+      # Turbo Stream : retire la ligne du tableau sans recharger la page
+      # dom_id(@contact_message) → "contact_message_42"
+      respond_to do |format|
+        format.turbo_stream { render turbo_stream: turbo_stream.remove("contact_message_#{@contact_message.id}") }
+        format.html         { redirect_to admin_contact_messages_path, notice: "Message supprimé." }
+      end
+    end
+
+    # DELETE /admin/contact_messages/destroy_all
+    # Supprime tous les messages de contact d'un seul coup
+    def destroy_all
+      ContactMessage.destroy_all
+      redirect_to admin_contact_messages_path, notice: "Tous les messages ont été supprimés."
+    end
+
     # POST /admin/contact_messages/:id/reply
     # Envoie un email de réponse à l'expéditeur et marque le message comme lu
     def reply

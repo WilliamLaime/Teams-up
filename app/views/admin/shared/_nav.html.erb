@@ -2,8 +2,9 @@
 <%# Partial partagé entre toutes les pages admin %>
 <%# Paramètre attendu : active_tab — soit :dashboard soit :formulaires %>
 
-<%# Compte les messages non lus pour le badge sur l'onglet Formulaires %>
-<% unread_count = ContactMessage.unread.count %>
+<%# L'abonnement turbo_stream_from "admin_contact_messages" est dans _navbar.html.erb
+    (conditionnel if current_user&.admin?) pour éviter les doublons qui neutralisent
+    les subscriptions côté client Turbo. Un seul abonné par canal. %>
 
 <%# Onglets centrés, style cohérent avec le reste du site (auth-tab) %>
 <div class="d-flex justify-content-center mb-5">
@@ -21,10 +22,10 @@
                 class: "admin-nav-tab #{active_tab == :formulaires ? "admin-nav-tab--active" : ""}" do %>
       <i data-lucide="mail" style="width:15px; height:15px;"></i>
       Formulaires
-      <%# Badge vert si des messages non lus existent %>
-      <% if unread_count > 0 %>
-        <span class="admin-nav-badge"><%= unread_count %></span>
-      <% end %>
+      <%# Wrapper fixe avec ID ciblé par broadcast_update_to — son contenu est mis à jour en temps réel %>
+      <span id="admin-nav-unread-badge">
+        <%= render "admin/shared/admin_unread_badge" %>
+      </span>
     <% end %>
 
   </div>

@@ -57,6 +57,7 @@ gem "sassc-rails"
 gem "pundit"
 gem "rack-attack" # Protection contre le brute force et le spam
 gem "active_storage_validations" # Validation du type et de la taille des fichiers uploadés
+gem "valid_email2" # Validation format + existence MX record des emails
 gem "csv"
 
 group :development, :test do

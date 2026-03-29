@@ -1,0 +1,7 @@
+<%# Contenu interne du point vert sur l'avatar.
+    Le wrapper <span id="navbar-admin-avatar-dot"> est dans _navbar.html.erb.
+    Ce partial est mis à jour via broadcast_update_to (remplace le innerHTML du wrapper). %>
+<% if ContactMessage.unread.any? %>
+  <%# Point vert superposé sur l'avatar — indique des messages non lus %>
+  <span class="navbar-admin-dot" aria-label="Messages non lus"></span>
+<% end %>

@@ -6,6 +6,12 @@
    - Actions droite → toujours visibles (cloche + avatar)
    ===================================================== %>
 
+<%# Abonnement Turbo Stream pour les admins — met à jour le voyant vert en temps réel
+    sur toutes les pages (pas seulement les pages admin) %>
+<% if current_user&.admin? %>
+  <%= turbo_stream_from "admin_contact_messages" %>
+<% end %>
+
 <nav class="navbar navbar-expand-lg navbar-dark-custom">
   <div class="container">
 
@@ -139,15 +145,16 @@
               <span class="navbar-user-name d-none d-lg-inline"><%= display_name %></span>
             <% end %>
             <%# Avatar + point vert si admin avec des messages non lus %>
-            <% has_unread_messages = current_user.admin? && ContactMessage.unread.any? %>
             <span class="navbar-avatar-wrapper">
               <%= user_avatar_tag current_user,
                   css_class: "avatar",
                   style: "object-fit:cover;",
                   alt: display_name || current_user.email %>
-              <%# Point vert visible uniquement si admin + messages non lus %>
-              <% if has_unread_messages %>
-                <span class="navbar-admin-dot" aria-label="Messages non lus"></span>
+              <%# Wrapper fixe — son contenu est mis à jour en temps réel via Turbo Stream %>
+              <% if current_user.admin? %>
+                <span id="navbar-admin-avatar-dot">
+                  <%= render "shared/navbar_admin_avatar_dot" %>
+                </span>
               <% end %>
             </span>
           </button>
@@ -167,10 +174,10 @@
               <%= link_to admin_root_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
                 <i data-lucide="shield" style="width:14px;height:14px;"></i>
                 Administration
-                <%# Point vert à droite si des messages de contact ne sont pas lus %>
-                <% if has_unread_messages %>
-                  <span class="navbar-admin-dot navbar-admin-dot--inline ms-auto" aria-label="Messages non lus"></span>
-                <% end %>
+                <%# ms-auto pousse le wrapper vers la droite (flex item) — contenu mis à jour via Turbo Stream %>
+                <span id="navbar-admin-inline-dot" class="ms-auto">
+                  <%= render "shared/navbar_admin_inline_dot" %>
+                </span>
               <% end %>
             <% end %>
             <div class="dropdown-divider"></div>

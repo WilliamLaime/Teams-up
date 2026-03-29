@@ -111,7 +111,17 @@
               <%= f.label :email, class: "contact-label" do %>
                 Email <span class="contact-required">*</span>
               <% end %>
-              <%= f.email_field :email, class: "contact-input", placeholder: "ton@email.com", required: true %>
+              <%# is-invalid : ajoute un contour rouge Bootstrap si la validation échoue %>
+              <%= f.email_field :email,
+                    class: "contact-input #{"is-invalid" if @contact_message.errors[:email].any?}",
+                    placeholder: "ton@email.com",
+                    required: true %>
+              <%# Message d'erreur affiché directement sous le champ %>
+              <% if @contact_message.errors[:email].any? %>
+                <div class="invalid-feedback d-block">
+                  <%= @contact_message.errors[:email].first %>
+                </div>
+              <% end %>
             </div>
 
             <%# Sujet %>
