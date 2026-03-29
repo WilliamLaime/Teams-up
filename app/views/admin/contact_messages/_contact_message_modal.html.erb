@@ -1,0 +1,88 @@
+<%# Partial : modale de lecture et de réponse pour un message de contact.
+    Rendu dans l'index ET envoyé via Turbo Stream quand un nouveau message arrive.
+    Variable attendue : msg (un ContactMessage) %>
+
+<div class="modal fade"
+     id="modal-message-<%= msg.id %>"
+     tabindex="-1"
+     aria-labelledby="modal-label-<%= msg.id %>"
+     aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="background:#1a1c1a; border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:#fff;">
+
+      <%# ── En-tête de la modale ── %>
+      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.07); padding:1.25rem 1.5rem;">
+        <div class="d-flex align-items-center gap-2">
+          <i data-lucide="mail" style="width:16px; height:16px; color:#1EDD88;"></i>
+          <h5 class="modal-title" id="modal-label-<%= msg.id %>"
+              style="margin:0; font-size:1rem; font-weight:600; color:#fff;">
+            <%= msg.sujet %>
+          </h5>
+        </div>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Fermer"></button>
+      </div>
+
+      <%# ── Corps de la modale ── %>
+      <div class="modal-body" style="padding:1.5rem;">
+
+        <%# Infos expéditeur %>
+        <div class="d-flex flex-wrap gap-4 mb-4" style="font-size:0.85rem;">
+          <div>
+            <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Expéditeur</span>
+            <span style="color:#fff; font-weight:600;"><%= msg.prenom %> <%= msg.nom %></span>
+          </div>
+          <div>
+            <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Email</span>
+            <%= mail_to msg.email, msg.email, style: "color:#1EDD88; font-weight:500;" %>
+          </div>
+          <div>
+            <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Reçu le</span>
+            <span style="color:rgba(255,255,255,0.6);"><%= msg.created_at.strftime("%d/%m/%Y à %Hh%M") %></span>
+          </div>
+        </div>
+
+        <%# Message complet %>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:1rem 1.25rem; margin-bottom:1.5rem;">
+          <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:0.6rem;">Message</span>
+          <div style="color:rgba(255,255,255,0.85); font-size:0.92rem; line-height:1.7;">
+            <%= simple_format msg.message, style: "margin:0;" %>
+          </div>
+        </div>
+
+        <%# ── Formulaire de réponse ── %>
+        <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:1.25rem;">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i data-lucide="reply" style="width:14px; height:14px; color:#1EDD88;"></i>
+            <span style="color:#fff; font-size:0.9rem; font-weight:600;">Répondre à <%= msg.prenom %></span>
+          </div>
+
+          <%= form_with url: reply_admin_contact_message_path(msg), method: :post, data: { turbo: false } do |f| %>
+            <div class="mb-3">
+              <%= f.text_area :reply_body,
+                  rows: 5,
+                  placeholder: "Écris ta réponse ici…",
+                  required: true,
+                  style: "width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; padding:0.7rem 1rem; font-size:0.9rem; resize:vertical; outline:none;" %>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button"
+                      class="btn btn-sm"
+                      style="background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1);"
+                      data-bs-dismiss="modal">
+                Annuler
+              </button>
+              <%= f.submit "Envoyer la réponse",
+                  class: "btn btn-sm",
+                  style: "background:#1EDD88; color:#111; border:none; font-weight:600;" %>
+            </div>
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

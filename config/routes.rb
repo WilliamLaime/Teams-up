@@ -138,11 +138,14 @@ Rails.application.routes.draw do
     # Messages reçus via le formulaire /contact
     # GET  /admin/contact_messages          => liste tous les messages
     # PATCH /admin/contact_messages/:id/toggle_lu => bascule lu/non-lu
-    resources :contact_messages, only: [:index] do
+    resources :contact_messages, only: [:index, :destroy] do
       member do
         patch :toggle_lu
-        # POST /admin/contact_messages/:id/reply → envoie un email de réponse
         post :reply
+      end
+      collection do
+        # DELETE /admin/contact_messages/destroy_all → supprime tous les messages
+        delete :destroy_all
       end
     end
   end

@@ -1,0 +1,7 @@
+<%# Contenu interne du point vert inline dans le dropdown "Administration".
+    Le wrapper <span id="navbar-admin-inline-dot" class="ms-auto"> est dans _navbar.html.erb.
+    Ce partial est mis à jour via broadcast_update_to (remplace le innerHTML du wrapper). %>
+<% if ContactMessage.unread.any? %>
+  <%# Point vert à droite du lien Administration dans le dropdown %>
+  <span class="navbar-admin-dot navbar-admin-dot--inline" aria-label="Messages non lus"></span>
+<% end %>

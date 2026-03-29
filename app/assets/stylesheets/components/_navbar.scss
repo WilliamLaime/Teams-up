@@ -129,6 +129,7 @@
 // Variante inline (dans le dropdown à côté de "Administration")
 .navbar-admin-dot--inline {
   position: static;       // annule le positionnement absolu
+  display: inline-block;  // OBLIGATOIRE : un <span> en display:inline ignore width/height → le point serait invisible
   width: 8px;
   height: 8px;
   box-shadow: none;

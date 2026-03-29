@@ -1,0 +1,10 @@
+<%# Partial pour le badge "non lus" sur l'onglet Formulaires.
+    Rendu à chaque broadcast Turbo Stream (nouveau message ou changement d'état lu/non-lu).
+    Calculé ici pour avoir le compte à jour au moment du broadcast. %>
+
+<%# Contenu interne du badge — le wrapper <span id="admin-nav-unread-badge"> est dans _nav.html.erb
+    Ce partial est mis à jour via broadcast_update_to (remplace le innerHTML du wrapper) %>
+<% unread_count = ContactMessage.unread.count %>
+<% if unread_count > 0 %>
+  <span class="admin-nav-badge"><%= unread_count %></span>
+<% end %>

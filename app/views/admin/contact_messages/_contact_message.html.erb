@@ -1,0 +1,78 @@
+<%# Partial : une ligne du tableau des messages de contact.
+    Rendu dans l'index ET envoyé via Turbo Stream quand un nouveau message arrive.
+    Variable attendue : msg (un ContactMessage) %>
+
+<%# id="contact_message_42" — ciblé par Turbo Stream pour la suppression unitaire %>
+<tr id="<%= dom_id(msg) %>" style="<%= msg.lu? ? "opacity:0.6;" : "" %>">
+
+  <%# Colonne statut : point vert = non lu, gris = lu %>
+  <td style="border-color:rgba(255,255,255,0.07); vertical-align:middle;">
+    <% if msg.lu? %>
+      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.2);"></span>
+    <% else %>
+      <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#1EDD88;"></span>
+    <% end %>
+  </td>
+
+  <%# Prénom + Nom — en gras si non lu %>
+  <td style="border-color:rgba(255,255,255,0.07); color:#fff; font-weight:<%= msg.lu? ? "400" : "600" %>;">
+    <%= msg.prenom %> <%= msg.nom %>
+  </td>
+
+  <%# Email cliquable (ouvre le client mail) %>
+  <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+    <%= mail_to msg.email, msg.email, style: "color:rgba(255,255,255,0.6);" %>
+  </td>
+
+  <%# Sujet du message %>
+  <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.8);">
+    <%= msg.sujet %>
+  </td>
+
+  <%# Date de réception formatée en français %>
+  <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); white-space:nowrap;">
+    <%= msg.created_at.strftime("%d/%m/%Y à %Hh%M") %>
+  </td>
+
+  <%# Colonne actions : Lire + Lu/Non lu + Supprimer %>
+  <td style="border-color:rgba(255,255,255,0.07);">
+    <div class="d-flex gap-2 align-items-center">
+
+      <%# Bouton "Lire" — ouvre la modale du message correspondant %>
+      <button type="button"
+              class="btn btn-sm"
+              style="font-size:0.75rem; padding:0.25rem 0.6rem; background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);"
+              data-bs-toggle="modal"
+              data-bs-target="#modal-message-<%= msg.id %>">
+        <i data-lucide="eye" style="width:12px; height:12px; display:inline;"></i>
+        Lire
+      </button>
+
+      <%# Bouton pour basculer l'état lu/non-lu %>
+      <%= button_to toggle_lu_admin_contact_message_path(msg),
+                    method: :patch,
+                    class: "btn btn-sm",
+                    style: "font-size:0.75rem; padding:0.25rem 0.6rem; border:1px solid; #{msg.lu? ? "background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.4); border-color:rgba(255,255,255,0.1);" : "background:transparent; color:rgba(255,255,255,0.35); border-color:rgba(255,255,255,0.1);"}" do %>
+        <% if msg.lu? %>
+          <i data-lucide="mail" style="width:12px; height:12px; display:inline;"></i>
+          Non lu
+        <% else %>
+          <i data-lucide="mail-check" style="width:12px; height:12px; display:inline;"></i>
+          Lu
+        <% end %>
+      <% end %>
+
+      <%# Bouton supprimer — poubelle rouge, Turbo Stream retire la ligne %>
+      <%= button_to admin_contact_message_path(msg),
+                    method: :delete,
+                    class: "btn btn-sm",
+                    style: "font-size:0.75rem; padding:0.25rem 0.6rem; background:rgba(220,53,69,0.12); color:#ff6b6b; border:1px solid rgba(220,53,69,0.3);",
+                    title: "Supprimer",
+                    data: { turbo_confirm: "Supprimer ce message définitivement ?" } do %>
+        <i data-lucide="trash-2" style="width:12px; height:12px;"></i>
+      <% end %>
+
+    </div>
+  </td>
+
+</tr>
