@@ -70,6 +70,36 @@ class Match < ApplicationRecord
     end
   }
 
+  # ── PRÉ-FILTRES BASÉS SUR LE PROFIL ──────────────────────────────────────────
+  # Ces scopes sont utilisés pour pré-filtrer automatiquement les matchs
+  # selon les préférences de l'utilisateur (ville, lieux favoris, niveau)
+
+  # Pré-filtre : matchs dans la ville préférée de l'utilisateur
+  scope :by_preferred_city, ->(city) {
+    where("place ILIKE ?", "%#{city}%") if city.present?
+  }
+
+  # Pré-filtre : matchs dans un des lieux favoris de l'utilisateur
+  scope :by_favorite_venues, ->(venue_ids) {
+    where(venue_id: venue_ids) if venue_ids.present? && venue_ids.any?
+  }
+
+  # Pré-filtre : matchs au niveau de compétence de l'utilisateur pour un sport
+  # Retourne les matchs du même sport avec le même niveau OU "Tout niveau"
+  scope :by_user_level_for_sports, ->(user_id, sport_id) {
+    if user_id.present? && sport_id.present?
+      # Récupère le niveau de l'user pour ce sport via sa relation sport_profils
+      user = User.find_by(id: user_id)
+      user_level = user&.profil&.sport_profils&.find_by(sport_id: sport_id)&.level
+
+      # Filter matchs du même sport avec son niveau OU "Tout niveau" (jouable par tous)
+      where(sport_id: sport_id)
+        .where(level: [user_level, "Tout niveau"]) if user_level.present?
+    else
+      all
+    end
+  }
+
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
 

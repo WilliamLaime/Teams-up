@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_101220) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_30_173821) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -180,6 +180,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_101220) do
     t.index ["sender_id", "recipient_id"], name: "index_private_conversations_on_sender_id_and_recipient_id", unique: true
   end
 
+  create_table "profil_favorite_venues", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "profil_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "venue_id", null: false
+    t.index ["profil_id", "venue_id"], name: "index_profil_favorite_venues_on_profil_and_venue", unique: true
+    t.index ["profil_id"], name: "index_profil_favorite_venues_on_profil_id"
+    t.index ["venue_id"], name: "index_profil_favorite_venues_on_venue_id"
+  end
+
   create_table "profils", force: :cascade do |t|
     t.string "address"
     t.integer "attr_attack", default: 0, null: false
@@ -200,6 +210,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_101220) do
     t.string "level"
     t.string "localisation"
     t.string "phone"
+    t.string "preferred_city"
     t.string "role"
     t.integer "stat_points", default: 0, null: false
     t.datetime "time_available"
@@ -207,6 +218,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_101220) do
     t.bigint "user_id", null: false
     t.integer "xp", default: 0, null: false
     t.integer "xp_level", default: 1, null: false
+    t.index ["preferred_city"], name: "index_profils_on_preferred_city"
     t.index ["user_id"], name: "index_profils_on_user_id"
   end
 
@@ -275,6 +287,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_101220) do
     t.string "address"
     t.string "city"
     t.datetime "created_at", null: false
+    t.boolean "from_nominatim", default: false, null: false
     t.float "latitude"
     t.float "longitude"
     t.string "name"
@@ -307,6 +320,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_101220) do
   add_foreign_key "notifications", "users"
   add_foreign_key "private_conversations", "users", column: "recipient_id"
   add_foreign_key "private_conversations", "users", column: "sender_id"
+  add_foreign_key "profil_favorite_venues", "profils"
+  add_foreign_key "profil_favorite_venues", "venues"
   add_foreign_key "profils", "users"
   add_foreign_key "sport_profils", "profils"
   add_foreign_key "sport_profils", "sports"

@@ -33,7 +33,15 @@ class MatchesController < ApplicationController
                  .publicly_visible
                  .visible_for_genre(current_user)
                  .order(date: :asc, time: :asc)
-      apply_filters
+
+      # 🔑 Appliquer les PRÉ-FILTRES ou les FILTRES MANUELS
+      # Si l'user n'a modifié aucun filtre → utiliser ses préférences de profil
+      # Sinon → appliquer les filtres qu'il a choisis
+      if should_apply_prefilters?
+        apply_prefilters
+      else
+        apply_filters
+      end
     end
   end
 
@@ -276,6 +284,67 @@ class MatchesController < ApplicationController
       @matches = @matches.where(sport_id: params[:sport_ids])
     elsif current_sport.present?
       @matches = @matches.where(sport_id: current_sport.id)
+    end
+  end
+
+  # Vérifie si les pré-filtres doivent être appliqués
+  # → True si l'utilisateur n'a modifié aucun filtre manuel ET est connecté
+  # → False sinon (les filtres manuels prennent priorité)
+  def should_apply_prefilters?
+    return false unless user_signed_in?
+
+    # Le lien "Voir tous les matchs" passe no_prefilter=1 pour contourner les pré-filtres
+    return false if params[:no_prefilter].present?
+
+    # Si l'utilisateur a modifié UN filtre → désactiver les pré-filtres
+    params[:query].blank? &&
+      params[:levels].blank? &&
+      params[:place].blank? &&
+      params[:date].blank? &&
+      params[:time_from].blank? &&
+      params[:player_left].blank? &&
+      params[:sport_ids].blank?
+  end
+
+  # Applique les pré-filtres intelligents basés sur les préférences du profil
+  # Filtre automatiquement les matchs par :
+  # 1. Ville préférée (if renseignée)
+  # 2. Lieux favoris (if renseignés)
+  # 3. Niveau de compétence pour le sport courant (if sport actif)
+  def apply_prefilters
+    profil = current_user.profil
+    return unless profil  # Sécurité : pas de profil = pas de pré-filtres
+
+    # Hashes pour tracker quels pré-filtres sont actifs (utilisés dans la vue)
+    @active_prefilters = {}
+    @prefilter_params = {}
+
+    # 1️⃣ Pré-filtre : Ville préférée
+    if profil.preferred_city.present?
+      @matches = @matches.by_preferred_city(profil.preferred_city)
+      @active_prefilters[:city] = true
+      @prefilter_params[:city] = profil.preferred_city
+    end
+
+    # 2️⃣ Pré-filtre : Lieux favoris (si l'user a en ajouté en favoris)
+    if profil.favorite_venues.any?
+      venue_ids = profil.favorite_venues.pluck(:id)
+      @matches = @matches.by_favorite_venues(venue_ids)
+      @active_prefilters[:venues] = true
+      @prefilter_params[:venues] = profil.favorite_venues.pluck(:name)  # Pour affichage
+    end
+
+    # 3️⃣ Pré-filtre : Niveau de compétence pour le sport courant
+    # Seulement si :
+    #   - Un sport est actuellement actif (pas en mode multisport)
+    #   - L'user a renseigné un niveau pour ce sport
+    if current_sport.present? && profil.present?
+      sport_profil = profil.sport_profils.find_by(sport_id: current_sport.id)
+      if sport_profil&.level.present?
+        @matches = @matches.by_user_level_for_sports(current_user.id, current_sport.id)
+        @active_prefilters[:level] = true
+        @prefilter_params[:level] = sport_profil.level
+      end
     end
   end
 

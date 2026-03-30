@@ -124,7 +124,7 @@
                     <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.35rem;">
                       <span style="display:inline-flex; align-items:center; gap:0.25rem; font-size:0.75rem; color:rgba(255,255,255,0.5);">
                         <i data-lucide="map-pin" style="width:10px; height:10px; color:rgba(255,255,255,0.18);"></i>
-                        <%= @profil.localisation.presence || "—" %>
+                        <%= @profil.preferred_city.presence || "—" %>
                       </span>
                     </div>
 

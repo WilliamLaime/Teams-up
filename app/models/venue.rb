@@ -4,6 +4,10 @@ class Venue < ApplicationRecord
   # Un lieu peut être associé à plusieurs matchs
   has_many :matches
 
+  # Lieux favoris : association pour les profils qui les ont ajoutés en favoris
+  has_many :profil_favorite_venues, dependent: :destroy
+  has_many :favorited_by_profils, through: :profil_favorite_venues, source: :profil
+
   # Validation : le nom et la ville sont obligatoires
   validates :name, presence: true
   validates :city, presence: true

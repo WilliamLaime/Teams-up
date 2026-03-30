@@ -126,7 +126,10 @@ Rails.application.routes.draw do
   # Route AJAX pour la recherche d'établissements sportifs
   # Appelée par le Stimulus controller "place-search" via fetchDbVenues()
   # GET /venues/search?q=...&lat=...&lon=... → retourne JSON
-  get "venues/search", to: "venues#search", as: :search_venues
+  get  "venues/search",          to: "venues#search",          as: :search_venues
+  # Appelée quand l'user sélectionne un résultat Nominatim (pas en BDD)
+  # POST /venues/find_or_create → cherche par name+city ou crée, retourne { id, name, city }
+  post "venues/find_or_create",  to: "venues#find_or_create",  as: :find_or_create_venue
 
   # ── Espace Admin ───────────────────────────────────────────────────────────
   # GET /admin          → redirige vers le dashboard
