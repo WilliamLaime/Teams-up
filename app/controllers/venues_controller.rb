@@ -6,6 +6,46 @@ class VenuesController < ApplicationController
   skip_after_action :verify_authorized
   skip_after_action :verify_policy_scoped
 
+  # POST /venues/find_or_create
+  # Appelée quand l'user sélectionne un résultat Nominatim (OSM) non présent en BDD.
+  # Cherche une venue existante par name+city (insensible à la casse).
+  # Si absente → la crée avec les données OSM passées en JSON.
+  # Retourne { id, name, city } pour que le JS puisse stocker le vrai ID.
+  def find_or_create
+    name = params[:name].to_s.strip
+    city = params[:city].to_s.strip
+
+    # Sécurité minimale : name et city sont obligatoires
+    if name.blank? || city.blank?
+      render json: { error: "Nom et ville requis" }, status: :unprocessable_entity
+      return
+    end
+
+    # Cherche d'abord une venue existante (insensible à la casse via ILIKE)
+    # puis crée si absent. Le rescue gère les rares cas de race condition.
+    venue = Venue.where("LOWER(name) = ? AND LOWER(city) = ?", name.downcase, city.downcase).first
+
+    if venue.nil?
+      # Crée la venue avec les données Nominatim
+      venue = Venue.create(
+        name:           name,
+        city:           city,
+        address:        params[:address].to_s.strip.presence,
+        postal_code:    params[:postal_code].to_s.strip.presence,
+        sport_type:     params[:sport_type].to_s.strip.presence,
+        latitude:       params[:latitude].to_f.nonzero?,
+        longitude:      params[:longitude].to_f.nonzero?,
+        from_nominatim: true   # Marque cette venue comme ajoutée via OSM
+      )
+    end
+
+    if venue.persisted?
+      render json: { id: venue.id, name: venue.name, city: venue.city }
+    else
+      render json: { error: venue.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    end
+  end
+
   # GET /venues/search?q=...&lat=...&lon=...
   # Retourne un tableau JSON d'établissements sportifs correspondants
   #

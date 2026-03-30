@@ -186,6 +186,13 @@ class ProfilsController < ApplicationController
     avatar = resolve_avatar
     @profil.avatar.attach(avatar) if avatar.present?
 
+    # Le champ caché "favorite_venue_ids" envoie une string "id1,id2" (géré par Stimulus).
+    # Rails attend un tableau pour l'association has_many → on convertit avant update.
+    venue_ids_raw = params.dig(:profil, :favorite_venue_ids)
+    if venue_ids_raw.is_a?(String)
+      params[:profil][:favorite_venue_ids] = venue_ids_raw.split(",").map(&:to_i).reject(&:zero?)
+    end
+
     if @profil.update(profil_params)
       # 🎮 Vérifier l'achievement "profil complété" après la mise à jour
       AchievementService.new(current_user).check(:profile_updated)
@@ -296,7 +303,9 @@ class ProfilsController < ApplicationController
     # pas un rôle système/admin — Brakeman génère un faux positif sur ce champ.
     params.require(:profil).permit( # brakeman: ignore
       :first_name, :last_name, :address, :description,
-      :level, :phone, :role, :localisation, :time_available, :avatar
+      :level, :phone, :role, :localisation, :time_available, :avatar,
+      :preferred_city,      # Ville préférée pour les pré-filtres
+      favorite_venue_ids: [] # Lieux favoris (multi-select)
     )
   end
 end

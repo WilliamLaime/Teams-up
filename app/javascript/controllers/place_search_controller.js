@@ -361,6 +361,13 @@ export default class extends Controller {
           data-action="click->place-search#selectResult"
           data-full-value="${this.escapeAttr(fullValue)}"
           data-venue-id="${venue.id || ""}"
+          data-venue-name="${this.escapeAttr(venue.name)}"
+          data-venue-city="${this.escapeAttr(venue.city)}"
+          data-venue-address="${this.escapeAttr(venue.address || '')}"
+          data-venue-postal-code="${this.escapeAttr(venue.postal_code || '')}"
+          data-venue-sport-type="${this.escapeAttr(venue.sport_type || '')}"
+          data-venue-lat="${venue.latitude || ''}"
+          data-venue-lon="${venue.longitude || ''}"
         >
           <div class="d-flex align-items-start gap-2">
             <span>${icon}</span>
@@ -384,26 +391,62 @@ export default class extends Controller {
   // ── ACTIONS DE SÉLECTION ────────────────────────────────────────────────────
 
   // Sélection d'un résultat depuis le dropdown
-  selectResult(event) {
+  async selectResult(event) {
     const button = event.target.closest("[data-full-value]")
     if (!button) return
 
     this.inputTarget.value = button.dataset.fullValue
 
-    // venue_id : rempli si résultat BDD, vide si résultat OSM
-    if (this.hasVenueIdTarget) {
-      this.venueIdTarget.value = button.dataset.venueId || ""
-    }
-
     // Notifie les autres contrôleurs (match-form#updatePlace) que la valeur a changé.
-    // Quand JS modifie .value directement, l'événement "input" ne se déclenche pas
-    // automatiquement — il faut le dispatcher manuellement.
     this.inputTarget.dispatchEvent(new Event("input", { bubbles: true }))
-    // Cet événement déclenche aussi place-search#search qui programme un debounce.
-    // On l'annule immédiatement pour éviter que le dropdown se rouvre après la sélection.
+    // Annule le debounce de search() pour éviter que le dropdown se rouvre.
     clearTimeout(this.timeout)
-
     this.hideDropdown()
+
+    if (!this.hasVenueIdTarget) return
+
+    const venueId = button.dataset.venueId
+
+    if (venueId) {
+      // Résultat BDD : on a déjà l'ID
+      this.venueIdTarget.value = venueId
+    } else {
+      // Résultat OSM : on persiste en BDD et on récupère le vrai ID.
+      // Ainsi la venue sera retrouvable dans les autres formulaires (lieux favoris du profil).
+      const id = await this.findOrCreateVenue({
+        name:        button.dataset.venueName,
+        city:        button.dataset.venueCity,
+        address:     button.dataset.venueAddress    || "",
+        postal_code: button.dataset.venuePostalCode || "",
+        sport_type:  button.dataset.venueSportType  || "",
+        latitude:    button.dataset.venueLat        || "",
+        longitude:   button.dataset.venueLon        || ""
+      })
+      this.venueIdTarget.value = id || ""
+    }
+  }
+
+  // Persiste une venue Nominatim en BDD et retourne son ID Rails.
+  // Appelée uniquement pour les résultats OSM (id: null) à la sélection.
+  // En cas d'erreur réseau, retourne null silencieusement (le formulaire continue de fonctionner).
+  async findOrCreateVenue(venueData) {
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content
+      const response = await fetch("/venues/find_or_create", {
+        method:  "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+          "Accept":       "application/json"
+        },
+        body: JSON.stringify(venueData)
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      return data.id || null
+    } catch {
+      return null
+    }
   }
 
   // Validation du texte libre saisi (pas de venue en BDD)

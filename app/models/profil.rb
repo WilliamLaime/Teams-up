@@ -25,6 +25,14 @@ class Profil < ApplicationRecord
   # Niveau et rôle par sport — un enregistrement par sport pratiqué
   has_many :sport_profils, dependent: :destroy
 
+  # Lieux favoris : association through pour les établissements préférés
+  # Un joueur peut ajouter plusieurs venues en favoris pour pré-filtrer les matchs
+  has_many :profil_favorite_venues, dependent: :destroy
+  has_many :favorite_venues, through: :profil_favorite_venues, source: :venue
+
+  # Validation : la ville préférée est optionnelle mais max 100 caractères
+  validates :preferred_city, length: { maximum: 100 }, allow_blank: true
+
   # ─── SYSTÈME XP & NIVEAUX ───────────────────────────────────────────────────
   # Seuils d'XP cumulés pour atteindre chaque niveau
   # Index 0 = Niveau 1 (0 XP), Index 1 = Niveau 2 (100 XP), etc.

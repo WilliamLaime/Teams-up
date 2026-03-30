@@ -100,7 +100,9 @@
                          data-level-filter-target="checkbox"
                          data-action="change->level-filter#change"
                          style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
-                         <%= "checked" if params[:levels]&.include?(level_name) %>>
+                         <%# Pré-coché si filtre URL OU si préfiltre profil actif pour ce niveau %>
+                         <%= "checked" if params[:levels]&.include?(level_name) ||
+                                          (@active_prefilters&.dig(:level) && @prefilter_params[:level] == level_name) %>>
                   <span class="match-badge-level <%= level_css %>" style="font-size:0.72rem; padding:0.2rem 0.6rem; line-height:1; margin:0;"><%= level_name %></span>
                 </label>
               <% end %>
@@ -185,8 +187,9 @@
           <%# Ville %>
           <div class="filter-pill-group">
             <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+            <%# Pré-rempli avec la ville du préfiltre profil si aucun filtre URL actif %>
             <%= f.text_field :place,
-                value: params[:place],
+                value: params[:place].presence || (@active_prefilters&.dig(:city) ? @prefilter_params[:city] : nil),
                 placeholder: "Ville",
                 class: "filter-text-input" %>
           </div>
@@ -217,6 +220,30 @@
         </div>
 
       </div>
+    <% end %>
+
+    <%# ── Indicateur discret : pré-filtres actifs OU désactivés ─────────────── %>
+    <% if !params[:mine].present? %>
+      <% if @active_prefilters&.any? %>
+        <%# Les pré-filtres sont actifs → petite ligne explicative + lien "Voir tout" %>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.1rem 0 0.75rem; display:flex; align-items:center; gap:0.4rem;">
+          <i data-lucide="sparkles" style="width:12px; height:12px; color:#1EDD88; flex-shrink:0;"></i>
+          Résultats pré-filtrés selon votre profil
+          <% if @active_prefilters[:venues] %>
+            (inclut <%= @prefilter_params[:venues].join(", ") %>)
+          <% end %>
+          &nbsp;·&nbsp;
+          <%= link_to "Voir tous les matchs", matches_path(no_prefilter: 1), style: "color:rgba(255,255,255,0.45); text-decoration:underline;" %>
+        </p>
+      <% elsif params[:no_prefilter].present? %>
+        <%# L'user a cliqué "Voir tous les matchs" → proposer de réactiver les pré-filtres %>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.1rem 0 0.75rem; display:flex; align-items:center; gap:0.4rem;">
+          <i data-lucide="sparkles" style="width:12px; height:12px; color:rgba(255,255,255,0.3); flex-shrink:0;"></i>
+          Tous les matchs affichés.
+          &nbsp;·&nbsp;
+          <%= link_to "Filtrer selon mon profil", matches_path, style: "color:rgba(255,255,255,0.45); text-decoration:underline;" %>
+        </p>
+      <% end %>
     <% end %>
 
     <%# ── Grille de matchs ────────────────────────────────────────────────── %>

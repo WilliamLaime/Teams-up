@@ -365,70 +365,7 @@
 
 
       <%# ─────────────────────────────────────────────────────────────────── %>
-      <%# SECTION 2 : Localisation & Contact ───────────────────────────── %>
-      <%# ─────────────────────────────────────────────────────────────────── %>
-
-      <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-        <i data-lucide="map-pin" style="width:14px; height:14px;"></i>
-        Localisation & Contact
-      </div>
-
-      <div class="match-block mb-4">
-        <div class="row g-3">
-
-          <%# Ville / zone géographique %>
-          <div class="col-md-6">
-            <%= f.label :localisation, "Ville", class: "edit-form-label" %>
-            <%= f.text_field :localisation,
-                class: "form-control edit-form-input",
-                placeholder: "Ex: Paris, Lyon..." %>
-          </div>
-
-          <%# Téléphone %>
-          <div class="col-md-6">
-            <%= f.label :phone, "Téléphone", class: "edit-form-label" %>
-            <%= f.text_field :phone,
-                class: "form-control edit-form-input",
-                placeholder: "06 00 00 00 00" %>
-          </div>
-
-          <%# Adresse complète %>
-          <div class="col-12">
-            <%= f.label :address, "Adresse", class: "edit-form-label" %>
-            <%= f.text_field :address,
-                class: "form-control edit-form-input",
-                placeholder: "Ton adresse complète" %>
-          </div>
-
-        </div>
-      </div>
-      <%# / localisation & contact %>
-
-
-      <%# ─────────────────────────────────────────────────────────────────── %>
-      <%# SECTION 3 : À propos ──────────────────────────────────────────── %>
-      <%# ─────────────────────────────────────────────────────────────────── %>
-
-      <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-        <i data-lucide="file-text" style="width:14px; height:14px;"></i>
-        À propos
-      </div>
-
-      <div class="match-block mb-4">
-        <%= f.label :description, "Description", class: "edit-form-label" %>
-        <%= f.text_area :description,
-            class: "form-control edit-form-input",
-            rows: 4,
-            placeholder: "Parle de toi, de ton style de jeu, de tes disponibilités..." %>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
-          Quelques lignes sur toi pour que les autres joueurs te connaissent mieux.
-        </p>
-      </div>
-      <%# / à propos %>
-
-
-      <%# ─────────────────────────────────────────────────────────────────── %>
-      <%# SECTION 4 : Genre ────────────────────────────────────────────── %>
+      <%# SECTION 2 : Genre ────────────────────────────────────────────── %>
       <%# ─────────────────────────────────────────────────────────────────── %>
 
       <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
@@ -478,6 +415,117 @@
         </script>
       </div>
       <%# / genre %>
+
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# SECTION 3 : Localisation & Contact ───────────────────────────── %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+
+      <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+        <i data-lucide="map-pin" style="width:14px; height:14px;"></i>
+        Localisation & Contact
+      </div>
+
+      <div class="match-block mb-4">
+        <div class="row g-3">
+
+          <%# Ville préférée — affichée sur le profil ET utilisée pour pré-filtrer les matchs %>
+          <div class="col-md-6">
+            <%= f.label :preferred_city, "Ville préférée pour jouer", class: "edit-form-label" %>
+            <%= f.text_field :preferred_city,
+                class: "form-control edit-form-input",
+                placeholder: "Ex: Paris, Lyon..." %>
+            <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
+              Sélectionnez une ville pour recevoir les matchs proposés en premier lieu.
+            </p>
+          </div>
+
+          <%# Téléphone %>
+          <div class="col-md-6">
+            <%= f.label :phone, "Téléphone", class: "edit-form-label" %>
+            <%= f.text_field :phone,
+                class: "form-control edit-form-input",
+                placeholder: "06 00 00 00 00" %>
+          </div>
+
+        </div>
+      </div>
+      <%# / localisation & contact %>
+
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# SECTION 3 : Lieux favoris ────────────────────────────────────────── %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+
+      <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+        <i data-lucide="map-pin" style="width:14px; height:14px;"></i>
+        Lieux favoris pour jouer
+      </div>
+
+      <%# Contrôleur Stimulus pour gérer la recherche et ajout/suppression de venues %>
+      <%# position:relative nécessaire pour que le dropdown absolu se positionne dans ce bloc %>
+      <div class="match-block mb-4" data-controller="venue-search" style="position:relative;">
+        <%# Champ caché qui stocke les IDs des venues favorites %>
+        <%= f.hidden_field :favorite_venue_ids, value: profil.favorite_venue_ids.join(","), data: { "venue-search-target": "hiddenInput" } %>
+
+        <%# Affiche les lieux favoris actuels ──────────────────────────────── %>
+        <div data-venue-search-target="selectedVenues" style="margin-bottom:1rem;">
+          <% profil.favorite_venues.each do |venue| %>
+            <div class="badge" style="background-color:rgba(30,221,136,0.2); color:#1EDD88; padding:0.5rem 0.75rem; margin:0.25rem; display:inline-flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
+              🏟️ <%= venue.name %> <span style="color:rgba(255,255,255,0.4);">(<%= venue.city %>)</span>
+              <button type="button"
+                      class="venue-remove-btn"
+                      style="background:none; border:none; color:#1EDD88; cursor:pointer; margin-left:0.3rem; padding:0;"
+                      data-action="click->venue-search#removeVenue"
+                      data-venue-id="<%= venue.id %>">
+                ✕
+              </button>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Champ de recherche ─────────────────────────────────────────────── %>
+        <input type="text"
+               placeholder="Chercher un établissement (ex: Le Five, Paris...)"
+               class="form-control edit-form-input"
+               data-action="keyup->venue-search#search"
+               data-venue-search-target="searchInput"
+               style="margin-bottom:0.5rem;">
+
+        <%# Results dropdown (caché par défaut) ───────────────────────────── %>
+        <%# Pas de classe "dropdown-menu" Bootstrap : celle-ci ajoute pointer-events:none et bloquerait les clics %>
+        <div data-venue-search-target="resultsDropdown"
+             style="display:none; position:absolute; z-index:300; width:100%; max-height:200px; overflow-y:auto; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);" id="venue-search-results">
+          <!-- Dynamiquement rempli par JS -->
+        </div>
+
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
+          Sélectionnez vos 2-3 établissements favoris pour pré-filtrer les matchs.
+        </p>
+      </div>
+      <%# / lieux favoris %>
+
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# SECTION 4 : À propos ──────────────────────────────────────────── %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+
+      <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+        <i data-lucide="file-text" style="width:14px; height:14px;"></i>
+        À propos
+      </div>
+
+      <div class="match-block mb-4">
+        <%= f.label :description, "Description", class: "edit-form-label" %>
+        <%= f.text_area :description,
+            class: "form-control edit-form-input",
+            rows: 4,
+            placeholder: "Parle de toi, de ton style de jeu, de tes disponibilités..." %>
+        <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
+          Quelques lignes sur toi pour que les autres joueurs te connaissent mieux.
+        </p>
+      </div>
+      <%# / à propos %>
 
 
       <%# ─────────────────────────────────────────────────────────────────── %>
