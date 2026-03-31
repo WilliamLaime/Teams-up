@@ -38,7 +38,10 @@ class MatchesController < ApplicationController
       # Si l'user n'a modifié aucun filtre → utiliser ses préférences de profil
       # Sinon → appliquer les filtres qu'il a choisis
       if should_apply_prefilters?
+        # Mémorise le total avant préfiltres pour afficher "X sur Y" dans le banner
+        @total_matches_count = @matches.count
         apply_prefilters
+        @filtered_matches_count = @matches.count
       else
         apply_filters
       end
@@ -285,6 +288,13 @@ class MatchesController < ApplicationController
     elsif current_sport.present?
       @matches = @matches.where(sport_id: current_sport.id)
     end
+
+    # Filtre "Mes lieux" — restreint aux venues favorites de l'utilisateur
+    # Disponible comme filtre manuel pour combiner avec d'autres filtres (date, niveau, etc.)
+    if params[:favorite_venues].present? && user_signed_in?
+      venue_ids = current_user.profil&.favorite_venues&.pluck(:id)
+      @matches = @matches.where(venue_id: venue_ids) if venue_ids&.any?
+    end
   end
 
   # Vérifie si les pré-filtres doivent être appliqués
@@ -303,7 +313,8 @@ class MatchesController < ApplicationController
       params[:date].blank? &&
       params[:time_from].blank? &&
       params[:player_left].blank? &&
-      params[:sport_ids].blank?
+      params[:sport_ids].blank? &&
+      params[:favorite_venues].blank?
   end
 
   # Applique les pré-filtres intelligents basés sur les préférences du profil
@@ -319,31 +330,60 @@ class MatchesController < ApplicationController
     @active_prefilters = {}
     @prefilter_params = {}
 
-    # 1️⃣ Pré-filtre : Ville préférée
-    if profil.preferred_city.present?
+    # 1️⃣ & 2️⃣ Pré-filtres : Ville préférée ET/OU Lieux favoris
+    #
+    # Logique :
+    #   - Les deux renseignés → OR : matchs dans la ville OU dans un lieu favori
+    #     (évite 0 résultats si le lieu favori est dans une autre ville que la ville préférée)
+    #   - Seulement la ville → filtre par ville uniquement
+    #   - Seulement les lieux → filtre par lieux uniquement
+    has_city   = profil.preferred_city.present?
+    has_venues = profil.favorite_venues.any?
+
+    if has_city && has_venues
+      # OR : on regroupe les deux conditions dans un seul WHERE
+      venue_ids = profil.favorite_venues.pluck(:id)
+      @matches = @matches.where(
+        "place ILIKE ? OR venue_id IN (?)",
+        "%#{profil.preferred_city}%",
+        venue_ids
+      )
+      @active_prefilters[:city]   = true
+      @active_prefilters[:venues] = true
+      @prefilter_params[:city]    = profil.preferred_city
+      @prefilter_params[:venues]  = profil.favorite_venues.pluck(:name)
+
+    elsif has_city
       @matches = @matches.by_preferred_city(profil.preferred_city)
       @active_prefilters[:city] = true
-      @prefilter_params[:city] = profil.preferred_city
-    end
+      @prefilter_params[:city]  = profil.preferred_city
 
-    # 2️⃣ Pré-filtre : Lieux favoris (si l'user a en ajouté en favoris)
-    if profil.favorite_venues.any?
+    elsif has_venues
       venue_ids = profil.favorite_venues.pluck(:id)
-      @matches = @matches.by_favorite_venues(venue_ids)
+      @matches  = @matches.by_favorite_venues(venue_ids)
       @active_prefilters[:venues] = true
-      @prefilter_params[:venues] = profil.favorite_venues.pluck(:name)  # Pour affichage
+      @prefilter_params[:venues]  = profil.favorite_venues.pluck(:name)
     end
 
-    # 3️⃣ Pré-filtre : Niveau de compétence pour le sport courant
-    # Seulement si :
-    #   - Un sport est actuellement actif (pas en mode multisport)
-    #   - L'user a renseigné un niveau pour ce sport
-    if current_sport.present? && profil.present?
+    # 3️⃣ Pré-filtre : Sport(s) pratiqués
+    # - Sport actif → filtre sur ce sport + niveau de l'utilisateur
+    # - Mode multisport (aucun sport actif) → filtre sur TOUS les sports pratiqués par l'user
+    #   (évite de voir des matchs de sports qu'il ne pratique pas)
+    if current_sport.present?
+      # Un seul sport actif : filtre aussi par niveau si renseigné
       sport_profil = profil.sport_profils.find_by(sport_id: current_sport.id)
       if sport_profil&.level.present?
         @matches = @matches.by_user_level_for_sports(current_user.id, current_sport.id)
         @active_prefilters[:level] = true
         @prefilter_params[:level] = sport_profil.level
+      end
+    else
+      # Mode multisport : restreindre aux sports que l'user pratique réellement
+      user_sport_ids = current_user.sports.pluck(:id)
+      if user_sport_ids.any?
+        @matches = @matches.where(sport_id: user_sport_ids)
+        @active_prefilters[:sports] = true
+        @prefilter_params[:sports]  = current_user.sports.pluck(:name)
       end
     end
   end

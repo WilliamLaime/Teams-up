@@ -184,18 +184,39 @@
             </div>
           <% end %>
 
-          <%# Ville %>
-          <div class="filter-pill-group">
-            <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+          <%# Ville — avec autocomplétion via city_search_controller %>
+          <%# position:relative nécessaire pour positionner le dropdown absolu dans ce bloc %>
+          <div class="filter-pill-group" data-controller="city-search" style="position:relative;">
+            <i data-lucide="map-pin" style="width:14px;height:14px; flex-shrink:0;"></i>
             <%# Pré-rempli avec la ville du préfiltre profil si aucun filtre URL actif %>
             <%= f.text_field :place,
                 value: params[:place].presence || (@active_prefilters&.dig(:city) ? @prefilter_params[:city] : nil),
                 placeholder: "Ville",
-                class: "filter-text-input" %>
+                class: "filter-text-input",
+                autocomplete: "off",
+                data: {
+                  "city-search-target": "input",
+                  action: "keyup->city-search#search"
+                } %>
+
+            <%# Dropdown de suggestions — caché par défaut, rempli dynamiquement par JS %>
+            <div data-city-search-target="dropdown"
+                 style="display:none; position:absolute; top:100%; left:0; z-index:300; min-width:200px; max-height:200px; overflow-y:auto; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+            </div>
           </div>
 
+          <%# Filtre "Mes lieux favoris" — visible seulement si connecté ET lieux favoris renseignés %>
+          <% if user_signed_in? && current_user.profil&.favorite_venues&.any? %>
+            <label class="filter-pill-group" style="cursor:pointer; user-select:none;">
+              <%= check_box_tag :favorite_venues, "1", params[:favorite_venues].present?,
+                  class: "filter-checkbox",
+                  style: "accent-color:#1EDD88; width:13px; height:13px; cursor:pointer;" %>
+              <span style="font-size:0.8rem; white-space:nowrap;">Mes lieux ⭐</span>
+            </label>
+          <% end %>
+
           <%# Bouton "Effacer" visible seulement si un filtre est actif %>
-          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? %>
+          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? || params[:favorite_venues].present? %>
             <%= link_to matches_path, class: "filter-reset-btn" do %>
               <i data-lucide="x" style="width:13px;height:13px;"></i>
               Effacer
@@ -225,15 +246,55 @@
     <%# ── Indicateur discret : pré-filtres actifs OU désactivés ─────────────── %>
     <% if !params[:mine].present? %>
       <% if @active_prefilters&.any? %>
-        <%# Les pré-filtres sont actifs → petite ligne explicative + lien "Voir tout" %>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.1rem 0 0.75rem; display:flex; align-items:center; gap:0.4rem;">
+        <%# Les pré-filtres sont actifs → badges pour chaque filtre actif + lien "Voir tout" %>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.1rem 0 0.75rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
           <i data-lucide="sparkles" style="width:12px; height:12px; color:#1EDD88; flex-shrink:0;"></i>
-          Résultats pré-filtrés selon votre profil
-          <% if @active_prefilters[:venues] %>
-            (inclut <%= @prefilter_params[:venues].join(", ") %>)
+          <span>Pré-filtrés :</span>
+
+          <%# Badge ville préférée %>
+          <% if @active_prefilters[:city] %>
+            <span style="background:rgba(30,221,136,0.12); color:#1EDD88; border-radius:999px; padding:0.1rem 0.55rem; font-size:0.7rem;">
+              📍 <%= @prefilter_params[:city] %>
+            </span>
           <% end %>
-          &nbsp;·&nbsp;
+
+          <%# Badge lieux favoris (un badge par venue) %>
+          <% if @active_prefilters[:venues] %>
+            <% @prefilter_params[:venues].each do |venue_name| %>
+              <span style="background:rgba(30,221,136,0.12); color:#1EDD88; border-radius:999px; padding:0.1rem 0.55rem; font-size:0.7rem;">
+                🏟️ <%= venue_name %>
+              </span>
+            <% end %>
+          <% end %>
+
+          <%# Badge niveau %>
+          <% if @active_prefilters[:level] %>
+            <span style="background:rgba(30,221,136,0.12); color:#1EDD88; border-radius:999px; padding:0.1rem 0.55rem; font-size:0.7rem;">
+              ⭐ <%= @prefilter_params[:level] %>
+            </span>
+          <% end %>
+
+          <%# Badges sports pratiqués (mode multisport uniquement) %>
+          <% if @active_prefilters[:sports] %>
+            <% @prefilter_params[:sports].each do |sport_name| %>
+              <span style="background:rgba(30,221,136,0.12); color:#1EDD88; border-radius:999px; padding:0.1rem 0.55rem; font-size:0.7rem;">
+                🏅 <%= sport_name %>
+              </span>
+            <% end %>
+          <% end %>
+
+          <%# Compteur : X matchs sur Y total %>
+          <% if @filtered_matches_count && @total_matches_count %>
+            <span style="color:rgba(255,255,255,0.25);">·</span>
+            <span style="font-size:0.7rem; color:rgba(255,255,255,0.35);">
+              <%= @filtered_matches_count %> match<%= @filtered_matches_count > 1 ? "s" : "" %> sur <%= @total_matches_count %>
+            </span>
+          <% end %>
+
+          <span style="color:rgba(255,255,255,0.25);">·</span>
           <%= link_to "Voir tous les matchs", matches_path(no_prefilter: 1), style: "color:rgba(255,255,255,0.45); text-decoration:underline;" %>
+          <span style="color:rgba(255,255,255,0.25);">·</span>
+          <%= link_to "Modifier mes préférences", edit_profil_path(current_user.profil), style: "color:rgba(255,255,255,0.45); text-decoration:underline;" %>
         </p>
       <% elsif params[:no_prefilter].present? %>
         <%# L'user a cliqué "Voir tous les matchs" → proposer de réactiver les pré-filtres %>
@@ -257,10 +318,17 @@
             Tu n'as pas encore de matchs terminés.
           <% elsif params[:mine].present? %>
             Tu n'as aucun match en cours pour l'instant.
+          <% elsif @active_prefilters&.any? %>
+            <%# Préfiltres actifs mais aucun résultat → on guide l'utilisateur %>
+            Aucun match ne correspond à tes préférences de profil.
           <% else %>
             Aucun match ne correspond à ta recherche.
           <% end %>
         </p>
+        <%# Si les préfiltres sont responsables de l'absence de résultats, proposer de les désactiver %>
+        <% if @active_prefilters&.any? %>
+          <%= link_to "Voir tous les matchs", matches_path(no_prefilter: 1), class: "btn btn-outline-secondary mt-2 me-2" %>
+        <% end %>
         <% if user_signed_in? %>
           <%= link_to "Créer un match", new_match_path, class: "btn btn-primary mt-2" %>
         <% end %>
@@ -302,7 +370,7 @@
 
 <%# Auto-submit : date et niveau déclenchent le filtre sans clic sur "Filtrer" %>
 <script>
-  document.querySelectorAll(".filter-date-input, .filter-select").forEach(function(el) {
+  document.querySelectorAll(".filter-date-input, .filter-select, .filter-checkbox").forEach(function(el) {
     el.addEventListener("change", function() {
       document.getElementById("filter-submit-btn").click();
     });

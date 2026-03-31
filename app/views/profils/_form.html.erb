@@ -276,7 +276,7 @@
                   <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">Niveau</p>
 
                   <%# Pills de niveau %>
-                  <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.85rem;">
+                  <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.5rem;">
                     <% ["Débutant", "Intermédiaire", "Avancé"].each do |lvl| %>
                       <button type="button"
                               class="level-pill <%= 'level-pill--active' if sp&.level == lvl %>"
@@ -287,6 +287,11 @@
                       </button>
                     <% end %>
                   </div>
+
+                  <%# Hint : lien entre le niveau et le préfiltre automatique %>
+                  <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0 0 0.85rem;">
+                    ⭐ Ce niveau pré-filtre automatiquement les matchs de ce sport sur la page d'accueil.
+                  </p>
 
                   <%# Label rôle %>
                   <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">
@@ -430,13 +435,26 @@
         <div class="row g-3">
 
           <%# Ville préférée — affichée sur le profil ET utilisée pour pré-filtrer les matchs %>
-          <div class="col-md-6">
+          <%# data-controller="city-search" : active l'autocomplétion Nominatim sur ce champ %>
+          <%# position:relative nécessaire pour que le dropdown absolu se positionne dans ce bloc %>
+          <div class="col-md-6" data-controller="city-search" style="position:relative;">
             <%= f.label :preferred_city, "Ville préférée pour jouer", class: "edit-form-label" %>
             <%= f.text_field :preferred_city,
                 class: "form-control edit-form-input",
-                placeholder: "Ex: Paris, Lyon..." %>
+                placeholder: "Ex: Paris, Lyon...",
+                autocomplete: "off",
+                data: {
+                  "city-search-target": "input",
+                  action: "keyup->city-search#search"
+                } %>
+
+            <%# Dropdown de suggestions — caché par défaut, rempli dynamiquement par JS %>
+            <div data-city-search-target="dropdown"
+                 style="display:none; position:absolute; z-index:300; width:100%; max-height:200px; overflow-y:auto; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+            </div>
+
             <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
-              Sélectionnez une ville pour recevoir les matchs proposés en premier lieu.
+              📍 Les matchs dans cette ville apparaîtront en premier. Se combine avec vos lieux favoris.
             </p>
           </div>
 
@@ -486,7 +504,7 @@
 
         <%# Champ de recherche ─────────────────────────────────────────────── %>
         <input type="text"
-               placeholder="Chercher un établissement (ex: Le Five, Paris...)"
+               placeholder="Chercher un lieu (ex: Le Five, Stade Charlety...)"
                class="form-control edit-form-input"
                data-action="keyup->venue-search#search"
                data-venue-search-target="searchInput"
@@ -500,7 +518,7 @@
         </div>
 
         <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
-          Sélectionnez vos 2-3 établissements favoris pour pré-filtrer les matchs.
+          Sélectionnez vos 2-3 lieux favoris pour pré-filtrer les matchs (salles, terrains, complexes...).
         </p>
       </div>
       <%# / lieux favoris %>
