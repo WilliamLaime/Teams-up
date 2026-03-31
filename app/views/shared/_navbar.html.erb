@@ -152,21 +152,31 @@
                         Lancement instantané
                       </li>
                       <li style="color:rgba(255,255,255,0.75); font-size:0.875rem; display:flex; align-items:center; gap:0.6rem;">
-                        <i data-lucide="wifi-off" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
-                        Disponible même hors connexion
-                      </li>
-                      <li style="color:rgba(255,255,255,0.75); font-size:0.875rem; display:flex; align-items:center; gap:0.6rem;">
                         <i data-lucide="smartphone" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
                         Expérience plein écran
                       </li>
                     </ul>
                   </div>
+                  <%# Instructions spécifiques iOS (Safari ne supporte pas le prompt natif) %>
+                  <div data-pwa-install-target="iosInstructions" style="display:none; padding: 0 1.5rem 1rem;">
+                    <p style="color:rgba(255,255,255,0.55); font-size:0.85rem; line-height:1.6; margin:0; border-top:1px solid rgba(255,255,255,0.1); padding-top:1rem;">
+                      Sur iOS, appuie sur
+                      <strong style="color:rgba(255,255,255,0.85);">Partager</strong>
+                      <i data-lucide="share" style="width:13px;height:13px;color:#1EDD88;vertical-align:middle;"></i>
+                      puis
+                      <strong style="color:rgba(255,255,255,0.85);">Sur l'écran d'accueil</strong>.
+                    </p>
+                  </div>
+
                   <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
                     <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
                             style="color:rgba(255,255,255,0.55); background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:8px 18px;">
                       Plus tard
                     </button>
-                    <button type="button" data-action="click->pwa-install#install"
+                    <%# Bouton principal : caché sur iOS (pas de prompt natif), actif si le navigateur le supporte %>
+                    <button type="button"
+                            data-pwa-install-target="installBtn"
+                            data-action="click->pwa-install#install"
                             class="btn btn-sm d-flex align-items-center gap-2"
                             style="background-color:#1EDD88; color:#111111; border:none; font-weight:700; border-radius:8px; padding:8px 20px;">
                       <i data-lucide="download" style="width:15px;height:15px;"></i>
