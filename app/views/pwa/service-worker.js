@@ -1,11 +1,11 @@
-// ── Service Worker TeamUp ────────────────────────────────────────────────────
+// ── Service Worker Teams-Up ──────────────────────────────────────────────────
 // Ce fichier est enregistré par le layout et tourne en arrière-plan dans le navigateur.
 // Il intercepte les requêtes réseau pour les mettre en cache et permettre un mode offline.
 
 // Nom du cache : incrémenté à "v2" pour forcer l'effacement du cache v1
 // (le cache v1 contenait des pages HTML avec du contenu utilisateur, ce qui causait
 //  l'affichage de photos incorrectes après connexion)
-const CACHE_NAME = "teamup-v2";
+const CACHE_NAME = "teams-up-v2";
 
 // Seule la page offline est pré-cachée (les pages HTML contiennent du contenu
 // spécifique à l'utilisateur connecté → jamais en cache)

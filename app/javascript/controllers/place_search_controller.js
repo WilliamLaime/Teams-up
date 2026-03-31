@@ -199,7 +199,7 @@ export default class extends Controller {
 
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?${params.toString()}`,
-        { headers: { "Accept-Language": "fr", "User-Agent": "TeamUpApp/1.0" } }
+        { headers: { "Accept-Language": "fr", "User-Agent": "TeamsUpApp/1.0" } }
       )
       if (!response.ok) return []
 

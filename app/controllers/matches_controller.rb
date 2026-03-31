@@ -224,7 +224,7 @@ class MatchesController < ApplicationController
     ics_content = <<~ICS
       BEGIN:VCALENDAR
       VERSION:2.0
-      PRODID:-//TeamUp//TeamUp//FR
+      PRODID:-//Teams-Up//Teams-Up//FR
       BEGIN:VEVENT
       UID:match-#{@match.id}@teamup
       DTSTART:#{start_dt.utc.strftime('%Y%m%dT%H%M%SZ')}
