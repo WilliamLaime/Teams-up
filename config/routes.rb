@@ -17,6 +17,9 @@ Rails.application.routes.draw do
   get  "contact", to: "pages#contact",         as: :contact
   post "contact", to: "contact_messages#create"
 
+  # Page partenariat — présente les opportunités de collaboration professionnelle
+  get "partenariat", to: "pages#partenariat", as: :partenariat
+
   # Page Politique de confidentialité (RGPD)
   get "confidentialite", to: "pages#confidentialite", as: :confidentialite
 

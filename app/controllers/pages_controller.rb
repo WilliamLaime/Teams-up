@@ -1,6 +1,6 @@
 class PagesController < ApplicationController
   # Ces pages sont publiques (pas besoin d'être connecté)
-  skip_before_action :authenticate_user!, only: %i[home about contact confidentialite conditions offline]
+  skip_before_action :authenticate_user!, only: %i[home about contact partenariat confidentialite conditions offline]
 
   # Rails 7.1 vérifie au chargement que les actions dans `only:` existent.
   # PagesController n'a pas d'action `index`, donc on désactive les callbacks Pundit.
@@ -20,6 +20,11 @@ class PagesController < ApplicationController
     # Initialise un objet vide pour que form_with puisse construire le formulaire
     # Cet objet sera aussi utilisé pour ré-afficher les erreurs si le POST échoue
     @contact_message = ContactMessage.new
+  end
+
+  def partenariat
+    # Page statique — pas de données à charger
+    # Présente les opportunités de partenariat et renvoie vers /contact pour la prise de contact
   end
 
   def confidentialite

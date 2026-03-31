@@ -1,0 +1,311 @@
+<%# =====================================================
+    PAGE PARTENARIAT
+    Route : GET /partenariat
+    Page publique — présente les opportunités de collaboration
+    Sections : Hero / Chiffres / Pourquoi nous / Types / CTA
+    ===================================================== %>
+
+<div class="partenariat-page">
+
+  <%# ══════════════════════════════════════════════════
+      1. HERO — Accroche principale
+      ══════════════════════════════════════════════════ %>
+  <section class="partenariat-hero">
+    <div class="container">
+      <div class="row align-items-center g-5">
+
+        <%# ── Colonne texte ── %>
+        <div class="col-lg-7">
+
+          <%# Badge orange "Partenariat" %>
+          <div class="partenariat-badge">
+            <i data-lucide="handshake" style="width:14px;height:14px;"></i>
+            Devenir partenaire
+          </div>
+
+          <%# Titre principal — accroche forte %>
+          <h1 class="partenariat-hero-title">
+            Rejoignez une communauté
+            <span class="partenariat-hero-accent">sportive en pleine croissance.</span>
+          </h1>
+
+          <%# Sous-titre %>
+          <p class="partenariat-hero-desc">
+            Teams-Up connecte des milliers de sportifs chaque semaine.
+            Que vous soyez un club, une marque ou un prestataire, construisons
+            quelque chose de fort ensemble.
+          </p>
+
+          <%# Bouton CTA principal %>
+          <%= link_to contact_path, class: "btn partenariat-btn-cta" do %>
+            Nous contacter
+            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+          <% end %>
+
+        </div>
+
+        <%# ── Colonne icônes illustrative ── %>
+        <div class="col-lg-5 d-none d-lg-flex justify-content-center">
+          <div class="partenariat-hero-visual">
+
+            <%# Cercle central avec logo ou icône %>
+            <div class="partenariat-visual-center">
+              <i data-lucide="trophy" style="width:48px;height:48px;"></i>
+            </div>
+
+            <%# Icônes orbitales autour du cercle central %>
+            <div class="partenariat-visual-orbit partenariat-visual-orbit--1">
+              <i data-lucide="users" style="width:22px;height:22px;"></i>
+            </div>
+            <div class="partenariat-visual-orbit partenariat-visual-orbit--2">
+              <i data-lucide="megaphone" style="width:22px;height:22px;"></i>
+            </div>
+            <div class="partenariat-visual-orbit partenariat-visual-orbit--3">
+              <i data-lucide="map-pin" style="width:22px;height:22px;"></i>
+            </div>
+            <div class="partenariat-visual-orbit partenariat-visual-orbit--4">
+              <i data-lucide="star" style="width:22px;height:22px;"></i>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <%# ══════════════════════════════════════════════════
+      2. CHIFFRES CLÉS — Preuve sociale
+      ══════════════════════════════════════════════════ %>
+  <section class="partenariat-stats">
+    <div class="container">
+      <div class="row justify-content-center g-4 text-center">
+
+        <%# Stat 1 : Sportifs actifs %>
+        <div class="col-6 col-md-3">
+          <div class="partenariat-stat-card">
+            <div class="partenariat-stat-number">+2 000</div>
+            <div class="partenariat-stat-label">Sportifs actifs</div>
+          </div>
+        </div>
+
+        <%# Stat 2 : Matchs créés %>
+        <div class="col-6 col-md-3">
+          <div class="partenariat-stat-card">
+            <div class="partenariat-stat-number">+500</div>
+            <div class="partenariat-stat-label">Matchs créés</div>
+          </div>
+        </div>
+
+        <%# Stat 3 : Sports couverts %>
+        <div class="col-6 col-md-3">
+          <div class="partenariat-stat-card">
+            <div class="partenariat-stat-number">7</div>
+            <div class="partenariat-stat-label">Sports couverts</div>
+          </div>
+        </div>
+
+        <%# Stat 4 : Villes %>
+        <div class="col-6 col-md-3">
+          <div class="partenariat-stat-card">
+            <div class="partenariat-stat-number">En croissance</div>
+            <div class="partenariat-stat-label">Partout en France</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <%# ══════════════════════════════════════════════════
+      3. POURQUOI NOUS — Arguments clés
+      ══════════════════════════════════════════════════ %>
+  <section class="partenariat-why">
+    <div class="container">
+
+      <%# Titre de section %>
+      <div class="text-center mb-5">
+        <h2 class="partenariat-section-title">Pourquoi Teams-Up ?</h2>
+        <p class="partenariat-section-subtitle">
+          Une audience engagée, un contexte de pratique sportive positive, une visibilité authentique.
+        </p>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+
+        <%# Argument 1 : Communauté engagée %>
+        <div class="col-md-4">
+          <div class="partenariat-why-card">
+            <div class="partenariat-why-icon">
+              <i data-lucide="users" style="width:26px;height:26px;"></i>
+            </div>
+            <h3 class="partenariat-why-title">Communauté engagée</h3>
+            <p class="partenariat-why-text">
+              Nos utilisateurs sont des passionnés de sport qui créent et rejoignent
+              des matchs régulièrement. Un public actif, pas passif.
+            </p>
+          </div>
+        </div>
+
+        <%# Argument 2 : Visibilité ciblée %>
+        <div class="col-md-4">
+          <div class="partenariat-why-card">
+            <div class="partenariat-why-icon">
+              <i data-lucide="target" style="width:26px;height:26px;"></i>
+            </div>
+            <h3 class="partenariat-why-title">Visibilité ciblée</h3>
+            <p class="partenariat-why-text">
+              Touchez des sportifs par discipline, par ville, par niveau.
+              Un ciblage naturel que la publicité classique ne peut pas offrir.
+            </p>
+          </div>
+        </div>
+
+        <%# Argument 3 : Sur mesure %>
+        <div class="col-md-4">
+          <div class="partenariat-why-card">
+            <div class="partenariat-why-icon">
+              <i data-lucide="sliders-horizontal" style="width:26px;height:26px;"></i>
+            </div>
+            <h3 class="partenariat-why-title">Sur mesure</h3>
+            <p class="partenariat-why-text">
+              Chaque partenariat est unique. On construit ensemble une collaboration
+              adaptée à vos objectifs et à votre budget.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <%# ══════════════════════════════════════════════════
+      4. TYPES DE PARTENARIATS — Qui peut nous rejoindre ?
+      ══════════════════════════════════════════════════ %>
+  <section class="partenariat-types">
+    <div class="container">
+
+      <div class="text-center mb-5">
+        <h2 class="partenariat-section-title">Qui peut devenir partenaire ?</h2>
+        <p class="partenariat-section-subtitle">
+          Clubs, marques, prestataires ou médias — il y a une place pour vous.
+        </p>
+      </div>
+
+      <div class="row g-4">
+
+        <%# Type 1 : Clubs sportifs %>
+        <div class="col-sm-6 col-lg-3">
+          <div class="partenariat-type-card">
+            <%# Numéro et icône %>
+            <div class="partenariat-type-header">
+              <span class="partenariat-type-num">01</span>
+              <div class="partenariat-type-icon">
+                <i data-lucide="shield" style="width:20px;height:20px;"></i>
+              </div>
+            </div>
+            <h4 class="partenariat-type-title">Clubs sportifs</h4>
+            <p class="partenariat-type-text">
+              Recrutez de nouveaux licenciés, remplissez vos créneaux et
+              augmentez la visibilité de votre structure locale.
+            </p>
+          </div>
+        </div>
+
+        <%# Type 2 : Marques & sponsors %>
+        <div class="col-sm-6 col-lg-3">
+          <div class="partenariat-type-card">
+            <div class="partenariat-type-header">
+              <span class="partenariat-type-num">02</span>
+              <div class="partenariat-type-icon">
+                <i data-lucide="badge-check" style="width:20px;height:20px;"></i>
+              </div>
+            </div>
+            <h4 class="partenariat-type-title">Marques & sponsors</h4>
+            <p class="partenariat-type-text">
+              Associez votre marque à une pratique sportive positive.
+              Logo, offres exclusives, codes promo — parlons-en.
+            </p>
+          </div>
+        </div>
+
+        <%# Type 3 : Prestataires sportifs %>
+        <div class="col-sm-6 col-lg-3">
+          <div class="partenariat-type-card">
+            <div class="partenariat-type-header">
+              <span class="partenariat-type-num">03</span>
+              <div class="partenariat-type-icon">
+                <i data-lucide="map-pin" style="width:20px;height:20px;"></i>
+              </div>
+            </div>
+            <h4 class="partenariat-type-title">Prestataires sportifs</h4>
+            <p class="partenariat-type-text">
+              Terrains, salles, équipementiers : référencez vos infrastructures
+              directement sur la plateforme et touchez les joueurs du coin.
+            </p>
+          </div>
+        </div>
+
+        <%# Type 4 : Médias & presse %>
+        <div class="col-sm-6 col-lg-3">
+          <div class="partenariat-type-card">
+            <div class="partenariat-type-header">
+              <span class="partenariat-type-num">04</span>
+              <div class="partenariat-type-icon">
+                <i data-lucide="newspaper" style="width:20px;height:20px;"></i>
+              </div>
+            </div>
+            <h4 class="partenariat-type-title">Médias & presse</h4>
+            <p class="partenariat-type-text">
+              Vous couvrez le sport amateur ou la tech ? On est disponibles
+              pour des interviews, des démos ou des exclusivités.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+
+  <%# ══════════════════════════════════════════════════
+      5. CTA FINAL — Prise de contact
+      ══════════════════════════════════════════════════ %>
+  <section class="partenariat-cta">
+    <div class="container">
+      <div class="partenariat-cta-inner text-center">
+
+        <%# Icône décorative %>
+        <div class="partenariat-cta-icon">
+          <i data-lucide="handshake" style="width:36px;height:36px;"></i>
+        </div>
+
+        <h2 class="partenariat-cta-title">
+          Prêt à nous rejoindre ?
+        </h2>
+
+        <p class="partenariat-cta-desc">
+          Dites-nous qui vous êtes et ce que vous envisagez.<br>
+          On vous répond sous 48h pour explorer les possibilités ensemble.
+        </p>
+
+        <%# Bouton principal vers le formulaire de contact %>
+        <%= link_to contact_path, class: "btn partenariat-btn-cta" do %>
+          Écrire à l'équipe
+          <i data-lucide="send" style="width:16px;height:16px;"></i>
+        <% end %>
+
+        <%# Lien email alternatif %>
+        <p class="partenariat-cta-email">
+          Ou directement :
+          <a href="mailto:contact@team-up.fr" class="partenariat-cta-email-link">contact@team-up.fr</a>
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+</div><%# fin .partenariat-page %>

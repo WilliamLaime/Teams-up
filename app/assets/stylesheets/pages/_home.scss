@@ -606,3 +606,119 @@
     }
   }
 }
+
+
+// ── 5. CONTACTEZ-NOUS ─────────────────────────────
+// Section claire avec deux cartes : pro + utilisateur
+
+.contact-cta-section {
+  background-color: $dark-surface; // fond sombre cohérent avec le reste de la page
+  padding: 80px 0;
+
+  // Titre principal de la section
+  .contact-cta-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  // Sous-titre descriptif
+  .contact-cta-subtitle {
+    color: $dark-muted;
+    font-size: 0.95rem;
+  }
+
+  // ── Carte commune ──
+  // Chaque carte est un <a> (link_to) qui occupe toute la surface cliquable
+  .contact-cta-card {
+    display: flex;           // colonne pour empiler icône / titre / texte / lien
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem 1.75rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08); // bordure discrète
+    background: $dark-card-bg;
+    text-decoration: none;   // supprime le soulignement du lien
+    color: $dark-text;       // texte clair
+    height: 100%;            // les deux cartes font la même hauteur dans le row Bootstrap
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+
+    // Survol : légère élévation + couleur de bordure
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+      color: $dark-text;     // garde la couleur au hover
+    }
+
+    // ── Cercle icône (commun) ──
+    .contact-cta-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;  // carré arrondi pour changer du cercle habituel
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+
+    // Titre de la carte
+    .contact-cta-card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.65rem;
+    }
+
+    // Texte descriptif
+    .contact-cta-card-text {
+      font-size: 0.875rem;
+      color: $dark-muted;
+      line-height: 1.6;
+      flex: 1;               // pousse le lien en bas de la carte (flex colonne)
+      margin-bottom: 1.25rem;
+    }
+
+    // Lien "Nous écrire →" en bas de la carte
+    .contact-cta-card-link {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      // La couleur est définie dans chaque variante ci-dessous
+    }
+  }
+
+  // ── Variante Pro (orange) ──
+  .contact-cta-card--pro {
+
+    // Au survol, la bordure prend la couleur orange
+    &:hover { border-color: rgba($orange, 0.5); }
+
+    // Fond orange très transparent pour le cercle icône
+    .contact-cta-icon--pro {
+      background: rgba($orange, 0.15);
+      i { color: $orange; }
+    }
+
+    // Lien en orange
+    .contact-cta-card-link { color: $orange; }
+  }
+
+  // ── Variante Utilisateur (vert) ──
+  .contact-cta-card--user {
+
+    // Au survol, la bordure prend la couleur verte
+    &:hover { border-color: rgba($green, 0.5); }
+
+    // Fond vert très transparent pour le cercle icône
+    .contact-cta-icon--user {
+      background: rgba($green, 0.15);
+      i { color: $green; }
+    }
+
+    // Lien en vert
+    .contact-cta-card-link { color: $green; }
+  }
+}

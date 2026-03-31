@@ -1,0 +1,401 @@
+// ═══════════════════════════════════════════════════
+//  PAGE PARTENARIAT — _partenariat.scss
+//  Route : GET /partenariat
+//  Thème : sombre, accent orange (couleur pro)
+// ═══════════════════════════════════════════════════
+
+.partenariat-page {
+  background-color: $dark-bg;
+  color: $dark-text;
+
+
+  // ── 1. HERO ────────────────────────────────────────
+
+  .partenariat-hero {
+    padding: 100px 0 90px;
+    position: relative;
+    overflow: hidden;
+
+    // Gradient décoratif orange en haut à droite
+    &::before {
+      content: "";
+      position: absolute;
+      top: -80px;
+      right: -100px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba($orange, 0.1) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    // Le container passe au-dessus du gradient
+    > .container { position: relative; z-index: 1; }
+  }
+
+  // Badge "Devenir partenaire" en haut du hero
+  .partenariat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba($orange, 0.12);
+    color: $orange;
+    border: 1px solid rgba($orange, 0.3);
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+
+    // L'icône Lucide hérite la couleur orange
+    i { color: $orange; }
+  }
+
+  // Titre principal du hero
+  .partenariat-hero-title {
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+    margin-bottom: 1.25rem;
+  }
+
+  // Mot(s) en accent orange dans le titre
+  .partenariat-hero-accent {
+    color: $orange;
+  }
+
+  // Description sous le titre
+  .partenariat-hero-desc {
+    font-size: 1rem;
+    color: $dark-muted;
+    line-height: 1.7;
+    max-width: 520px;
+    margin-bottom: 2rem;
+  }
+
+  // Bouton CTA orange (partagé hero + section finale)
+  .partenariat-btn-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: $orange;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: 8px;
+    border: none;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      background: darken($orange, 8%);
+      color: #fff;
+      transform: translateY(-2px); // légère élévation au survol
+    }
+
+    i { color: #fff; }
+  }
+
+  // ── Visuel décoratif côté droit du hero ──────────
+  // Cercle central + 4 icônes en orbite
+
+  .partenariat-hero-visual {
+    position: relative;
+    width: 280px;
+    height: 280px;
+  }
+
+  // Cercle central avec l'icône trophée
+  .partenariat-visual-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    background: rgba($orange, 0.15);
+    border: 2px solid rgba($orange, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i { color: $orange; }
+  }
+
+  // Icônes en orbite autour du cercle
+  // Chacune est positionnée à un angle différent autour du centre
+  .partenariat-visual-orbit {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    background: $dark-surface;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i { color: $dark-muted; }
+
+    // Orbit 1 : en haut
+    &--1 { top: 10px;  left: 50%; transform: translateX(-50%); }
+    // Orbit 2 : à droite
+    &--2 { top: 50%;  right: 10px; transform: translateY(-50%); }
+    // Orbit 3 : en bas
+    &--3 { bottom: 10px; left: 50%; transform: translateX(-50%); }
+    // Orbit 4 : à gauche
+    &--4 { top: 50%; left: 10px; transform: translateY(-50%); }
+  }
+
+
+  // ── 2. CHIFFRES CLÉS ─────────────────────────────
+
+  .partenariat-stats {
+    background: $dark-surface; // fond légèrement plus clair pour créer une séparation visuelle
+    padding: 60px 0;
+  }
+
+  // Chaque carte de stat
+  .partenariat-stat-card {
+    padding: 1.5rem 1rem;
+  }
+
+  // Le chiffre en grand — orange pour l'impact
+  .partenariat-stat-number {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 800;
+    color: $orange;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  // Label sous le chiffre
+  .partenariat-stat-label {
+    font-size: 0.85rem;
+    color: $dark-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+
+  // ── 3. POURQUOI NOUS ─────────────────────────────
+
+  .partenariat-why {
+    padding: 80px 0;
+    background: $dark-bg;
+  }
+
+  // Titre de section générique (réutilisé dans plusieurs sections)
+  .partenariat-section-title {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  // Sous-titre de section générique
+  .partenariat-section-subtitle {
+    font-size: 0.95rem;
+    color: $dark-muted;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  // Carte "Pourquoi nous"
+  .partenariat-why-card {
+    background: $dark-card-bg;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    height: 100%;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      border-color: rgba($orange, 0.35);
+      transform: translateY(-4px);
+    }
+  }
+
+  // Cercle avec icône — orange
+  .partenariat-why-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba($orange, 0.12);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+
+    i { color: $orange; }
+  }
+
+  .partenariat-why-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.6rem;
+  }
+
+  .partenariat-why-text {
+    font-size: 0.875rem;
+    color: $dark-muted;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+
+  // ── 4. TYPES DE PARTENARIATS ─────────────────────
+
+  .partenariat-types {
+    background: $dark-surface;
+    padding: 80px 0;
+  }
+
+  // Carte type de partenariat
+  .partenariat-type-card {
+    background: $dark-card-bg;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    padding: 1.75rem 1.5rem;
+    height: 100%;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+      border-color: rgba($orange, 0.35);
+      transform: translateY(-3px);
+    }
+  }
+
+  // Ligne haute : numéro + icône côte à côte
+  .partenariat-type-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  // Numéro en grand — grisé pour rester discret
+  .partenariat-type-num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.08); // très discret, juste décoratif
+    line-height: 1;
+  }
+
+  // Cercle icône petit
+  .partenariat-type-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba($orange, 0.12);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i { color: $orange; }
+  }
+
+  .partenariat-type-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  .partenariat-type-text {
+    font-size: 0.85rem;
+    color: $dark-muted;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+
+  // ── 5. CTA FINAL ─────────────────────────────────
+
+  .partenariat-cta {
+    padding: 80px 0 100px;
+    background: $dark-bg;
+  }
+
+  // Bloc centré avec fond légèrement encadré
+  .partenariat-cta-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    background: $dark-card-bg;
+    border: 1px solid rgba($orange, 0.2);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+
+    // Gradient décoratif derrière le bloc
+    &::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba($orange, 0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+  }
+
+  // Cercle icône central au-dessus du titre
+  .partenariat-cta-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba($orange, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    position: relative; // passe au-dessus du ::before
+
+    i { color: $orange; }
+  }
+
+  .partenariat-cta-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.75rem;
+    position: relative;
+  }
+
+  .partenariat-cta-desc {
+    font-size: 0.95rem;
+    color: $dark-muted;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+
+  // Lien email alternatif sous le bouton
+  .partenariat-cta-email {
+    font-size: 0.85rem;
+    color: $dark-muted;
+    margin-top: 1.25rem;
+    margin-bottom: 0;
+    position: relative;
+  }
+
+  .partenariat-cta-email-link {
+    color: $orange;
+    text-decoration: none;
+
+    &:hover {
+      color: lighten($orange, 8%);
+      text-decoration: underline;
+    }
+  }
+
+} // fin .partenariat-page
