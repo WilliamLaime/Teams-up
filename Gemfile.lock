@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/heartcombo/simple_form.git
-  revision: 55bec8024c3b9e7490e48fd127ae66cc122ff9a9
+  revision: f28f208c2e429a7d094f4594e600b575e9181346
   specs:
     simple_form (5.4.1)
       actionpack (>= 7.0)
@@ -99,7 +99,7 @@ GEM
     bcrypt_pbkdf (1.1.2)
     bcrypt_pbkdf (1.1.2-arm64-darwin)
     bcrypt_pbkdf (1.1.2-x86_64-darwin)
-    bigdecimal (4.0.1)
+    bigdecimal (4.1.0)
     bindex (0.8.1)
     bootsnap (1.23.0)
       msgpack (~> 1.2)
@@ -197,7 +197,7 @@ GEM
     jbuilder (2.14.1)
       actionview (>= 7.0.0)
       activesupport (>= 7.0.0)
-    json (2.19.2)
+    json (2.19.3)
     json-schema (6.2.0)
       addressable (~> 2.8)
       bigdecimal (>= 3.1, < 5)
@@ -591,7 +591,7 @@ CHECKSUMS
   bcrypt_pbkdf (1.1.2) sha256=c2414c23ce66869b3eb9f643d6a3374d8322dfb5078125c82792304c10b94cf6
   bcrypt_pbkdf (1.1.2-arm64-darwin) sha256=afdd6feb6ed5a97b8e44caacb3f2d641b98af78e6a516d4a3520b69af5cf9fea
   bcrypt_pbkdf (1.1.2-x86_64-darwin) sha256=35f5639d0058e6c2cc2f856f9c0b14080543268d3047abe6bc81c513093caa0e
-  bigdecimal (4.0.1) sha256=8b07d3d065a9f921c80ceaea7c9d4ae596697295b584c296fe599dd0ad01c4a7
+  bigdecimal (4.1.0) sha256=6dc07767aa3dc456ccd48e7ae70a07b474e9afd7c5bc576f80bd6da5c8dd6cae
   bindex (0.8.1) sha256=7b1ecc9dc539ed8bccfc8cb4d2732046227b09d6f37582ff12e50a5047ceb17e
   bootsnap (1.23.0) sha256=c1254f458d58558b58be0f8eb8f6eec2821456785b7cdd1e16248e2020d3f214
   bootstrap (5.3.8) sha256=1c23b06df24ec28a0058ad90a0da93e260d2c0a5c453d7087f6bad428464742f
@@ -638,7 +638,7 @@ CHECKSUMS
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   irb (1.17.0) sha256=168c4ddb93d8a361a045c41d92b2952c7a118fa73f23fe14e55609eb7a863aae
   jbuilder (2.14.1) sha256=4eb26376ff60ef100cb4fd6fd7533cd271f9998327e86adf20fd8c0e69fabb42
-  json (2.19.2) sha256=e7e1bd318b2c37c4ceee2444841c86539bc462e81f40d134cf97826cb14e83cf
+  json (2.19.3) sha256=289b0bb53052a1fa8c34ab33cc750b659ba14a5c45f3fcf4b18762dc67c78646
   json-schema (6.2.0) sha256=e8bff46ed845a22c1ab2bd0d7eccf831c01fe23bb3920caa4c74db4306813666
   jwt (3.1.2) sha256=af6991f19a6bb4060d618d9add7a66f0eeb005ac0bc017cd01f63b42e122d535
   kamal (2.11.0) sha256=1408864425e0dec7e0a14d712a3b13f614e9f3a425b7661d3f9d287a51d7dd75
