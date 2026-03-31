@@ -1,6 +1,6 @@
 <%# ── Navigation par onglets de l'espace Admin ──────────────────────────── %>
 <%# Partial partagé entre toutes les pages admin %>
-<%# Paramètre attendu : active_tab — soit :dashboard soit :formulaires %>
+<%# Paramètre attendu : active_tab — :dashboard, :formulaires ou :security %>
 
 <%# L'abonnement turbo_stream_from "admin_contact_messages" est dans _navbar.html.erb
     (conditionnel if current_user&.admin?) pour éviter les doublons qui neutralisent
@@ -26,6 +26,13 @@
       <span id="admin-nav-unread-badge">
         <%= render "admin/shared/admin_unread_badge" %>
       </span>
+    <% end %>
+
+    <%# ── Onglet Sécurité (logs de connexions et d'actions suspectes) ── %>
+    <%= link_to admin_security_logs_path,
+                class: "admin-nav-tab #{active_tab == :security ? "admin-nav-tab--active" : ""}" do %>
+      <i data-lucide="shield-alert" style="width:15px; height:15px;"></i>
+      Sécurité
     <% end %>
 
   </div>

@@ -63,8 +63,21 @@ module Users
         return
       end
 
+      # Vérifie le captcha AVANT de créer le compte
+      # Si le captcha échoue, on réaffiche le formulaire avec une erreur
+      unless verify_hcaptcha
+        build_resource(sign_up_params)
+        flash.now[:alert] = "Vérification captcha échouée. Veuillez réessayer."
+        clean_up_passwords resource
+        respond_with resource
+        return
+      end
+
       super do |user|
         if user.persisted?
+          # Log de sécurité : inscription réussie
+          SecurityLog.log("signup", request, user: user)
+
           profil_attrs = {
             first_name: sign_up_params[:first_name],
             last_name: sign_up_params[:last_name]

@@ -56,6 +56,8 @@ gem "simple_form", github: "heartcombo/simple_form"
 gem "sassc-rails"
 gem "pundit"
 gem "rack-attack" # Protection contre le brute force et le spam
+gem "hcaptcha"    # Widget captcha pour protéger les formulaires contre les bots
+gem "pagy", "~> 9.0"  # Pagination légère pour les tableaux admin (v9 = dernière version avec Pagy::Backend/Frontend)
 gem "active_storage_validations" # Validation du type et de la taille des fichiers uploadés
 gem "valid_email2" # Validation format + existence MX record des emails
 gem "csv"

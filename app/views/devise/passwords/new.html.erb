@@ -27,6 +27,11 @@
                     input_html: { autocomplete: "email", placeholder: "votre@email.com" } %>
       </div>
 
+      <%# Widget hcaptcha — protège le formulaire contre les bots (spam d'emails de reset) %>
+      <div class="mb-3 d-flex justify-content-center">
+        <%= hcaptcha_tags %>
+      </div>
+
       <%# Bouton envoi %>
       <div class="form-actions">
         <%= f.button :submit, "Envoyer le lien de réinitialisation" %>

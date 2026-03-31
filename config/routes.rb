@@ -1,8 +1,10 @@
 Rails.application.routes.draw do
   # controllers: indique à Devise d'utiliser notre controller personnalisé pour l'inscription
   devise_for :users, controllers: {
-    registrations:       "users/registrations",      # Controller personnalisé pour l'inscription
-    omniauth_callbacks:  "users/omniauth_callbacks"  # Controller pour gérer le retour de Google OAuth
+    registrations:      "users/registrations",      # Controller personnalisé pour l'inscription
+    sessions:           "users/sessions",           # Controller personnalisé pour log sécurité + captcha connexion
+    passwords:          "users/passwords",          # Controller personnalisé pour log sécurité + captcha reset
+    omniauth_callbacks: "users/omniauth_callbacks"  # Controller pour gérer le retour de Google OAuth
   }
 
   # Page d'accueil
@@ -137,6 +139,10 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: "dashboard#show"
     resource :dashboard, only: [:show]
+
+    # Logs de sécurité (connexions, échecs, blocages rack-attack)
+    # GET /admin/security_logs => tableau avec filtres par type et date
+    resources :security_logs, only: [:index]
 
     # Messages reçus via le formulaire /contact
     # GET  /admin/contact_messages          => liste tous les messages

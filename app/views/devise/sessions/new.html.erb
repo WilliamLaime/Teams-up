@@ -44,6 +44,12 @@
         <%= f.input :remember_me, as: :boolean if devise_mapping.rememberable? %>
       </div>
 
+      <%# Widget hcaptcha — protège le formulaire contre les bots automatisés %>
+      <%# En développement avec les clés de test, aucun challenge n'est affiché %>
+      <div class="mb-3 d-flex justify-content-center">
+        <%= hcaptcha_tags %>
+      </div>
+
       <%# Bouton de soumission — centré, taille auto %>
       <div class="form-actions form-actions--center mt-3">
         <%= f.button :submit, "Se connecter" %>

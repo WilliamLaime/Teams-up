@@ -18,11 +18,14 @@ Rails.application.configure do
 
     # Scripts : notre serveur + scripts inline (Stimulus/Turbo en ont besoin)
     # + unpkg.com pour la librairie d'icônes Lucide utilisée dans les vues
-    policy.script_src :self, :unsafe_inline, "https://unpkg.com"
+    # + hcaptcha.com et newassets.hcaptcha.com pour le widget captcha
+    policy.script_src :self, :unsafe_inline, "https://unpkg.com",
+                      "https://hcaptcha.com", "https://newassets.hcaptcha.com"
 
     # Styles : notre serveur + styles inline (Bootstrap en a besoin)
     # + Google Fonts pour charger les polices Nunito et Bebas Neue
-    policy.style_src :self, :unsafe_inline, "https://fonts.googleapis.com"
+    # + hcaptcha.com pour les styles du widget captcha
+    policy.style_src :self, :unsafe_inline, "https://fonts.googleapis.com", "https://hcaptcha.com"
 
     # Images : notre serveur + Cloudinary (avatars/photos) + Google (avatars OAuth)
     # + data: (images encodées en base64 parfois utilisées par Bootstrap)
@@ -38,14 +41,18 @@ Rails.application.configure do
     policy.font_src :self, :data, "https://fonts.gstatic.com"
 
     # Connexions réseau (AJAX, fetch, WebSocket) : notre serveur + Google OAuth
+    # + hcaptcha.com pour la vérification du captcha
     policy.connect_src :self,
                        "https://accounts.google.com",
                        "https://oauth2.googleapis.com",
-                       "https://unpkg.com",         # source maps de Lucide (icônes)
-                       "https://nominatim.openstreetmap.org" # recherche de lieux (création de match)
+                       "https://unpkg.com",                   # source maps de Lucide (icônes)
+                       "https://nominatim.openstreetmap.org", # recherche de lieux (création de match)
+                       "https://hcaptcha.com"                 # vérification captcha
 
     # Frames : Google OAuth + Google Maps (carte intégrée dans les pages de match)
-    policy.frame_src "https://accounts.google.com", "https://maps.google.com", "https://www.google.com"
+    # + newassets.hcaptcha.com pour le challenge hcaptcha (affiché dans une iframe)
+    policy.frame_src "https://accounts.google.com", "https://maps.google.com", "https://www.google.com",
+                     "https://newassets.hcaptcha.com"
 
     # Objets embarqués (Flash, etc.) : rien d'autorisé
     policy.object_src :none

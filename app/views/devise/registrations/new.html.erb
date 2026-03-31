@@ -386,6 +386,11 @@
             </div>
           </div>
 
+          <%# Widget hcaptcha — protège le formulaire d'inscription contre les bots %>
+          <div class="mb-3 d-flex justify-content-center">
+            <%= hcaptcha_tags %>
+          </div>
+
           <%# ── Bouton S'inscrire + lien Se connecter sous les inputs ──────── %>
           <div class="form-actions mt-3">
             <%= f.button :submit, "S'inscrire" %>

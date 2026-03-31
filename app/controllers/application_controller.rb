@@ -62,7 +62,9 @@ class ApplicationController < ActionController::Base
 
   # Hook Devise : appelé automatiquement après chaque connexion réussie
   # On pose un flag en session pour déclencher la modal au prochain chargement de page
+  # On enregistre aussi un log de sécurité
   def after_sign_in_path_for(resource)
+    SecurityLog.log("login_success", request, user: resource)
     session[:show_review_modal] = true
     super
   end

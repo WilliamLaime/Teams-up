@@ -14,6 +14,9 @@ module Users
       @user = User.from_omniauth(request.env["omniauth.auth"])
 
       if @user.persisted?
+        # Log de sécurité : connexion Google réussie
+        SecurityLog.log("google_login", request, user: @user)
+
         # L'utilisateur a bien été trouvé ou créé → on le connecte
         sign_in_and_redirect @user, event: :authentication
 

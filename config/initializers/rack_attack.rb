@@ -100,6 +100,39 @@ class Rack::Attack
 
 
   # -----------------------------------------------------------------------
+  # Notification Rack::Attack → SecurityLog
+  #
+  # Quand rack-attack bloque une requête (throttle déclenché), il publie
+  # un événement ActiveSupport::Notifications que l'on peut écouter.
+  # On crée un SecurityLog pour chaque blocage.
+  #
+  # IMPORTANT : rack-attack s'exécute dans le middleware, AVANT Rails.
+  # On utilise un Thread + connection_pool.with_connection pour éviter
+  # de bloquer le middleware et de fuir des connexions ActiveRecord.
+  # -----------------------------------------------------------------------
+  ActiveSupport::Notifications.subscribe("throttle.rack_attack") do |_name, _start, _finish, _id, payload|
+    req = payload[:request]
+
+    # On crée le log dans un thread séparé pour ne pas ralentir rack-attack
+    Thread.new do
+      ActiveRecord::Base.connection_pool.with_connection do
+        SecurityLog.create!(
+          event_type: "rack_attack_throttle",
+          ip_address: req.ip,
+          user_agent: req.user_agent,
+          details:    {
+            throttle: req.env["rack.attack.matched"],  # ex: "logins/ip"
+            path:     req.path                          # ex: "/users/sign_in"
+          }
+        )
+      end
+    rescue => e
+      Rails.logger.error("[SecurityLog] Rack-attack hook error : #{e.message}")
+    end
+  end
+
+
+  # -----------------------------------------------------------------------
   # Réponse personnalisée pour les requêtes bloquées (HTTP 429)
   #
   # Par défaut rack-attack retourne un body vide. On renvoie un message
