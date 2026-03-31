@@ -2,66 +2,85 @@
 // Ce fichier est enregistré par le layout et tourne en arrière-plan dans le navigateur.
 // Il intercepte les requêtes réseau pour les mettre en cache et permettre un mode offline.
 
-// Nom du cache : à changer quand on veut forcer un rafraîchissement du cache
-const CACHE_NAME = "teamup-v1";
+// Nom du cache : incrémenté à "v2" pour forcer l'effacement du cache v1
+// (le cache v1 contenait des pages HTML avec du contenu utilisateur, ce qui causait
+//  l'affichage de photos incorrectes après connexion)
+const CACHE_NAME = "teamup-v2";
 
-// Pages à pré-cacher dès l'installation du service worker
-const PAGES_TO_PRECACHE = ["/", "/offline"];
+// Seule la page offline est pré-cachée (les pages HTML contiennent du contenu
+// spécifique à l'utilisateur connecté → jamais en cache)
+const PAGES_TO_PRECACHE = ["/offline"];
 
 // ── Événement "install" ───────────────────────────────────────────────────────
 // Déclenché une seule fois quand le service worker est installé pour la 1ère fois.
-// On en profite pour mettre en cache les pages essentielles.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // addAll télécharge et stocke les pages dans le cache
       return cache.addAll(PAGES_TO_PRECACHE);
     })
   );
-  // skipWaiting : le nouveau SW prend le contrôle immédiatement sans attendre
   self.skipWaiting();
 });
 
 // ── Événement "activate" ─────────────────────────────────────────────────────
-// Déclenché quand le SW devient actif (après install).
-// On supprime les anciens caches pour libérer de l'espace.
+// On supprime tous les anciens caches (notamment le v1 qui contenait des pages HTML).
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME) // on garde seulement le cache actuel
-          .map((name) => caches.delete(name))     // on supprime les anciens caches
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
       );
     })
   );
-  // clients.claim : le SW prend immédiatement le contrôle des onglets ouverts
   self.clients.claim();
 });
 
 // ── Événement "fetch" ────────────────────────────────────────────────────────
-// Déclenché à chaque requête réseau de l'app (pages, images, CSS, JS...).
-// Stratégie : Network First → on essaie le réseau, et si ça échoue (offline),
-// on retourne la réponse en cache.
+// Stratégie différenciée selon le type de requête :
+//   • Navigations HTML        → Network Only (toujours fraîche, jamais en cache)
+//   • ActiveStorage / uploads → ignoré (géré directement par le navigateur)
+//   • Assets statiques (JS/CSS/images de l'app) → Network First avec fallback cache
 self.addEventListener("fetch", (event) => {
-  // On ignore les requêtes non-GET (POST, PATCH, DELETE...)
-  // Ces requêtes ne peuvent pas être mises en cache de façon simple
+  // On ignore les requêtes non-GET
   if (event.request.method !== "GET") return;
 
-  // On ignore les connexions WebSocket d'ActionCable (Turbo Streams / chat)
-  // car elles ne sont pas des requêtes HTTP classiques
+  // On ignore les WebSockets ActionCable
   if (event.request.url.includes("/cable")) return;
 
-  // On ignore les requêtes vers d'autres domaines (ex: CDN Lucide Icons)
+  // On ignore les requêtes vers d'autres domaines (Cloudinary, CDN...)
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // ── CAS 1 : Navigations (pages HTML) ─────────────────────────────────────
+  // Les pages HTML contiennent du contenu propre à l'utilisateur connecté
+  // (avatar, nom, notifications...). On ne les met JAMAIS en cache pour éviter
+  // d'afficher du contenu périmé (ex: photo de profil incorrecte après connexion).
+  // En cas d'échec réseau → on renvoie la page offline.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match("/offline"))
+    );
+    return;
+  }
+
+  // ── CAS 2 : ActiveStorage blobs (photos uploadées par les utilisateurs) ───
+  // Ces URLs sont dynamiques et spécifiques à chaque utilisateur.
+  // On laisse le navigateur les gérer directement sans passer par le cache SW.
+  if (url.pathname.startsWith("/rails/active_storage/")) {
+    return; // le navigateur gère la requête normalement
+  }
+
+  // ── CAS 3 : Assets statiques (JS, CSS, fonts, images de l'app) ───────────
+  // Network First : on essaie le réseau, on met en cache si succès.
+  // En cas d'échec réseau → on utilise le cache (mode offline).
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Requête réseau réussie → on met la réponse en cache pour usage futur
+        // Succès réseau → on met en cache pour usage offline futur
         if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone(); // on clone car le body ne peut être lu qu'une fois
+          const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
           });
@@ -70,14 +89,7 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => {
         // Réseau indisponible → on cherche dans le cache
-        return caches.match(event.request).then((cachedResponse) => {
-          // Si la page est en cache, on la retourne
-          if (cachedResponse) return cachedResponse;
-          // Sinon, si c'est une navigation (page HTML), on affiche la page offline
-          if (event.request.mode === "navigate") {
-            return caches.match("/offline");
-          }
-        });
+        return caches.match(event.request);
       })
   );
 });
