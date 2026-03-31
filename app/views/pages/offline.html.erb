@@ -1,0 +1,36 @@
+<%# Page affichée automatiquement par le service worker quand l'utilisateur est hors connexion %>
+<%# Elle est mise en cache au lancement de l'app, donc disponible même sans réseau %>
+
+<div class="container d-flex flex-column align-items-center justify-content-center text-center"
+     style="min-height: 70vh; gap: 1.5rem;">
+
+  <%# Icône principale %>
+  <i data-lucide="wifi-off"
+     style="width:64px; height:64px; color: var(--color-primary); opacity:0.8;"></i>
+
+  <%# Titre %>
+  <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--color-dark);">
+    Vous êtes hors ligne
+  </h1>
+
+  <%# Message explicatif %>
+  <p style="color: var(--color-dark); opacity: 0.6; max-width: 360px; line-height: 1.6;">
+    Impossible de charger cette page. Vérifiez votre connexion internet et réessayez.
+  </p>
+
+  <%# Bouton "Réessayer" — recharge la page courante %>
+  <button onclick="window.location.reload()"
+          class="btn btn-primary px-4 d-flex align-items-center gap-2">
+    <i data-lucide="refresh-cw" style="width:16px; height:16px;"></i>
+    Réessayer
+  </button>
+
+  <%# Retour à l'accueil (déjà mise en cache par le service worker) %>
+  <%= link_to root_path,
+      class: "btn btn-link d-flex align-items-center gap-1",
+      style: "color: var(--color-primary); text-decoration: none; font-size: 0.9rem;" do %>
+    <i data-lucide="home" style="width:14px; height:14px;"></i>
+    Retour à l'accueil
+  <% end %>
+
+</div>

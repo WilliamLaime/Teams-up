@@ -11,8 +11,21 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+    <%# ── PWA : manifeste + couleur de thème ──────────────────────────────── %>
+    <%# Le manifeste dit au navigateur que l'app est installable (icône, nom, couleurs) %>
+    <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+    <%# theme-color : colore la barre de statut/navigateur sur mobile %>
+    <meta name="theme-color" content="#111111">
+
+    <%# ── Enregistrement du Service Worker ─────────────────────────────────
+        Le service worker permet : cache offline, fond de préchargement.
+        On l'enregistre uniquement si le navigateur supporte l'API. %>
+    <%= javascript_tag nonce: true do %>
+      if ("serviceWorker" in navigator) {
+        // Enregistre le SW avec la portée "/" = toutes les pages du site
+        navigator.serviceWorker.register("<%= pwa_service_worker_path %>", { scope: "/" });
+      }
+    <% end %>
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>

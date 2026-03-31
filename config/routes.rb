@@ -157,6 +157,16 @@ Rails.application.routes.draw do
   # Vérification de santé de l'application
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # ── Routes PWA ────────────────────────────────────────────────────────────
+  # /manifest.json   → renvoie le fichier app/views/pwa/manifest.json.erb (Content-Type: JSON)
+  # /service-worker  → renvoie le fichier app/views/pwa/service-worker.js (Content-Type: JS)
+  # On utilise notre propre PwaController car rails/pwa ne définit pas le bon format
+  get "manifest"       => "pwa#manifest",       as: :pwa_manifest
+  get "service-worker" => "pwa#service_worker", as: :pwa_service_worker
+
+  # Page hors-ligne : affichée par le service worker quand l'utilisateur est offline
+  get "offline", to: "pages#offline", as: :offline
+
   # ── Pages d'erreur personnalisées ──────────────────────────────────────────
   # Ces routes sont utilisées par config.exceptions_app = routes (dans application.rb)
   # Rails redirige automatiquement les erreurs vers ces URLs selon le code HTTP

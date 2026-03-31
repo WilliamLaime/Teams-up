@@ -1,6 +1,6 @@
 class PagesController < ApplicationController
   # Ces pages sont publiques (pas besoin d'être connecté)
-  skip_before_action :authenticate_user!, only: %i[home about contact confidentialite conditions]
+  skip_before_action :authenticate_user!, only: %i[home about contact confidentialite conditions offline]
 
   # Rails 7.1 vérifie au chargement que les actions dans `only:` existent.
   # PagesController n'a pas d'action `index`, donc on désactive les callbacks Pundit.
@@ -9,6 +9,11 @@ class PagesController < ApplicationController
 
   def about
     # Pas de données à charger — page statique
+  end
+
+  def offline
+    # Page affichée par le service worker quand l'utilisateur est hors connexion
+    # Le service worker redirige automatiquement ici quand le réseau est coupé
   end
 
   def contact

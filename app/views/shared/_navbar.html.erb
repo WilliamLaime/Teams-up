@@ -99,11 +99,107 @@
 
       <% if user_signed_in? %>
 
-        <%# Bouton "Créer un match" — desktop uniquement %>
-        <div class="d-none d-lg-block">
-          <%= link_to new_match_path, class: "btn btn-primary btn-sm px-3 btn-cta-primary d-flex align-items-center gap-1" do %>
-            Créer un match
-          <% end %>
+        <%# ── Bouton "Installer l'app" PWA ──────────────────────────────────
+            Caché par défaut, affiché automatiquement si le navigateur détecte
+            que l'app est installable (événement beforeinstallprompt).
+            Style : bouton vert (couleur principale de la charte) pour le rendre visible. %>
+        <%# ── Bouton "Installer l'app" PWA + modale personnalisée ──────────────
+            data-controller="pwa-install" : active le controller Stimulus
+            Le bouton ouvre notre modale custom (au lieu du prompt Chrome directement).
+            La modale custom s'affiche, et quand l'user clique "Installer" dedans,
+            on déclenche le prompt natif Chrome. %>
+        <%# ── Bouton "Installer l'app" PWA — toujours visible pour les connectés ──
+            Au clic : si déjà installé sur cet appareil → modale "déjà installé"
+                      sinon → modale d'installation normale %>
+        <div data-controller="pwa-install">
+
+          <%# Bouton toujours visible (mobile + desktop) %>
+          <button data-pwa-install-target="button"
+                  data-action="click->pwa-install#openModal"
+                  class="btn btn-sm d-flex align-items-center gap-2"
+                  style="background-color:#1EDD88; color:#111111; border:none; font-weight:400; font-size:0.8rem; border-radius:8px; padding:6px 14px;"
+                  title="Installer l'application sur votre appareil">
+            <i data-lucide="download" style="width:14px;height:14px;"></i>
+            Installer l'app
+          </button>
+
+          <%# ── Modale unique avec deux états gérés par Stimulus ──────────────
+              État 1 (installable)    : titre + avantages + bouton Installer
+              État 2 (déjà installé) : message informatif + bouton Fermer %>
+          <div data-pwa-install-target="modal"
+               class="modal fade" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content" style="background:#1a1c1a; border:1px solid rgba(30,221,136,0.2); border-radius:16px; overflow:hidden;">
+
+                <%# En-tête commun aux deux états %>
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                  <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-up", style: "height:28px;" %>
+                  <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+
+                <%# ── État 1 : installation disponible ── %>
+                <div data-pwa-install-target="installView">
+                  <div class="modal-body px-4 py-4">
+                    <h5 style="color:#f0f0f0; font-weight:700; font-size:1.2rem; margin-bottom:0.5rem;">
+                      Installe Teams-up sur ton appareil
+                    </h5>
+                    <p style="color:rgba(255,255,255,0.55); font-size:0.9rem; line-height:1.6; margin-bottom:1.5rem;">
+                      Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application — sans passer par le navigateur.
+                    </p>
+                    <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.6rem;">
+                      <li style="color:rgba(255,255,255,0.75); font-size:0.875rem; display:flex; align-items:center; gap:0.6rem;">
+                        <i data-lucide="zap" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
+                        Lancement instantané
+                      </li>
+                      <li style="color:rgba(255,255,255,0.75); font-size:0.875rem; display:flex; align-items:center; gap:0.6rem;">
+                        <i data-lucide="wifi-off" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
+                        Disponible même hors connexion
+                      </li>
+                      <li style="color:rgba(255,255,255,0.75); font-size:0.875rem; display:flex; align-items:center; gap:0.6rem;">
+                        <i data-lucide="smartphone" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
+                        Expérience plein écran
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+                    <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
+                            style="color:rgba(255,255,255,0.55); background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:8px 18px;">
+                      Plus tard
+                    </button>
+                    <button type="button" data-action="click->pwa-install#install"
+                            class="btn btn-sm d-flex align-items-center gap-2"
+                            style="background-color:#1EDD88; color:#111111; border:none; font-weight:700; border-radius:8px; padding:8px 20px;">
+                      <i data-lucide="download" style="width:15px;height:15px;"></i>
+                      Installer
+                    </button>
+                  </div>
+                </div>
+
+                <%# ── État 2 : déjà installé sur cet appareil ── %>
+                <div data-pwa-install-target="alreadyInstalledView" style="display:none;">
+                  <div class="modal-body px-4 py-4 text-center">
+                    <div style="margin-bottom:1rem;">
+                      <i data-lucide="circle-check" style="width:40px;height:40px;color:#1EDD88;"></i>
+                    </div>
+                    <h5 style="color:#f0f0f0; font-weight:700; font-size:1.1rem; margin-bottom:0.5rem;">
+                      Déjà installée sur cet appareil
+                    </h5>
+                    <p style="color:rgba(255,255,255,0.55); font-size:0.875rem; line-height:1.6; margin:0;">
+                      Teams-up est déjà installé ici. Tu peux l'ouvrir directement depuis ton écran d'accueil.<br>
+                      <span style="color:rgba(255,255,255,0.35); font-size:0.8rem;">Pour installer sur un autre appareil, utilise ce bouton depuis ce nouvel appareil.</span>
+                    </p>
+                  </div>
+                  <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-sm w-100" data-bs-dismiss="modal"
+                            style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.75); border:none; border-radius:8px; padding:8px;">
+                      Fermer
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
         </div>
 
         <%# ── Cloche notifications (UNE seule instance, temps réel via Turbo) ──
