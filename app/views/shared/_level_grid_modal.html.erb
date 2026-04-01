@@ -1,0 +1,138 @@
+<%#
+  Modale "Grilles de niveaux"
+  Accessible depuis le bouton "?" sur :
+    - le formulaire de création/édition de match (à côté du sélecteur de niveau)
+    - le formulaire de profil (à côté des pills de niveau par sport)
+    - l'index des matchs (à côté du filtre niveau)
+    - la page show d'un match (à côté du badge niveau)
+
+  Seuls les sports avec un référentiel officiel sont affichés :
+    padel (FFP), tennis (FFT), badminton (FFBad).
+  Les sports collectifs n'ont pas de classement officiel et ne sont donc pas listés ici.
+
+  Le controller Stimulus "level-grid" gère :
+    - l'affichage du panneau du sport actif
+    - la pré-sélection via preselectSport() (appelé par les boutons "?")
+%>
+
+<%# Liste des sports avec référentiel officiel uniquement %>
+<% racquet_sports = Sport.where(slug: %w[padel tennis badminton]).order(:name) %>
+
+<div class="modal fade"
+     id="levelGridModal"
+     tabindex="-1"
+     data-controller="level-grid"
+     aria-labelledby="levelGridModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:680px;">
+    <div class="modal-content"
+         style="background:#1a1c1a; border:1px solid rgba(255,255,255,0.1); border-radius:1rem;">
+
+      <%# ── En-tête ── %>
+      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08); padding:1rem 1.25rem;">
+        <div>
+          <h5 class="modal-title"
+              id="levelGridModalLabel"
+              style="color:#1EDD88; font-weight:700; font-size:1rem; margin:0 0 0.2rem;">
+            Grilles de niveaux
+          </h5>
+          <%# Sous-titre explicatif %>
+          <p style="font-size:0.7rem; color:rgba(255,255,255,0.35); margin:0;">
+            Référentiels officiels FFP · FFT · FFBad
+          </p>
+        </div>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Fermer"></button>
+      </div>
+
+      <%# ── Corps ── %>
+      <div class="modal-body" style="padding:0;">
+
+        <%# Onglets sports — un bouton par sport de raquette %>
+        <div data-level-grid-target="tabBar"
+             style="display:flex; overflow-x:auto; gap:0.25rem;
+                    border-bottom:1px solid rgba(255,255,255,0.08);
+                    padding:0.5rem 1rem 0;
+                    scrollbar-width:none;">
+          <% racquet_sports.each do |sport| %>
+            <button type="button"
+                    class="level-grid-tab"
+                    data-action="click->level-grid#selectTab"
+                    data-level-grid-target="tab"
+                    data-sport-id="<%= sport.id %>"
+                    style="background:none; border:none; border-bottom:2px solid transparent;
+                           padding:0.4rem 0.75rem; cursor:pointer; white-space:nowrap;
+                           color:rgba(255,255,255,0.5); font-size:1.1rem; transition:all 0.15s;">
+              <%= sport_icon(sport, size: "1.1rem") %>
+              <span style="font-size:0.72rem; font-weight:600; margin-left:0.3rem; vertical-align:middle;">
+                <%= sport.name %>
+              </span>
+            </button>
+          <% end %>
+        </div>
+
+        <%# Panneaux par sport — seul le panneau actif est visible %>
+        <div style="padding:1rem 1.25rem; max-height:420px; overflow-y:auto;">
+          <% racquet_sports.each do |sport| %>
+            <div data-level-grid-target="panel"
+                 data-sport-id="<%= sport.id %>"
+                 style="display:none;">
+
+              <%# Sous-titre : nombre de niveaux %>
+              <p style="font-size:0.7rem; font-weight:600; color:rgba(255,255,255,0.3);
+                         text-transform:uppercase; letter-spacing:0.07em; margin:0 0 1rem;">
+                <%= sport.name %> — <%= sport.available_levels.length %> niveaux
+              </p>
+
+              <%# Liste des niveaux avec badge + référence + description %>
+              <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                <% sport.available_levels.each do |lvl| %>
+                  <div style="display:flex; align-items:flex-start; gap:0.75rem;">
+
+                    <%# Colonne gauche : badge coloré — largeur fixe assez grande pour "Perfectionnement" %>
+                    <div style="flex-shrink:0; width:155px;">
+                      <span class="match-badge-level <%= level_badge_css(lvl[:label], sport) %>"
+                            style="font-size:0.68rem; padding:0.15rem 0.55rem; white-space:nowrap; display:inline-block;">
+                        <%= lvl[:label] %>
+                      </span>
+                      <%# Référence officielle sous le badge (classement) %>
+                      <% if lvl[:ref].present? %>
+                        <div style="font-size:0.65rem; color:rgba(255,255,255,0.35);
+                                    margin-top:0.2rem; padding-left:0.1rem; font-style:italic;">
+                          <%= lvl[:ref] %>
+                        </div>
+                      <% end %>
+                    </div>
+
+                    <%# Colonne droite : description concrète %>
+                    <% if lvl[:desc].present? %>
+                      <p style="font-size:0.75rem; color:rgba(255,255,255,0.6);
+                                  margin:0; line-height:1.45; padding-top:0.05rem;">
+                        <%= lvl[:desc] %>
+                      </p>
+                    <% end %>
+
+                  </div>
+                <% end %>
+              </div>
+
+            </div><%# fin panneau sport %>
+          <% end %>
+        </div>
+
+      </div><%# fin modal-body %>
+
+      <%# ── Pied de modale : note sur les sports collectifs ── %>
+      <div class="modal-footer"
+           style="border-top:1px solid rgba(255,255,255,0.05);
+                  padding:0.65rem 1.25rem; justify-content:flex-start;">
+        <p style="font-size:0.68rem; color:rgba(255,255,255,0.3); margin:0;">
+          Pour les sports collectifs (foot, basket, hand, volley), l'échelle utilisée est indicative : Débutant · Amateur · Intermédiaire · Confirmé · Expert.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>

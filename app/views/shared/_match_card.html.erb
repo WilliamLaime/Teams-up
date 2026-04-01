@@ -77,13 +77,8 @@
   # sinon rotation déterministe : le même match aura toujours la même image
   cover_image = match.banner_image.presence || images[match.id % images.length]
 
-  # Classe CSS du badge de niveau
-  level_css = case match.level
-    when "Débutant"      then "level-debutant"
-    when "Intermédiaire" then "level-intermediaire"
-    when "Avancé"        then "level-avance"
-    else                      "level-tout"
-  end
+  # Classe CSS du badge de niveau — tier dynamique selon la grille du sport
+  level_css = level_badge_css(match.level, match.sport)
 
   # Date courte en français (ex: "Lun 13, 18:30")
   fr_days  = %w[Dim Lun Mar Mer Jeu Ven Sam]

@@ -19,33 +19,62 @@
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
 
-  // Débutant → vert
-  &.level-debutant {
+  // ── Système de tiers (1→7) : spectre du débutant à l'expert ──
+  // Tier 1 — Débutant (vert)
+  &.level-tier-1 {
     background: rgba($green, 0.15);
     color: $green;
-    border: 1px solid rgba($green, 0.40); // bordure pour définir la pill sur fond sombre
+    border: 1px solid rgba($green, 0.40);
   }
-
-  // Intermédiaire → jaune
-  &.level-intermediaire {
+  // Tier 2 — Petit niveau (teal)
+  &.level-tier-2 {
+    background: rgba(#2DD4BF, 0.15);
+    color: #2DD4BF;
+    border: 1px solid rgba(#2DD4BF, 0.40);
+  }
+  // Tier 3 — Intermédiaire bas (bleu clair)
+  &.level-tier-3 {
+    background: rgba($blue, 0.15);
+    color: lighten($blue, 20%);
+    border: 1px solid rgba($blue, 0.40);
+  }
+  // Tier 4 — Intermédiaire haut (jaune)
+  &.level-tier-4 {
     background: rgba($yellow, 0.15);
     color: $yellow;
     border: 1px solid rgba($yellow, 0.40);
   }
-
-  // Avancé → rouge doux
-  &.level-avance {
+  // Tier 5 — Confirmé (orange)
+  &.level-tier-5 {
+    background: rgba(#FB923C, 0.15);
+    color: #FB923C;
+    border: 1px solid rgba(#FB923C, 0.40);
+  }
+  // Tier 6 — Avancé (rouge doux)
+  &.level-tier-6 {
     background: rgba(#f87171, 0.15);
     color: #f87171;
     border: 1px solid rgba(#f87171, 0.40);
   }
+  // Tier 7 — Expert (violet)
+  &.level-tier-7 {
+    background: rgba(#C084FC, 0.15);
+    color: #C084FC;
+    border: 1px solid rgba(#C084FC, 0.40);
+  }
 
-  // Tout niveau → bleu discret (même logique que les autres niveaux)
+  // Tout niveau → bleu neutre
   &.level-tout {
     background: rgba($blue, 0.15);
     color: lighten($blue, 20%);
     border: 1px solid rgba($blue, 0.40);
   }
+
+  // ── Aliases héritage (anciennes classes → tiers) ───────────
+  // Gardées temporairement pour les matchs existants en base
+  &.level-debutant     { @extend .match-badge-level.level-tier-1; }
+  &.level-intermediaire { @extend .match-badge-level.level-tier-4; }
+  &.level-avance       { @extend .match-badge-level.level-tier-6; }
 }
 
 // ── Badge urgent : rouge intense + majuscules + clignotant ─
