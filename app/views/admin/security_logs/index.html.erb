@@ -19,39 +19,47 @@
   <%# ── Formulaire de filtres ── %>
   <%# method: :get → les filtres passent dans l'URL (bookmarkable, rechargeable) %>
   <%= form_with url: admin_security_logs_path, method: :get, local: true do |f| %>
+    <%# Sur mobile : les éléments se replient grâce à flex-wrap %>
     <div class="d-flex gap-2 mb-4 flex-wrap align-items-center">
 
-      <%# Filtre par type d'événement — menu déroulant %>
+      <%# Filtre par type d'événement — prend toute la largeur sur mobile %>
       <%= f.select :event_type,
                    [["Tous les types", ""]] + @event_types.map { |t| [t.humanize, t] },
                    { selected: params[:event_type] },
-                   class: "form-select form-select-sm",
-                   style: "width:auto; background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,0.2);" %>
+                   class: "form-select form-select-sm flex-grow-1",
+                   style: "min-width:140px; max-width:220px; background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,0.2);" %>
 
-      <%# Filtre date de début %>
-      <%= f.date_field :date_from,
-                       value: params[:date_from],
-                       class: "form-control form-control-sm",
-                       style: "width:auto; background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,0.2);" %>
+      <%# Groupe dates sur une même ligne même sur mobile %>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <%# Filtre date de début %>
+        <%= f.date_field :date_from,
+                         value: params[:date_from],
+                         class: "form-control form-control-sm",
+                         style: "min-width:130px; background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,0.2); color-scheme:dark;" %>
 
-      <%# Séparateur visuel "→" %>
-      <span style="color:rgba(255,255,255,0.3);">→</span>
+        <%# Séparateur visuel "→" %>
+        <span style="color:rgba(255,255,255,0.3);">→</span>
 
-      <%# Filtre date de fin %>
-      <%= f.date_field :date_to,
-                       value: params[:date_to],
-                       class: "form-control form-control-sm",
-                       style: "width:auto; background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,0.2);" %>
+        <%# Filtre date de fin %>
+        <%= f.date_field :date_to,
+                         value: params[:date_to],
+                         class: "form-control form-control-sm",
+                         style: "min-width:130px; background:#1a1a1a; color:#fff; border:1px solid rgba(255,255,255,0.2); color-scheme:dark;" %>
+      </div>
 
-      <%# Bouton filtrer %>
-      <%= f.submit "Filtrer",
-                   class: "btn btn-sm",
-                   style: "background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.3);" %>
+      <%# Boutons d'action groupés %>
+      <div class="d-flex gap-2">
+        <%# Bouton filtrer %>
+        <%= f.submit "Filtrer",
+                     class: "btn btn-sm",
+                     style: "background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.3); white-space:nowrap;" %>
 
-      <%# Lien "Réinitialiser" — efface tous les filtres %>
-      <%= link_to "Réinitialiser", admin_security_logs_path,
-                  class: "btn btn-sm",
-                  style: "background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.1);" %>
+        <%# Lien "Réinitialiser" — efface tous les filtres %>
+        <%= link_to "Réinitialiser", admin_security_logs_path,
+                    class: "btn btn-sm",
+                    style: "background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.1); white-space:nowrap;" %>
+      </div>
+
     </div>
   <% end %>
 
@@ -61,91 +69,95 @@
   </p>
 
   <%# ── Tableau des logs ── %>
-  <div class="match-block">
-    <table class="table table-dark table-hover mb-0" style="font-size:0.82rem;">
-      <thead>
-        <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
-          <th style="padding:0.75rem 1rem;">Date</th>
-          <th style="padding:0.75rem 1rem;">Type</th>
-          <th style="padding:0.75rem 1rem;">IP</th>
-          <th style="padding:0.75rem 1rem;">Utilisateur</th>
-          <th style="padding:0.75rem 1rem;">Détails</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if @security_logs.empty? %>
-          <%# Ligne vide si aucun log ne correspond aux filtres %>
-          <tr>
-            <td colspan="5" style="text-align:center; color:rgba(255,255,255,0.3); padding:2rem;">
-              Aucun événement trouvé
-            </td>
+  <%# overflow-x directement sur match-block (plus fiable que table-responsive imbriqué sur mobile) %>
+  <div class="match-block" style="overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0;">
+    <div>
+      <table class="table table-dark table-hover mb-0" style="font-size:0.82rem; min-width: 600px;">
+        <thead>
+          <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <th style="padding:0.75rem 1rem;">Date</th>
+            <th style="padding:0.75rem 1rem;">Type</th>
+            <th style="padding:0.75rem 1rem;">IP</th>
+            <th style="padding:0.75rem 1rem;">Utilisateur</th>
+            <th style="padding:0.75rem 1rem;">Détails</th>
           </tr>
-        <% else %>
-          <% @security_logs.each do |log| %>
+        </thead>
+        <tbody>
+          <% if @security_logs.empty? %>
+            <%# Ligne vide si aucun log ne correspond aux filtres %>
             <tr>
-              <%# Date et heure de l'événement %>
-              <td style="color:rgba(255,255,255,0.5); padding:0.6rem 1rem; white-space:nowrap;">
-                <%= log.created_at.strftime("%d/%m/%Y %H:%M") %>
-              </td>
-
-              <%# Badge coloré selon le type : rouge pour les événements suspects, vert pour les succès %>
-              <td style="padding:0.6rem 1rem;">
-                <%
-                  # Couleur selon la nature de l'événement
-                  badge_color = case log.event_type
-                                when "login_success", "signup", "google_login" then "#1EDD88"  # vert
-                                when "login_failure", "rack_attack_throttle"   then "#ff6b6b"  # rouge
-                                else "#ffd166"                                                 # jaune
-                                end
-                %>
-                <span style="display:inline-block; padding:0.2rem 0.5rem; border-radius:4px;
-                             background:rgba(0,0,0,0.3); color:<%= badge_color %>;
-                             border:1px solid <%= badge_color %>40; font-size:0.72rem; white-space:nowrap;">
-                  <%= log.event_type %>
-                </span>
-              </td>
-
-              <%# Adresse IP en monospace — plus lisible pour les adresses réseau %>
-              <td style="color:rgba(255,255,255,0.6); padding:0.6rem 1rem; font-family:monospace;">
-                <%= log.ip_address %>
-              </td>
-
-              <%# Lien vers le profil si un user est associé, sinon "—" %>
-              <td style="padding:0.6rem 1rem;">
-                <% if log.user %>
-                  <%= link_to log.user.email,
-                              user_profil_path(log.user),
-                              style: "color:#fff; text-decoration:none; font-size:0.8rem;" %>
-                <% else %>
-                  <span style="color:rgba(255,255,255,0.25);">—</span>
-                <% end %>
-              </td>
-
-              <%# Données JSON supplémentaires — email tenté, nom du throttle, etc. %>
-              <td style="color:rgba(255,255,255,0.45); padding:0.6rem 1rem;
-                         font-family:monospace; font-size:0.72rem; max-width:250px;
-                         overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                <% if log.details.any? %>
-                  <%# Affiche chaque clé/valeur sur une ligne pour plus de lisibilité %>
-                  <% log.details.each do |key, value| %>
-                    <span style="color:rgba(255,255,255,0.3);"><%= key %>:</span>
-                    <span><%= value %></span>
-                    <br>
-                  <% end %>
-                <% else %>
-                  <span style="color:rgba(255,255,255,0.2);">—</span>
-                <% end %>
+              <td colspan="5" style="text-align:center; color:rgba(255,255,255,0.3); padding:2rem;">
+                Aucun événement trouvé
               </td>
             </tr>
+          <% else %>
+            <% @security_logs.each do |log| %>
+              <tr>
+                <%# Date et heure de l'événement %>
+                <td style="color:rgba(255,255,255,0.5); padding:0.6rem 1rem; white-space:nowrap;">
+                  <%= log.created_at.strftime("%d/%m/%Y %H:%M") %>
+                </td>
+
+                <%# Badge coloré selon le type : rouge pour les événements suspects, vert pour les succès %>
+                <td style="padding:0.6rem 1rem;">
+                  <%
+                    # Couleur selon la nature de l'événement
+                    badge_color = case log.event_type
+                                  when "login_success", "signup", "google_login" then "#1EDD88"  # vert
+                                  when "login_failure", "rack_attack_throttle"   then "#ff6b6b"  # rouge
+                                  else "#ffd166"                                                 # jaune
+                                  end
+                  %>
+                  <span style="display:inline-block; padding:0.2rem 0.5rem; border-radius:4px;
+                               background:rgba(0,0,0,0.3); color:<%= badge_color %>;
+                               border:1px solid <%= badge_color %>40; font-size:0.72rem; white-space:nowrap;">
+                    <%= log.event_type %>
+                  </span>
+                </td>
+
+                <%# Adresse IP %>
+                <td style="color:rgba(255,255,255,0.6); padding:0.6rem 1rem; font-family:monospace;">
+                  <%= log.ip_address %>
+                </td>
+
+                <%# Lien vers le profil si un user est associé, sinon "—" %>
+                <td style="padding:0.6rem 1rem;">
+                  <% if log.user %>
+                    <%= link_to log.user.email,
+                                user_profil_path(log.user),
+                                style: "color:#fff; text-decoration:none; font-size:0.8rem;" %>
+                  <% else %>
+                    <span style="color:rgba(255,255,255,0.25);">—</span>
+                  <% end %>
+                </td>
+
+                <%# Données JSON supplémentaires — email tenté, nom du throttle, etc. %>
+                <td style="color:rgba(255,255,255,0.45); padding:0.6rem 1rem;
+                           font-family:monospace; font-size:0.72rem; max-width:200px;
+                           overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <% if log.details.any? %>
+                    <%# Affiche chaque clé/valeur sur une ligne pour plus de lisibilité %>
+                    <% log.details.each do |key, value| %>
+                      <span style="color:rgba(255,255,255,0.3);"><%= key %>:</span>
+                      <span><%= value %></span>
+                      <br>
+                    <% end %>
+                  <% else %>
+                    <span style="color:rgba(255,255,255,0.2);">—</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
           <% end %>
-        <% end %>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
 
     <%# ── Pagination pagy ── %>
     <%# N'affiche la pagination que s'il y a plus d'une page %>
     <% if @pagy.pages > 1 %>
-      <div class="d-flex justify-content-center mt-3 pb-2">
+      <%# padding pour que la pagination soit alignée avec le reste du contenu %>
+      <div class="d-flex justify-content-center mt-3 pb-2" style="padding: 0 1.35rem;">
         <%== pagy_bootstrap_nav(@pagy) %>
       </div>
     <% end %>

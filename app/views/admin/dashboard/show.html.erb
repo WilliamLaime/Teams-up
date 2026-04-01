@@ -165,35 +165,38 @@
     </span>
   </div>
 
-  <div class="match-block mb-4">
+  <%# Le match-block est lui-même le scroll container — plus fiable que table-responsive
+      imbriqué, surtout sur Safari iOS. padding:0 car le tableau gère ses propres espacements. %>
+  <div class="match-block mb-4" style="overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0;">
     <% if @top_players.any? %>
-      <table class="table table-dark table-hover mb-0" style="font-size:0.85rem;">
+      <%# min-width force le tableau à garder toutes ses colonnes visibles,
+          ce qui déclenche le scroll quand l'écran est trop étroit %>
+      <table class="table table-dark table-hover mb-0" style="font-size:0.85rem; min-width: 460px;">
         <thead>
           <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
-            <th style="border-color:rgba(255,255,255,0.07);">#</th>
-            <th style="border-color:rgba(255,255,255,0.07);">Joueur</th>
-            <th style="border-color:rgba(255,255,255,0.07);">Note moyenne</th>
-            <th style="border-color:rgba(255,255,255,0.07);">Nombre d'avis</th>
-            <th style="border-color:rgba(255,255,255,0.07);">XP</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">#</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Joueur</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Note moyenne</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Nb d'avis</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">XP</th>
           </tr>
         </thead>
         <tbody>
           <% @top_players.each_with_index do |profil, index| %>
             <tr>
-              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4);"><%= index + 1 %></td>
-              <td style="border-color:rgba(255,255,255,0.07);">
-                <%# Lien vers le profil public du joueur %>
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); padding: 0.6rem 1rem;"><%= index + 1 %></td>
+              <td style="border-color:rgba(255,255,255,0.07); padding: 0.6rem 1rem;">
                 <%= link_to user_profil_path(profil.user), style: "color:#fff; text-decoration:none;" do %>
                   <%= profil.first_name %> <%= profil.last_name %>
                 <% end %>
               </td>
-              <td style="border-color:rgba(255,255,255,0.07); color:#1EDD88; font-weight:700;">
+              <td style="border-color:rgba(255,255,255,0.07); color:#1EDD88; font-weight:700; padding: 0.6rem 1rem;">
                 <%= profil.average_rating&.round(2) %> ★
               </td>
-              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); padding: 0.6rem 1rem;">
                 <%= profil.avis_count %>
               </td>
-              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+              <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); padding: 0.6rem 1rem;">
                 <%= profil.xp || 0 %> XP
               </td>
             </tr>
@@ -201,7 +204,9 @@
         </tbody>
       </table>
     <% else %>
-      <p style="font-size:0.85rem; color:rgba(255,255,255,0.3); margin:0;">Aucun avis enregistré pour le moment.</p>
+      <div style="padding: 1.25rem 1.35rem;">
+        <p style="font-size:0.85rem; color:rgba(255,255,255,0.3); margin:0;">Aucun avis enregistré pour le moment.</p>
+      </div>
     <% end %>
   </div>
 
@@ -216,20 +221,22 @@
     </span>
   </div>
 
-  <div class="match-block">
-    <table class="table table-dark table-hover mb-0" style="font-size:0.85rem;">
+  <%# Même approche que Top joueurs : scroll sur le match-block lui-même %>
+  <div class="match-block" style="overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0;">
+    <%# min-width maintient toutes les colonnes — le scroll se déclenche si l'écran est trop étroit %>
+    <table class="table table-dark table-hover mb-0" style="font-size:0.85rem; min-width: 480px;">
       <thead>
         <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
-          <th style="border-color:rgba(255,255,255,0.07);">Nom</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Email</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Genre</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Inscrit le</th>
+          <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Nom</th>
+          <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Email</th>
+          <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Genre</th>
+          <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Inscrit le</th>
         </tr>
       </thead>
       <tbody>
         <% @recent_users.each do |user| %>
           <tr>
-            <td style="border-color:rgba(255,255,255,0.07);">
+            <td style="border-color:rgba(255,255,255,0.07); padding: 0.6rem 1rem;">
               <%# Affiche le prénom + nom si le profil existe, sinon l'email %>
               <% if user.profil %>
                 <%= link_to user_profil_path(user), style: "color:#fff; text-decoration:none;" do %>
@@ -239,13 +246,13 @@
                 <span style="color:rgba(255,255,255,0.4);">Sans profil</span>
               <% end %>
             </td>
-            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); padding: 0.6rem 1rem;">
               <%= user.email %>
             </td>
-            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); padding: 0.6rem 1rem;">
               <%= user.genre.presence || "—" %>
             </td>
-            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
+            <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); padding: 0.6rem 1rem;">
               <%# Affiche la date au format jour/mois/année %>
               <%= user.created_at.strftime("%d/%m/%Y") %>
             </td>

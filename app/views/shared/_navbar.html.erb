@@ -114,13 +114,16 @@
         <div data-controller="pwa-install">
 
           <%# Bouton toujours visible (mobile + desktop) %>
+          <%# Sur mobile : icône seule (pas de texte) pour économiser l'espace navbar
+              Sur desktop (lg+) : icône + texte "Installer l'app" %>
           <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
                   class="btn btn-sm d-flex align-items-center gap-2"
-                  style="background-color:#1EDD88; color:#111111; border:none; font-weight:400; font-size:0.8rem; border-radius:8px; padding:6px 14px;"
+                  style="background-color:#1EDD88; color:#111111; border:none; font-weight:400; font-size:0.8rem; border-radius:8px; padding:6px 10px;"
                   title="Installer l'application sur votre appareil">
             <i data-lucide="download" style="width:14px;height:14px;"></i>
-            Installer l'app
+            <%# Texte masqué sur mobile, visible à partir de lg %>
+            <span class="d-none d-lg-inline">Installer l'app</span>
           </button>
 
           <%# ── Modale unique avec deux états gérés par Stimulus ──────────────

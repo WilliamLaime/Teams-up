@@ -6,8 +6,8 @@
     (conditionnel if current_user&.admin?) pour éviter les doublons qui neutralisent
     les subscriptions côté client Turbo. Un seul abonné par canal. %>
 
-<%# Onglets centrés, style cohérent avec le reste du site (auth-tab) %>
-<div class="d-flex justify-content-center mb-5">
+<%# Onglets centrés — wrapper scrollable sur mobile pour éviter le débordement %>
+<div class="d-flex justify-content-center mb-5 admin-nav-tabs-wrapper">
   <div class="admin-nav-tabs">
 
     <%# ── Onglet Dashboard ── %>
