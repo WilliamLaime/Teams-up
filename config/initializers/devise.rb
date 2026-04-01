@@ -279,11 +279,13 @@ Devise.setup do |config|
 
   # Configuration Google OAuth — full_host dynamique
   # Se base sur la requête entrante pour construire l'URL de callback
-  # Fonctionne automatiquement depuis localhost, Ngrok et Heroku
+  # Sur Heroku, le vrai scheme est dans X-Forwarded-Proto (le proxy reçoit https
+  # mais transfère en http en interne, donc req.scheme vaut "http" à tort)
   OmniAuth.config.full_host = lambda { |env|
     req = Rack::Request.new(env)
-    # Reconstruit le host avec le bon scheme (http ou https)
-    "#{req.scheme}://#{req.host_with_port}"
+    # Priorité au header X-Forwarded-Proto (Heroku/proxy), sinon scheme natif
+    scheme = env["HTTP_X_FORWARDED_PROTO"]&.split(",")&.first || req.scheme
+    "#{scheme}://#{req.host_with_port}"
   }
   config.omniauth :google_oauth2, ENV["GOOGLE_CLIENT_ID"], ENV["GOOGLE_CLIENT_SECRET"]
 
