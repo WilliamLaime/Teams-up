@@ -9,73 +9,9 @@
 
 <%# Calculs réutilisés dans la carte %>
 <%
-  # Images disponibles par sport — dossier sports/ dans assets/images/
-  sport_images = {
-    "football"   => %w[
-      sports/Football/ballon.webp
-      sports/Football/citytoulouse.webp
-      sports/Football/bresil.webp
-      sports/Football/herbe.webp
-      sports/Football/city1.webp
-      sports/Football/citydrone.webp
-      sports/Football/Duel.webp
-      sports/Football/Medellin.webp
-    ],
-    "tennis"     => %w[
-      sports/Tennis/tennis1.webp
-      sports/Tennis/tennis2.webp
-      sports/Tennis/tennis3.webp
-      sports/Tennis/tennis4.webp
-      sports/Tennis/tennis5.webp
-      sports/Tennis/tennis6.webp
-    ],
-    "padel"      => %w[
-      sports/Padel/padel1.webp
-      sports/Padel/padel2.webp
-      sports/Padel/padel3.webp
-      sports/Padel/padel4.webp
-      sports/Padel/padel5.webp
-      sports/Padel/padel6.webp
-    ],
-    "volleyball" => %w[
-      sports/Volley/volley1.webp
-      sports/Volley/volley2.webp
-      sports/Volley/volley3.webp
-      sports/Volley/volley4.webp
-      sports/Volley/volley5.webp
-      sports/Volley/volley6.webp
-    ],
-    "basketball" => %w[
-      sports/Basketball/basket1.webp
-      sports/Basketball/basket2.webp
-      sports/Basketball/basket3.webp
-      sports/Basketball/basket4.webp
-      sports/Basketball/basket5.webp
-      sports/Basketball/basket6.webp
-    ],
-    "handball"   => %w[
-      sports/Handball/handball1.webp
-      sports/Handball/handball2.webp
-    ],
-    "badminton"  => %w[
-      sports/Badminton/badminton1.webp
-      sports/Badminton/badminton2.webp
-      sports/Badminton/badminton3.webp
-      sports/Badminton/badminton4.webp
-      sports/Badminton/badminton5.webp
-      sports/Badminton/badminton6.webp
-    ]
-  }
-
-  # On récupère le slug du sport du match, ou "football" par défaut
-  sport_slug = match.sport&.slug || "football"
-
-  # On récupère la liste d'images correspondante (ou football si slug inconnu)
-  images = sport_images[sport_slug] || sport_images["football"]
-
-  # Utilise l'image sauvegardée à la création si elle existe,
-  # sinon rotation déterministe : le même match aura toujours la même image
-  cover_image = match.banner_image.presence || images[match.id % images.length]
+  # Image de couverture via le helper SportImagesHelper (URLs Cloudinary)
+  # Le helper gère : banner_image manuelle > rotation déterministe par sport
+  cover_image = sport_cover_image(match)
 
   # Classe CSS du badge de niveau — tier dynamique selon la grille du sport
   level_css = level_badge_css(match.level, match.sport)
