@@ -73,6 +73,12 @@ module SportImagesHelper
     padel_icon:      "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png"
   }.freeze
 
+  # Méthode helper pour accéder à SPORT_MISC_IMAGES depuis les vues.
+  # Usage : sport_misc_image(:multisports)
+  def sport_misc_image(key)
+    SPORT_MISC_IMAGES[key]
+  end
+
   # Retourne la liste d'URLs pour un sport donné (slug).
   # Si le sport est inconnu, retourne les images football par défaut.
   def sport_images_for(sport_slug)

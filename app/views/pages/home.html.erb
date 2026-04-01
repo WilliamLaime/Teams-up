@@ -82,7 +82,7 @@
                hero_alt = "Joueur de volley"
              when nil
                # Mode Multisport (aucun sport sélectionné) → image Cloudinary multisports
-               hero_src = SPORT_MISC_IMAGES[:multisports_img]
+               hero_src = sport_misc_image(:multisports_img)
                hero_alt = "Multisport"
              else
                # Tennis par défaut
