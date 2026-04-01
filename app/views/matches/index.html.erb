@@ -70,11 +70,52 @@
                 class: "filter-date-input" %>
           </div>
 
-          <%# Niveau — dropdown custom avec badges et checkboxes (multi-sélection) %>
-          <%# position:relative en inline = ancre garantie pour le dropdown absolu %>
-          <div class="level-filter-pill" data-controller="level-filter" style="position:relative">
+          <%#
+            ── Calculs pour le filtre niveau dynamique ──
+            Les niveaux affichés dépendent du/des sport(s) sélectionné(s).
+            En JS (level-filter + sport-filter controllers), les checkboxes
+            sont reconstruites côté client quand le sport change — sans rechargement.
+          %>
+          <%
+            # IDs des sports cochés dans l'URL (ou sport actif si pas de param)
+            selected_sport_ids = params[:sport_ids]&.map(&:to_i)&.reject(&:zero?) || []
+            selected_sport_ids = [current_sport.id] if selected_sport_ids.empty? && current_sport&.id
 
-            <%# Trigger : pill cliquable qui ouvre le dropdown %>
+            # Sport par défaut pour le filtre niveau quand aucun sport n'est sélectionné :
+            # → sport actif du contexte utilisateur, sinon premier sport alphabétiquement
+            default_sport = current_sport || Sport.order(:name).first
+
+            # Convertit un sport en tableau de niveaux [{label, css}] sans "Tout niveau"
+            levels_for = ->(sp) {
+              sp.available_levels.map { |l| { label: l[:label], css: level_badge_css(l[:label], sp) } }
+            }
+
+            # Niveaux à afficher au chargement de la page
+            initial_levels = if selected_sport_ids.length == 1
+              # 1 sport → grille complète du sport
+              sp = Sport.find_by(id: selected_sport_ids.first)
+              sp ? levels_for.(sp) : (default_sport ? levels_for.(default_sport) : [])
+            else
+              # 0 sport → grille du sport actif par défaut
+              default_sport ? levels_for.(default_sport) : []
+            end
+
+            # Map sport_id → [{label, css}] passée en JSON au controller Stimulus.
+            # Clé "0" = niveaux du sport actif (fallback JS quand aucun sport sélectionné).
+            sports_levels_map = Sport.all.each_with_object({}) do |sp, h|
+              h[sp.id] = levels_for.(sp)
+            end
+            sports_levels_map[0] = default_sport ? levels_for.(default_sport) : []
+          %>
+
+          <%# Niveau — dropdown custom avec badges et checkboxes (multi-sélection) %>
+          <%# data-sports-levels : map JSON utilisée par le controller pour reconstruire les options %>
+          <div class="level-filter-pill"
+               data-controller="level-filter"
+               data-sports-levels="<%= sports_levels_map.to_json %>"
+               style="position:relative">
+
+            <%# Trigger : pill cliquable %>
             <button type="button"
                     class="filter-pill-group level-filter-trigger"
                     data-action="click->level-filter#toggle">
@@ -83,31 +124,45 @@
               <i data-lucide="chevron-down" style="width:11px;height:11px;margin-left:2px;"></i>
             </button>
 
-            <%#
-              Panel dropdown — tous les styles critiques en inline pour éviter tout conflit CSS/cache.
-              display:none = caché par défaut, Stimulus le passe à "flex" au clic.
-            %>
+            <%# Panel dropdown %>
             <div class="level-filter-dropdown"
                  data-level-filter-target="dropdown"
-                 style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:120px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem">
+                 style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:160px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem; max-height:340px; overflow-y:auto;">
 
-              <% [["Débutant", "level-debutant"], ["Intermédiaire", "level-intermediaire"], ["Avancé", "level-avance"], ["Tout niveau", "level-tout"]].each do |level_name, level_css| %>
-                <%# Inline styles sur le label = une seule ligne, checkbox + badge côte à côte, centrés %>
-                <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
-                  <input type="checkbox"
-                         name="levels[]"
-                         value="<%= level_name %>"
-                         data-level-filter-target="checkbox"
-                         data-action="change->level-filter#change"
-                         style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
-                         <%# Pré-coché si filtre URL OU si préfiltre profil actif pour ce niveau %>
-                         <%= "checked" if params[:levels]&.include?(level_name) ||
-                                          (@active_prefilters&.dig(:level) && @prefilter_params[:level] == level_name) %>>
-                  <span class="match-badge-level <%= level_css %>" style="font-size:0.72rem; padding:0.2rem 0.6rem; line-height:1; margin:0;"><%= level_name %></span>
-                </label>
-              <% end %>
+              <%# Conteneur des checkboxes — reconstruit par JS quand le sport change %>
+              <div data-level-filter-target="list"
+                   style="display:flex; flex-direction:column; gap:0.15rem;">
+                <% initial_levels.each do |lvl| %>
+                  <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
+                    <input type="checkbox"
+                           name="levels[]"
+                           value="<%= lvl[:label] %>"
+                           data-level-filter-target="checkbox"
+                           data-action="change->level-filter#change"
+                           style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
+                           <%# Pré-coché si filtre URL OU si préfiltre profil actif %>
+                           <%= "checked" if params[:levels]&.include?(lvl[:label]) ||
+                                            (@active_prefilters&.dig(:level) && @prefilter_params[:level] == lvl[:label]) %>>
+                    <span class="match-badge-level <%= lvl[:css] %>"
+                          style="font-size:0.72rem; padding:0.2rem 0.6rem; line-height:1; margin:0;">
+                      <%= lvl[:label] %>
+                    </span>
+                  </label>
+                <% end %>
+              </div>
 
-              <%# Bouton Appliquer — soumet le formulaire et ferme le dropdown %>
+              <%# Bouton "?" pour ouvrir la modale des grilles %>
+              <button type="button"
+                      style="margin-top:0.2rem; width:100%; padding:0.3rem 0.5rem; background:rgba(255,255,255,0.04);
+                             border:1px solid rgba(255,255,255,0.1); border-radius:6px; font-size:0.72rem;
+                             color:rgba(255,255,255,0.5); cursor:pointer; text-align:left;"
+                      data-bs-toggle="modal"
+                      data-bs-target="#levelGridModal"
+                      aria-label="Voir la grille des niveaux">
+                ? Voir les grilles de niveaux
+              </button>
+
+              <%# Bouton Appliquer %>
               <button type="button"
                       data-action="click->level-filter#apply"
                       style="margin-top:0.3rem; width:100%; padding:0.35rem 0; background:#1EDD88; color:#111; border:none; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:opacity 0.15s;"
@@ -119,7 +174,7 @@
             </div>
           </div>
 
-          <%# Sport — dropdown custom multi-select (comme le filtre Niveau) %>
+          <%# Sport — dropdown custom sélection unique (radio buttons) %>
           <% if Sport.count > 0 %>
             <div class="sport-filter-pill" data-controller="sport-filter" style="position:relative">
 
@@ -131,54 +186,47 @@
                 <i data-lucide="chevron-down" style="width:11px;height:11px;margin-left:2px;"></i>
               </button>
 
-              <%# Panel dropdown %>
+              <%# Panel dropdown — clic sur un radio ferme et soumet automatiquement %>
               <div class="sport-filter-dropdown"
                    data-sport-filter-target="dropdown"
                    style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:150px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem">
 
-                <%# Bouton Tout sélectionner — en haut, style pill vert outline %>
-                <button type="button"
-                        data-action="click->sport-filter#selectAll"
-                        style="width:100%; padding:0.35rem 0.5rem; background:rgba(30,221,136,0.1); color:#1EDD88; border:1px solid rgba(30,221,136,0.35); border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; text-align:center; transition:background 0.15s, border-color 0.15s; margin-bottom:0.2rem;"
-                        onmouseover="this.style.background='rgba(30,221,136,0.2)'; this.style.borderColor='rgba(30,221,136,0.6)'"
-                        onmouseout="this.style.background='rgba(30,221,136,0.1)'; this.style.borderColor='rgba(30,221,136,0.35)'">
-                  Tout sélectionner
-                </button>
+                <%# Option "Tous les sports" — réinitialise le filtre sport %>
+                <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
+                  <input type="radio"
+                         name="sport_ids[]"
+                         value=""
+                         data-sport-filter-target="checkbox"
+                         data-label-html="Sport"
+                         data-action="change->sport-filter#change"
+                         style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
+                         <%= "checked" if params[:sport_ids].present? && params[:sport_ids].all?(&:blank?) %>>
+                  <span style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);">Tous les sports</span>
+                </label>
 
                 <%# Séparateur %>
-                <div style="height:1px; background:rgba(255,255,255,0.08); margin:0.2rem 0 0.25rem;"></div>
+                <div style="height:1px; background:rgba(255,255,255,0.08); margin:0.1rem 0;"></div>
 
+                <%# Un radio par sport — auto-soumet au clic %>
                 <% Sport.order(:name).each do |sport| %>
-                  <%# Pré-coché si ce sport est dans les filtres URL, ou si c'est le sport actif (et aucun filtre URL) %>
+                  <%# Pré-sélectionné si dans l'URL, ou si c'est le sport actif (aucun filtre URL) %>
                   <% sport_checked = params[:sport_ids]&.include?(sport.id.to_s) ||
-                                     (params[:sport_ids].blank? && current_sport&.id == sport.id) ||
-                                     (params[:sport_ids].blank? && multisport_mode?) %>
+                                     (params[:sport_ids].blank? && current_sport&.id == sport.id) %>
                   <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
-                    <input type="checkbox"
+                    <input type="radio"
                            name="sport_ids[]"
                            value="<%= sport.id %>"
                            data-sport-filter-target="checkbox"
-                           data-label="<%= sport_icon_text(sport) %> <%= sport.name %>"
                            data-label-html="<%= sport_icon_html_attr(sport, size: '1rem') %>"
                            data-action="change->sport-filter#change"
                            style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
                            <% if sport_checked %>checked<% end %>>
-                    <%# Emoji + nom du sport %>
                     <span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.85);">
                       <%= sport_icon(sport, size: "1.05rem") %>
                       <%= sport.name %>
                     </span>
                   </label>
                 <% end %>
-
-                <%# Bouton Appliquer %>
-                <button type="button"
-                        data-action="click->sport-filter#apply"
-                        style="margin-top:0.3rem; width:100%; padding:0.35rem 0; background:#1EDD88; color:#111; border:none; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:opacity 0.15s;"
-                        onmouseover="this.style.opacity='0.85'"
-                        onmouseout="this.style.opacity='1'">
-                  Appliquer
-                </button>
 
               </div>
             </div>

@@ -126,11 +126,9 @@ class Match < ApplicationRecord
     visibility == "public" || visibility.blank?
   end
 
-  # Niveaux disponibles (freeze = tableau immuable, bonne pratique Ruby)
-  LEVELS = ["Tout niveau", "Débutant", "Intermédiaire", "Avancé"].freeze
-
-  # Validation : le niveau est obligatoire
-  validates :level, presence: true, inclusion: { in: LEVELS }
+  # Validation : le niveau est obligatoire et doit appartenir à la grille du sport
+  validates :level, presence: true
+  validate :level_valid_for_sport
 
   # Validation : nombre de joueurs manquants obligatoire, entier, minimum 1
   validates :player_left,
@@ -144,6 +142,22 @@ class Match < ApplicationRecord
 
   # Validation : le match doit être prévu au minimum 30 minutes à l'avance
   validate :match_must_be_at_least_30min_in_future, on: %i[create update]
+
+  # Vérifie que le niveau choisi appartient à la grille du sport sélectionné.
+  # Tolère les niveaux hérités ("Tout niveau", "Avancé", etc.) sur les anciens matchs.
+  def level_valid_for_sport
+    return if level.blank?
+    # Backward compat : anciens matchs créés avec "Tout niveau" restent valides
+    return if level == "Tout niveau"
+
+    if sport.present?
+      valid_labels = sport.available_levels.map { |l| l[:label] }
+      unless valid_labels.include?(level)
+        errors.add(:level, "n'est pas valide pour ce sport (valeurs acceptées : #{valid_labels.join(', ')})")
+      end
+    end
+    # Si pas de sport sélectionné, la validation presence: true sur sport s'en charge
+  end
 
   # Retourne vrai si le format du match est "Libre" (taille d'équipe définie librement)
   def libre?

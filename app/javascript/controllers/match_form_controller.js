@@ -64,7 +64,10 @@ export default class extends Controller {
     "recapPrice",        // Zone affichant le prix par joueur (en bas du récap, en blanc)
     "recapPresentRow",   // Ligne "Présents" dans le récap (visible uniquement en mode Libre)
     "recapPresent",      // Valeur "joueurs présents" dans la ligne récap
-    "formCol"            // Colonne gauche (col-lg-7) — sert à mesurer son bas pour l'alignement
+    "formCol",           // Colonne gauche (col-lg-7) — sert à mesurer son bas pour l'alignement
+
+    // ── Boutons de niveau dynamiques (générés par JS selon le sport) ──
+    "levelButtons"       // Div recevant les boutons de niveau générés dynamiquement
   ]
 
   // ── connect() : appelé automatiquement au chargement de la page ──
@@ -178,6 +181,13 @@ export default class extends Controller {
       const matchedFmt  = formats.find(f => f.label === savedFormat) || formats[0]
       const matchedBtn  = Array.from(allBtns).find(b => b.dataset.label === savedFormat) || allBtns[0]
       this._applyFormat(matchedFmt, matchedBtn)
+
+      // Génère les boutons de niveau dynamiquement selon le sport
+      const levelsMap  = JSON.parse(select.dataset.levels || "{}")
+      const savedLevel = this.levelInputTarget.value
+      if (levelsMap[sportId]) {
+        this._renderLevelButtons(levelsMap[sportId], savedLevel)
+      }
 
     } else {
       // Aucun sport sélectionné
@@ -440,37 +450,68 @@ export default class extends Controller {
     this.recapPlayersTarget.textContent = val
   }
 
-  // ── Niveau : sélectionner un bouton ──────────────────────
-  // Appelé quand l'utilisateur clique sur un des boutons Débutant/Intermédiaire/etc.
-  selectLevel(event) {
-    const btn   = event.currentTarget
-    const value = btn.dataset.level  // la valeur est dans data-level="Avancé"
+  // ── Niveau : génère les boutons de niveau pour le sport sélectionné ──
+  // Même style et même pattern que _renderFormatButtons
+  _renderLevelButtons(levels, savedLevel) {
+    const container = this.levelButtonsTarget
+    container.innerHTML = ""
 
-    // 1. Met à jour le champ caché qui sera envoyé avec le formulaire
-    this.levelInputTarget.value = value
-
-    // 2. Retire la classe "active" de tous les boutons de niveau
-    //    + styles inline : garantit l'apparence même si le CSS est surchargé
-    this.element.querySelectorAll(".match-level-btn").forEach(b => {
-      b.classList.remove("active")
-      b.style.setProperty("border", "2px solid rgba(255,255,255,0.4)", "important")
-      b.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
-      b.style.setProperty("color", "rgba(255,255,255,0.9)", "important")
+    levels.forEach((lvl) => {
+      const btn = document.createElement("button")
+      btn.type = "button"
+      const isActive = lvl.label === savedLevel
+      btn.className = "match-level-btn" + (isActive ? " active" : "")
+      btn.textContent = lvl.label
+      btn.dataset.level = lvl.label
+      btn.style.setProperty("padding", "0.5rem 1.1rem")
+      btn.style.setProperty("border-radius", "0.5rem")
+      btn.style.setProperty("font-size", "0.9rem")
+      btn.style.setProperty("cursor", "pointer")
+      btn.style.setProperty("border",      isActive ? "2px solid #1EDD88"         : "2px solid rgba(255,255,255,0.4)", "important")
+      btn.style.setProperty("background",  isActive ? "rgba(30,221,136,0.12)"     : "rgba(255,255,255,0.08)", "important")
+      btn.style.setProperty("color",       isActive ? "#1EDD88"                   : "rgba(255,255,255,0.9)", "important")
+      btn.addEventListener("mouseover", () => {
+        if (!btn.classList.contains("active")) {
+          btn.style.setProperty("border",     "2px solid #1EDD88", "important")
+          btn.style.setProperty("background", "rgba(30,221,136,0.08)", "important")
+          btn.style.setProperty("color",      "#1EDD88", "important")
+        }
+      })
+      btn.addEventListener("mouseout", () => {
+        if (!btn.classList.contains("active")) {
+          btn.style.setProperty("border",     "2px solid rgba(255,255,255,0.4)", "important")
+          btn.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
+          btn.style.setProperty("color",      "rgba(255,255,255,0.9)", "important")
+        }
+      })
+      btn.addEventListener("click", () => this._applyLevel(lvl.label, btn))
+      container.appendChild(btn)
     })
-    // 3. Ajoute "active" + styles verts seulement sur le bouton cliqué
-    btn.classList.add("active")
-    btn.style.setProperty("border", "2px solid #1EDD88", "important")
-    btn.style.setProperty("background", "rgba(30,221,136,0.12)", "important")
-    btn.style.setProperty("color", "#1EDD88", "important")
-
-    // 4. Met à jour le récap (la ligne reste toujours visible)
-    this.recapLevelTarget.textContent = value
   }
 
-  // ── Niveau : synchroniser le récap ────────────────────────
+  // Applique un niveau : met à jour l'input caché, le récap et les styles des boutons
+  _applyLevel(label, clickedBtn) {
+    this.levelInputTarget.value        = label
+    this.recapLevelTarget.textContent  = label
+
+    // Remet tous les boutons niveau à l'état inactif
+    this.levelButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
+      const isActive = b === clickedBtn
+      b.classList.toggle("active", isActive)
+      b.style.setProperty("border",     isActive ? "2px solid #1EDD88"     : "2px solid rgba(255,255,255,0.4)", "important")
+      b.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
+      b.style.setProperty("color",      isActive ? "#1EDD88"               : "rgba(255,255,255,0.9)", "important")
+    })
+  }
+
+  // ── Niveau : sélectionner un bouton (appelé via data-action dans le HTML) ──
+  selectLevel(event) {
+    this._applyLevel(event.currentTarget.dataset.level, event.currentTarget)
+  }
+
+  // ── Niveau : synchroniser le récap au chargement ────────────
   updateLevel() {
     const val = this.levelInputTarget.value
-    // Affiche la valeur ou rien si vide (la ligne reste toujours visible)
     this.recapLevelTarget.textContent = val
   }
 

@@ -272,18 +272,32 @@
                          value="<%= sp&.level %>"
                          data-sport-level-target="input">
 
-                  <%# Label niveau %>
-                  <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">Niveau</p>
+                  <%# Label niveau + bouton "?" modale %>
+                  <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">
+                    Niveau
+                    <%# Ouvre la modale grilles de niveaux sur le sport concerné %>
+                    <button type="button"
+                            style="background:none; border:1px solid rgba(255,255,255,0.25); border-radius:50%;
+                                   width:16px; height:16px; font-size:0.6rem; color:rgba(255,255,255,0.4);
+                                   cursor:pointer; padding:0; line-height:1; vertical-align:middle; margin-left:0.3rem;"
+                            data-bs-toggle="modal"
+                            data-bs-target="#levelGridModal"
+                            data-sport-id="<%= sport.id %>"
+                            data-action="click->level-grid#preselectSport"
+                            aria-label="Voir la grille des niveaux">
+                      ?
+                    </button>
+                  </p>
 
-                  <%# Pills de niveau %>
+                  <%# Pills de niveau — dynamiques selon la grille du sport %>
                   <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:0.5rem;">
-                    <% ["Débutant", "Intermédiaire", "Avancé"].each do |lvl| %>
+                    <% sport.available_levels.each do |lvl| %>
                       <button type="button"
-                              class="level-pill <%= 'level-pill--active' if sp&.level == lvl %>"
+                              class="level-pill <%= 'level-pill--active' if sp&.level == lvl[:label] %>"
                               data-sport-level-target="pill"
                               data-action="click->sport-level#select"
-                              data-value="<%= lvl %>">
-                        <%= lvl %>
+                              data-value="<%= lvl[:label] %>">
+                        <%= lvl[:label] %>
                       </button>
                     <% end %>
                   </div>

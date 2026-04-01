@@ -86,6 +86,8 @@
               sports_names    = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = "#{sport_icon_text(s)} #{s.name}".strip }
               # Formats disponibles par sport : { sportId => [{label, players}, ...] }
               sports_formats  = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_formats }
+              # Niveaux disponibles par sport : { sportId => [{label, ref?}, ...] }
+              sports_levels   = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_levels }
 
               # Images disponibles par sport — même liste que show.html.erb et _match_card.html.erb
               # IMPORTANT : asset_path() lève une erreur si le fichier n'existe pas → ne lister que les vrais fichiers
@@ -117,6 +119,9 @@
                   "max-players": sports_max.to_json,
                   "sport-names": sports_names.to_json,
                   "formats": sports_formats.to_json,
+                  # niveaux : { sportId => [{label, ref?}, ...] } — utilisé par Stimulus pour
+                  # générer les boutons de niveau dynamiquement selon le sport sélectionné
+                  "levels": sports_levels.to_json,
                   # images : { sportId => [url1, url2, ...] } — utilisé par Stimulus pour
                   # changer l'image de la banner dynamiquement selon le sport sélectionné
                   "images": sports_images_map.to_json
@@ -506,33 +511,33 @@
 
           </div><%# fin section Libre %>
 
-          <%# ── Boutons de niveau ── %>
+          <%# ── Boutons de niveau (générés dynamiquement par Stimulus selon le sport) ── %>
           <div class="mb-4">
-            <label class="form-label d-block">Niveau requis <span class="required-star">*</span></label>
+            <label class="form-label d-block">
+              Niveau requis <span class="required-star">*</span>
+              <%# Bouton "?" : ouvre la modale explicative des niveaux pour le sport actif %>
+              <button type="button"
+                      style="background:none; border:1px solid rgba(255,255,255,0.25); border-radius:50%;
+                             width:18px; height:18px; font-size:0.65rem; color:rgba(255,255,255,0.5);
+                             cursor:pointer; padding:0; line-height:1; vertical-align:middle; margin-left:0.3rem;"
+                      data-bs-toggle="modal"
+                      data-bs-target="#levelGridModal"
+                      data-action="click->level-grid#preselectSport"
+                      aria-label="Voir la grille des niveaux">
+                ?
+              </button>
+            </label>
 
-            <%# Input caché : contient le niveau sélectionné (ex: "Avancé").
-                Mis à jour par selectLevel() dans Stimulus quand on clique un bouton. %>
+            <%# Input caché : contient le niveau sélectionné.
+                Mis à jour par _applyLevel() dans Stimulus quand on clique un bouton. %>
             <%= f.hidden_field :level,
                 value: @match.level,
                 data: { "match-form-target": "levelInput" } %>
 
-            <%# Groupe de boutons stylisés (pas de vrais radio inputs)
-                Chaque bouton a data-level="Nom du niveau" et data-action pour Stimulus
-                La classe .active est ajoutée/retirée par Stimulus selon la sélection %>
-            <div class="match-level-buttons">
-              <% Match::LEVELS.each do |lvl| %>
-                <%# Styles inline garantis + hover via onmouseover/onmouseout (contourne !important du CSS) %>
-                <button type="button"
-                        class="match-level-btn <%= 'active' if @match.level == lvl %>"
-                        style="padding:0.5rem 1.1rem; border-radius:0.5rem; font-size:0.9rem; cursor:pointer; border:<%= @match.level == lvl ? '2px solid #1EDD88' : '2px solid rgba(255,255,255,0.4)' %> !important; background:<%= @match.level == lvl ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.08)' %> !important; color:<%= @match.level == lvl ? '#1EDD88' : 'rgba(255,255,255,0.9)' %> !important;"
-                        onmouseover="if(!this.classList.contains('active')){this.style.setProperty('border','2px solid #1EDD88','important');this.style.setProperty('background','rgba(30,221,136,0.08)','important');this.style.setProperty('color','#1EDD88','important')}"
-                        onmouseout="if(!this.classList.contains('active')){this.style.setProperty('border','2px solid rgba(255,255,255,0.4)','important');this.style.setProperty('background','rgba(255,255,255,0.08)','important');this.style.setProperty('color','rgba(255,255,255,0.9)','important')}"
-                        data-level="<%= lvl %>"
-                        data-action="click->match-form#selectLevel">
-                  <%= lvl %>
-                </button>
-              <% end %>
-            </div>
+            <%# Container vide — Stimulus remplit les boutons via _renderLevelButtons()
+                lors de updateSport() au chargement et au changement de sport %>
+            <div class="match-level-buttons"
+                 data-match-form-target="levelButtons"></div>
 
           </div><%# fin niveau %>
 

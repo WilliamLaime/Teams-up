@@ -138,6 +138,43 @@ module ApplicationHelper
     end
   end
 
+  # ── Badge de niveau ──────────────────────────────────────────────────────────
+  # Retourne la classe CSS à appliquer sur un badge de niveau.
+  # Le niveau est traduit en "tier" (1 à 7) selon sa position dans la grille du sport.
+  # Tier 1 = débutant (vert) → Tier 7 = expert (violet), "Tout niveau" = bleu neutre.
+  #
+  # Paramètres :
+  #   level_label – chaîne du niveau (ex: "Confirmé")
+  #   sport       – objet Sport (optionnel) pour un mapping précis selon la grille du sport
+  def level_badge_css(level_label, sport = nil)
+    return "level-tout" if level_label.blank? || level_label == "Tout niveau"
+
+    if sport.present?
+      levels = sport.available_levels.map { |l| l[:label] }
+      index  = levels.index(level_label)
+
+      if index
+        # Normalise la position (0..n-1) en tier (1..7)
+        # Guard contre division par zéro si un seul niveau dans la grille
+        tier = ((index.to_f / [levels.length - 1, 1].max) * 6).round + 1
+        "level-tier-#{tier.clamp(1, 7)}"
+      else
+        "level-tout" # niveau inconnu / héritage → badge neutre
+      end
+    else
+      # Pas de contexte sport → fallback sur le nom du label
+      case level_label
+      when "Débutant"          then "level-tier-1"
+      when "Amateur", "Initié", "Perfectionnement", "Élémentaire" then "level-tier-2"
+      when "Intermédiaire"     then "level-tier-3"
+      when "Confirmé"          then "level-tier-5"
+      when "Avancé"            then "level-tier-6"
+      when "Expert"            then "level-tier-7"
+      else "level-tout"
+      end
+    end
+  end
+
   # Texte brut pour les attributs data-* et les options de select (pas de HTML)
   def sport_icon_text(sport)
     return "" unless sport

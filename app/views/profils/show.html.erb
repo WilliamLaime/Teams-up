@@ -185,15 +185,9 @@
 
                         <%# Badge niveau — séparé par un point si présent %>
                         <% if sp&.level.present? %>
-                          <%
-                            lvl_color = case sp.level
-                              when "Débutant"      then "rgba(34,197,94,0.85)"
-                              when "Intermédiaire" then "rgba(59,130,246,0.85)"
-                              when "Avancé"        then "rgba(245,158,11,0.9)"
-                            end
-                          %>
                           <span style="color:rgba(255,255,255,0.25);">·</span>
-                          <span style="font-size:0.68rem; font-weight:700; color:<%= lvl_color %>;">
+                          <span class="match-badge-level <%= level_badge_css(sp.level, sport) %>"
+                                style="font-size:0.65rem; padding:0.1rem 0.45rem;">
                             <%= sp.level %>
                           </span>
                         <% end %>
@@ -469,12 +463,7 @@
                   images = sport_images[sport_slug] || sport_images["football"]
                   cover = images[match.id % images.length]
 
-                  lvl_css = case match.level
-                    when "Débutant"      then "level-debutant"
-                    when "Intermédiaire" then "level-intermediaire"
-                    when "Avancé"        then "level-avance"
-                    else                      "level-tout"
-                  end
+                  lvl_css = level_badge_css(match.level, match.sport)
 
                   fr_days = %w[Dim Lun Mar Mer Jeu Ven Sam]
                   date_str = match.date ? "#{fr_days[match.date.wday]} #{match.date.strftime('%d/%m')}" : "—"

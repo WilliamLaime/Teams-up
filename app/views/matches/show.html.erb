@@ -100,13 +100,8 @@
   is_participant = @current_match_user &&
                    (@current_match_user.approved? || @current_match_user.role == "organisateur")
 
-  # Classe CSS du badge niveau
-  level_css = case @match.level
-    when "Débutant"      then "level-debutant"
-    when "Intermédiaire" then "level-intermediaire"
-    when "Avancé"        then "level-avance"
-    else                      "level-tout"
-  end
+  # Classe CSS du badge niveau — tier dynamique selon la grille du sport
+  level_css = level_badge_css(@match.level, @match.sport)
 
   # Jours et mois en français
   fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
@@ -166,7 +161,21 @@
           <% if @match.urgent? %>
             <span class="match-badge-urgent">🔥 Urgent</span>
           <% end %>
-          <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
+          <%# Badge niveau + bouton "?" modale %>
+          <span style="display:inline-flex; align-items:center; gap:0.3rem;">
+            <span class="match-badge-level <%= level_css %>"><%= @match.level %></span>
+            <button type="button"
+                    style="background:none; border:1px solid rgba(255,255,255,0.2); border-radius:50%;
+                           width:16px; height:16px; font-size:0.6rem; color:rgba(255,255,255,0.4);
+                           cursor:pointer; padding:0; line-height:1; flex-shrink:0;"
+                    data-bs-toggle="modal"
+                    data-bs-target="#levelGridModal"
+                    data-sport-id="<%= @match.sport_id %>"
+                    data-action="click->level-grid#preselectSport"
+                    aria-label="Voir la grille des niveaux">
+              ?
+            </button>
+          </span>
           <%# Badge "Complet" supprimé — remplacé par le bandeau centré sur l'image %>
         </div>
 

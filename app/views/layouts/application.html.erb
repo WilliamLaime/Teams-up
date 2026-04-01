@@ -84,6 +84,8 @@
     <%# Rendus ici — en dehors de tout stacking context — pour que Bootstrap puisse
         gérer correctement z-index et backdrop sans conflit de positionnement CSS %>
     <%= yield :modals %>
+    <%# Modale grille des niveaux — disponible sur toutes les pages via le bouton "?" %>
+    <%= render "shared/level_grid_modal" %>
 
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Appelé en bas de body pour que le DOM soit chargé %>
