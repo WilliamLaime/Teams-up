@@ -81,8 +81,8 @@
                hero_src = asset_path("img banner/banner_volley.jpeg")
                hero_alt = "Joueur de volley"
              when nil
-               # Mode Multisport (aucun sport sélectionné) → image locale multisports
-               hero_src = asset_path("sports/multisports-img.png")
+               # Mode Multisport (aucun sport sélectionné) → image Cloudinary multisports
+               hero_src = SPORT_MISC_IMAGES[:multisports_img]
                hero_alt = "Multisport"
              else
                # Tennis par défaut

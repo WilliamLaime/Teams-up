@@ -1,0 +1,17 @@
+# Fichiers exclus du slug Heroku pour réduire la taille
+
+# Tests et specs
+/spec
+/test
+/features
+
+# Documentation
+*.md
+/doc
+/docs
+
+# Fichiers de développement
+.git
+.gitignore
+.env*
+.rubocop*

@@ -43,7 +43,7 @@
                   data-bs-toggle="dropdown"
                   aria-expanded="false">
             <% if multisport_mode? %>
-              <%= image_tag "sports/multisports.png", style: "width:1rem;height:1rem;object-fit:contain;", class: "sport-switcher-icon" %>
+              <%= image_tag SPORT_MISC_IMAGES[:multisports], style: "width:1rem;height:1rem;object-fit:contain;", class: "sport-switcher-icon" %>
             <% elsif current_sport %>
               <%= sport_icon(current_sport, size: "1rem", css_class: "sport-switcher-icon") %>
             <% end %>
@@ -64,7 +64,7 @@
               <%= button_to multisport_switch_path, method: :post,
                   class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
                   form: { "data-turbo": "false" } do %>
-                <%= image_tag "sports/multisports.png", style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
+                <%= image_tag SPORT_MISC_IMAGES[:multisports], style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
                 <span>Multisport</span>
                 <% if multisport_mode? %>
                   <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>

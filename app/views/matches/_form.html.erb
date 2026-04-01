@@ -89,22 +89,10 @@
               # Niveaux disponibles par sport : { sportId => [{label, ref?}, ...] }
               sports_levels   = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_levels }
 
-              # Images disponibles par sport — même liste que show.html.erb et _match_card.html.erb
-              # IMPORTANT : asset_path() lève une erreur si le fichier n'existe pas → ne lister que les vrais fichiers
-              _sport_images_data = {
-                "football"   => %w[sports/Football/ballon.webp sports/Football/citytoulouse.webp sports/Football/bresil.webp sports/Football/herbe.webp sports/Football/city1.webp sports/Football/citydrone.webp sports/Football/Duel.webp sports/Football/Medellin.webp],
-                "tennis"     => %w[sports/Tennis/tennis1.webp sports/Tennis/tennis2.webp sports/Tennis/tennis3.webp sports/Tennis/tennis4.webp sports/Tennis/tennis5.webp sports/Tennis/tennis6.webp],
-                "padel"      => %w[sports/Padel/padel1.webp sports/Padel/padel2.webp sports/Padel/padel3.webp sports/Padel/padel4.webp sports/Padel/padel5.webp sports/Padel/padel6.webp],
-                "volleyball" => %w[sports/Volley/volley1.webp sports/Volley/volley2.webp sports/Volley/volley3.webp sports/Volley/volley4.webp sports/Volley/volley5.webp sports/Volley/volley6.webp],
-                "basketball" => %w[sports/Basketball/basket1.webp sports/Basketball/basket2.webp sports/Basketball/basket3.webp sports/Basketball/basket4.webp sports/Basketball/basket5.webp sports/Basketball/basket6.webp],
-                "handball"   => %w[sports/Handball/handball1.webp sports/Handball/handball2.webp],
-                "badminton"  => %w[sports/Badminton/badminton1.webp sports/Badminton/badminton2.webp sports/Badminton/badminton3.webp sports/Badminton/badminton4.webp sports/Badminton/badminton5.webp sports/Badminton/badminton6.webp]
-              }
-              # Construit { sportId => ["/assets/sports/Football/ballon-abc123.webp", ...] }
-              # asset_path() génère l'URL avec fingerprint (cache-busting) → nécessaire en prod
+              # Images disponibles par sport — URLs Cloudinary via SportImagesHelper
+              # Construit { sportId => [url1, url2, ...] }
               sports_images_map = Sport.order(:name).each_with_object({}) do |s, h|
-                slug_imgs = _sport_images_data[s.slug] || _sport_images_data["football"]
-                h[s.id] = slug_imgs.map { |img| asset_path(img) }
+                h[s.id] = sport_images_for(s.slug)
               end
             %>
             <%#
