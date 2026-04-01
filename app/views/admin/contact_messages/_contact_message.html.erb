@@ -22,7 +22,7 @@
     </span>
   </td>
 
-  <%# Email cliquable (ouvre le client mail) %>
+  <%# Email cliquable %>
   <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6);">
     <%= mail_to msg.email, msg.email, style: "color:rgba(255,255,255,0.6);" %>
   </td>
@@ -35,7 +35,7 @@
     </span>
   </td>
 
-  <%# Date de réception formatée en français %>
+  <%# Date de réception %>
   <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); white-space:nowrap;">
     <%= msg.created_at.strftime("%d/%m/%Y à %Hh%M") %>
   </td>

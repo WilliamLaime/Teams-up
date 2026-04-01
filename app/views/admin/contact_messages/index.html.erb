@@ -29,11 +29,12 @@
   <% end %>
 
   <%# ── Tableau des messages ── %>
-  <div class="match-block">
+  <%# overflow-x directement sur match-block — plus fiable sur mobile %>
+  <div class="match-block" style="overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0;">
 
-    <%# Bouton "Tout supprimer" — visible uniquement s'il y a des messages %>
+    <%# Bouton "Tout supprimer" — padding rétabli autour de ce bouton %>
     <% if @contact_messages.any? %>
-      <div class="d-flex justify-content-end mb-2">
+      <div class="d-flex justify-content-end" style="padding: 1.25rem 1.35rem 0.75rem;">
         <%= button_to destroy_all_admin_contact_messages_path,
                       method: :delete,
                       class: "btn btn-sm",
@@ -45,37 +46,41 @@
       </div>
     <% end %>
 
-    <%# Tableau toujours présent dans le DOM pour recevoir les broadcasts Turbo Stream,
-        même quand il n'y a aucun message au chargement de la page %>
-    <table class="table table-dark table-hover mb-0" style="font-size:0.85rem;">
-      <thead>
-        <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
-          <th style="border-color:rgba(255,255,255,0.07);">Statut</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Expéditeur</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Email</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Sujet</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Reçu le</th>
-          <th style="border-color:rgba(255,255,255,0.07);">Actions</th>
-        </tr>
-      </thead>
-      <%# id="contact_messages_tbody" — ciblé par broadcast_prepend_to pour insérer les nouvelles lignes %>
-      <tbody id="contact_messages_tbody">
-        <% if @contact_messages.any? %>
-          <% @contact_messages.each do |msg| %>
-            <%= render "admin/contact_messages/contact_message", msg: msg %>
-          <% end %>
-        <% else %>
-          <%# Ligne "état vide" avec un id — supprimée automatiquement par broadcast_remove_to
-              dès que le premier message arrive en temps réel via Turbo Stream %>
-          <tr id="contact_messages_empty">
-            <td colspan="6" class="text-center py-5" style="border:none;">
-              <i data-lucide="inbox" style="width:40px; height:40px; color:rgba(255,255,255,0.2); margin-bottom:1rem; display:block; margin-left:auto; margin-right:auto;"></i>
-              <p style="color:rgba(255,255,255,0.3); margin:0;">Aucun message de contact pour le moment.</p>
-            </td>
+    <%# Le tableau prend toute la largeur — le scroll du parent prend le relais si nécessaire %>
+    <div>
+      <%# Tableau toujours présent dans le DOM pour recevoir les broadcasts Turbo Stream,
+          même quand il n'y a aucun message au chargement de la page %>
+      <%# min-width force le scroll quand le contenu est trop large pour l'écran %>
+      <table class="table table-dark table-hover mb-0" style="font-size:0.85rem; min-width: 620px;">
+        <thead>
+          <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Statut</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Expéditeur</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Email</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Sujet</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Reçu le</th>
+            <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">Actions</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <%# id="contact_messages_tbody" — ciblé par broadcast_prepend_to pour insérer les nouvelles lignes %>
+        <tbody id="contact_messages_tbody">
+          <% if @contact_messages.any? %>
+            <% @contact_messages.each do |msg| %>
+              <%= render "admin/contact_messages/contact_message", msg: msg %>
+            <% end %>
+          <% else %>
+            <%# Ligne "état vide" avec un id — supprimée automatiquement par broadcast_remove_to
+                dès que le premier message arrive en temps réel via Turbo Stream %>
+            <tr id="contact_messages_empty">
+              <td colspan="6" class="text-center py-5" style="border:none;">
+                <i data-lucide="inbox" style="width:40px; height:40px; color:rgba(255,255,255,0.2); margin-bottom:1rem; display:block; margin-left:auto; margin-right:auto;"></i>
+                <p style="color:rgba(255,255,255,0.3); margin:0;">Aucun message de contact pour le moment.</p>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
 
   </div>
 
