@@ -277,10 +277,14 @@ Devise.setup do |config|
   # up on your models and hooks.
   # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
 
-  # Configuration Google OAuth — les clés sont dans le fichier .env
-  # APP_HOST doit être défini sur Heroku (ex: https://www.teams-up.fit)
-  # En développement, on utilise localhost:3000
-  OmniAuth.config.full_host = ENV.fetch("APP_HOST", "http://localhost:3000")
+  # Configuration Google OAuth — full_host dynamique
+  # Se base sur la requête entrante pour construire l'URL de callback
+  # Fonctionne automatiquement depuis localhost, Ngrok et Heroku
+  OmniAuth.config.full_host = lambda { |env|
+    req = Rack::Request.new(env)
+    # Reconstruit le host avec le bon scheme (http ou https)
+    "#{req.scheme}://#{req.host_with_port}"
+  }
   config.omniauth :google_oauth2, ENV["GOOGLE_CLIENT_ID"], ENV["GOOGLE_CLIENT_SECRET"]
 
   # ==> Warden configuration

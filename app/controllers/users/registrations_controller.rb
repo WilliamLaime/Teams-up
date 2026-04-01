@@ -34,7 +34,7 @@ module Users
         # Clé :sports → permet à la vue d'afficher l'erreur directement près du champ sport
         resource.errors.add(:sports, "Sélectionne au moins un sport pour continuer.")
         clean_up_passwords resource
-        respond_with resource
+        render :new, status: :unprocessable_entity
         return
       end
 
@@ -47,7 +47,7 @@ module Users
         # Clé :genre → permet à la vue d'afficher l'erreur directement près du champ genre
         resource.errors.add(:genre, "Sélectionne ton genre pour continuer.")
         clean_up_passwords resource
-        respond_with resource
+        render :new, status: :unprocessable_entity
         return
       end
 
@@ -59,7 +59,7 @@ module Users
         build_resource(sign_up_params)
         resource.errors.add(:base, "La photo de profil doit être un JPG, PNG ou GIF de moins de 5 Mo.")
         clean_up_passwords resource
-        respond_with resource
+        render :new, status: :unprocessable_entity
         return
       end
 
@@ -69,7 +69,7 @@ module Users
         build_resource(sign_up_params)
         flash.now[:alert] = "Vérification captcha échouée. Veuillez réessayer."
         clean_up_passwords resource
-        respond_with resource
+        render :new, status: :unprocessable_entity
         return
       end
 
