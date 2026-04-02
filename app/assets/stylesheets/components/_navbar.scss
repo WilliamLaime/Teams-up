@@ -71,6 +71,47 @@
   }
 }
 
+// Bouton "Installer l'app" PWA — style icône discrète sur mobile, pill vert sur desktop
+.nav-pwa-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.75);
+  transition: color 0.2s ease;
+
+  .nav-pwa-icon {
+    color: rgba(255, 255, 255, 0.75);
+    transition: color 0.2s ease;
+  }
+
+  &:hover .nav-pwa-icon {
+    color: $green;
+  }
+
+  // Desktop : apparence bouton pill vert (comme avant)
+  @media (min-width: 992px) {
+    background-color: #1EDD88;
+    color: #111111;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    .nav-pwa-icon {
+      color: #111111;
+    }
+
+    &:hover {
+      background-color: darken(#1EDD88, 6%);
+    }
+
+    &:hover .nav-pwa-icon {
+      color: #111111;
+    }
+  }
+}
+
 // Hover sur la cloche : l'icône passe en vert
 .navbar-dark-custom .notif-bell-link {
   // Couleur de base de l'icône (via currentColor du SVG Lucide)

@@ -95,7 +95,7 @@
         ACTIONS DROITE — toujours visibles (mobile + desktop)
         On affiche/cache certains éléments avec d-none/d-lg-block
         ══════════════════════════════════════════════════════ %>
-    <div class="d-flex align-items-center gap-3 ms-auto ms-lg-0">
+    <div class="d-flex align-items-center gap-2 gap-lg-3 ms-auto ms-lg-0">
 
       <% if user_signed_in? %>
 
@@ -116,14 +116,13 @@
           <%# Bouton toujours visible (mobile + desktop) %>
           <%# Sur mobile : icône seule (pas de texte) pour économiser l'espace navbar
               Sur desktop (lg+) : icône + texte "Installer l'app" %>
+          <%# Sur desktop : bouton vert avec texte. Sur mobile : icône discrète style nav (comme la cloche et le chat) %>
           <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
-                  class="btn btn-sm d-flex align-items-center gap-2"
-                  style="background-color:#1EDD88; color:#111111; border:none; font-weight:400; font-size:0.8rem; border-radius:8px; padding:6px 10px;"
+                  class="nav-pwa-btn d-flex align-items-center gap-2"
                   title="Installer l'application sur votre appareil">
-            <i data-lucide="download" style="width:14px;height:14px;"></i>
-            <%# Texte masqué sur mobile, visible à partir de lg %>
-            <span class="d-none d-lg-inline">Installer l'app</span>
+            <i data-lucide="download" class="nav-pwa-icon" style="width:20px;height:20px;"></i>
+            <span class="d-none d-lg-inline nav-pwa-label">Installer l'app</span>
           </button>
 
           <%# ── Modale unique avec deux états gérés par Stimulus ──────────────
