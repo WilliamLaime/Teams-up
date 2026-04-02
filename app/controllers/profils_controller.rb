@@ -2,8 +2,8 @@ class ProfilsController < ApplicationController
   # Noms de fichiers autorisés pour les avatars prédéfinis
   VALID_PRESET_AVATARS = %w[01 02 3 4 5 6 7 8 9 10 11 12].freeze
   # Retrouver le profil de l'utilisateur connecté avant chaque action
-  # On exclut show_user car il charge le profil d'un autre utilisateur
-  before_action :set_profil, except: [:show_user]
+  # On exclut show_user et show_user_simple car ils chargent le profil d'un autre utilisateur
+  before_action :set_profil, except: [:show_user, :show_user_simple]
 
   # GET /profil
   # Affiche le profil de l'utilisateur connecté
@@ -133,6 +133,95 @@ class ProfilsController < ApplicationController
     redirect_to profil_path
   end
 
+  # GET /profil/simple
+  # Nouvelle version du profil sans gamification (XP, niveaux, achievements)
+  def show_simple
+    # On réutilise la règle show? de ProfilPolicy (seul le propriétaire peut voir)
+    authorize @profil, :show?
+    # @profil_user sert dans la vue pour afficher le bon utilisateur
+    @profil_user = current_user
+
+    # Charge tous les amis acceptés de l'utilisateur connecté
+    @all_friends = current_user.all_friends.includes(:profil)
+
+    # Charge les demandes d'ami en attente reçues
+    @pending_friend_requests = current_user.inverse_friendships
+                                           .pending
+                                           .includes(user: :profil)
+
+    # Nombre de matchs réellement joués (status "approved" + match terminé)
+    @matchs_joues = current_user.match_users
+                                .joins(:match)
+                                .where(status: "approved")
+                                .where("(matches.date + matches.time) < ?", Time.current - 1.hour)
+                                .count
+
+    # Charge les 10 derniers avis mutuels reçus
+    @avis = Avis.mutual
+                .where(reviewed_user: current_user)
+                .includes(reviewer: :profil)
+                .order(created_at: :desc)
+                .limit(10)
+
+    # Nombre d'avis reçus mais non-mutuels (encourage l'user à noter en retour)
+    @pending_avis_count = Avis.non_mutual
+                              .where(reviewed_user: current_user)
+                              .count
+
+    # Utilisateurs qui ont noté current_user sans recevoir d'avis en retour
+    pending_reviewer_ids = Avis.non_mutual
+                               .where(reviewed_user: current_user)
+                               .pluck(:reviewer_id)
+                               .uniq
+    @pending_reviewers = User.where(id: pending_reviewer_ids).includes(:profil)
+  end
+
+  # GET /users/:id/profil/simple
+  # Version simplifiée du profil public d'un autre utilisateur (sans gamification)
+  def show_user_simple
+    skip_authorization
+    @profil_user = User.find(params[:id])
+    @profil = @profil_user.profil || @profil_user.build_profil
+
+    # Charge tous les amis du profil affiché
+    @all_friends = @profil_user.all_friends.includes(:profil)
+
+    # Vérifie le statut de la relation entre current_user et ce profil
+    if user_signed_in? && current_user != @profil_user
+      @already_friends              = current_user.friends_with?(@profil_user)
+      @pending_sent                 = current_user.pending_request_sent_to?(@profil_user)
+      @pending_received             = current_user.pending_request_from?(@profil_user)
+      @friendship_initiated_by_me   = current_user.friendships.find_by(friend_id: @profil_user.id)
+    end
+
+    # Nombre de matchs réellement joués par cet utilisateur
+    @matchs_joues = @profil_user.match_users
+                                .joins(:match)
+                                .where(status: "approved")
+                                .where("(matches.date + matches.time) < ?", Time.current - 1.hour)
+                                .count
+
+    # Charge les 10 derniers avis mutuels reçus
+    @avis = Avis.mutual
+                .where(reviewed_user: @profil_user)
+                .includes(reviewer: :profil)
+                .order(created_at: :desc)
+                .limit(10)
+
+    # Vérifie si l'utilisateur connecté peut laisser un avis à ce joueur
+    @eligible_match = find_eligible_match_for_review(@profil_user)
+
+    # Vérifie si cet utilisateur a déjà laissé un avis non-mutuel à current_user
+    @hidden_review_from_this_user = user_signed_in? &&
+                                    current_user != @profil_user &&
+                                    Avis.non_mutual.exists?(
+                                      reviewer_id: @profil_user.id,
+                                      reviewed_user_id: current_user.id
+                                    )
+
+    render :show_simple
+  end
+
   # PATCH/PUT /profil
   # Met à jour le profil et les sports de l'utilisateur connecté
   def update
@@ -196,7 +285,7 @@ class ProfilsController < ApplicationController
     if @profil.update(profil_params)
       # 🎮 Vérifier l'achievement "profil complété" après la mise à jour
       AchievementService.new(current_user).check(:profile_updated)
-      redirect_to profil_path, notice: "Profil mis à jour avec succès !"
+      redirect_to simple_profil_path, notice: "Profil mis à jour avec succès !"
     else
       render :edit, status: :unprocessable_entity
     end

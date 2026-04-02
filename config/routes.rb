@@ -57,17 +57,22 @@ Rails.application.routes.draw do
   end
 
   # Route pour le profil de l'utilisateur connecté (ressource singulière)
-  # GET  /profil      => voir mon profil
-  # GET  /profil/edit => modifier mon profil
-  # PUT  /profil      => sauvegarder les modifications
+  # GET  /profil        => voir mon profil (version gaming)
+  # GET  /profil/simple => voir mon profil (version simplifiée, sans gamification)
+  # GET  /profil/edit   => modifier mon profil
+  # PUT  /profil        => sauvegarder les modifications
   resource :profil, only: [:show, :edit, :update] do
     # PATCH /profil/spend_stat?attribute=attr_attack => dépenser un point de stat
     patch :spend_stat, on: :member
+    # GET /profil/simple => nouvelle page profil sans gamification
+    get :simple, on: :member, action: :show_simple
   end
 
   # Route pour voir le profil public d'un autre utilisateur
-  # GET /users/:id/profil => voir le profil de l'utilisateur avec cet id
+  # GET /users/:id/profil        => version gaming
+  # GET /users/:id/profil/simple => version simplifiée, sans gamification
   get "users/:id/profil", to: "profils#show_user", as: :user_profil
+  get "users/:id/profil/simple", to: "profils#show_user_simple", as: :user_profil_simple
 
   # Routes pour les avis et les amis (imbriquées sous users)
   # POST   /users/:user_id/avis                => laisser un avis à un joueur
