@@ -1,0 +1,206 @@
+<%# ── Formulaire création / édition d'une équipe ─────────────────────────── %>
+<%# Partagé entre new.html.erb et edit.html.erb %>
+
+<%= form_with model: @team,
+    data: { controller: "badge-builder" },
+    html: { enctype: "multipart/form-data" } do |f| %>
+
+  <%# Affiche les erreurs de validation %>
+  <% if @team.errors.any? %>
+    <div class="alert alert-danger mb-3">
+      <% @team.errors.full_messages.each do |msg| %>
+        <p class="mb-0"><%= msg %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="row g-4">
+
+    <%# ── Colonne gauche : infos de l'équipe ──────────────────────────────── %>
+    <div class="col-12 col-lg-7">
+      <div class="team-section-card">
+        <h2 class="team-section-title">Informations</h2>
+
+        <%# Nom de l'équipe %>
+        <div class="mb-3">
+          <%= f.label :name, "Nom de l'équipe *", class: "form-label text-white-50" %>
+          <%= f.text_field :name,
+              class: "form-control form-control-dark",
+              placeholder: "Les Invincibles…",
+              maxlength: 50,
+              required: true %>
+        </div>
+
+        <%# Description %>
+        <div class="mb-3">
+          <%= f.label :description, "Description (optionnelle)", class: "form-label text-white-50" %>
+          <%= f.text_area :description,
+              class: "form-control form-control-dark",
+              placeholder: "Présente ton équipe en quelques mots…",
+              rows: 3 %>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Colonne droite : blason ──────────────────────────────────────────── %>
+    <div class="col-12 col-lg-5">
+      <div class="team-section-card">
+        <h2 class="team-section-title">Blason</h2>
+
+        <%# Onglets Upload / Générateur %>
+        <div class="badge-tabs mb-3">
+          <button type="button"
+                  class="badge-tab active"
+                  data-badge-builder-target="tabUpload"
+                  data-action="click->badge-builder#showUpload">
+            <i data-lucide="upload" style="width:13px;height:13px;margin-right:4px;"></i>
+            Uploader une image
+          </button>
+          <button type="button"
+                  class="badge-tab"
+                  data-badge-builder-target="tabGenerator"
+                  data-action="click->badge-builder#showGenerator">
+            <i data-lucide="wand-2" style="width:13px;height:13px;margin-right:4px;"></i>
+            Générateur de blason
+          </button>
+        </div>
+
+        <%# ── Panneau upload ────────────────────────────────────────────────── %>
+        <div data-badge-builder-target="panelUpload">
+          <% if @team.badge_image.attached? %>
+            <div class="mb-2">
+              <%= image_tag @team.badge_image, style: "width:80px;height:80px;object-fit:cover;border-radius:8px;" %>
+            </div>
+          <% end %>
+
+          <%= f.file_field :badge_image,
+              class: "form-control form-control-dark",
+              accept: "image/jpeg,image/png",
+              data: { badge_builder_target: "fileInput" } %>
+          <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:0.3rem;">JPG ou PNG, max 2 Mo</p>
+        </div>
+
+        <%# ── Panneau générateur de blason SVG ─────────────────────────────── %>
+        <div data-badge-builder-target="panelGenerator" style="display:none;">
+
+          <%# Aperçu SVG live — centré, plus grand %>
+          <div style="display:flex; justify-content:center; margin-bottom:1.25rem;">
+            <div class="badge-preview" data-badge-builder-target="preview"
+                 style="width:110px; height:110px;">
+            </div>
+          </div>
+
+          <%# ── 1. Forme du fond ─────────────────────────────────────────── %>
+          <div class="mb-3">
+            <label class="badge-builder-label">Forme</label>
+            <div class="badge-shapes">
+              <%#
+                Chaque bouton affiche un mini SVG de la forme.
+                data-shape est lu par le controller pour générer le bon clipPath.
+              %>
+              <% [
+                { key: "shield",   label: "Bouclier",  path: "M50,3 L92,18 L92,58 C92,78 72,92 50,98 C28,92 8,78 8,58 L8,18 Z" },
+                { key: "hexagon",  label: "Hexagone",  path: "M50,5 L93,28 L93,72 L50,95 L7,72 L7,28 Z" },
+                { key: "circle",   label: "Cercle",    path: nil },
+                { key: "diamond",  label: "Diamant",   path: "M50,3 L97,50 L50,97 L3,50 Z" },
+                { key: "pentagon", label: "Pentagone", path: "M50,5 L97,36 L79,92 L21,92 L3,36 Z" }
+              ].each_with_index do |shape, i| %>
+                <button type="button"
+                        class="badge-shape-btn <%= i == 0 ? 'active' : '' %>"
+                        title="<%= shape[:label] %>"
+                        data-shape="<%= shape[:key] %>"
+                        data-action="click->badge-builder#selectShape">
+                  <svg viewBox="0 0 100 100" width="34" height="34">
+                    <% if shape[:path] %>
+                      <path d="<%= shape[:path] %>" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+                    <% else %>
+                      <circle cx="50" cy="50" r="46" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
+                    <% end %>
+                  </svg>
+                </button>
+              <% end %>
+            </div>
+          </div>
+
+          <%# ── 2. Couleur du fond ───────────────────────────────────────── %>
+          <div class="mb-3">
+            <label class="badge-builder-label">Couleur</label>
+            <div class="badge-colors">
+              <% %w[
+                #1EDD88 #2ED573 #26de81 #0be881
+                #FF4757 #FF6348 #FFA502 #ECCC68
+                #3742FA #2980b9 #A29BFE #a55eea
+                #ffffff #b2bec3 #2d3436 #000000
+              ].each_with_index do |color, i| %>
+                <button type="button"
+                        class="badge-color-swatch <%= i == 0 ? 'active' : '' %>"
+                        style="background:<%= color %>; <%= color == '#ffffff' ? 'border:1px solid rgba(255,255,255,0.2);' : '' %>"
+                        data-color="<%= color %>"
+                        data-action="click->badge-builder#selectColor">
+                </button>
+              <% end %>
+            </div>
+          </div>
+
+          <%# ── 3. Symbole ───────────────────────────────────────────────── %>
+          <div class="mb-3">
+            <label class="badge-builder-label">Symbole</label>
+
+            <%# Catégorie Sport %>
+            <div style="font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Sport</div>
+            <div class="badge-icons mb-2">
+              <% %w[⚽ 🏀 🏈 🎾 🏐 🥊 🏒 🏹].each do |emoji| %>
+                <button type="button"
+                        class="badge-icon-btn"
+                        data-icon-emoji="<%= emoji %>"
+                        data-action="click->badge-builder#selectIcon">
+                  <%= emoji %>
+                </button>
+              <% end %>
+            </div>
+
+            <%# Catégorie Puissance %>
+            <div style="font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Puissance</div>
+            <div class="badge-icons mb-2">
+              <% %w[⚡ 🔥 💥 🌊 🌪️ ❄️ ☄️ 🌟].each do |emoji| %>
+                <button type="button"
+                        class="badge-icon-btn"
+                        data-icon-emoji="<%= emoji %>"
+                        data-action="click->badge-builder#selectIcon">
+                  <%= emoji %>
+                </button>
+              <% end %>
+            </div>
+
+            <%# Catégorie Prestige %>
+            <div style="font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Prestige</div>
+            <div class="badge-icons">
+              <% %w[👑 🏆 🛡️ ⚔️ 🦁 🦅 🐺 🔱].each do |emoji| %>
+                <button type="button"
+                        class="badge-icon-btn"
+                        data-icon-emoji="<%= emoji %>"
+                        data-action="click->badge-builder#selectIcon">
+                  <%= emoji %>
+                </button>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Champ caché : contient le SVG final généré côté client %>
+          <%= f.hidden_field :badge_svg, data: { badge_builder_target: "svgInput" } %>
+
+        </div><%# fin panelGenerator %>
+
+      </div><%# fin team-section-card blason %>
+    </div>
+
+  </div><%# fin row %>
+
+  <%# Bouton de soumission %>
+  <div class="mt-4 d-flex gap-3">
+    <%= f.submit @team.persisted? ? "Enregistrer les modifications" : "Créer l'équipe",
+        class: "btn btn-primary btn-cta-primary px-4" %>
+    <%= link_to "Annuler", @team.persisted? ? @team : teams_path, class: "btn btn-outline-light" %>
+  </div>
+
+<% end %>

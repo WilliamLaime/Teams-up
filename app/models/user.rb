@@ -41,6 +41,13 @@ class User < ApplicationRecord
   # Valide que le genre est l'une des valeurs autorisées si renseigné
   # allow_nil: true → les anciens comptes (genre non rempli) restent valides
   validates :genre, inclusion: { in: GENRES, message: "n'est pas valide" }, allow_nil: true
+  # ── Équipes ───────────────────────────────────────────────────────────────
+  has_many :captained_teams, class_name: "Team", foreign_key: "captain_id", dependent: :destroy
+  has_many :team_members,    dependent: :destroy
+  has_many :teams,           through: :team_members
+  has_many :team_invitations_received, class_name: "TeamInvitation", foreign_key: "invitee_id", dependent: :destroy
+  has_many :team_invitations_sent,     class_name: "TeamInvitation", foreign_key: "inviter_id", dependent: :destroy
+
   has_many :match_users, dependent: :destroy
   has_many :matchs, through: :match_users
   has_many :notifications, dependent: :destroy

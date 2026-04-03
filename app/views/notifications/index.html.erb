@@ -38,6 +38,10 @@
           <% end %>
         </div>
 
+        <%# ── Invitations d'équipes en attente ── %>
+        <% pending_invitations = current_user.team_invitations_received.pending.includes(:inviter, :team, inviter: :profil) %>
+        <%= render "team_invitations/pending_invitations", invitations: pending_invitations %>
+
         <%# ── Liste des notifications ── %>
         <% if @notifications.any? %>
           <div class="notif-page-list">

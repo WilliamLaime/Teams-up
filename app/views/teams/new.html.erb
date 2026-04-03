@@ -1,0 +1,13 @@
+<%# ── Création d'une nouvelle équipe ─────────────────────────────────────── %>
+
+<div class="teams-page">
+<div class="container py-4">
+  <div class="mb-4">
+    <%= render "shared/nav_button", url: teams_path, label: "Mes équipes", direction: "back", extra_class: "mb-2" %>
+    <h1 class="matches-index-title">Créer une équipe</h1>
+    <p class="matches-index-subtitle">Forme ton équipe et invite tes amis !</p>
+  </div>
+
+  <%= render "form" %>
+</div>
+</div>

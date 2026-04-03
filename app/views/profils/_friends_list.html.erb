@@ -4,10 +4,13 @@
       - own_profile  : true si on affiche son propre profil (affiche le bouton Retirer)
     Note : les demandes en attente sont gérées directement dans show.html.erb, au-dessus des matchs %>
 
+<%# Ne rien afficher si la collection d'amis n'est pas chargée (profil d'un autre user) %>
+<% return if friends.nil? %>
+
 <%# ── Liste des amis acceptés ── %>
-<div style="margin-top:1.75rem;">
+<div style="margin-top:0.5rem;">
   <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
-              text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.35);
+              text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;
               margin-bottom:0.75rem;">
     <i data-lucide="users" style="width:14px; height:14px;"></i>
     Amis (<%= friends.count %>)

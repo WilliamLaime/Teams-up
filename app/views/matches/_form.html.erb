@@ -643,6 +643,70 @@
             </div>
           </div><%# fin toggle visibilité %>
 
+          <%# ── Sélecteur d'équipe (optionnel, visible si l'user est capitaine d'une équipe) ── %>
+          <% if @my_captained_teams&.any? %>
+            <div class="mb-0 mt-3">
+              <label class="form-label d-block">
+                Associer une équipe
+                <span class="css-tooltip" data-tip="Si vous associez une équipe, le match sera privé et les membres seront automatiquement invités à confirmer leur place.">
+                  <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
+                </span>
+              </label>
+
+              <%# Champ hidden qui sera soumis — vide = pas d'équipe %>
+              <%= f.hidden_field :team_id, value: @match.team_id, id: "match_team_id" %>
+
+              <%# Boutons radio stylisés : "Aucune équipe" + une ligne par équipe %>
+              <div style="display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem;">
+
+                <%# Option "aucune équipe" %>
+                <label style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.7rem; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); cursor:pointer;"
+                       id="team-option-none">
+                  <input type="radio" name="team_picker" value=""
+                         <%= @match.team_id.blank? ? "checked" : "" %>
+                         style="accent-color:#1EDD88;"
+                         onchange="
+                           document.getElementById('match_team_id').value = '';
+                         ">
+                  <span style="font-size:0.82rem; color:rgba(255,255,255,0.6);">Aucune équipe</span>
+                </label>
+
+                <%# Une ligne par équipe %>
+                <% @my_captained_teams.each do |team| %>
+                  <label style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.7rem; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); cursor:pointer;">
+                    <input type="radio" name="team_picker" value="<%= team.id %>"
+                           <%= @match.team_id == team.id ? "checked" : "" %>
+                           style="accent-color:#1EDD88;"
+                           onchange="
+                             document.getElementById('match_team_id').value = '<%= team.id %>';
+                             document.getElementById('match_visibility').value = 'private';
+                             document.getElementById('visibility_toggle').checked = false;
+                             document.getElementById('label_prive').style.color = '#1EDD88';
+                             document.getElementById('label_public').style.color = 'rgba(255,255,255,0.4)';
+                           ">
+                    <%# Mini blason %>
+                    <div style="flex-shrink:0; width:26px; height:26px; border-radius:5px; overflow:hidden; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center;">
+                      <% if team.badge_image.attached? %>
+                        <%= image_tag team.badge_image, style: "width:100%; height:100%; object-fit:cover;", alt: "" %>
+                      <% elsif team.badge_svg.present? %>
+                        <%= team.badge_svg.html_safe %>
+                      <% else %>
+                        <i data-lucide="shield" style="width:13px;height:13px;color:rgba(255,255,255,0.3);"></i>
+                      <% end %>
+                    </div>
+                    <span style="font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.85);">
+                      <%= team.name %>
+                    </span>
+                    <span style="font-size:0.7rem; color:rgba(255,255,255,0.35); margin-left:auto;">
+                      <%= team.members_count %> membre<%= "s" if team.members_count > 1 %>
+                    </span>
+                  </label>
+                <% end %>
+
+              </div>
+            </div>
+          <% end %>
+
           <%# ── Toggle : Restriction de genre Tous / Femme ── %>
           <%# Affiché uniquement pour les utilisatrices femmes — seules elles peuvent créer un match "femme uniquement" %>
           <% if current_user.genre == "femme" %>

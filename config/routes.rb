@@ -26,6 +26,37 @@ Rails.application.routes.draw do
   # Page Conditions générales d'utilisation
   get "conditions", to: "pages#conditions", as: :conditions
 
+  # ── Équipes ────────────────────────────────────────────────────────────────
+  # GET    /teams              → mes équipes
+  # GET    /teams/new          → formulaire création
+  # POST   /teams              → créer une équipe
+  # GET    /teams/:id          → page détail
+  # GET    /teams/:id/edit     → modifier l'équipe
+  # PATCH  /teams/:id          → sauvegarder les modifs
+  # DELETE /teams/:id          → supprimer l'équipe (captain seulement)
+  resources :teams do
+    member do
+      # PATCH /teams/:id/transfer_captain → transférer le capitanat à un autre membre
+      patch :transfer_captain
+      # DELETE /teams/:id/leave → quitter l'équipe (membres non-captain)
+      delete :leave
+    end
+
+    # Invitations imbriquées dans l'équipe
+    # POST  /teams/:team_id/team_invitations        → inviter un user
+    # PATCH /teams/:team_id/team_invitations/:id    → accepter ou refuser
+    resources :team_invitations, only: [:create, :update, :destroy] do
+      collection do
+        # GET /teams/:team_id/team_invitations/search?q=lucas → autocomplete JSON
+        get :search
+      end
+    end
+
+    # Membres imbriqués (retirer un membre)
+    # DELETE /teams/:team_id/team_members/:id       → retirer un membre (captain)
+    resources :team_members, only: [:destroy]
+  end
+
   # Routes pour les matchs (CRUD complet)
   # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.
   resources :matches do
@@ -49,6 +80,7 @@ Rails.application.routes.draw do
       member do
         patch :approve
         patch :reject
+        patch :confirm  # Membre d'équipe qui confirme sa propre place (team match)
       end
     end
 

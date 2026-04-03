@@ -1,0 +1,46 @@
+<%# ── Invitations d'équipe reçues et en attente ──────────────────────────── %>
+<%# Rendu dans la page notifications ou tout autre endroit pertinent %>
+<%# Variable attendue : invitations (collection de TeamInvitation) %>
+
+<% if invitations.any? %>
+  <div class="team-invitations-received">
+    <h3 style="font-size:0.9rem;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:0.75rem;">
+      <i data-lucide="mail" style="width:14px;height:14px;margin-right:4px;"></i>
+      Invitations d'équipes (<%= invitations.size %>)
+    </h3>
+
+    <% invitations.each do |inv| %>
+      <div class="team-invitation-card">
+        <div class="team-invitation-card-body">
+          <p style="font-size:0.85rem;margin:0;color:rgba(255,255,255,0.85);">
+            <strong><%= inv.inviter.profil&.first_name %></strong>
+            t'invite à rejoindre <strong><%= inv.team.name %></strong>
+          </p>
+          <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin:0;">
+            <%= time_ago_in_words(inv.created_at) %>
+          </p>
+        </div>
+
+        <div class="team-invitation-card-actions">
+          <%# Accepter %>
+          <%= button_to team_team_invitation_path(inv.team, inv),
+              method: :patch,
+              params: { status: "accepted" },
+              class: "btn btn-sm btn-primary btn-cta-primary" do %>
+            <i data-lucide="check" style="width:12px;height:12px;margin-right:4px;"></i>
+            Accepter
+          <% end %>
+
+          <%# Refuser %>
+          <%= button_to team_team_invitation_path(inv.team, inv),
+              method: :patch,
+              params: { status: "refused" },
+              class: "btn btn-sm btn-outline-danger" do %>
+            <i data-lucide="x" style="width:12px;height:12px;margin-right:4px;"></i>
+            Refuser
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

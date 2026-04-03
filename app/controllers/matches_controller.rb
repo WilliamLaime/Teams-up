@@ -28,7 +28,9 @@ class MatchesController < ApplicationController
     else
       # Index public : uniquement les matchs ouverts à l'inscription et publics
       # visible_for_genre filtre les matchs "féminin" pour ne les montrer qu'aux femmes
+      # includes évite les N+1 sur user/profil/sport chargés dans _match_card
       @matches = policy_scope(Match)
+                 .includes(:sport, user: :profil)
                  .upcoming
                  .publicly_visible
                  .visible_for_genre(current_user)
@@ -129,6 +131,16 @@ class MatchesController < ApplicationController
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
     @match.sport           = current_sport # Sport : pré-rempli avec le sport actif
+
+    # Si on vient depuis une page équipe (?team_id=X), pré-associer l'équipe
+    if params[:team_id].present?
+      @match.team = Team.find_by(id: params[:team_id])
+      # Un match d'équipe est privé par défaut
+      @match.visibility = "private" if @match.team
+    end
+
+    # Équipes dont l'user est capitaine (pour le select dans le formulaire)
+    @my_captained_teams = current_user.captained_teams.order(:name)
   end
 
   # POST /matches
@@ -139,16 +151,33 @@ class MatchesController < ApplicationController
     # Sécurité : seules les femmes peuvent créer un match "femme uniquement"
     # Si un non-femme envoie cette valeur (ex: via requête HTTP directe), on la remet à "tous"
     @match.genre_restriction = "tous" unless current_user.genre == "femme"
+
+    # Si une équipe est associée, on force la visibilité à "private"
+    if @match.team_id.present?
+      # Vérifie que l'user est bien captain de cette équipe
+      @match.team = Team.find_by(id: @match.team_id)
+      unless @match.team&.captain?(current_user)
+        @match.team = nil
+        @match.team_id = nil
+      end
+      @match.visibility = "private" if @match.team
+    end
+
     authorize @match
 
     if @match.save
       # Ajoute automatiquement le créateur comme organisateur approuvé du match
-      # status: "approved" car l'organisateur est automatiquement accepté dans son propre match
       @match.match_users.create(user: current_user, role: "organisateur", status: "approved")
+
+      # Si c'est un match d'équipe, on pré-inscrit les autres membres en "pending"
+      # Ils devront confirmer leur participation depuis la page du match
+      invite_team_members if @match.team
+
       # 🎮 Vérifier les achievements liés à la création de match
       AchievementService.new(current_user).check(:match_created)
       redirect_to @match, notice: "Match créé avec succès !"
     else
+      @my_captained_teams = current_user.captained_teams.order(:name)
       # En cas d'erreur, réaffiche le formulaire
       render :new, status: :unprocessable_entity
     end
@@ -287,8 +316,8 @@ class MatchesController < ApplicationController
     # Filtre par heure minimum (ex: matchs à partir de 18h)
     @matches = @matches.where("time >= ?", params[:time_from]) if params[:time_from].present?
 
-    # Filtre par nombre de places disponibles minimum
-    @matches = @matches.where("player_left >= ?", params[:player_left].to_i) if params[:player_left].present?
+    # Filtre par nombre de places disponibles minimum (> 0 pour ignorer un param vide converti en 0)
+    @matches = @matches.where("player_left >= ?", params[:player_left].to_i) if params[:player_left].to_i > 0
 
     # Filtre "Mes lieux" — restreint aux venues favorites de l'utilisateur
     # Disponible comme filtre manuel pour combiner avec d'autres filtres (date, niveau, etc.)
@@ -412,7 +441,21 @@ class MatchesController < ApplicationController
       :title, :description, :date, :time, :place, :venue_id,
       :level, :player_left, :players_present, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
-      :genre_restriction # Restriction de genre : "tous" ou "feminin"
+      :genre_restriction, # Restriction de genre : "tous" ou "feminin"
+      :team_id            # Équipe organisatrice (optionnel)
     )
+  end
+
+  # Pré-inscrit tous les membres de l'équipe (sauf le captain/créateur) en "pending"
+  # Envoie une notification à chaque membre pour les prévenir
+  def invite_team_members
+    @match.team.members.where.not(id: current_user.id).each do |member|
+      @match.match_users.create(user: member, role: "joueur", status: "pending")
+      Notification.create(
+        user:    member,
+        message: "📅 #{@match.team.name} a un nouveau match : \"#{@match.title}\". Confirme ta présence !",
+        link:    match_path(@match)
+      )
+    end
   end
 end

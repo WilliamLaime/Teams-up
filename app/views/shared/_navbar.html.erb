@@ -28,6 +28,13 @@
           Trouver un match
         <% end %>
       </li>
+      <% if user_signed_in? %>
+        <li class="nav-item">
+          <%= link_to teams_path, class: "nav-link #{request.path.start_with?('/teams') ? 'active' : ''}" do %>
+            Mes équipes
+          <% end %>
+        </li>
+      <% end %>
       <li class="nav-item">
         <%= link_to about_path, class: "nav-link" do %>
           Qui sommes-nous ?

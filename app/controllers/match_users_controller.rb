@@ -1,8 +1,8 @@
 class MatchUsersController < ApplicationController
   # Retrouver le match parent avant chaque action
   before_action :set_match
-  # Retrouver l'inscription spécifique pour approve, reject et destroy
-  before_action :set_match_user, only: %i[destroy approve reject]
+  # Retrouver l'inscription spécifique pour approve, reject, destroy et confirm
+  before_action :set_match_user, only: %i[destroy approve reject confirm]
 
   # POST /matches/:match_id/match_users
   # Rejoindre un match (ou rejoindre la file d'attente si le match est complet)
@@ -155,6 +155,25 @@ class MatchUsersController < ApplicationController
       # Fallback HTML classique
       format.html { redirect_to @match, notice: flash_msg }
     end
+  end
+
+  # PATCH /matches/:match_id/match_users/:id/confirm
+  # Le membre de l'équipe confirme lui-même sa participation au match d'équipe
+  # Réservé à l'utilisateur concerné (pas à l'organisateur)
+  def confirm
+    authorize @match_user
+
+    # Le match doit être un match d'équipe
+    unless @match.team_id.present?
+      return redirect_to @match, alert: "Ce match n'est pas un match d'équipe."
+    end
+
+    # Garde idempotente : seul un statut "pending" peut être confirmé
+    return redirect_to @match unless @match_user.pending?
+
+    @match_user.update(status: "approved")
+    notify(@match.user, "✅ #{current_user.display_name} a confirmé sa participation à \"#{@match.title}\".")
+    redirect_to @match, notice: "Tu es inscrit au match !"
   end
 
   private

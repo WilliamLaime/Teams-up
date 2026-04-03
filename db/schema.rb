@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_01_074709) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_03_111144) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -131,6 +131,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_074709) do
     t.integer "price_per_player", default: 0
     t.string "private_token"
     t.bigint "sport_id"
+    t.bigint "team_id"
     t.time "time"
     t.string "title"
     t.datetime "updated_at", null: false
@@ -141,6 +142,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_074709) do
     t.index ["homme_du_match_id"], name: "index_matches_on_homme_du_match_id"
     t.index ["private_token"], name: "index_matches_on_private_token", unique: true
     t.index ["sport_id"], name: "index_matches_on_sport_id"
+    t.index ["team_id"], name: "index_matches_on_team_id"
     t.index ["user_id"], name: "index_matches_on_user_id"
     t.index ["venue_id"], name: "index_matches_on_venue_id"
   end
@@ -257,6 +259,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_074709) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "team_invitations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "invitee_id", null: false
+    t.bigint "inviter_id", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["invitee_id"], name: "index_team_invitations_on_invitee_id"
+    t.index ["inviter_id"], name: "index_team_invitations_on_inviter_id"
+    t.index ["team_id", "invitee_id"], name: "index_team_invitations_pending_unique", unique: true, where: "((status)::text = 'pending'::text)"
+    t.index ["team_id"], name: "index_team_invitations_on_team_id"
+  end
+
+  create_table "team_members", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "joined_at"
+    t.string "role", default: "member", null: false
+    t.bigint "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["team_id", "user_id"], name: "index_team_members_on_team_id_and_user_id", unique: true
+    t.index ["team_id"], name: "index_team_members_on_team_id"
+    t.index ["user_id"], name: "index_team_members_on_user_id"
+  end
+
+  create_table "teams", force: :cascade do |t|
+    t.text "badge_svg"
+    t.bigint "captain_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["captain_id"], name: "index_teams_on_captain_id"
+    t.index ["name", "captain_id"], name: "index_teams_on_name_and_captain_id", unique: true
+  end
+
   create_table "user_achievements", force: :cascade do |t|
     t.bigint "achievement_id", null: false
     t.datetime "created_at", null: false
@@ -326,6 +364,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_074709) do
   add_foreign_key "match_votes", "users", column: "voted_for_id"
   add_foreign_key "match_votes", "users", column: "voter_id"
   add_foreign_key "matches", "sports"
+  add_foreign_key "matches", "teams"
   add_foreign_key "matches", "users"
   add_foreign_key "matches", "users", column: "homme_du_match_id"
   add_foreign_key "matches", "venues"
@@ -341,6 +380,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_01_074709) do
   add_foreign_key "security_logs", "users", on_delete: :nullify
   add_foreign_key "sport_profils", "profils"
   add_foreign_key "sport_profils", "sports"
+  add_foreign_key "team_invitations", "teams"
+  add_foreign_key "team_invitations", "users", column: "invitee_id"
+  add_foreign_key "team_invitations", "users", column: "inviter_id"
+  add_foreign_key "team_members", "teams"
+  add_foreign_key "team_members", "users"
+  add_foreign_key "teams", "users", column: "captain_id"
   add_foreign_key "user_achievements", "achievements"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_sports", "sports"

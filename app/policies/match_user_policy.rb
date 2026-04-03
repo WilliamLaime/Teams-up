@@ -19,6 +19,11 @@ class MatchUserPolicy < ApplicationPolicy
     organizer?
   end
 
+  # Seul le membre concerné peut confirmer sa propre place (match d'équipe)
+  def confirm?
+    record.user == user
+  end
+
   private
 
   # Vérifie si l'utilisateur connecté est l'organisateur du match

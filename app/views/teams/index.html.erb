@@ -1,0 +1,39 @@
+<%# ── Liste des équipes de l'utilisateur connecté ───────────────────────── %>
+
+<div class="teams-page">
+<div class="container py-4">
+
+  <%# En-tête %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
+      <h1 class="matches-index-title mb-1">Mes équipes</h1>
+      <p class="matches-index-subtitle mb-0">Les équipes dont tu fais partie.</p>
+    </div>
+    <%= link_to new_team_path, class: "btn btn-primary btn-cta-primary px-3" do %>
+      <i data-lucide="plus" style="width:15px;height:15px;margin-right:4px;"></i>
+      Créer une équipe
+    <% end %>
+  </div>
+
+  <%# Liste des équipes %>
+  <% if @teams.any? %>
+    <div class="row g-3">
+      <% @teams.each do |team| %>
+        <div class="col-12 col-md-6 col-lg-4">
+          <%= render "teams/team_card", team: team %>
+        </div>
+      <% end %>
+    </div>
+
+  <%# État vide %>
+  <% else %>
+    <div class="text-center py-5">
+      <i data-lucide="users" style="width:48px;height:48px;color:rgba(255,255,255,0.2);margin-bottom:1rem;"></i>
+      <p style="color:rgba(255,255,255,0.5); font-size:1rem;">Tu n'es encore membre d'aucune équipe.</p>
+      <%= link_to "Créer ma première équipe", new_team_path, class: "btn btn-primary btn-cta-primary mt-2" %>
+    </div>
+  <% end %>
+
+</div>
+</div>

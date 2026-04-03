@@ -1,0 +1,451 @@
+// ── Styles des équipes ────────────────────────────────────────────────────────
+// Utilisé dans /teams (index, show, new, edit)
+
+// Fond sombre pleine page (même convention que .matches-index-page)
+.teams-page {
+  background-color: $dark-bg;
+  min-height: calc(100vh - 130px);
+  padding: 2.5rem 0 4rem;
+
+  // Titre et sous-titre réutilisés depuis les pages matches
+  .matches-index-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.35rem;
+    font-family: $headers-font;
+  }
+
+  .matches-index-subtitle {
+    color: $dark-muted;
+    font-size: 0.95rem;
+    margin: 0;
+  }
+}
+
+// ── Carte équipe (index) ──────────────────────────────────────────────────────
+.team-card {
+  background: #1a1c1a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    border-color: rgba(30, 221, 136, 0.35);
+    transform: translateY(-2px);
+  }
+
+  // Blason dans la carte
+  &-badge {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+
+    &-img   { width: 100%; height: 100%; object-fit: cover; }
+    &-svg   { width: 60px; height: 60px; svg { width: 60px; height: 60px; } }
+    &-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+  }
+
+  &-body    { flex: 1; min-width: 0; }
+  &-name    { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &-meta    { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); margin: 0; display: flex; align-items: center; }
+
+  // Badge de rôle dans la carte
+  &-role {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    margin-bottom: 0.2rem;
+
+    &.captain { background: rgba(30, 221, 136, 0.15); color: #1EDD88; }
+    &.member  { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.5); }
+  }
+}
+
+// ── Page détail (show) ────────────────────────────────────────────────────────
+.team-show-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 576px) {
+    flex-direction: column;
+  }
+}
+
+.team-show-badge {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &-img { width: 100%; height: 100%; object-fit: cover; }
+  &-svg { svg { width: 80px; height: 80px; } }
+  &-placeholder { display: flex; align-items: center; justify-content: center; }
+}
+
+.team-show-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-show-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.25rem;
+}
+
+.team-show-meta {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.team-show-description {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0;
+}
+
+.team-show-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+// ── Bloc section générique (encadré sombre) ───────────────────────────────────
+.team-section-card {
+  background: #1a1c1a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.team-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+}
+
+// ── Liste des membres ─────────────────────────────────────────────────────────
+.team-members-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.team-member-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.04); }
+}
+
+.team-member-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.team-member-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.team-member-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.team-member-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-member-role-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.45rem;
+  border-radius: 20px;
+  width: fit-content;
+
+  &.captain { background: rgba(30, 221, 136, 0.15); color: #1EDD88; }
+  &.member  { background: rgba(255, 255, 255, 0.07); color: rgba(255, 255, 255, 0.45); }
+}
+
+.team-member-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+// ── Invitations reçues ────────────────────────────────────────────────────────
+.team-invitations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.team-invitation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.83rem;
+}
+
+.team-invitation-card {
+  background: rgba(30, 221, 136, 0.06);
+  border: 1px solid rgba(30, 221, 136, 0.2);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.team-invitation-card-body { flex: 1; }
+.team-invitation-card-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+// ── Générateur de blason ──────────────────────────────────────────────────────
+
+.badge-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.badge-tab {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+
+  &.active, &:hover {
+    background: rgba(30, 221, 136, 0.12);
+    border-color: rgba(30, 221, 136, 0.35);
+    color: #1EDD88;
+  }
+}
+
+// Label de section dans le générateur
+.badge-builder-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.5rem;
+}
+
+// Aperçu du blason — transparent pour laisser la forme SVG s'exprimer
+.badge-preview {
+  width: 110px;
+  height: 110px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg { width: 110px; height: 110px; }
+}
+
+// Sélecteur de formes
+.badge-shapes {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge-shape-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+
+  svg path, svg circle { transition: fill 0.15s, stroke 0.15s; }
+
+  &:hover {
+    border-color: rgba(30, 221, 136, 0.4);
+    background: rgba(30, 221, 136, 0.08);
+    svg path, svg circle { fill: rgba(30, 221, 136, 0.35); stroke: rgba(30, 221, 136, 0.7); }
+  }
+
+  &.active {
+    border-color: #1EDD88;
+    background: rgba(30, 221, 136, 0.12);
+    svg path, svg circle { fill: rgba(30, 221, 136, 0.4); stroke: #1EDD88; }
+  }
+}
+
+// Grille de couleurs (4 colonnes)
+.badge-colors {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.4rem;
+}
+
+.badge-color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.15s;
+  padding: 0;
+
+  &:hover  { transform: scale(1.2); }
+  &.active { border-color: #fff; transform: scale(1.2); box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
+}
+
+// Grille de symboles emoji
+.badge-icons {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.badge-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+
+  &:hover  { background: rgba(30, 221, 136, 0.12); border-color: rgba(30, 221, 136, 0.3); }
+  &.active { background: rgba(30, 221, 136, 0.2);  border-color: #1EDD88; }
+}
+
+// ── Autocomplete invitation ───────────────────────────────────────────────────
+.invite-search-dropdown {
+  position: relative;
+  background: #1e201e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-top: 4px;
+  overflow: hidden;
+  display: none; // affiché via JS
+}
+
+.invite-search-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(30, 221, 136, 0.08); }
+  & + & { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+}
+
+.invite-search-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.invite-search-lastname {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.invite-search-empty {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+// ── Bouton XS (retirer membre, transférer) ────────────────────────────────────
+.btn-xs {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  line-height: 1;
+}

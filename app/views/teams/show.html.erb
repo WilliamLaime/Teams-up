@@ -1,0 +1,345 @@
+<%# ── Page détail d'une équipe ─────────────────────────────────────────────── %>
+
+<div class="teams-page">
+<div class="container py-4">
+  <%= render "shared/nav_button", url: teams_path, label: "Mes équipes", direction: "back", extra_class: "mb-3" %>
+
+  <%# ── En-tête équipe ─────────────────────────────────────────────────────── %>
+  <div class="team-show-header">
+
+    <%# Blason %>
+    <div class="team-show-badge">
+      <% if @team.badge_image.attached? %>
+        <%= image_tag @team.badge_image, alt: "Blason #{@team.name}", class: "team-show-badge-img" %>
+      <% elsif @team.badge_svg.present? %>
+        <div class="team-show-badge-svg"><%= @team.badge_svg.html_safe %></div>
+      <% else %>
+        <div class="team-show-badge-placeholder">
+          <i data-lucide="shield" style="width:48px;height:48px;color:rgba(255,255,255,0.3);"></i>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="team-show-info">
+      <h1 class="team-show-name"><%= @team.name %></h1>
+      <p class="team-show-meta">
+        <i data-lucide="users" style="width:13px;height:13px;"></i>
+        <%= @team.members_count %> membre<%= @team.members_count > 1 ? "s" : "" %>
+        &nbsp;·&nbsp;
+        Captain : <%= @team.captain.profil&.first_name %>
+      </p>
+      <% if @team.description.present? %>
+        <p class="team-show-description"><%= @team.description %></p>
+      <% end %>
+    </div>
+
+    <%# Actions captain %>
+    <% if @team.captain?(current_user) %>
+      <div class="team-show-actions">
+        <%= link_to edit_team_path(@team), class: "btn btn-sm btn-outline-light" do %>
+          <i data-lucide="settings" style="width:13px;height:13px;margin-right:4px;"></i>
+          Modifier
+        <% end %>
+
+        <%# Supprimer — confirmation via data-controller stimulus %>
+        <%= button_to team_path(@team), method: :delete,
+            class: "btn btn-sm btn-outline-danger",
+            data: { confirm: "Supprimer l'équipe \"#{@team.name}\" ? Cette action est irréversible." } do %>
+          <i data-lucide="trash-2" style="width:13px;height:13px;margin-right:4px;"></i>
+          Supprimer
+        <% end %>
+      </div>
+    <% elsif policy(@team).leave? %>
+      <%# Bouton Quitter pour les membres non-captain %>
+      <%= button_to leave_team_path(@team), method: :delete,
+          class: "btn btn-sm btn-outline-danger",
+          data: { confirm: "Quitter l'équipe \"#{@team.name}\" ?" } do %>
+        <i data-lucide="log-out" style="width:13px;height:13px;margin-right:4px;"></i>
+        Quitter l'équipe
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# ── Bannière d'invitation (visible uniquement si l'user a une invitation en attente) ── %>
+  <% if @my_invitation %>
+    <div class="team-invitation-card mb-3">
+      <div class="team-invitation-card-body">
+        <p style="font-size:0.9rem;margin:0;color:rgba(255,255,255,0.9);">
+          <i data-lucide="mail" style="width:14px;height:14px;margin-right:6px;"></i>
+          <strong><%= @my_invitation.inviter.profil&.first_name %></strong>
+          t'invite à rejoindre cette équipe.
+        </p>
+      </div>
+      <div class="team-invitation-card-actions">
+        <%# Accepter %>
+        <%= button_to team_team_invitation_path(@team, @my_invitation),
+            method: :patch,
+            params: { status: "accepted" },
+            class: "btn btn-primary btn-cta-primary" do %>
+          <i data-lucide="check" style="width:12px;height:12px;margin-right:4px;"></i>
+          Rejoindre
+        <% end %>
+        <%# Refuser %>
+        <%= button_to team_team_invitation_path(@team, @my_invitation),
+            method: :patch,
+            params: { status: "refused" },
+            class: "btn btn-sm btn-outline-danger" do %>
+          <i data-lucide="x" style="width:12px;height:12px;margin-right:4px;"></i>
+          Refuser
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="row g-4 mt-2">
+
+    <%# ── Colonne membres ──────────────────────────────────────────────────── %>
+    <div class="col-12 col-lg-7">
+      <div class="team-section-card">
+        <h2 class="team-section-title">
+          <i data-lucide="users" style="width:16px;height:16px;margin-right:6px;"></i>
+          Membres
+        </h2>
+
+        <% if @team_members.any? %>
+          <ul class="team-members-list">
+            <% @team_members.each do |tm| %>
+              <li class="team-member-item">
+
+                <%# Avatar + nom cliquables → profil du membre %>
+                <%= link_to user_profil_path(tm.user),
+                      style: "display:flex; align-items:center; gap:0.6rem; text-decoration:none; flex:1; min-width:0;",
+                      data: { turbo_frame: "_top" } do %>
+                  <%# Avatar %>
+                  <% if tm.user.profil&.avatar&.attached? %>
+                    <%= image_tag tm.user.profil.avatar, class: "team-member-avatar", alt: tm.user.profil.first_name %>
+                  <% else %>
+                    <div class="team-member-avatar-placeholder">
+                      <i data-lucide="user" style="width:18px;height:18px;color:rgba(255,255,255,0.4);"></i>
+                    </div>
+                  <% end %>
+
+                  <%# Nom et rôle %>
+                  <div class="team-member-info">
+                    <span class="team-member-name">
+                      <%= tm.user.profil&.first_name %> <%= tm.user.profil&.last_name %>
+                    </span>
+                    <span class="team-member-role-badge <%= tm.captain? ? 'captain' : 'member' %>">
+                      <%= tm.captain? ? "⚡ Captain" : "Membre" %>
+                    </span>
+                  </div>
+                <% end %>
+
+                <%# Actions captain : retirer ou transférer le capitanat %>
+                <% if @team.captain?(current_user) && !tm.captain? %>
+                  <div class="team-member-actions">
+                    <%# Transférer le capitanat — ouvre une modale de confirmation %>
+                    <%= button_to transfer_captain_team_path(@team),
+                        method: :patch,
+                        params: { new_captain_id: tm.user_id },
+                        class: "btn btn-xs btn-outline-light",
+                        data: { confirm: "Transférer le capitanat à #{tm.user.profil&.first_name} ?" } do %>
+                      <i data-lucide="star" style="width:11px;height:11px;"></i>
+                    <% end %>
+
+                    <%# Retirer le membre %>
+                    <%= button_to team_team_member_path(@team, tm),
+                        method: :delete,
+                        class: "btn btn-xs btn-outline-danger",
+                        data: { confirm: "Retirer #{tm.user.profil&.first_name} de l'équipe ?" } do %>
+                      <i data-lucide="user-minus" style="width:11px;height:11px;"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+
+              </li>
+            <% end %>
+          </ul>
+
+        <% else %>
+          <p style="color:rgba(255,255,255,0.4); font-size:0.85rem;">Aucun membre pour l'instant.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Colonne invitations (captain seulement) ─────────────────────────── %>
+    <% if @team.captain?(current_user) %>
+      <div class="col-12 col-lg-5">
+
+        <%# Formulaire d'invitation avec autocomplete %>
+        <div class="team-section-card mb-3"
+             data-controller="invite-search"
+             data-invite-search-url-value="<%= search_team_team_invitations_path(@team) %>">
+          <h2 class="team-section-title">
+            <i data-lucide="user-plus" style="width:16px;height:16px;margin-right:6px;"></i>
+            Inviter un joueur
+          </h2>
+
+          <%= form_with url: team_team_invitations_path(@team), method: :post, local: true do |f| %>
+            <%# Champ visible : déclenche la recherche, non soumis directement %>
+            <input type="text"
+                   data-invite-search-target="input"
+                   data-action="input->invite-search#search"
+                   placeholder="Email ou prénom du joueur…"
+                   class="form-control form-control-dark form-control-sm"
+                   autocomplete="off">
+
+            <%# Dropdown des résultats %>
+            <div data-invite-search-target="dropdown" class="invite-search-dropdown"></div>
+
+            <%# Champ caché soumis avec l'email de la personne sélectionnée %>
+            <%= f.hidden_field :invitee_query, data: { "invite-search-target": "hidden" } %>
+
+            <%= f.submit "Inviter", class: "btn btn-primary btn-cta-primary btn-sm mt-2" %>
+          <% end %>
+        </div>
+
+        <%# Amis invitables %>
+        <% if @invitable_friends&.any? %>
+          <div class="team-section-card mb-3">
+            <h2 class="team-section-title">
+              <i data-lucide="users" style="width:16px;height:16px;margin-right:6px;"></i>
+              Mes amis
+            </h2>
+            <ul class="team-members-list">
+              <% @invitable_friends.each do |friend| %>
+                <li class="team-member-item">
+                  <%# Avatar %>
+                  <% if friend.profil&.avatar&.attached? %>
+                    <%= image_tag friend.profil.avatar, class: "team-member-avatar", alt: friend.profil.first_name %>
+                  <% else %>
+                    <div class="team-member-avatar-placeholder">
+                      <i data-lucide="user" style="width:18px;height:18px;color:rgba(255,255,255,0.4);"></i>
+                    </div>
+                  <% end %>
+
+                  <%# Nom %>
+                  <div class="team-member-info">
+                    <span class="team-member-name">
+                      <%= friend.profil&.first_name %> <%= friend.profil&.last_name %>
+                    </span>
+                  </div>
+
+                  <%# Bouton inviter %>
+                  <%= button_to team_team_invitations_path(@team),
+                      method: :post,
+                      params: { invitee_query: friend.email },
+                      class: "btn btn-xs btn-outline-light" do %>
+                    <i data-lucide="user-plus" style="width:11px;height:11px;margin-right:3px;"></i>
+                    Inviter
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <%# Invitations en attente %>
+        <div class="team-section-card">
+          <h2 class="team-section-title">
+            <i data-lucide="clock" style="width:16px;height:16px;margin-right:6px;"></i>
+            Invitations en attente
+          </h2>
+
+          <% if @pending_invitations&.any? %>
+            <ul class="team-invitations-list">
+              <% @pending_invitations.each do |inv| %>
+                <li class="team-invitation-item">
+                  <span class="team-member-name">
+                    <%= inv.invitee.profil&.first_name %> <%= inv.invitee.profil&.last_name %>
+                  </span>
+                  <div class="d-flex align-items-center gap-2">
+                    <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);">En attente</span>
+                    <%= button_to team_team_invitation_path(@team, inv),
+                        method: :delete,
+                        class: "btn btn-xs btn-outline-danger",
+                        data: { confirm: "Annuler l'invitation de #{inv.invitee.profil&.first_name} ?" } do %>
+                      <i data-lucide="x" style="width:11px;height:11px;"></i>
+                    <% end %>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p style="color:rgba(255,255,255,0.4); font-size:0.85rem;">Aucune invitation en attente.</p>
+          <% end %>
+        </div>
+
+      </div>
+    <% end %>
+
+  </div>
+
+  <%# ── Section matchs de l'équipe ─────────────────────────────────────────── %>
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="team-section-card">
+
+        <%# En-tête avec le bouton créer (visible au capitaine seulement) %>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+          <h2 class="team-section-title" style="margin-bottom:0;">
+            <i data-lucide="calendar" style="width:16px;height:16px;margin-right:6px;"></i>
+            Matchs de l'équipe
+          </h2>
+          <% if @team.captain?(current_user) %>
+            <%= link_to new_match_path(team_id: @team.id),
+                class: "btn btn-primary btn-cta-primary btn-sm",
+                data: { turbo_frame: "_top" } do %>
+              <i data-lucide="plus" style="width:13px;height:13px;margin-right:4px;"></i>
+              Créer un match
+            <% end %>
+          <% end %>
+        </div>
+
+        <%# Liste des matchs liés à cette équipe %>
+        <% team_matches = @team.matches.includes(:sport, user: :profil).order(date: :asc, time: :asc) %>
+        <% if team_matches.any? %>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <% team_matches.each do |match| %>
+              <%= link_to match_path(match), style: "display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.75rem; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); text-decoration:none; transition:background 0.15s;", data: { turbo_frame: "_top" } do %>
+
+                <%# Icône sport %>
+                <div style="flex-shrink:0; width:34px; height:34px; border-radius:6px; background:rgba(30,221,136,0.1); display:flex; align-items:center; justify-content:center;">
+                  <span style="font-size:1rem;line-height:1;"><%= match.sport&.icon.presence || "🏃" %></span>
+                </div>
+
+                <%# Infos match %>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:0.85rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <%= match.title %>
+                  </div>
+                  <div style="font-size:0.72rem; color:rgba(255,255,255,0.4);">
+                    <%= match.date&.strftime("%d %b %Y") %> à <%= match.time&.strftime("%H:%M") %>
+                    <% if match.place.present? %> · <%= match.place %><% end %>
+                  </div>
+                </div>
+
+                <%# Badge visibilité %>
+                <% if match.private? %>
+                  <span style="font-size:0.68rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:20px; background:rgba(255,165,0,0.15); color:#FFA500;">
+                    <i data-lucide="lock" style="width:9px;height:9px;margin-right:2px;"></i>Privé
+                  </span>
+                <% else %>
+                  <span style="font-size:0.68rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:20px; background:rgba(30,221,136,0.15); color:#1EDD88;">
+                    <i data-lucide="globe" style="width:9px;height:9px;margin-right:2px;"></i>Public
+                  </span>
+                <% end %>
+
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin:0;">
+            Aucun match pour cette équipe.
+            <% if @team.captain?(current_user) %>
+              <%= link_to "Créer le premier !", new_match_path(team_id: @team.id), style: "color:#1EDD88;", data: { turbo_frame: "_top" } %>
+            <% end %>
+          </p>
+        <% end %>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>

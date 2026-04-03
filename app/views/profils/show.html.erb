@@ -486,6 +486,27 @@
         <%# / mes matchs %>
 
 
+        <%# ── Amis + Équipes en 2 colonnes (desktop) / empilés (mobile) ─── %>
+        <div class="row g-3" style="margin-top:0;">
+
+          <%# Colonne Amis — visible uniquement sur son propre profil %>
+          <% if current_user == @profil_user %>
+            <div class="col-12 col-md-6">
+              <%= turbo_frame_tag "friends_list_#{@profil_user.id}" do %>
+                <%= render "profils/friends_list",
+                      friends: @all_friends,
+                      own_profile: true %>
+              <% end %>
+            </div>
+          <% end %>
+
+          <%# Colonne Équipes — pleine largeur si seul, demi-largeur si avec amis %>
+          <div class="<%= current_user == @profil_user ? 'col-12 col-md-6' : 'col-12' %>">
+            <%= render "profils/profil_teams" %>
+          </div>
+
+        </div>
+
         <%# ── Avis des joueurs (système dynamique) ──────────────────────────── %>
 
         <%# Titre + bouton "Laisser un avis" %>
@@ -586,12 +607,11 @@
           avis_visibles = @avis.first(3)
           avis_caches   = @avis.drop(3)
         %>
-        <div style="display:flex; flex-direction:column; gap:0.65rem;">
-          <% if @avis.any? %>
-
-            <%# Les 3 premiers avis toujours visibles %>
-            <% avis_visibles.each do |avis| %>
-              <div class="match-block" style="padding:0.85rem 1rem;">
+        <% if @avis.any? %>
+          <%# Bloc unique — séparateurs entre avis au lieu de cartes séparées %>
+          <div class="match-block" style="padding:0; overflow:hidden;">
+            <% avis_visibles.each_with_index do |avis, i| %>
+              <div style="padding:0.85rem 1rem; <%= i > 0 ? 'border-top:1px solid rgba(255,255,255,0.06);' : '' %>">
                 <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
                   <% if avis.reviewer.profil&.avatar&.attached? %>
                     <%= image_tag avis.reviewer.profil.avatar,
@@ -619,52 +639,44 @@
               </div>
             <% end %>
 
-            <%# S'il y a plus de 3 avis, on les cache dans un collapse Bootstrap %>
             <% if avis_caches.any? %>
-              <%# Zone masquée — id unique par profil pour éviter les conflits %>
               <div class="collapse" id="more-avis-<%= @profil_user.id %>">
-                <div style="display:flex; flex-direction:column; gap:0.65rem;">
-                  <% avis_caches.each do |avis| %>
-                    <div class="match-block" style="padding:0.85rem 1rem;">
-                      <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
-                        <% if avis.reviewer.profil&.avatar&.attached? %>
-                          <%= image_tag avis.reviewer.profil.avatar,
-                              style: "width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;",
-                              alt: avis.reviewer.display_name %>
-                        <% else %>
-                          <div style="width:36px; height:36px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
-                            <%= avis.reviewer.display_name.first.upcase %>
-                          </div>
-                        <% end %>
-                        <div>
-                          <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">
-                            <%= avis.reviewer.display_name %>
-                          </div>
-                          <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
-                            <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:rgba(255,255,255,0.2);"><%= "★" * (5 - avis.rating) %></span>
-                          </div>
+                <% avis_caches.each do |avis| %>
+                  <div style="padding:0.85rem 1rem; border-top:1px solid rgba(255,255,255,0.06);">
+                    <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
+                      <% if avis.reviewer.profil&.avatar&.attached? %>
+                        <%= image_tag avis.reviewer.profil.avatar,
+                            style: "width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;",
+                            alt: avis.reviewer.display_name %>
+                      <% else %>
+                        <div style="width:36px; height:36px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                          <%= avis.reviewer.display_name.first.upcase %>
+                        </div>
+                      <% end %>
+                      <div>
+                        <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">
+                          <%= avis.reviewer.display_name %>
+                        </div>
+                        <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
+                          <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:rgba(255,255,255,0.2);"><%= "★" * (5 - avis.rating) %></span>
                         </div>
                       </div>
-                      <% if avis.content.present? %>
-                        <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
-                          <%= avis.content %>
-                        </p>
-                      <% end %>
                     </div>
-                  <% end %>
-                </div>
+                    <% if avis.content.present? %>
+                      <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
+                        <%= avis.content %>
+                      </p>
+                    <% end %>
+                  </div>
+                <% end %>
               </div>
-
-              <%# Bouton qui ouvre/ferme le collapse et change son texte au clic %>
-              <div style="margin-top:0.25rem; text-align:center;">
+              <div style="padding:0.6rem 1rem; border-top:1px solid rgba(255,255,255,0.06); text-align:center;">
                 <button class="btn btn-sm"
                         data-bs-toggle="collapse"
                         data-bs-target="#more-avis-<%= @profil_user.id %>"
                         aria-expanded="false"
                         aria-controls="more-avis-<%= @profil_user.id %>"
-                        style="font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.5);
-                               background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
-                               border-radius:999px; padding:0.3rem 1rem;"
+                        style="font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.5); background:none; border:none; padding:0;"
                         data-label-more="Voir plus d'avis (<%= avis_caches.size %>)"
                         data-label-less="Voir moins d'avis"
                         onclick="this.textContent = (this.getAttribute('aria-expanded') === 'true') ? this.dataset.labelMore : this.dataset.labelLess">
@@ -672,8 +684,9 @@
                 </button>
               </div>
             <% end %>
+          </div>
 
-          <% else %>
+        <% else %>
             <%# Aucun avis pour l'instant %>
             <div class="match-block" style="padding:1.25rem; text-align:center; color:rgba(255,255,255,0.35);">
               <i data-lucide="message-circle" style="width:24px; height:24px; margin-bottom:0.4rem; opacity:0.4;"></i>
@@ -757,16 +770,6 @@
         <% end %>
         <%# / modal avis %>
 
-        <%# ── Section Amis ────────────────────────────────────────────────── %>
-        <%# Sur son propre profil on passe les demandes en attente reçues
-            Sur le profil d'un autre on ne les passe pas (nil → section masquée) %>
-        <%# turbo_frame_tag — permet la mise à jour en temps réel de la liste d'amis via ActionCable %>
-        <%= turbo_frame_tag "friends_list_#{@profil_user.id}" do %>
-          <%# pending_requests n'est plus passé ici — les demandes sont affichées en haut de colonne %>
-          <%= render "profils/friends_list",
-                friends: @all_friends,
-                own_profile: (current_user == @profil_user) %>
-        <% end %>
 
       </div><%# / col-lg-7 %>
 

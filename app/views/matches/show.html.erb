@@ -506,6 +506,36 @@
 
 
         <%# ──────────────────────────────────────
+            BLOC ÉQUIPE (si match d'équipe)
+            Affiche le badge + nom de l'équipe organisatrice
+            ────────────────────────────────────── %>
+        <% if @match.team %>
+          <%= link_to team_path(@match.team), class: "match-block d-flex align-items-center gap-3", style: "text-decoration:none;", data: { turbo_frame: "_top" } do %>
+            <%# Blason %>
+            <div style="flex-shrink:0; width:42px; height:42px; border-radius:8px; overflow:hidden; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;">
+              <% if @match.team.badge_image.attached? %>
+                <%= image_tag @match.team.badge_image, style: "width:100%; height:100%; object-fit:cover;", alt: @match.team.name %>
+              <% elsif @match.team.badge_svg.present? %>
+                <%= @match.team.badge_svg.html_safe %>
+              <% else %>
+                <i data-lucide="shield" style="width:20px;height:20px;color:rgba(255,255,255,0.3);"></i>
+              <% end %>
+            </div>
+            <%# Info équipe %>
+            <div>
+              <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#1EDD88; margin-bottom:2px;">
+                Match d'équipe
+              </div>
+              <div style="font-size:0.95rem; font-weight:700; color:#fff;">
+                <%= @match.team.name %>
+              </div>
+            </div>
+            <%# Chevron %>
+            <i data-lucide="chevron-right" style="width:16px;height:16px;color:rgba(255,255,255,0.3);margin-left:auto;"></i>
+          <% end %>
+        <% end %>
+
+        <%# ──────────────────────────────────────
             BLOC JOUEURS INSCRITS
             Joueurs approuvés + joueurs en attente (avec badge horloge).
             Pour l'organisateur : bouton "Gérer les demandes" dans le titre
@@ -742,15 +772,34 @@
                 <% end %>
 
               <% elsif @current_match_user.pending? %>
-                <%# Demande en attente %>
-                <div class="match-join-status match-join-status--pending">
-                  <i data-lucide="clock" style="width:14px;height:14px;"></i>
-                  Demande en attente
-                </div>
-                <%= button_to match_match_user_path(@match, @current_match_user),
-                    method: :delete,
-                    class: "btn btn-outline-secondary btn-sm w-100 mt-2" do %>
-                  Annuler la demande
+                <% if @match.team_id.present? %>
+                  <%# Match d'équipe : le membre doit confirmer sa place %>
+                  <div class="match-join-status match-join-status--pending">
+                    <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                    Tu es invité par ton équipe
+                  </div>
+                  <%= button_to confirm_match_match_user_path(@match, @current_match_user),
+                      method: :patch,
+                      class: "btn btn-primary btn-cta-primary btn-sm w-100 mt-2" do %>
+                    <i data-lucide="check" style="width:13px;height:13px;margin-right:4px;"></i>
+                    Confirmer ma présence
+                  <% end %>
+                  <%= button_to match_match_user_path(@match, @current_match_user),
+                      method: :delete,
+                      class: "btn btn-outline-secondary btn-sm w-100 mt-1" do %>
+                    Décliner
+                  <% end %>
+                <% else %>
+                  <%# Match normal : demande envoyée, en attente de l'organisateur %>
+                  <div class="match-join-status match-join-status--pending">
+                    <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                    Demande en attente
+                  </div>
+                  <%= button_to match_match_user_path(@match, @current_match_user),
+                      method: :delete,
+                      class: "btn btn-outline-secondary btn-sm w-100 mt-2" do %>
+                    Annuler la demande
+                  <% end %>
                 <% end %>
 
               <% elsif @current_match_user.waiting? %>

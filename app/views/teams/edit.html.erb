@@ -1,0 +1,12 @@
+<%# ── Modification d'une équipe ───────────────────────────────────────────── %>
+
+<div class="teams-page">
+<div class="container py-4">
+  <div class="mb-4">
+    <%= render "shared/nav_button", url: @team, label: "Retour à l'équipe", direction: "back", extra_class: "mb-2" %>
+    <h1 class="matches-index-title">Modifier "<%= @team.name %>"</h1>
+  </div>
+
+  <%= render "form" %>
+</div>
+</div>

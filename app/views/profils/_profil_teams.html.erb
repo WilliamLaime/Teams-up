@@ -1,0 +1,145 @@
+<%# ── Section équipes sur le profil d'un joueur ──────────────────────────────── %>
+<%# Variables attendues :
+#   @profil_teams     — équipes du joueur affiché
+#   @invitable_teams  — équipes où current_user peut inviter ce joueur (nil si profil perso)
+#   @profil_user      — l'utilisateur affiché
+%>
+
+<%# Sur le profil d'un autre : ne rien afficher si aucune équipe en commun ni équipe invitable %>
+<% return if current_user != @profil_user && @profil_teams.empty? && @invitable_teams.blank? %>
+
+<div style="margin-top:0.5rem; margin-bottom:0;">
+
+  <%# ── En-tête ── %>
+  <% teams_title = (current_user == @profil_user) ? "Équipes" : "Équipes en commun" %>
+  <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
+              text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+    <i data-lucide="shield" style="width:14px; height:14px;"></i>
+    <%= teams_title %> (<%= @profil_teams.size %>)
+  </div>
+
+  <div class="match-block" style="padding:1rem;">
+
+    <%# ── Liste des équipes ── %>
+    <% if @profil_teams.any? %>
+      <div style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:<%= @invitable_teams&.any? ? '1rem' : '0' %>;">
+        <% @profil_teams.each do |team| %>
+          <%# Rôle du joueur dans cette équipe %>
+          <% is_captain = team.captain_id == @profil_user.id %>
+          <%= link_to team_path(team), style: "display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0.6rem; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); text-decoration:none; transition:background 0.15s;", data: { turbo_frame: "_top" } do %>
+
+            <%# Blason %>
+            <div style="flex-shrink:0; width:36px; height:36px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;">
+              <% if team.badge_image.attached? %>
+                <%= image_tag team.badge_image, style: "width:100%; height:100%; object-fit:cover;", alt: team.name %>
+              <% elsif team.badge_svg.present? %>
+                <div style="width:36px; height:36px; display:flex; align-items:center; justify-content:center;">
+                  <%= team.badge_svg.html_safe %>
+                </div>
+              <% else %>
+                <i data-lucide="shield" style="width:18px; height:18px; color:rgba(255,255,255,0.3);"></i>
+              <% end %>
+            </div>
+
+            <%# Nom + rôle %>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:0.85rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <%= team.name %>
+              </div>
+              <span style="display:inline-block; font-size:0.68rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:20px; <%= is_captain ? 'background:rgba(30,221,136,0.15); color:#1EDD88;' : 'background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.45);' %>">
+                <%= is_captain ? "⚡ Captain" : "Membre" %>
+              </span>
+            </div>
+
+            <%# Nombre de membres %>
+            <div style="flex-shrink:0; font-size:0.75rem; color:rgba(255,255,255,0.35); display:flex; align-items:center; gap:3px;">
+              <i data-lucide="users" style="width:11px; height:11px;"></i>
+              <%= team.team_members.size %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p style="font-size:0.85rem; color:rgba(255,255,255,0.35); margin:0 0 <%= @invitable_teams&.any? ? '1rem' : '0' %>;">
+        Pas encore membre d'une équipe.
+      </p>
+    <% end %>
+
+    <%# ── Formulaire "Inviter dans mon équipe" (visible si current_user est captain d'une équipe invitable) ── %>
+    <% if @invitable_teams&.any? %>
+      <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:0.85rem;"
+           data-controller="profil-invite"
+           data-profil-invite-base-url-value="<%= team_team_invitations_path("TEAM_ID") %>">
+
+        <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.4); margin-bottom:0.5rem;">
+          <i data-lucide="user-plus" style="width:11px; height:11px; margin-right:3px;"></i>
+          Inviter dans mon équipe
+        </div>
+
+        <%# Le form action est mis à jour dynamiquement par Stimulus selon l'équipe choisie %>
+        <form method="post"
+              action="<%= team_team_invitations_path(@invitable_teams.first) %>"
+              data-profil-invite-target="form">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <%# Email de l'invité — passé en hidden pour correspondre à find_invitee %>
+          <%= hidden_field_tag :invitee_query, @profil_user.email %>
+
+          <% if @invitable_teams.size > 1 %>
+            <%# Plusieurs équipes : grille de boutons radio stylisés %>
+            <div style="display:flex; flex-direction:column; gap:0.4rem; margin-bottom:0.6rem;">
+              <% @invitable_teams.each_with_index do |team, i| %>
+                <label style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.65rem; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); cursor:pointer; transition:border-color 0.15s;"
+                       data-action="click->profil-invite#selectTeam"
+                       data-team-id="<%= team.id %>">
+                  <%# Blason miniature %>
+                  <div style="flex-shrink:0; width:28px; height:28px; border-radius:5px; overflow:hidden; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center;">
+                    <% if team.badge_image.attached? %>
+                      <%= image_tag team.badge_image, style: "width:100%; height:100%; object-fit:cover;", alt: "" %>
+                    <% elsif team.badge_svg.present? %>
+                      <%= team.badge_svg.html_safe %>
+                    <% else %>
+                      <i data-lucide="shield" style="width:14px; height:14px; color:rgba(255,255,255,0.3);"></i>
+                    <% end %>
+                  </div>
+                  <%# Nom %>
+                  <span style="flex:1; font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.8);">
+                    <%= team.name %>
+                  </span>
+                  <%# Radio caché %>
+                  <input type="radio"
+                         name="selected_team"
+                         value="<%= team.id %>"
+                         data-profil-invite-target="select"
+                         data-action="change->profil-invite#update"
+                         <%= i == 0 ? "checked" : "" %>
+                         style="accent-color:#1EDD88;">
+                </label>
+              <% end %>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-cta-primary btn-sm w-100">
+              <i data-lucide="user-plus" style="width:12px; height:12px; margin-right:4px;"></i>
+              Inviter dans cette équipe
+            </button>
+          <% else %>
+            <%# Une seule équipe : juste le nom + bouton %>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <span style="flex:1; font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.75);">
+                <%= @invitable_teams.first.name %>
+              </span>
+              <input type="hidden"
+                     name="selected_team"
+                     value="<%= @invitable_teams.first.id %>"
+                     data-profil-invite-target="select">
+              <button type="submit" class="btn btn-primary btn-cta-primary btn-sm" style="white-space:nowrap;">
+                <i data-lucide="user-plus" style="width:12px; height:12px; margin-right:4px;"></i>
+                Inviter
+              </button>
+            </div>
+          <% end %>
+        </form>
+      </div>
+    <% end %>
+
+  </div>
+</div>

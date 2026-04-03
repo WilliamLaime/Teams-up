@@ -1,0 +1,39 @@
+<%# ── Carte résumé d'une équipe — affichée dans /teams ───────────────────── %>
+<%# Variables attendues : team (Team) %>
+
+<%= link_to team_path(team), style: "text-decoration:none;" do %>
+  <div class="team-card">
+
+    <%# Blason %>
+    <div class="team-card-badge">
+      <% if team.badge_image.attached? %>
+        <%= image_tag team.badge_image, alt: "Blason #{team.name}", class: "team-card-badge-img" %>
+      <% elsif team.badge_svg.present? %>
+        <%# SVG généré stocké en base — rendu inline en sécurité %>
+        <div class="team-card-badge-svg"><%= team.badge_svg.html_safe %></div>
+      <% else %>
+        <%# Placeholder par défaut %>
+        <div class="team-card-badge-placeholder">
+          <i data-lucide="shield" style="width:32px;height:32px;color:rgba(255,255,255,0.4);"></i>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Infos %>
+    <div class="team-card-body">
+      <h3 class="team-card-name"><%= team.name %></h3>
+
+      <%# Rôle de l'user dans cette équipe %>
+      <% tm = team.team_members.find { |m| m.user_id == current_user.id } %>
+      <span class="team-card-role <%= tm&.captain? ? 'captain' : 'member' %>">
+        <%= tm&.captain? ? "⚡ Captain" : "Membre" %>
+      </span>
+
+      <p class="team-card-meta">
+        <i data-lucide="users" style="width:12px;height:12px;margin-right:3px;"></i>
+        <%= team.team_members.size %> membre<%= team.team_members.size > 1 ? "s" : "" %>
+      </p>
+    </div>
+
+  </div>
+<% end %>

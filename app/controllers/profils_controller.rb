@@ -53,6 +53,9 @@ class ProfilsController < ApplicationController
                                .pluck(:reviewer_id)
                                .uniq
     @pending_reviewers = User.where(id: pending_reviewer_ids).includes(:profil)
+
+    # Équipes du joueur (affiché sur le profil)
+    @profil_teams = current_user.teams.includes(:captain, :team_members).order(:name)
   end
 
   # GET /users/:id/profil
@@ -63,8 +66,8 @@ class ProfilsController < ApplicationController
     @profil_user = User.find(params[:id])
     @profil = @profil_user.profil || @profil_user.build_profil
 
-    # Charge tous les amis du profil affiché
-    @all_friends = @profil_user.all_friends.includes(:profil)
+    # On n'affiche pas les amis d'un autre utilisateur (trop intrusif)
+    @all_friends = nil
 
     # Vérifie le statut de la relation entre current_user et ce profil
     if user_signed_in? && current_user != @profil_user
@@ -107,6 +110,18 @@ class ProfilsController < ApplicationController
                                       reviewer_id: @profil_user.id,
                                       reviewed_user_id: current_user.id
                                     )
+
+    # Équipes en commun uniquement (pas toutes les équipes de l'autre user)
+    if user_signed_in? && current_user != @profil_user
+      common_team_ids  = current_user.team_ids & @profil_user.team_ids
+      @profil_teams    = Team.where(id: common_team_ids).includes(:captain, :team_members).order(:name)
+      # Équipes où current_user est captain et peut encore inviter ce joueur
+      excluded         = @profil_user.teams.pluck(:id) +
+                         TeamInvitation.pending.where(invitee: @profil_user).pluck(:team_id)
+      @invitable_teams = current_user.captained_teams.where.not(id: excluded).order(:name)
+    else
+      @profil_teams = Team.none
+    end
 
     render :show
   end
@@ -174,6 +189,9 @@ class ProfilsController < ApplicationController
                                .pluck(:reviewer_id)
                                .uniq
     @pending_reviewers = User.where(id: pending_reviewer_ids).includes(:profil)
+
+    # Équipes du joueur (affiché sur le profil)
+    @profil_teams = current_user.teams.includes(:captain, :team_members).order(:name)
   end
 
   # GET /users/:id/profil/simple
@@ -183,8 +201,8 @@ class ProfilsController < ApplicationController
     @profil_user = User.find(params[:id])
     @profil = @profil_user.profil || @profil_user.build_profil
 
-    # Charge tous les amis du profil affiché
-    @all_friends = @profil_user.all_friends.includes(:profil)
+    # On n'affiche pas les amis d'un autre utilisateur (trop intrusif)
+    @all_friends = nil
 
     # Vérifie le statut de la relation entre current_user et ce profil
     if user_signed_in? && current_user != @profil_user
@@ -218,6 +236,18 @@ class ProfilsController < ApplicationController
                                       reviewer_id: @profil_user.id,
                                       reviewed_user_id: current_user.id
                                     )
+
+    # Équipes en commun uniquement (pas toutes les équipes de l'autre user)
+    if user_signed_in? && current_user != @profil_user
+      common_team_ids = current_user.team_ids & @profil_user.team_ids
+      @profil_teams   = Team.where(id: common_team_ids).includes(:captain, :team_members).order(:name)
+      # Équipes où current_user est captain et peut encore inviter ce joueur
+      excluded        = @profil_user.teams.pluck(:id) +
+                        TeamInvitation.pending.where(invitee: @profil_user).pluck(:team_id)
+      @invitable_teams = current_user.captained_teams.where.not(id: excluded).order(:name)
+    else
+      @profil_teams = Team.none
+    end
 
     render :show_simple
   end
