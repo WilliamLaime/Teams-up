@@ -191,22 +191,6 @@
                    data-sport-filter-target="dropdown"
                    style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:150px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem">
 
-                <%# Option "Tous les sports" — réinitialise le filtre sport %>
-                <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
-                  <input type="radio"
-                         name="sport_ids[]"
-                         value=""
-                         data-sport-filter-target="checkbox"
-                         data-label-html="Sport"
-                         data-action="change->sport-filter#change"
-                         style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
-                         <%= "checked" if params[:sport_ids].present? && params[:sport_ids].all?(&:blank?) %>>
-                  <span style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);">Tous les sports</span>
-                </label>
-
-                <%# Séparateur %>
-                <div style="height:1px; background:rgba(255,255,255,0.08); margin:0.1rem 0;"></div>
-
                 <%# Un radio par sport — auto-soumet au clic %>
                 <% Sport.order(:name).each do |sport| %>
                   <%# Pré-sélectionné si dans l'URL, ou si c'est le sport actif (aucun filtre URL) %>

@@ -34,6 +34,7 @@ export default class extends Controller {
   // Ouvre ou ferme le dropdown au clic sur le trigger
   toggle(event) {
     event.stopPropagation()
+
     const dropdown = this.dropdownTarget
     // On contrôle directement le style inline — pas de conflit CSS possible
     if (dropdown.style.display === "none") {
@@ -106,17 +107,15 @@ export default class extends Controller {
     this._rebuildLevels(event.detail.sportIds)
   }
 
-  // Reconstruit les checkboxes selon le sport sélectionné (sélection unique).
+  // Reconstruit les checkboxes selon le sport sélectionné.
   // Clé "0" = fallback (sport actif du contexte utilisateur, calculé côté serveur).
   // Les niveaux déjà cochés sont conservés si leur label existe dans la nouvelle liste.
   _rebuildLevels(sportIds) {
     // Récupère la map sport_id → [{label, css}] depuis le data attribute
     const map = JSON.parse(this.element.dataset.sportsLevels || "{}")
 
-    // 1 sport sélectionné → sa grille ; sinon fallback clé "0" (sport actif du contexte)
-    const levels = sportIds.length === 1
-      ? (map[String(sportIds[0])] || map["0"] || [])
-      : (map["0"] || [])
+    // 1 sport sélectionné → sa grille complète
+    const levels = map[String(sportIds[0])] || map["0"] || []
 
     // Conserve les labels actuellement cochés pour les re-cocher si présents dans la nouvelle liste
     const selected = new Set(this.checkboxTargets.filter(cb => cb.checked).map(cb => cb.value))

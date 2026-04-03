@@ -265,7 +265,17 @@ class MatchesController < ApplicationController
     # Recherche full-text — titre, ville, description ou prénom/nom du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
 
-    # Filtre par niveau — accepte plusieurs valeurs (WHERE level IN ('...', '...'))
+    # Filtre par sport :
+    # - sport sélectionné dans l'URL → filtrer par ce sport
+    # - Aucun param sport dans l'URL → fallback sur le sport actif de l'utilisateur
+    sport_ids = params[:sport_ids]&.reject(&:blank?) || []
+    if sport_ids.any?
+      @matches = @matches.where(sport_id: sport_ids)
+    elsif current_sport.present?
+      @matches = @matches.where(sport_id: current_sport.id)
+    end
+
+    # Filtre par niveau
     @matches = @matches.where(level: params[:levels]) if params[:levels].present?
 
     # Filtre par ville — ILIKE = insensible à la casse (PostgreSQL)
@@ -279,15 +289,6 @@ class MatchesController < ApplicationController
 
     # Filtre par nombre de places disponibles minimum
     @matches = @matches.where("player_left >= ?", params[:player_left].to_i) if params[:player_left].present?
-
-    # Filtre par sport :
-    # - Si des sports sont sélectionnés dans les filtres (multi-select) → filtrer par ces sports
-    # - Sinon, pré-filtrer automatiquement par le sport actif de l'utilisateur
-    if params[:sport_ids].present?
-      @matches = @matches.where(sport_id: params[:sport_ids])
-    elsif current_sport.present?
-      @matches = @matches.where(sport_id: current_sport.id)
-    end
 
     # Filtre "Mes lieux" — restreint aux venues favorites de l'utilisateur
     # Disponible comme filtre manuel pour combiner avec d'autres filtres (date, niveau, etc.)
