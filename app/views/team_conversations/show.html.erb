@@ -1,0 +1,54 @@
+<%# ── Chat d'équipe — chargé dans la colonne droite du sticky chat ────────────
+    Même structure que conversations/show.html.erb mais pour les équipes.
+    Le data-controller="chat" réutilise le controller Stimulus existant.
+%>
+
+<%= turbo_frame_tag "sticky-chat-frame" do %>
+
+  <div data-controller="chat"
+       data-chat-current-user-id-value="<%= current_user.id %>"
+       class="sticky-chat-inner">
+
+    <%# Abonnement Turbo Stream — reçoit les nouveaux messages d'équipe en temps réel
+        Stream "sticky" séparé de la page show de l'équipe (évite les doublons) %>
+    <%= turbo_stream_from "team_chat_sticky_#{@team.id}" %>
+
+    <%# En-tête : nom de l'équipe — cliquable pour aller sur la page de l'équipe
+        Même pattern que le chat privé : ferme la modale puis navigue %>
+    <div class="sticky-chat-chat-header">
+      <span class="sticky-chat-profile-link"
+            data-action="click->sticky-chat#goToProfile"
+            data-url="<%= team_path(@team) %>">
+        <i data-lucide="shield" style="width:13px;height:13px;color:#4A90D9;"></i>
+        <%= truncate(@team.name, length: 28) %>
+        <span style="font-size:0.65rem;color:rgba(255,255,255,0.4);margin-left:4px;">· Équipe</span>
+      </span>
+    </div>
+
+    <%# Zone scrollable des messages
+        id="sticky-chat-messages" : cible du broadcast Turbo Stream (message.rb)
+        --team : fond bleu pour différencier du chat de match %>
+    <div class="sticky-chat-messages-zone sticky-chat-messages-zone--team"
+         id="sticky-chat-messages"
+         data-chat-target="messages">
+
+      <% if @messages.any? %>
+        <%= render @messages %>
+      <% else %>
+        <div class="chat-empty text-center py-3" id="chat-empty">
+          <div style="font-size: 1.5rem;">🛡️</div>
+          <p class="small">Soyez les premiers à chatter !</p>
+        </div>
+      <% end %>
+
+    </div>
+
+    <%# Formulaire d'envoi
+        id="sticky-chat-form" : réinitialisé par MessagesController après envoi %>
+    <div class="sticky-chat-form-zone" id="sticky-chat-form">
+      <%= render "messages/form", team: @team, message: @message %>
+    </div>
+
+  </div>
+
+<% end %>

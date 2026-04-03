@@ -15,10 +15,15 @@
         pour éviter un doublon si l'utilisateur est aussi sur la page show du match %>
     <%= turbo_stream_from "match_chat_sticky_#{@match.id}" %>
 
-    <%# En-tête : nom du match %>
+    <%# En-tête : nom du match — cliquable pour aller sur la page du match
+        Même pattern que le chat privé : ferme la modale puis navigue %>
     <div class="sticky-chat-chat-header">
-      <i data-lucide="message-circle" style="width:13px;height:13px;color:#1EDD88;"></i>
-      <%= truncate(@match.title, length: 30) %>
+      <span class="sticky-chat-profile-link"
+            data-action="click->sticky-chat#goToProfile"
+            data-url="<%= match_path(@match) %>">
+        <i data-lucide="message-circle" style="width:13px;height:13px;color:#1EDD88;"></i>
+        <%= truncate(@match.title, length: 30) %>
+      </span>
     </div>
 
     <%# Zone scrollable des messages

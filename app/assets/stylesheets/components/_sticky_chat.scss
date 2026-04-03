@@ -269,7 +269,7 @@
   text-overflow: ellipsis;
 }
 
-// Badge non-lu : petit rond vert pulsant (dans la sidebar)
+// Badge non-lu : petit rond vert pulsant (matchs)
 .sticky-chat-unread-dot {
   width: 7px;
   height: 7px;
@@ -279,6 +279,39 @@
   display: inline-block;
   flex-shrink: 0;
   animation: unread-pulse 2s ease-in-out infinite;
+
+  // Variante bleue pour les chats d'équipe
+  &--team {
+    background-color: #4A90D9;
+  }
+}
+
+// Badge "Équipe" — pastille bleue dans la sidebar
+.sticky-chat-team-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4A90D9;
+  background: rgba(74, 144, 217, 0.12);
+  border: 1px solid rgba(74, 144, 217, 0.25);
+  border-radius: 20px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+// Badge "Match" — pastille verte dans la sidebar (miroir du badge équipe)
+.sticky-chat-match-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $green;
+  background: rgba(30, 221, 136, 0.12);
+  border: 1px solid rgba(30, 221, 136, 0.25);
+  border-radius: 20px;
+  padding: 1px 5px;
+  flex-shrink: 0;
 }
 
 // Animation légère des badges non-lus
@@ -386,10 +419,17 @@
   flex: 1;
   overflow-y: auto;
   padding: 8px;
-  background-image: asset-url('fond_chat.png'); // image de fond du chat
+  background-image: asset-url('fond_chat.png'); // image de fond du chat (match/privé = vert)
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+
+  // Variante bleue pour le chat d'équipe dans la navbar
+  &--team {
+    background-image:
+      linear-gradient(rgba(74, 144, 217, 0.12), rgba(74, 144, 217, 0.12)),
+      asset-url('fond_chat.png');
+  }
   display: flex;
   flex-direction: column;
   gap: 4px;

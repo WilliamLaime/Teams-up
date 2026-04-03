@@ -398,6 +398,83 @@
   &.active { background: rgba(30, 221, 136, 0.2);  border-color: #1EDD88; }
 }
 
+// ── Carte d'accès au chat d'équipe ───────────────────────────────────────────
+// Carte bleue distincte du reste de la page (thème équipe = #4A90D9)
+.team-chat-card {
+  background: rgba(74, 144, 217, 0.06);         // fond légèrement bleu
+  border: 1px solid rgba(74, 144, 217, 0.25);   // bordure bleue subtile
+  border-left: 3px solid #4A90D9;               // accent bleu à gauche
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  // Partie gauche : icône + titre + preview
+  &-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  // Cercle icône bleu
+  &-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(74, 144, 217, 0.15);
+    color: #4A90D9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  // Titre "Chat de l'équipe"
+  &-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.1rem;
+  }
+
+  // Aperçu du dernier message
+  &-preview {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.45);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 400px;
+  }
+
+  // Bouton "Ouvrir le chat"
+  &-btn {
+    background: rgba(74, 144, 217, 0.15);
+    border: 1px solid rgba(74, 144, 217, 0.4);
+    color: #4A90D9;
+    border-radius: 8px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+
+    &:hover {
+      background: rgba(74, 144, 217, 0.25);
+      border-color: #4A90D9;
+      color: #fff;
+    }
+  }
+}
+
 // ── Autocomplete invitation ───────────────────────────────────────────────────
 .invite-search-dropdown {
   position: relative;

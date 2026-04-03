@@ -55,7 +55,14 @@ Rails.application.routes.draw do
     # Membres imbriqués (retirer un membre)
     # DELETE /teams/:team_id/team_members/:id       → retirer un membre (captain)
     resources :team_members, only: [:destroy]
+
+    # Chat d'équipe — POST /teams/:team_id/messages → envoyer un message dans le chat équipe
+    resources :messages, only: [:create]
   end
+
+  # Chat d'équipe dans le panneau sticky global
+  # GET /team_conversations/:id → charge le chat de l'équipe dans la colonne droite du sticky chat
+  resources :team_conversations, only: [:show]
 
   # Routes pour les matchs (CRUD complet)
   # Exemple : GET /matches => liste, GET /matches/1 => détail, etc.

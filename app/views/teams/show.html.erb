@@ -341,5 +341,94 @@
     </div>
   </div>
 
+
+  <%# ── Bouton d'accès au chat (membres uniquement) ──────────────────────────── %>
+  <% if @team.member?(current_user) %>
+    <div class="row mt-4">
+      <div class="col-12">
+        <%# Abonnement Turbo Stream — reçoit les broadcasts de la page équipe (stream séparé du sticky)
+            Placé ici (hors modale) pour être toujours actif, même si la modale n'est pas ouverte %>
+        <%= turbo_stream_from "team_chat_page_#{@team.id}" %>
+
+        <div class="team-chat-card">
+          <div class="team-chat-card-left">
+            <div class="team-chat-card-icon">
+              <i data-lucide="message-circle" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <div class="team-chat-card-title">Chat de l'équipe</div>
+              <%# id="team-page-last-message-*" : mis à jour en temps réel via Turbo Stream %>
+              <%= render "teams/chat_page_preview", team: @team %>
+            </div>
+          </div>
+          <button class="team-chat-card-btn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#teamChatModal">
+            Ouvrir le chat
+            <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Modale chat d'équipe ─────────────────────────────────────────────────
+        Structure identique à la modale chat du match show.
+        data-controller="chat" : auto-scroll, style "mine", Entrée pour envoyer
+        data-action="shown.bs.modal->chat#onModalOpen" : scroll en bas à l'ouverture %>
+    <div class="modal fade"
+         id="teamChatModal"
+         tabindex="-1"
+         data-controller="chat"
+         data-chat-current-user-id-value="<%= current_user.id %>"
+         data-action="shown.bs.modal->chat#onModalOpen">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content chat-modal-content">
+
+          <%# En-tête %>
+          <div class="modal-header chat-header">
+            <div class="d-flex align-items-center gap-2">
+              <span class="chat-header-icon">🛡️</span>
+              <div>
+                <div class="chat-header-title"><%= @team.name %></div>
+                <div class="chat-header-subtitle">
+                  <%= @team.members_count %> membre<%= @team.members_count > 1 ? "s" : "" %>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+
+          <%# Zone scrollable des messages
+              id="team-chat-messages" : cible du broadcast dans Message#broadcast_team_message
+              data-chat-target="messages" : utilisé par chat_controller.js pour l'auto-scroll
+              chat-messages--team : fond bleu pour différencier du chat de match (vert) %>
+          <div class="modal-body p-0">
+            <div class="chat-messages chat-messages--team"
+                 id="team-chat-messages"
+                 data-chat-target="messages">
+              <% team_messages = @team.messages.includes(user: :profil).order(:created_at).last(50) %>
+              <% if team_messages.any? %>
+                <%= render team_messages %>
+              <% else %>
+                <%# id="chat-empty" ciblé par chat_controller.js → supprimé au 1er message %>
+                <div class="chat-empty text-center py-5" id="chat-empty">
+                  <div class="mb-2" style="font-size:2rem;">🛡️</div>
+                  <p>Soyez les premiers à chatter !</p>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Formulaire d'envoi
+              id="team-chat-form" : réinitialisé par MessagesController#create après envoi %>
+          <div class="modal-footer p-2 border-top" id="team-chat-form">
+            <%= render "messages/form", team: @team, message: Message.new %>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  <% end %>
+
 </div>
 </div>

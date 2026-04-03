@@ -2,7 +2,7 @@
     Remplace l'ancien panneau sticky flottant en bas à droite.
     L'icône dans la navbar ouvre cette modale via data-bs-toggle="modal".
     Structure :
-      [sidebar avec 2 onglets (Matchs / Messages) | zone chat turbo-frame]
+      [sidebar avec 2 onglets (Matchs+Équipes / Messages) | zone chat turbo-frame]
     Notifications : badge non-lu sur l'icône navbar géré en temps réel via ActionCable
 %>
 <% if user_signed_in? %>
@@ -19,6 +19,12 @@
       .select { |mu| !mu.match.past? }
       .sort_by { |mu| mu.match.created_at }
       .reverse
+  %>
+
+  <%# ── Conversations d'équipe (intégrées dans l'onglet "Matchs") ───────────
+      Récupère les équipes dont l'utilisateur est membre %>
+  <%
+    user_team_members = current_user.team_members.includes(:team)
   %>
 
   <%# ── Conversations privées (onglet "Messages") ───────────────────────────
@@ -46,7 +52,10 @@
 
     <%# Abonnement au stream personnel de l'utilisateur
         Permet de recevoir les mises à jour des badges non-lus en temps réel
-        (broadcast depuis Message model pour les matchs et les convs privées) %>
+        (broadcast depuis Message model pour les matchs, équipes et convs privées)
+        NOTE : les streams de chat d'équipe (team_chat_sticky_*) sont abonnés dans
+        team_conversations/show.html.erb (à l'intérieur de la turbo-frame),
+        comme les streams de match dans conversations/show.html.erb %>
     <%= turbo_stream_from "user_conversations_#{current_user.id}" %>
 
     <%# Trigger caché pour l'ouverture automatique de la modale
@@ -75,14 +84,14 @@
               <%# Gestion par Stimulus (sticky-chat#switchTab) — pas data-bs-toggle
                   car Bootstrap Tab entre en conflit avec data-turbo-permanent %>
               <div class="sticky-chat-tabs">
-                <%# Onglet "Matchs" — actif par défaut (classe "active" gérée par Stimulus) %>
+                <%# Onglet "Chats" (matchs + équipes) — actif par défaut (classe "active" gérée par Stimulus) %>
                 <button class="sticky-chat-tab active"
                         type="button"
-                        data-tab="matchs"
+                        data-tab="chats"
                         data-action="click->sticky-chat#switchTab">
-                  Matchs
+                  Chats
                   <%# Point vert non-lus — caché par défaut, affiché par updateBadge() %>
-                  <span class="sticky-chat-tab-badge" id="badge-tab-matchs" style="display:none;"></span>
+                  <span class="sticky-chat-tab-badge" id="badge-tab-chats" style="display:none;"></span>
                 </button>
                 <%# Onglet "Messages" (conversations privées) %>
                 <button class="sticky-chat-tab"
@@ -103,8 +112,8 @@
               <%# ── Contenu des onglets — géré par Stimulus, pas Bootstrap Tab ── %>
               <div class="sticky-chat-tab-content">
 
-                <%# ── Onglet Matchs — visible par défaut (sticky-chat-pane--active) %>
-                <div class="sticky-chat-pane sticky-chat-pane--active" id="tab-matchs">
+                <%# ── Onglet Chats (matchs + équipes) — visible par défaut (sticky-chat-pane--active) %>
+                <div class="sticky-chat-pane sticky-chat-pane--active" id="tab-chats">
 
                   <%# IMPORTANT : #sticky-chat-sidebar-list doit TOUJOURS être présent
                       dans le DOM, même quand la liste est vide.
@@ -112,17 +121,29 @@
                       ciblent cet id pour ajouter une conversation en temps réel.
                       Si l'élément n'existe pas lors du broadcast, rien ne s'affiche. %>
                   <div id="sticky-chat-sidebar-list">
+
+                    <%# ── Conversations d'équipe (point bleu) — en premier ── %>
+                    <% if user_team_members.any? %>
+                      <% user_team_members.each do |tm| %>
+                        <%= render "shared/team_convo_item", team: tm.team, team_member: tm %>
+                      <% end %>
+                    <% end %>
+
+                    <%# ── Conversations de match (point vert) ── %>
                     <% if sticky_convos.any? %>
                       <% sticky_convos.each do |mu| %>
                         <%= render "shared/sticky_convo_item", match: mu.match, match_user: mu %>
                       <% end %>
-                    <% else %>
-                      <%# id="sticky-chat-sidebar-empty" supprimé par broadcast quand une conv arrive %>
+                    <% end %>
+
+                    <%# Message vide si aucune conversation dans aucune catégorie %>
+                    <% if sticky_convos.empty? && user_team_members.empty? %>
                       <div class="sticky-chat-sidebar-empty" id="sticky-chat-sidebar-empty">
                         <div>⚽</div>
-                        <p>Rejoins un match pour chatter !</p>
+                        <p>Rejoins un match ou une équipe pour chatter !</p>
                       </div>
                     <% end %>
+
                   </div>
 
                 </div>

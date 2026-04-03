@@ -7,7 +7,55 @@ class MessagesController < ApplicationController
   def create
     skip_authorization
 
-    if @match
+    if @team
+      # ── Message d'équipe ──────────────────────────────────────────────────
+      @message = @team.messages.build(
+        content: message_params[:content],
+        user: current_user
+      )
+
+      if @message.save
+        # Met à jour le timestamp de lecture de l'expéditeur
+        now = Time.current
+        @team_member.update_column(:chat_last_read_at, now)
+        # Met à jour l'objet en mémoire pour que le partial voie la bonne valeur
+        @team_member.chat_last_read_at = now
+
+        # Déplace la conv en tête de sidebar pour l'expéditeur (sans badge non-lu)
+        # Fait ICI après mise à jour de chat_last_read_at → unread = false pour l'expéditeur
+        Turbo::StreamsChannel.broadcast_remove_to(
+          "user_conversations_#{current_user.id}",
+          target: "sticky-team-convo-#{@team.id}"
+        )
+        Turbo::StreamsChannel.broadcast_prepend_to(
+          "user_conversations_#{current_user.id}",
+          target: "sticky-chat-sidebar-list",
+          partial: "shared/team_convo_item",
+          locals: { team: @team, team_member: @team_member }
+        )
+
+        # Le broadcast est géré par after_create_commit dans le modèle
+        # On réinitialise les deux formulaires (sticky chat + page équipe)
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: [
+              turbo_stream.update("sticky-chat-form",
+                partial: "messages/form",
+                locals: { team: @team, message: Message.new }
+              ),
+              turbo_stream.update("team-chat-form",
+                partial: "messages/form",
+                locals: { team: @team, message: Message.new }
+              )
+            ]
+          end
+          format.html { redirect_to @team }
+        end
+      else
+        redirect_to @team, alert: "Impossible d'envoyer le message."
+      end
+
+    elsif @match
       # ── Message de match ──────────────────────────────────────────────────
       @message = @match.messages.build(
         content: message_params[:content],
@@ -20,7 +68,24 @@ class MessagesController < ApplicationController
 
         # Met à jour last_read_at de l'expéditeur pour éviter le badge non-lu sur soi-même
         sender_mu = @match.match_users.find_by(user: current_user)
-        sender_mu&.update_column(:last_read_at, Time.current)
+        if sender_mu
+          now = Time.current
+          sender_mu.update_column(:last_read_at, now)
+          # Met à jour l'objet en mémoire pour que le partial voie la bonne valeur
+          sender_mu.last_read_at = now
+
+          # Déplace la conv en tête de sidebar pour l'expéditeur (sans badge non-lu)
+          Turbo::StreamsChannel.broadcast_remove_to(
+            "user_conversations_#{current_user.id}",
+            target: "sticky-convo-#{@match.id}"
+          )
+          Turbo::StreamsChannel.broadcast_prepend_to(
+            "user_conversations_#{current_user.id}",
+            target: "sticky-chat-sidebar-list",
+            partial: "shared/sticky_convo_item",
+            locals: { match: @match, match_user: sender_mu }
+          )
+        end
 
         # Le broadcast est géré par after_create_commit dans le modèle
         # On réinitialise les formulaires via Turbo Stream (vide le champ texte)
@@ -74,7 +139,7 @@ class MessagesController < ApplicationController
         # Fait ICI après mark_read_for! : unread_for?(current_user) retourne false → pas de voyant
         # (Si on le faisait dans le model callback, mark_read_for! n'est pas encore appelé)
         if is_first_message || sender_was_dismissed
-          # Item absent du DOM (premier message ou conv masquée) → on l'insère en haut
+          # Item absent du DOM (premier message ou conv masquée) → insère en haut
           Turbo::StreamsChannel.broadcast_prepend_to(
             "user_conversations_#{current_user.id}",
             target:  "private-chat-sidebar-list",
@@ -82,10 +147,14 @@ class MessagesController < ApplicationController
             locals:  { conversation: @conversation, current_user: current_user }
           )
         else
-          # Item déjà présent → mise à jour simple
-          Turbo::StreamsChannel.broadcast_replace_to(
+          # Item déjà présent → supprime de sa position puis insère en tête
+          Turbo::StreamsChannel.broadcast_remove_to(
             "user_conversations_#{current_user.id}",
-            target:  "private-convo-#{@conversation.id}",
+            target: "private-convo-#{@conversation.id}"
+          )
+          Turbo::StreamsChannel.broadcast_prepend_to(
+            "user_conversations_#{current_user.id}",
+            target:  "private-chat-sidebar-list",
             partial: "shared/private_convo_item",
             locals:  { conversation: @conversation, current_user: current_user }
           )
@@ -114,9 +183,18 @@ class MessagesController < ApplicationController
 
   private
 
-  # ── Charge le contexte : match ou conversation privée ─────────────────────
+  # ── Charge le contexte : équipe, match ou conversation privée ────────────
   def set_context_and_check_access
-    if params[:match_id]
+    if params[:team_id]
+      # Message d'équipe — vérifie que l'utilisateur est membre
+      @team = Team.find(params[:team_id])
+      @team_member = @team.team_members.find_by(user: current_user)
+
+      return if @team_member
+
+      redirect_to @team, alert: "Tu dois être membre de l'équipe pour écrire dans le chat."
+
+    elsif params[:match_id]
       # Message de match — comportement existant
       @match = Match.find(params[:match_id])
       match_user = @match.match_users.find_by(user: current_user)

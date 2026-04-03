@@ -1,0 +1,11 @@
+<%# Preview du dernier message dans la carte de la page équipe
+    id="team-page-last-message-*" ciblé par broadcast_replace_to depuis Message#broadcast_team_message
+    Variable attendue : team %>
+<% last_msg = team.messages.last %>
+<div id="team-page-last-message-<%= team.id %>" class="team-chat-card-preview">
+  <% if last_msg %>
+    <%= truncate(last_msg.content, length: 50) %>
+  <% else %>
+    Aucun message — soyez les premiers !
+  <% end %>
+</div>

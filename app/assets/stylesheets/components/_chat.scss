@@ -204,6 +204,13 @@
     background-color: $dark-surface;
     border-radius: 4px;
   }
+
+  // Variante bleue pour le chat d'équipe — superpose un calque bleu sur fond_chat.png
+  &--team {
+    background-image:
+      linear-gradient(rgba(74, 144, 217, 0.12), rgba(74, 144, 217, 0.12)),
+      asset-url('fond_chat.png');
+  }
 }
 
 // ── Conteneur d'un message (avatar + bulle) ────────────────────────────────────

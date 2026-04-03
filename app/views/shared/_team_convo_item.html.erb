@@ -1,0 +1,60 @@
+<%# ── Partial : item d'équipe dans la sidebar sticky ───────────────────────────
+    Variables attendues :
+      - team        : objet Team
+      - team_member : objet TeamMember de l'utilisateur connecté pour cette équipe
+    Affiché avec un point BLEU (vs vert pour les matchs) pour différencier.
+%>
+
+<% last_msg = team.messages.last %>
+
+<%# Détermine si l'utilisateur a des messages non lus dans ce chat d'équipe
+    Non lu = messages postés APRÈS son dernier chat_last_read_at %>
+<% unread = if team_member.chat_last_read_at.nil?
+               team.messages.exists?
+             else
+               team.messages.where("created_at > ?", team_member.chat_last_read_at).exists?
+             end %>
+
+<%# Conteneur de l'item — id ciblé par les broadcasts Turbo Stream %>
+<div class="sticky-chat-convo-item-wrapper" id="sticky-team-convo-<%= team.id %>">
+
+  <%# Lien vers le chat d'équipe (ouvre dans la colonne droite du sticky chat)
+      turbo_prefetch: false → évite de marquer comme lu au simple survol %>
+  <%= link_to team_conversation_path(team),
+      data: {
+        turbo_frame: "sticky-chat-frame",
+        action: "click->sticky-chat#selectConvo",
+        turbo_prefetch: false
+      },
+      class: "sticky-chat-convo-link",
+      id: "sticky-team-convo-link-#{team.id}" do %>
+
+    <div class="sticky-chat-convo-info">
+
+      <%# Titre de l'équipe + badge "Équipe" + point bleu si non lu %>
+      <div class="sticky-chat-convo-title-row">
+        <span class="sticky-chat-convo-title">
+          <%= truncate(team.name, length: 18) %>
+        </span>
+        <%# Badge visuel pour distinguer un chat d'équipe d'un chat de match %>
+        <span class="sticky-chat-team-badge">Équipe</span>
+        <%# Point BLEU = messages non lus (bleu pour équipe, vert pour match) %>
+        <% if unread %>
+          <span class="sticky-chat-unread-dot sticky-chat-unread-dot--team" title="Nouveau message"></span>
+        <% end %>
+      </div>
+
+      <%# Aperçu du dernier message %>
+      <div class="sticky-chat-convo-preview">
+        <% if last_msg %>
+          <%= truncate(last_msg.content, length: 22) %>
+        <% else %>
+          Aucun message
+        <% end %>
+      </div>
+
+    </div>
+
+  <% end %>
+
+</div>

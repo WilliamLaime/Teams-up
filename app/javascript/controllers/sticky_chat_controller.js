@@ -90,13 +90,13 @@ export default class extends Controller {
   // ── Mettre à jour tous les badges de notification ─────────────────────────
   // Appelé à l'init, après chaque mutation DOM et après chaque navigation Turbo.
   updateBadge() {
-    // ── Badge onglet "Matchs" ──────────────────────────────────────────────
-    const matchsPane = document.getElementById("tab-matchs")
+    // ── Badge onglet "Chats" (matchs + équipes) ──────────────────────────
+    const matchsPane = document.getElementById("tab-chats")
     const hasUnreadMatchs = matchsPane
       ? matchsPane.querySelectorAll(".sticky-chat-unread-dot").length > 0
       : false
 
-    const badgeMatchs = document.getElementById("badge-tab-matchs")
+    const badgeMatchs = document.getElementById("badge-tab-chats")
     if (badgeMatchs) badgeMatchs.style.display = hasUnreadMatchs ? "inline-block" : "none"
 
     // ── Badge onglet "Messages" ────────────────────────────────────────────

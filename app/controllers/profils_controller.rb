@@ -9,8 +9,8 @@ class ProfilsController < ApplicationController
   # Affiche le profil de l'utilisateur connecté
   def show
     authorize @profil
-    # @profil_user sert dans la vue pour afficher le bon utilisateur
-    @profil_user = current_user
+    # /profil redirige vers /profil/simple (version prioritaire)
+    redirect_to simple_profil_path and return
 
     # Charge tous les amis acceptés de l'utilisateur connecté
     @all_friends = current_user.all_friends.includes(:profil)

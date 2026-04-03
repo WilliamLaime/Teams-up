@@ -35,11 +35,13 @@
 
     <div class="sticky-chat-convo-info">
 
-      <%# Titre du match + badge non-lu si applicable %>
+      <%# Titre du match + badge "Match" + point vert si non lu %>
       <div class="sticky-chat-convo-title-row">
         <span class="sticky-chat-convo-title">
-          <%= truncate(match.title, length: 20) %>
+          <%= truncate(match.title, length: 16) %>
         </span>
+        <%# Badge vert pour distinguer un chat de match d'un chat d'équipe %>
+        <span class="sticky-chat-match-badge">Match</span>
         <%# Petit rond vert = messages non lus %>
         <% if unread %>
           <span class="sticky-chat-unread-dot" title="Nouveau message"></span>

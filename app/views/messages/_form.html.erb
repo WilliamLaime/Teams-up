@@ -1,14 +1,18 @@
 <%# Formulaire d'envoi de message — réinitialisé après chaque envoi via Turbo Stream
-    Accepte soit un match (chat de groupe) soit une private_conversation (chat privé)
+    Accepte un match, une private_conversation ou une équipe
     Variables attendues :
-      - message            : objet Message.new
-      - match              : objet Match (ou nil si conversation privée)
-      - private_conversation : objet PrivateConversation (ou nil si chat match) %>
+      - message              : objet Message.new
+      - match                : objet Match (ou nil)
+      - private_conversation : objet PrivateConversation (ou nil)
+      - team                 : objet Team (ou nil) %>
 
 <%# Détermine l'URL de soumission selon le type de conversation %>
 <% if local_assigns[:private_conversation] && private_conversation.present?
      # Message privé → POST /private_conversations/:id/messages
      form_model = [private_conversation, message]
+   elsif local_assigns[:team] && team.present?
+     # Message d'équipe → POST /teams/:team_id/messages
+     form_model = [team, message]
    else
      # Message de match → POST /matches/:match_id/messages
      form_model = [match, message]

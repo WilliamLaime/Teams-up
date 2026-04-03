@@ -9,6 +9,9 @@ class Team < ApplicationRecord
   # Matchs créés par cette équipe
   has_many :matches, foreign_key: :team_id, dependent: :nullify
 
+  # Messages du chat d'équipe
+  has_many :messages, dependent: :destroy
+
   # Blason uploadé via Active Storage (alternative au SVG généré)
   has_one_attached :badge_image
 
