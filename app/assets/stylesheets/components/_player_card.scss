@@ -1,0 +1,530 @@
+// =============================================
+// CARD PROFIL JOUEUR ORNEMENTALE
+// Utilise des variables CSS pour les thèmes de rang
+// =============================================
+
+.player-card {
+  // Variables de thème par défaut (bronze)
+  --c1: #1c0e06;
+  --c2: #c87028;
+  --c-mid: #2a1608;
+  --c-glow: #a85c18;
+  --c-logo1: #7a3a10;
+  --c-logo2: #d89050;
+  --c-logo3: #b06020;
+  --c-mist: rgba(180, 100, 40, 0.4);
+  --c-accent: #d08040;
+  --c-star: #c07030;
+
+  position: relative;
+  width: 100%;
+  // perspective : nécessaire pour que la rotation 3D du flip soit visible
+  perspective: 1200px;
+  border-radius: 0px 2rem;
+  padding: 2px;
+
+  // Bordure dégradée selon le thème
+  background-image:
+    radial-gradient(#1a1a1acc, #121212ee),
+    linear-gradient(35deg, var(--c1) 62%, var(--c2) 100%);
+  background-origin: border-box;
+  background-clip: content-box, border-box;
+
+  box-shadow: 0 0 2rem var(--c-glow);
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+  cursor: pointer;
+  animation: pulse_bronze 3s infinite;
+
+  &:hover {
+    // Le hover ne s'applique pas quand la card est en train de flip
+    box-shadow: 0 8px 3rem var(--c-glow);
+  }
+
+  // ----- THÈMES -----
+
+  &.theme-bronze {
+    --c1: #1c0e06; --c2: #c87028; --c-mid: #2a1608;
+    --c-glow: #a85c18; --c-logo1: #7a3a10; --c-logo2: #d89050;
+    --c-logo3: #b06020; --c-mist: rgba(180, 100, 40, 0.4);
+    --c-accent: #d08040; --c-star: #c07030;
+    animation: pulse_bronze 3s infinite;
+  }
+
+  &.theme-silver {
+    --c1: #252530; --c2: #c8c8d8; --c-mid: #32323e;
+    --c-glow: #a0a0b8; --c-logo1: #7878a0; --c-logo2: #c8c8e0;
+    --c-logo3: #a0a0c0; --c-mist: rgba(180, 180, 210, 0.4);
+    --c-accent: #c8c8e0; --c-star: #b8b8d0;
+    animation: pulse_silver 3s infinite;
+  }
+
+  &.theme-gold {
+    --c1: #281a04; --c2: #ffd700; --c-mid: #3a2606;
+    --c-glow: #d4a800; --c-logo1: #b87c00; --c-logo2: #ffe04a;
+    --c-logo3: #d4a000; --c-mist: rgba(255, 200, 30, 0.4);
+    --c-accent: #ffd700; --c-star: #ffcc00;
+    animation: pulse_gold 3s infinite;
+  }
+
+  &.theme-platinum {
+    --c1: #1a0e2e; --c2: #c084fc; --c-mid: #2a1648;
+    --c-glow: #a855f7; --c-logo1: #7c3aed; --c-logo2: #d8b4fe;
+    --c-logo3: #a855f7; --c-mist: rgba(168, 85, 247, 0.4);
+    --c-accent: #d8b4fe; --c-star: #c084fc;
+    animation: pulse_platinum 3s infinite;
+  }
+
+  &.theme-emerald {
+    --c1: #124926; --c2: #57ff94; --c-mid: #165c30;
+    --c-glow: #57ff95; --c-logo1: #228647; --c-logo2: #7bffac;
+    --c-logo3: #1ccc5d; --c-mist: rgba(87, 255, 149, 0.4);
+    --c-accent: #57ff95; --c-star: #57ff95;
+    animation: pulse_emerald 3s infinite;
+  }
+}
+
+// Fond intérieur de la card
+.player-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 0px 1.8rem;
+  overflow: hidden;
+  background: linear-gradient(160deg, #141414 0%, #0d1a0d 60%, #0a0a0a 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+// Marquee discret en fond
+.player-card__marquee {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.player-card__marquee-track {
+  display: flex;
+  width: fit-content;
+  animation: slide_marquee 40s linear infinite;
+  --move-initial: calc(-20% + 2rem);
+  --move-final: calc(-70% + 2rem);
+  transform: translate3d(var(--move-initial), 0, 0);
+}
+
+.player-card__marquee-word {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 7rem;
+  color: var(--c2);
+  white-space: nowrap;
+  padding: 0 1rem;
+  line-height: 1;
+}
+
+// Brouillard lumineux bas de card
+.player-card__mist {
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 120%;
+  height: 120px;
+  background: radial-gradient(ellipse at center, var(--c-mist) 0%, transparent 70%);
+  filter: blur(20px);
+  pointer-events: none;
+  z-index: 0;
+  animation: mist_anim 8s infinite ease-in-out;
+}
+
+// En-tête : avatar + nom + bouton modifier
+.player-card__header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+// Wrapper avatar + anneau tournant
+.player-card__avatar-wrap {
+  flex-shrink: 0;
+  position: relative;
+  width: 66px;
+  height: 66px;
+}
+
+// Anneau conic animé autour de l'avatar
+.player-card__avatar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--c2) 0%, transparent 55%, var(--c2) 100%);
+  animation: spin_ring 3s linear infinite;
+}
+
+// Avatar
+.player-card__avatar {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  color: var(--c-accent);
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+}
+
+// Infos nom + localisation
+.player-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-card__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-card__location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #555;
+  margin-top: 2px;
+
+  svg {
+    position: static;
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+  }
+}
+
+// Bouton Modifier
+.player-card__btn-modifier {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ccc;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+
+  svg {
+    position: static;
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border-color: rgba(255,255,255,0.2);
+  }
+}
+
+// Étoiles de notation
+.player-card__rating {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.player-card__stars {
+  display: flex;
+  gap: 3px;
+
+  .star { font-size: 14px; color: #333; }
+  .star.filled { color: var(--c-star); }
+}
+
+.player-card__rating-label {
+  font-size: 11px;
+  color: #444;
+  margin-left: 4px;
+}
+
+// Statistiques
+.player-card__stats {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.player-card__stat-box {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.player-card__stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #444;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.player-card__stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--c-accent);
+  line-height: 1;
+}
+
+// Sports pratiqués (flex-wrap pour 1 à N sports)
+.player-card__sports {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.player-card__sports-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #444;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.player-card__sport-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--c-accent);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+// Description
+.player-card__description {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  padding: 10px 18px 14px;
+  display: flex;
+  align-items: center;
+
+  p {
+    font-size: 13px;
+    color: #888;
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .player-card__add-link {
+    color: var(--c-accent);
+    font-style: normal;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// =============================================
+// ANIMATIONS
+// =============================================
+
+@keyframes spin_ring {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes slide_marquee {
+  0%   { transform: translate3d(calc(-20% + 2rem), 0, 0); }
+  100% { transform: translate3d(calc(-70% + 2rem), 0, 0); }
+}
+
+@keyframes mist_anim {
+  0%, 100% { transform: translateX(-10%) scale(1); opacity: 0.8; }
+  50%       { transform: translateX(10%) scale(1.1); opacity: 1; }
+}
+
+// =============================================
+// FLIP RECTO / VERSO
+// =============================================
+
+// Conteneur qui tourne — reçoit la classe .is-flipped via le controller Stimulus
+.player-card__flip-inner {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;     // nécessaire pour que les deux faces soient en 3D
+  transition: transform 0.6s ease;  // durée de l'animation de retournement
+
+  &.is-flipped {
+    transform: rotateY(180deg);
+  }
+}
+
+// Styles communs aux deux faces (recto et verso)
+.player-card__face {
+  width: 100%;
+  backface-visibility: hidden; // cache la face qui est "derrière" pendant le flip
+  border-radius: 0px 1.8rem;
+}
+
+// Le recto est visible par défaut
+.player-card__front {
+  position: relative;
+  pointer-events: all; // cliquable par défaut
+}
+
+// Le verso est retourné — backface-visibility le cache jusqu'au flip
+.player-card__back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+  overflow: hidden;
+  pointer-events: none; // non cliquable tant qu'il est caché derrière
+}
+
+// Quand la card est retournée : on inverse les pointer-events
+.player-card__flip-inner.is-flipped {
+  .player-card__front { pointer-events: none; } // recto caché = non cliquable
+  .player-card__back  { pointer-events: all;  } // verso visible = cliquable
+}
+
+// Bouton en bas de chaque face pour déclencher le flip
+.player-card__flip-btn-wrap {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 18px 14px;
+  position: relative;
+  z-index: 2;
+}
+
+.player-card__flip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-accent);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--c-accent);
+  }
+}
+
+// Titre du verso "Armoire à trophées"
+.player-card__trophy-title {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-accent);
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+// Grille des badges de trophées
+.player-card__trophy-grid {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 18px;
+  flex: 1;
+  align-content: flex-start;
+  overflow-y: auto;
+}
+
+// Texte d'aide sous la grille
+.player-card__trophy-hint {
+  position: relative;
+  z-index: 2;
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.22);
+  padding: 0 18px 4px;
+  margin: 0;
+}
+
+// =============================================
+// ANIMATIONS
+// =============================================
+
+@keyframes pulse_bronze {
+  0%, 100% { box-shadow: 0 0 1.5rem #a85c1866; }
+  70%       { box-shadow: 0 0 3rem #c8702899; }
+}
+@keyframes pulse_silver {
+  0%, 100% { box-shadow: 0 0 1.5rem #a0a0b866; }
+  70%       { box-shadow: 0 0 3rem #c0c0d899; }
+}
+@keyframes pulse_gold {
+  0%, 100% { box-shadow: 0 0 1.5rem #d4a80066; }
+  70%       { box-shadow: 0 0 3rem #ffd70099; }
+}
+@keyframes pulse_platinum {
+  0%, 100% { box-shadow: 0 0 1.5rem #a855f766; }
+  70%       { box-shadow: 0 0 3rem #c084fc99; }
+}
+@keyframes pulse_emerald {
+  0%, 100% { box-shadow: 0 0 1.5rem #57ff9566; }
+  70%       { box-shadow: 0 0 3rem #57ff9599; }
+}
