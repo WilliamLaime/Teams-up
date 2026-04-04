@@ -1,3 +1,9 @@
+<%# Désactive le cache Turbo Drive sur cette page %>
+<%# Sans ça, Turbo restaure un ancien snapshot avec l'ancien captcha %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
 <%# ── Page de connexion ─────────────────────────────────────────────────────── %>
 <%# Fond sombre pleine page + carte centrée %>
 <div class="auth-page">
@@ -42,12 +48,6 @@
 
         <%# Case à cocher "Se souvenir de moi" (si activé dans Devise) %>
         <%= f.input :remember_me, as: :boolean if devise_mapping.rememberable? %>
-      </div>
-
-      <%# Widget hcaptcha — protège le formulaire contre les bots automatisés %>
-      <%# En développement avec les clés de test, aucun challenge n'est affiché %>
-      <div class="mb-3 d-flex justify-content-center">
-        <%= hcaptcha_tags %>
       </div>
 
       <%# Bouton de soumission — centré, taille auto %>

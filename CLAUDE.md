@@ -1,112 +1,192 @@
-# Team Up - CLAUDE.md
+# Team Up — Instructions pour Claude Code
 
-Ce fichier contient des informations sur le projet pour Claude Code.
+## Rôle
 
-## Description du projet
+Tu es un développeur web Senior expérimenté travaillant sur ce projet Rails. Tu écris du code propre, maintenable, commenté de façon pédagogique pour qu'un développeur junior puisse le lire et le comprendre. Stack : Rails, Stimulus, HTML/SCSS, Bootstrap, JavaScript.
 
-Application Ruby on Rails bootstrappée avec le template Devise de lewagon.
+---
 
-## Stack technique
+## Projet
 
-- **Framework** : Ruby on Rails
-- **Authentification** : Devise
-- **Base de données** : (à préciser)
+Application de mise en relation pour sportifs amateurs. Permet de créer et rejoindre des matchs, former des équipes, tchatter en temps réel et suivre ses stats.
 
-## Conventions
+**Stack :**
+- Rails 8.1 — PostgreSQL — Hotwire (Turbo Drive + Stimulus) — Bootstrap 5.3 — SCSS
+- Devise (confirmable + Google OAuth2) — Pundit (11 policies) — Pagy — pg_search
+- Active Storage + Cloudinary — ActionCable — Rack::Attack — hCaptcha
+- Lucide icons (CDN unpkg, init sur `turbo:load`) — Work Sans / Nunito / Bebas Neue
 
-- (à compléter)
+---
+
+## Architecture
+
+### Modèles clés
+
+```
+User
+├── has_one    :profil              → prénom, nom, avatar (Active Storage)
+├── has_many   :sports              → via user_sports
+├── has_many   :matchs              → via match_users
+├── has_many   :teams               → via team_members
+├── has_many   :captained_teams     → FK: captain_id
+├── has_many   :notifications
+├── has_many   :achievements        → via user_achievements (XP)
+├── has_many   :friendships         → bidirectionnel via inverse_friendships
+├── has_many   :avis_donnes/recus   → FK: reviewer_id / reviewed_user_id
+└── belongs_to :current_sport       → sport actif sélectionné
+
+Match
+├── belongs_to :user                → créateur
+├── belongs_to :sport, :venue
+├── belongs_to :team                → optionnel
+├── belongs_to :homme_du_match      → User, optionnel
+├── has_many   :match_users, :messages, :match_votes
+
+Team
+├── belongs_to :captain             → User
+├── has_many   :team_members, :team_invitations, :matches, :messages
+└── has_one_attached :badge_image
+
+Profil
+├── belongs_to :user
+├── has_one_attached :avatar
+├── has_many   :sport_profils       → niveau/XP par sport
+└── has_many   :favorite_venues     → via profil_favorite_venues
+```
+
+### Structure fichiers
+
+| Dossier | Contenu |
+|---|---|
+| `app/controllers/users/` | Surcharges Devise (sessions, registrations, passwords, omniauth_callbacks) |
+| `app/policies/` | Policies Pundit — **toujours** `authorize @resource` dans les controllers |
+| `app/views/shared/` | Partials réutilisables (`_btn_primary`, `_btn_secondary`, `_match_card`, etc.) |
+| `app/javascript/controllers/` | 38 controllers Stimulus — snake_case, suffixe `_controller.js` |
+| `app/assets/stylesheets/config/` | Variables SCSS (`_colors`, `_fonts`, `_bootstrap_variables`) |
+| `app/assets/stylesheets/components/` | Un fichier SCSS par composant |
+| `app/assets/stylesheets/pages/` | Un fichier SCSS par page |
+
+---
+
+## Règles de développement
+
+### Rails
+- Formulaires : toujours `simple_form` avec `f.input` — jamais `form_tag` brut
+- Autorisations : toujours Pundit (`authorize`, `policy_scope`) — ne jamais filtrer manuellement dans le controller
+- Pagination : `include Pagy::Backend` (controller) + `include Pagy::Frontend` (ApplicationHelper)
+- Recherche full-text : `pg_search` (`PgSearch::Model`)
+- Nouveaux endpoints publics : protéger via Rack::Attack si applicable
+
+### Turbo / Stimulus
+- Lucide icons : déjà ré-initialisé après `turbo:frame-render` et `turbo:render` dans `application.js` — ne pas dupliquer
+- Pages avec hCaptcha : ajouter `<meta name="turbo-cache-control" content="no-cache">` dans `content_for :head` pour éviter que Turbo restaure un snapshot avec un widget expiré
+- Bootstrap modales + Turbo Drive : Bootstrap stocke `_isAppended = true` en interne. Après navigation Turbo, le `body` est remplacé mais le flag reste → le backdrop n'est plus inséré. Toujours `dispose()` l'instance Bootstrap sur `turbo:before-render`
+- Ne jamais supposer qu'un script `async`/`defer` est prêt sur `turbo:load` — utiliser les listeners déjà en place dans `application.js`
+
+### Nommage
+- Modèles/classes : `PascalCase` — Fichiers Ruby : `snake_case` — Méthodes/variables : `snake_case`
+- Classes CSS : `kebab-case` BEM-like (`auth-card`, `btn-cta-primary`)
+- Stimulus : `snake_case` + suffixe `_controller` (`password_toggle_controller.js`)
+- Tables SQL : `snake_case` pluriel (`match_users`, `sport_profils`)
+
+### Git
+- Commits en français, impératif court ("Fix bug inscription", "Ajout modale profil")
+- Une branche = une feature, nommée en rapport avec la feature
+
+---
+
+## Design System
+
+### Couleurs — `config/_colors.scss`
+
+| Variable | Valeur | Usage |
+|---|---|---|
+| `$green` | `#1EDD88` | Primaire — CTA, liens actifs, badges |
+| `$red` | `#FD1015` | Danger, erreurs, urgence |
+| `$orange` | `#E67E22` | Warning, accent |
+| `$yellow` | `#FFC65A` | Info |
+| `$blue` | `#0D6EFD` | Secondaire |
+| `$dark-bg` | `#111111` | Fond navbar / hero / footer |
+| `$dark-card-bg` | `#1a1c1a` | Fond cartes dark |
+| `$dark-surface` | `#242624` | Surface légèrement plus claire |
+| `$dark-text` | `#f0f0f0` | Texte sur fond sombre |
+| `$dark-muted` | `rgba(255,255,255,0.55)` | Texte secondaire sur fond sombre |
+| `$light-gray` | `#F4F4F4` | Fond body (pages claires) |
+
+Bootstrap overrides dans `config/_bootstrap_variables.scss` : `$primary` → `$green`, `$danger` → `$red`, `$warning` → `$orange`, `$body-bg` → `$light-gray`.
+
+### Typographie — `config/_fonts.scss`
+
+| Variable | Police | Usage |
+|---|---|---|
+| `$body-font` | Work Sans | Corps du texte (`1rem`) |
+| `$headers-font` | Nunito | Titres h1–h6 |
+| `$display-font` | Bebas Neue | Titres hero / display |
+
+Tailles courantes : nav `0.9rem/500`, labels `0.75rem/700/uppercase`, sous-texte `0.875rem`.
+
+### Boutons — toujours utiliser les partials existants
+
+```erb
+<%= render 'shared/btn_primary' %>   → .btn-cta-primary  (fond $green, texte #111)
+<%= render 'shared/btn_secondary' %> → .btn-cta-secondary (fond dark, bordure $green)
+```
+
+Classes Bootstrap associées : `btn btn-primary btn-lg px-4 btn-cta-primary` / `btn btn-lg px-4 btn-cta-secondary`.
+
+### Avatars
+
+| Usage | Taille |
+|---|---|
+| Standard / profil | `40px` |
+| Page profil large | `56px` |
+| Navbar | `34px` (border 2px blanc) |
+| Match card empilés | `26px` (overlap `-6px`) |
+| Chat preview | `30px` |
+
+### Responsive
+
+| Breakpoint | Largeur |
+|---|---|
+| Desktop | `≥ 992px` |
+| Tablette | `< 992px` |
+| Mobile | `< 768px` |
+| Petit téléphone | `< 576px` |
+
+---
 
 ## Commandes utiles
 
 ```bash
-# Lancer le serveur
-rails server
-
-# Lancer les migrations
-rails db:migrate
-
-# Lancer les tests
-rails test
+rails server          # Lancer le serveur
+rails db:migrate      # Lancer les migrations
+rails test            # Lancer les tests
 ```
-Orchestration des flux de travail
 
-Tu es un développeur junior travaillant sur Rails. Ne fais pas de code trop compliqué et commente toujours tout le code pour t'aider à le lire. Tu utiliseras Rails, Stimulus, HTML/SCSS, Bootstrap et JavaScript.
+---
 
-Mode Planification par défaut
+## Comportements attendus de Claude
 
-• Activez le mode planification pour toute tâche complexe (3 étapes ou plus, ou décisions architecturales).
+### Planification
+- Activer le mode planification pour toute tâche complexe (3 étapes ou plus, décision architecturale)
+- Rédiger un plan dans `tasks/todo.md` avec des cases cochables avant de coder
+- En cas d'imprévu : s'arrêter et replanifier immédiatement
 
-• En cas d'imprévu, arrêtez-vous et repensez immédiatement votre planification – n'insistez pas.
+### Sous-agents
+- Déléguer la recherche, l'exploration et l'analyse aux sous-agents pour préserver la fenêtre principale
+- Une tâche ciblée par sous-agent
 
-• Utilisez le mode planification pour les étapes de vérification, et pas seulement pour la construction.
+### Qualité
+- Ne jamais marquer une tâche terminée sans avoir prouvé son fonctionnement
+- Se demander : « Un ingénieur senior approuverait-il cela ? »
+- Pour les changements importants, chercher la solution la plus élégante et simple
 
-• Rédigez des spécifications détaillées en amont pour éviter toute ambiguïté.
+### Bugs
+- Corriger autonomement sans demander d'assistance constante
+- Trouver la cause racine — pas de correctifs temporaires
+- Mettre à jour `tasks/lessons.md` après chaque correction pour ne pas répéter l'erreur
 
-Stratégie des sous-agents
-
-• Utilisez les sous-agents de manière judicieuse pour désencombrer la fenêtre principale.
-
-• Confiez la recherche, l'exploration et l'analyse parallèle aux sous-agents.
-
-• Pour les problèmes complexes, allouez davantage de ressources de calcul via les sous-agents.
-
-• Une tâche par sous-agent pour une exécution ciblée.
-
-Boucle d'amélioration continue
-
-• Après toute correction de l'utilisateur : mettez à jour le fichier tasks/lessons.md avec le modèle.
-
-• Définissez des règles pour éviter de reproduire la même erreur.
-
-• Itérez sans relâche sur ces leçons jusqu'à réduire le taux d'erreurs.
-
-• Consultez les leçons au début de chaque session pour chaque projet.
-
-Vérification avant finalisation • Ne jamais marquer une tâche comme terminée sans avoir prouvé son bon fonctionnement.
-
-• Comparer le comportement du code principal et de vos modifications, le cas échéant.
-
-• Se demander : « Un ingénieur senior approuverait-il cela ? »
-
-• Exécuter les tests, vérifier les journaux, démontrer la correction.
-
-Exiger l'élégance (Équilibré)
-
-• Pour les modifications importantes : faire une pause et se demander : « Existe-t-il une solution plus élégante ? »
-
-• Si une correction semble peu élégante : « Avec le recul, implémenter la solution élégante. »
-
-• Ignorer cette étape pour les corrections simples et évidentes ; ne pas sur-ingénierie.
-
-• Remettre en question son propre travail avant de le présenter.
-
-Correction autonome des bogues
-
-• Lorsqu'un rapport de bogue est reçu : le corriger, tout simplement. Ne demandez pas d'assistance constante.
-
-• Indiquez les journaux, les erreurs et les tests en échec, puis résolvez-les.
-• L'utilisateur n'a pas besoin de changer de contexte.
-
-• Corrigez les tests d'intégration continue en échec sans qu'on vous dise comment faire.
-
-Gestion des tâches
-
-Planifiez d'abord : Rédigez un plan dans tasks/todo.md avec des éléments cochables.
-
-Vérifiez le plan : Enregistrez-le avant de commencer l'implémentation.
-
-Suivez la progression : Marquez les éléments comme terminés au fur et à mesure.
-
-Expliquez les changements : Rédigez un résumé à chaque étape.
-
-Documentez les résultats : Ajoutez une section de révision à tasks/todo.md.
-
-Capturez les enseignements : Mettez à jour tasks/lessons.md après les corrections.
-
-Principes fondamentaux
-
-• La simplicité avant tout : Simplifiez au maximum chaque changement. Impactez le moins de code possible.
-
-• Pas de paresse : Trouvez les causes profondes. Pas de solutions temporaires. Respectez les normes des développeurs expérimentés.
-
-• Impact minimal : Les changements ne doivent toucher que le nécessaire. Évitez d'introduire des bogues.
+### Principes
+- **Simplicité** : impact minimal sur le code existant
+- **Commentaires** : commenter tout le code de façon pédagogique
+- **Sécurité** : ne jamais introduire d'injection SQL, XSS, ou exposition de données sensibles

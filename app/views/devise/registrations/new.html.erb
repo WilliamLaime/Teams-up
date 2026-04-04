@@ -1,3 +1,9 @@
+<%# Désactive le cache Turbo Drive sur cette page %>
+<%# Sans ça, Turbo restaure un ancien snapshot avec l'ancien captcha %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
 <%# ── Page d'inscription ────────────────────────────────────────────────────── %>
 <div class="auth-page">
   <%# auth-card--wide : variante plus large pour le layout 2 colonnes %>

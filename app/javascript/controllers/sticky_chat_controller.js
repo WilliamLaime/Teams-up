@@ -62,12 +62,33 @@ export default class extends Controller {
         if (typeof lucide !== "undefined") lucide.createIcons()
       })
     }
+
+    // ── Fix backdrop Bootstrap + Turbo Drive ──────────────────────────────────
+    // Problème : Bootstrap stocke _isAppended = true dans son instance Backdrop
+    // interne après la première ouverture de la modale.
+    // Quand Turbo navigue, il remplace document.body → le backdrop (.modal-backdrop)
+    // est supprimé du DOM, MAIS l'instance Bootstrap pense qu'il est encore là.
+    // À la prochaine ouverture, _append() retourne immédiatement sans rien insérer
+    // → backdrop invisible sur toutes les pages après la première navigation.
+    //
+    // Solution : dispose() l'instance Modal AVANT que Turbo remplace le body.
+    // Cela réinitialise _isAppended = false. Après navigation, getOrCreateInstance()
+    // crée une nouvelle instance qui insère correctement le backdrop dans le nouveau body.
+    this._handleTurboBeforeRender = () => {
+      const chatModal = document.getElementById("global-chat-modal")
+      if (chatModal && typeof bootstrap !== "undefined") {
+        const instance = bootstrap.Modal.getInstance(chatModal)
+        if (instance) instance.dispose()
+      }
+    }
+    document.addEventListener("turbo:before-render", this._handleTurboBeforeRender)
   }
 
   disconnect() {
     if (this._observer) this._observer.disconnect()
-    // Retire le listener turbo:render pour éviter les fuites mémoire
+    // Retire les listeners pour éviter les fuites mémoire
     document.removeEventListener("turbo:render", this._handleTurboRender)
+    document.removeEventListener("turbo:before-render", this._handleTurboBeforeRender)
   }
 
   // ── Switcher entre les onglets Matchs et Messages ─────────────────────────

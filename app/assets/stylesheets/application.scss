@@ -15,6 +15,14 @@
 // Importé EN DERNIER pour pouvoir surcharger tous les styles précédents
 @import "components/responsive";
 
+// ── Backdrop des modales ────────────────────────────
+// Bootstrap 5 calcule opacity via var(--bs-backdrop-opacity).
+// !important écrase cette valeur calculée de manière fiable,
+// sans JS, sans timing, sur toutes les pages après navigation Turbo.
+.modal-backdrop.show {
+  opacity: 0.75 !important;
+}
+
 // ── Sticky footer ───────────────────────────────────
 // body en colonne flex → main prend tout l'espace libre
 // → footer toujours collé en bas, même sur les pages courtes
