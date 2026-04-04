@@ -327,6 +327,18 @@
           </div>
         <% end %>
 
+        <%# ── Player Card ornementale ────────────────────────────────────────── %>
+        <%# Affiche la card animée avec thème selon le rang du joueur %>
+        <div class="d-flex justify-content-center mt-4">
+          <%= render "profils/player_card",
+                     profil_user: @profil_user,
+                     show_edit: current_user == @profil_user,
+                     already_friends: @already_friends,
+                     pending_sent: @pending_sent,
+                     pending_received: @pending_received,
+                     friendship_initiated_by_me: @friendship_initiated_by_me %>
+        </div>
+
       </div><%# / col-lg-5 %>
 
 

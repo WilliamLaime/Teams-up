@@ -109,6 +109,19 @@ class User < ApplicationRecord
     inverse_friendships.pending.find_by(user_id: other_user.id)
   end
 
+  # Retourne le rang du joueur selon son xp_level (calculé dans Profil)
+  # Utilisé par la player card pour choisir le thème visuel
+  def rank
+    level = profil&.xp_level || 1
+    case level
+    when 1..2   then "bronze"
+    when 3..4   then "silver"
+    when 5..6   then "gold"
+    when 7..8   then "platinum"
+    else             "emerald"
+    end
+  end
+
   # Retourne "Prénom Nom" si renseigné, sinon l'email
   # Utilisé partout dans les vues pour afficher l'identité d'un joueur
   def display_name
