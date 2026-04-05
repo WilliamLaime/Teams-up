@@ -43,12 +43,20 @@ Rails.application.routes.draw do
     end
 
     # Invitations imbriquées dans l'équipe
-    # POST  /teams/:team_id/team_invitations        → inviter un user
-    # PATCH /teams/:team_id/team_invitations/:id    → accepter ou refuser
+    # POST  /teams/:team_id/team_invitations              → inviter un user (captain)
+    # PATCH /teams/:team_id/team_invitations/:id          → accepter ou refuser
+    # POST  /teams/:team_id/team_invitations/propose      → proposer un ami (membre)
+    # PATCH /teams/:team_id/team_invitations/:id/review   → valider/refuser une proposition (captain)
     resources :team_invitations, only: [:create, :update, :destroy] do
       collection do
-        # GET /teams/:team_id/team_invitations/search?q=lucas → autocomplete JSON
-        get :search
+        # GET  /teams/:team_id/team_invitations/search  → autocomplete JSON
+        get  :search
+        # POST /teams/:team_id/team_invitations/propose → un membre propose un ami
+        post :propose
+      end
+      member do
+        # PATCH /teams/:team_id/team_invitations/:id/review → captain valide ou refuse
+        patch :review
       end
     end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_03_125155) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_05_141918) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -265,11 +265,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_125155) do
     t.datetime "created_at", null: false
     t.bigint "invitee_id", null: false
     t.bigint "inviter_id", null: false
+    t.bigint "proposed_by_id"
     t.string "status", default: "pending", null: false
     t.bigint "team_id", null: false
     t.datetime "updated_at", null: false
     t.index ["invitee_id"], name: "index_team_invitations_on_invitee_id"
     t.index ["inviter_id"], name: "index_team_invitations_on_inviter_id"
+    t.index ["proposed_by_id"], name: "index_team_invitations_on_proposed_by_id"
     t.index ["team_id", "invitee_id"], name: "index_team_invitations_pending_unique", unique: true, where: "((status)::text = 'pending'::text)"
     t.index ["team_id"], name: "index_team_invitations_on_team_id"
   end
@@ -387,6 +389,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_125155) do
   add_foreign_key "team_invitations", "teams"
   add_foreign_key "team_invitations", "users", column: "invitee_id"
   add_foreign_key "team_invitations", "users", column: "inviter_id"
+  add_foreign_key "team_invitations", "users", column: "proposed_by_id"
   add_foreign_key "team_members", "teams"
   add_foreign_key "team_members", "users"
   add_foreign_key "teams", "users", column: "captain_id"

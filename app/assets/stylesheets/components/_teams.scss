@@ -74,16 +74,50 @@
   }
 }
 
+// ── Bannière de couverture (show) ─────────────────────────────────────────────
+// Conteneur relatif : l'image est absolute en fond, le header flotte par-dessus
+.team-cover-section {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+// Image de fond — couvre tout le conteneur
+.team-cover-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+// Overlay dégradé pour assurer la lisibilité du texte
+.team-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(8, 13, 26, 0.35) 0%,
+    rgba(8, 13, 26, 0.75) 100%
+  );
+}
+
 // ── Page détail (show) ────────────────────────────────────────────────────────
 .team-show-header {
+  position: relative; // passe au-dessus de l'image et de l'overlay
+  z-index: 1;
   display: flex;
   align-items: flex-start;
   gap: 1.25rem;
-  margin-bottom: 1.5rem;
+  padding: 1.5rem 1.5rem 1.5rem; // espace intérieur sur la bannière
   flex-wrap: wrap;
 
   @media (max-width: 576px) {
     flex-direction: column;
+    padding: 1rem;
   }
 }
 
@@ -91,17 +125,32 @@
   flex-shrink: 0;
   width: 80px;
   height: 80px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
 
-  &-img { width: 100%; height: 100%; object-fit: cover; }
+  // Image uploadée : on conserve le cadre arrondi
+  &-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 14px;
+    object-fit: cover;
+  }
+
+  // SVG généré : pas de fond ni de bordure, le logo s'affiche directement
   &-svg { svg { width: 80px; height: 80px; } }
-  &-placeholder { display: flex; align-items: center; justify-content: center; }
+
+  // Aucun badge : on affiche un placeholder avec un fond subtil
+  &-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .team-show-info {
@@ -158,60 +207,82 @@
 }
 
 // ── Liste des membres ─────────────────────────────────────────────────────────
-.team-members-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+// ── Grille de cartes membres ──────────────────────────────────────────────────
+.team-members-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); // 3 colonnes desktop
+  gap: 0.75rem;
+
+  @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); } // 2 tablette
+  @media (max-width: 480px) { grid-template-columns: 1fr; }            // 1 mobile
 }
 
-.team-member-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem;
-  border-radius: 8px;
+// Carte individuelle d'un membre
+.team-member-card {
+  position: relative;
+  border-radius: 12px;
+  padding: 1rem 0.75rem 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid transparent; // surcharge par .captain / .member ci-dessous
   transition: background 0.15s;
 
-  &:hover { background: rgba(255, 255, 255, 0.04); }
+  // Bordure colorée selon le rang XP — sans glow, juste la couleur
+  &.rank-bronze   { border-color: rgba(200, 112,  40, 0.6); } // orange brun
+  &.rank-silver   { border-color: rgba(200, 200, 216, 0.6); } // gris argenté
+  &.rank-gold     { border-color: rgba(255, 215,   0, 0.6); } // jaune or
+  &.rank-platinum { border-color: rgba(192, 132, 252, 0.6); } // violet
+  &.rank-emerald  { border-color: rgba( 87, 255, 148, 0.6); } // vert émeraude
+
+  &:hover { background: rgba(255, 255, 255, 0.06); }
 }
 
-.team-member-avatar {
-  width: 36px;
-  height: 36px;
+// Boutons d'action (transférer / retirer) — coin haut droit de la carte
+.team-member-card-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.3rem;
+}
+
+// Lien cliquable centré verticalement
+.team-member-card-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+// Avatar rond
+.team-member-card-avatar {
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
 }
 
-.team-member-avatar-placeholder {
-  width: 36px;
-  height: 36px;
+// Placeholder avatar
+.team-member-card-avatar-placeholder {
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.07);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
-.team-member-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.team-member-name {
-  font-size: 0.88rem;
+// Nom du membre
+.team-member-card-name {
+  font-size: 0.82rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .team-member-role-badge {
@@ -230,6 +301,60 @@
   display: flex;
   gap: 0.3rem;
   flex-shrink: 0;
+}
+
+// ── Liste amis/joueurs (colonne latérale) ─────────────────────────────────────
+.team-members-list {
+  list-style: none; // supprime les puces
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.team-member-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); }
+}
+
+// Avatar rond dans la liste latérale
+.team-member-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+// Placeholder avatar dans la liste latérale
+.team-member-avatar-placeholder {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.team-member-info { flex: 1; min-width: 0; }
+
+.team-member-name {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 // ── Invitations reçues ────────────────────────────────────────────────────────
@@ -472,6 +597,54 @@
       border-color: #4A90D9;
       color: #fff;
     }
+  }
+}
+
+// ── Barre de recherche d'invitation ───────────────────────────────────────────
+// Champ texte + bouton "Inviter" côte à côte, thème sombre cohérent avec les cartes
+.invite-search-group {
+  display: flex;
+  gap: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color 0.15s;
+
+  &:focus-within {
+    border-color: rgba(30, 221, 136, 0.4); // vert au focus
+  }
+}
+
+// Champ texte sombre sans bordure propre (la bordure est sur le groupe)
+.invite-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.83rem;
+  padding: 0.55rem 0.85rem;
+
+  &::placeholder { color: rgba(255, 255, 255, 0.3); }
+}
+
+// Bouton "Inviter" intégré à droite de l'input
+.invite-search-btn {
+  flex-shrink: 0;
+  background: rgba(30, 221, 136, 0.15);
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  color: #1EDD88;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(30, 221, 136, 0.28);
+    color: #fff;
   }
 }
 

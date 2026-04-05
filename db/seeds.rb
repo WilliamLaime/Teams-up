@@ -365,7 +365,24 @@ end
 # ── Amis fictifs ──────────────────────────────────────────────────────────────
 # Crée 5 utilisateurs avec profil et les lie comme amis acceptés au 1er user
 # Idempotent : find_or_create_by! sur l'email
+require 'open-uri'
+require 'cgi'
 puts "Création des amis fictifs..."
+
+# Helper : télécharge un avatar depuis DiceBear et l'attache au profil
+# Skippé si l'avatar est déjà présent (idempotent)
+# CGI.escape gère les caractères spéciaux dans le seed (accents, etc.)
+def attach_seed_avatar(profil, style, seed, filename)
+  return if profil.avatar.attached?
+  url = "https://api.dicebear.com/7.x/#{style}/png?seed=#{CGI.escape(seed)}&size=200"
+  profil.avatar.attach(
+    io:           URI.open(url),
+    filename:     filename,
+    content_type: "image/png"
+  )
+rescue => e
+  puts "  ⚠️  Avatar non chargé (#{filename}) : #{e.message}"
+end
 
 # On prend le premier utilisateur en base comme "utilisateur principal"
 main_user = User.first
@@ -373,12 +390,13 @@ main_user = User.first
 if main_user.nil?
   puts "⚠️  Aucun utilisateur trouvé, les amis fictifs ne seront pas créés."
 else
+  # avatar_style : "big-ears" pour les hommes, "lorelei" pour les femmes (DiceBear v7)
   fake_friends_data = [
-    { first_name: "Lucas",   last_name: "Martin",   email: "lucas.martin@seed.com",   level: "Intermédiaire", localisation: "Paris",    description: "Passionné de foot et de padel, toujours partant pour un match !" },
-    { first_name: "Emma",    last_name: "Dupont",   email: "emma.dupont@seed.com",     level: "Débutant",      localisation: "Lyon",     description: "Nouvelle dans le sport collectif, j'adore le volleyball." },
-    { first_name: "Théo",    last_name: "Bernard",  email: "theo.bernard@seed.com",    level: "Expert",        localisation: "Bordeaux", description: "10 ans de basket, capitaine de mon équipe en amateur." },
-    { first_name: "Camille", last_name: "Leroy",    email: "camille.leroy@seed.com",   level: "Intermédiaire", localisation: "Nantes",   description: "Tennis et badminton le week-end, bonne humeur garantie." },
-    { first_name: "Noah",    last_name: "Moreau",   email: "noah.moreau@seed.com",     level: "Débutant",      localisation: "Marseille", description: "Je découvre le football à 5, prêt à apprendre !" }
+    { first_name: "Lucas",   last_name: "Martin",   email: "lucas.martin@seed.com",   level: "Intermédiaire", localisation: "Paris",     description: "Passionné de foot et de padel, toujours partant pour un match !", avatar_style: "big-ears"  },
+    { first_name: "Emma",    last_name: "Dupont",   email: "emma.dupont@seed.com",     level: "Débutant",      localisation: "Lyon",      description: "Nouvelle dans le sport collectif, j'adore le volleyball.",        avatar_style: "lorelei"   },
+    { first_name: "Théo",    last_name: "Bernard",  email: "theo.bernard@seed.com",    level: "Expert",        localisation: "Bordeaux",  description: "10 ans de basket, capitaine de mon équipe en amateur.",           avatar_style: "big-ears"  },
+    { first_name: "Camille", last_name: "Leroy",    email: "camille.leroy@seed.com",   level: "Intermédiaire", localisation: "Nantes",    description: "Tennis et badminton le week-end, bonne humeur garantie.",         avatar_style: "lorelei"   },
+    { first_name: "Noah",    last_name: "Moreau",   email: "noah.moreau@seed.com",     level: "Débutant",      localisation: "Marseille", description: "Je découvre le football à 5, prêt à apprendre !",                 avatar_style: "big-ears"  }
   ]
 
   fake_friends_data.each do |data|
@@ -403,6 +421,9 @@ else
     profil.description  = data[:description]
     profil.save!
 
+    # Attache l'avatar DiceBear (skippé si déjà présent)
+    attach_seed_avatar(profil, data[:avatar_style], data[:first_name], "#{data[:first_name].downcase}_avatar.png")
+
     # Crée l'amitié acceptée si elle n'existe pas encore
     already_friends = Friendship.exists?(user: main_user, friend: friend_user) ||
                       Friendship.exists?(user: friend_user, friend: main_user)
@@ -421,3 +442,51 @@ else
 
   puts "✅ #{main_user.all_friends.count} amis au total pour #{main_user.email}."
 end
+
+# ── Joueurs invitables (sans amitié, juste des comptes existants) ──────────────
+# Ces joueurs peuvent être invités via la recherche par email ou prénom
+puts "Création des joueurs invitables..."
+
+invitable_data = [
+  { first_name: "Jules",  last_name: "Petit",    email: "jules.petit@seed.com",    level: "Intermédiaire", localisation: "Toulouse",    description: "Footeux du dimanche, mais sérieux quand il le faut.",         avatar_style: "big-ears" },
+  { first_name: "Inès",   last_name: "Rousseau", email: "ines.rousseau@seed.com",  level: "Expert",        localisation: "Strasbourg",  description: "Capitaine de mon équipe de handball en D3 régionale.",        avatar_style: "lorelei"  }
+]
+
+invitable_data.each do |data|
+  # Crée le compte s'il n'existe pas encore
+  user = User.find_by(email: data[:email])
+  unless user
+    user = User.create!(
+      email:      data[:email],
+      password:   "Password1!",
+      first_name: data[:first_name],
+      last_name:  data[:last_name]
+    )
+  end
+
+  # Crée ou met à jour le profil
+  profil = user.profil || user.build_profil
+  profil.first_name   = data[:first_name]
+  profil.last_name    = data[:last_name]
+  profil.level        = data[:level]
+  profil.localisation = data[:localisation]
+  profil.description  = data[:description]
+  profil.save!
+
+  # Attache l'avatar DiceBear (skippé si déjà présent)
+  avatar_url = "https://api.dicebear.com/7.x/#{data[:avatar_style]}/png?seed=#{data[:first_name]}&size=200"
+  attach_seed_avatar(profil, avatar_url, "#{data[:first_name].downcase}_avatar.png")
+
+  # Lie comme ami accepté avec le main_user (pour apparaître dans "Proposer un joueur")
+  if main_user
+    already_friends = Friendship.exists?(user: main_user, friend: user) ||
+                      Friendship.exists?(user: user, friend: main_user)
+    unless already_friends
+      Friendship.create!(user: main_user, friend: user, status: "accepted")
+    end
+  end
+
+  puts "  ✓ Joueur invitable : #{data[:first_name]} #{data[:last_name]} (#{data[:email]})"
+end
+
+puts "✅ Joueurs invitables créés."

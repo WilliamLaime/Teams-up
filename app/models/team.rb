@@ -15,6 +15,14 @@ class Team < ApplicationRecord
   # Blason uploadé via Active Storage (alternative au SVG généré)
   has_one_attached :badge_image
 
+  # Image de couverture (bannière en haut de la page équipe)
+  has_one_attached :cover_image
+
+  validates :cover_image,
+            content_type: { in: %w[image/jpeg image/png image/webp], message: "doit être un JPG, PNG ou WebP" },
+            size: { less_than: 5.megabytes, message: "ne doit pas dépasser 5 Mo" },
+            if: -> { cover_image.attached? }
+
   # ── Validations ────────────────────────────────────────────────────────────
   validates :name, presence: true, length: { maximum: 50 }
 
