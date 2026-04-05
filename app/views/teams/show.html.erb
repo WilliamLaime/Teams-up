@@ -7,9 +7,11 @@
   <%# ── Bannière + header fusionnés — le contenu est par-dessus l'image ────── %>
   <div class="team-cover-section">
 
-    <%# Image de fond (absolute, derrière tout) %>
+    <%# Image de fond (absolute, derrière tout).
+        object-position applique le cadrage défini par le captain dans le formulaire. %>
     <% if @team.cover_image.attached? %>
-      <%= image_tag @team.cover_image, alt: "", class: "team-cover-bg" %>
+      <%= image_tag @team.cover_image, alt: "", class: "team-cover-bg",
+          style: "object-position: #{@team.cover_position.presence || '50% 50%'};" %>
     <% else %>
       <%= image_tag "banniere_fond_equipe.png", alt: "", class: "team-cover-bg" %>
     <% end %>
@@ -39,7 +41,7 @@
         <%= @team.members_count %> membre<%= @team.members_count > 1 ? "s" : "" %>
         &nbsp;·&nbsp;
         Capitaine :
-        <%= link_to user_profil_simple_path(@team.captain),
+        <%= link_to user_profil_path(@team.captain),
               style: "color:inherit; font-weight:600;",
               data: { turbo_frame: "_top" } do %>
           <%= @team.captain.profil&.first_name %>
@@ -53,17 +55,24 @@
     <%# Actions captain %>
     <% if @team.captain?(current_user) %>
       <div class="team-show-actions">
-        <%= link_to edit_team_path(@team), class: "btn btn-sm btn-outline-light rounded-pill" do %>
-          <i data-lucide="settings" style="width:13px;height:13px;margin-right:4px;"></i>
+        <%# Créer un match directement depuis la bannière %>
+        <%= link_to new_match_path(team_id: @team.id),
+              class: "btn btn-sm btn-primary btn-cta-primary rounded-pill",
+              data: { turbo_frame: "_top" } do %>
+          Créer un match
+        <% end %>
+
+        <%= link_to edit_team_path(@team), class: "team-banner-btn team-banner-btn--edit" do %>
+          <i data-lucide="settings" style="width:13px;height:13px;"></i>
           Modifier
         <% end %>
 
-        <%# Supprimer — confirmation via data-controller stimulus %>
+        <%# Supprimer — icône seule pour ne pas surcharger la bannière %>
         <%= button_to team_path(@team), method: :delete,
-            class: "btn btn-sm btn-outline-danger rounded-pill",
+            class: "team-banner-btn team-banner-btn--delete",
+            title: "Supprimer l'équipe",
             data: { confirm: "Supprimer l'équipe \"#{@team.name}\" ? Cette action est irréversible." } do %>
-          <i data-lucide="trash-2" style="width:13px;height:13px;margin-right:4px;"></i>
-          Supprimer
+          <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
         <% end %>
       </div>
     <% elsif policy(@team).leave? %>
@@ -228,7 +237,7 @@
                 <% end %>
 
                 <%# Avatar + nom cliquables → profil du membre %>
-                <%= link_to user_profil_simple_path(tm.user),
+                <%= link_to user_profil_path(tm.user),
                       class: "team-member-card-link",
                       data: { turbo_frame: "_top" } do %>
                   <%# Avatar %>
@@ -247,7 +256,7 @@
 
                   <%# Badge rôle %>
                   <span class="team-member-role-badge <%= tm.captain? ? 'captain' : 'member' %>">
-                    <%= tm.captain? ? "⚡ Capitaine" : "Membre" %>
+                    <%= tm.captain? ? "👑 Capitaine" : "Membre" %>
                   </span>
                 <% end %>
 
@@ -306,7 +315,7 @@
               <% @invitable_friends.each do |friend| %>
                 <li class="team-member-item">
                   <%# Avatar + nom cliquables → profil de l'ami %>
-                  <%= link_to user_profil_simple_path(friend),
+                  <%= link_to user_profil_path(friend),
                         style: "display:flex; align-items:center; gap:0.6rem; text-decoration:none; flex:1; min-width:0;",
                         data: { turbo_frame: "_top" } do %>
                     <%# Avatar %>
@@ -352,7 +361,7 @@
               <% @pending_invitations.each do |inv| %>
                 <li class="team-invitation-item">
                   <%# Nom cliquable → profil de l'invité en attente %>
-                  <%= link_to user_profil_simple_path(inv.invitee),
+                  <%= link_to user_profil_path(inv.invitee),
                         style: "text-decoration:none;",
                         data: { turbo_frame: "_top" } do %>
                     <span class="team-member-name">
@@ -388,7 +397,7 @@
                 <li class="team-invitation-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem;">
                   <%# Info joueur proposé %>
                   <div style="display:flex; align-items:center; gap:0.5rem; width:100%;">
-                    <%= link_to user_profil_simple_path(prop.invitee),
+                    <%= link_to user_profil_path(prop.invitee),
                           style: "text-decoration:none; flex:1;",
                           data: { turbo_frame: "_top" } do %>
                       <span class="team-member-name">
@@ -441,7 +450,7 @@
               <% @proposable_friends.each do |friend| %>
                 <li class="team-member-item">
                   <%# Avatar + nom cliquables %>
-                  <%= link_to user_profil_simple_path(friend),
+                  <%= link_to user_profil_path(friend),
                         style: "display:flex; align-items:center; gap:0.6rem; text-decoration:none; flex:1; min-width:0;",
                         data: { turbo_frame: "_top" } do %>
                     <% if friend.profil&.avatar&.attached? %>
@@ -485,21 +494,11 @@
     <div class="col-12">
       <div class="team-section-card">
 
-        <%# En-tête avec le bouton créer (visible au capitaine seulement) %>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
-          <h2 class="team-section-title" style="margin-bottom:0;">
-            <i data-lucide="calendar" style="width:16px;height:16px;margin-right:6px;"></i>
-            Matchs de l'équipe
-          </h2>
-          <% if @team.captain?(current_user) %>
-            <%= link_to new_match_path(team_id: @team.id),
-                class: "btn btn-primary btn-cta-primary btn-sm",
-                data: { turbo_frame: "_top" } do %>
-              <i data-lucide="plus" style="width:13px;height:13px;margin-right:4px;"></i>
-              Créer un match
-            <% end %>
-          <% end %>
-        </div>
+        <%# En-tête de la section matchs %>
+        <h2 class="team-section-title" style="margin-bottom:1rem;">
+          <i data-lucide="calendar" style="width:16px;height:16px;margin-right:6px;"></i>
+          Matchs de l'équipe
+        </h2>
 
         <%# Liste des matchs liés à cette équipe %>
         <% team_matches = @team.matches.includes(:sport, user: :profil).order(date: :asc, time: :asc) %>

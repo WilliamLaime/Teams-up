@@ -77,7 +77,7 @@ class TeamsController < ApplicationController
       Notification.create(
         user:    tm.user,
         actor:   current_user,
-        message: "L'équipe \"#{@team.name}\" a été supprimée par le captain.",
+        message: "L'équipe \"#{@team.name}\" a été supprimée par le capitaine.",
         link:    teams_path
       )
     end
@@ -112,7 +112,7 @@ class TeamsController < ApplicationController
     Notification.create(
       user:    new_captain,
       actor:   current_user,
-      message: "Tu es maintenant le captain de l'équipe \"#{@team.name}\" !",
+      message: "Tu es maintenant le capitaine de l'équipe \"#{@team.name}\" !",
       link:    team_path(@team)
     )
 
@@ -137,6 +137,6 @@ class TeamsController < ApplicationController
 
   # Paramètres autorisés pour la création/modification d'une équipe
   def team_params
-    params.require(:team).permit(:name, :description, :badge_image, :badge_svg, :cover_image)
+    params.require(:team).permit(:name, :description, :badge_image, :badge_svg, :cover_image, :cover_position)
   end
 end

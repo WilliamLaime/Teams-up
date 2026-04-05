@@ -125,8 +125,9 @@ export default class extends Controller {
   }
 
   // ── Banner : change le fond de .match-new-banner selon le sport ──
-  // Choisit une image aléatoire dans le tableau du sport sélectionné
-  // et met à jour l'élément #match-new-banner (dans new.html.erb) + le champ caché
+  // Choisit une image aléatoire dans le tableau du sport sélectionné.
+  // Si aucun sport n'est sélectionné (ou sport inconnu), utilise l'image multisport.
+  // Met à jour l'élément #match-new-banner (dans new.html.erb) + le champ caché
   updateBanner() {
     const select    = this.sportInputTarget
     const sportId   = select.value
@@ -134,10 +135,13 @@ export default class extends Controller {
     const imagesMap = JSON.parse(select.dataset.images || "{}")
     const images    = imagesMap[sportId] || []
 
-    if (images.length === 0) return
+    // Fallback multisport : utilisé quand aucun sport n'est sélectionné ou inconnu dans la map
+    const MULTISPORT_IMG = "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061666/sports/misc/multisports-img.png"
 
-    // Choisit une image au hasard dans le tableau
-    const randomImg = images[Math.floor(Math.random() * images.length)]
+    // Choisit une image au hasard dans le tableau du sport, ou l'image multisport par défaut
+    const randomImg = images.length > 0
+      ? images[Math.floor(Math.random() * images.length)]
+      : MULTISPORT_IMG
 
     // Met à jour le champ caché (sera sauvegardé en BDD à la soumission)
     this.bannerImageInputTarget.value = randomImg

@@ -26,7 +26,7 @@
       <%# Rôle de l'user dans cette équipe %>
       <% tm = team.team_members.find { |m| m.user_id == current_user.id } %>
       <span class="team-card-role <%= tm&.captain? ? 'captain' : 'member' %>">
-        <%= tm&.captain? ? "⚡ Captain" : "Membre" %>
+        <%= tm&.captain? ? "👑 Capitaine" : "Membre" %>
       </span>
 
       <p class="team-card-meta">

@@ -174,13 +174,12 @@
 //   → Changer le titre/sous-titre directement dans new.html.erb
 
 .match-new-banner {
-  // Image de fond + aplat noir très léger par-dessus pour l'assombrir légèrement
-  // → image-url()     : charge abstract_perso.png depuis app/assets/images/
+  // Image de fond par défaut : multisport (Cloudinary) + aplat noir pour la lisibilité.
+  // Stimulus remplace ce background dynamiquement via updateBanner() quand un sport est sélectionné.
   // Pour changer l'opacité de l'aplat, modifie le chiffre dans rgba(0,0,0, X)
-  // Pour enlever l'image, remplace tout par : background-color: $dark-bg;
   background:
     linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
-    image-url("sports/Football/herbe.webp") center 25% / cover no-repeat;
+    url("https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061666/sports/misc/multisports-img.png") center 25% / cover no-repeat;
   padding: 2rem 0 2.25rem;
   // Séparateur subtil entre la banner et le formulaire
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);

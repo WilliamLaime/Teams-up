@@ -222,7 +222,7 @@
 
           <%# Dropdown desktop : Mon profil / Mon compte / Admin (si admin) / Déconnexion %>
           <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <%= link_to simple_profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+            <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
             <% end %>
             <%= link_to edit_user_registration_path,
