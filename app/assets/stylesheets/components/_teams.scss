@@ -100,8 +100,8 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(8, 13, 26, 0.35) 0%,
-    rgba(8, 13, 26, 0.75) 100%
+    rgba(8, 13, 26, 0.55) 0%,
+    rgba(8, 13, 26, 0.88) 100%
   );
 }
 
@@ -167,7 +167,7 @@
 
 .team-show-meta {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.9);
   margin: 0 0 0.4rem;
   display: flex;
   align-items: center;
@@ -184,7 +184,64 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  align-items: flex-start;
+  // stretch : tous les items (liens + bouton) atteignent la même hauteur
+  align-items: stretch;
+
+  // button_to génère un <form> bloc — display:contents le neutralise
+  // pour que le <button> participe directement au flex et hérite du stretch
+  form { display: contents; }
+}
+
+// Le bouton icône-only doit centrer son contenu verticalement une fois étiré
+.team-banner-btn--delete {
+  justify-content: center;
+}
+
+// ── Boutons d'action dans la bannière (Modifier / Supprimer) ──────────────────
+// Effet verre dépoli cohérent avec la bannière photo
+.team-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  // Alignement sur Bootstrap btn-sm : même font-size, line-height et padding vertical
+  padding: 0.25rem 0.85rem;
+  border-radius: 50rem; // pill — cohérent avec le bouton "Créer un match"
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-decoration: none;
+  border: 1px solid transparent;
+
+  // Variante "Modifier" — verre blanc subtil
+  &--edit {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.45);
+      color: #fff;
+    }
+  }
+
+  // Variante "Supprimer" — icône seule, teinté rouge discret
+  &--delete {
+    background: rgba(253, 16, 21, 0.10);
+    border-color: rgba(253, 16, 21, 0.30);
+    color: rgba(253, 16, 21, 0.85);
+    padding: 0.25rem 0.6rem; // carré car icône seule
+
+    &:hover {
+      background: rgba(253, 16, 21, 0.22);
+      border-color: rgba(253, 16, 21, 0.6);
+      color: #FD1015;
+    }
+  }
 }
 
 // ── Bloc section générique (encadré sombre) ───────────────────────────────────

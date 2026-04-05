@@ -27,14 +27,15 @@ Rails.application.routes.draw do
   get "conditions", to: "pages#conditions", as: :conditions
 
   # ── Équipes ────────────────────────────────────────────────────────────────
-  # GET    /teams              → mes équipes
-  # GET    /teams/new          → formulaire création
-  # POST   /teams              → créer une équipe
-  # GET    /teams/:id          → page détail
-  # GET    /teams/:id/edit     → modifier l'équipe
-  # PATCH  /teams/:id          → sauvegarder les modifs
-  # DELETE /teams/:id          → supprimer l'équipe (captain seulement)
-  resources :teams do
+  # GET    /equipes              → mes équipes
+  # GET    /equipes/new          → formulaire création
+  # POST   /equipes              → créer une équipe
+  # GET    /equipes/:id          → page détail
+  # GET    /equipes/:id/edit     → modifier l'équipe
+  # PATCH  /equipes/:id          → sauvegarder les modifs
+  # DELETE /equipes/:id          → supprimer l'équipe (captain seulement)
+  # path: 'equipes' change l'URL visible mais les helpers (teams_path, team_path) restent inchangés
+  resources :teams, path: 'equipes' do
     member do
       # PATCH /teams/:id/transfer_captain → transférer le capitanat à un autre membre
       patch :transfer_captain
@@ -104,22 +105,30 @@ Rails.application.routes.draw do
   end
 
   # Route pour le profil de l'utilisateur connecté (ressource singulière)
-  # GET  /profil        => voir mon profil (version gaming)
-  # GET  /profil/simple => voir mon profil (version simplifiée, sans gamification)
+  #
+  # GET  /profil        => voir mon profil (show_simple — version principale)
+  # GET  /profil/old    => ancien profil gamifié (conservé, non lié depuis la nav)
   # GET  /profil/edit   => modifier mon profil
-  # PUT  /profil        => sauvegarder les modifications
-  resource :profil, only: [:show, :edit, :update] do
+  # PATCH /profil       => sauvegarder les modifications
+  # PATCH /profil/spend_stat => dépenser un point de stat
+  #
+  # On définit GET /profil manuellement AVANT la resource pour qu'il pointe vers
+  # show_simple. Le resource génère ensuite profil_path pour PATCH (update) et
+  # edit_profil_path pour l'édition — les helpers restent fonctionnels.
+  get "profil", to: "profils#show_simple"
+
+  resource :profil, only: [:edit, :update] do
     # PATCH /profil/spend_stat?attribute=attr_attack => dépenser un point de stat
     patch :spend_stat, on: :member
-    # GET /profil/simple => nouvelle page profil sans gamification
-    get :simple, on: :member, action: :show_simple
+    # GET /profil/old => ancien profil gamifié (conservé pour référence)
+    get :old, on: :member, action: :show
   end
 
-  # Route pour voir le profil public d'un autre utilisateur
-  # GET /users/:id/profil        => version gaming
-  # GET /users/:id/profil/simple => version simplifiée, sans gamification
-  get "users/:id/profil", to: "profils#show_user", as: :user_profil
-  get "users/:id/profil/simple", to: "profils#show_user_simple", as: :user_profil_simple
+  # Profil public d'un autre utilisateur
+  # GET /users/:id/profil        => version principale (show_user_simple)
+  # GET /users/:id/profil/old    => ancien profil gamifié (conservé)
+  get "users/:id/profil", to: "profils#show_user_simple", as: :user_profil
+  get "users/:id/profil/old", to: "profils#show_user", as: :user_profil_old
 
   # Routes pour les avis et les amis (imbriquées sous users)
   # POST   /users/:user_id/avis                => laisser un avis à un joueur

@@ -16,7 +16,7 @@
 
   <div class="row g-4">
 
-    <%# ── Colonne gauche : infos de l'équipe ──────────────────────────────── %>
+    <%# ── Colonne gauche : infos de l'équipe + image de couverture ───────── %>
     <div class="col-12 col-lg-7">
       <div class="team-section-card">
         <h2 class="team-section-title">Informations</h2>
@@ -39,6 +39,62 @@
               placeholder: "Présente ton équipe en quelques mots…",
               rows: 3 %>
         </div>
+      </div>
+
+      <%# ── Image de couverture — même largeur que le bloc Informations ──── %>
+      <div class="team-section-card mt-3">
+        <h2 class="team-section-title">
+          <i data-lucide="image" style="width:16px;height:16px;margin-right:6px;"></i>
+          Image de couverture
+        </h2>
+
+        <%# Aperçu interactif avec repositionnement par glisser-déposer.
+            Le data-controller="cover-position" gère le drag.
+            On vérifie blob.persisted? pour éviter l'erreur "Cannot get a signed_id
+            for a new record" lors du re-render après un save échoué. %>
+        <% if f.object.cover_image.attached? && f.object.cover_image.blob&.persisted? %>
+          <div class="mb-3"
+               data-controller="cover-position"
+               data-cover-position-initial-value="<%= f.object.cover_position.presence || '50% 50%' %>">
+
+            <%# Aperçu drag-to-position %>
+            <div class="cover-position-preview"
+                 data-cover-position-target="preview"
+                 style="position:relative; width:100%; height:140px; border-radius:10px; overflow:hidden;
+                        border:1px solid rgba(255,255,255,0.08); cursor:grab; user-select:none;">
+              <%= image_tag f.object.cover_image,
+                    alt: "Couverture de l'équipe",
+                    data: { "cover-position-target": "image" },
+                    style: "width:100%; height:100%; object-fit:cover; object-position:#{f.object.cover_position.presence || '50% 50%'}; display:block;" %>
+              <%# Indication de repositionnement par-dessus l'image %>
+              <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+                <span style="background:rgba(0,0,0,0.45); color:#fff; font-size:0.72rem; font-weight:600;
+                             padding:0.25rem 0.65rem; border-radius:20px; letter-spacing:0.03em;">
+                  <i data-lucide="move" style="width:10px;height:10px;margin-right:4px;"></i>
+                  Glissez pour recadrer
+                </span>
+              </div>
+            </div>
+
+            <%# Champ caché : valeur "X% Y%" mise à jour par le Stimulus controller %>
+            <%= f.hidden_field :cover_position,
+                value: f.object.cover_position.presence || "50% 50%",
+                data: { "cover-position-target": "positionInput" } %>
+          </div>
+        <% else %>
+          <%# Pas d'image : on inclut quand même le champ caché avec la valeur actuelle %>
+          <%= f.hidden_field :cover_position, value: f.object.cover_position.presence || "50% 50%" %>
+        <% end %>
+
+        <%= f.file_field :cover_image,
+            class: "form-control form-control-dark",
+            accept: "image/jpeg,image/png,image/webp" %>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.35); margin-top:0.4rem;">
+          JPG, PNG ou WebP · max 5 Mo · recommandé : 1200×300 px
+          <% if f.object.cover_image.attached? %>
+          · <span style="color:rgba(255,255,255,0.5);">Glisse l'aperçu pour ajuster le cadrage</span>
+          <% end %>
+        </p>
       </div>
     </div>
 
@@ -67,9 +123,10 @@
 
         <%# ── Panneau upload ────────────────────────────────────────────────── %>
         <div data-badge-builder-target="panelUpload">
-          <% if @team.badge_image.attached? %>
+          <%# Aperçu du blason existant — blob.persisted? pour éviter l'erreur signed_id %>
+          <% if f.object.badge_image.attached? && f.object.badge_image.blob&.persisted? %>
             <div class="mb-2">
-              <%= image_tag @team.badge_image, style: "width:80px;height:80px;object-fit:cover;border-radius:8px;" %>
+              <%= image_tag f.object.badge_image, alt: "Blason actuel", style: "width:80px;height:80px;object-fit:cover;border-radius:8px;" %>
             </div>
           <% end %>
 
@@ -186,6 +243,30 @@
             </div>
           </div>
 
+          <%# ── 4. Logo personnalisé ──────────────────────────────────────── %>
+          <%# Permet d'uploader une image qui remplace l'emoji dans le blason.
+              Lue en base64 côté client par le Stimulus controller (selectLogo). %>
+          <div class="mb-3">
+            <label class="badge-builder-label">Logo personnalisé (optionnel)</label>
+            <input type="file"
+                   class="form-control form-control-dark"
+                   accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                   data-badge-builder-target="logoInput"
+                   data-action="change->badge-builder#selectLogo"
+                   style="font-size:0.78rem;">
+            <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin-top:0.25rem;">
+              PNG, JPG, WebP ou SVG — remplace l'emoji dans le blason
+            </p>
+            <%# Bouton pour effacer le logo et revenir aux emojis %>
+            <button type="button"
+                    class="badge-tab"
+                    style="margin-top:0.3rem; font-size:0.72rem; padding:0.2rem 0.6rem;"
+                    data-action="click->badge-builder#clearLogo">
+              <i data-lucide="x" style="width:10px;height:10px;margin-right:3px;"></i>
+              Effacer le logo
+            </button>
+          </div>
+
           <%# Champ caché : contient le SVG final généré côté client %>
           <%= f.hidden_field :badge_svg, data: { badge_builder_target: "svgInput" } %>
 
@@ -194,40 +275,13 @@
       </div><%# fin team-section-card blason %>
     </div>
 
-  <%# ── Photo de couverture ──────────────────────────────────────────────────── %>
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="team-section-card">
-        <h2 class="team-section-title">
-          <i data-lucide="image" style="width:16px;height:16px;margin-right:6px;"></i>
-          Image de couverture
-        </h2>
-
-        <%# Aperçu de la couverture actuelle %>
-        <% if f.object.cover_image.attached? %>
-          <div class="mb-3">
-            <%= image_tag f.object.cover_image, alt: "Couverture de l'équipe",
-                style: "width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.08);" %>
-          </div>
-        <% end %>
-
-        <%= f.file_field :cover_image,
-            class: "form-control form-control-dark",
-            accept: "image/jpeg,image/png,image/webp" %>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.35); margin-top:0.4rem;">
-          JPG, PNG ou WebP · max 5 Mo · recommandé : 1200×300 px
-        </p>
-      </div>
-    </div>
-  </div>
-
   </div><%# fin row %>
 
-  <%# Bouton de soumission %>
+  <%# Bouton de soumission — f.object remplace @team pour éviter la dépendance à la variable d'instance %>
   <div class="mt-4 d-flex gap-3">
-    <%= f.submit @team.persisted? ? "Enregistrer les modifications" : "Créer l'équipe",
+    <%= f.submit f.object.persisted? ? "Enregistrer les modifications" : "Créer l'équipe",
         class: "btn btn-primary btn-cta-primary px-4" %>
-    <%= link_to "Annuler", @team.persisted? ? @team : teams_path, class: "btn btn-outline-light" %>
+    <%= link_to "Annuler", f.object.persisted? ? f.object : teams_path, class: "btn btn-outline-light" %>
   </div>
 
 <% end %>

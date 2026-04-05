@@ -39,7 +39,8 @@ export default class extends Controller {
     "panelGenerator",  // Panneau générateur
     "preview",         // Div où le SVG live est rendu
     "svgInput",        // Champ caché qui contient le SVG final
-    "fileInput"        // Input file pour l'upload
+    "fileInput",       // Input file pour l'upload du blason
+    "logoInput"        // Input file pour le logo personnalisé dans le générateur
   ]
 
   connect() {
@@ -47,6 +48,7 @@ export default class extends Controller {
     this.selectedShape = "shield"
     this.selectedColor = "#1EDD88"
     this.selectedEmoji = "⚽"
+    this.selectedLogoDataUrl = null  // null = utilise l'emoji, sinon Data URL base64
 
     // Si un SVG est déjà enregistré, basculer sur le générateur
     if (this.hasSvgInputTarget && this.svgInputTarget.value) {
@@ -103,6 +105,29 @@ export default class extends Controller {
     this._renderSVG()
   }
 
+  // ── Logo personnalisé ────────────────────────────────────────────────────────
+
+  // Appelé quand l'user sélectionne un fichier logo (PNG, JPG, SVG…)
+  // Lit le fichier en base64 Data URL et l'intègre dans le SVG à la place de l'emoji.
+  selectLogo(event) {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      this.selectedLogoDataUrl = e.target.result  // Data URL base64
+      this._renderSVG()
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Efface le logo personnalisé et revient à l'emoji sélectionné
+  clearLogo() {
+    this.selectedLogoDataUrl = null
+    if (this.hasLogoInputTarget) this.logoInputTarget.value = ""
+    this._renderSVG()
+  }
+
   // ── Rendu SVG ────────────────────────────────────────────────────────────────
 
   // Génère le SVG complet : forme + fond coloré + bordure intérieure + emoji
@@ -140,10 +165,19 @@ export default class extends Controller {
       `
     }
 
+    // ─ Symbole : soit un logo uploadé en base64, soit l'emoji sélectionné
+    let symbolElement
+    if (this.selectedLogoDataUrl) {
+      // Logo image : centré, légèrement inséré dans la forme (marges 15px)
+      symbolElement = `<image href="${this.selectedLogoDataUrl}" x="15" y="15" width="70" height="70" preserveAspectRatio="xMidYMid meet"/>`
+    } else {
+      symbolElement = `<text x="50" y="64" font-size="42" text-anchor="middle" dominant-baseline="auto">${emoji}</text>`
+    }
+
     // ─ Assemblage SVG final
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" width="100" height="100">
       ${bgElements}
-      <text x="50" y="64" font-size="42" text-anchor="middle" dominant-baseline="auto">${emoji}</text>
+      ${symbolElement}
     </svg>`.trim()
 
     // Affiche le preview et stocke dans le champ caché
