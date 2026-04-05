@@ -19,6 +19,8 @@
 
   <%# ── État 1 : on est déjà amis ── %>
   <% if already_friends %>
+    <%# ID unique pour la modale (évite les conflits si plusieurs cartes sur la page) %>
+    <% modal_id = "removefriendModal#{profil_user.id}" %>
     <div style="display:inline-flex; align-items:center; gap:0.4rem;">
       <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700;
                    color:#1EDD88; border:1px solid rgba(30,221,136,0.3); border-radius:999px;
@@ -26,19 +28,62 @@
         <i data-lucide="user-check" style="width:11px; height:11px;"></i>
         Amis
       </span>
-      <%# Bouton retirer toujours visible quand on est amis (que ce soit moi ou l'autre qui ait initié) %>
-      <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
-      <%= button_to user_friendship_path(profil_user),
-            method: :delete,
-            data: { turbo_frame: "_top" },
-            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                    font-weight:700; color:rgba(255,255,255,0.35);
-                    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
-                    border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+
+      <%# Bouton qui ouvre la modale de confirmation (ne supprime pas directement) %>
+      <button type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#<%= modal_id %>"
+              style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
+                     font-weight:700; color:rgba(255,255,255,0.35);
+                     background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+                     border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
         <i data-lucide="user-minus" style="width:10px; height:10px;"></i>
         Retirer
-      <% end %>
+      </button>
     </div>
+
+    <%# Modale hissée hors du flip-card via content_for :modals
+        (les transforms CSS du flip-card piègent les modales à l'intérieur sinon) %>
+    <% content_for :modals do %>
+      <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+          <div class="modal-content" style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+
+            <div class="modal-body text-center" style="padding:1.5rem 1.5rem 1rem;">
+              <div style="font-size:2rem; margin-bottom:0.75rem;">👋</div>
+              <p style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
+                Retirer <%= profil_user.profil&.first_name %> ?
+              </p>
+              <p style="color:rgba(255,255,255,0.45); font-size:0.8rem; margin:0;">
+                Vous ne serez plus amis et ne pourrez plus vous envoyer de messages.
+              </p>
+            </div>
+
+            <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
+              <%# Annuler — ferme juste la modale %>
+              <button type="button"
+                      data-bs-dismiss="modal"
+                      style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);
+                             background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+                             border-radius:20px; padding:0.4rem 1rem; cursor:pointer;">
+                Annuler
+              </button>
+
+              <%# Confirmer — soumet la vraie requête DELETE %>
+              <%= button_to user_friendship_path(profil_user),
+                    method: :delete,
+                    data: { turbo_frame: "_top" },
+                    style: "font-size:0.8rem; font-weight:700; color:#fff;
+                            background:rgba(220,53,69,0.8); border:1px solid rgba(220,53,69,0.5);
+                            border-radius:20px; padding:0.4rem 1rem; cursor:pointer;" do %>
+                Retirer
+              <% end %>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    <% end %>
 
   <%# ── État 2 : j'ai envoyé une demande, en attente de réponse ── %>
   <% elsif pending_sent %>

@@ -361,3 +361,63 @@ if users_with_profil.size >= 2
 else
   puts "⚠️  Pas assez d'utilisateurs avec profil pour créer les avis de test."
 end
+
+# ── Amis fictifs ──────────────────────────────────────────────────────────────
+# Crée 5 utilisateurs avec profil et les lie comme amis acceptés au 1er user
+# Idempotent : find_or_create_by! sur l'email
+puts "Création des amis fictifs..."
+
+# On prend le premier utilisateur en base comme "utilisateur principal"
+main_user = User.first
+
+if main_user.nil?
+  puts "⚠️  Aucun utilisateur trouvé, les amis fictifs ne seront pas créés."
+else
+  fake_friends_data = [
+    { first_name: "Lucas",   last_name: "Martin",   email: "lucas.martin@seed.com",   level: "Intermédiaire", localisation: "Paris",    description: "Passionné de foot et de padel, toujours partant pour un match !" },
+    { first_name: "Emma",    last_name: "Dupont",   email: "emma.dupont@seed.com",     level: "Débutant",      localisation: "Lyon",     description: "Nouvelle dans le sport collectif, j'adore le volleyball." },
+    { first_name: "Théo",    last_name: "Bernard",  email: "theo.bernard@seed.com",    level: "Expert",        localisation: "Bordeaux", description: "10 ans de basket, capitaine de mon équipe en amateur." },
+    { first_name: "Camille", last_name: "Leroy",    email: "camille.leroy@seed.com",   level: "Intermédiaire", localisation: "Nantes",   description: "Tennis et badminton le week-end, bonne humeur garantie." },
+    { first_name: "Noah",    last_name: "Moreau",   email: "noah.moreau@seed.com",     level: "Débutant",      localisation: "Marseille", description: "Je découvre le football à 5, prêt à apprendre !" }
+  ]
+
+  fake_friends_data.each do |data|
+    # Crée l'utilisateur s'il n'existe pas déjà
+    # first_name et last_name sont des attr_accessor requis à la création (pour Devise)
+    friend_user = User.find_by(email: data[:email])
+    unless friend_user
+      friend_user = User.create!(
+        email:      data[:email],
+        password:   "Password1!",
+        first_name: data[:first_name],
+        last_name:  data[:last_name]
+      )
+    end
+
+    # Crée ou met à jour le profil
+    profil = friend_user.profil || friend_user.build_profil
+    profil.first_name   = data[:first_name]
+    profil.last_name    = data[:last_name]
+    profil.level        = data[:level]
+    profil.localisation = data[:localisation]
+    profil.description  = data[:description]
+    profil.save!
+
+    # Crée l'amitié acceptée si elle n'existe pas encore
+    already_friends = Friendship.exists?(user: main_user, friend: friend_user) ||
+                      Friendship.exists?(user: friend_user, friend: main_user)
+
+    unless already_friends
+      Friendship.create!(
+        user:   main_user,
+        friend: friend_user,
+        status: "accepted"
+      )
+      puts "  ✓ Ami créé : #{data[:first_name]} #{data[:last_name]}"
+    else
+      puts "  → Déjà ami : #{data[:first_name]} #{data[:last_name]}"
+    end
+  end
+
+  puts "✅ #{main_user.all_friends.count} amis au total pour #{main_user.email}."
+end
