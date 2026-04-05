@@ -519,4 +519,32 @@
     </div><%# / wrapper %>
   </div><%# / overlay %>
 
+<%# ── Ouverture automatique du chat si redirection depuis le bouton "Message" ──
+    Le PrivateConversationsController redirige vers ?open_chat=:id après création
+    Ce script ouvre la modale, charge la conversation et active l'onglet Messages %>
+<% if params[:open_chat].present? && user_signed_in? && current_user != @profil_user %>
+  <script>
+    document.addEventListener("turbo:load", function openChatOnLoad() {
+      var modal = document.getElementById("global-chat-modal");
+      if (!modal || typeof bootstrap === "undefined") return;
+
+      // Active l'onglet "Messages"
+      var tabBtn = document.querySelector("[data-tab='messages']");
+      if (tabBtn) tabBtn.click();
+
+      // Charge la conversation dans le turbo frame
+      var frame = document.getElementById("sticky-chat-frame");
+      if (frame) {
+        frame.setAttribute("src", "/private_conversations/" + <%= params[:open_chat].to_i.to_json %>);
+      }
+
+      // Ouvre la modale Bootstrap
+      bootstrap.Modal.getOrCreateInstance(modal).show();
+
+      // Retire l'écouteur pour éviter les déclenchements lors des navigations suivantes
+      document.removeEventListener("turbo:load", openChatOnLoad);
+    }, { once: true });
+  </script>
+<% end %>
+
 </div><%# / profil-page %>

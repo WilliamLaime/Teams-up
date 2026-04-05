@@ -64,6 +64,11 @@ class ProfilsController < ApplicationController
     # On indique à Pundit qu'on gère l'autorisation manuellement (accès public)
     skip_authorization
     @profil_user = User.find(params[:id])
+
+    # /users/:id/profil redirige vers /users/:id/profil/simple (version prioritaire)
+    # On conserve les query params (ex: open_chat=2) pour que le chat s'ouvre correctement
+    redirect_to user_profil_simple_path(@profil_user, **request.query_parameters) and return
+
     @profil = @profil_user.profil || @profil_user.build_profil
 
     # On n'affiche pas les amis d'un autre utilisateur (trop intrusif)

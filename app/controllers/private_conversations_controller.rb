@@ -15,7 +15,7 @@ class PrivateConversationsController < ApplicationController
 
     # Répond en redirigeant vers le show dans la page (data-turbo: false donc redirect normal)
     # La page profil se recharge avec un paramètre pour indiquer d'ouvrir la modale
-    redirect_to user_profil_path(@other_user, open_chat: @conversation.id)
+    redirect_to user_profil_simple_path(@other_user, open_chat: @conversation.id)
   end
 
   # ── DELETE /private_conversations/:id/dismiss ────────────────────────────
