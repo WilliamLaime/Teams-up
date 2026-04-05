@@ -383,7 +383,7 @@
                     <div class="match-organizer-tag">Organisateur</div>
                   </div>
                 </div>
-                <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
+                <%= link_to user_profil_simple_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
                   <i data-lucide="user" style="width:13px;height:13px;"></i>
                   Voir profil
                 <% end %>
@@ -438,7 +438,7 @@
                 <div class="match-organizer-tag">Organisateur</div>
               </div>
             </div>
-            <%= link_to user_profil_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
+            <%= link_to user_profil_simple_path(organizer, from_match: @match.id), class: "btn btn-sm match-profile-btn" do %>
               <i data-lucide="user" style="width:13px;height:13px;"></i>
               Voir profil
             <% end %>
@@ -611,7 +611,7 @@
             <%# ── Joueurs approuvés (organisateur inclus) ── %>
             <% approved_users.each do |mu| %>
               <%# Lien vers le profil du joueur — toute la card est cliquable %>
-              <%= link_to user_profil_path(mu.user),
+              <%= link_to user_profil_simple_path(mu.user),
                   class: "match-player-item",
                   style: "text-decoration:none;" do %>
 
@@ -633,7 +633,7 @@
             <%# ── Joueurs en attente — avatar avec badge horloge ── %>
             <% pending_mus.each do |mu| %>
               <%# Lien vers le profil du joueur en attente %>
-              <%= link_to user_profil_path(mu.user),
+              <%= link_to user_profil_simple_path(mu.user),
                   class: "match-player-item match-player-item--pending",
                   style: "text-decoration:none;" do %>
 

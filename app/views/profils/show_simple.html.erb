@@ -137,7 +137,7 @@
               <div style="display:flex; flex-direction:column; gap:0.6rem;">
                 <% @pending_friend_requests.each do |friendship| %>
                   <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem;">
-                    <%= link_to user_profil_path(friendship.user),
+                    <%= link_to user_profil_simple_path(friendship.user),
                           data: { turbo_frame: "_top" },
                           style: "display:inline-flex; align-items:center; gap:0.5rem; text-decoration:none; flex:1; min-width:0;" do %>
                       <% if friendship.user.profil&.avatar&.attached? %>
@@ -240,7 +240,7 @@
               %>
               <div style="display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center;">
                 <% visible.each do |reviewer| %>
-                  <%= link_to user_profil_path(reviewer),
+                  <%= link_to user_profil_simple_path(reviewer),
                       style: "display:inline-flex; align-items:center; gap:0.4rem; padding:0.3rem 0.7rem; background:rgba(30,221,136,0.12); border:1px solid rgba(30,221,136,0.35); border-radius:999px; text-decoration:none;" do %>
                     <% if reviewer.profil&.avatar&.attached? %>
                       <%= image_tag reviewer.profil.avatar,

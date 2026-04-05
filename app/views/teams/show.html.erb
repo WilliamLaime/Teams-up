@@ -26,7 +26,12 @@
         <i data-lucide="users" style="width:13px;height:13px;"></i>
         <%= @team.members_count %> membre<%= @team.members_count > 1 ? "s" : "" %>
         &nbsp;·&nbsp;
-        Captain : <%= @team.captain.profil&.first_name %>
+        Capitaine :
+        <%= link_to user_profil_simple_path(@team.captain),
+              style: "color:inherit; font-weight:600;",
+              data: { turbo_frame: "_top" } do %>
+          <%= @team.captain.profil&.first_name %>
+        <% end %>
       </p>
       <% if @team.description.present? %>
         <p class="team-show-description"><%= @team.description %></p>
@@ -107,7 +112,7 @@
               <li class="team-member-item">
 
                 <%# Avatar + nom cliquables → profil du membre %>
-                <%= link_to user_profil_path(tm.user),
+                <%= link_to user_profil_simple_path(tm.user),
                       style: "display:flex; align-items:center; gap:0.6rem; text-decoration:none; flex:1; min-width:0;",
                       data: { turbo_frame: "_top" } do %>
                   <%# Avatar %>
@@ -125,7 +130,7 @@
                       <%= tm.user.profil&.first_name %> <%= tm.user.profil&.last_name %>
                     </span>
                     <span class="team-member-role-badge <%= tm.captain? ? 'captain' : 'member' %>">
-                      <%= tm.captain? ? "⚡ Captain" : "Membre" %>
+                      <%= tm.captain? ? "⚡ Capitaine" : "Membre" %>
                     </span>
                   </div>
                 <% end %>
@@ -204,21 +209,26 @@
             <ul class="team-members-list">
               <% @invitable_friends.each do |friend| %>
                 <li class="team-member-item">
-                  <%# Avatar %>
-                  <% if friend.profil&.avatar&.attached? %>
-                    <%= image_tag friend.profil.avatar, class: "team-member-avatar", alt: friend.profil.first_name %>
-                  <% else %>
-                    <div class="team-member-avatar-placeholder">
-                      <i data-lucide="user" style="width:18px;height:18px;color:rgba(255,255,255,0.4);"></i>
+                  <%# Avatar + nom cliquables → profil de l'ami %>
+                  <%= link_to user_profil_simple_path(friend),
+                        style: "display:flex; align-items:center; gap:0.6rem; text-decoration:none; flex:1; min-width:0;",
+                        data: { turbo_frame: "_top" } do %>
+                    <%# Avatar %>
+                    <% if friend.profil&.avatar&.attached? %>
+                      <%= image_tag friend.profil.avatar, class: "team-member-avatar", alt: friend.profil.first_name %>
+                    <% else %>
+                      <div class="team-member-avatar-placeholder">
+                        <i data-lucide="user" style="width:18px;height:18px;color:rgba(255,255,255,0.4);"></i>
+                      </div>
+                    <% end %>
+
+                    <%# Nom %>
+                    <div class="team-member-info">
+                      <span class="team-member-name">
+                        <%= friend.profil&.first_name %> <%= friend.profil&.last_name %>
+                      </span>
                     </div>
                   <% end %>
-
-                  <%# Nom %>
-                  <div class="team-member-info">
-                    <span class="team-member-name">
-                      <%= friend.profil&.first_name %> <%= friend.profil&.last_name %>
-                    </span>
-                  </div>
 
                   <%# Bouton inviter %>
                   <%= button_to team_team_invitations_path(@team),
@@ -245,9 +255,14 @@
             <ul class="team-invitations-list">
               <% @pending_invitations.each do |inv| %>
                 <li class="team-invitation-item">
-                  <span class="team-member-name">
-                    <%= inv.invitee.profil&.first_name %> <%= inv.invitee.profil&.last_name %>
-                  </span>
+                  <%# Nom cliquable → profil de l'invité en attente %>
+                  <%= link_to user_profil_simple_path(inv.invitee),
+                        style: "text-decoration:none;",
+                        data: { turbo_frame: "_top" } do %>
+                    <span class="team-member-name">
+                      <%= inv.invitee.profil&.first_name %> <%= inv.invitee.profil&.last_name %>
+                    </span>
+                  <% end %>
                   <div class="d-flex align-items-center gap-2">
                     <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);">En attente</span>
                     <%= button_to team_team_invitation_path(@team, inv),
