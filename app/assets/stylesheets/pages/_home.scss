@@ -83,13 +83,29 @@
     }
   }
 
+  // ── Rangée sélecteur de sport ──
+  // Ligne "Ton sport : [Multisport ▾]" entre la description et les CTAs
+  .hero-sport-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .hero-sport-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $dark-muted;
+    white-space: nowrap;
+  }
+
   // Description sous le titre
   .hero-description {
     color: $dark-muted;
     font-size: 1rem;
     line-height: 1.6;
     max-width: 440px;
-    margin-bottom: 2rem;
+    margin-bottom: 1.25rem; // réduit — le sélecteur de sport prend le relais avant les CTAs
   }
 
   // ── Image droite du hero ──
