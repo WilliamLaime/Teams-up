@@ -16,8 +16,8 @@
 
 
 <%# ── 2. Thème CSS selon le rang du joueur ───────────────────────────────── %>
-<%# THÈME FORCÉ pour preview — remplacer "theme-platinum" par le thème voulu %>
-<% theme_class = "theme-platinum" %>
+<%# Thème dynamique selon le rang XP du joueur (bronze/silver/gold/platinum/emerald) %>
+<% theme_class = "theme-#{profil_user.rank}" %>
 
 
 <%# ── 3. Préparer les données ───────────────────────────────────────────── %>

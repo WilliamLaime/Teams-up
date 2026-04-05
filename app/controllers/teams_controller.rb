@@ -17,9 +17,17 @@ class TeamsController < ApplicationController
       # Invitations en attente (visible par le captain)
       @pending_invitations = @team.team_invitations.pending.includes(invitee: :profil)
 
+      # Propositions en attente envoyées par les membres (visible par le captain)
+      @pending_proposals = @team.team_invitations.proposed.includes(invitee: :profil, proposed_by: :profil)
+
       # Amis du captain qui peuvent encore être invités (pas membres, pas déjà invités)
       excluded_ids = @team.members.pluck(:id) + @team.team_invitations.pending.pluck(:invitee_id)
       @invitable_friends = current_user.all_friends.includes(:profil).where.not(id: excluded_ids)
+    elsif @team.member?(current_user)
+      # Amis proposables : pas déjà membres, pas déjà invités/proposés
+      excluded_ids = @team.members.pluck(:id) +
+                     @team.team_invitations.where(status: %w[pending proposed]).pluck(:invitee_id)
+      @proposable_friends = current_user.all_friends.includes(:profil).where.not(id: excluded_ids)
     end
     # Invitation reçue par l'user connecté (pour afficher accepter/refuser)
     @my_invitation = current_user.team_invitations_received.pending.find_by(team: @team)
@@ -129,6 +137,6 @@ class TeamsController < ApplicationController
 
   # Paramètres autorisés pour la création/modification d'une équipe
   def team_params
-    params.require(:team).permit(:name, :description, :badge_image, :badge_svg)
+    params.require(:team).permit(:name, :description, :badge_image, :badge_svg, :cover_image)
   end
 end
