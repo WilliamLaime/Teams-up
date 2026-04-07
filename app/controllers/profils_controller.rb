@@ -322,7 +322,7 @@ class ProfilsController < ApplicationController
       rescue => e
         Rails.logger.error "[AchievementService] Erreur lors du check profile_updated : #{e.message}"
       end
-      redirect_to simple_profil_path, notice: "Profil mis à jour avec succès !"
+      redirect_to profil_path, notice: "Profil mis à jour avec succès !"
     else
       render :edit, status: :unprocessable_entity
     end
