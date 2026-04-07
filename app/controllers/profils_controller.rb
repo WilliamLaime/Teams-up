@@ -282,14 +282,7 @@ class ProfilsController < ApplicationController
         sp = SportProfil.find_or_initialize_by(profil: @profil, sport_id: sport_id.to_i)
         sp.level = sp_params[:level].presence
         sp.role  = sp_params[:role].presence
-        # On utilise save (sans !) pour éviter une exception non gérée en cas de validation invalide
-        unless sp.save
-          sp.errors.full_messages.each do |msg|
-            @profil.errors.add(:base, msg)
-          end
-          render :edit, status: :unprocessable_entity
-          return
-        end
+        sp.save!
       end
 
       # Supprime les SportProfil des sports désélectionnés
@@ -315,13 +308,8 @@ class ProfilsController < ApplicationController
     end
 
     if @profil.update(profil_params)
-      # Vérifier l'achievement "profil complété" après la mise à jour
-      # Le rescue évite qu'une erreur du service (ex: broadcast ActionCable) n'empêche la sauvegarde
-      begin
-        AchievementService.new(current_user).check(:profile_updated)
-      rescue => e
-        Rails.logger.error "[AchievementService] Erreur lors du check profile_updated : #{e.message}"
-      end
+      # 🎮 Vérifier l'achievement "profil complété" après la mise à jour
+      AchievementService.new(current_user).check(:profile_updated)
       redirect_to simple_profil_path, notice: "Profil mis à jour avec succès !"
     else
       render :edit, status: :unprocessable_entity
