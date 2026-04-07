@@ -5,12 +5,10 @@ class ProfilsController < ApplicationController
   # On exclut show_user et show_user_simple car ils chargent le profil d'un autre utilisateur
   before_action :set_profil, except: [:show_user, :show_user_simple]
 
-  # GET /profil
-  # Affiche le profil de l'utilisateur connecté
+  # GET /profil/old
+  # Ancien profil gamifié — conservé mais non exposé depuis la navigation principale
   def show
     authorize @profil
-    # /profil redirige vers /profil/simple (version prioritaire)
-    redirect_to simple_profil_path and return
 
     # Charge tous les amis acceptés de l'utilisateur connecté
     @all_friends = current_user.all_friends.includes(:profil)
@@ -58,17 +56,11 @@ class ProfilsController < ApplicationController
     @profil_teams = current_user.teams.includes(:captain, :team_members).order(:name)
   end
 
-  # GET /users/:id/profil
-  # Affiche le profil public d'un autre utilisateur
+  # GET /users/:id/profil/old
+  # Ancien profil public gamifié — conservé mais non exposé depuis la navigation
   def show_user
-    # On indique à Pundit qu'on gère l'autorisation manuellement (accès public)
     skip_authorization
     @profil_user = User.find(params[:id])
-
-    # /users/:id/profil redirige vers /users/:id/profil/simple (version prioritaire)
-    # On conserve les query params (ex: open_chat=2) pour que le chat s'ouvre correctement
-    redirect_to user_profil_simple_path(@profil_user, **request.query_parameters) and return
-
     @profil = @profil_user.profil || @profil_user.build_profil
 
     # On n'affiche pas les amis d'un autre utilisateur (trop intrusif)
@@ -116,16 +108,15 @@ class ProfilsController < ApplicationController
                                       reviewed_user_id: current_user.id
                                     )
 
-    # Équipes en commun uniquement (pas toutes les équipes de l'autre user)
+    # Toutes les équipes du joueur affiché — toujours chargées
+    @profil_teams = @profil_user.teams.includes(:captain, :team_members).order(:name)
+
+    # Équipes où current_user est captain et peut encore inviter ce joueur
+    # (uniquement si on consulte le profil de quelqu'un d'autre)
     if user_signed_in? && current_user != @profil_user
-      common_team_ids  = current_user.team_ids & @profil_user.team_ids
-      @profil_teams    = Team.where(id: common_team_ids).includes(:captain, :team_members).order(:name)
-      # Équipes où current_user est captain et peut encore inviter ce joueur
       excluded         = @profil_user.teams.pluck(:id) +
                          TeamInvitation.pending.where(invitee: @profil_user).pluck(:team_id)
       @invitable_teams = current_user.captained_teams.where.not(id: excluded).order(:name)
-    else
-      @profil_teams = Team.none
     end
 
     render :show
@@ -150,11 +141,11 @@ class ProfilsController < ApplicationController
       @profil.decrement!(:stat_points)       # -1 point disponible
     end
 
-    redirect_to profil_path
+    redirect_to profil_path  # profil_path → GET /profil → show_simple
   end
 
-  # GET /profil/simple
-  # Nouvelle version du profil sans gamification (XP, niveaux, achievements)
+  # GET /profil
+  # Version principale du profil (sans gamification)
   def show_simple
     # On réutilise la règle show? de ProfilPolicy (seul le propriétaire peut voir)
     authorize @profil, :show?
@@ -199,8 +190,8 @@ class ProfilsController < ApplicationController
     @profil_teams = current_user.teams.includes(:captain, :team_members).order(:name)
   end
 
-  # GET /users/:id/profil/simple
-  # Version simplifiée du profil public d'un autre utilisateur (sans gamification)
+  # GET /users/:id/profil
+  # Version principale du profil public d'un autre utilisateur
   def show_user_simple
     skip_authorization
     @profil_user = User.find(params[:id])
@@ -242,16 +233,15 @@ class ProfilsController < ApplicationController
                                       reviewed_user_id: current_user.id
                                     )
 
-    # Équipes en commun uniquement (pas toutes les équipes de l'autre user)
+    # Toutes les équipes du joueur affiché — toujours chargées, même si c'est son propre profil
+    @profil_teams = @profil_user.teams.includes(:captain, :team_members).order(:name)
+
+    # Équipes où current_user est captain et peut encore inviter ce joueur
+    # (uniquement si on consulte le profil de quelqu'un d'autre)
     if user_signed_in? && current_user != @profil_user
-      common_team_ids = current_user.team_ids & @profil_user.team_ids
-      @profil_teams   = Team.where(id: common_team_ids).includes(:captain, :team_members).order(:name)
-      # Équipes où current_user est captain et peut encore inviter ce joueur
-      excluded        = @profil_user.teams.pluck(:id) +
-                        TeamInvitation.pending.where(invitee: @profil_user).pluck(:team_id)
+      excluded         = @profil_user.teams.pluck(:id) +
+                         TeamInvitation.pending.where(invitee: @profil_user).pluck(:team_id)
       @invitable_teams = current_user.captained_teams.where.not(id: excluded).order(:name)
-    else
-      @profil_teams = Team.none
     end
 
     render :show_simple

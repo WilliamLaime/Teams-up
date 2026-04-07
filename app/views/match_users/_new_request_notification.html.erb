@@ -47,7 +47,7 @@
             <div class="pending-modal-row">
 
               <%# Avatar cliquable → ouvre le profil dans un nouvel onglet %>
-              <%= link_to user_profil_simple_path(mu.user, from_match: match.id),
+              <%= link_to user_profil_path(mu.user, from_match: match.id),
                   class: "pending-modal-avatar-link",
                   target: "_blank",
                   title: "Voir le profil" do %>
@@ -76,7 +76,7 @@
                   </div>
                 <% end %>
                 <%# Lien vers le profil complet %>
-                <%= link_to user_profil_simple_path(mu.user, from_match: match.id),
+                <%= link_to user_profil_path(mu.user, from_match: match.id),
                     class: "pending-modal-profile-link",
                     style: "color:#1EDD88;",
                     target: "_blank" do %>

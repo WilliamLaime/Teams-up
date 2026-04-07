@@ -5,6 +5,9 @@ module Users
     # Noms de fichiers autorisés pour les avatars prédéfinis (évite les injections de chemin)
     VALID_PRESET_AVATARS = %w[01 02 3 4 5 6 7 8 9 10 11 12].freeze
 
+    # Vérifie le captcha AVANT de traiter l'inscription
+    before_action :verify_captcha_on_signup, only: [:create]
+
     # Action appelée quand l'utilisateur arrive sur la page d'inscription (GET)
     # Si l'utilisateur arrive directement (pas depuis la page de connexion),
     # on efface la "stored location" de Devise pour éviter une redirection non désirée
@@ -63,16 +66,6 @@ module Users
         return
       end
 
-      # Vérifie le captcha AVANT de créer le compte
-      # Si le captcha échoue, on réaffiche le formulaire avec une erreur
-      unless verify_hcaptcha
-        build_resource(sign_up_params)
-        flash.now[:alert] = "Vérification captcha échouée. Veuillez réessayer."
-        clean_up_passwords resource
-        render :new, status: :unprocessable_entity
-        return
-      end
-
       super do |user|
         if user.persisted?
           # Log de sécurité : inscription réussie
@@ -104,6 +97,16 @@ module Users
     end
 
     private
+
+    # Vérifie que le widget hcaptcha a bien été complété avant l'inscription
+    def verify_captcha_on_signup
+      return if verify_hcaptcha
+
+      # Recrée le resource pour réafficher le formulaire avec les valeurs saisies
+      build_resource(sign_up_params)
+      flash.now[:alert] = "Vérification captcha échouée. Veuillez réessayer."
+      render :new, status: :unprocessable_entity
+    end
 
     # Retourne l'avatar à attacher au profil :
     # - Cas 1 : photo personnelle uploadée par l'utilisateur

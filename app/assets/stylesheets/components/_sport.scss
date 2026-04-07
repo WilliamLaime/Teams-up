@@ -31,6 +31,31 @@
   border: 1px solid rgba($green, 0.35);
 }
 
+// ── Badge sport dans la navbar (indicateur non-interactif) ───────────────
+// Lien vers la home pour rappeler le sport actif depuis toutes les pages.
+// L'action de changement se fait désormais dans le hero de la home.
+.navbar-sport-badge {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 1rem;
+  padding: 0.3rem 0.75rem !important;
+  border-radius: 999px !important;
+  background: rgba($green, 0.12) !important;
+  border: 1.5px solid rgba($green, 0.4) !important;
+  color: $green !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba($green, 0.2) !important;
+    border-color: rgba($green, 0.6) !important;
+    color: $green !important;
+  }
+}
+
 // ── Sélecteur de sport dans la navbar ────────────────────────────────────
 // Pill "sélectionné" avec accent vert — cohérent avec les badges sport
 .sport-switcher {
@@ -73,9 +98,22 @@
   }
 }
 
-// ── Dropdown des sports dans la navbar ───────────────────────────────────
+// ── Dropdown des sports (navbar et hero) ─────────────────────────────────
+// Force le thème sombre sur le dropdown Bootstrap (qui est blanc par défaut)
 .sport-dropdown {
   min-width: 220px;
+  background-color: $dark-card-bg;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  // Hauteur max pour gérer 50+ sports sans déborder l'écran
+  max-height: 320px;
+  overflow-y: auto;
+
+  // Séparateurs
+  .dropdown-divider {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
 
   // Champ de recherche dans le dropdown
   .sport-search-input {

@@ -5,13 +5,13 @@
 #   @profil_user      — l'utilisateur affiché
 %>
 
-<%# Sur le profil d'un autre : ne rien afficher si aucune équipe en commun ni équipe invitable %>
+<%# Sur le profil d'un autre : ne rien afficher si pas d'équipes et pas d'équipes invitables %>
 <% return if current_user != @profil_user && @profil_teams.empty? && @invitable_teams.blank? %>
 
 <div style="margin-top:0.5rem; margin-bottom:0;">
 
-  <%# ── En-tête ── %>
-  <% teams_title = (current_user == @profil_user) ? "Équipes" : "Équipes en commun" %>
+  <%# ── En-tête — même titre "Équipes" pour son propre profil ou celui d'un autre ── %>
+  <% teams_title = "Équipes" %>
   <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
               text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
     <i data-lucide="shield" style="width:14px; height:14px;"></i>
@@ -47,7 +47,7 @@
                 <%= team.name %>
               </div>
               <span style="display:inline-block; font-size:0.68rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:20px; <%= is_captain ? 'background:rgba(30,221,136,0.15); color:#1EDD88;' : 'background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.45);' %>">
-                <%= is_captain ? "⚡ Captain" : "Membre" %>
+                <%= is_captain ? "👑 Capitaine" : "Membre" %>
               </span>
             </div>
 

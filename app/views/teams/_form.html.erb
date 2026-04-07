@@ -16,7 +16,7 @@
 
   <div class="row g-4">
 
-    <%# ── Colonne gauche : infos de l'équipe ──────────────────────────────── %>
+    <%# ── Colonne gauche : infos de l'équipe + image de couverture ───────── %>
     <div class="col-12 col-lg-7">
       <div class="team-section-card">
         <h2 class="team-section-title">Informations</h2>
@@ -40,48 +40,116 @@
               rows: 3 %>
         </div>
       </div>
+
+      <%# ── Image de couverture ──────────────────────────────────────────────── %>
+      <%#
+        Le data-controller="cover-position" gère :
+          • Le drag de l'image existante pour recadrer (posX, posY)
+          • Le slider de zoom (transform: scale)
+          • L'aperçu live quand un nouveau fichier est sélectionné (FileReader)
+        Les deux valeurs finales sont stockées dans les champs cachés
+        cover_position ("X% Y%") et cover_zoom (float).
+      %>
+      <div class="team-section-card mt-3"
+           data-controller="cover-position"
+           data-cover-position-initial-value="<%= f.object.cover_position.presence || '50% 50%' %>"
+           data-cover-position-initial-zoom-value="<%= f.object.cover_zoom || 1.0 %>">
+
+        <h2 class="team-section-title">
+          <i data-lucide="image" style="width:16px;height:16px;margin-right:6px;"></i>
+          Image de couverture
+        </h2>
+
+        <%#
+          Aperçu interactif — toujours rendu dans le DOM pour que le controller
+          puisse y injecter la preview d'un nouveau fichier via FileReader.
+          On ne l'affiche que si une image est déjà attachée (ou sera affichée
+          dynamiquement par le controller après sélection du fichier).
+        %>
+        <div class="cover-position-preview"
+             data-cover-position-target="preview"
+             style="position:relative; width:100%; height:140px; border-radius:10px; overflow:hidden;
+                    border:1px solid rgba(255,255,255,0.08); cursor:grab; user-select:none;
+                    <%= f.object.cover_image.attached? && f.object.cover_image.blob&.persisted? ? '' : 'display:none;' %>">
+
+          <% if f.object.cover_image.attached? && f.object.cover_image.blob&.persisted? %>
+            <%# Image déjà enregistrée : affichée avec position et zoom existants %>
+            <%= image_tag f.object.cover_image,
+                  alt: "Couverture de l'équipe",
+                  data: { "cover-position-target": "image" },
+                  style: "width:100%; height:100%; object-fit:cover; display:block;
+                          object-position:#{f.object.cover_position.presence || '50% 50%'};
+                          transform:scale(#{f.object.cover_zoom || 1.0});
+                          transform-origin:#{f.object.cover_position.presence || '50% 50%'};" %>
+          <% else %>
+            <%# Pas d'image sauvegardée : balise img vide, remplie par le FileReader %>
+            <img data-cover-position-target="image" alt=""
+                 style="width:100%; height:100%; object-fit:cover; display:none;">
+          <% end %>
+
+          <%# Indication de repositionnement par-dessus l'image %>
+          <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+            <span style="background:rgba(0,0,0,0.45); color:#fff; font-size:0.72rem; font-weight:600;
+                         padding:0.25rem 0.65rem; border-radius:20px; letter-spacing:0.03em;">
+              <i data-lucide="move" style="width:10px;height:10px;margin-right:4px;"></i>
+              Glissez pour recadrer
+            </span>
+          </div>
+        </div>
+
+        <%# Slider de zoom — affiché dès qu'une image est présente %>
+        <div class="cover-zoom-row"
+             data-cover-position-target="zoomRow"
+             style="<%= f.object.cover_image.attached? && f.object.cover_image.blob&.persisted? ? '' : 'display:none;' %>">
+          <i data-lucide="zoom-in" style="width:14px;height:14px;color:rgba(255,255,255,0.45);flex-shrink:0;"></i>
+          <input type="range"
+                 class="cover-zoom-slider"
+                 min="1" max="2" step="0.05"
+                 value="<%= f.object.cover_zoom || 1.0 %>"
+                 data-cover-position-target="zoomSlider"
+                 data-action="input->cover-position#updateZoom">
+          <span class="cover-zoom-value" data-cover-position-target="zoomValue">
+            <%= (f.object.cover_zoom || 1.0).round(1) %>×
+          </span>
+        </div>
+
+        <%# Champs cachés soumis avec le formulaire %>
+        <%= f.hidden_field :cover_position,
+            value: f.object.cover_position.presence || "50% 50%",
+            data: { "cover-position-target": "positionInput" } %>
+        <%= f.hidden_field :cover_zoom,
+            value: f.object.cover_zoom || 1.0,
+            data: { "cover-position-target": "zoomInput" } %>
+
+        <%# Input file : déclenche l'aperçu live via cover-position#previewFile %>
+        <%= f.file_field :cover_image,
+            class: "form-control form-control-dark mt-3",
+            accept: "image/jpeg,image/png,image/webp",
+            data: {
+              "cover-position-target": "fileField",
+              action: "change->cover-position#previewFile"
+            } %>
+        <p style="font-size:0.75rem; color:rgba(255,255,255,0.35); margin-top:0.4rem;">
+          JPG, PNG ou WebP · max 5 Mo · recommandé : 1200×300 px
+        </p>
+
+      </div>
+
+      <%# CTA juste sous la card image de couverture, même gap que entre les blocs %>
+      <div class="d-flex gap-3 mt-4">
+        <%= f.submit f.object.persisted? ? "Enregistrer les modifications" : "Créer l'équipe",
+            class: "btn btn-primary btn-cta-primary px-4" %>
+        <%= link_to "Annuler", f.object.persisted? ? f.object : teams_path, class: "btn btn-outline-light" %>
+      </div>
     </div>
 
-    <%# ── Colonne droite : blason ──────────────────────────────────────────── %>
-    <div class="col-12 col-lg-5">
+    <%# ── Colonne droite : blason — align-self-start pour rester en haut ─── %>
+    <div class="col-12 col-lg-5 align-self-start">
       <div class="team-section-card">
         <h2 class="team-section-title">Blason</h2>
 
-        <%# Onglets Upload / Générateur %>
-        <div class="badge-tabs mb-3">
-          <button type="button"
-                  class="badge-tab active"
-                  data-badge-builder-target="tabUpload"
-                  data-action="click->badge-builder#showUpload">
-            <i data-lucide="upload" style="width:13px;height:13px;margin-right:4px;"></i>
-            Uploader une image
-          </button>
-          <button type="button"
-                  class="badge-tab"
-                  data-badge-builder-target="tabGenerator"
-                  data-action="click->badge-builder#showGenerator">
-            <i data-lucide="wand-2" style="width:13px;height:13px;margin-right:4px;"></i>
-            Générateur de blason
-          </button>
-        </div>
-
-        <%# ── Panneau upload ────────────────────────────────────────────────── %>
-        <div data-badge-builder-target="panelUpload">
-          <% if @team.badge_image.attached? %>
-            <div class="mb-2">
-              <%= image_tag @team.badge_image, style: "width:80px;height:80px;object-fit:cover;border-radius:8px;" %>
-            </div>
-          <% end %>
-
-          <%= f.file_field :badge_image,
-              class: "form-control form-control-dark",
-              accept: "image/jpeg,image/png",
-              data: { badge_builder_target: "fileInput" } %>
-          <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:0.3rem;">JPG ou PNG, max 2 Mo</p>
-        </div>
-
-        <%# ── Panneau générateur de blason SVG ─────────────────────────────── %>
-        <div data-badge-builder-target="panelGenerator" style="display:none;">
+        <%# ── Générateur de blason SVG ─────────────────────────────────────── %>
+        <div>
 
           <%# Aperçu SVG live — centré, plus grand %>
           <div style="display:flex; justify-content:center; margin-bottom:1.25rem;">
@@ -186,6 +254,48 @@
             </div>
           </div>
 
+          <%# ── 4. Logo personnalisé avec slider de taille ────────────────── %>
+          <%#
+            Permet d'uploader une image qui remplace l'emoji dans le blason.
+            Le slider permet de régler la taille du logo dans la forme (30% à 110%).
+            Le slider n'est affiché qu'une fois un logo sélectionné.
+          %>
+          <div class="mb-3">
+            <label class="badge-builder-label">Logo personnalisé (optionnel)</label>
+            <input type="file"
+                   class="form-control form-control-dark"
+                   accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                   data-badge-builder-target="logoInput"
+                   data-action="change->badge-builder#selectLogo"
+                   style="font-size:0.78rem;">
+            <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin-top:0.25rem;">
+              PNG, JPG, WebP ou SVG — remplace l'emoji dans le blason
+            </p>
+
+            <%# Slider de taille du logo — affiché dynamiquement par le controller %>
+            <div class="logo-scale-row"
+                 data-badge-builder-target="logoControls"
+                 style="display:none;">
+              <i data-lucide="scaling" style="width:14px;height:14px;color:rgba(255,255,255,0.45);flex-shrink:0;"></i>
+              <input type="range"
+                     class="cover-zoom-slider"
+                     min="0.3" max="1.1" step="0.05"
+                     value="0.7"
+                     data-badge-builder-target="logoSlider"
+                     data-action="input->badge-builder#updateLogoScale">
+              <span class="cover-zoom-value" data-badge-builder-target="logoScaleDisplay">70%</span>
+            </div>
+
+            <%# Bouton pour effacer le logo et revenir aux emojis %>
+            <button type="button"
+                    class="badge-tab"
+                    style="margin-top:0.3rem; font-size:0.72rem; padding:0.2rem 0.6rem;"
+                    data-action="click->badge-builder#clearLogo">
+              <i data-lucide="x" style="width:10px;height:10px;margin-right:3px;"></i>
+              Effacer le logo
+            </button>
+          </div>
+
           <%# Champ caché : contient le SVG final généré côté client %>
           <%= f.hidden_field :badge_svg, data: { badge_builder_target: "svgInput" } %>
 
@@ -194,40 +304,6 @@
       </div><%# fin team-section-card blason %>
     </div>
 
-  <%# ── Photo de couverture ──────────────────────────────────────────────────── %>
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="team-section-card">
-        <h2 class="team-section-title">
-          <i data-lucide="image" style="width:16px;height:16px;margin-right:6px;"></i>
-          Image de couverture
-        </h2>
-
-        <%# Aperçu de la couverture actuelle %>
-        <% if f.object.cover_image.attached? %>
-          <div class="mb-3">
-            <%= image_tag f.object.cover_image, alt: "Couverture de l'équipe",
-                style: "width:100%; height:140px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,0.08);" %>
-          </div>
-        <% end %>
-
-        <%= f.file_field :cover_image,
-            class: "form-control form-control-dark",
-            accept: "image/jpeg,image/png,image/webp" %>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.35); margin-top:0.4rem;">
-          JPG, PNG ou WebP · max 5 Mo · recommandé : 1200×300 px
-        </p>
-      </div>
-    </div>
-  </div>
-
   </div><%# fin row %>
-
-  <%# Bouton de soumission %>
-  <div class="mt-4 d-flex gap-3">
-    <%= f.submit @team.persisted? ? "Enregistrer les modifications" : "Créer l'équipe",
-        class: "btn btn-primary btn-cta-primary px-4" %>
-    <%= link_to "Annuler", @team.persisted? ? @team : teams_path, class: "btn btn-outline-light" %>
-  </div>
 
 <% end %>

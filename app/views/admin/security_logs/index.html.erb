@@ -124,7 +124,7 @@
                 <td style="padding:0.6rem 1rem;">
                   <% if log.user %>
                     <%= link_to log.user.email,
-                                user_profil_simple_path(log.user),
+                                user_profil_path(log.user),
                                 style: "color:#fff; text-decoration:none; font-size:0.8rem;" %>
                   <% else %>
                     <span style="color:rgba(255,255,255,0.25);">—</span>

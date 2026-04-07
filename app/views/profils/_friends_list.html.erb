@@ -24,7 +24,7 @@
           <%# Chaque ami : lien vers son profil + bouton Retirer (uniquement sur son propre profil) %>
           <div style="display:inline-flex; align-items:center; gap:0.25rem;">
             <%# data-turbo-frame="_top" → navigation complète au lieu de naviguer dans le turbo_frame %>
-            <%= link_to user_profil_simple_path(friend),
+            <%= link_to user_profil_path(friend),
                   data: { turbo_frame: "_top" },
                   style: "display:inline-flex; align-items:center; gap:0.5rem; padding:0.3rem 0.7rem;
                           background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);

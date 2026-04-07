@@ -186,7 +186,7 @@
             <tr>
               <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.4); padding: 0.6rem 1rem;"><%= index + 1 %></td>
               <td style="border-color:rgba(255,255,255,0.07); padding: 0.6rem 1rem;">
-                <%= link_to user_profil_simple_path(profil.user), style: "color:#fff; text-decoration:none;" do %>
+                <%= link_to user_profil_path(profil.user), style: "color:#fff; text-decoration:none;" do %>
                   <%= profil.first_name %> <%= profil.last_name %>
                 <% end %>
               </td>
@@ -239,7 +239,7 @@
             <td style="border-color:rgba(255,255,255,0.07); padding: 0.6rem 1rem;">
               <%# Affiche le prénom + nom si le profil existe, sinon l'email %>
               <% if user.profil %>
-                <%= link_to user_profil_simple_path(user), style: "color:#fff; text-decoration:none;" do %>
+                <%= link_to user_profil_path(user), style: "color:#fff; text-decoration:none;" do %>
                   <%= user.profil.first_name %> <%= user.profil.last_name %>
                 <% end %>
               <% else %>

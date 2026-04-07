@@ -42,60 +42,6 @@
       </li>
 
 
-      <% if user_signed_in? %>
-        <%# ── Sélecteur de sport actif (desktop centre) ─────────────────────── %>
-        <li class="nav-item dropdown">
-          <button class="nav-link sport-switcher d-flex align-items-center gap-1"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false">
-            <% if multisport_mode? %>
-              <%= image_tag sport_misc_image(:multisports), style: "width:1rem;height:1rem;object-fit:contain;", class: "sport-switcher-icon" %>
-            <% elsif current_sport %>
-              <%= sport_icon(current_sport, size: "1rem", css_class: "sport-switcher-icon") %>
-            <% end %>
-            <span class="sport-switcher-name"><%= multisport_mode? ? "Multisport" : (current_sport&.name || "Sport") %></span>
-            <i data-lucide="chevron-down" style="width:13px;height:13px;" class="sport-switcher-chevron"></i>
-          </button>
-
-          <ul class="dropdown-menu sport-dropdown" data-controller="sport-search">
-            <li class="px-2 pb-1" data-action="click->sport-search#stopPropagation">
-              <input type="text" class="form-control form-control-sm sport-search-input"
-                placeholder="Rechercher un sport..."
-                data-sport-search-target="input"
-                data-action="input->sport-search#filter"
-                autocomplete="off">
-            </li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <li data-sport-search-target="item" data-sport-name="multisport">
-              <%= button_to multisport_switch_path, method: :post,
-                  class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
-                  form: { "data-turbo": "false" } do %>
-                <%= image_tag sport_misc_image(:multisports), style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
-                <span>Multisport</span>
-                <% if multisport_mode? %>
-                  <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
-                <% end %>
-              <% end %>
-            </li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <% Sport.order(:name).each do |sport| %>
-              <li data-sport-search-target="item" data-sport-name="<%= sport.name.downcase %>">
-                <%= button_to switch_sport_path(sport), method: :post,
-                    class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{'sport-dropdown-item--active' if current_sport&.id == sport.id}",
-                    form: { "data-turbo": "false" } do %>
-                  <%= sport_icon(sport, size: "1.1rem") %>
-                  <span><%= sport.name %></span>
-                  <% if current_sport&.id == sport.id %>
-                    <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
-                  <% end %>
-                <% end %>
-              </li>
-            <% end %>
-          </ul>
-        </li>
-        <%# ── Fin sélecteur sport desktop ── %>
-      <% end %>
     </ul>
 
     <%# ══════════════════════════════════════════════════════
@@ -276,7 +222,7 @@
 
           <%# Dropdown desktop : Mon profil / Mon compte / Admin (si admin) / Déconnexion %>
           <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <%= link_to simple_profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+            <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
             <% end %>
             <%= link_to edit_user_registration_path,

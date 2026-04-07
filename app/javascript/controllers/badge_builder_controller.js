@@ -1,7 +1,6 @@
 // badge_builder_controller.js
 // Gère le générateur de blason SVG interactif sur le formulaire d'équipe.
-// Deux modes : "upload" (fichier image) ou "generator" (SVG généré côté client).
-// Options : 5 formes de fond, 16 couleurs, 24 symboles emoji.
+// Options : 5 formes de fond, 16 couleurs, 24 symboles emoji, logo personnalisé redimensionnable.
 import { Controller } from "@hotwired/stimulus"
 
 // ── Formes disponibles ────────────────────────────────────────────────────────
@@ -33,13 +32,12 @@ const SHAPES = {
 
 export default class extends Controller {
   static targets = [
-    "tabUpload",       // Bouton onglet "Uploader une image"
-    "tabGenerator",    // Bouton onglet "Générateur"
-    "panelUpload",     // Panneau upload
-    "panelGenerator",  // Panneau générateur
-    "preview",         // Div où le SVG live est rendu
-    "svgInput",        // Champ caché qui contient le SVG final
-    "fileInput"        // Input file pour l'upload
+    "preview",          // Div où le SVG live est rendu
+    "svgInput",         // Champ caché qui contient le SVG final
+    "logoInput",        // Input file pour le logo personnalisé
+    "logoSlider",       // Range input pour la taille du logo personnalisé
+    "logoScaleDisplay", // Affichage textuel de la taille (ex: "70%")
+    "logoControls"      // Conteneur du slider (affiché seulement si logo chargé)
   ]
 
   connect() {
@@ -47,39 +45,16 @@ export default class extends Controller {
     this.selectedShape = "shield"
     this.selectedColor = "#1EDD88"
     this.selectedEmoji = "⚽"
+    this.selectedLogoDataUrl = null  // null = utilise l'emoji, sinon Data URL base64
 
-    // Si un SVG est déjà enregistré, basculer sur le générateur
-    if (this.hasSvgInputTarget && this.svgInputTarget.value) {
-      this.showGenerator()
-    }
+    // Taille du logo personnalisé dans le SVG (0.3 à 1.1, défaut 0.7)
+    this.logoScale = 0.7
 
-    this._renderSVG()
-  }
-
-  // ── Onglets ──────────────────────────────────────────────────────────────────
-
-  showUpload() {
-    this.panelUploadTarget.style.display    = "block"
-    this.panelGeneratorTarget.style.display = "none"
-    this.tabUploadTarget.classList.add("active")
-    this.tabGeneratorTarget.classList.remove("active")
-    // Vide le SVG pour ne pas envoyer les deux
-    this.svgInputTarget.value = ""
-  }
-
-  showGenerator() {
-    this.panelUploadTarget.style.display    = "none"
-    this.panelGeneratorTarget.style.display = "block"
-    this.tabUploadTarget.classList.remove("active")
-    this.tabGeneratorTarget.classList.add("active")
-    // Vide l'input file pour ne pas envoyer les deux
-    if (this.hasFileInputTarget) this.fileInputTarget.value = ""
     this._renderSVG()
   }
 
   // ── Sélections ───────────────────────────────────────────────────────────────
 
-  // Appelé quand l'user clique sur une forme
   selectShape(event) {
     this.selectedShape = event.currentTarget.dataset.shape
     this.element.querySelectorAll(".badge-shape-btn").forEach(el => el.classList.remove("active"))
@@ -87,7 +62,6 @@ export default class extends Controller {
     this._renderSVG()
   }
 
-  // Appelé quand l'user clique sur une couleur de fond
   selectColor(event) {
     this.selectedColor = event.currentTarget.dataset.color
     this.element.querySelectorAll(".badge-color-swatch").forEach(el => el.classList.remove("active"))
@@ -95,7 +69,6 @@ export default class extends Controller {
     this._renderSVG()
   }
 
-  // Appelé quand l'user clique sur un symbole
   selectIcon(event) {
     this.selectedEmoji = event.currentTarget.dataset.iconEmoji
     this.element.querySelectorAll(".badge-icon-btn").forEach(el => el.classList.remove("active"))
@@ -103,19 +76,54 @@ export default class extends Controller {
     this._renderSVG()
   }
 
+  // ── Logo personnalisé ────────────────────────────────────────────────────────
+
+  // Lit le fichier en base64 Data URL et l'intègre dans le SVG à la place de l'emoji
+  selectLogo(event) {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      this.selectedLogoDataUrl = e.target.result
+      // Affiche le slider de taille
+      if (this.hasLogoControlsTarget) this.logoControlsTarget.style.display = "flex"
+      this._renderSVG()
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Ajuste la taille du logo dans le SVG
+  updateLogoScale(event) {
+    this.logoScale = parseFloat(event.target.value)
+    if (this.hasLogoScaleDisplayTarget) {
+      this.logoScaleDisplayTarget.textContent = Math.round(this.logoScale * 100) + "%"
+    }
+    this._renderSVG()
+  }
+
+  // Efface le logo et revient à l'emoji sélectionné
+  clearLogo() {
+    this.selectedLogoDataUrl = null
+    this.logoScale = 0.7
+    if (this.hasLogoInputTarget)        this.logoInputTarget.value = ""
+    if (this.hasLogoSliderTarget)       this.logoSliderTarget.value = "0.7"
+    if (this.hasLogoControlsTarget)     this.logoControlsTarget.style.display = "none"
+    if (this.hasLogoScaleDisplayTarget) this.logoScaleDisplayTarget.textContent = "70%"
+    this._renderSVG()
+  }
+
   // ── Rendu SVG ────────────────────────────────────────────────────────────────
 
-  // Génère le SVG complet : forme + fond coloré + bordure intérieure + emoji
   _renderSVG() {
-    const color  = this.selectedColor
-    const emoji  = this.selectedEmoji
-    const shape  = SHAPES[this.selectedShape] || SHAPES.shield
+    const color = this.selectedColor
+    const emoji = this.selectedEmoji
+    const shape = SHAPES[this.selectedShape] || SHAPES.shield
 
-    // ─ Éléments de fond (forme + dégradé subtil + bordure interne)
+    // ─ Fond : forme + dégradé subtil + bordure interne
     let bgElements = ""
 
     if (shape.clip) {
-      // Forme avec path SVG (bouclier, hexagone, diamant, pentagone)
       bgElements = `
         <defs>
           <linearGradient id="bg-grad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -140,13 +148,23 @@ export default class extends Controller {
       `
     }
 
-    // ─ Assemblage SVG final
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+    // ─ Symbole : logo uploadé en base64 ou emoji
+    let symbolElement
+    if (this.selectedLogoDataUrl) {
+      // Taille et centrage calculés depuis logoScale (0.3–1.1)
+      const size   = this.logoScale * 100
+      const offset = (100 - size) / 2
+      symbolElement = `<image href="${this.selectedLogoDataUrl}" x="${offset}" y="${offset}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`
+    } else {
+      symbolElement = `<text x="50" y="64" font-size="42" text-anchor="middle" dominant-baseline="auto">${emoji}</text>`
+    }
+
+    // ─ Assemblage final
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100" width="100" height="100">
       ${bgElements}
-      <text x="50" y="64" font-size="42" text-anchor="middle" dominant-baseline="auto">${emoji}</text>
+      ${symbolElement}
     </svg>`.trim()
 
-    // Affiche le preview et stocke dans le champ caché
     this.previewTarget.innerHTML = svg
     this.svgInputTarget.value    = svg
   }
