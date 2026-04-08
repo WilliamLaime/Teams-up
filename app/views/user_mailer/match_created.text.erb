@@ -1,0 +1,26 @@
+TEAMS-UP
+========
+
+Votre match "<%= @match.title %>" a bien été créé !
+
+Récapitulatif :
+  Date       : <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+<% if @match.venue.present? %>
+  Lieu       : <%= @match.venue.name %>, <%= @match.venue.city %>
+<% elsif @match.place.present? %>
+  Lieu       : <%= @match.place %>
+<% end %>
+  Places     : <%= @match.player_left %> disponibles
+  Niveau     : <%= @match.level %>
+  Validation : <%= @match.manual_validation? ? "Manuelle" : "Automatique" %>
+<% if @match.price_per_player.present? && @match.price_per_player > 0 %>
+  Prix       : <%= @match.price_per_player %> €/joueur
+<% end %>
+<% if @match.private? %>
+  Lien privé : <%= match_url(@match, token: @match.private_token) %>
+<% end %>
+
+Voir le match : <%= match_url(@match) %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

@@ -1,0 +1,19 @@
+TEAMS-UP
+========
+
+Tu as reçu un avis !
+
+<%= @reviewer.display_name %> t'a laissé un avis après le match "<%= @match.title %>".
+
+Note : <%= @avis.rating %>/5 (<%= "★" * @avis.rating %><%= "☆" * (5 - @avis.rating) %>)
+<% if @avis.content.present? %>
+
+"<%= @avis.content %>"
+— <%= @reviewer.display_name %>
+<% end %>
+
+Consulte ton profil pour voir l'impact sur ta note globale :
+<%= user_profil_url(@reviewed_user) %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

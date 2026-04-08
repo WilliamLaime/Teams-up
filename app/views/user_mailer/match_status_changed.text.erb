@@ -1,0 +1,29 @@
+TEAMS-UP
+========
+
+<% if @accepted %>
+Tu es dans le match — <%= @match.title %>
+
+Bonne nouvelle ! Ta demande a été acceptée par l'organisateur.
+Prépare-toi, le coup d'envoi approche !
+
+Voir le match : <%= match_url(@match) %>
+<% else %>
+Demande non retenue — <%= @match.title %>
+
+Ta demande pour rejoindre ce match n'a pas été retenue par l'organisateur.
+Ne te décourage pas, il y a plein d'autres matchs à rejoindre !
+
+Explorer d'autres matchs : <%= matches_url %>
+<% end %>
+
+Récapitulatif :
+  Match      : <%= @match.title %>
+  Date       : <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+<% if @match.venue.present? %>
+  Lieu       : <%= @match.venue.name %>, <%= @match.venue.city %>
+<% end %>
+  Organisé par : <%= @match.user.display_name %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

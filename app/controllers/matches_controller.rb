@@ -175,6 +175,16 @@ class MatchesController < ApplicationController
 
       # 🎮 Vérifier les achievements liés à la création de match
       AchievementService.new(current_user).check(:match_created)
+
+      # Email de confirmation avec récapitulatif du match pour l'organisateur
+      UserMailer.match_created(@match).deliver_later
+
+      # Planifie le rappel 24h avant le match pour tous les participants approuvés.
+      # On vérifie qu'il reste plus de 24h avant le match pour éviter un job inutile
+      # (ex: match créé à J-2h → le rappel serait déjà passé).
+      reminder_time = @match.build_datetime - 24.hours
+      MatchReminderJob.set(wait_until: reminder_time).perform_later(@match.id) if reminder_time > Time.current
+
       redirect_to @match, notice: "Match créé avec succès !"
     else
       @my_captained_teams = current_user.captained_teams.order(:name)
@@ -215,9 +225,13 @@ class MatchesController < ApplicationController
                          .where(status: ["approved", "pending", "waiting"])
                          .includes(:user)
 
-    # Notifie chaque participant en temps réel si il est sur la page du match
+    # Notifie chaque participant en temps réel si il est sur la page du match,
+    # et envoie un email transactionnel pour les utilisateurs absents.
+    # IMPORTANT : les emails sont envoyés AVANT @match.destroy pour que les
+    # associations (venue, sport, user) soient encore accessibles dans les vues.
     participants.each do |mu|
       broadcast_match_cancelled_to_participant(mu.user)
+      UserMailer.match_cancelled(@match, mu.user).deliver_later
     end
 
     @match.destroy
