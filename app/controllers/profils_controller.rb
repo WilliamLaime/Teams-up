@@ -137,7 +137,15 @@ class ProfilsController < ApplicationController
     skip_authorization
     @profil.update_column(:onboarding_shown_at, Time.current)
 
-    redirect_to params[:redirect_to].presence || root_path
+    # Sécurité : on n'accepte que les chemins locaux (commençant par /)
+    # pour éviter un open redirect vers un domaine externe (phishing).
+    # Un attaquant pourrait forger ?redirect_to=https://evil.com → rejeté.
+    destination = params[:redirect_to].presence
+    if destination&.start_with?("/")
+      redirect_to destination
+    else
+      redirect_to root_path
+    end
   end
 
   # DELETE /profil/dismiss_reminder

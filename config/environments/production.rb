@@ -24,14 +24,18 @@ Rails.application.configure do
   # Stockage des fichiers sur Cloudinary (voir config/storage.yml et .env pour les credentials)
   config.active_storage.service = :cloudinary
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
+  # Heroku termine le SSL au niveau du reverse proxy (load balancer).
+  # assume_ssl indique à Rails de considérer toutes les requêtes comme HTTPS,
+  # ce qui garantit que les cookies de session ont le flag "Secure".
+  config.assume_ssl = true
 
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  # Force la redirection HTTP → HTTPS et active l'en-tête Strict-Transport-Security (HSTS).
+  # HSTS dit au navigateur de ne jamais contacter le site en HTTP pendant 2 ans.
+  config.force_ssl = true
 
-  # Skip http-to-https redirect for the default health check endpoint.
-  # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
+  # Exclure le health check Heroku de la redirection SSL
+  # (Heroku le ping en HTTP depuis l'intérieur de l'infrastructure)
+  config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
   # Log to STDOUT with the current request id as a default log tag.
   config.log_tags = [ :request_id ]
@@ -87,12 +91,19 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Protection contre les attaques d'injection d'en-tête Host (DNS rebinding).
+  # Rails vérifie que chaque requête utilise bien l'un de ces domaines autorisés.
+  # Sans cette liste, un attaquant pourrait forger l'en-tête Host pour rediriger
+  # les URLs générées (emails, redirects) vers son propre domaine.
+  config.hosts = [
+    "teams-up-sport.com",
+    "www.teams-up-sport.com",
+    "teams-up-sport.fr",
+    "www.teams-up-sport.fr",
+    "www.teams-up.fit",
+    /.*\.herokuapp\.com/   # domaine Heroku natif (health checks, deploy checks)
+  ]
+
+  # Le health check Heroku (/up) est appelé sans Host header parfois → on l'exclut
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end
