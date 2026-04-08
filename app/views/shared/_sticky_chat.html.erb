@@ -7,24 +7,39 @@
 %>
 <% if user_signed_in? %>
 
-  <%# ── Conversations de matchs (onglet "Matchs") ──────────────────────────
-      Récupère les match_users actifs (non-dismissés, matchs non terminés) %>
+  <%# ── Conversations de matchs + équipes (onglet "Chats") ────────────────
+      On charge les deux listes puis on les fusionne en un seul tri
+      par date du DERNIER MESSAGE (pas de création), pour que la conv
+      la plus récente apparaisse toujours en premier, même après rechargement. %>
   <%
     active_match_users = current_user.match_users
       .where("status = 'approved' OR role = 'organisateur'")
       .where(chat_dismissed_at: nil)
       .includes(:match)
 
-    sticky_convos = active_match_users
-      .select { |mu| !mu.match.past? }
-      .sort_by { |mu| mu.match.created_at }
-      .reverse
-  %>
-
-  <%# ── Conversations d'équipe (intégrées dans l'onglet "Matchs") ───────────
-      Récupère les équipes dont l'utilisateur est membre %>
-  <%
     user_team_members = current_user.team_members.includes(:team)
+
+    # Récupère la date du dernier message pour chaque match (1 seule requête GROUP BY)
+    active_match_ids = active_match_users.map(&:match_id)
+    match_last_msg = active_match_ids.any? \
+      ? Message.where(match_id: active_match_ids).group(:match_id).maximum(:created_at)
+      : {}
+
+    # Récupère la date du dernier message pour chaque équipe (1 seule requête GROUP BY)
+    team_ids = user_team_members.map(&:team_id)
+    team_last_msg = team_ids.any? \
+      ? Message.where(team_id: team_ids).group(:team_id).maximum(:created_at)
+      : {}
+
+    # Fusionne les deux listes avec leur timestamp d'activité, puis trie du plus récent au plus ancien
+    all_convos = []
+    active_match_users.select { |mu| !mu.match.past? }.each do |mu|
+      all_convos << { type: :match, obj: mu, last_at: match_last_msg[mu.match_id] || mu.match.created_at }
+    end
+    user_team_members.each do |tm|
+      all_convos << { type: :team, obj: tm, last_at: team_last_msg[tm.team_id] || tm.team.created_at }
+    end
+    all_convos.sort_by! { |c| c[:last_at] }.reverse!
   %>
 
   <%# ── Conversations privées (onglet "Messages") ───────────────────────────
@@ -122,22 +137,21 @@
                       Si l'élément n'existe pas lors du broadcast, rien ne s'affiche. %>
                   <div id="sticky-chat-sidebar-list">
 
-                    <%# ── Conversations d'équipe (point bleu) — en premier ── %>
-                    <% if user_team_members.any? %>
-                      <% user_team_members.each do |tm| %>
-                        <%= render "shared/team_convo_item", team: tm.team, team_member: tm %>
+                    <%# Liste fusionnée matchs + équipes, triée par dernière activité chat %>
+                    <% all_convos.each do |convo| %>
+                      <% if convo[:type] == :match %>
+                        <%= render "shared/sticky_convo_item",
+                                   match: convo[:obj].match,
+                                   match_user: convo[:obj] %>
+                      <% else %>
+                        <%= render "shared/team_convo_item",
+                                   team: convo[:obj].team,
+                                   team_member: convo[:obj] %>
                       <% end %>
                     <% end %>
 
-                    <%# ── Conversations de match (point vert) ── %>
-                    <% if sticky_convos.any? %>
-                      <% sticky_convos.each do |mu| %>
-                        <%= render "shared/sticky_convo_item", match: mu.match, match_user: mu %>
-                      <% end %>
-                    <% end %>
-
-                    <%# Message vide si aucune conversation dans aucune catégorie %>
-                    <% if sticky_convos.empty? && user_team_members.empty? %>
+                    <%# Message vide si aucune conversation %>
+                    <% if all_convos.empty? %>
                       <div class="sticky-chat-sidebar-empty" id="sticky-chat-sidebar-empty">
                         <div>⚽</div>
                         <p>Rejoins un match ou une équipe pour chatter !</p>

@@ -47,6 +47,15 @@ class Match < ApplicationRecord
   # La vue s'abonne avec <%= turbo_stream_from "matches" %>
   broadcasts_to ->(_match) { "matches" }
 
+  # Avant la suppression, on mémorise la liste des participants (leurs user_id)
+  # prepend: true → s'exécute AVANT le dependent: :destroy de match_users
+  # sinon match_users est déjà vide au moment du pluck.
+  before_destroy :cache_participant_ids, prepend: true
+
+  # Après la suppression du match, retire l'item de chat de la sidebar
+  # pour chaque participant connecté, en temps réel via Turbo Stream.
+  after_destroy :broadcast_chat_removal
+
   # Scope public : matchs ouverts à l'inscription (pas encore commencés)
   # Dès l'heure du match → match "verrouillé" : retiré de l'index, on ne peut plus rejoindre
   scope :upcoming, -> { where("(date + time) > ?", Time.current) }
@@ -219,6 +228,24 @@ class Match < ApplicationRecord
   end
 
   private
+
+  def cache_participant_ids
+    # Inclut les joueurs (match_users) + le créateur du match (user_id)
+    # car le créateur est stocké sur la colonne user_id du match et peut
+    # ne pas avoir de match_users record dans certains cas.
+    ids = match_users.pluck(:user_id)
+    ids << user_id if user_id.present?
+    @participant_ids_before_destroy = ids.uniq
+  end
+
+  def broadcast_chat_removal
+    @participant_ids_before_destroy.to_a.each do |user_id|
+      Turbo::StreamsChannel.broadcast_remove_to(
+        "user_conversations_#{user_id}",
+        target: "sticky-convo-#{id}"
+      )
+    end
+  end
 
   # Génère un token URL-safe unique (ex: "aB3xZ9qR")
   # Boucle jusqu'à trouver un token qui n'existe pas encore en base

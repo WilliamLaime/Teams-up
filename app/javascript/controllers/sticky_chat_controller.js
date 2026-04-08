@@ -139,13 +139,25 @@ export default class extends Controller {
     }
   }
 
-  // ── Sélectionner une conversation (highlight dans la sidebar) ─────────────
+  // ── Sélectionner une conversation (highlight + focus automatique sur l'input) ──
   // Appelé par data-action="click->sticky-chat#selectConvo" sur chaque lien.
   selectConvo(event) {
+    // 1. Highlight de la conversation active dans la sidebar
     this.element.querySelectorAll(".sticky-chat-convo-link").forEach(link => {
       link.classList.remove("sticky-chat-convo-link--active")
     })
     event.currentTarget.classList.add("sticky-chat-convo-link--active")
+
+    // 2. Focus l'input dès que le turbo-frame a fini de charger le nouveau chat.
+    //    On écoute "turbo:frame-load" en one-shot sur le frame concerné.
+    const frame = document.getElementById("sticky-chat-frame")
+    if (!frame) return
+
+    frame.addEventListener("turbo:frame-load", () => {
+      // Cherche le textarea ou input de saisie dans le frame qui vient de charger
+      const input = frame.querySelector("textarea, input[type='text']")
+      if (input) input.focus()
+    }, { once: true }) // once: true → l'écouteur se supprime automatiquement après le premier déclenchement
   }
 
   // ── Fermer la modale puis naviguer vers le profil d'un utilisateur ─────────

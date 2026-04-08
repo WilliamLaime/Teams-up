@@ -38,6 +38,14 @@ class Team < ApplicationRecord
   # Quand une équipe est créée, on ajoute automatiquement le captain comme membre
   after_create :add_captain_as_member
 
+  # Avant la suppression, on mémorise les ids des membres
+  # car après destroy les team_members auront déjà été supprimés en cascade.
+  before_destroy :cache_member_ids
+
+  # Après la suppression de l'équipe, retire l'item de chat de la sidebar
+  # pour chaque membre connecté, en temps réel via Turbo Stream.
+  after_destroy :broadcast_chat_removal
+
   # ── Méthodes d'instance ────────────────────────────────────────────────────
 
   # Retourne vrai si l'user donné est le captain de l'équipe
@@ -76,5 +84,18 @@ class Team < ApplicationRecord
       role:      "captain",
       joined_at: Time.current
     )
+  end
+
+  def cache_member_ids
+    @member_ids_before_destroy = team_members.pluck(:user_id)
+  end
+
+  def broadcast_chat_removal
+    @member_ids_before_destroy.to_a.each do |user_id|
+      Turbo::StreamsChannel.broadcast_remove_to(
+        "user_conversations_#{user_id}",
+        target: "sticky-team-convo-#{id}"
+      )
+    end
   end
 end
