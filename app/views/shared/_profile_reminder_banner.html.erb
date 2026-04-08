@@ -1,0 +1,37 @@
+<%# ── Banner de rappel "Complète ton profil" ─────────────────────────────────
+    Affiché 7 jours après l'inscription si le profil est toujours incomplet
+    (preferred_city absent) et que l'utilisateur n'a pas encore fermé le banner.
+    Rendu par le layout si @show_profile_reminder_banner est vrai.
+    Le bouton "×" appelle dismiss_reminder_profil_path via Turbo (DELETE),
+    qui marque profile_reminder_dismissed_at et retire le banner du DOM. %>
+
+<div id="profile-reminder-banner" class="profile-reminder-banner">
+  <div class="profile-reminder-banner__inner">
+
+    <%# Icône + message %>
+    <div class="profile-reminder-banner__content">
+      <i data-lucide="settings" style="width:18px;height:18px;color:#1EDD88;flex-shrink:0;"></i>
+      <span>
+        <strong>Améliore tes suggestions de matchs !</strong>
+        Ajoute ta ville et tes lieux favoris pour trouver des matchs près de chez toi.
+      </span>
+    </div>
+
+    <%# Actions %>
+    <div class="profile-reminder-banner__actions">
+      <%= link_to "Compléter mon profil",
+                  edit_profil_path,
+                  class: "profile-reminder-banner__cta" %>
+
+      <%# Bouton de fermeture — DELETE /profil/dismiss_reminder via Turbo %>
+      <%= button_to dismiss_reminder_profil_path,
+                    method: :delete,
+                    class: "profile-reminder-banner__close",
+                    title: "Fermer",
+                    data: { turbo_stream: true } do %>
+        <i data-lucide="x" style="width:16px;height:16px;"></i>
+      <% end %>
+    </div>
+
+  </div>
+</div>

@@ -19,6 +19,9 @@ class ApplicationController < ActionController::Base
   # Le flag est posé par after_sign_in_path_for juste après le login
   before_action :load_review_modal_data
 
+  # Avant chaque action : détermine si la modale ou le banner d'onboarding doit s'afficher
+  before_action :set_onboarding_flags
+
   # Retourne true si l'utilisateur est en mode "Multisport" (tous les sports)
   def multisport_mode?
     user_signed_in? && session[:current_sport_id] == "all"
@@ -56,6 +59,29 @@ class ApplicationController < ActionController::Base
   # Ignore Pundit pour Devise et les pages publiques
   def skip_pundit?
     devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)/
+  end
+
+  # ── Onboarding post-inscription ──────────────────────────────────────────
+
+  # Détecte si l'utilisateur connecté a besoin de voir la modale d'onboarding
+  # ou le banner de rappel (7 jours après, profil incomplet).
+  #
+  # IMPORTANT : on ne marque PAS onboarding_shown_at ici.
+  # Le flag est posé uniquement quand l'utilisateur clique l'un des deux boutons
+  # de la modale (via ProfilsController#dismiss_onboarding).
+  # Cela garantit que la modale est affichée jusqu'à ce que l'user l'ait vraiment vue,
+  # même si Devise l'a redirigé à travers plusieurs pages après la confirmation d'email.
+  def set_onboarding_flags
+    return unless user_signed_in?
+
+    profil = current_user.profil
+    return unless profil
+
+    if profil.needs_onboarding_modal?
+      @show_onboarding_modal = true
+    elsif profil.needs_profile_reminder?
+      @show_profile_reminder_banner = true
+    end
   end
 
   # ── Système de modal post-match ───────────────────────────────────────────

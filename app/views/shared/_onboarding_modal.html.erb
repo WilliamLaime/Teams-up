@@ -1,0 +1,80 @@
+<%# ── Modale d'onboarding post-inscription ────────────────────────────────────
+    Affichée jusqu'à ce que l'utilisateur interagisse avec l'un des deux boutons.
+    onboarding_shown_at est posé par ProfilsController#dismiss_onboarding (PAS dans le before_action)
+    ce qui garantit que chaque user la voit vraiment, même après les redirects Devise. %>
+
+<div class="modal fade"
+     id="onboarding-modal"
+     tabindex="-1"
+     aria-labelledby="onboardingModalLabel"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content onboarding-modal-content">
+
+      <%# ── En-tête ─────────────────────────────────────────────────────────── %>
+      <div class="onboarding-modal-header">
+        <div class="onboarding-modal-icon">
+          <i data-lucide="map-pin" style="width:28px;height:28px;color:#1EDD88;"></i>
+        </div>
+        <h5 class="onboarding-modal-title" id="onboardingModalLabel">
+          Bienvenue sur Team Up !
+        </h5>
+        <p class="onboarding-modal-subtitle">
+          Pour te suggérer les meilleurs matchs près de chez toi,
+          complète ton profil en 30 secondes.
+        </p>
+      </div>
+
+      <%# ── Corps : avantages à compléter son profil ─────────────────────────── %>
+      <div class="onboarding-modal-body">
+        <ul class="onboarding-benefits-list">
+          <li>
+            <i data-lucide="map-pin" style="width:16px;height:16px;color:#1EDD88;flex-shrink:0;"></i>
+            <span>Matchs <strong>près de ta ville</strong></span>
+          </li>
+          <li>
+            <i data-lucide="bar-chart-2" style="width:16px;height:16px;color:#1EDD88;flex-shrink:0;"></i>
+            <span>Suggestions <strong>adaptées à ton niveau</strong></span>
+          </li>
+          <li>
+            <i data-lucide="heart" style="width:16px;height:16px;color:#1EDD88;flex-shrink:0;"></i>
+            <span>Tes <strong>salles et terrains favoris</strong> en priorité</span>
+          </li>
+        </ul>
+      </div>
+
+      <%# ── Pied : deux actions ──────────────────────────────────────────────── %>
+      <div class="onboarding-modal-footer">
+
+        <%# Bouton principal : marque la modale comme vue ET redirige vers le profil %>
+        <%= button_to dismiss_onboarding_profil_path(redirect_to: edit_profil_path),
+                      method: :post,
+                      class: "btn btn-primary btn-cta-primary w-100 mb-2" do %>
+          Compléter mon profil
+        <% end %>
+
+        <%# Bouton secondaire : marque la modale comme vue, reste sur la page courante %>
+        <%= button_to dismiss_onboarding_profil_path,
+                      method: :post,
+                      class: "btn btn-cta-secondary w-100" do %>
+          Merci, je regarderai plus tard
+        <% end %>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%# Ouvre la modale automatiquement dès le chargement de la page %>
+<script>
+  document.addEventListener("turbo:load", function openOnboardingModal() {
+    var modal = document.getElementById("onboarding-modal");
+    if (modal && typeof bootstrap !== "undefined") {
+      bootstrap.Modal.getOrCreateInstance(modal).show();
+    }
+  }, { once: true });
+</script>

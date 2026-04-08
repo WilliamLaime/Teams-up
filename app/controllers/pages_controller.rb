@@ -1,6 +1,6 @@
 class PagesController < ApplicationController
   # Ces pages sont publiques (pas besoin d'être connecté)
-  skip_before_action :authenticate_user!, only: %i[home about contact partenariat confidentialite conditions offline]
+  skip_before_action :authenticate_user!, only: %i[home about contact partenariat confidentialite conditions offline email_confirmation]
 
   # Rails 7.1 vérifie au chargement que les actions dans `only:` existent.
   # PagesController n'a pas d'action `index`, donc on désactive les callbacks Pundit.
@@ -9,6 +9,13 @@ class PagesController < ApplicationController
 
   def about
     # Pas de données à charger — page statique
+  end
+
+  # Page affichée juste après l'inscription, avant confirmation de l'email.
+  # Devise redirige ici via after_inactive_sign_up_path_for (RegistrationsController).
+  # L'email est stocké en session pour l'afficher sur la page.
+  def email_confirmation
+    @confirmation_email = session.delete(:confirmation_pending_email)
   end
 
   def offline
