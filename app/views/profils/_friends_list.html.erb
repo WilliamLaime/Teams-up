@@ -46,19 +46,63 @@
             <% end %>
             <%# Bouton Retirer visible uniquement sur son propre profil %>
             <% if local_assigns[:own_profile] %>
-              <%# data-turbo-frame="_top" → force navigation complète pour afficher le toast flash %>
-              <%= button_to user_friendship_path(friend),
-                    method: :delete,
-                    data: { turbo_frame: "_top" },
-                    style: "display:inline-flex; align-items:center; justify-content:center;
-                            width:20px; height:20px; padding:0;
-                            color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.04);
-                            border:1px solid rgba(255,255,255,0.08); border-radius:50%;
-                            cursor:pointer; flex-shrink:0;",
-                    title: "Retirer #{friend.display_name} de vos amis" do %>
+              <% remove_modal_id = "removeFriendListModal#{friend.id}" %>
+              <%# Bouton qui ouvre la modale de confirmation (ne supprime pas directement) %>
+              <button type="button"
+                      data-bs-toggle="modal"
+                      data-bs-target="#<%= remove_modal_id %>"
+                      style="display:inline-flex; align-items:center; justify-content:center;
+                             width:20px; height:20px; padding:0;
+                             color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.04);
+                             border:1px solid rgba(255,255,255,0.08); border-radius:50%;
+                             cursor:pointer; flex-shrink:0;"
+                      title="Retirer <%= friend.display_name %> de vos amis">
                 <i data-lucide="x" style="width:10px; height:10px;"></i>
-              <% end %>
-            <% end %>
+              </button>
+
+              <%# Modale hissée hors du conteneur via content_for :modals
+                  (évite les problèmes de z-index causés par les contextes de stacking CSS) %>
+              <% content_for :modals do %>
+              <div class="modal fade" id="<%= remove_modal_id %>" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-sm">
+                  <div class="modal-content" style="background:#111111; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+
+                    <div class="modal-body text-center" style="padding:1.5rem 1.5rem 1rem;">
+                      <div style="font-size:2rem; margin-bottom:0.75rem;">👋</div>
+                      <p style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
+                        Retirer <%= friend.profil&.first_name || friend.display_name %> ?
+                      </p>
+                      <p style="color:rgba(255,255,255,0.45); font-size:0.8rem; margin:0;">
+                        Vous ne serez plus amis et ne pourrez plus vous envoyer de messages.
+                      </p>
+                    </div>
+
+                    <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
+                      <%# Annuler — ferme juste la modale %>
+                      <button type="button"
+                              data-bs-dismiss="modal"
+                              style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);
+                                     background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+                                     border-radius:20px; padding:0.4rem 1rem; cursor:pointer;">
+                        Annuler
+                      </button>
+
+                      <%# Confirmer — soumet la vraie requête DELETE %>
+                      <%= button_to user_friendship_path(friend),
+                            method: :delete,
+                            data: { turbo_frame: "_top" },
+                            style: "font-size:0.8rem; font-weight:700; color:#fff;
+                                    background:rgba(220,53,69,0.8); border:1px solid rgba(220,53,69,0.5);
+                                    border-radius:20px; padding:0.4rem 1rem; cursor:pointer;" do %>
+                        Retirer
+                      <% end %>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            <% end %> <%# fin content_for :modals %>
+            <% end %> <%# fin if own_profile %>
           </div>
         <% end %>
       </div>
