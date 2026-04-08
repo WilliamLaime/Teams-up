@@ -227,6 +227,12 @@ class Match < ApplicationRecord
     build_datetime < Time.current - 1.hour
   end
 
+  # Construit un DateTime combinant les champs date et time du match.
+  # Public car utilisé par le controller (rappel 24h) et les méthodes internes.
+  def build_datetime
+    Time.zone.local(date.year, date.month, date.day, time.hour, time.min, 0)
+  end
+
   private
 
   def cache_participant_ids
@@ -257,11 +263,6 @@ class Match < ApplicationRecord
         break
       end
     end
-  end
-
-  # Construit un DateTime combinant les champs date et time du match
-  def build_datetime
-    Time.zone.local(date.year, date.month, date.day, time.hour, time.min, 0)
   end
 
   # Vérifie que le match est prévu au moins 30 min dans le futur
