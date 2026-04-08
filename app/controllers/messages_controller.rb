@@ -21,28 +21,24 @@ class MessagesController < ApplicationController
         # Met à jour l'objet en mémoire pour que le partial voie la bonne valeur
         @team_member.chat_last_read_at = now
 
-        # Déplace la conv en tête de sidebar pour l'expéditeur (sans badge non-lu)
-        # Fait ICI après mise à jour de chat_last_read_at → unread = false pour l'expéditeur
-        Turbo::StreamsChannel.broadcast_remove_to(
-          "user_conversations_#{current_user.id}",
-          target: "sticky-team-convo-#{@team.id}"
-        )
-        Turbo::StreamsChannel.broadcast_prepend_to(
-          "user_conversations_#{current_user.id}",
-          target: "sticky-chat-sidebar-list",
-          partial: "shared/team_convo_item",
-          locals: { team: @team, team_member: @team_member }
-        )
-
-        # Le broadcast est géré par after_create_commit dans le modèle
-        # On réinitialise les deux formulaires (sticky chat + page équipe)
+        # Le broadcast des messages aux autres membres est géré par after_create_commit
+        # dans le modèle Message. La mise à jour de la sidebar de l'EXPÉDITEUR est incluse
+        # directement dans la réponse HTTP Turbo Stream pour garantir la fiabilité.
         respond_to do |format|
           format.turbo_stream do
             render turbo_stream: [
+              # 1. Déplace la conversation d'équipe en tête de la sidebar
+              turbo_stream.remove("sticky-team-convo-#{@team.id}"),
+              turbo_stream.prepend("sticky-chat-sidebar-list",
+                partial: "shared/team_convo_item",
+                locals: { team: @team, team_member: @team_member }
+              ),
+              # 2. Réinitialise le formulaire du sticky chat
               turbo_stream.update("sticky-chat-form",
                 partial: "messages/form",
                 locals: { team: @team, message: Message.new }
               ),
+              # 3. Réinitialise le formulaire de la page équipe (si ouvert)
               turbo_stream.update("team-chat-form",
                 partial: "messages/form",
                 locals: { team: @team, message: Message.new }
@@ -73,34 +69,41 @@ class MessagesController < ApplicationController
           sender_mu.update_column(:last_read_at, now)
           # Met à jour l'objet en mémoire pour que le partial voie la bonne valeur
           sender_mu.last_read_at = now
-
-          # Déplace la conv en tête de sidebar pour l'expéditeur (sans badge non-lu)
-          Turbo::StreamsChannel.broadcast_remove_to(
-            "user_conversations_#{current_user.id}",
-            target: "sticky-convo-#{@match.id}"
-          )
-          Turbo::StreamsChannel.broadcast_prepend_to(
-            "user_conversations_#{current_user.id}",
-            target: "sticky-chat-sidebar-list",
-            partial: "shared/sticky_convo_item",
-            locals: { match: @match, match_user: sender_mu }
-          )
         end
 
-        # Le broadcast est géré par after_create_commit dans le modèle
-        # On réinitialise les formulaires via Turbo Stream (vide le champ texte)
+        # Le broadcast des messages aux autres participants est géré par after_create_commit
+        # dans le modèle Message. La mise à jour de la sidebar de l'EXPÉDITEUR est incluse
+        # directement dans la réponse HTTP Turbo Stream (ci-dessous) pour garantir la fiabilité :
+        # un broadcast ActionCable asynchrone pouvait parfois arriver en décalé, causant
+        # la disparition temporaire du chat dans la sidebar.
         respond_to do |format|
           format.turbo_stream do
-            render turbo_stream: [
+            streams = [
+              # 1. Réinitialise le formulaire de la page match (si ouvert)
               turbo_stream.update("chat-form",
                 partial: "messages/form",
                 locals: { match: @match, message: Message.new }
               ),
+              # 2. Réinitialise le formulaire du sticky chat
               turbo_stream.update("sticky-chat-form",
                 partial: "messages/form",
                 locals: { match: @match, message: Message.new }
               )
             ]
+
+            # 3. Déplace la conversation en tête de la sidebar pour l'expéditeur
+            #    (supprime de sa position actuelle puis insère en premier)
+            if sender_mu
+              streams.unshift(
+                turbo_stream.remove("sticky-convo-#{@match.id}"),
+                turbo_stream.prepend("sticky-chat-sidebar-list",
+                  partial: "shared/sticky_convo_item",
+                  locals: { match: @match, match_user: sender_mu }
+                )
+              )
+            end
+
+            render turbo_stream: streams
           end
           format.html { redirect_to @match }
         end
@@ -111,10 +114,10 @@ class MessagesController < ApplicationController
     elsif @conversation
       # ── Message privé ────────────────────────────────────────────────────
 
-      # Capture l'état AVANT le save : on en a besoin après pour choisir prepend vs replace
+      # Capture l'état AVANT le save : on en a besoin après pour choisir prepend vs remove+prepend
       # - Premier message : l'item n'est pas encore dans la sidebar de l'expéditeur
       # - Expéditeur avait masqué la conv : l'item a été retiré du DOM
-      # Dans les deux cas → prepend. Sinon → replace.
+      # Dans les deux cas → prepend seul. Sinon → remove puis prepend.
       is_first_message    = !Message.exists?(private_conversation_id: @conversation.id)
       sender_was_dismissed = @conversation.dismissed_for?(current_user)
 
@@ -135,36 +138,31 @@ class MessagesController < ApplicationController
           @conversation.update_column(col, nil)
         end
 
-        # Met à jour la sidebar de l'expéditeur (aperçu du dernier message, sans badge non-lu)
-        # Fait ICI après mark_read_for! : unread_for?(current_user) retourne false → pas de voyant
-        # (Si on le faisait dans le model callback, mark_read_for! n'est pas encore appelé)
-        if is_first_message || sender_was_dismissed
-          # Item absent du DOM (premier message ou conv masquée) → insère en haut
-          Turbo::StreamsChannel.broadcast_prepend_to(
-            "user_conversations_#{current_user.id}",
-            target:  "private-chat-sidebar-list",
-            partial: "shared/private_convo_item",
-            locals:  { conversation: @conversation, current_user: current_user }
-          )
-        else
-          # Item déjà présent → supprime de sa position puis insère en tête
-          Turbo::StreamsChannel.broadcast_remove_to(
-            "user_conversations_#{current_user.id}",
-            target: "private-convo-#{@conversation.id}"
-          )
-          Turbo::StreamsChannel.broadcast_prepend_to(
-            "user_conversations_#{current_user.id}",
-            target:  "private-chat-sidebar-list",
-            partial: "shared/private_convo_item",
-            locals:  { conversation: @conversation, current_user: current_user }
-          )
-        end
-
-        # Réinitialise le formulaire via Turbo Stream
+        # La mise à jour de la sidebar de l'expéditeur est incluse directement dans la réponse
+        # HTTP Turbo Stream pour garantir la fiabilité (pas de broadcast ActionCable asynchrone).
+        # Le broadcast aux DESTINATAIRES reste géré par after_create_commit dans le modèle.
         respond_to do |format|
           format.turbo_stream do
-            render turbo_stream: turbo_stream.update(
-              "sticky-chat-form",
+            streams = []
+
+            # 1. Déplace la conversation privée en tête de la sidebar de l'expéditeur
+            if is_first_message || sender_was_dismissed
+              # Item absent du DOM (premier message ou conv masquée) → insère en haut
+              streams << turbo_stream.prepend("private-chat-sidebar-list",
+                partial: "shared/private_convo_item",
+                locals:  { conversation: @conversation, current_user: current_user }
+              )
+            else
+              # Item déjà présent → supprime de sa position puis insère en tête
+              streams << turbo_stream.remove("private-convo-#{@conversation.id}")
+              streams << turbo_stream.prepend("private-chat-sidebar-list",
+                partial: "shared/private_convo_item",
+                locals:  { conversation: @conversation, current_user: current_user }
+              )
+            end
+
+            # 2. Réinitialise le formulaire du sticky chat
+            streams << turbo_stream.update("sticky-chat-form",
               partial: "messages/form",
               locals: {
                 match: nil,
@@ -172,6 +170,8 @@ class MessagesController < ApplicationController
                 private_conversation: @conversation
               }
             )
+
+            render turbo_stream: streams
           end
           format.html { redirect_to private_conversation_path(@conversation) }
         end
