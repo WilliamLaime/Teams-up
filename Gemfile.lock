@@ -558,9 +558,8 @@ DEPENDENCIES
   importmap-rails
   jbuilder
   kamal
-  letter_opener
-  meta-tags
   letter_opener_web
+  meta-tags
   omniauth-google-oauth2
   omniauth-rails_csrf_protection
   pagy (~> 9.0)
