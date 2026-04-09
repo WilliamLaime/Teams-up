@@ -1,0 +1,30 @@
+TEAMS-UP
+========
+
+<% if @status == "waiting" %>
+Nouvelle mise en file d'attente — <%= @match.title %>
+
+<%= @joining_user.display_name %> s'est inscrit en file d'attente pour votre match.
+Il sera automatiquement promu si une place se libère.
+<% elsif @status == "pending" %>
+Nouvelle demande de participation — <%= @match.title %>
+
+<%= @joining_user.display_name %> souhaite rejoindre votre match.
+Rendez-vous sur la page du match pour accepter ou refuser sa demande.
+<% else %>
+Nouveau joueur dans votre match — <%= @match.title %>
+
+<%= @joining_user.display_name %> a rejoint votre match.
+Il reste <%= @match.player_left %> place(s) disponible(s).
+<% end %>
+
+Récapitulatif :
+  Date : <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+<% if @match.venue.present? %>
+  Lieu : <%= @match.venue.name %>, <%= @match.venue.city %>
+<% end %>
+
+Voir le match : <%= match_url(@match) %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

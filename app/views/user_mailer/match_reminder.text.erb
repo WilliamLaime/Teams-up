@@ -1,0 +1,23 @@
+TEAMS-UP
+========
+
+⏰ Rappel — "<%= @match.title %>" c'est demain !
+
+Prépare tes affaires, le match approche !
+
+Infos du match :
+  Quand  : <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+<% if @match.venue.present? %>
+  Où     : <%= @match.venue.name %>, <%= @match.venue.address %>, <%= @match.venue.city %>
+<% elsif @match.place.present? %>
+  Où     : <%= @match.place %>
+<% end %>
+  Orga   : <%= @match.user.display_name %>
+<% if @match.price_per_player.present? && @match.price_per_player > 0 %>
+  Prix   : <%= @match.price_per_player %> € à prévoir
+<% end %>
+
+Voir le match : <%= match_url(@match) %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

@@ -7,9 +7,9 @@ class MatchUser < ApplicationRecord
   STATUSES = ["pending", "approved", "rejected", "waiting"].freeze
 
   # ── Callbacks Turbo Stream pour le sticky chat ──────────────────────────────
-  # Quand un utilisateur est créé en tant qu'organisateur → ajoute la conv en temps réel
+  # Quand un utilisateur rejoint un match (organisateur OU joueur auto-approuvé) → ajoute la conv en temps réel
   after_create_commit :broadcast_new_convo_to_sidebar,
-                      if: -> { role == "organisateur" }
+                      if: -> { role == "organisateur" || status == "approved" }
 
   # Quand un joueur passe à "approved" → ajoute la conv en temps réel dans sa sidebar
   after_update_commit :broadcast_new_convo_to_sidebar,

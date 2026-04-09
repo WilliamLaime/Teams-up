@@ -1,0 +1,90 @@
+<%# ── Email : un joueur a rejoint votre match ────────────────────────────── %>
+<%# Envoyé à l'organisateur quand un joueur s'inscrit (auto, manuel ou file) %>
+<%# Inline CSS obligatoire — les clients mail ignorent les feuilles de style externes %>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #111111; padding: 40px 20px; min-height: 100vh;">
+
+  <%# Carte centrale %>
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+
+    <%# En-tête logo %>
+    <div style="background-color: #111111; padding: 28px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <span style="font-size: 1.6rem; font-weight: 800; color: #f0f0f0; letter-spacing: -0.5px;">
+        TEAMS<span style="color: #1EDD88;">-UP</span>
+      </span>
+    </div>
+
+    <%# Corps %>
+    <div style="padding: 36px 40px;">
+
+      <%# Icône selon le statut d'inscription %>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; background-color: rgba(30, 221, 136, 0.12); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">
+          <% if @status == "waiting" %>⏳<% elsif @status == "pending" %>🔔<% else %>⚽<% end %>
+        </div>
+      </div>
+
+      <%# Titre %>
+      <h1 style="color: #f0f0f0; font-size: 1.4rem; font-weight: 700; text-align: center; margin: 0 0 8px 0;">
+        <% if @status == "waiting" %>
+          Nouvelle mise en file d'attente
+        <% elsif @status == "pending" %>
+          Nouvelle demande de participation
+        <% else %>
+          Nouveau joueur dans votre match !
+        <% end %>
+      </h1>
+
+      <%# Sous-titre %>
+      <p style="color: rgba(255,255,255,0.45); font-size: 0.9rem; text-align: center; margin: 0 0 28px 0;">
+        Match : <strong style="color: rgba(255,255,255,0.7);"><%= @match.title %></strong>
+      </p>
+
+      <%# Message principal %>
+      <p style="color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.6; margin: 0 0 20px 0;">
+        <% if @status == "waiting" %>
+          <strong style="color: #f0f0f0;"><%= @joining_user.display_name %></strong>
+          s'est inscrit en <strong style="color: #FFC65A;">file d'attente</strong> pour votre match.
+          Il sera automatiquement promu si une place se libère.
+        <% elsif @status == "pending" %>
+          <strong style="color: #f0f0f0;"><%= @joining_user.display_name %></strong>
+          souhaite <strong style="color: #1EDD88;">rejoindre</strong> votre match.
+          Rendez-vous sur la page du match pour accepter ou refuser sa demande.
+        <% else %>
+          <strong style="color: #f0f0f0;"><%= @joining_user.display_name %></strong>
+          a <strong style="color: #1EDD88;">rejoint</strong> votre match.
+          Il reste <strong style="color: #f0f0f0;"><%= @match.player_left %> place<%= @match.player_left > 1 ? "s" : "" %></strong> disponible<%= @match.player_left > 1 ? "s" : "" %>.
+        <% end %>
+      </p>
+
+      <%# Encart récapitulatif du match %>
+      <div style="background-color: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 20px; margin-bottom: 28px;">
+        <p style="color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 10px 0;">Récapitulatif</p>
+        <p style="color: #f0f0f0; font-size: 0.9rem; margin: 0 0 6px 0;">
+          📅 <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+        </p>
+        <% if @match.venue.present? %>
+          <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0;">
+            📍 <%= @match.venue.name %>, <%= @match.venue.city %>
+          </p>
+        <% end %>
+      </div>
+
+      <%# Bouton CTA %>
+      <div style="text-align: center; margin-bottom: 28px;">
+        <%= link_to match_url(@match),
+            style: "display: inline-block; background-color: #1EDD88; color: #111111; font-weight: 700; font-size: 1rem; padding: 14px 36px; border-radius: 50px; text-decoration: none; letter-spacing: 0.3px;" do %>
+          Voir le match
+        <% end %>
+      </div>
+
+    </div>
+
+    <%# Pied de page %>
+    <div style="background-color: #111111; padding: 20px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 0;">
+        © <%= Date.today.year %> Teams-Up — Tous droits réservés.
+      </p>
+    </div>
+
+  </div>
+</div>

@@ -41,24 +41,11 @@ class ConversationsController < ApplicationController
     @messages = @match.messages.includes(user: :profil).order(:created_at)
     @message = Message.new
 
-    # Marque la conversation comme lue maintenant que l'utilisateur l'ouvre
-    # Cela efface le badge "non-lu" dans la sidebar via un broadcast Turbo Stream
+    # Marque la conversation comme lue maintenant que l'utilisateur l'ouvre.
+    # Le dot non-lu est retiré côté client par Stimulus (sticky-chat#selectConvo)
+    # pour éviter une race condition : un broadcast_replace_to asynchrone (ActionCable)
+    # peut arriver après le remove+prepend du MessagesController et écraser le nouvel item.
     match_user.update_column(:last_read_at, Time.current)
-
-    # Broadcast pour mettre à jour l'item de sidebar (retire le badge non-lu)
-    broadcast_read_update(match_user)
-  end
-
-  private
-
-  # Diffuse la mise à jour de l'item sidebar pour retirer le badge non-lu
-  def broadcast_read_update(match_user)
-    Turbo::StreamsChannel.broadcast_replace_to(
-      "user_conversations_#{current_user.id}",
-      target: "sticky-convo-#{match_user.match_id}",
-      partial: "shared/sticky_convo_item",
-      locals: { match: @match, match_user: match_user }
-    )
   end
 
   def dismiss

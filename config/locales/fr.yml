@@ -41,6 +41,64 @@ fr:
         last_name: "Nom"
         avatar: "Avatar"
 
+  # Formats de date utilisés avec I18n.l(date, format: :xxx)
+  date:
+    formats:
+      default: "%d/%m/%Y"
+      short:   "%d %b %Y"
+      long:    "%d %B %Y"
+    month_names:
+      - ~
+      - janvier
+      - février
+      - mars
+      - avril
+      - mai
+      - juin
+      - juillet
+      - août
+      - septembre
+      - octobre
+      - novembre
+      - décembre
+    abbr_month_names:
+      - ~
+      - jan.
+      - fév.
+      - mars
+      - avr.
+      - mai
+      - juin
+      - juil.
+      - août
+      - sept.
+      - oct.
+      - nov.
+      - déc.
+    day_names:
+      - dimanche
+      - lundi
+      - mardi
+      - mercredi
+      - jeudi
+      - vendredi
+      - samedi
+    abbr_day_names:
+      - dim.
+      - lun.
+      - mar.
+      - mer.
+      - jeu.
+      - ven.
+      - sam.
+
+  # Formats de temps
+  time:
+    formats:
+      default: "%H:%M"
+      short:   "%H:%M"
+      long:    "%d %B %Y à %H:%M"
+
   # Traductions pour time_ago_in_words (utilisé dans les notifications)
   datetime:
     distance_in_words:

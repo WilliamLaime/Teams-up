@@ -1,0 +1,110 @@
+<%# ── Email : confirmation de création de match ──────────────────────────── %>
+<%# Récapitulatif envoyé à l'organisateur juste après la création du match %>
+<%# Inline CSS obligatoire — les clients mail ignorent les feuilles de style externes %>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #111111; padding: 40px 20px; min-height: 100vh;">
+
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+
+    <%# En-tête logo %>
+    <div style="background-color: #111111; padding: 28px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <span style="font-size: 1.6rem; font-weight: 800; color: #f0f0f0; letter-spacing: -0.5px;">
+        TEAMS<span style="color: #1EDD88;">-UP</span>
+      </span>
+    </div>
+
+    <%# Corps %>
+    <div style="padding: 36px 40px;">
+
+      <%# Icône création %>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; background-color: rgba(30, 221, 136, 0.12); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">
+          <span style="color: #1EDD88;">⚽</span>
+        </div>
+      </div>
+
+      <%# Titre %>
+      <h1 style="color: #f0f0f0; font-size: 1.4rem; font-weight: 700; text-align: center; margin: 0 0 8px 0;">
+        Votre match est en ligne !
+      </h1>
+
+      <%# Sous-titre %>
+      <p style="color: rgba(255,255,255,0.45); font-size: 0.9rem; text-align: center; margin: 0 0 28px 0;">
+        <strong style="color: rgba(255,255,255,0.7);"><%= @match.title %></strong> est maintenant visible par les joueurs.
+      </p>
+
+      <%# Récapitulatif complet du match %>
+      <div style="background-color: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px 24px; margin-bottom: 28px;">
+        <p style="color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 14px 0;">Récapitulatif</p>
+
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0; width: 36%;">📅 Date</td>
+            <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;">
+              <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+            </td>
+          </tr>
+          <% if @match.venue.present? %>
+            <tr>
+              <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0;">📍 Lieu</td>
+              <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;">
+                <%= @match.venue.name %>, <%= @match.venue.city %>
+              </td>
+            </tr>
+          <% elsif @match.place.present? %>
+            <tr>
+              <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0;">📍 Lieu</td>
+              <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;"><%= @match.place %></td>
+            </tr>
+          <% end %>
+          <tr>
+            <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0;">👥 Places</td>
+            <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;"><%= @match.player_left %> disponibles</td>
+          </tr>
+          <tr>
+            <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0;">🎯 Niveau</td>
+            <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;"><%= @match.level %></td>
+          </tr>
+          <tr>
+            <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0;">🔒 Validation</td>
+            <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;">
+              <%= @match.manual_validation? ? "Manuelle (vous acceptez chaque joueur)" : "Automatique" %>
+            </td>
+          </tr>
+          <% if @match.price_per_player.present? && @match.price_per_player > 0 %>
+            <tr>
+              <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0;">💶 Prix</td>
+              <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;"><%= @match.price_per_player %> €/joueur</td>
+            </tr>
+          <% end %>
+        </table>
+      </div>
+
+      <%# CTA %>
+      <div style="text-align: center; margin-bottom: 28px;">
+        <%= link_to match_url(@match),
+            style: "display: inline-block; background-color: #1EDD88; color: #111111; font-weight: 700; font-size: 1rem; padding: 14px 36px; border-radius: 50px; text-decoration: none; letter-spacing: 0.3px;" do %>
+          Voir mon match
+        <% end %>
+      </div>
+
+      <%# Rappel du lien si match privé %>
+      <% if @match.private? %>
+        <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem; text-align: center; margin: 0;">
+          Match privé — lien d'invitation :<br>
+          <span style="color: rgba(30, 221, 136, 0.6); word-break: break-all;">
+            <%= match_url(@match, token: @match.private_token) %>
+          </span>
+        </p>
+      <% end %>
+
+    </div>
+
+    <%# Pied de page %>
+    <div style="background-color: #111111; padding: 20px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 0;">
+        © <%= Date.today.year %> Teams-Up — Tous droits réservés.
+      </p>
+    </div>
+
+  </div>
+</div>

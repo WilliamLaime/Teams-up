@@ -3,6 +3,108 @@
 // Thème sombre cohérent avec la navbar/footer
 // =====================================================
 
+// ── Page confirmation email (post-inscription) ────────────────────────────────
+
+.email-confirmation-page {
+  min-height: calc(100vh - 130px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  background-color: $dark-bg;
+}
+
+.email-confirmation-card {
+  background-color: $dark-card-bg;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2.5rem 2.25rem;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.email-confirmation-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: rgba(30, 221, 136, 0.1);
+  border: 1.5px solid rgba(30, 221, 136, 0.3);
+  border-radius: 50%;
+  margin-bottom: 1.25rem;
+}
+
+.email-confirmation-title {
+  font-family: $headers-font;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f0f0f0;
+  margin-bottom: 1rem;
+}
+
+.email-confirmation-text {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.email-confirmation-address {
+  color: #1EDD88;
+  word-break: break-all;
+}
+
+.email-confirmation-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: left;
+  margin-bottom: 1.25rem;
+
+  strong { color: rgba(255, 255, 255, 0.7); }
+}
+
+.email-confirmation-divider {
+  border-color: rgba(255, 255, 255, 0.08);
+  margin: 1.25rem 0;
+}
+
+.email-confirmation-resend-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.65rem;
+}
+
+.email-confirmation-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .email-confirmation-card {
+    padding: 1.75rem 1.25rem;
+  }
+}
+
 // Fond pleine page sombre pour les pages d'authentification
 .auth-page {
   min-height: calc(100vh - 130px); // Retire la hauteur navbar + footer

@@ -20,6 +20,8 @@ class AvisController < ApplicationController
     # Répond en HTML (depuis le profil) ou JSON (depuis la modal AJAX)
     respond_to do |format|
       if @avis.save
+        # Email transactionnel : informe le joueur noté qu'il a reçu un avis
+        UserMailer.avis_received(@avis).deliver_later
         format.html do
           redirect_back(fallback_location: user_profil_path(@reviewed_user),
                         notice: "Votre avis a bien été enregistré !")

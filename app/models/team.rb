@@ -35,6 +35,11 @@ class Team < ApplicationRecord
             if: -> { badge_image.attached? }
 
   # ── Callbacks ──────────────────────────────────────────────────────────────
+  # Sanitise le SVG du blason avant stockage pour éliminer toute injection XSS.
+  # Le SVG est soumis via un champ caché rempli côté client — sans validation
+  # serveur, n'importe qui pourrait injecter <script> ou des handlers "onload=".
+  before_save :sanitize_badge_svg, if: -> { badge_svg_changed? && badge_svg.present? }
+
   # Quand une équipe est créée, on ajoute automatiquement le captain comme membre
   after_create :add_captain_as_member
 
@@ -76,6 +81,39 @@ class Team < ApplicationRecord
   end
 
   private
+
+  # Tags SVG autorisés — uniquement les éléments graphiques purs, aucun élément
+  # actif (script, foreignObject, animate) ni événement (onclick, onload...).
+  SVG_ALLOWED_TAGS = %w[
+    svg g defs clipPath use
+    circle ellipse rect line polyline polygon path
+    text tspan
+    title desc
+  ].freeze
+
+  # Attributs SVG autorisés — présentation et géométrie uniquement.
+  # Les attributs "on*" (onclick, onmouseover…) et "href" vers javascript:
+  # sont automatiquement exclus car absents de cette liste.
+  SVG_ALLOWED_ATTRS = %w[
+    xmlns viewBox width height
+    fill fill-opacity fill-rule stroke stroke-width stroke-dasharray stroke-linecap stroke-linejoin
+    d cx cy r rx ry x y x1 y1 x2 y2 points
+    transform clip-path opacity
+    text-anchor dominant-baseline font-size font-family font-weight font-style
+    class id
+  ].freeze
+
+  # Sanitise le SVG avec la whitelist ci-dessus.
+  # Rails::Html::SafeListSanitizer supprime tout tag/attribut absent de la liste,
+  # ce qui élimine <script>, onload=, javascript: href, etc.
+  def sanitize_badge_svg
+    sanitizer = Rails::Html::SafeListSanitizer.new
+    self.badge_svg = sanitizer.sanitize(
+      badge_svg,
+      tags:       SVG_ALLOWED_TAGS,
+      attributes: SVG_ALLOWED_ATTRS
+    )
+  end
 
   # Ajoute le captain comme premier membre avec le rôle "captain"
   def add_captain_as_member

@@ -148,6 +148,16 @@ export default class extends Controller {
     })
     event.currentTarget.classList.add("sticky-chat-convo-link--active")
 
+    // 2. Retire immédiatement le dot non-lu de cet item côté client.
+    //    Cela évite un broadcast_replace_to asynchrone (ActionCable) qui pourrait
+    //    arriver après le remove+prepend du MessagesController et écraser le nouvel item.
+    //    Le serveur met quand même à jour last_read_at en base dans conversations#show.
+    const wrapper = event.currentTarget.closest(".sticky-chat-convo-item-wrapper")
+    if (wrapper) {
+      wrapper.querySelectorAll(".sticky-chat-unread-dot").forEach(dot => dot.remove())
+    }
+    this.updateBadge()
+
     // 2. Focus l'input dès que le turbo-frame a fini de charger le nouveau chat.
     //    On écoute "turbo:frame-load" en one-shot sur le frame concerné.
     const frame = document.getElementById("sticky-chat-frame")

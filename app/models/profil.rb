@@ -121,6 +121,28 @@ class Profil < ApplicationRecord
     )
   end
 
+  # ─── ONBOARDING ─────────────────────────────────────────────────────────────
+
+  # Retourne vrai si la modale d'onboarding n'a jamais été affichée à cet utilisateur.
+  # Dès que la modale est rendue, ApplicationController marque onboarding_shown_at.
+  def needs_onboarding_modal?
+    onboarding_shown_at.nil?
+  end
+
+  # Retourne vrai si on doit afficher le banner de rappel "Complète ton profil".
+  # Conditions :
+  #   - La modale initiale a déjà été montrée (sinon c'est le chemin normal)
+  #   - Il y a plus de 7 jours que la modale a été montrée
+  #   - Le profil est toujours incomplet (pas de ville préférée)
+  #   - L'utilisateur n'a pas encore fermé ce banner
+  def needs_profile_reminder?
+    return false if preferred_city.present?
+    return false if onboarding_shown_at.nil?
+    return false if profile_reminder_dismissed_at.present?
+
+    onboarding_shown_at < 7.days.ago
+  end
+
   # Classe CSS du tier de la carte — détermine les ornements du contour
   # Niveaux 1-2 : bronze, 3-4 : silver, 5-6 : or, 7-8 : platine, 9-10 : élite
   def card_tier_class

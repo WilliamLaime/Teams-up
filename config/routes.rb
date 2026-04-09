@@ -1,4 +1,11 @@
 Rails.application.routes.draw do
+  # Interface web pour visualiser les emails interceptés en développement
+  # Accessible à /letter_opener — compatible WSL2 (pas besoin d'ouvrir le navigateur système)
+  if Rails.env.development?
+    require "letter_opener_web"
+    mount LetterOpenerWeb::Engine, at: "/letter_opener"
+  end
+
   # controllers: indique à Devise d'utiliser notre controller personnalisé pour l'inscription
   devise_for :users, controllers: {
     registrations:      "users/registrations",      # Controller personnalisé pour l'inscription
@@ -9,6 +16,9 @@ Rails.application.routes.draw do
 
   # Page d'accueil
   root to: "pages#home"
+
+  # Page post-inscription : invite l'utilisateur à confirmer son email
+  get "confirmation-en-attente", to: "pages#email_confirmation", as: :email_confirmation_pending
 
   # Page "Qui sommes-nous ?"
   get "quisommesnous", to: "pages#about", as: :about
@@ -122,6 +132,10 @@ Rails.application.routes.draw do
     patch :spend_stat, on: :member
     # GET /profil/old => ancien profil gamifié (conservé pour référence)
     get :old, on: :member, action: :show
+    # DELETE /profil/dismiss_reminder => ferme le banner de rappel profil (7j)
+    delete :dismiss_reminder, on: :member
+    # POST /profil/dismiss_onboarding => l'user a vu et fermé la modale d'onboarding
+    post :dismiss_onboarding, on: :member
   end
 
   # Profil public d'un autre utilisateur

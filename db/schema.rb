@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_06_064514) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_08_095608) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -214,8 +214,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_06_064514) do
     t.string "last_name"
     t.string "level"
     t.string "localisation"
+    t.datetime "onboarding_shown_at"
     t.string "phone"
     t.string "preferred_city"
+    t.datetime "profile_reminder_dismissed_at"
     t.string "role"
     t.integer "stat_points", default: 0, null: false
     t.datetime "time_available"

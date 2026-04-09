@@ -59,7 +59,11 @@ class MatchUsersController < ApplicationController
 
     # Notifie l'organisateur en temps réel si un joueur approuvé a quitté
     # (pas de notif si pending/waiting/rejected — ces cas ne libèrent pas de place)
-    broadcast_player_left_to_organizer(leaving_user) if was_approved
+    if was_approved
+      broadcast_player_left_to_organizer(leaving_user)
+      # Email transactionnel : informe l'organisateur du départ et de la place libérée
+      UserMailer.match_player_left(@match, leaving_user).deliver_later
+    end
 
     # Match privé → retour à l'index (le joueur n'a plus accès sans token)
     # Match public → retour à la show du match
@@ -90,6 +94,8 @@ class MatchUsersController < ApplicationController
       @match_user.update(status: "approved")
       @match.decrement!(:player_left)
       notify(@match_user.user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
+      # Email transactionnel : informe le joueur de l'acceptation
+      UserMailer.match_status_changed(@match_user, accepted: true).deliver_later
       # Broadcast en temps réel vers le joueur s'il est sur la page du match.
       broadcast_decision_to_participant(accepted: true)
       flash_msg = "#{@match_user.user.display_name} a été approuvé !"
@@ -130,6 +136,8 @@ class MatchUsersController < ApplicationController
 
     @match_user.update(status: "rejected")
     notify(@match_user.user, "❌ Ta demande pour \"#{@match.title}\" a été refusée.")
+    # Email transactionnel : informe le joueur du refus
+    UserMailer.match_status_changed(@match_user, accepted: false).deliver_later
     # Broadcast en temps réel vers le joueur s'il est sur la page du match.
     broadcast_decision_to_participant(accepted: false)
     flash_msg = "#{@match_user.user.display_name} a été refusé."
@@ -188,8 +196,8 @@ class MatchUsersController < ApplicationController
     @match_user = @match.match_users.find(params[:id])
   end
 
-  # Envoie une notification à un utilisateur donné
-  # Si user est nil (ex: organisateur introuvable), on ne fait rien
+  # Envoie une notification in-app à un utilisateur donné.
+  # Si user est nil (ex: organisateur introuvable), on ne fait rien.
   def notify(user, message)
     return unless user
 
@@ -284,6 +292,8 @@ class MatchUsersController < ApplicationController
       next_in_line.update(status: "approved")
       message = "🎉 Une place s'est libérée ! Tu as été automatiquement inscrit au match \"#{@match.title}\"."
       notify(next_in_line.user, message)
+      # Email transactionnel : informe le joueur de sa promotion depuis la file d'attente
+      UserMailer.match_status_changed(next_in_line, accepted: true).deliver_later
     else
       # Personne en attente : on rend la place disponible
       @match.increment!(:player_left)
@@ -300,6 +310,8 @@ class MatchUsersController < ApplicationController
     @match_user.status = "waiting"
     if @match_user.save
       notify(organizer, "#{current_user.display_name} s'est inscrit en file d'attente pour \"#{@match.title}\"")
+      # Email transactionnel : informe l'organisateur qu'un joueur est en file d'attente
+      UserMailer.match_joined(@match, current_user, status: "waiting").deliver_later
       redirect_to match_path(@match, **match_redirect_options),
                   notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
     else
@@ -312,6 +324,8 @@ class MatchUsersController < ApplicationController
     @match_user.status = "pending"
     @match_user.save
     notify(organizer, "#{current_user.display_name} veut rejoindre votre match \"#{@match.title}\"")
+    # Email transactionnel : informe l'organisateur d'une nouvelle demande à traiter
+    UserMailer.match_joined(@match, current_user, status: "pending").deliver_later
 
     # Broadcast en temps réel vers l'organisateur s'il est sur la page du match.
     # Met à jour le contenu de #pending_modal_inner et ouvre la modal automatiquement.
@@ -326,6 +340,8 @@ class MatchUsersController < ApplicationController
     if @match_user.save
       @match.decrement!(:player_left)
       notify(organizer, "#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
+      # Email transactionnel : informe l'organisateur qu'un joueur a rejoint automatiquement
+      UserMailer.match_joined(@match, current_user, status: "approved").deliver_later
 
       # Notifie l'organisateur en temps réel s'il est sur la page du match.
       # Injecte la modal #autoJoinModal dans son navigateur et l'ouvre automatiquement.

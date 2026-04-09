@@ -51,8 +51,11 @@ Rails.application.configure do
 
     # Frames : Google OAuth + Google Maps (carte intégrée dans les pages de match)
     # + newassets.hcaptcha.com pour le challenge hcaptcha (affiché dans une iframe)
-    policy.frame_src "https://accounts.google.com", "https://maps.google.com", "https://www.google.com",
-                     "https://newassets.hcaptcha.com"
+    # + :self en développement pour letter_opener_web (affichage des emails dans une iframe locale)
+    frame_sources = ["https://accounts.google.com", "https://maps.google.com", "https://www.google.com",
+                     "https://newassets.hcaptcha.com"]
+    frame_sources << :self if Rails.env.development?
+    policy.frame_src(*frame_sources)
 
     # Objets embarqués (Flash, etc.) : rien d'autorisé
     policy.object_src :none

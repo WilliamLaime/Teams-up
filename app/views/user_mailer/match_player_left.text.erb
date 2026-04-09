@@ -1,0 +1,19 @@
+TEAMS-UP
+========
+
+Un joueur a quitté votre match — <%= @match.title %>
+
+<%= @leaving_user.display_name %> s'est désinscrit de votre match.
+Une place vient de se libérer.
+
+Récapitulatif :
+  Date             : <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+<% if @match.venue.present? %>
+  Lieu             : <%= @match.venue.name %>, <%= @match.venue.city %>
+<% end %>
+  Places libres    : <%= @match.player_left %>
+
+Gérer le match : <%= match_url(@match) %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

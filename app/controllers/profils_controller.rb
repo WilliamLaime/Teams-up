@@ -129,6 +129,39 @@ class ProfilsController < ApplicationController
     authorize @profil
   end
 
+  # POST /profil/dismiss_onboarding
+  # Appelé quand l'utilisateur clique l'un des deux boutons de la modale d'onboarding.
+  # Marque onboarding_shown_at pour ne plus jamais afficher la modale.
+  # params[:redirect_to] : URL de redirection optionnelle (ex: edit_profil_path pour le bouton "Compléter")
+  def dismiss_onboarding
+    skip_authorization
+    @profil.update_column(:onboarding_shown_at, Time.current)
+
+    # Sécurité : on n'accepte que les chemins locaux (commençant par /)
+    # pour éviter un open redirect vers un domaine externe (phishing).
+    # Un attaquant pourrait forger ?redirect_to=https://evil.com → rejeté.
+    destination = params[:redirect_to].presence
+    if destination&.start_with?("/")
+      redirect_to destination
+    else
+      redirect_to root_path
+    end
+  end
+
+  # DELETE /profil/dismiss_reminder
+  # Ferme définitivement le banner de rappel "Complète ton profil" (7 jours post-inscription).
+  # On marque profile_reminder_dismissed_at — le banner ne réapparaîtra plus.
+  def dismiss_reminder
+    skip_authorization
+    @profil.update_column(:profile_reminder_dismissed_at, Time.current)
+
+    # Réponse Turbo Stream : supprime le banner du DOM sans rechargement de page
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.remove("profile-reminder-banner") }
+      format.html { redirect_back(fallback_location: root_path) }
+    end
+  end
+
   # PATCH /profil/spend_stat?attribute=attr_attack
   # Dépense 1 point de stat sur l'attribut demandé
   def spend_stat
@@ -296,7 +329,12 @@ class ProfilsController < ApplicationController
         sp = SportProfil.find_or_initialize_by(profil: @profil, sport_id: sport_id.to_i)
         sp.level = sp_params[:level].presence
         sp.role  = sp_params[:role].presence
-        sp.save!
+        # save (sans !) pour ne pas propager une exception non gérée → 500
+        unless sp.save
+          @profil.errors.add(:base, "Erreur sur le sport #{sport_id} : #{sp.errors.full_messages.join(', ')}")
+          render :edit, status: :unprocessable_entity
+          return
+        end
       end
 
       # Supprime les SportProfil des sports désélectionnés

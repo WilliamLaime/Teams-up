@@ -79,6 +79,15 @@
       <div id="global_notification_container"></div>
     <% end %>
 
+    <%# ── Onboarding post-inscription ─────────────────────────────────────────
+        La modale Bootstrap est hors du <main> (position:fixed géré par Bootstrap).
+        Le banner de rappel est ici, juste avant le contenu, pour apparaître sous la navbar. %>
+    <% if @show_onboarding_modal %>
+      <%= render "shared/onboarding_modal" %>
+    <% elsif @show_profile_reminder_banner %>
+      <%= render "shared/profile_reminder_banner" %>
+    <% end %>
+
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
     <main>
       <%= yield %>

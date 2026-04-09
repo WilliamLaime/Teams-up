@@ -158,10 +158,12 @@ module Users
     end
 
     # Redirection après inscription avec confirmation en attente (:confirmable activé)
-    # Devise appelle cette méthode quand l'utilisateur n'est pas encore confirmé
-    # On redirige vers l'accueil plutôt que vers la page précédente (qui peut être un match protégé)
-    def after_inactive_sign_up_path_for(_resource)
-      root_path
+    # Devise appelle cette méthode quand l'utilisateur n'est pas encore confirmé.
+    # On stocke l'email en session pour l'afficher sur la page de confirmation,
+    # puis on redirige vers la page dédiée qui explique quoi faire.
+    def after_inactive_sign_up_path_for(resource)
+      session[:confirmation_pending_email] = resource.email
+      email_confirmation_pending_path
     end
 
     # Paramètres autorisés pour la création du compte

@@ -1,0 +1,71 @@
+<%# ── Page post-inscription : confirmation email en attente ───────────────────
+    Affichée immédiatement après la création du compte (Devise confirmable).
+    Explique à l'utilisateur qu'il doit confirmer son email avant de se connecter.
+    @confirmation_email : l'adresse email saisie à l'inscription (stockée en session) %>
+
+<% content_for :title, "Confirme ton adresse email — Teams-up" %>
+<%# Pas de cache Turbo : la session ne doit pas être rejouée %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
+<div class="email-confirmation-page">
+  <div class="email-confirmation-card">
+
+    <%# Icône principale %>
+    <div class="email-confirmation-icon">
+      <i data-lucide="mail" style="width:32px;height:32px;color:#1EDD88;"></i>
+    </div>
+
+    <%# Titre %>
+    <h1 class="email-confirmation-title">
+      Vérifie ta boîte mail !
+    </h1>
+
+    <%# Message personnalisé avec l'email si disponible %>
+    <% if @confirmation_email.present? %>
+      <p class="email-confirmation-text">
+        Un email de confirmation a été envoyé à
+        <strong class="email-confirmation-address"><%= @confirmation_email %></strong>.
+        <br>
+        Clique sur le lien dans l'email pour activer ton compte.
+      </p>
+    <% else %>
+      <p class="email-confirmation-text">
+        Un email de confirmation a été envoyé à l'adresse que tu as fournie.
+        <br>
+        Clique sur le lien dans l'email pour activer ton compte.
+      </p>
+    <% end %>
+
+    <%# Aide : que faire si l'email n'est pas arrivé %>
+    <div class="email-confirmation-hint">
+      <i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;opacity:0.6;"></i>
+      <span>
+        Tu ne vois pas l'email ? Pense à vérifier ton dossier
+        <strong>spam / courrier indésirable</strong>.
+      </span>
+    </div>
+
+    <%# Séparateur %>
+    <hr class="email-confirmation-divider">
+
+    <%# Renvoi du mail de confirmation via Devise %>
+    <p class="email-confirmation-resend-label">
+      Tu n'as pas reçu l'email ?
+    </p>
+    <%= link_to new_user_confirmation_path,
+                class: "btn btn-cta-secondary w-100 mb-3" do %>
+      <i data-lucide="send" style="width:15px;height:15px;"></i>
+      Renvoyer l'email de confirmation
+    <% end %>
+
+    <%# Lien retour connexion %>
+    <%= link_to new_user_session_path,
+                class: "email-confirmation-back-link" do %>
+      <i data-lucide="arrow-left" style="width:14px;height:14px;"></i>
+      Retour à la connexion
+    <% end %>
+
+  </div>
+</div>
