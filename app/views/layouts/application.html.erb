@@ -15,12 +15,15 @@
     <%= display_meta_tags site: "Teams-up" %>
 
     <%# ── Vérification Google Search Console ──────────────────────────────────
-        Ce code prouve à Google que nous sommes propriétaires du domaine.
-        Il est stocké dans les credentials Rails (jamais en dur ici).
-        Pour l'ajouter : rails credentials:edit → google_site_verification: VOTRE_CODE
-        Pour obtenir le code : Search Console → Ajouter une propriété → Balise HTML %>
+        Deux codes : un par propriété Search Console (teams-up-sport.fr et .com).
+        Stockés dans les variables d'environnement Heroku.
+        GOOGLE_SITE_VERIFICATION     → propriété www.teams-up-sport.fr
+        GOOGLE_SITE_VERIFICATION_COM → propriété www.teams-up-sport.com (redirige vers .fr) %>
     <% if ENV["GOOGLE_SITE_VERIFICATION"].present? %>
       <meta name="google-site-verification" content="<%= ENV["GOOGLE_SITE_VERIFICATION"] %>">
+    <% end %>
+    <% if ENV["GOOGLE_SITE_VERIFICATION_COM"].present? %>
+      <meta name="google-site-verification" content="<%= ENV["GOOGLE_SITE_VERIFICATION_COM"] %>">
     <% end %>
 
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
