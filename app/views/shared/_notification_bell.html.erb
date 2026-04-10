@@ -91,39 +91,50 @@
                    style="font-size:0.82rem;white-space:normal;line-height:1.3;color:<%= notif.read? ? 'rgba(255,255,255,0.5)' : '#fff' %>;">
                 <%= notif.message %>
               </div>
-              <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
-                <%= time_ago_in_words(notif.created_at) %>
-              </small>
+              <%# On masque le temps pour les demandes d'ami — il est réaffiché avec les boutons ✓/✗ en dessous %>
+              <% unless notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
+                <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+                  <%= time_ago_in_words(notif.created_at) %>
+                </small>
+              <% end %>
             </div>
           </div>
         <% end %>
 
-        <%# Boutons Accepter / Refuser pour les demandes d'ami en attente %>
+        <%#
+          Boutons ✓/✗ pour les demandes d'ami — sur la même ligne que le temps.
+          Placés EN DEHORS du button_to principal (les forms ne s'imbriquent pas).
+          On repositionne la ligne "temps" via CSS pour y intégrer les boutons à droite.
+        %>
         <% if notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
-          <div class="d-flex gap-2 px-3 pb-2"
+          <div class="d-flex align-items-center justify-content-between px-3 pb-2"
+               style="margin-top:-4px; padding-left:2.4rem !important;"
                data-action="click->notification-dropdown#stopClickPropagation">
-            <%# Accepter — navigation pleine page (data-turbo-frame="_top") %>
-            <%= button_to accept_user_friendship_path(notif.actor),
-                  method: :patch,
-                  data: { turbo_frame: "_top" },
-                  style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                          font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
-                          border:1px solid rgba(30,221,136,0.3); border-radius:999px;
-                          padding:0.2rem 0.65rem; cursor:pointer;" do %>
-              <i data-lucide="check" style="width:10px; height:10px;"></i>
-              Accepter
-            <% end %>
-            <%# Refuser — navigation pleine page %>
-            <%= button_to decline_user_friendship_path(notif.actor),
-                  method: :patch,
-                  data: { turbo_frame: "_top" },
-                  style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                          font-weight:700; color:rgba(255,100,100,0.7);
-                          background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
-                          border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
-              <i data-lucide="x" style="width:10px; height:10px;"></i>
-              Refuser
-            <% end %>
+            <%# Temps — reprend le même style que le small dans le button_to %>
+            <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+              <%= time_ago_in_words(notif.created_at) %>
+            </small>
+            <%# Boutons icône uniquement : ✓ vert et ✗ rouge %>
+            <div class="d-flex gap-1">
+              <%= button_to accept_user_friendship_path(notif.actor),
+                    method: :patch,
+                    data: { turbo_frame: "_top" },
+                    style: "display:inline-flex; align-items:center; justify-content:center;
+                            width:22px; height:22px; border-radius:50%; cursor:pointer;
+                            color:#1EDD88; background:rgba(30,221,136,0.1);
+                            border:1px solid rgba(30,221,136,0.3);" do %>
+                <i data-lucide="check" style="width:11px; height:11px;"></i>
+              <% end %>
+              <%= button_to decline_user_friendship_path(notif.actor),
+                    method: :patch,
+                    data: { turbo_frame: "_top" },
+                    style: "display:inline-flex; align-items:center; justify-content:center;
+                            width:22px; height:22px; border-radius:50%; cursor:pointer;
+                            color:rgba(255,100,100,0.7); background:rgba(255,100,100,0.06);
+                            border:1px solid rgba(255,100,100,0.2);" do %>
+                <i data-lucide="x" style="width:11px; height:11px;"></i>
+              <% end %>
+            </div>
           </div>
         <% end %>
 
