@@ -248,11 +248,12 @@ class MatchesController < ApplicationController
 
     # Notifie chaque participant en temps réel si il est sur la page du match,
     # et envoie un email transactionnel pour les utilisateurs absents.
-    # IMPORTANT : les emails sont envoyés AVANT @match.destroy pour que les
-    # associations (venue, sport, user) soient encore accessibles dans les vues.
+    # IMPORTANT : on utilise deliver_now (pas deliver_later) car le match est
+    # détruit juste après. Avec deliver_later, SolidQueue tente de désérialiser
+    # le Match via GlobalID mais il n'existe plus en base → DeserializationError.
     participants.each do |mu|
       broadcast_match_cancelled_to_participant(mu.user)
-      UserMailer.match_cancelled(@match, mu.user).deliver_later
+      UserMailer.match_cancelled(@match, mu.user).deliver_now
     end
 
     @match.destroy
