@@ -110,8 +110,8 @@
           <div class="d-flex align-items-center justify-content-between px-3 pb-2"
                style="margin-top:-4px; padding-left:2.4rem !important;"
                data-action="click->notification-dropdown#stopClickPropagation">
-            <%# Temps — reprend le même style que le small dans le button_to %>
-            <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+            <%# Temps — en vert pour les demandes d'ami %>
+            <small style="color:#1EDD88;font-size:0.75rem;">
               <%= time_ago_in_words(notif.created_at) %>
             </small>
             <%# Boutons icône uniquement : ✓ vert et ✗ rouge %>
