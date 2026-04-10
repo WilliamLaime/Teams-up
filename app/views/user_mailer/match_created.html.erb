@@ -15,10 +15,17 @@
     <%# Corps %>
     <div style="padding: 36px 40px;">
 
-      <%# Icône création %>
+      <%# Icône du sport — emoji direct ou image Cloudinary selon la valeur stockée en base %>
       <div style="text-align: center; margin-bottom: 24px;">
-        <div style="display: inline-block; background-color: rgba(30, 221, 136, 0.12); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">
-          <span style="color: #1EDD88;">⚽</span>
+        <div style="display: inline-block; background-color: rgba(30, 221, 136, 0.12); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px; text-align: center;">
+          <% sport_icon = @match.sport&.icon %>
+          <% if sport_icon&.match?(/\.(png|jpg|svg|gif|webp)$/i) %>
+            <%# URL Cloudinary → image_tag avec URL absolue (fonctionne dans tous les clients mail) %>
+            <%= image_tag sport_icon, alt: @match.sport&.name, style: "width: 32px; height: 32px; object-fit: contain; vertical-align: middle; margin-top: 16px;" %>
+          <% else %>
+            <%# Emoji → affiché directement %>
+            <span style="color: #1EDD88;"><%= sport_icon || '🏃' %></span>
+          <% end %>
         </div>
       </div>
 
