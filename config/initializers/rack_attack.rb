@@ -61,10 +61,11 @@ class Rack::Attack
   # THROTTLE 3 : Inscriptions par IP
   #
   # But : empêcher la création massive de faux comptes depuis une IP.
-  # Limite : 3 inscriptions par heure.
+  # Limite : 10 inscriptions par heure (3 était trop restrictif pour les tests
+  #          et les vrais utilisateurs qui corrigent plusieurs fois leurs données).
   # Route ciblée : POST /users (formulaire d'inscription Devise)
   # -----------------------------------------------------------------------
-  throttle("signups/ip", limit: 3, period: 1.hour) do |req|
+  throttle("signups/ip", limit: 10, period: 1.hour) do |req|
     if req.path == "/users" && req.post?
       req.ip
     end
@@ -135,14 +136,30 @@ class Rack::Attack
   # -----------------------------------------------------------------------
   # Réponse personnalisée pour les requêtes bloquées (HTTP 429)
   #
-  # Par défaut rack-attack retourne un body vide. On renvoie un message
-  # lisible en français pour informer l'utilisateur.
+  # PROBLÈME HISTORIQUE : la réponse était en text/plain. Turbo Drive ne sait
+  # pas afficher du text/plain → la page ne changeait pas → "rien ne se passe".
+  #
+  # SOLUTION : on redirige (302) vers la page précédente (referer).
+  # Turbo suit la redirection via GET et ré-affiche la page normalement.
+  # Si le referer n'est pas disponible, on redirige vers l'accueil.
   # -----------------------------------------------------------------------
-  self.throttled_responder = lambda do |_env|
+  self.throttled_responder = lambda do |env|
+    req = Rack::Request.new(env)
+
+    # Sécurité : on vérifie que le referer appartient au même domaine
+    # pour éviter un open redirect (attaquant qui injecte un referer externe)
+    referer = req.referer.presence
+    location = begin
+      referer_host = URI.parse(referer).host if referer
+      (referer_host == req.host) ? referer : "/"
+    rescue URI::InvalidURIError
+      "/"
+    end
+
     [
-      429,  # HTTP 429 Too Many Requests
-      { "Content-Type" => "text/plain; charset=utf-8" },
-      ["Trop de tentatives. Veuillez patienter quelques instants avant de réessayer."]
+      302,
+      { "Location" => location, "Content-Type" => "text/html; charset=utf-8" },
+      [""]
     ]
   end
 

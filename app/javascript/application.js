@@ -37,15 +37,23 @@ document.addEventListener("turbo:before-cache", () => {
   })
 })
 
-document.addEventListener("turbo:load", () => {
-  // Si la librairie hcaptcha est disponible (script déjà chargé),
-  // on re-rend manuellement les widgets vides (.h-captcha sans iframe).
-  if (typeof hcaptcha !== "undefined") {
-    document.querySelectorAll(".h-captcha").forEach(el => {
-      // Un widget déjà rendu contient un iframe — on ne re-rend que les vides
-      if (!el.querySelector("iframe")) {
-        hcaptcha.render(el)
-      }
-    })
-  }
-})
+// Fonction partagée : re-rend les widgets hcaptcha vides présents dans la page.
+// Un widget déjà rendu contient un <iframe> — on ne re-rend que les divs vides
+// pour éviter de créer des doublons.
+function rerenderHcaptchaWidgets() {
+  if (typeof hcaptcha === "undefined") return
+
+  document.querySelectorAll(".h-captcha").forEach(el => {
+    if (!el.querySelector("iframe")) {
+      hcaptcha.render(el)
+    }
+  })
+}
+
+// turbo:load → navigation classique (lien, retour arrière, redirection)
+document.addEventListener("turbo:load", rerenderHcaptchaWidgets)
+
+// turbo:render → AUSSI déclenché après une réponse 422 (erreur de formulaire).
+// turbo:load ne se déclenche PAS dans ce cas, c'est pour ça que le widget
+// disparaissait après une erreur et ne réapparaissait qu'au rechargement complet.
+document.addEventListener("turbo:render", rerenderHcaptchaWidgets)

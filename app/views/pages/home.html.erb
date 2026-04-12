@@ -26,7 +26,7 @@
 
         <%# Titre principal sur 2 lignes %>
         <h1 class="hero-title">
-          Créer un match<br>
+          Créez un match<br>
           <span class="hero-title-accent">en 30 secondes.</span>
         </h1>
 
@@ -390,36 +390,12 @@
     <%# ── Deux cartes côte à côte ── %>
     <div class="row justify-content-center g-4">
 
-      <%# ── Carte 1 : Contact Professionnel ── %>
-      <%# Pour les partenariats, presse, propositions commerciales → page dédiée %>
-      <div class="col-md-5">
-        <%= link_to partenariat_path, class: "contact-cta-card contact-cta-card--pro" do %>
-
-          <%# Icône dans un cercle coloré %>
-          <div class="contact-cta-icon contact-cta-icon--pro">
-            <i data-lucide="briefcase" style="width:28px;height:28px;"></i>
-          </div>
-
-          <%# Titre de la carte %>
-          <h3 class="contact-cta-card-title">Contact Professionnel</h3>
-
-          <%# Description courte %>
-          <p class="contact-cta-card-text">
-            Vous êtes une marque, un club sportif ou un partenaire potentiel ?
-            Parlons de ce qu'on peut construire ensemble.
-          </p>
-
-          <%# Lien discret en bas de la carte %>
-          <span class="contact-cta-card-link">
-            Nous écrire <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
-          </span>
-
-        <% end %>
-      </div>
+      <%# ── Carte 1 : Contact Professionnel ── (masquée temporairement) %>
+      <%#= link_to partenariat_path do %><%# end %>
 
       <%# ── Carte 2 : Contact Utilisateur ── %>
       <%# Pour les questions, retours d'expérience, bugs signalés %>
-      <div class="col-md-5">
+      <div class="col-md-5 col-lg-4">
         <%= link_to contact_path, class: "contact-cta-card contact-cta-card--user" do %>
 
           <%# Icône dans un cercle vert %>
