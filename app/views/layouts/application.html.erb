@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
   <head>
     <%# Encodage déclaré explicitement — bonne pratique HTML5 et prérequis SEO %>
     <meta charset="utf-8">
@@ -51,17 +51,21 @@
       }
     <% end %>
 
+    <%# ── Google Fonts — chargement optimisé ──────────────────────────────────
+        Placé AVANT le stylesheet principal pour que le navigateur lance la connexion
+        vers Google Fonts en parallèle du téléchargement de application.css.
+        preconnect : ouvre la connexion TCP/TLS dès que possible (gain ~100ms).
+        Une seule requête pour Nunito + Work Sans + Bebas Neue via l'API CSS2.
+        display=swap : le navigateur affiche une police de secours immédiatement
+        → pas de texte invisible pendant le chargement (évite le FOIT). %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700&family=Work+Sans:wght@400;700&display=swap" rel="stylesheet">
+
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <%= favicon_link_tag "favicon.png" %>
-
-    <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
-    <%# Doc : https://lucide.dev/icons/ — utilisation : <i data-lucide="nom-icone"></i> %>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-
-    <%# Bebas Neue — police utilisée pour les chiffres de la player card %>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
   </head>
 
   <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
@@ -123,8 +127,15 @@
     <%# Modale grille des niveaux — disponible sur toutes les pages via le bouton "?" %>
     <%= render "shared/level_grid_modal" %>
 
+    <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
+    <%# Chargé ici (bas du body) et non dans le <head> pour éviter de bloquer
+        le rendu de la page (render-blocking). À cet endroit, tout le DOM visible
+        est déjà parsé et affiché — le script s'exécute immédiatement après. %>
+    <%# Doc : https://lucide.dev/icons/ — utilisation : <i data-lucide="nom-icone"></i> %>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
-    <%# Appelé en bas de body pour que le DOM soit chargé %>
+    <%# Appelé juste après le script Lucide pour garantir que lucide est défini %>
     <script>
       // Initialisation au premier chargement de la page
       lucide.createIcons();

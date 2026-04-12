@@ -21,7 +21,8 @@
           <button class="mobile-sport-btn d-flex align-items-center gap-2"
                   type="button"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false">
+                  aria-expanded="false"
+                  aria-label="Sport actif : <%= multisport_mode? ? 'Multisport' : (current_sport&.name || 'Sport') %>. Changer de sport">
             <% if multisport_mode? %>
               <%# Icône multisport %>
               <%= image_tag sport_misc_image(:multisports),

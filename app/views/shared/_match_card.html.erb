@@ -38,7 +38,9 @@
 
   <%# ── Image du terrain + overlays ──────────────────────────────────────── %>
   <div class="match-card-img-wrapper">
-    <%= image_tag cover_image, alt: "Terrain #{match.title}", class: "match-card-img" %>
+    <%# loading: lazy → le navigateur ne télécharge cette image que quand la carte
+        approche du viewport. Évite de charger les images hors-écran au chargement initial. %>
+    <%= image_tag cover_image, alt: "Terrain #{match.title}", class: "match-card-img", loading: "lazy" %>
 
     <%# Badge sport — coin haut gauche de l'image %>
     <% if match.sport %>

@@ -197,7 +197,8 @@
                   class="d-flex align-items-center gap-2 text-decoration-none btn-reset"
                   id="userDropdown"
                   data-bs-toggle="dropdown"
-                  aria-expanded="false">
+                  aria-expanded="false"
+                  aria-label="Menu utilisateur">
             <% display_name = current_user.profil &&
                 [current_user.profil.first_name, current_user.profil.last_name]
                   .compact.join(" ").presence %>

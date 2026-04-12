@@ -10,7 +10,8 @@
 <%# Bouton (pas un lien) car il n'y a pas de navigation — centrage flex de l'icône %>
 <button type="button"
         class="nav-link px-2 d-flex align-items-center justify-content-center border-0 bg-transparent"
-        id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+        aria-label="<%= unread_count > 0 ? "#{unread_count} notification#{'s' if unread_count > 1} non lue#{'s' if unread_count > 1}" : "Notifications" %>">
   <%# Le span position-relative est collé à la taille de l'icône (inline-flex)
       pour que le badge se positionne par rapport à la cloche et non au lien entier %>
   <span class="position-relative d-inline-flex">

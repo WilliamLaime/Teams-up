@@ -5,7 +5,7 @@
 // Nom du cache : incrémenté à "v2" pour forcer l'effacement du cache v1
 // (le cache v1 contenait des pages HTML avec du contenu utilisateur, ce qui causait
 //  l'affichage de photos incorrectes après connexion)
-const CACHE_NAME = "teams-up-v2";
+const CACHE_NAME = "teams-up-v3";
 
 // Seule la page offline est pré-cachée (les pages HTML contiennent du contenu
 // spécifique à l'utilisateur connecté → jamais en cache)
@@ -60,7 +60,13 @@ self.addEventListener("fetch", (event) => {
   // En cas d'échec réseau → on renvoie la page offline.
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match("/offline"))
+      fetch(event.request).catch(async () => {
+        // caches.match() retourne undefined si la page offline n'est pas en cache
+        // (ex: première visite, cache vidé). On utilise Response.error() comme
+        // filet de sécurité — c'est un objet Response valide que le navigateur accepte.
+        const cached = await caches.match("/offline");
+        return cached || Response.error();
+      })
     );
     return;
   }
@@ -87,9 +93,12 @@ self.addEventListener("fetch", (event) => {
         }
         return networkResponse;
       })
-      .catch(() => {
+      .catch(async () => {
         // Réseau indisponible → on cherche dans le cache
-        return caches.match(event.request);
+        // Si l'asset n'est pas en cache non plus, on retourne Response.error()
+        // (objet Response valide) plutôt que undefined → évite le TypeError console
+        const cached = await caches.match(event.request);
+        return cached || Response.error();
       })
   );
 });
