@@ -78,7 +78,8 @@
     <div class="d-flex align-items-center justify-content-between mb-2">
       <div class="d-flex gap-1 flex-wrap">
         <% if match.urgent? %>
-          <span class="match-badge-urgent">🔥 Urgent</span>
+          <%# aria-hidden sur l'emoji : le mot "Urgent" suffit aux lecteurs d'écran %>
+          <span class="match-badge-urgent"><span aria-hidden="true">🔥</span> Urgent</span>
         <% end %>
         <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
       </div>
@@ -86,12 +87,12 @@
       <div class="d-flex align-items-center gap-2">
         <% if match.format.present? %>
           <span class="match-card-date">
-            <i data-lucide="users" style="width:12px;height:12px;"></i>
+            <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
             <%= match.format %>
           </span>
         <% end %>
         <span class="match-card-date">
-          <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+          <i data-lucide="calendar" style="width:12px;height:12px;" aria-hidden="true"></i>
           <%= date_str %>
         </span>
       </div>
@@ -109,7 +110,7 @@
 
     <%# Lieu %>
     <div class="match-info-line">
-      <i data-lucide="map-pin" style="width:13px;height:13px;"></i>
+      <i data-lucide="map-pin" style="width:13px;height:13px;" aria-hidden="true"></i>
       <span><%= match.place || "Lieu non défini" %></span>
     </div>
 

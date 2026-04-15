@@ -23,20 +23,30 @@
     <%# ── Liens du centre (desktop uniquement, cachés sur mobile) ── %>
     <ul class="navbar-nav d-none d-lg-flex flex-row mx-auto gap-1 align-items-center">
       <li class="nav-item">
-        <%# "active" si on est sur /matches SANS le filtre ?mine=true %>
-        <%= link_to matches_path, class: "nav-link #{current_page?(matches_path) && params[:mine].blank? ? 'active' : ''}" do %>
+        <%# "active" si on est sur /matches SANS le filtre ?mine=true
+            aria-current="page" : indique la page active aux lecteurs d'écran (RGAA 12.4) %>
+        <% matches_active = current_page?(matches_path) && params[:mine].blank? %>
+        <%= link_to matches_path,
+            class: "nav-link #{matches_active ? 'active' : ''}",
+            "aria-current": (matches_active ? "page" : nil) do %>
           Trouver un match
         <% end %>
       </li>
       <% if user_signed_in? %>
         <li class="nav-item">
-          <%= link_to teams_path, class: "nav-link #{request.path.start_with?('/teams') ? 'active' : ''}" do %>
+          <% teams_active = request.path.start_with?('/teams') %>
+          <%= link_to teams_path,
+              class: "nav-link #{teams_active ? 'active' : ''}",
+              "aria-current": (teams_active ? "page" : nil) do %>
             Mes équipes
           <% end %>
         </li>
       <% end %>
       <li class="nav-item">
-        <%= link_to about_path, class: "nav-link" do %>
+        <% about_active = current_page?(about_path) %>
+        <%= link_to about_path,
+            class: "nav-link #{about_active ? 'active' : ''}",
+            "aria-current": (about_active ? "page" : nil) do %>
           Qui sommes-nous ?
         <% end %>
       </li>
@@ -70,11 +80,13 @@
           <%# Sur mobile : icône seule (pas de texte) pour économiser l'espace navbar
               Sur desktop (lg+) : icône + texte "Installer l'app" %>
           <%# Sur desktop : bouton vert avec texte. Sur mobile : icône discrète style nav (comme la cloche et le chat) %>
+          <%# aria-label : nom accessible fiable (sur mobile l'icône est seule sans texte) %>
           <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
                   class="nav-pwa-btn d-flex align-items-center gap-2"
+                  aria-label="Installer l'application sur votre appareil"
                   title="Installer l'application sur votre appareil">
-            <i data-lucide="download" class="nav-pwa-icon" style="width:20px;height:20px;"></i>
+            <i data-lucide="download" class="nav-pwa-icon" style="width:20px;height:20px;" aria-hidden="true"></i>
             <span class="d-none d-lg-inline nav-pwa-label">Installer l'app</span>
           </button>
 
@@ -181,12 +193,14 @@
             Le badge vert (#chat-navbar-badge) est géré par le Stimulus controller
             sticky-chat : il s'affiche quand il y a des messages non lus. %>
         <div class="nav-item">
+          <%# aria-label : bouton icône-seule → nom accessible nécessaire (RGAA 11.9) %>
           <button type="button"
                   class="nav-chat-btn"
                   data-bs-toggle="modal"
                   data-bs-target="#global-chat-modal"
+                  aria-label="Mes conversations"
                   title="Mes conversations">
-            <i data-lucide="message-circle" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
+            <i data-lucide="message-circle" style="width:20px;height:20px;color:rgba(255,255,255,0.75);" aria-hidden="true"></i>
             <span id="chat-navbar-badge" class="nav-chat-badge" style="display:none;"></span>
           </button>
         </div>
@@ -224,17 +238,17 @@
           <%# Dropdown desktop : Mon profil / Mon compte / Admin (si admin) / Déconnexion %>
           <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
             <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-              <i data-lucide="user" style="width:14px;height:14px;"></i> Mon profil
+              <i data-lucide="user" style="width:14px;height:14px;" aria-hidden="true"></i> Mon profil
             <% end %>
             <%= link_to edit_user_registration_path,
                 class: "dropdown-item d-flex align-items-center gap-2" do %>
-              <i data-lucide="settings" style="width:14px;height:14px;"></i> Mon compte
+              <i data-lucide="settings" style="width:14px;height:14px;" aria-hidden="true"></i> Mon compte
             <% end %>
             <%# Lien Admin — visible uniquement pour les administrateurs %>
             <% if current_user&.admin? %>
               <div class="dropdown-divider"></div>
               <%= link_to admin_root_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
-                <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                <i data-lucide="shield" style="width:14px;height:14px;" aria-hidden="true"></i>
                 Administration
                 <%# ms-auto pousse le wrapper vers la droite (flex item) — contenu mis à jour via Turbo Stream %>
                 <span id="navbar-admin-inline-dot" class="ms-auto">
@@ -246,7 +260,7 @@
             <%= link_to destroy_user_session_path,
                 data: { turbo_method: :delete },
                 class: "dropdown-item text-danger d-flex align-items-center gap-2" do %>
-              <i data-lucide="log-out" style="width:14px;height:14px;"></i> Se déconnecter
+              <i data-lucide="log-out" style="width:14px;height:14px;" aria-hidden="true"></i> Se déconnecter
             <% end %>
           </div>
         </div>

@@ -34,6 +34,21 @@ body {
   main { flex: 1; }
 }
 
+// ── Respect de la préférence système prefers-reduced-motion ─────────────────
+// RGAA 13.8 / WCAG 2.3.3 — désactive les animations pour les utilisateurs qui
+// le demandent dans leur OS (personnes sensibles au mouvement, troubles vestibulaires).
+// Réduit aussi la charge GPU et la consommation énergétique (RGESN 4.4 / 6.9).
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 // ── Empêche le scroll horizontal ────────────────────
 // Certains éléments dépassent légèrement du viewport (gradients avec left: -120px,
 // Bootstrap rows avec marges négatives, etc.) et créent une barre de scroll inutile.
