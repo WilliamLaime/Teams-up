@@ -1,0 +1,24 @@
+// ── Lien d'évitement (Skip Link) — RGAA 12.11 / WCAG 2.4.1 ──────────────────
+// Permet aux utilisateurs clavier et lecteurs d'écran de sauter la navbar
+// pour accéder directement au contenu principal.
+// Invisible tant qu'il n'a pas le focus, puis apparaît en haut à gauche au Tab.
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: $green;
+  color: #111111;
+  font-weight: 700;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  transition: top 0.15s ease;
+
+  &:focus {
+    top: 0;
+    outline: 3px solid #111111;
+    outline-offset: 2px;
+    color: #111111;
+  }
+}

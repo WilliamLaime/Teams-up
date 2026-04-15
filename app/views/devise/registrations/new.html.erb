@@ -328,7 +328,7 @@
             <%# Champ mot de passe avec bouton oeil ──────────────────────── %>
             <div class="mb-3" data-controller="password-toggle">
               <label class="form-label" for="user_password">
-                Mot de passe <abbr title="required">*</abbr>
+                Mot de passe <abbr title="Champ obligatoire" aria-label="obligatoire">*</abbr>
               </label>
               <%# position:relative ici → le bouton absolu se positionne par rapport à CE div %>
               <div style="position: relative;">
@@ -346,7 +346,7 @@
                         data-password-toggle-target="button"
                         tabindex="-1"
                         aria-label="Afficher le mot de passe">
-                  <i data-lucide="eye" style="width:18px;height:18px;"></i>
+                  <i data-lucide="eye" style="width:18px;height:18px;" aria-hidden="true"></i>
                 </button>
               </div>
               <%# Affiche toutes les règles du mot de passe sous le champ %>
@@ -364,7 +364,7 @@
             <%# Champ confirmation mot de passe avec bouton oeil ────────────── %>
             <div class="mb-3" data-controller="password-toggle">
               <label class="form-label" for="user_password_confirmation">
-                Confirmer le mot de passe <abbr title="required">*</abbr>
+                Confirmer le mot de passe <abbr title="Champ obligatoire" aria-label="obligatoire">*</abbr>
               </label>
               <div style="position: relative;">
                 <input type="password"
@@ -380,7 +380,7 @@
                         data-password-toggle-target="button"
                         tabindex="-1"
                         aria-label="Afficher le mot de passe">
-                  <i data-lucide="eye" style="width:18px;height:18px;"></i>
+                  <i data-lucide="eye" style="width:18px;height:18px;" aria-hidden="true"></i>
                 </button>
               </div>
               <%# Affiche l'erreur inline si les mots de passe ne correspondent pas %>

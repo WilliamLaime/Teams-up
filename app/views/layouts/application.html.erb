@@ -71,6 +71,12 @@
   <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
       automatiquement jusqu'à la première erreur de formulaire si elle existe %>
   <body data-controller="scroll-to-error">
+    <%# ── Lien d'évitement — RGAA 12.11 / WCAG 2.4.1 ──────────────────────
+        Premier élément focusable de la page. Masqué visuellement hors focus,
+        il apparaît quand l'utilisateur appuie sur Tab et permet de sauter
+        directement au contenu principal (cible : #main-content). %>
+    <a href="#main-content" class="skip-link">Aller au contenu principal</a>
+
     <%= render "shared/navbar" %>
     <%# Bande sous la navbar : sport switcher (connecté) ou boutons auth (non connecté) — mobile uniquement %>
     <%= render "shared/mobile_sub_navbar" %>
@@ -96,7 +102,8 @@
     <% end %>
 
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
-    <main>
+    <%# id="main-content" : cible du lien d'évitement (RGAA 12.11) %>
+    <main id="main-content" tabindex="-1">
       <%= yield %>
     </main>
 
@@ -128,22 +135,26 @@
     <%= render "shared/level_grid_modal" %>
 
     <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
-    <%# Chargé ici (bas du body) et non dans le <head> pour éviter de bloquer
-        le rendu de la page (render-blocking). À cet endroit, tout le DOM visible
-        est déjà parsé et affiché — le script s'exécute immédiatement après. %>
-    <%# Doc : https://lucide.dev/icons/ — utilisation : <i data-lucide="nom-icone"></i> %>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <%# Version fixée (pas de @latest) : cache navigateur stable, pas de régression surprise,
+        meilleure empreinte écologique (cache HTTP long durable côté CDN).
+        defer : ne bloque pas le parsing HTML — s'exécute après le DOM prêt.
+        Doc : https://lucide.dev/icons/ — utilisation : <i data-lucide="nom-icone"></i> %>
+    <script src="https://unpkg.com/lucide@0.474.0/dist/umd/lucide.min.js" defer></script>
 
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
-    <%# Appelé juste après le script Lucide pour garantir que lucide est défini %>
+    <%# Avec defer, le script Lucide s'exécute après DOMContentLoaded —
+        on attend donc que `lucide` soit défini avant d'appeler createIcons(). %>
     <script>
-      // Initialisation au premier chargement de la page
-      lucide.createIcons();
+      // Initialisation au premier chargement de la page (Lucide chargé avec defer)
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.lucide) lucide.createIcons();
+      });
 
       // Ré-initialisation après chaque mise à jour Turbo (navigation, turbo_frame, turbo_stream)
       // Sans ça, les icônes dans les frames remplacées par Turbo disparaissent
-      document.addEventListener("turbo:render", () => lucide.createIcons());
-      document.addEventListener("turbo:frame-render", () => lucide.createIcons());
+      // Garde-fou window.lucide : protège contre les rendus Turbo très précoces (avant defer)
+      document.addEventListener("turbo:render", () => { if (window.lucide) lucide.createIcons(); });
+      document.addEventListener("turbo:frame-render", () => { if (window.lucide) lucide.createIcons(); });
 
       // Turbo Stream (ex: nouvelle notification via ActionCable) — on intercepte la fonction
       // de rendu pour appeler lucide.createIcons() et ouvrir les modals APRÈS que le DOM a été modifié.
@@ -153,7 +164,7 @@
         event.detail.render = function(streamElement) {
           originalRender(streamElement); // mise à jour du DOM
 
-          lucide.createIcons(); // ré-initialise les icônes APRÈS le DOM
+          if (window.lucide) lucide.createIcons(); // ré-initialise les icônes APRÈS le DOM
 
           // Ouvre automatiquement toute modal marquée data-auto-open="true"
           // (injectée via Turbo Stream depuis les partials de notification)

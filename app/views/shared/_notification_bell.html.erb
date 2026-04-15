@@ -15,7 +15,7 @@
   <%# Le span position-relative est collé à la taille de l'icône (inline-flex)
       pour que le badge se positionne par rapport à la cloche et non au lien entier %>
   <span class="position-relative d-inline-flex">
-    <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);"></i>
+    <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);" aria-hidden="true"></i>
     <% if unread_count > 0 %>
       <%# Badge rouge au coin supérieur droit de la cloche %>
       <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -79,11 +79,11 @@
           <div class="d-flex align-items-start gap-2 px-3 py-2">
             <%# Icône : shield-alert rouge pour modération, check grisé si lue, cloche verte si non lue %>
             <% if notif.notif_type == "image_rejected" %>
-              <i data-lucide="shield-alert" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:#E67E22;"></i>
+              <i data-lucide="shield-alert" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:#E67E22;" aria-hidden="true"></i>
             <% elsif notif.read? %>
-              <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:rgba(255,255,255,0.4);"></i>
+              <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:rgba(255,255,255,0.4);" aria-hidden="true"></i>
             <% else %>
-              <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary"></i>
+              <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary" aria-hidden="true"></i>
             <% end %>
             <div>
               <%#
@@ -122,21 +122,23 @@
               <%= time_ago_in_words(notif.created_at) %>
             </small>
             <div class="d-flex gap-2 align-items-center">
-              <%# ✓ sans fond ni bordure %>
+              <%# ✓ sans fond ni bordure — aria-label : nom accessible du bouton icône-seule (RGAA 11.9) %>
               <%= button_to accept_user_friendship_path(notif.actor),
                     method: :patch,
                     data: { turbo_frame: "_top" },
+                    aria: { label: "Accepter la demande d'ami" },
                     style: "display:inline-flex; align-items:center; background:none;
                             border:none; padding:0; cursor:pointer; color:#1EDD88;" do %>
-                <i data-lucide="check" style="width:16px; height:16px;"></i>
+                <i data-lucide="check" style="width:16px; height:16px;" aria-hidden="true"></i>
               <% end %>
               <%# ✗ sans fond ni bordure %>
               <%= button_to decline_user_friendship_path(notif.actor),
                     method: :patch,
                     data: { turbo_frame: "_top" },
+                    aria: { label: "Refuser la demande d'ami" },
                     style: "display:inline-flex; align-items:center; background:none;
                             border:none; padding:0; cursor:pointer; color:rgba(255,100,100,0.7);" do %>
-                <i data-lucide="x" style="width:16px; height:16px;"></i>
+                <i data-lucide="x" style="width:16px; height:16px;" aria-hidden="true"></i>
               <% end %>
             </div>
           </div>
@@ -151,12 +153,14 @@
           data: { action: "click->..." } → stoppe la propagation du click AVANT
           que Bootstrap ne le reçoive et ferme le dropdown.
         %>
+        <%# aria-label : nom accessible du bouton icône-seule — title ne suffit pas (RGAA 11.9) %>
         <%= button_to notification_path(notif), method: :delete,
             class: "notif-delete-btn",
             title: "Supprimer",
+            aria: { label: "Supprimer la notification" },
             form: { data: { action: "submit->notification-dropdown#deleteNotif" } },
             data: { action: "click->notification-dropdown#stopClickPropagation" } do %>
-          <i data-lucide="trash-2" style="width:11px;height:11px;"></i>
+          <i data-lucide="trash-2" style="width:11px;height:11px;" aria-hidden="true"></i>
         <% end %>
 
       </div>
@@ -165,7 +169,7 @@
   <% else %>
     <%# État vide — aucune notification %>
     <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
-      <i data-lucide="inbox" style="width:22px;height:22px;"></i>
+      <i data-lucide="inbox" style="width:22px;height:22px;" aria-hidden="true"></i>
       <div class="small mt-1">Aucune notification</div>
     </div>
   <% end %>
