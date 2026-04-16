@@ -31,6 +31,10 @@ class ApplicationController < ActionController::Base
   # Avant chaque action : détermine si la modale ou le banner d'onboarding doit s'afficher
   before_action :set_onboarding_flags
 
+  # Avant chaque action : lit le cookie court-vivant posé par Rack::Attack
+  # lors d'un throttle de création (match ou équipe) et l'affiche comme flash.
+  before_action :check_throttle_cookie
+
   # Retourne true si l'utilisateur est en mode "Multisport" (tous les sports)
   def multisport_mode?
     user_signed_in? && session[:current_sport_id] == "all"
@@ -184,6 +188,19 @@ class ApplicationController < ActionController::Base
 
     # Trouve les matchs terminés récents avec des joueurs non encore notés
     @pending_review_matches = find_pending_reviews_for_modal
+  end
+
+  # ── Feedback throttle Rack::Attack ──────────────────────────────────────
+  #
+  # Rack::Attack s'exécute avant Rails et ne peut pas écrire dans la session
+  # chiffrée. Il pose à la place un cookie "throttle_alert" (Max-Age: 10s).
+  # Ce before_action le lit à chaque requête, l'affiche comme flash, puis le supprime.
+  # Le Max-Age court (10s) garantit qu'il disparaît même si Rails ne le lit pas.
+  def check_throttle_cookie
+    return unless cookies[:throttle_alert]
+
+    flash.now[:alert] = "Trop de créations en peu de temps. Attendez quelques minutes avant de réessayer."
+    cookies.delete(:throttle_alert)
   end
 
   # Retourne un tableau de { match:, users: [...] } pour la modal
