@@ -85,20 +85,32 @@ class MatchUsersController < ApplicationController
     # de notification (newRequestModal) ne se met pas à jour visuellement.
     return redirect_to @match unless @match_user.pending?
 
-    # Si le match est complet, on place le joueur en liste d'attente plutôt que de l'approuver
-    if @match.full?
-      @match_user.update(status: "waiting")
-      flash_msg = "#{@match_user.user.display_name} a été placé en liste d'attente (match complet)."
-    else
-      # Place normale disponible : on approuve et on décrémente le compteur
-      @match_user.update(status: "approved")
-      @match.decrement!(:player_left)
-      notify(@match_user.user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
+    # Capture l'user avant le bloc de verrouillage (avec_lock recharge @match mais pas @match_user)
+    approved_user = @match_user.user
+    flash_msg = nil
+
+    # with_lock : SELECT FOR UPDATE sur le match — garantit qu'un seul organisateur
+    # peut approuver et décrémenter player_left à la fois (ex: double-clic ou appel concurrent)
+    @match.with_lock do
+      if @match.full?
+        # Si le match est complet, on place le joueur en liste d'attente plutôt que de l'approuver
+        @match_user.update(status: "waiting")
+        flash_msg = "#{approved_user.display_name} a été placé en liste d'attente (match complet)."
+      else
+        # Place normale disponible : on approuve et on décrémente le compteur
+        @match_user.update(status: "approved")
+        @match.decrement!(:player_left)
+        flash_msg = "#{approved_user.display_name} a été approuvé !"
+      end
+    end
+
+    # Notifications en dehors du verrou (non bloquantes pour la cohérence des données)
+    if @match_user.approved?
+      notify(approved_user, "✅ Ta demande pour \"#{@match.title}\" a été acceptée !")
       # Email transactionnel : informe le joueur de l'acceptation
       UserMailer.match_status_changed(@match_user, accepted: true).deliver_later
       # Broadcast en temps réel vers le joueur s'il est sur la page du match.
       broadcast_decision_to_participant(accepted: true)
-      flash_msg = "#{@match_user.user.display_name} a été approuvé !"
     end
 
     # Recharge les demandes encore en attente pour mettre à jour la modal
@@ -284,19 +296,30 @@ class MatchUsersController < ApplicationController
 
   # Gère la promotion du prochain joueur en file d'attente quand une place se libère
   def promote_next_in_line
-    # Cherche le premier joueur en file d'attente (le plus ancien en premier)
-    next_in_line = @match.match_users.where(status: "waiting").order(created_at: :asc).first
+    promoted_record = nil
 
-    if next_in_line
-      # Promeut automatiquement le joueur — player_left reste à 0 car la place est reprise
-      next_in_line.update(status: "approved")
+    # with_lock : SELECT FOR UPDATE — évite qu'une promotion concurrente
+    # (ex: deux joueurs quittent simultanément) promouvde deux personnes pour une seule place
+    @match.with_lock do
+      # Cherche le premier joueur en file d'attente (le plus ancien en premier)
+      next_in_line = @match.match_users.where(status: "waiting").order(created_at: :asc).first
+
+      if next_in_line
+        # Promeut automatiquement le joueur — player_left reste à 0 car la place est reprise
+        next_in_line.update(status: "approved")
+        promoted_record = next_in_line
+      else
+        # Personne en attente : on rend la place disponible
+        @match.increment!(:player_left)
+      end
+    end
+
+    # Notifications en dehors du verrou (non critiques pour la cohérence des données)
+    if promoted_record
       message = "🎉 Une place s'est libérée ! Tu as été automatiquement inscrit au match \"#{@match.title}\"."
-      notify(next_in_line.user, message)
+      notify(promoted_record.user, message)
       # Email transactionnel : informe le joueur de sa promotion depuis la file d'attente
-      UserMailer.match_status_changed(next_in_line, accepted: true).deliver_later
-    else
-      # Personne en attente : on rend la place disponible
-      @match.increment!(:player_left)
+      UserMailer.match_status_changed(promoted_record, accepted: true).deliver_later
     end
   end
 
@@ -336,9 +359,34 @@ class MatchUsersController < ApplicationController
 
   # Cas 3 : Validation automatique → accepté immédiatement
   def join_automatically(organizer)
-    @match_user.status = "approved"
-    if @match_user.save
-      @match.decrement!(:player_left)
+    status_assigned = nil
+
+    # with_lock ouvre une transaction et pose un SELECT FOR UPDATE sur la ligne du match.
+    # Un seul process à la fois peut lire puis modifier player_left — plus de race condition.
+    @match.with_lock do
+      if @match.full?
+        # La place a été prise par un autre joueur entre le check initial (create) et maintenant
+        @match_user.status = "waiting"
+        @match_user.save
+        status_assigned = :waiting
+      else
+        @match_user.status = "approved"
+        if @match_user.save
+          @match.decrement!(:player_left)
+          status_assigned = :approved
+        else
+          status_assigned = :error
+        end
+      end
+    end
+
+    case status_assigned
+    when :waiting
+      notify(organizer, "#{current_user.display_name} s'est inscrit en file d'attente pour \"#{@match.title}\"")
+      UserMailer.match_joined(@match, current_user, status: "waiting").deliver_later
+      redirect_to match_path(@match, **match_redirect_options),
+                  notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
+    when :approved
       notify(organizer, "#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
       # Email transactionnel : informe l'organisateur qu'un joueur a rejoint automatiquement
       UserMailer.match_joined(@match, current_user, status: "approved").deliver_later
