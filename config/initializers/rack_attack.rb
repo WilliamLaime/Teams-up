@@ -101,6 +101,38 @@ class Rack::Attack
 
 
   # -----------------------------------------------------------------------
+  # THROTTLE 6 : Création de matchs par utilisateur
+  #
+  # But : empêcher un utilisateur connecté de spammer des créations de matchs.
+  # On utilise l'user_id (plus précis que l'IP) via Warden, qui est accessible
+  # dans le middleware Rack avant que Rails ne traite la requête.
+  # Limite : 5 créations sur 10 minutes.
+  # Route ciblée : POST /matches
+  # -----------------------------------------------------------------------
+  throttle("match_creation/user", limit: 5, period: 10.minutes) do |req|
+    if req.path == "/matches" && req.post?
+      # Warden est le middleware d'authentification utilisé par Devise.
+      # &.user(:user) renvoie l'utilisateur connecté, ou nil si non authentifié.
+      req.env["warden"]&.user(:user)&.id
+    end
+  end
+
+
+  # -----------------------------------------------------------------------
+  # THROTTLE 7 : Création d'équipes par utilisateur
+  #
+  # But : empêcher un utilisateur connecté de spammer des créations d'équipes.
+  # Limite : 3 créations sur 30 minutes.
+  # Route ciblée : POST /equipes
+  # -----------------------------------------------------------------------
+  throttle("team_creation/user", limit: 3, period: 30.minutes) do |req|
+    if req.path == "/equipes" && req.post?
+      req.env["warden"]&.user(:user)&.id
+    end
+  end
+
+
+  # -----------------------------------------------------------------------
   # Notification Rack::Attack → SecurityLog
   #
   # Quand rack-attack bloque une requête (throttle déclenché), il publie
@@ -144,7 +176,11 @@ class Rack::Attack
   # Si le referer n'est pas disponible, on redirige vers l'accueil.
   # -----------------------------------------------------------------------
   self.throttled_responder = lambda do |env|
-    req = Rack::Request.new(env)
+    # rack-attack 6.7+ / Rack 3 : `env` est un Rack::Attack::Request (sous-classe de
+    # Rack::Request). Rack 3 a supprimé `[]` sur Request, donc `env["clé"]` plante.
+    # On utilise directement l'objet Request et on accède au Hash via `.env`.
+    req     = env.is_a?(Rack::Request) ? env : Rack::Request.new(env)
+    matched = req.env["rack.attack.matched"]
 
     # Sécurité : on vérifie que le referer appartient au même domaine
     # pour éviter un open redirect (attaquant qui injecte un referer externe)
@@ -156,11 +192,20 @@ class Rack::Attack
       "/"
     end
 
-    [
-      302,
-      { "Location" => location, "Content-Type" => "text/html; charset=utf-8" },
-      [""]
-    ]
+    headers = {
+      "Location"     => location,
+      "Content-Type" => "text/html; charset=utf-8"
+    }
+
+    # Pour les throttles de création (match/équipe), on pose un cookie court-vivant
+    # (Max-Age: 10s). Rack::Attack s'exécute dans le middleware, AVANT Rails — on ne
+    # peut donc pas écrire dans la session chiffrée. Le cookie sera lu par
+    # ApplicationController#check_throttle_cookie et converti en flash d'alerte.
+    if matched&.start_with?("match_creation", "team_creation")
+      headers["Set-Cookie"] = "throttle_alert=true; Path=/; HttpOnly; SameSite=Lax; Max-Age=10"
+    end
+
+    [302, headers, [""]]
   end
 
 end

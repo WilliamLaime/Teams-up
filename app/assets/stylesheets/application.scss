@@ -23,6 +23,21 @@
   opacity: 0.75 !important;
 }
 
+// ── Typographie globale ──────────────────────────────
+// H1 et H2 en Bebas Neue ($display-font) pour un style affirmé et cohérent
+// avec l'identité visuelle Team Up.
+// letter-spacing : Bebas Neue est une condensed, un léger tracking améliore
+// la lisibilité et donne de l'air aux titres.
+h1 {
+  font-family: $display-font;
+  letter-spacing: 0.04em;
+}
+
+h2 {
+  font-family: $display-font;
+  letter-spacing: 0.03em;
+}
+
 // ── Sticky footer ───────────────────────────────────
 // body en colonne flex → main prend tout l'espace libre
 // → footer toujours collé en bas, même sur les pages courtes

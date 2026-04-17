@@ -182,9 +182,8 @@
   // ── Titre du formulaire ──────────────────────────
   h2 {
     color: $dark-text;
-    font-family: $headers-font;
+    font-family: $display-font;
     font-size: 1.75rem;
-    font-weight: 700;
     margin-bottom: 1.75rem;
 
     // Accent vert sur le dernier mot (optionnel, utilisé via <span class="accent">)
