@@ -128,6 +128,15 @@ class Profil < ApplicationRecord
     )
   end
 
+  # ─── PRÉFÉRENCE DE THÈME ────────────────────────────────────────────────────
+
+  # Retourne le thème CSS à appliquer selon la préférence enregistrée.
+  # Utilisé dans le layout pour poser data-theme sur <html>.
+  # "light" = mode clair, "dark" = mode sombre (défaut de l'app)
+  def theme
+    light_mode? ? "light" : "dark"
+  end
+
   # ─── ONBOARDING ─────────────────────────────────────────────────────────────
 
   # Retourne vrai si la modale d'onboarding n'a jamais été affichée à cet utilisateur.

@@ -4,7 +4,8 @@
 // ═══════════════════════════════════════════════════
 
 .about-page {
-  background-color: $dark-bg; // fond sombre global — empêche le blanc du body de transparaître derrière le SVG transparent
+  // CSS variable → fond page (sombre ou clair selon thème)
+  background-color: var(--theme-page-bg); // était $dark-bg
 
   // ── Banner + Section 1 fusionnées ───────────────
   // Image de fond img_banner_qsn.png avec aplat sombre
@@ -67,11 +68,11 @@
   .about-section {
     padding: 72px 0;
 
-    // Fond très sombre (comme la navbar)
-    &--dark    { background-color: $dark-bg; }
+    // Fond très sombre (comme la navbar) → CSS variable
+    &--dark    { background-color: var(--theme-page-bg); }   // était $dark-bg
 
-    // Fond légèrement plus clair
-    &--surface { background-color: $dark-surface; }
+    // Fond légèrement plus clair → CSS variable
+    &--surface { background-color: var(--theme-bg-surface); } // était $dark-surface
 
     // Photo vestiaire abandonné en arrière-plan (section 2 - frustration)
     &--vestiaire {
@@ -121,7 +122,7 @@
     font-size: clamp(2.2rem, 4vw, 3.2rem); // plus grand qu'avant
     font-weight: 400;                // Bebas Neue n'a qu'un seul weight
     letter-spacing: 0.04em;          // légère ouverture des lettres
-    color: $dark-text;
+    color: var(--theme-text-primary); // était $dark-text
     margin-bottom: 1.5rem;
     max-width: 720px;
     // Interlignage fixe en px → identique quelle que soit la taille de chaque span
@@ -130,7 +131,7 @@
 
   // Paragraphes
   .about-section-text {
-    color: $dark-muted;
+    color: var(--theme-text-muted);   // était $dark-muted
     font-size: 1rem;
     line-height: 1.8;
     max-width: 640px;
@@ -138,7 +139,7 @@
 
     // Variante : texte plus mis en avant
     &--strong {
-      color: $dark-text;
+      color: var(--theme-text-primary); // était $dark-text
       font-weight: 500;
     }
   }
@@ -213,7 +214,7 @@
     // pas de flex-grow pour que le groupe reste compact et centrable
 
     li {
-      color: $dark-text;
+      color: var(--theme-text-primary); // était $dark-text
       font-size: 1rem;
       line-height: 1.7;
       padding-left: 1.2rem;
@@ -373,7 +374,7 @@
 
   // ── CTA final ────────────────────────────────────
   .about-cta {
-    background-color: $dark-bg;
+    background-color: var(--theme-page-bg); // était $dark-bg
     padding: 60px 0;
   }
 

@@ -69,7 +69,7 @@
         <div class="cover-position-preview"
              data-cover-position-target="preview"
              style="position:relative; width:100%; height:140px; border-radius:10px; overflow:hidden;
-                    border:1px solid rgba(255,255,255,0.08); cursor:grab; user-select:none;
+                    border:1px solid var(--theme-border); cursor:grab; user-select:none;
                     <%= f.object.cover_image.attached? && f.object.cover_image.blob&.persisted? ? '' : 'display:none;' %>">
 
           <% if f.object.cover_image.attached? && f.object.cover_image.blob&.persisted? %>
@@ -101,7 +101,7 @@
         <div class="cover-zoom-row"
              data-cover-position-target="zoomRow"
              style="<%= f.object.cover_image.attached? && f.object.cover_image.blob&.persisted? ? '' : 'display:none;' %>">
-          <i data-lucide="zoom-in" style="width:14px;height:14px;color:rgba(255,255,255,0.45);flex-shrink:0;"></i>
+          <i data-lucide="zoom-in" style="width:14px;height:14px;color:var(--theme-text-muted);flex-shrink:0;"></i>
           <input type="range"
                  class="cover-zoom-slider"
                  min="1" max="2" step="0.05"
@@ -129,7 +129,7 @@
               "cover-position-target": "fileField",
               action: "change->cover-position#previewFile"
             } %>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.35); margin-top:0.4rem;">
+        <p style="font-size:0.75rem; color:var(--theme-text-muted); margin-top:0.4rem;">
           JPG, PNG ou WebP · max 5 Mo · recommandé : 1200×300 px
         </p>
 
@@ -215,7 +215,7 @@
             <label class="badge-builder-label">Symbole</label>
 
             <%# Catégorie Sport %>
-            <div style="font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Sport</div>
+            <div style="font-size:0.68rem; color:var(--theme-text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Sport</div>
             <div class="badge-icons mb-2">
               <% %w[⚽ 🏀 🏈 🎾 🏐 🥊 🏒 🏹].each do |emoji| %>
                 <button type="button"
@@ -228,7 +228,7 @@
             </div>
 
             <%# Catégorie Puissance %>
-            <div style="font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Puissance</div>
+            <div style="font-size:0.68rem; color:var(--theme-text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Puissance</div>
             <div class="badge-icons mb-2">
               <% %w[⚡ 🔥 💥 🌊 🌪️ ❄️ ☄️ 🌟].each do |emoji| %>
                 <button type="button"
@@ -241,7 +241,7 @@
             </div>
 
             <%# Catégorie Prestige %>
-            <div style="font-size:0.68rem; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Prestige</div>
+            <div style="font-size:0.68rem; color:var(--theme-text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">Prestige</div>
             <div class="badge-icons">
               <% %w[👑 🏆 🛡️ ⚔️ 🦁 🦅 🐺 🔱].each do |emoji| %>
                 <button type="button"
@@ -268,7 +268,7 @@
                    data-badge-builder-target="logoInput"
                    data-action="change->badge-builder#selectLogo"
                    style="font-size:0.78rem;">
-            <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin-top:0.25rem;">
+            <p style="font-size:0.72rem; color:var(--theme-text-muted); margin-top:0.25rem;">
               PNG, JPG, WebP ou SVG — remplace l'emoji dans le blason
             </p>
 
@@ -276,7 +276,7 @@
             <div class="logo-scale-row"
                  data-badge-builder-target="logoControls"
                  style="display:none;">
-              <i data-lucide="scaling" style="width:14px;height:14px;color:rgba(255,255,255,0.45);flex-shrink:0;"></i>
+              <i data-lucide="scaling" style="width:14px;height:14px;color:var(--theme-text-muted);flex-shrink:0;"></i>
               <input type="range"
                      class="cover-zoom-slider"
                      min="0.3" max="1.1" step="0.05"

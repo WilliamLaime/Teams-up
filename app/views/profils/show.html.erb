@@ -20,7 +20,8 @@
 <% end %>
 
 <%# data-controller ici = hors de tout transform CSS → position:fixed fonctionne %>
-<div class="profil-page" data-controller="achievement-modal" style="background-color:#111111; min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
+<%# background-color géré par .profil-page dans _profil.scss (et _theme.scss en mode clair) %>
+<div class="profil-page" data-controller="achievement-modal" style="min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
   <div class="container" style="position:relative; z-index:1;">
 
     <%# ── Lien retour ──────────────────────────────────────────────────────── %>
@@ -315,7 +316,7 @@
               <div class="match-block" style="display:flex; align-items:center; gap:0.75rem;">
                 <span style="font-size:1.6rem; line-height:1;">🏆</span>
                 <div>
-                  <span style="font-size:0.68rem; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.07em; display:block;">
+                  <span style="font-size:0.68rem; font-weight:700; color:var(--theme-text-muted); text-transform:uppercase; letter-spacing:0.07em; display:block;">
                     Homme du match
                   </span>
                   <span style="font-size:1.4rem; font-weight:800; color:#f59e0b; line-height:1.1;">
@@ -371,13 +372,14 @@
                               style: "width:30px; height:30px; border-radius:50%; object-fit:cover; flex-shrink:0;",
                               alt: friendship.user.display_name %>
                       <% else %>
-                        <span style="width:30px; height:30px; border-radius:50%; background:#333;
+                        <span style="width:30px; height:30px; border-radius:50%; background:var(--theme-hover-bg);
+                                     border:1px solid var(--theme-border);
                                      display:inline-flex; align-items:center; justify-content:center;
-                                     font-size:0.65rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                                     font-size:0.65rem; font-weight:800; color:var(--theme-text-muted); flex-shrink:0;">
                           <%= friendship.user.display_name.first.upcase %>
                         </span>
                       <% end %>
-                      <span style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      <span style="font-size:0.8rem; font-weight:600; color:var(--theme-text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                         <%= friendship.user.display_name %>
                       </span>
                     <% end %>
@@ -443,7 +445,8 @@
                 %>
 
                 <%# Card horizontale — 1 match = 1 ligne %>
-                <div style="display:flex; align-items:center; gap:0.9rem; padding:0.75rem 0.85rem; background-color:#242624; border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+                <%# Classe profil-match-card gérée dans _profil.scss (adaptatif light/dark) %>
+                <div class="profil-match-card" style="display:flex; align-items:center; gap:0.9rem;">
 
                   <%# Miniature terrain %>
                   <%= image_tag cover, alt: match.title,
@@ -451,12 +454,12 @@
 
                   <%# Info centrale %>
                   <div style="flex:1; min-width:0;">
-                    <div style="font-size:0.87rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <div style="font-size:0.87rem; font-weight:700; color:var(--theme-text-strong); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                       <%= match.title %>
                     </div>
                     <%# Description sur 2 lignes max — visible uniquement si présente %>
                     <% if match.description.present? %>
-                      <div style="font-size:0.72rem; color:rgba(255,255,255,0.4); margin-top:0.2rem; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                      <div style="font-size:0.72rem; color:var(--theme-text-muted); margin-top:0.2rem; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
                         <%= match.description %>
                       </div>
                     <% end %>
@@ -464,12 +467,12 @@
                       <span class="match-badge-level <%= lvl_css %>" style="font-size:0.65rem; padding:0.12rem 0.45rem;">
                         <%= match.level %>
                       </span>
-                      <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:rgba(255,255,255,0.55);">
+                      <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:var(--theme-text-muted);">
                         <i data-lucide="calendar" style="width:10px; height:10px;"></i>
                         <%= date_str %>
                       </span>
                       <% if match.place.present? %>
-                        <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:rgba(255,255,255,0.55);">
+                        <span style="display:inline-flex; align-items:center; gap:0.2rem; font-size:0.7rem; color:var(--theme-text-muted);">
                           <i data-lucide="map-pin" style="width:10px; height:10px;"></i>
                           <%= match.place.split(",").first %>
                         </span>
@@ -477,9 +480,9 @@
                     </div>
                   </div>
 
-                  <%# Bouton détails %>
+                  <%# Bouton détails — adaptatif via CSS vars %>
                   <%= link_to "Détails", match_path(match),
-                      style: "flex-shrink:0; font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:999px; padding:0.25rem 0.8rem; text-decoration:none; white-space:nowrap;" %>
+                      style: "flex-shrink:0; font-size:0.75rem; font-weight:600; color:var(--theme-text-muted); border:1px solid var(--theme-border); border-radius:999px; padding:0.25rem 0.8rem; text-decoration:none; white-space:nowrap;" %>
 
                 </div>
               <% end %>
@@ -487,7 +490,7 @@
 
           <% else %>
             <%# État vide — aucun match à venir %>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem; padding:1.5rem 0; text-align:center; color:rgba(255,255,255,0.55);">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem; padding:1.5rem 0; text-align:center; color:var(--theme-text-muted);">
               <i data-lucide="calendar-x" style="width:28px; height:28px; opacity:0.3;"></i>
               <p style="font-size:0.88rem; margin:0;">Aucun match à venir.</p>
               <%= link_to "Trouver un match", matches_path, class: "btn btn-primary btn-sm btn-cta-primary mt-2" %>
@@ -545,7 +548,7 @@
           <div style="padding:0.75rem 0.9rem; margin-bottom:0.75rem; background:rgba(30,221,136,0.07); border:1px solid rgba(30,221,136,0.2); border-radius:8px;">
             <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
               <i data-lucide="lock" style="width:14px; height:14px; color:#1EDD88; flex-shrink:0;"></i>
-              <p style="margin:0; font-size:0.78rem; color:rgba(255,255,255,0.65); line-height:1.4;">
+              <p style="margin:0; font-size:0.78rem; color:var(--theme-text-muted); line-height:1.4;">
                 <strong style="color:#1EDD88;"><%= @pending_avis_count %> avis</strong>
                 <%= @pending_avis_count > 1 ? "vous attendent" : "vous attend" %> —
                 notez vos coéquipiers pour les débloquer.
@@ -567,7 +570,7 @@
                           style: "width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0;",
                           alt: reviewer.display_name %>
                     <% else %>
-                      <span style="width:20px; height:20px; border-radius:50%; background:#333; display:inline-flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                      <span style="width:20px; height:20px; border-radius:50%; background:var(--theme-hover-bg); border:1px solid var(--theme-border); display:inline-flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:800; color:var(--theme-text-muted); flex-shrink:0;">
                         <%= reviewer.display_name.first.upcase %>
                       </span>
                     <% end %>
@@ -592,7 +595,7 @@
           <div style="padding:0.75rem 0.9rem; margin-bottom:0.75rem; background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.2); border-radius:8px;">
             <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
               <i data-lucide="eye-off" style="width:14px; height:14px; color:#f59e0b; flex-shrink:0;"></i>
-              <p style="margin:0; font-size:0.78rem; color:rgba(255,255,255,0.65); line-height:1.4;">
+              <p style="margin:0; font-size:0.78rem; color:var(--theme-text-muted); line-height:1.4;">
                 <strong style="color:#f59e0b;"><%= @profil_user.display_name %></strong>
                 vous a laissé un avis — laissez-lui le vôtre pour le débloquer.
               </p>
@@ -606,7 +609,7 @@
                 Laisser un avis à <%= @profil_user.display_name %>
               </button>
             <% else %>
-              <span style="font-size:0.72rem; color:rgba(255,255,255,0.35);">
+              <span style="font-size:0.72rem; color:var(--theme-text-muted);">
                 La fenêtre de 7 jours est expirée.
               </span>
             <% end %>
@@ -623,28 +626,31 @@
           <%# Bloc unique — séparateurs entre avis au lieu de cartes séparées %>
           <div class="match-block" style="padding:0; overflow:hidden;">
             <% avis_visibles.each_with_index do |avis, i| %>
-              <div style="padding:0.85rem 1rem; <%= i > 0 ? 'border-top:1px solid rgba(255,255,255,0.06);' : '' %>">
+              <%# border-top adaptatif entre chaque avis (sauf le premier) %>
+              <div style="padding:0.85rem 1rem; <%= i > 0 ? 'border-top:1px solid var(--theme-border);' : '' %>">
                 <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
                   <% if avis.reviewer.profil&.avatar&.attached? %>
                     <%= image_tag avis.reviewer.profil.avatar,
                         style: "width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;",
                         alt: avis.reviewer.display_name %>
                   <% else %>
-                    <div style="width:36px; height:36px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                    <%# Avatar fallback initiale — fond adaptatif selon le thème %>
+                    <div style="width:36px; height:36px; border-radius:50%; background:var(--theme-hover-bg); border:1px solid var(--theme-border); display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:var(--theme-text-muted); flex-shrink:0;">
                       <%= avis.reviewer.display_name.first.upcase %>
                     </div>
                   <% end %>
                   <div>
-                    <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">
+                    <div style="font-size:0.82rem; font-weight:700; color:var(--theme-text-strong); line-height:1.2;">
                       <%= avis.reviewer.display_name %>
                     </div>
                     <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
-                      <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:rgba(255,255,255,0.2);"><%= "★" * (5 - avis.rating) %></span>
+                      <%# Étoiles pleines en vert, étoiles vides en gris adaptatif %>
+                      <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:var(--theme-text-muted); opacity:0.4;"><%= "★" * (5 - avis.rating) %></span>
                     </div>
                   </div>
                 </div>
                 <% if avis.content.present? %>
-                  <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
+                  <p style="font-size:0.78rem; color:var(--theme-text-muted); line-height:1.5; margin:0;">
                     <%= avis.content %>
                   </p>
                 <% end %>
@@ -654,41 +660,41 @@
             <% if avis_caches.any? %>
               <div class="collapse" id="more-avis-<%= @profil_user.id %>">
                 <% avis_caches.each do |avis| %>
-                  <div style="padding:0.85rem 1rem; border-top:1px solid rgba(255,255,255,0.06);">
+                  <div style="padding:0.85rem 1rem; border-top:1px solid var(--theme-border);">
                     <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.5rem;">
                       <% if avis.reviewer.profil&.avatar&.attached? %>
                         <%= image_tag avis.reviewer.profil.avatar,
                             style: "width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; display:block;",
                             alt: avis.reviewer.display_name %>
                       <% else %>
-                        <div style="width:36px; height:36px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:var(--theme-hover-bg); border:1px solid var(--theme-border); display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:var(--theme-text-muted); flex-shrink:0;">
                           <%= avis.reviewer.display_name.first.upcase %>
                         </div>
                       <% end %>
                       <div>
-                        <div style="font-size:0.82rem; font-weight:700; color:#fff; line-height:1.2;">
+                        <div style="font-size:0.82rem; font-weight:700; color:var(--theme-text-strong); line-height:1.2;">
                           <%= avis.reviewer.display_name %>
                         </div>
                         <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
-                          <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:rgba(255,255,255,0.2);"><%= "★" * (5 - avis.rating) %></span>
+                          <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:var(--theme-text-muted); opacity:0.4;"><%= "★" * (5 - avis.rating) %></span>
                         </div>
                       </div>
                     </div>
                     <% if avis.content.present? %>
-                      <p style="font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.5; margin:0;">
+                      <p style="font-size:0.78rem; color:var(--theme-text-muted); line-height:1.5; margin:0;">
                         <%= avis.content %>
                       </p>
                     <% end %>
                   </div>
                 <% end %>
               </div>
-              <div style="padding:0.6rem 1rem; border-top:1px solid rgba(255,255,255,0.06); text-align:center;">
+              <div style="padding:0.6rem 1rem; border-top:1px solid var(--theme-border); text-align:center;">
                 <button class="btn btn-sm"
                         data-bs-toggle="collapse"
                         data-bs-target="#more-avis-<%= @profil_user.id %>"
                         aria-expanded="false"
                         aria-controls="more-avis-<%= @profil_user.id %>"
-                        style="font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.5); background:none; border:none; padding:0;"
+                        style="font-size:0.78rem; font-weight:600; color:var(--theme-text-muted); background:none; border:none; padding:0;"
                         data-label-more="Voir plus d'avis (<%= avis_caches.size %>)"
                         data-label-less="Voir moins d'avis"
                         onclick="this.textContent = (this.getAttribute('aria-expanded') === 'true') ? this.dataset.labelMore : this.dataset.labelLess">
@@ -700,7 +706,7 @@
 
         <% else %>
             <%# Aucun avis pour l'instant %>
-            <div class="match-block" style="padding:1.25rem; text-align:center; color:rgba(255,255,255,0.35);">
+            <div class="match-block" style="padding:1.25rem; text-align:center; color:var(--theme-text-muted);">
               <i data-lucide="message-circle" style="width:24px; height:24px; margin-bottom:0.4rem; opacity:0.4;"></i>
               <% if defined?(@hidden_review_from_this_user) && @hidden_review_from_this_user %>
                 <p style="font-size:0.82rem; margin:0; color:rgba(245,158,11,0.6);">Avis masqué — laissez votre avis pour le débloquer.</p>
@@ -714,15 +720,17 @@
         <%# ── Modal formulaire d'avis ────────────────────────────────────── %>
         <% if defined?(@eligible_match) && @eligible_match.present? %>
           <% content_for :modals do %>
+          <%# Modale formulaire d'avis — fond et bordures adaptatifs via CSS vars %>
           <div class="modal fade" id="modal-avis-<%= @profil_user.id %>" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content" style="background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+              <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:12px;">
 
-                <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08);">
-                  <h5 class="modal-title" style="color:#fff; font-size:1rem; font-weight:700;">
+                <div class="modal-header" style="border-bottom:1px solid var(--theme-border);">
+                  <h5 class="modal-title" style="color:var(--theme-text-strong); font-size:1rem; font-weight:700;">
                     Laisser un avis à <%= @profil_user.display_name %>
                   </h5>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  <%# btn-close-white en dark, btn-close normal en light — géré par BS5 via data-theme %>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
@@ -733,36 +741,37 @@
                     <%= hidden_field_tag "avis[rating]", "",
                         data: { "star-rating-target": "input" } %>
 
-                    <p style="font-size:0.78rem; color:rgba(255,255,255,0.45); margin-bottom:1rem;">
-                      Suite au match : <strong style="color:rgba(255,255,255,0.7);"><%= @eligible_match.title %></strong>
+                    <p style="font-size:0.78rem; color:var(--theme-text-muted); margin-bottom:1rem;">
+                      Suite au match : <strong style="color:var(--theme-text-primary);"><%= @eligible_match.title %></strong>
                       du <%= @eligible_match.date&.strftime("%d/%m/%Y") %>
                     </p>
 
                     <div style="margin-bottom:1rem;">
-                      <label style="font-size:0.8rem; color:rgba(255,255,255,0.6); display:block; margin-bottom:0.4rem;">Note *</label>
+                      <label style="font-size:0.8rem; color:var(--theme-text-muted); display:block; margin-bottom:0.4rem;">Note *</label>
                       <div style="display:flex; gap:0.35rem; font-size:1.8rem; cursor:pointer;"
                            data-star-rating-target="stars">
                         <% (1..5).each do |i| %>
+                          <%# Étoile initiale grisée — le JS star-rating la mettra en vert au clic %>
                           <span data-action="click->star-rating#select"
                                 data-value="<%= i %>"
-                                style="color:rgba(255,255,255,0.2); transition:color 0.15s; user-select:none;">★</span>
+                                style="color:var(--theme-text-muted); transition:color 0.15s; user-select:none;">★</span>
                         <% end %>
                       </div>
                     </div>
 
                     <div style="margin-bottom:1.25rem;">
-                      <label style="font-size:0.8rem; color:rgba(255,255,255,0.6); display:block; margin-bottom:0.4rem;">
-                        Commentaire <span style="color:rgba(255,255,255,0.3);">(optionnel)</span>
+                      <label style="font-size:0.8rem; color:var(--theme-text-muted); display:block; margin-bottom:0.4rem;">
+                        Commentaire <span style="color:var(--theme-text-muted); opacity:0.6;">(optionnel)</span>
                       </label>
                       <%= text_area_tag "avis[content]", "",
                           placeholder: "Décris ton expérience avec ce joueur...",
                           rows: 3,
-                          style: "width:100%; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; padding:0.6rem 0.75rem; font-size:0.82rem; resize:none;" %>
+                          style: "width:100%; background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:8px; color:var(--theme-text-primary); padding:0.6rem 0.75rem; font-size:0.82rem; resize:none;" %>
                     </div>
 
                     <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
                       <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
-                              style="color:rgba(255,255,255,0.5); background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:0.4rem 1rem;">
+                              style="color:var(--theme-text-muted); background:var(--theme-hover-bg); border:1px solid var(--theme-border); border-radius:999px; padding:0.4rem 1rem;">
                         Annuler
                       </button>
                       <button type="submit" class="btn btn-sm btn-cta-primary"

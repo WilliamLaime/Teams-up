@@ -57,7 +57,7 @@ export default class extends Controller {
       const icon = btn.querySelector("[data-lucide='bell-dot']")
       if (icon) {
         icon.setAttribute("data-lucide", "check-circle")
-        icon.style.color = "rgba(255,255,255,0.3)"
+        icon.style.color = "var(--theme-text-muted)" // Icône discrète selon le thème
         icon.classList.remove("text-primary")
       }
 

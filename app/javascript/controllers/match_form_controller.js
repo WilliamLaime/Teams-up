@@ -216,28 +216,29 @@ export default class extends Controller {
       // dataset.players stocke "null" (string) pour le format Libre
       btn.dataset.players = fmt.players
       btn.dataset.label   = fmt.label
-      // Styles inline garantis (évite tout conflit Bootstrap/navigateur)
+      // Styles inline — les couleurs inactives utilisent des CSS variables pour s'adapter au thème
+      // Les CSS variables (var(--theme-*)) fonctionnent dans setProperty et se résolvent dynamiquement
       const isFirst = index === 0
       btn.style.setProperty("padding", "0.5rem 1.1rem")
       btn.style.setProperty("border-radius", "0.5rem")
       btn.style.setProperty("font-size", "0.9rem")
       btn.style.setProperty("cursor", "pointer")
-      btn.style.setProperty("border", isFirst ? "2px solid #1EDD88" : "2px solid rgba(255,255,255,0.4)", "important")
-      btn.style.setProperty("background", isFirst ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
-      btn.style.setProperty("color", isFirst ? "#1EDD88" : "rgba(255,255,255,0.9)", "important")
-      // Hover : vert au survol si non actif, retour à la normale en partant
+      btn.style.setProperty("border",      isFirst ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
+      btn.style.setProperty("background",  isFirst ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)", "important")
+      btn.style.setProperty("color",       isFirst ? "#1EDD88"                   : "var(--theme-text-primary)", "important")
+      // Hover : vert au survol si non actif, retour aux CSS variables en partant
       btn.addEventListener("mouseover", () => {
         if (!btn.classList.contains("active")) {
-          btn.style.setProperty("border", "2px solid #1EDD88", "important")
-          btn.style.setProperty("background", "rgba(30,221,136,0.08)", "important")
-          btn.style.setProperty("color", "#1EDD88", "important")
+          btn.style.setProperty("border",     "2px solid #1EDD88",           "important")
+          btn.style.setProperty("background", "rgba(30,221,136,0.08)",       "important")
+          btn.style.setProperty("color",      "#1EDD88",                     "important")
         }
       })
       btn.addEventListener("mouseout", () => {
         if (!btn.classList.contains("active")) {
-          btn.style.setProperty("border", "2px solid rgba(255,255,255,0.4)", "important")
-          btn.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
-          btn.style.setProperty("color", "rgba(255,255,255,0.9)", "important")
+          btn.style.setProperty("border",     "2px solid var(--theme-border-strong)", "important")
+          btn.style.setProperty("background", "var(--theme-hover-bg)",               "important")
+          btn.style.setProperty("color",      "var(--theme-text-primary)",           "important")
         }
       })
       // Au clic : sélectionne ce format
@@ -306,14 +307,14 @@ export default class extends Controller {
       this.updateCounterButtons(count)
     }
 
-    // Met à jour l'état "active" des boutons de format avec styles inline
+    // Met à jour l'état "active" des boutons de format — inactifs via CSS variables (thème-agnostique)
     if (clickedBtn) {
       this.formatButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
         const isActive = b === clickedBtn
         b.classList.toggle("active", isActive)
-        b.style.setProperty("border", isActive ? "2px solid #1EDD88" : "2px solid rgba(255,255,255,0.4)", "important")
-        b.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
-        b.style.setProperty("color", isActive ? "#1EDD88" : "rgba(255,255,255,0.9)", "important")
+        b.style.setProperty("border",      isActive ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
+        b.style.setProperty("background",  isActive ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)",               "important")
+        b.style.setProperty("color",       isActive ? "#1EDD88"                   : "var(--theme-text-primary)",           "important")
       })
     }
   }
@@ -470,21 +471,22 @@ export default class extends Controller {
       btn.style.setProperty("border-radius", "0.5rem")
       btn.style.setProperty("font-size", "0.9rem")
       btn.style.setProperty("cursor", "pointer")
-      btn.style.setProperty("border",      isActive ? "2px solid #1EDD88"         : "2px solid rgba(255,255,255,0.4)", "important")
-      btn.style.setProperty("background",  isActive ? "rgba(30,221,136,0.12)"     : "rgba(255,255,255,0.08)", "important")
-      btn.style.setProperty("color",       isActive ? "#1EDD88"                   : "rgba(255,255,255,0.9)", "important")
+      // CSS variables pour les inactifs — se résolvent selon le thème courant (clair/sombre)
+      btn.style.setProperty("border",      isActive ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
+      btn.style.setProperty("background",  isActive ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)",               "important")
+      btn.style.setProperty("color",       isActive ? "#1EDD88"                   : "var(--theme-text-primary)",           "important")
       btn.addEventListener("mouseover", () => {
         if (!btn.classList.contains("active")) {
-          btn.style.setProperty("border",     "2px solid #1EDD88", "important")
-          btn.style.setProperty("background", "rgba(30,221,136,0.08)", "important")
-          btn.style.setProperty("color",      "#1EDD88", "important")
+          btn.style.setProperty("border",     "2px solid #1EDD88",           "important")
+          btn.style.setProperty("background", "rgba(30,221,136,0.08)",       "important")
+          btn.style.setProperty("color",      "#1EDD88",                     "important")
         }
       })
       btn.addEventListener("mouseout", () => {
         if (!btn.classList.contains("active")) {
-          btn.style.setProperty("border",     "2px solid rgba(255,255,255,0.4)", "important")
-          btn.style.setProperty("background", "rgba(255,255,255,0.08)", "important")
-          btn.style.setProperty("color",      "rgba(255,255,255,0.9)", "important")
+          btn.style.setProperty("border",     "2px solid var(--theme-border-strong)", "important")
+          btn.style.setProperty("background", "var(--theme-hover-bg)",               "important")
+          btn.style.setProperty("color",      "var(--theme-text-primary)",           "important")
         }
       })
       btn.addEventListener("click", () => this._applyLevel(lvl.label, btn))
@@ -497,13 +499,13 @@ export default class extends Controller {
     this.levelInputTarget.value        = label
     this.recapLevelTarget.textContent  = label
 
-    // Remet tous les boutons niveau à l'état inactif
+    // Remet tous les boutons niveau à l'état inactif — CSS variables pour le thème
     this.levelButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
       const isActive = b === clickedBtn
       b.classList.toggle("active", isActive)
-      b.style.setProperty("border",     isActive ? "2px solid #1EDD88"     : "2px solid rgba(255,255,255,0.4)", "important")
-      b.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "rgba(255,255,255,0.08)", "important")
-      b.style.setProperty("color",      isActive ? "#1EDD88"               : "rgba(255,255,255,0.9)", "important")
+      b.style.setProperty("border",     isActive ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
+      b.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)",               "important")
+      b.style.setProperty("color",      isActive ? "#1EDD88"                   : "var(--theme-text-primary)",           "important")
     })
   }
 

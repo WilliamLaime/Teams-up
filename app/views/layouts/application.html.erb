@@ -1,5 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr">
+<%# data-theme est appliqué ici — côté serveur — pour éviter tout "flash" de thème
+    au chargement de la page. Si l'utilisateur a activé le mode clair dans son profil,
+    on pose data-theme="light" directement dans le HTML avant que le CSS soit parsé.
+    Pour les utilisateurs non connectés, on applique le thème sombre par défaut ("dark").
+    Le Stimulus controller theme-toggle peut ensuite le mettre à jour dynamiquement. %>
+<% current_theme = user_signed_in? ? current_user.profil&.theme : "dark" %>
+<% current_theme ||= "dark" %>
+<html lang="fr" data-theme="<%= current_theme %>">
   <head>
     <%# Encodage déclaré explicitement — bonne pratique HTML5 et prérequis SEO %>
     <meta charset="utf-8">
@@ -69,8 +76,13 @@
   </head>
 
   <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
-      automatiquement jusqu'à la première erreur de formulaire si elle existe %>
-  <body data-controller="scroll-to-error">
+      automatiquement jusqu'à la première erreur de formulaire si elle existe.
+      data-controller="theme-toggle" : gère le bouton de bascule thème dans la navbar.
+      Les deux controllers Stimulus cohabitent sur le même élément (Stimulus supporte les
+      espaces pour déclarer plusieurs controllers sur un même nœud DOM). %>
+  <body data-controller="scroll-to-error theme-toggle"
+        data-theme-toggle-url-value="<%= update_theme_profil_path if user_signed_in? %>"
+        data-theme-toggle-authenticated-value="<%= user_signed_in? %>">
     <%# ── Lien d'évitement — RGAA 12.11 / WCAG 2.4.1 ──────────────────────
         Premier élément focusable de la page. Masqué visuellement hors focus,
         il apparaît quand l'utilisateur appuie sur Tab et permet de sauter

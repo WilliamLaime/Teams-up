@@ -120,30 +120,20 @@ export default class extends Controller {
     const emoji = this.selectedEmoji
     const shape = SHAPES[this.selectedShape] || SHAPES.shield
 
-    // ─ Fond : forme + dégradé subtil + bordure interne
+    // ─ Fond : forme colorée + bordure interne semi-transparente
+    // On utilise fill="${color}" directement (pas de gradient via url(#id)) pour éviter
+    // que le sanitizer Rails supprime la définition et laisse la forme transparente.
     let bgElements = ""
 
     if (shape.clip) {
       bgElements = `
-        <defs>
-          <linearGradient id="bg-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stop-color="${color}" stop-opacity="1"/>
-            <stop offset="100%" stop-color="${color}" stop-opacity="0.75"/>
-          </linearGradient>
-        </defs>
-        <path d="${shape.clip}" fill="url(#bg-grad)"/>
+        <path d="${shape.clip}" fill="${color}"/>
         <path d="${shape.inner}" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
       `
     } else {
       // Cercle
       bgElements = `
-        <defs>
-          <linearGradient id="bg-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%"   stop-color="${color}" stop-opacity="1"/>
-            <stop offset="100%" stop-color="${color}" stop-opacity="0.75"/>
-          </linearGradient>
-        </defs>
-        <circle cx="50" cy="50" r="46" fill="url(#bg-grad)"/>
+        <circle cx="50" cy="50" r="46" fill="${color}"/>
         <circle cx="50" cy="50" r="43" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
       `
     }

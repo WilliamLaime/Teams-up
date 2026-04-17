@@ -137,16 +137,19 @@
                     <%= sport_icon(@match.sport, size: "1.1rem") %>
                     <span><%= @match.sport.name %></span>
                   <% else %>
-                    <span style="color:rgba(255,255,255,0.4);">Sélectionner un sport</span>
+                    <%# Classe CSS sport-picker-placeholder — adapte la couleur au thème %>
+                    <span class="sport-picker-placeholder">Sélectionner un sport</span>
                   <% end %>
                 </span>
               </button>
 
-              <%# Panel dropdown avec tous les sports %>
+              <%# Panel dropdown avec tous les sports
+                  Les styles sont dans _sport.scss (.sport-picker-dropdown)
+                  pour qu'ils s'adaptent au thème clair/sombre via CSS variables.
+                  "display:none" reste en inline car Stimulus le gère dynamiquement. %>
               <div data-sport-picker-target="dropdown"
-                   style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
-                          background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
-                          padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                   class="sport-picker-dropdown"
+                   style="display:none;">
                 <% Sport.order(:name).each do |sport| %>
                   <%# data-active="true" = sport actuellement sélectionné → fond vert géré par le controller %>
                   <button type="button"
@@ -284,9 +287,10 @@
                         data-date-picker-target="trigger"
                         data-action="click->date-picker#toggle"
                         style="cursor:pointer; display:flex; align-items:center; background-image:none; padding-right:0.75rem;">
-                  <%# Span du texte — mis à jour par Stimulus sans toucher à l'icône %>
+                  <%# Span du texte — mis à jour par Stimulus sans toucher à l'icône
+                      Utilise une classe CSS pour la couleur afin de s'adapter au thème %>
                   <span data-date-picker-target="triggerText"
-                        style="color:<%= @match.date.present? ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                        class="<%= @match.date.present? ? '' : 'sport-picker-placeholder' %>">
                     <% if @match.date.present? %>
                       <% fr_days = %w[Dim Lun Mar Mer Jeu Ven Sam]; fr_months = %w[jan. fév. mars avr. mai juin juil. août sept. oct. nov. déc.] %>
                       <%= "#{fr_days[@match.date.wday]} #{@match.date.day} #{fr_months[@match.date.month - 1]} #{@match.date.year}" %>
@@ -295,7 +299,7 @@
                     <% end %>
                   </span>
                   <%# Icône calendrier — reste fixe, jamais remplacée par Stimulus %>
-                  <i data-lucide="calendar" style="width:14px;height:14px;color:white;flex-shrink:0;margin-left:auto;"></i>
+                  <i data-lucide="calendar" style="width:14px;height:14px;color:var(--theme-text-muted);flex-shrink:0;margin-left:auto;"></i>
                 </button>
 
                 <%# Dropdown calendrier — rempli dynamiquement par le controller JS %>
@@ -326,27 +330,27 @@
                       value: @match.time&.hour,
                       data: { "time-picker-target": "input" } %>
 
-                  <%# Trigger : même rendu visuel que le form-select des minutes %>
+                  <%# Trigger : même rendu visuel que le form-select des minutes
+                      Classe sport-picker-placeholder si aucune heure choisie → couleur via CSS %>
                   <button type="button"
-                          class="form-select w-100"
+                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @match.time %>"
                           data-time-picker-target="trigger"
                           data-action="click->time-picker#toggle"
-                          style="cursor:pointer; text-align:left; color:<%= @match.time ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                          style="cursor:pointer; text-align:left;">
                     <%= @match.time ? ("%02dh" % @match.time.hour) : "Heure" %>
                   </button>
 
-                  <%# Dropdown : toutes les heures (0h-23h), 5 visibles + scroll %>
-                  <%# .time-picker-dropdown → scrollbar verte (même style que .notif-list) %>
+                  <%# Dropdown heures — visuels (fond, bordure, border-radius, shadow) dans .time-picker-dropdown CSS
+                      On garde uniquement les styles de position/layout en inline %>
                   <div class="time-picker-dropdown"
                        data-time-picker-target="dropdown"
-                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
-                              background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
-                              overflow-y:auto; max-height:200px; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
                     <% (0..23).each do |h| %>
-                      <%# Styles inline garantis : évite tout conflit Bootstrap/navigateur %>
+                      <%# On ne met en inline que le background (valeur dynamique selon l'état actif)
+                          La couleur du texte est gérée par .time-picker-item { color: var(--theme-text-muted) } %>
                       <button type="button"
                               class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.hour == h %>"
-                              style="display:block; width:100%; padding:0.5rem 0.85rem; background:<%= @match.time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important; border:none !important; outline:none; border-radius:6px; color:<%= @match.time&.hour == h ? '#1EDD88' : 'rgba(255,255,255,0.7)' %>; font-size:0.88rem; font-weight:<%= @match.time&.hour == h ? '700' : '500' %>; text-align:left; cursor:pointer; box-shadow:none !important;"
+                              style="background:<%= @match.time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
                               data-time-picker-item
                               data-action="click->time-picker#select"
                               data-value="<%= h %>"
@@ -366,26 +370,25 @@
                       value: @match.time&.min,
                       data: { "time-picker-target": "input" } %>
 
-                  <%# Trigger : même rendu que le bouton heures %>
+                  <%# Trigger : même rendu que le bouton heures
+                      Classe sport-picker-placeholder si aucune minute choisie %>
                   <button type="button"
-                          class="form-select w-100"
+                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @match.time %>"
                           data-time-picker-target="trigger"
                           data-action="click->time-picker#toggle"
-                          style="cursor:pointer; text-align:left; color:<%= @match.time ? 'inherit' : 'rgba(255,255,255,0.4)' %>;">
+                          style="cursor:pointer; text-align:left;">
                     <%= @match.time ? ("%02d" % @match.time.min) : "Min" %>
                   </button>
 
-                  <%# Dropdown : 4 options (quarts d'heure) %>
-                  <%# .time-picker-dropdown → même style scrollbar que les heures et les notifs %>
+                  <%# Dropdown minutes — visuels dans .time-picker-dropdown CSS, position en inline %>
                   <div class="time-picker-dropdown"
                        data-time-picker-target="dropdown"
-                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400;
-                              background:#242624; border:1px solid rgba(255,255,255,0.15); border-radius:10px;
-                              overflow-y:auto; max-height:200px; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
                     <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
+                      <%# Background dynamique en inline, couleur texte via CSS %>
                       <button type="button"
                               class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.min == val %>"
-                              style="display:block; width:100%; padding:0.5rem 0.85rem; background:<%= @match.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important; border:none !important; outline:none; border-radius:6px; color:<%= @match.time&.min == val ? '#1EDD88' : 'rgba(255,255,255,0.7)' %>; font-size:0.88rem; font-weight:<%= @match.time&.min == val ? '700' : '500' %>; text-align:left; cursor:pointer; box-shadow:none !important;"
+                              style="background:<%= @match.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
                               data-time-picker-item
                               data-action="click->time-picker#select"
                               data-value="<%= val %>"
@@ -606,11 +609,10 @@
               <%= f.hidden_field :team_id, value: @match.team_id, id: "match_team_id" %>
 
               <%# Boutons radio stylisés : "Aucune équipe" + une ligne par équipe %>
-              <div style="display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem;">
+              <div class="team-picker-list">
 
                 <%# Option "aucune équipe" %>
-                <label style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.7rem; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); cursor:pointer;"
-                       id="team-option-none">
+                <label class="team-picker-option" id="team-option-none">
                   <input type="radio" name="team_picker" value=""
                          <%= @match.team_id.blank? ? "checked" : "" %>
                          style="accent-color:#1EDD88;"
@@ -621,12 +623,12 @@
                              btn.classList.toggle('active', btn.dataset.visibilityChoice === 'public');
                            });
                          ">
-                  <span style="font-size:0.82rem; color:rgba(255,255,255,0.6);">Aucune équipe</span>
+                  <span class="team-picker-none-label">Aucune équipe</span>
                 </label>
 
                 <%# Une ligne par équipe %>
                 <% @my_captained_teams.each do |team| %>
-                  <label style="display:flex; align-items:center; gap:0.6rem; padding:0.45rem 0.7rem; border-radius:8px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); cursor:pointer;">
+                  <label class="team-picker-option">
                     <input type="radio" name="team_picker" value="<%= team.id %>"
                            <%= @match.team_id == team.id ? "checked" : "" %>
                            style="accent-color:#1EDD88;"
@@ -638,19 +640,17 @@
                              });
                            ">
                     <%# Mini blason %>
-                    <div style="flex-shrink:0; width:26px; height:26px; border-radius:5px; overflow:hidden; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center;">
+                    <div class="team-picker-badge">
                       <% if team.badge_image.attached? %>
                         <%= image_tag team.badge_image, style: "width:100%; height:100%; object-fit:cover;", alt: "" %>
                       <% elsif team.badge_svg.present? %>
                         <%= team.badge_svg.html_safe %>
                       <% else %>
-                        <i data-lucide="shield" style="width:13px;height:13px;color:rgba(255,255,255,0.3);"></i>
+                        <i data-lucide="shield" class="team-picker-badge-icon" style="width:13px;height:13px;"></i>
                       <% end %>
                     </div>
-                    <span style="font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.85);">
-                      <%= team.name %>
-                    </span>
-                    <span style="font-size:0.7rem; color:rgba(255,255,255,0.35); margin-left:auto;">
+                    <span class="team-picker-name"><%= team.name %></span>
+                    <span class="team-picker-members">
                       <%= team.members_count %> membre<%= "s" if team.members_count > 1 %>
                     </span>
                   </label>

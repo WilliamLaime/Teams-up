@@ -215,7 +215,7 @@
               <button type="button"
                       data-sport-select-target="prevBtn"
                       data-action="click->sport-select#prevSport"
-                      style="background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.6); padding:0.2rem 0.4rem; border-radius:6px; transition:color 0.15s;"
+                      style="background:none; border:none; cursor:pointer; color:var(--theme-text-muted); padding:0.2rem 0.4rem; border-radius:6px; transition:color 0.15s;"
                       title="Sport précédent">
                 <i data-lucide="chevron-left" style="width:18px; height:18px;"></i>
               </button>
@@ -223,15 +223,15 @@
               <%# Nom + icône du sport actuel + compteur %>
               <div style="display:flex; align-items:center; gap:0.5rem; flex:1; justify-content:center;">
                 <span data-sport-select-target="carouselIcon" style="font-size:1.1rem; line-height:1;"></span>
-                <span data-sport-select-target="carouselName" style="font-size:0.9rem; font-weight:700; color:#fff;"></span>
-                <span data-sport-select-target="carouselCounter" style="font-size:0.72rem; color:rgba(255,255,255,0.35); font-weight:500;"></span>
+                <span data-sport-select-target="carouselName" style="font-size:0.9rem; font-weight:700; color:var(--theme-text-strong);"></span>
+                <span data-sport-select-target="carouselCounter" style="font-size:0.72rem; color:var(--theme-text-muted); font-weight:500;"></span>
               </div>
 
               <%# Flèche droite %>
               <button type="button"
                       data-sport-select-target="nextBtn"
                       data-action="click->sport-select#nextSport"
-                      style="background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.6); padding:0.2rem 0.4rem; border-radius:6px; transition:color 0.15s;"
+                      style="background:none; border:none; cursor:pointer; color:var(--theme-text-muted); padding:0.2rem 0.4rem; border-radius:6px; transition:color 0.15s;"
                       title="Sport suivant">
                 <i data-lucide="chevron-right" style="width:18px; height:18px;"></i>
               </button>
@@ -239,8 +239,8 @@
             </div>
             <%# / navigation %>
 
-            <%# Séparateur %>
-            <div style="height:1px; background:rgba(255,255,255,0.07); margin-bottom:1rem;"></div>
+            <%# Séparateur adaptatif %>
+            <div style="height:1px; background:var(--theme-border); margin-bottom:1rem;"></div>
 
             <%#
               Champs niveau/rôle pour chaque sport — un seul visible à la fois (géré par Stimulus)
@@ -273,12 +273,12 @@
                          data-sport-level-target="input">
 
                   <%# Label niveau + bouton "?" modale %>
-                  <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">
-                    Niveau <span style="color:rgba(255,255,255,0.2); font-weight:400; text-transform:none;">(optionnel)</span>
+                  <p style="font-size:0.75rem; font-weight:600; color:var(--theme-text-muted); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">
+                    Niveau <span style="color:var(--theme-text-muted); opacity:0.6; font-weight:400; text-transform:none;">(optionnel)</span>
                     <%# Ouvre la modale grilles de niveaux sur le sport concerné %>
                     <button type="button"
-                            style="background:none; border:1px solid rgba(255,255,255,0.25); border-radius:50%;
-                                   width:16px; height:16px; font-size:0.6rem; color:rgba(255,255,255,0.4);
+                            style="background:none; border:1px solid var(--theme-border-strong); border-radius:50%;
+                                   width:16px; height:16px; font-size:0.6rem; color:var(--theme-text-muted);
                                    cursor:pointer; padding:0; line-height:1; vertical-align:middle; margin-left:0.3rem;"
                             data-bs-toggle="modal"
                             data-bs-target="#levelGridModal"
@@ -303,13 +303,13 @@
                   </div>
 
                   <%# Hint : lien entre le niveau et le préfiltre automatique %>
-                  <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0 0 0.85rem;">
+                  <p style="font-size:0.72rem; color:var(--theme-text-muted); margin:0 0 0.85rem;">
                     ⭐ Ce niveau pré-filtre automatiquement les matchs de ce sport sur la page d'accueil.
                   </p>
 
                   <%# Label rôle %>
-                  <p style="font-size:0.75rem; font-weight:600; color:rgba(255,255,255,0.45); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">
-                    Rôle <span style="color:rgba(255,255,255,0.2); font-weight:400; text-transform:none;">(optionnel)</span>
+                  <p style="font-size:0.75rem; font-weight:600; color:var(--theme-text-muted); margin:0 0 0.5rem; text-transform:uppercase; letter-spacing:0.06em;">
+                    Rôle <span style="color:var(--theme-text-muted); opacity:0.6; font-weight:400; text-transform:none;">(optionnel)</span>
                   </p>
 
                   <%# Champ rôle %>
@@ -399,15 +399,16 @@
 
         <%# 3 boutons : Femme / Homme / Autre — pré-sélectionne le genre actuel %>
         <div class="d-flex gap-2 flex-wrap profil-genre-btn-group">
+          <%# Boutons genre — inactif : fond/bordure adaptatifs, actif : vert %>
           <% [["femme", "Femme"], ["homme", "Homme"], ["autre", "Autre"]].each do |valeur, libelle| %>
             <% est_selectionne = current_user.genre == valeur %>
             <button type="button"
                     class="profil-genre-btn btn"
                     data-genre="<%= valeur %>"
                     style="padding:0.45rem 1.1rem; border-radius:0.5rem; font-size:0.9rem;
-                           border: 2px solid <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.3)' %>;
-                           background: <%= est_selectionne ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.06)' %>;
-                           color: <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.85)' %>;">
+                           border: 2px solid <%= est_selectionne ? '#1EDD88' : 'var(--theme-border-strong)' %>;
+                           background: <%= est_selectionne ? 'rgba(30,221,136,0.12)' : 'var(--theme-hover-bg)' %>;
+                           color: <%= est_selectionne ? '#1EDD88' : 'var(--theme-text-primary)' %>;">
               <%= libelle %>
             </button>
           <% end %>
@@ -419,11 +420,11 @@
             btn.addEventListener('click', function() {
               // Met à jour le champ caché avec le genre cliqué
               document.getElementById('profil_genre_value').value = btn.dataset.genre;
-              // Réinitialise le style de tous les boutons
+              // Réinitialise le style de tous les boutons — CSS vars pour compatibilité light/dark
               document.querySelectorAll('.profil-genre-btn-group .profil-genre-btn').forEach(function(b) {
-                b.style.border = '2px solid rgba(255,255,255,0.3)';
-                b.style.background = 'rgba(255,255,255,0.06)';
-                b.style.color = 'rgba(255,255,255,0.85)';
+                b.style.border = '2px solid var(--theme-border-strong)';
+                b.style.background = 'var(--theme-hover-bg)';
+                b.style.color = 'var(--theme-text-primary)';
               });
               // Active le style vert sur le bouton sélectionné
               btn.style.border = '2px solid #1EDD88';
@@ -464,10 +465,10 @@
 
             <%# Dropdown de suggestions — caché par défaut, rempli dynamiquement par JS %>
             <div data-city-search-target="dropdown"
-                 style="display:none; position:absolute; z-index:300; width:100%; max-height:200px; overflow-y:auto; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                 style="display:none; position:absolute; z-index:300; width:100%; max-height:200px; overflow-y:auto; background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
             </div>
 
-            <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
+            <p style="font-size:0.72rem; color:var(--theme-text-muted); margin:0.4rem 0 0;">
               📍 Les matchs dans cette ville apparaîtront en premier. Se combine avec vos lieux favoris.
             </p>
           </div>
@@ -504,7 +505,7 @@
         <div data-venue-search-target="selectedVenues" style="margin-bottom:1rem;">
           <% profil.favorite_venues.each do |venue| %>
             <div class="badge" style="background-color:rgba(30,221,136,0.2); color:#1EDD88; padding:0.5rem 0.75rem; margin:0.25rem; display:inline-flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
-              🏟️ <%= venue.name %> <span style="color:rgba(255,255,255,0.4);">(<%= venue.city %>)</span>
+              🏟️ <%= venue.name %> <span style="color:var(--theme-text-muted);">(<%= venue.city %>)</span>
               <button type="button"
                       class="venue-remove-btn"
                       style="background:none; border:none; color:#1EDD88; cursor:pointer; margin-left:0.3rem; padding:0;"
@@ -527,11 +528,11 @@
         <%# Results dropdown (caché par défaut) ───────────────────────────── %>
         <%# Pas de classe "dropdown-menu" Bootstrap : celle-ci ajoute pointer-events:none et bloquerait les clics %>
         <div data-venue-search-target="resultsDropdown"
-             style="display:none; position:absolute; z-index:300; width:100%; max-height:200px; overflow-y:auto; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);" id="venue-search-results">
+             style="display:none; position:absolute; z-index:300; width:100%; max-height:200px; overflow-y:auto; background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.3);" id="venue-search-results">
           <!-- Dynamiquement rempli par JS -->
         </div>
 
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
+        <p style="font-size:0.72rem; color:var(--theme-text-muted); margin:0.4rem 0 0;">
           Sélectionnez vos 2-3 lieux favoris pour pré-filtrer les matchs (salles, terrains, complexes...).
         </p>
       </div>
@@ -553,7 +554,7 @@
             class: "form-control edit-form-input",
             rows: 4,
             placeholder: "Parle de toi, de ton style de jeu, de tes disponibilités..." %>
-        <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.4rem 0 0;">
+        <p style="font-size:0.72rem; color:var(--theme-text-muted); margin:0.4rem 0 0;">
           Quelques lignes sur toi pour que les autres joueurs te connaissent mieux.
         </p>
       </div>
@@ -579,7 +580,7 @@
       </div>
 
       <%# Légende des champs obligatoires %>
-      <p style="font-size:0.72rem; color:rgba(255,255,255,0.3); margin:0.85rem 0 0;">
+      <p style="font-size:0.72rem; color:var(--theme-text-muted); margin:0.85rem 0 0;">
         <span style="color:#1EDD88; font-weight:700;">*</span> Champs obligatoires
       </p>
 

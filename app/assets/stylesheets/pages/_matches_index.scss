@@ -3,9 +3,9 @@
 // Thème sombre cohérent avec la home et la navbar
 // =====================================================
 
-// Fond sombre pleine page (reprend $dark-bg comme le hero)
+// Fond de page — CSS variable pour réagir au changement de thème
 .matches-index-page {
-  background-color: $dark-bg;
+  background-color: var(--theme-page-bg);          // était $dark-bg
   min-height: calc(100vh - 130px);
   padding: 2.5rem 0 4rem;
 
@@ -17,14 +17,14 @@
     .matches-index-title {
       font-size: 2rem;
       font-weight: 800;
-      color: #fff;
+      color: var(--theme-text-strong);             // était #fff
       margin-bottom: 0.35rem;
       font-family: $headers-font;
     }
 
     // Sous-titre
     .matches-index-subtitle {
-      color: $dark-muted;
+      color: var(--theme-text-muted);              // était $dark-muted
       font-size: 0.95rem;
       margin: 0;
     }
@@ -45,14 +45,14 @@
         font-size: 0.82rem;
         font-weight: 600;
         text-decoration: none;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: rgba(255, 255, 255, 0.55);
+        border: 1px solid var(--theme-border-strong); // était rgba(255,255,255,0.15)
+        color: var(--theme-text-muted);               // était rgba(255,255,255,0.55)
         background: transparent;
         transition: all 0.15s ease;
 
         &:hover {
-          color: rgba(255, 255, 255, 0.85);
-          border-color: rgba(255, 255, 255, 0.3);
+          color: var(--theme-text-primary);           // était rgba(255,255,255,0.85)
+          border-color: var(--theme-border-strong);
         }
 
         // Onglet actif : fond vert signature
@@ -74,8 +74,8 @@
     flex-wrap: wrap;
     margin-bottom: 2rem;
     padding: 0.85rem 1.1rem;
-    background-color: $dark-card-bg;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background-color: var(--theme-bg-card);        // était $dark-card-bg
+    border: 1px solid var(--theme-border);         // était rgba(255,255,255,0.07)
     border-radius: 12px;
   }
 
@@ -94,35 +94,35 @@
     gap: 0.65rem;
   }
 
-  // Chaque filtre "pill" (icône + input/select)
+  // Chaque filtre "pill" (icône + input/select) — adaptatif
   .filter-pill-group {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    background-color: $dark-surface;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--theme-bg-surface);  // fond adaptatif
+    border: 1px solid var(--theme-border);       // bordure adaptative
     border-radius: 999px;
     padding: 0.35rem 0.85rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--theme-text-primary);            // texte adaptatif
     transition: border-color 0.15s;
 
     &:focus-within {
       border-color: $green;
-      color: #fff;
+      color: var(--theme-text-strong); // texte fort au focus
     }
 
-    // Input date dans la pill
+    // Input date dans la pill — fond transparent, texte adaptatif
     .filter-date-input {
       background: transparent;
       border: none;
       outline: none;
-      color: rgba(255, 255, 255, 0.9);
+      color: var(--theme-text-primary); // texte adaptatif
       font-size: 0.82rem;
       width: 120px;
       cursor: pointer;
 
       // Couleur du texte jj/mm/aaaa dans Chrome (pseudo-élément interne)
-      &::-webkit-datetime-edit { color: rgba(255, 255, 255, 0.9); }
+      &::-webkit-datetime-edit { color: var(--theme-text-primary); }
 
       // Masque le calendrier natif sur certains navigateurs
       &::-webkit-calendar-picker-indicator {
@@ -140,49 +140,49 @@
     position: relative;
   }
 
-  // Trigger hérite de .filter-pill-group — on aligne le background avec les autres pills
+  // Trigger hérite de .filter-pill-group — adaptatif
   .level-filter-trigger {
-    background-color: $dark-surface;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
+    background-color: var(--theme-bg-surface); // fond adaptatif
+    border: 1px solid var(--theme-border);      // bordure adaptative
+    color: var(--theme-text-primary);           // texte adaptatif
     cursor: pointer;
 
     &:hover {
       border-color: $green;
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--theme-text-primary);
     }
 
     &:focus { outline: none; }
   }
 
-  // Input texte ville dans la pill
+  // Input texte ville dans la pill — fond transparent, texte adaptatif
   .filter-pill-group .filter-text-input {
     background: transparent;
     border: none;
     outline: none;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--theme-text-primary);   // texte saisi adaptatif
     font-size: 0.82rem;
     width: 100px;
 
-    &::placeholder { color: rgba(255, 255, 255, 0.35); }
+    &::placeholder { color: var(--theme-text-muted); } // placeholder adaptatif
   }
 
-  // Bouton "Effacer" (réinitialise les filtres)
+  // Bouton "Effacer" (réinitialise les filtres) — adaptatif
   .filter-reset-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--theme-text-muted);    // texte discret adaptatif
     text-decoration: none;
     padding: 0.3rem 0.6rem;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--theme-border); // bordure adaptative
     transition: all 0.15s;
 
     &:hover {
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.25);
+      color: var(--theme-text-primary);       // plus visible au survol
+      border-color: var(--theme-border-strong);
     }
   }
 
@@ -192,26 +192,27 @@
     display: flex;
     align-items: center;
 
-    // Icône loupe positionnée dans le champ
+    // Icône loupe positionnée dans le champ — adaptative
     .filter-search-icon {
       position: absolute;
       left: 0.75rem;
-      color: rgba(255, 255, 255, 0.35);
+      color: var(--theme-text-muted); // icône discrète adaptative
       pointer-events: none;
     }
 
+    // Champ de recherche libre — fond et texte adaptatifs
     .filter-search-input {
-      background-color: $dark-surface;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: var(--theme-bg-surface); // fond adaptatif
+      border: 1px solid var(--theme-border);      // bordure adaptative
       border-radius: 999px;
-      color: rgba(255, 255, 255, 0.8);
+      color: var(--theme-text-primary);           // texte saisi adaptatif
       font-size: 0.82rem;
       padding: 0.4rem 1rem 0.4rem 2.25rem; // padding-left pour l'icône
       width: 200px;
       outline: none;
       transition: border-color 0.15s;
 
-      &::placeholder { color: rgba(255, 255, 255, 0.3); }
+      &::placeholder { color: var(--theme-text-muted); } // placeholder adaptatif
 
       &:focus { border-color: $green; }
     }

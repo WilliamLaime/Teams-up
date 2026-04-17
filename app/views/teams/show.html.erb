@@ -24,15 +24,18 @@
     <%# ── En-tête équipe (par-dessus la bannière) ─────────────────────────── %>
     <div class="team-show-header">
 
-    <%# Blason %>
+    <%# Blason — priorité : SVG généré > image uploadée > placeholder
+        Même logique que la carte : le SVG du badge builder prime toujours. %>
     <div class="team-show-badge">
-      <% if @team.badge_image.attached? %>
-        <%= image_tag @team.badge_image, alt: "Blason #{@team.name}", class: "team-show-badge-img" %>
-      <% elsif @team.badge_svg.present? %>
+      <% if @team.badge_svg.present? %>
+        <%# SVG généré par le badge builder — rendu inline en sécurité %>
         <div class="team-show-badge-svg"><%= @team.badge_svg.html_safe %></div>
+      <% elsif @team.badge_image.attached? %>
+        <%# Fallback : image uploadée directement (ancienne version) %>
+        <%= image_tag @team.badge_image, alt: "Blason #{@team.name}", class: "team-show-badge-img" %>
       <% else %>
         <div class="team-show-badge-placeholder">
-          <i data-lucide="shield" style="width:48px;height:48px;color:rgba(255,255,255,0.3);"></i>
+          <i data-lucide="shield" style="width:48px;height:48px;color:var(--theme-text-muted);"></i>
         </div>
       <% end %>
     </div>
@@ -92,24 +95,24 @@
       <% content_for :modals do %>
         <div class="modal fade" id="leaveTeamModal" tabindex="-1" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content" style="background:#111111; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+            <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:12px;">
 
               <div class="modal-body text-center" style="padding:1.5rem 1.5rem 1rem;">
                 <div style="font-size:2rem; margin-bottom:0.75rem;">🚪</div>
-                <p style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
+                <p style="color:var(--theme-text-strong); font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
                   Quitter <%= @team.name %> ?
                 </p>
-                <p style="color:rgba(255,255,255,0.45); font-size:0.8rem; margin:0;">
+                <p style="color:var(--theme-text-muted); font-size:0.8rem; margin:0;">
                   Tu perdras accès au chat et aux matchs de l'équipe.
                 </p>
               </div>
 
-              <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
+              <div class="modal-footer" style="border-top:1px solid var(--theme-border); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
                 <%# Annuler %>
                 <button type="button"
                         data-bs-dismiss="modal"
-                        style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);
-                               background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+                        style="font-size:0.8rem; font-weight:600; color:var(--theme-text-muted);
+                               background:var(--theme-hover-bg); border:1px solid var(--theme-border);
                                border-radius:20px; padding:0.4rem 1rem; cursor:pointer;">
                   Annuler
                 </button>
@@ -134,7 +137,7 @@
   <% if @my_invitation %>
     <div class="team-invitation-card mb-3">
       <div class="team-invitation-card-body">
-        <p style="font-size:0.9rem;margin:0;color:rgba(255,255,255,0.9);">
+        <p style="font-size:0.9rem;margin:0;color:var(--theme-text-primary);">
           <i data-lucide="mail" style="width:14px;height:14px;margin-right:6px;"></i>
           <strong><%= @my_invitation.inviter.profil&.first_name %></strong>
           t'invite à rejoindre cette équipe.
@@ -206,21 +209,21 @@
                   <% content_for :modals do %>
                     <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-hidden="true">
                       <div class="modal-dialog modal-dialog-centered modal-sm">
-                        <div class="modal-content" style="background:#111111; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+                        <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:12px;">
                           <div class="modal-body text-center" style="padding:1.5rem 1.5rem 1rem;">
                             <div style="font-size:2rem; margin-bottom:0.75rem;">⚡</div>
-                            <p style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
+                            <p style="color:var(--theme-text-strong); font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
                               Transférer le capitanat à <%= tm.user.profil&.first_name %> ?
                             </p>
-                            <p style="color:rgba(255,255,255,0.45); font-size:0.8rem; margin:0;">
+                            <p style="color:var(--theme-text-muted); font-size:0.8rem; margin:0;">
                               Tu deviendras simple membre et tu perdras les droits de gestion de l'équipe.
                             </p>
                           </div>
-                          <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
+                          <div class="modal-footer" style="border-top:1px solid var(--theme-border); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
                             <button type="button"
                                     data-bs-dismiss="modal"
-                                    style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);
-                                           background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+                                    style="font-size:0.8rem; font-weight:600; color:var(--theme-text-muted);
+                                           background:var(--theme-hover-bg); border:1px solid var(--theme-border);
                                            border-radius:20px; padding:0.4rem 1rem; cursor:pointer;">
                               Annuler
                             </button>
@@ -248,7 +251,7 @@
                     <%= image_tag tm.user.profil.avatar, class: "team-member-card-avatar", alt: tm.user.profil.first_name %>
                   <% else %>
                     <div class="team-member-card-avatar-placeholder">
-                      <i data-lucide="user" style="width:22px;height:22px;color:rgba(255,255,255,0.4);"></i>
+                      <i data-lucide="user" style="width:22px;height:22px;color:var(--theme-text-muted);"></i>
                     </div>
                   <% end %>
 
@@ -269,7 +272,7 @@
 
 
         <% else %>
-          <p style="color:rgba(255,255,255,0.4); font-size:0.85rem;">Aucun membre pour l'instant.</p>
+          <p style="color:var(--theme-text-muted); font-size:0.85rem;">Aucun membre pour l'instant.</p>
         <% end %>
       </div>
     </div>
@@ -326,7 +329,7 @@
                       <%= image_tag friend.profil.avatar, class: "team-member-avatar", alt: friend.profil.first_name %>
                     <% else %>
                       <div class="team-member-avatar-placeholder">
-                        <i data-lucide="user" style="width:18px;height:18px;color:rgba(255,255,255,0.4);"></i>
+                        <i data-lucide="user" style="width:18px;height:18px;color:var(--theme-text-muted);"></i>
                       </div>
                     <% end %>
 
@@ -372,7 +375,7 @@
                     </span>
                   <% end %>
                   <div class="d-flex align-items-center gap-2">
-                    <span style="font-size:0.75rem;color:rgba(255,255,255,0.4);">En attente</span>
+                    <span style="font-size:0.75rem;color:var(--theme-text-muted);">En attente</span>
                     <%= button_to team_team_invitation_path(@team, inv),
                         method: :delete,
                         class: "btn btn-xs btn-outline-danger",
@@ -384,7 +387,7 @@
               <% end %>
             </ul>
           <% else %>
-            <p style="color:rgba(255,255,255,0.4); font-size:0.85rem;">Aucune invitation en attente.</p>
+            <p style="color:var(--theme-text-muted); font-size:0.85rem;">Aucune invitation en attente.</p>
           <% end %>
         </div>
 
@@ -408,7 +411,7 @@
                       </span>
                     <% end %>
                     <%# Proposé par %>
-                    <span style="font-size:0.7rem; color:rgba(255,255,255,0.35);">
+                    <span style="font-size:0.7rem; color:var(--theme-text-muted);">
                       par <%= prop.proposed_by&.profil&.first_name %>
                     </span>
                   </div>
@@ -444,7 +447,7 @@
             <i data-lucide="user-plus" style="width:16px;height:16px;margin-right:6px;"></i>
             Proposer un joueur
           </h2>
-          <p style="font-size:0.78rem; color:rgba(255,255,255,0.4); margin-bottom:0.75rem;">
+          <p style="font-size:0.78rem; color:var(--theme-text-muted); margin-bottom:0.75rem;">
             Propose un ami au capitaine — il validera ou refusera la demande.
           </p>
 
@@ -460,7 +463,7 @@
                       <%= image_tag friend.profil.avatar, class: "team-member-avatar", alt: friend.profil.first_name %>
                     <% else %>
                       <div class="team-member-avatar-placeholder">
-                        <i data-lucide="user" style="width:18px;height:18px;color:rgba(255,255,255,0.4);"></i>
+                        <i data-lucide="user" style="width:18px;height:18px;color:var(--theme-text-muted);"></i>
                       </div>
                     <% end %>
                     <div class="team-member-info">
@@ -482,7 +485,7 @@
               <% end %>
             </ul>
           <% else %>
-            <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin:0;">
+            <p style="color:var(--theme-text-muted); font-size:0.85rem; margin:0;">
               Tous tes amis sont déjà membres ou ont déjà une invitation en attente.
             </p>
           <% end %>
@@ -508,7 +511,7 @@
         <% if team_matches.any? %>
           <div style="display:flex; flex-direction:column; gap:0.5rem;">
             <% team_matches.each do |match| %>
-              <%= link_to match_path(match), style: "display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.75rem; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); text-decoration:none; transition:background 0.15s;", data: { turbo_frame: "_top" } do %>
+              <%= link_to match_path(match), style: "display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.75rem; border-radius:8px; background:var(--theme-hover-bg); border:1px solid var(--theme-border); text-decoration:none; transition:background 0.15s;", data: { turbo_frame: "_top" } do %>
 
                 <%# Icône sport %>
                 <div style="flex-shrink:0; width:34px; height:34px; border-radius:6px; background:rgba(30,221,136,0.1); display:flex; align-items:center; justify-content:center;">
@@ -517,10 +520,10 @@
 
                 <%# Infos match %>
                 <div style="flex:1; min-width:0;">
-                  <div style="font-size:0.85rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  <div style="font-size:0.85rem; font-weight:700; color:var(--theme-text-strong); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                     <%= match.title %>
                   </div>
-                  <div style="font-size:0.72rem; color:rgba(255,255,255,0.4);">
+                  <div style="font-size:0.72rem; color:var(--theme-text-muted);">
                     <%= match.date&.strftime("%d %b %Y") %> à <%= match.time&.strftime("%H:%M") %>
                     <% if match.place.present? %> · <%= match.place %><% end %>
                   </div>
@@ -541,7 +544,7 @@
             <% end %>
           </div>
         <% else %>
-          <p style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin:0;">
+          <p style="color:var(--theme-text-muted); font-size:0.85rem; margin:0;">
             Aucun match pour cette équipe.
             <% if @team.captain?(current_user) %>
               <%= link_to "Créer le premier !", new_match_path(team_id: @team.id), style: "color:#1EDD88;", data: { turbo_frame: "_top" } %>

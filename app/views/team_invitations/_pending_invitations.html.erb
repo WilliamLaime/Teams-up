@@ -4,7 +4,7 @@
 
 <% if invitations.any? %>
   <div class="team-invitations-received">
-    <h3 style="font-size:0.9rem;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:0.75rem;">
+    <h3 style="font-size:0.9rem;font-weight:700;color:var(--theme-text-muted);margin-bottom:0.75rem;">
       <i data-lucide="mail" style="width:14px;height:14px;margin-right:4px;"></i>
       Invitations d'équipes (<%= invitations.size %>)
     </h3>
@@ -12,11 +12,11 @@
     <% invitations.each do |inv| %>
       <div class="team-invitation-card">
         <div class="team-invitation-card-body">
-          <p style="font-size:0.85rem;margin:0;color:rgba(255,255,255,0.85);">
+          <p style="font-size:0.85rem;margin:0;color:var(--theme-text-primary);">
             <strong><%= inv.inviter.profil&.first_name %></strong>
             t'invite à rejoindre <strong><%= inv.team.name %></strong>
           </p>
-          <p style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin:0;">
+          <p style="font-size:0.75rem;color:var(--theme-text-muted);margin:0;">
             <%= time_ago_in_words(inv.created_at) %>
           </p>
         </div>

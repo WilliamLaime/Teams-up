@@ -1,6 +1,6 @@
 // =====================================================
 // AUTH PAGES — Connexion & Inscription
-// Thème sombre cohérent avec la navbar/footer
+// S'adapte au thème clair/sombre via var(--theme-*)
 // =====================================================
 
 // ── Page confirmation email (post-inscription) ────────────────────────────────
@@ -11,17 +11,17 @@
   align-items: center;
   justify-content: center;
   padding: 2.5rem 1rem;
-  background-color: $dark-bg;
+  background-color: var(--theme-page-bg); // Fond page selon le thème
 }
 
 .email-confirmation-card {
-  background-color: $dark-card-bg;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--theme-bg-card); // Carte selon le thème
+  border: 1px solid var(--theme-border);
   border-radius: 16px;
   padding: 2.5rem 2.25rem;
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
   text-align: center;
 }
 
@@ -41,19 +41,19 @@
   font-family: $headers-font;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #f0f0f0;
+  color: var(--theme-text-strong); // Titre fort selon le thème
   margin-bottom: 1rem;
 }
 
 .email-confirmation-text {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--theme-text-muted); // Texte secondaire selon le thème
   line-height: 1.6;
   margin-bottom: 1rem;
 }
 
 .email-confirmation-address {
-  color: #1EDD88;
+  color: #1EDD88; // Vert — identique dans les deux thèmes
   word-break: break-all;
 }
 
@@ -61,26 +61,26 @@
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--theme-hover-bg); // Fond léger selon le thème
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   padding: 0.65rem 0.85rem;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--theme-text-muted);
   text-align: left;
   margin-bottom: 1.25rem;
 
-  strong { color: rgba(255, 255, 255, 0.7); }
+  strong { color: var(--theme-text-primary); } // Texte fort selon le thème
 }
 
 .email-confirmation-divider {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--theme-border);
   margin: 1.25rem 0;
 }
 
 .email-confirmation-resend-label {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--theme-text-muted);
   margin-bottom: 0.65rem;
 }
 
@@ -89,12 +89,12 @@
   align-items: center;
   gap: 0.4rem;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--theme-text-muted);
   text-decoration: none;
   transition: color 0.15s ease;
 
   &:hover {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--theme-text-primary);
     text-decoration: none;
   }
 }
@@ -105,25 +105,25 @@
   }
 }
 
-// Fond pleine page sombre pour les pages d'authentification
+// Fond pleine page pour les pages d'authentification
 .auth-page {
   min-height: calc(100vh - 130px); // Retire la hauteur navbar + footer
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2.5rem 1rem;
-  background-color: $dark-bg; // Fond très sombre #111
+  background-color: var(--theme-page-bg); // Fond selon le thème (gris clair / noir)
 }
 
-// Carte blanche du formulaire (légèrement plus claire que le fond)
+// Carte du formulaire
 .auth-card {
-  background-color: $dark-card-bg; // #1a1c1a
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--theme-bg-card); // Fond carte selon le thème
+  border: 1px solid var(--theme-border);
   border-radius: 16px;
   padding: 2.5rem 2.25rem;
   width: 100%;
   max-width: 580px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
 
   // ── Variante large pour le formulaire d'inscription (layout 2 colonnes) ──
   &--wide {
@@ -137,7 +137,7 @@
       input[type="submit"],
       button[type="submit"] {
         width: auto;           // Annule le width: 100% du bouton par défaut
-        padding-left: 2rem;    // Espacement horizontal généreux
+        padding-left: 2rem;
         padding-right: 2rem;
       }
     }
@@ -157,46 +157,41 @@
   }
 
   // ── Espacement + séparateur entre les 2 colonnes ─────────────────────────
-  // Sur mobile : pas de séparateur, juste un espace vertical entre les blocs
-  // Sur desktop : border-left sur la colonne droite + padding symétrique
   .col-md-5 {
     @media (min-width: 768px) {
-      padding-right: 2rem; // Espace à droite de la colonne gauche
+      padding-right: 2rem;
     }
   }
 
   .col-md-7 {
     @media (min-width: 768px) {
-      padding-left: 2rem;                               // Espace à gauche = même valeur
-      border-left: 1px solid rgba(255, 255, 255, 0.08); // Ligne de séparation
+      padding-left: 2rem;
+      border-left: 1px solid var(--theme-border); // Séparateur vertical selon le thème
     }
 
-    // Sur mobile : séparateur horizontal à la place du vertical
+    // Sur mobile : séparateur horizontal
     @media (max-width: 767px) {
       padding-top: 1.5rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid var(--theme-border);
       margin-top: 1rem;
     }
   }
 
   // ── Titre du formulaire ──────────────────────────
   h2 {
-    color: $dark-text;
+    color: var(--theme-text-primary); // Titre selon le thème
     font-family: $headers-font;
     font-size: 1.75rem;
     font-weight: 700;
     margin-bottom: 1.75rem;
 
-    // Accent vert sur le dernier mot (optionnel, utilisé via <span class="accent">)
-    .accent {
-      color: $green;
-    }
+    .accent { color: $green; }
   }
 
   // ── Labels des champs ────────────────────────────
   label,
   .col-form-label {
-    color: rgba(255, 255, 255, 0.65) !important;
+    color: var(--theme-text-muted) !important; // Labels discrets selon le thème
     font-size: 0.85rem;
     font-weight: 500;
     margin-bottom: 0.35rem;
@@ -204,15 +199,15 @@
 
   // ── Champs de saisie ─────────────────────────────
   .form-control {
-    background-color: $dark-surface !important; // #242624
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: $dark-text !important;
+    background-color: var(--theme-bg-surface) !important; // Fond input selon le thème
+    border: 1px solid var(--theme-border) !important;
+    color: var(--theme-text-primary) !important;
     border-radius: 8px;
     padding: 0.7rem 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
     &::placeholder {
-      color: rgba(255, 255, 255, 0.25);
+      color: var(--theme-text-muted); // Placeholder discret selon le thème
     }
 
     // Focus : bordure verte + halo vert subtil
@@ -223,13 +218,13 @@
     }
 
     // Autofill navigateur : le navigateur force un fond blanc/bleu clair
-    // On utilise un box-shadow inset géant pour le masquer avec notre couleur sombre
+    // On utilise un box-shadow inset géant pour le masquer avec notre couleur de surface
     &:-webkit-autofill,
     &:-webkit-autofill:hover,
     &:-webkit-autofill:focus {
-      -webkit-box-shadow: 0 0 0px 1000px $dark-surface inset !important;
-      -webkit-text-fill-color: $dark-text !important;
-      caret-color: $dark-text;
+      -webkit-box-shadow: 0 0 0px 1000px var(--theme-bg-surface) inset !important;
+      -webkit-text-fill-color: var(--theme-text-primary) !important;
+      caret-color: var(--theme-text-primary);
       // Transition de 5000s → l'animation du navigateur dure si longtemps qu'elle est invisible
       transition: background-color 5000s ease-in-out 0s !important;
     }
@@ -238,7 +233,7 @@
   // ── Texte d'aide (hint, ex: "6 caractères minimum") ──
   .form-text,
   .hint {
-    color: rgba(255, 255, 255, 0.4) !important;
+    color: var(--theme-text-muted) !important;
     font-size: 0.78rem;
     margin-top: 0.25rem;
   }
@@ -279,7 +274,7 @@
 
   // ── Checkbox "Remember me" ───────────────────────
   .form-check-label {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--theme-text-muted);
     font-size: 0.875rem;
   }
 
@@ -295,7 +290,7 @@
   button[type="submit"]:not(.btn-google) {
     background-color: $green;
     border-color: $green;
-    color: #111111; // Texte sombre sur fond vert
+    color: #111111; // Texte sombre sur fond vert — identique dans les deux thèmes
     font-weight: 700;
     width: 100%;
     padding: 0.75rem;
@@ -320,7 +315,7 @@
   // ── Séparateur simple ────────────────────────────
   .auth-divider {
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--theme-border);
     margin: 1.5rem 0 1.25rem;
   }
 
@@ -337,11 +332,11 @@
       content: "";
       flex: 1;
       height: 1px;
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: var(--theme-border); // Séparateur selon le thème
     }
 
     span {
-      color: rgba(255, 255, 255, 0.35);
+      color: var(--theme-text-muted);
       font-size: 0.8rem;
       font-weight: 500;
       white-space: nowrap;
@@ -364,8 +359,8 @@
     width: auto;                      // Taille au contenu (pas pleine largeur)
     padding: 0.45rem 1rem;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background-color: #ffffff;        // Fond blanc — standard Google
+    border: 1px solid rgba(0, 0, 0, 0.15); // Bordure légère sur fond blanc
+    background-color: #ffffff;        // Fond blanc — standard Google (intentionnel)
     color: #3c4043;                   // Texte gris foncé Google
     font-size: 0.82rem;
     font-weight: 500;
@@ -379,7 +374,7 @@
 
     &:hover {
       background-color: #f8f9fa;      // Léger gris au survol
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       color: #3c4043;
       transform: translateY(-1px);
     }
@@ -400,7 +395,7 @@
     text-align: center;
 
     p {
-      color: rgba(255, 255, 255, 0.45);
+      color: var(--theme-text-muted);
       font-size: 0.875rem;
       margin-bottom: 0.4rem;
     }
@@ -421,13 +416,11 @@
 
   // ── Légende champs obligatoires ──────────────────
   .required-legend {
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--theme-text-muted);
     font-size: 0.78rem;
     margin-top: 0.75rem;
     display: block;
   }
-
-
 }
 
 // ── Bloc choix d'avatar (photo personnelle OU preset) ──────────────────────
@@ -450,17 +443,17 @@
     gap: 0.4rem;
     padding: 0.45rem 0.75rem;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--theme-border); // Bordure selon le thème
     background: transparent;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--theme-text-muted); // Texte discret selon le thème
     font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover {
-      color: rgba(255, 255, 255, 0.75);
-      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--theme-text-primary);
+      border-color: var(--theme-border-strong);
     }
   }
 
@@ -491,8 +484,8 @@
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    background-color: $dark-surface;
-    border: 2px dashed rgba(255, 255, 255, 0.2);
+    background-color: var(--theme-bg-surface); // Fond selon le thème
+    border: 2px dashed var(--theme-border-strong); // Pointillé selon le thème
     cursor: pointer;
     overflow: hidden;
     display: flex;
@@ -503,7 +496,7 @@
     &:hover {
       border-color: $green;
 
-      .avatar-placeholder-icon { color: rgba(255, 255, 255, 0.7); }
+      .avatar-placeholder-icon { color: var(--theme-text-primary); }
     }
   }
 
@@ -513,7 +506,7 @@
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--theme-text-muted); // Discret selon le thème
     font-size: 0.7rem;
     pointer-events: none;
     transition: color 0.2s;
@@ -536,7 +529,7 @@
     height: 26px;
     background-color: $green;
     border-radius: 50%;
-    border: 2px solid $dark-card-bg;
+    border: 2px solid var(--theme-bg-card); // Contour qui suit le fond de la carte
     display: flex;
     align-items: center;
     justify-content: center;
@@ -551,8 +544,8 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background-color: $dark-surface;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--theme-bg-surface); // Fond selon le thème
+    border: 2px solid var(--theme-border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -562,7 +555,7 @@
 
   // Icône smile affichée avant toute sélection
   .avatar-preset-placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--theme-text-muted); // Discret selon le thème
     display: flex;
     align-items: center;
     justify-content: center;
@@ -616,7 +609,7 @@
 
   // Texte d'aide sous les deux panneaux
   .avatar-upload-hint {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--theme-text-muted); // Discret selon le thème
     font-size: 0.72rem;
     margin-top: 0.6rem;
     text-align: center;
@@ -624,10 +617,6 @@
 }
 
 // ── Bouton oeil pour afficher/masquer le mot de passe ────────────────────
-// Utilise Bootstrap input-group : le bouton est collé à droite de l'input
-// Pas besoin de position absolute — Bootstrap gère l'alignement
-
-// Bouton oeil — flotte EN DESSUS de l'input, positionné en absolu dans le div relatif
 .password-toggle-btn {
   position: absolute;
   right: 0.75rem;       // Distance depuis le bord droit de l'input
@@ -637,21 +626,20 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--theme-text-muted); // Discret selon le thème
   display: flex;
   align-items: center;
   transition: color 0.2s ease;
   z-index: 2;           // Par-dessus l'input
 
   &:hover {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--theme-text-primary); // Texte fort au survol
   }
 }
 
 // ── Étoile obligatoire verte (page inscription) ──────────────────────────
 // Déclarée hors de .auth-card pour battre la spécificité de Bootstrap sur abbr
 // simple_form génère <abbr title="required">*</abbr> dans les labels
-// Cible "required" (EN) et "obligatoire" (FR) car le titre change selon la locale
 .auth-card abbr[title="required"],
 .auth-card abbr[title="obligatoire"],
 .auth-card .required-star {
@@ -662,7 +650,6 @@
 
 // ── Tooltip CSS pure (aucun JS requis) ───────────────────────────────────
 // Utilisé avec <span class="css-tooltip" data-tip="texte">
-// Le contenu de data-tip est affiché via ::after au survol
 .css-tooltip {
   position: relative;
   cursor: help;
@@ -675,14 +662,14 @@
 
   // Bulle de texte — construite depuis l'attribut data-tip
   &::after {
-    content: attr(data-tip);        // Récupère le texte dans data-tip
+    content: attr(data-tip);
     position: absolute;
-    left: calc(100% + 10px);        // Positionné à droite de l'icône
+    left: calc(100% + 10px);
     top: 50%;
     transform: translateY(-50%);
-    background-color: $dark-card-bg; // Fond sombre cohérent avec la DA
-    color: rgba(255, 255, 255, 0.85);
-    border: 1px solid $green;        // Bordure verte
+    background-color: var(--theme-bg-card); // Fond bulle selon le thème
+    color: var(--theme-text-primary);
+    border: 1px solid $green;
     font-size: 0.78rem;
     font-weight: 500;
     line-height: 1.45;
@@ -690,8 +677,8 @@
     border-radius: 8px;
     white-space: normal;
     width: 220px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    pointer-events: none;           // La bulle ne bloque pas les clics
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s ease;
     z-index: 10;
@@ -701,11 +688,11 @@
   &::before {
     content: "";
     position: absolute;
-    left: calc(100% + 4px);         // Juste avant la bulle
+    left: calc(100% + 4px);
     top: 50%;
     transform: translateY(-50%);
     border: 5px solid transparent;
-    border-right-color: $green;     // Flèche verte pointant à gauche
+    border-right-color: $green;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s ease;

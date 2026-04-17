@@ -292,8 +292,8 @@ export default class extends Controller {
   _showEnded() {
     this.element.innerHTML = `
       <div class="countdown-started">
-        <div class="countdown-pulse" style="background:rgba(255,255,255,0.35); box-shadow:none; animation:none;"></div>
-        <span style="color:rgba(255,255,255,0.4);">Match terminé</span>
+        <div class="countdown-pulse" style="background:var(--theme-text-muted); box-shadow:none; animation:none;"></div>
+        <span style="color:var(--theme-text-muted);">Match terminé</span>
       </div>
     `
   }

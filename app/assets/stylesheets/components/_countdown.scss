@@ -52,7 +52,7 @@ $fc-fold:   rgba(0, 0, 0, 0.25);          // ligne de pliage centrale (subtile)
   text-align: center;
   font-size: 1.05rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--theme-text-strong); // adaptatif : noir en clair, blanc en sombre
   margin-bottom: 0.35rem;
   letter-spacing: 0.01em;
 }
@@ -83,7 +83,7 @@ $fc-fold:   rgba(0, 0, 0, 0.25);          // ligne de pliage centrale (subtile)
 .flip-separator {
   font-size: 1.8rem;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--theme-text-muted); // séparateur ":" sur fond de page — adaptatif
   line-height: 1;
   margin-bottom: calc(#{$fc-half} + 0.3rem);  // centre les ":" au milieu des tuiles noires
   padding: 0 4px;
@@ -100,7 +100,7 @@ $fc-fold:   rgba(0, 0, 0, 0.25);          // ligne de pliage centrale (subtile)
 .flip-unit__label {
   font-size: 0.62rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--theme-text-muted); // label sous les tuiles — sur fond de page, adaptatif
   text-transform: lowercase;
   letter-spacing: 0.06em;
 }

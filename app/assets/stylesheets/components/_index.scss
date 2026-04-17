@@ -16,3 +16,5 @@
 @import "teams";       // Équipes : index, show, formulaire, blason
 @import "player_card"; // Card profil joueur ornementale avec thèmes de rang
 @import "onboarding";  // Modale post-inscription + banner de rappel 7 jours
+// NOTE : _theme.scss est importé directement dans application.scss après pages/index
+// pour garantir qu'il est bien en DERNIER dans le CSS compilé (priorité cascade maximale)

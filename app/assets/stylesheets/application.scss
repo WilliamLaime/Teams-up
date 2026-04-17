@@ -15,6 +15,14 @@
 // Importé EN DERNIER pour pouvoir surcharger tous les styles précédents
 @import "components/responsive";
 
+// ── Mode clair — overrides de thème ──────────────────────────────────────────
+// DOIT être importé EN TOUT DERNIER pour avoir la priorité cascade maximale
+// sur TOUS les fichiers (components ET pages).
+// Les règles [data-theme="light"] écrasent les valeurs sombres compilées des
+// fichiers précédents grâce à leur spécificité plus élevée (attribut + classe)
+// et à leur position dans le fichier final.
+@import "components/theme";
+
 // ── Backdrop des modales ────────────────────────────
 // Bootstrap 5 calcule opacity via var(--bs-backdrop-opacity).
 // !important écrase cette valeur calculée de manière fiable,

@@ -5,8 +5,8 @@
 // ═══════════════════════════════════════════════════
 
 .legal-page {
-  background-color: $dark-bg; // fond sombre cohérent avec le reste du site
-  color: $dark-text;           // texte clair sur fond sombre
+  background-color: var(--theme-page-bg);          // était $dark-bg
+  color: var(--theme-text-primary);                // était $dark-text
   min-height: 100vh;
 
   // ── Bannière en haut de page ────────────────────
@@ -18,19 +18,19 @@
     text-align: left;
   }
 
-  // Titre h1 dans la bannière
+  // Titre h1 dans la bannière (reste blanc car sur fond image sombre)
   .legal-banner-title {
     font-family: $display-font;
     font-size: clamp(2rem, 5vw, 3.5rem);
     font-weight: 800;
-    color: #fff;
+    color: #fff;                                   // gardé blanc : bannière image toujours sombre
     margin-bottom: 0.5rem;
   }
 
   // Date de mise à jour sous le titre
   .legal-banner-subtitle {
     font-size: 1rem;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.6);               // gardé : bannière image toujours sombre
   }
 
   // ── Section du contenu ───────────────────────────
@@ -41,18 +41,18 @@
   // Paragraphe d'introduction
   .legal-intro {
     font-size: 1.1rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     line-height: 1.8;
     margin-bottom: 3rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid $dark-surface; // séparateur discret
+    border-bottom: 1px solid var(--theme-border);  // était $dark-surface
   }
 
   // ── Bloc pour chaque section numérotée ──────────
   .legal-section {
     margin-bottom: 2.5rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid $dark-surface; // ligne séparatrice entre sections
+    border-bottom: 1px solid var(--theme-border);  // était $dark-surface
 
     &:last-of-type {
       border-bottom: none; // pas de ligne après la dernière section
@@ -63,7 +63,7 @@
   .legal-section-title {
     font-size: 1.3rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 1rem;
   }
 
@@ -71,21 +71,21 @@
   .legal-subsection-title {
     font-size: 1rem;
     font-weight: 600;
-    color: $dark-text;
+    color: var(--theme-text-primary);              // était $dark-text
     margin-top: 1.2rem;
     margin-bottom: 0.6rem;
   }
 
   // Paragraphes courants
   p {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     line-height: 1.8;
     margin-bottom: 1rem;
   }
 
   // Liens dans le texte
   a {
-    color: $green; // couleur principale Team-Up
+    color: $green;
     text-decoration: underline;
 
     &:hover {
@@ -95,7 +95,7 @@
 
   // Listes à puces
   .legal-list {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     line-height: 1.8;
     padding-left: 1.5rem;
     margin-bottom: 1rem;
@@ -106,7 +106,7 @@
 
     // Texte en gras dans les listes
     strong {
-      color: $dark-text;
+      color: var(--theme-text-primary);            // était $dark-text
     }
   }
 
@@ -160,13 +160,13 @@
   .legal-contact-block {
     margin-top: 3rem;
     padding: 2rem;
-    background-color: $dark-card-bg;
+    background-color: var(--theme-bg-card);        // était $dark-card-bg
     border-radius: 12px;
     text-align: center;
 
     p {
       font-size: 1.1rem;
-      color: $dark-text;
+      color: var(--theme-text-primary);            // était $dark-text
       margin-bottom: 1rem;
     }
 

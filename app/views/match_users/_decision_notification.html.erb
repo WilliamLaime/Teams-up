@@ -103,7 +103,7 @@
         <%# Bouton de fermeture principal %>
         <button type="button"
                 class="btn btn-sm w-100"
-                style="<%= accepted ? 'background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);' : 'background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.1);' %>"
+                style="<%= accepted ? 'background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);' : 'background:var(--theme-hover-bg);color:var(--theme-text-muted);border:1px solid var(--theme-border);' %>"
                 data-bs-dismiss="modal">
           <%= accepted ? "Super, j'ai compris !" : "OK, fermer" %>
         </button>

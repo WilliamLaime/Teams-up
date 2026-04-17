@@ -96,7 +96,7 @@
           <div data-pwa-install-target="modal"
                class="modal fade" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content" style="background:#1a1c1a; border:1px solid rgba(30,221,136,0.2); border-radius:16px; overflow:hidden;">
+              <div class="modal-content pwa-modal-content">
 
                 <%# En-tête commun aux deux états %>
                 <div class="modal-header border-0 pb-0 pt-4 px-4">
@@ -107,18 +107,18 @@
                 <%# ── État 1 : installation disponible ── %>
                 <div data-pwa-install-target="installView">
                   <div class="modal-body px-4 py-4">
-                    <h5 style="color:#f0f0f0; font-weight:700; font-size:1.2rem; margin-bottom:0.5rem;">
+                    <h5 class="pwa-modal-title">
                       Installe Teams-up sur ton appareil
                     </h5>
-                    <p style="color:rgba(255,255,255,0.55); font-size:0.9rem; line-height:1.6; margin-bottom:1.5rem;">
+                    <p class="pwa-modal-desc">
                       Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application — sans passer par le navigateur.
                     </p>
-                    <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.6rem;">
-                      <li style="color:rgba(255,255,255,0.75); font-size:0.875rem; display:flex; align-items:center; gap:0.6rem;">
+                    <ul class="pwa-modal-list">
+                      <li class="pwa-modal-list-item">
                         <i data-lucide="zap" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
                         Lancement instantané
                       </li>
-                      <li style="color:rgba(255,255,255,0.75); font-size:0.875rem; display:flex; align-items:center; gap:0.6rem;">
+                      <li class="pwa-modal-list-item">
                         <i data-lucide="smartphone" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
                         Expérience plein écran
                       </li>
@@ -126,18 +126,17 @@
                   </div>
                   <%# Instructions spécifiques iOS (Safari ne supporte pas le prompt natif) %>
                   <div data-pwa-install-target="iosInstructions" style="display:none; padding: 0 1.5rem 1rem;">
-                    <p style="color:rgba(255,255,255,0.55); font-size:0.85rem; line-height:1.6; margin:0; border-top:1px solid rgba(255,255,255,0.1); padding-top:1rem;">
+                    <p class="pwa-modal-ios-hint">
                       Sur iOS, appuie sur
-                      <strong style="color:rgba(255,255,255,0.85);">Partager</strong>
+                      <strong class="pwa-modal-ios-strong">Partager</strong>
                       <i data-lucide="share" style="width:13px;height:13px;color:#1EDD88;vertical-align:middle;"></i>
                       puis
-                      <strong style="color:rgba(255,255,255,0.85);">Sur l'écran d'accueil</strong>.
+                      <strong class="pwa-modal-ios-strong">Sur l'écran d'accueil</strong>.
                     </p>
                   </div>
 
                   <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
-                    <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
-                            style="color:rgba(255,255,255,0.55); background:rgba(255,255,255,0.07); border:none; border-radius:8px; padding:8px 18px;">
+                    <button type="button" class="btn btn-sm pwa-modal-btn-later" data-bs-dismiss="modal">
                       Plus tard
                     </button>
                     <%# Bouton principal : caché sur iOS (pas de prompt natif), actif si le navigateur le supporte %>
@@ -158,17 +157,16 @@
                     <div style="margin-bottom:1rem;">
                       <i data-lucide="circle-check" style="width:40px;height:40px;color:#1EDD88;"></i>
                     </div>
-                    <h5 style="color:#f0f0f0; font-weight:700; font-size:1.1rem; margin-bottom:0.5rem;">
+                    <h5 class="pwa-modal-title">
                       Déjà installée sur cet appareil
                     </h5>
-                    <p style="color:rgba(255,255,255,0.55); font-size:0.875rem; line-height:1.6; margin:0;">
+                    <p class="pwa-modal-desc">
                       Teams-up est déjà installé ici. Tu peux l'ouvrir directement depuis ton écran d'accueil.<br>
-                      <span style="color:rgba(255,255,255,0.35); font-size:0.8rem;">Pour installer sur un autre appareil, utilise ce bouton depuis ce nouvel appareil.</span>
+                      <span class="pwa-modal-hint-small">Pour installer sur un autre appareil, utilise ce bouton depuis ce nouvel appareil.</span>
                     </p>
                   </div>
                   <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-sm w-100" data-bs-dismiss="modal"
-                            style="background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.75); border:none; border-radius:8px; padding:8px;">
+                    <button type="button" class="btn btn-sm w-100 pwa-modal-btn-later" data-bs-dismiss="modal">
                       Fermer
                     </button>
                   </div>
@@ -200,7 +198,8 @@
                   data-bs-target="#global-chat-modal"
                   aria-label="Mes conversations"
                   title="Mes conversations">
-            <i data-lucide="message-circle" style="width:20px;height:20px;color:rgba(255,255,255,0.75);" aria-hidden="true"></i>
+            <%# Pas de color inline — hérite de .nav-chat-btn { color: var(--theme-text-muted) } %>
+            <i data-lucide="message-circle" style="width:20px;height:20px;" aria-hidden="true"></i>
             <span id="chat-navbar-badge" class="nav-chat-badge" style="display:none;"></span>
           </button>
         </div>
@@ -275,6 +274,23 @@
           <% end %>
         </div>
       <% end %>
+
+      <%# ── Bouton toggle mode clair / mode sombre ───────────────────────────────
+          Visible pour TOUS les utilisateurs (connectés ou non).
+          data-theme-toggle-target="button" : le Stimulus controller "theme-toggle"
+          (attaché sur <body>) détecte ce bouton et met à jour son icône au chargement
+          et après chaque toggle.
+          aria-label et title mis à jour dynamiquement par le controller JS. %>
+      <button type="button"
+              class="nav-theme-btn"
+              data-theme-toggle-target="button"
+              data-action="click->theme-toggle#toggle"
+              title="Changer le thème"
+              aria-label="Changer le thème">
+        <%# L'icône est initialement "sun" (pour mode sombre → inviter à passer en clair).
+            Le Stimulus controller la met à jour dès le connect() selon data-theme de <html>. %>
+        <i data-lucide="sun" style="width:20px;height:20px;" aria-hidden="true"></i>
+      </button>
 
     </div><%# fin actions droite %>
 

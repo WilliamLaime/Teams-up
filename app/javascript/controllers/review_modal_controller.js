@@ -103,9 +103,9 @@ export default class extends Controller {
     // Réinitialise le style de tous les boutons de ce match
     const allBtns = this.element.querySelectorAll(`.vote-candidate-btn[data-match-id="${matchId}"]`)
     allBtns.forEach(btn => {
-      btn.style.background  = "rgba(255,255,255,0.05)"
-      btn.style.borderColor = "rgba(255,255,255,0.1)"
-      btn.style.color       = "rgba(255,255,255,0.65)"
+      btn.style.background  = "var(--theme-hover-bg)"  // Fond inactif selon le thème
+      btn.style.borderColor = "var(--theme-border)"    // Bordure selon le thème
+      btn.style.color       = "var(--theme-text-muted)" // Texte inactif selon le thème
     })
 
     // Marque le bouton cliqué comme sélectionné (couleur ambre = homme du match)

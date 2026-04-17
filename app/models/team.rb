@@ -49,6 +49,14 @@ class Team < ApplicationRecord
   # serveur, n'importe qui pourrait injecter <script> ou des handlers "onload=".
   before_save :sanitize_badge_svg, if: -> { badge_svg_changed? && badge_svg.present? }
 
+  # Quand l'équipe enregistre un nouveau SVG de blason, on supprime l'image
+  # uploadée (badge_image) si elle existe. Raison : le SVG prend la priorité
+  # d'affichage et l'image n'est plus nécessaire — la garder gaspillerait
+  # de l'espace en storage (Cloudinary / Active Storage).
+  after_commit :purge_badge_image_if_svg_present,
+               on: %i[create update],
+               if: -> { badge_svg.present? && badge_image.attached? }
+
   # Quand une équipe est créée, on ajoute automatiquement le captain comme membre
   after_create :add_captain_as_member
 
@@ -93,35 +101,94 @@ class Team < ApplicationRecord
 
   # Tags SVG autorisés — uniquement les éléments graphiques purs, aucun élément
   # actif (script, foreignObject, animate) ni événement (onclick, onload...).
+  # ⚠️ Loofah normalise les noms de tags en MINUSCULES lors du parsing HTML.
+  #    Il faut donc lister les deux formes pour chaque tag camelCase :
+  #    ex. linearGradient → lineargradient, clipPath → clippath.
   SVG_ALLOWED_TAGS = %w[
-    svg g defs clipPath use
+    svg g defs
+    clipPath clippath
+    use
     circle ellipse rect line polyline polygon path
     text tspan
     title desc
+    linearGradient lineargradient
+    radialGradient radialgradient
+    stop
+    image
   ].freeze
 
   # Attributs SVG autorisés — présentation et géométrie uniquement.
   # Les attributs "on*" (onclick, onmouseover…) et "href" vers javascript:
   # sont automatiquement exclus car absents de cette liste.
+  # ⚠️ stop-color, stop-opacity et offset sont requis pour les dégradés.
+  # ⚠️ Loofah (le sanitizer) normalise tous les attributs en minuscules lors
+  #    du parsing (ex: viewBox → viewbox). Il faut donc lister les deux formes
+  #    pour que l'attribut survive à la sanitisation.
   SVG_ALLOWED_ATTRS = %w[
-    xmlns viewBox width height
+    xmlns xmlns:xlink viewBox viewbox width height
     fill fill-opacity fill-rule stroke stroke-width stroke-dasharray stroke-linecap stroke-linejoin
     d cx cy r rx ry x y x1 y1 x2 y2 points
     transform clip-path opacity
     text-anchor dominant-baseline font-size font-family font-weight font-style
+    stop-color stop-opacity offset
+    gradientUnits gradientTransform spreadMethod
+    preserveAspectRatio href xlink:href
     class id
   ].freeze
 
   # Sanitise le SVG avec la whitelist ci-dessus.
   # Rails::Html::SafeListSanitizer supprime tout tag/attribut absent de la liste,
   # ce qui élimine <script>, onload=, javascript: href, etc.
+  #
+  # Problème connu de Loofah : les data: URLs dans les attributs href sont
+  # automatiquement supprimées car elles ne font pas partie des protocoles
+  # autorisés (http/https/ftp/mailto). On doit donc :
+  #   1. Extraire les data: URLs d'images AVANT la sanitisation
+  #   2. Les remplacer par des placeholders
+  #   3. Sanitiser le SVG sans data: URLs
+  #   4. Restaurer les data: URLs après sanitisation
+  #
+  # Seuls les types image sûrs sont autorisés (pas SVG, qui peut contenir
+  # des scripts via <script> ou des event handlers).
+  SAFE_IMAGE_DATA_URL_PATTERN = /
+    href=["']                          # attribut href ouvert
+    (data:image\/(?:png|jpeg|gif|webp) # type MIME image sûr uniquement
+    ;base64,[A-Za-z0-9+\/=]+)          # données base64
+    ["']                               # attribut href fermé
+  /x.freeze
+
   def sanitize_badge_svg
+    svg = badge_svg
+
+    # ── Étape 1 : extraire les data: URLs d'images avant sanitisation
+    extracted = {}
+    index     = 0
+
+    svg = svg.gsub(SAFE_IMAGE_DATA_URL_PATTERN) do
+      token = "__IMG_DATA_#{index}__"
+      extracted[token] = Regexp.last_match(1)
+      index += 1
+      "href=\"#{token}\""
+    end
+
+    # ── Étape 2 : sanitiser le SVG (maintenant sans data: URLs)
     sanitizer = Rails::Html::SafeListSanitizer.new
-    self.badge_svg = sanitizer.sanitize(
-      badge_svg,
-      tags:       SVG_ALLOWED_TAGS,
-      attributes: SVG_ALLOWED_ATTRS
-    )
+    svg = sanitizer.sanitize(svg, tags: SVG_ALLOWED_TAGS, attributes: SVG_ALLOWED_ATTRS)
+
+    # ── Étape 3 : restaurer les data: URLs dans les placeholders
+    extracted.each do |token, data_url|
+      svg = svg.gsub("href=\"#{token}\"", "href=\"#{data_url}\"")
+    end
+
+    self.badge_svg = svg
+  end
+
+  # Purge l'image uploadée (badge_image) quand un SVG de blason existe.
+  # Appelée en after_commit pour éviter les conflits de transaction :
+  # la suppression du fichier en storage se fait après que le SVG soit
+  # définitivement persisté en base.
+  def purge_badge_image_if_svg_present
+    badge_image.purge_later
   end
 
   # Ajoute le captain comme premier membre avec le rôle "captain"
