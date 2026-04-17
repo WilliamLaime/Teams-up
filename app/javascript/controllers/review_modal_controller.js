@@ -15,6 +15,24 @@ export default class extends Controller {
 
     // Met à jour la visibilité du bouton "Match suivant" selon le step courant
     this.updateNextBtn()
+
+    // ── Fix Bootstrap backdrop + Turbo Drive ──────────────────────────────────
+    // Bootstrap stocke _isAppended = true après la première ouverture du backdrop.
+    // Quand Turbo navigue, il remplace document.body → le backdrop est supprimé du DOM,
+    // mais Bootstrap pense qu'il est encore là → backdrop invisible sur les pages suivantes.
+    // Solution : dispose() AVANT que Turbo remplace le body pour réinitialiser le flag.
+    this._handleTurboBeforeRender = () => {
+      if (typeof bootstrap !== "undefined") {
+        const instance = bootstrap.Modal.getInstance(this.element)
+        if (instance) instance.dispose()
+      }
+    }
+    document.addEventListener("turbo:before-render", this._handleTurboBeforeRender)
+  }
+
+  disconnect() {
+    // Retire le listener pour éviter les fuites mémoire quand le contrôleur est détruit
+    document.removeEventListener("turbo:before-render", this._handleTurboBeforeRender)
   }
 
   // Soumission AJAX d'un formulaire d'avis

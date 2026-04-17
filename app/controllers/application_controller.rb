@@ -188,34 +188,55 @@ class ApplicationController < ActionController::Base
 
   # Retourne un tableau de { match:, users: [...] } pour la modal
   # Chaque élément = 1 match + liste des co-joueurs pas encore notés
+  #
+  # Optimisation N+1 : toutes les données sont chargées en amont en ~6 requêtes fixes,
+  # quelle que soit le nombre de matchs. La boucle each ne fait que des lookups Hash O(1).
   def find_pending_reviews_for_modal
     # Matchs où current_user a été approuvé
     my_match_ids = current_user.match_users.where(status: "approved").pluck(:match_id)
     return [] if my_match_ids.empty?
 
     # Filtre : terminé (>1h) ET dans les 7 derniers jours
+    # .to_a force l'évaluation maintenant pour récupérer les IDs ci-dessous
     recent_completed_matches = Match.where(id: my_match_ids)
                                     .where("(date + time) < ?", Time.current - 1.hour)
                                     .where("(date + time) > ?", Time.current - 7.days - 1.hour)
-
+                                    .to_a
     return [] if recent_completed_matches.empty?
 
-    # IDs des joueurs déjà notés par current_user (toutes périodes confondues)
-    already_reviewed = Avis.where(reviewer_id: current_user.id)
+    match_ids = recent_completed_matches.map(&:id)
+
+    # ── 1 seule requête pour tous les co-joueurs approuvés de tous les matchs ──
+    # group_by + transform_values produit : { match_id => [user_id, user_id, ...] }
+    co_players_by_match = MatchUser.where(match_id: match_ids, status: "approved")
+                                   .where.not(user_id: current_user.id)
+                                   .pluck(:match_id, :user_id)
+                                   .group_by(&:first)
+                                   .transform_values { |rows| rows.map(&:last) }
+
+    all_co_player_ids = co_players_by_match.values.flatten.uniq
+
+    # ── 1 seule requête pour les avis déjà donnés — filtrée sur CES matchs uniquement ──
+    # (évite de charger l'historique complet de l'utilisateur)
+    already_reviewed = Avis.where(reviewer_id: current_user.id, match_id: match_ids)
                            .pluck(:reviewed_user_id, :match_id)
                            .map { |uid, mid| "#{uid}-#{mid}" }
 
-    # IDs des matchs pour lesquels current_user a déjà voté pour l'homme du match
-    already_voted_match_ids = MatchVote.where(voter_id: current_user.id).pluck(:match_id)
+    # ── 1 seule requête pour les votes homme du match — filtrée sur CES matchs ──
+    already_voted_match_ids = MatchVote.where(voter_id: current_user.id, match_id: match_ids)
+                                       .pluck(:match_id)
 
+    # ── 1 seule requête pour tous les users + profil (LEFT JOIN via eager_load) ──
+    # eager_load fait un LEFT OUTER JOIN users/profils en 1 requête (vs 2 avec includes)
+    # Ce choix réduit le total à 6 requêtes fixes au lieu de 7.
+    users_by_id = User.where(id: all_co_player_ids).eager_load(:profil).index_by(&:id)
+
+    # ── Boucle sans aucune requête SQL — lookups Hash O(1) uniquement ──
     result = []
 
     recent_completed_matches.each do |match|
-      # Co-joueurs approuvés dans ce match (sauf current_user)
-      co_player_ids = match.match_users
-                           .where(status: "approved")
-                           .where.not(user_id: current_user.id)
-                           .pluck(:user_id)
+      # Co-joueurs de ce match (déjà en mémoire, pas de requête)
+      co_player_ids = co_players_by_match[match.id] || []
 
       # Co-joueurs pas encore notés dans CE match
       pending_ids = co_player_ids.reject { |uid| already_reviewed.include?("#{uid}-#{match.id}") }
@@ -230,15 +251,15 @@ class ApplicationController < ActionController::Base
       # On inclut le match si des reviews sont pending OU si on peut encore voter homme du match
       next unless pending_ids.any? || can_vote_homme
 
-      pending_users  = User.where(id: pending_ids).includes(:profil)
-      all_co_players = User.where(id: co_player_ids).includes(:profil)
+      pending_users  = users_by_id.values_at(*pending_ids).compact
+      all_co_players = users_by_id.values_at(*co_player_ids).compact
 
       result << {
         match: match,
-        users: pending_users, # joueurs à noter (review)
+        users: pending_users,           # joueurs à noter (review)
         all_co_players: all_co_players, # tous les joueurs (vote homme du match)
-        has_voted: has_voted, # true si déjà voté pour ce match
-        can_vote_homme: can_vote_homme # true si la section homme du match doit s'afficher
+        has_voted: has_voted,           # true si déjà voté pour ce match
+        can_vote_homme: can_vote_homme  # true si la section homme du match doit s'afficher
       }
     end
 
