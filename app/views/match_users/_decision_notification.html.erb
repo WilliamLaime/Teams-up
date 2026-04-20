@@ -74,12 +74,14 @@
             </button>
             <ul class="dropdown-menu match-calendar-menu w-100">
               <li>
+                <%# RGAA 13.2 — mention "nouvelle fenêtre" pour les lecteurs d'écran %>
                 <a class="dropdown-item match-calendar-item"
                    href="<%= google_cal_url %>"
                    target="_blank"
                    rel="noopener noreferrer">
-                  <span class="match-calendar-item-icon">🗓️</span>
+                  <span class="match-calendar-item-icon" aria-hidden="true">🗓️</span>
                   Google Calendar
+                  <span class="visually-hidden">(nouvelle fenêtre)</span>
                 </a>
               </li>
               <li>

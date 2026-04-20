@@ -27,9 +27,12 @@
   <div class="chat-avatar" style="<%= has_avatar ? '' : "background-color: #{user_color};" %>">
     <% if has_avatar %>
       <%# blob.url = URL Cloudinary directe (fonctionne aussi dans les broadcasts Turbo Stream) %>
+      <%# RGESN 5.2 — width/height évite le layout shift ; loading=lazy car les messages sont sous le fold %>
       <%= image_tag message.user.profil.avatar.blob.url,
           class: "chat-avatar-img",
-          alt: sender_name %>
+          alt: sender_name,
+          width: 30, height: 30,
+          loading: "lazy" %>
     <% else %>
       <%= initials %>
     <% end %>

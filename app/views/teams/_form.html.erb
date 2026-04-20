@@ -173,12 +173,13 @@
                 { key: "diamond",  label: "Diamant",   path: "M50,3 L97,50 L50,97 L3,50 Z" },
                 { key: "pentagon", label: "Pentagone", path: "M50,5 L97,36 L79,92 L21,92 L3,36 Z" }
               ].each_with_index do |shape, i| %>
+                <%# RGAA 11.9 — aria-label pour nommer le bouton ; RGAA 4.8 — SVG décoratif masqué %>
                 <button type="button"
                         class="badge-shape-btn <%= i == 0 ? 'active' : '' %>"
-                        title="<%= shape[:label] %>"
+                        aria-label="<%= shape[:label] %>"
                         data-shape="<%= shape[:key] %>"
                         data-action="click->badge-builder#selectShape">
-                  <svg viewBox="0 0 100 100" width="34" height="34">
+                  <svg viewBox="0 0 100 100" width="34" height="34" aria-hidden="true">
                     <% if shape[:path] %>
                       <path d="<%= shape[:path] %>" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.5)" stroke-width="3"/>
                     <% else %>

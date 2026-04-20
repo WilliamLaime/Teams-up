@@ -4,11 +4,16 @@ import "controllers"
 import "@popperjs/core"
 import * as bootstrap from "bootstrap"
 
-// Ré-initialise les icônes Lucide après chaque mise à jour d'un turbo_frame
+// Ré-initialise les icônes Lucide après chaque mise à jour d'un turbo_frame ou turbo:render
 // (ex: le bouton ami se met à jour en live → les nouveaux <i data-lucide="..."> doivent être convertis en SVG)
 // RGAA 4.8 — masquer tous les SVG Lucide des lecteurs d'écran avec aria-hidden=true
 // Car les icônes décoratives ne doivent pas être annoncées aux utilisateurs de technologies d'assistance
 document.addEventListener("turbo:frame-render", () => {
+  if (window.lucide) window.lucide.createIcons({ attrs: { "aria-hidden": "true" } })
+})
+
+// RGAA 4.8 — re-render Lucide après turbo:render (réponses 422, streams, etc.)
+document.addEventListener("turbo:render", () => {
   if (window.lucide) window.lucide.createIcons({ attrs: { "aria-hidden": "true" } })
 })
 

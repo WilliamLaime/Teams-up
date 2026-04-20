@@ -168,6 +168,9 @@
       <div data-controller="sport-select">
 
         <%# ── Grille de sélection des sports ── %>
+        <%# RGAA 11.5 — fieldset/legend pour grouper les checkboxes de même nature %>
+        <fieldset style="border:none; padding:0; margin:0;">
+          <legend class="visually-hidden">Choisir vos sports pratiqués</legend>
         <div class="match-block">
           <div class="sport-select-grid">
             <% Sport.order(:name).each do |sport| %>
@@ -187,6 +190,7 @@
             <% end %>
           </div>
         </div>
+        </fieldset>
 
         <%#
           Section Niveau & Rôle par sport — carrousel : une seule card, flèches gauche/droite

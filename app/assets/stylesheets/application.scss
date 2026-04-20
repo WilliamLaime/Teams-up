@@ -64,6 +64,21 @@ body {
   }
 }
 
+// ── RGAA 10.7 — Focus visible pour la navigation clavier ────────────────────
+// Bootstrap 5 supprime l'outline sur :focus (btn, inputs, etc.) ce qui pénalise
+// les utilisateurs naviguant au clavier.
+// :focus-visible est supporté par tous les navigateurs modernes : il ne s'applique
+// QUE lors de la navigation clavier, pas au clic souris → pas d'anneau disgracieux
+// pour les utilisateurs souris, mais focus visible pour les claviers et daltons.
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid $green !important;
+  outline-offset: 2px;
+}
+
 // ── Empêche le scroll horizontal ────────────────────
 // Certains éléments dépassent légèrement du viewport (gradients avec left: -120px,
 // Bootstrap rows avec marges négatives, etc.) et créent une barre de scroll inutile.
