@@ -24,36 +24,22 @@ class Avis < ApplicationRecord
   after_create  :recalculate_average
   after_destroy :recalculate_average
 
+  # Maintient le flag mutual quand un nouvel avis est créé ou supprimé
+  after_create  :set_mutual_flag
+  after_destroy :clear_mutual_flag
+
   # ── Scopes ────────────────────────────────────────────────────────────────
 
   # Retourne les avis récents en premier
   scope :recent, -> { order(created_at: :desc) }
 
   # Avis mutuels : l'avis A→B n'est visible que si B→A existe pour le même match.
-  # On vérifie l'existence d'un avis inverse (même match, reviewer/reviewed inversés).
-  scope :mutual, lambda {
-    where(
-      "EXISTS (
-        SELECT 1 FROM avis a2
-        WHERE a2.reviewer_id      = avis.reviewed_user_id
-          AND a2.reviewed_user_id = avis.reviewer_id
-          AND a2.match_id         = avis.match_id
-      )"
-    )
-  }
+  # La colonne booléenne 'mutual' est maintenue par les callbacks après_create et après_destroy.
+  scope :mutual, -> { where(mutual: true) }
 
   # Avis non-mutuels : l'autre personne n'a pas encore rendu la pareille.
   # Utile pour afficher un compteur "avis en attente" sur son propre profil.
-  scope :non_mutual, lambda {
-    where.not(
-      "EXISTS (
-        SELECT 1 FROM avis a2
-        WHERE a2.reviewer_id      = avis.reviewed_user_id
-          AND a2.reviewed_user_id = avis.reviewer_id
-          AND a2.match_id         = avis.match_id
-      )"
-    )
-  }
+  scope :non_mutual, -> { where(mutual: false) }
 
   private
 
@@ -132,5 +118,31 @@ class Avis < ApplicationRecord
 
     # update_columns évite de déclencher les callbacks du profil (plus performant)
     profil.update_columns(average_rating: avg, avis_count: count)
+  end
+
+  # ── Maintien du flag mutual ────────────────────────────────────────────────
+
+  # Quand A→B est créé : si B→A existe, les deux deviennent mutuels
+  # Utilise update_column pour éviter de déclencher les callbacks (performance)
+  def set_mutual_flag
+    inverse = Avis.find_by(
+      reviewer_id: reviewed_user_id,
+      reviewed_user_id: reviewer_id,
+      match_id: match_id
+    )
+    return unless inverse
+
+    update_column(:mutual, true)
+    inverse.update_column(:mutual, true)
+  end
+
+  # Quand A→B est détruit : si B→A existe, il redevient non-mutuel
+  def clear_mutual_flag
+    inverse = Avis.find_by(
+      reviewer_id: reviewed_user_id,
+      reviewed_user_id: reviewer_id,
+      match_id: match_id
+    )
+    inverse&.update_column(:mutual, false)
   end
 end

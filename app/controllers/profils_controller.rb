@@ -53,7 +53,14 @@ class ProfilsController < ApplicationController
     @pending_reviewers = User.where(id: pending_reviewer_ids).includes(:profil)
 
     # Équipes du joueur (affiché sur le profil)
-    @profil_teams = current_user.teams.includes(:captain, :team_members).order(:name)
+    # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
+    # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
+    @profil_teams = current_user.teams
+                                 .preload(:captain)
+                                 .left_joins(:team_members)
+                                 .select("teams.*, COUNT(team_members.id) AS members_count")
+                                 .group("teams.id")
+                                 .order(:name)
   end
 
   # GET /users/:id/profil/old
@@ -109,7 +116,14 @@ class ProfilsController < ApplicationController
                                     )
 
     # Toutes les équipes du joueur affiché — toujours chargées
-    @profil_teams = @profil_user.teams.includes(:captain, :team_members).order(:name)
+    # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
+    # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
+    @profil_teams = @profil_user.teams
+                                 .preload(:captain)
+                                 .left_joins(:team_members)
+                                 .select("teams.*, COUNT(team_members.id) AS members_count")
+                                 .group("teams.id")
+                                 .order(:name)
 
     # Équipes où current_user est captain et peut encore inviter ce joueur
     # (uniquement si on consulte le profil de quelqu'un d'autre)
@@ -220,7 +234,14 @@ class ProfilsController < ApplicationController
     @pending_reviewers = User.where(id: pending_reviewer_ids).includes(:profil)
 
     # Équipes du joueur (affiché sur le profil)
-    @profil_teams = current_user.teams.includes(:captain, :team_members).order(:name)
+    # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
+    # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
+    @profil_teams = current_user.teams
+                                 .preload(:captain)
+                                 .left_joins(:team_members)
+                                 .select("teams.*, COUNT(team_members.id) AS members_count")
+                                 .group("teams.id")
+                                 .order(:name)
   end
 
   # GET /users/:id/profil
@@ -281,7 +302,14 @@ class ProfilsController < ApplicationController
                                     )
 
     # Toutes les équipes du joueur affiché — toujours chargées, même si c'est son propre profil
-    @profil_teams = @profil_user.teams.includes(:captain, :team_members).order(:name)
+    # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
+    # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
+    @profil_teams = @profil_user.teams
+                                 .preload(:captain)
+                                 .left_joins(:team_members)
+                                 .select("teams.*, COUNT(team_members.id) AS members_count")
+                                 .group("teams.id")
+                                 .order(:name)
 
     # Équipes où current_user est captain et peut encore inviter ce joueur
     # (uniquement si on consulte le profil de quelqu'un d'autre)
