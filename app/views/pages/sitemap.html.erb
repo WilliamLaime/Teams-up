@@ -12,9 +12,10 @@
 
     <h1 class="sitemap-title">PLAN DU SITE</h1>
     <p class="sitemap-subtitle">Retrouvez tous les liens importants de Teams-Up.</p>
-    <hr class="sitemap-divider">
 
     <%# ── Section 1 — Navigation principale ────────────── %>
+    <h2 class="sitemap-section-title">NAVIGATION</h2>
+    <hr class="sitemap-divider">
     <nav class="sitemap-section" aria-label="Navigation principale">
       <%= link_to "ACCUEIL", root_path, class: "sitemap-link" %>
       <%= link_to "TROUVER UN MATCH", matches_path, class: "sitemap-link" %>
@@ -26,18 +27,20 @@
         <%= link_to "SE CONNECTER", new_user_session_path, class: "sitemap-link" %>
       <% end %>
     </nav>
-    <hr class="sitemap-divider">
 
     <%# ── Section 2 — Informations légales ───────────── %>
+    <h2 class="sitemap-section-title">LÉGAL</h2>
+    <hr class="sitemap-divider">
     <nav class="sitemap-section" aria-label="Informations légales">
       <%= link_to "POLITIQUE DE CONFIDENTIALITÉ", confidentialite_path, class: "sitemap-link" %>
       <%= link_to "CONDITIONS GÉNÉRALES D'UTILISATION", conditions_path, class: "sitemap-link" %>
       <%= link_to "MENTIONS LÉGALES", contact_path, class: "sitemap-link" %>
       <%= link_to "NOUS CONTACTER", contact_path, class: "sitemap-link" %>
     </nav>
-    <hr class="sitemap-divider">
 
     <%# ── Section 3 — Sports disponibles ─────────────── %>
+    <h2 class="sitemap-section-title">SPORTS</h2>
+    <hr class="sitemap-divider">
     <nav class="sitemap-section" aria-label="Sports disponibles">
       <% @sports.each do |sport| %>
         <%= link_to sport.name.upcase, matches_path(sport: sport.id), class: "sitemap-link" %>
@@ -46,6 +49,8 @@
 
     <%# ── Section 4 — Administration (si admin) ─────── %>
     <% if user_signed_in? && current_user.admin? %>
+
+      <h2 class="sitemap-section-title">ADMINISTRATION</h2>
       <hr class="sitemap-divider">
       <nav class="sitemap-section" aria-label="Administration">
         <%= link_to "TABLEAU DE BORD", admin_dashboard_path, class: "sitemap-link" %>

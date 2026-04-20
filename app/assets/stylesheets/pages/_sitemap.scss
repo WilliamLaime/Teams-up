@@ -32,7 +32,7 @@
 .sitemap-divider {
   border: none;
   border-top: 3.3px solid #ffffff;
-  margin: 0 0 1.8rem 0;
+  margin: 0 0 0.8rem 0;
   padding: 0;
 }
 
@@ -41,6 +41,16 @@
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 1.8rem;
+}
+
+.sitemap-section-title {
+  font-family: $display-font;   // Bebas Neue — cohérent avec les liens
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: $dark-text;            // #f0f0f0 — blanc comme PLAN DU SITE
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem 0;
 }
 
 .sitemap-link {
@@ -86,6 +96,10 @@
     margin-bottom: 0.8rem;
   }
 
+  .sitemap-section-title {
+    font-size: 1.2rem;
+  }
+
   .sitemap-link {
     font-size: 1.2rem;
   }
@@ -114,6 +128,10 @@
   .sitemap-subtitle {
     font-size: 0.9rem;
     margin-bottom: 0.7rem;
+  }
+
+  .sitemap-section-title {
+    font-size: 1rem;
   }
 
   .sitemap-link {
