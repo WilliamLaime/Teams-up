@@ -16,6 +16,10 @@ class MatchReminderJob < ApplicationJob
     # Le match a été supprimé entre la planification et l'exécution du job → on arrête
     return unless match
 
+    # Sécurité : si la queue était en retard et que le match a déjà commencé,
+    # on n'envoie pas le rappel (inutile et confus pour le participant)
+    return if match.build_datetime <= Time.current
+
     # Récupère tous les participants approuvés (joueurs + organisateur)
     # includes(:user) pour éviter les N+1 queries lors de l'envoi des emails
     participants = match.match_users

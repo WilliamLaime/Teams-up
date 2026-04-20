@@ -200,10 +200,11 @@ class MatchesController < ApplicationController
       # Email de confirmation avec récapitulatif du match pour l'organisateur
       UserMailer.match_created(@match).deliver_later
 
-      # Planifie le rappel 24h avant le match pour tous les participants approuvés.
-      # On vérifie qu'il reste plus de 24h avant le match pour éviter un job inutile
-      # (ex: match créé à J-2h → le rappel serait déjà passé).
-      reminder_time = @match.build_datetime - 24.hours
+      # Planifie le rappel ~24h avant le match pour tous les participants approuvés.
+      # On anticipe de 30 min (-24.5.hours) pour absorber un éventuel retard de la queue :
+      # si le worker est lent, le rappel part quand même avant le coup d'envoi.
+      # Le job lui-même vérifie en plus que le match n'a pas encore commencé avant d'envoyer.
+      reminder_time = @match.build_datetime - 24.5.hours
       MatchReminderJob.set(wait_until: reminder_time).perform_later(@match.id) if reminder_time > Time.current
 
       redirect_to @match, notice: "Match créé avec succès !"
