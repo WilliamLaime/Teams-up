@@ -19,6 +19,9 @@
    end %>
 
 <%= form_with model: form_model, class: "chat-form d-flex gap-2 align-items-center w-100", data: { chat_target: "form" } do |f| %>
+  <%# RGAA 11.1 — label explicite masqué visuellement pour les lecteurs d'écran %>
+  <%= f.label :content, "Message", class: "visually-hidden" %>
+
   <%# Champ texte — flex-grow-1 pour prendre toute la largeur disponible %>
   <%= f.text_field :content,
       placeholder: "Écrire un message...",
@@ -31,12 +34,13 @@
         action: "keydown->chat#handleKeydown input->chat#onTyping"
       } %>
 
-  <%# Bouton d'envoi avec icône SVG flèche %>
+  <%# RGAA 11.9 — aria-label pour nommer le bouton (icône seule sans texte visible) %>
+  <%# RGAA 4.8  — aria-hidden="true" sur le SVG décoratif dans le bouton %>
   <%= f.button type: "submit",
       class: "btn btn-success chat-send-btn",
+      aria: { label: "Envoyer le message" },
       data: { chat_target: "submit" } do %>
-    <%# Icône SVG "send" (flèche vers la droite) %>
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
     </svg>
   <% end %>

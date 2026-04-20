@@ -9,8 +9,8 @@
 <div class="auth-page">
   <div class="auth-card">
 
-    <%# Titre avec accent vert %>
-    <h2><span class="accent">Connexion</span></h2>
+    <%# RGAA 9.1 — h1 obligatoire sur chaque page %>
+    <h1 class="h2"><span class="accent">Connexion</span></h1>
 
     <%# Formulaire Devise géré par simple_form %>
     <%= simple_form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
@@ -70,8 +70,8 @@
     <%# Bouton de connexion Google centré — style officiel Google %>
     <div class="text-center">
       <%= button_to user_google_oauth2_omniauth_authorize_path, data: { turbo: false }, class: "btn-google" do %>
-        <%# Logo Google en SVG officiel %>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20">
+        <%# RGAA 4.8 — SVG décoratif, le texte du bouton suffit pour l'accessibilité %>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
           <path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.86l6.09-6.09C34.46 3.1 29.5 1 24 1 14.82 1 7.07 6.48 3.64 14.18l7.08 5.5C12.4 13.72 17.73 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.5 24.5c0-1.64-.15-3.22-.42-4.74H24v8.98h12.67c-.55 2.96-2.2 5.47-4.68 7.16l7.19 5.58C43.39 37.3 46.5 31.36 46.5 24.5z"/>
           <path fill="#FBBC05" d="M10.72 28.32A14.6 14.6 0 0 1 9.5 24c0-1.5.26-2.95.72-4.32l-7.08-5.5A23.94 23.94 0 0 0 0 24c0 3.87.93 7.52 2.58 10.74l8.14-6.42z"/>

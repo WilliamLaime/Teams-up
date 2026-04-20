@@ -13,6 +13,9 @@
         Stream "sticky" séparé de la page show de l'équipe (évite les doublons) %>
     <%= turbo_stream_from "team_chat_sticky_#{@team.id}" %>
 
+    <%# RGAA 9.1 — titre de page masqué visuellement pour les lecteurs d'écran %>
+    <h1 class="visually-hidden">Chat d'équipe : <%= @team.name %></h1>
+
     <%# En-tête : nom de l'équipe — cliquable pour aller sur la page de l'équipe
         Même pattern que le chat privé : ferme la modale puis navigue %>
     <div class="sticky-chat-chat-header">

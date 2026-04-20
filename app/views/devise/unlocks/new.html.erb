@@ -1,4 +1,5 @@
-<h2>Resend unlock instructions</h2>
+<%# RGAA 9.1 — h1 obligatoire sur chaque page %>
+<h1 class="h2">Resend unlock instructions</h1>
 
 <%= simple_form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f| %>
   <%= f.error_notification %>

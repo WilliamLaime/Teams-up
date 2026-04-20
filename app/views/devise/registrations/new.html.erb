@@ -9,7 +9,8 @@
   <%# auth-card--wide : variante plus large pour le layout 2 colonnes %>
   <div class="auth-card auth-card--wide">
 
-    <h2>Créer un <span class="accent">compte</span></h2>
+    <%# RGAA 9.1 — h1 obligatoire sur chaque page, class h2 pour garder le style %>
+    <h1 class="h2">Créer un <span class="accent">compte</span></h1>
 
     <%# multipart: true obligatoire pour l'upload de fichier %>
     <%# data-action="submit->sport-select#validate" : vérifie qu'au moins 1 sport est sélectionné avant soumission %>
@@ -149,6 +150,9 @@
 
             <%# Grille des sports — chaque bouton est un checkbox visuel %>
             <%# Les 4 premiers sont visibles, les suivants cachés jusqu'au clic "voir plus" %>
+            <%# RGAA 11.5 — fieldset/legend pour grouper les checkboxes de même nature %>
+            <fieldset style="border:none; padding:0; margin:0;">
+              <legend class="visually-hidden">Choisir vos sports pratiqués</legend>
             <div class="sport-select-grid">
               <%# On récupère les sport_ids soumis avant erreur (tableau de strings ex: ["1","3"]) %>
               <% previously_selected = params.dig(:user, :sport_ids).to_a.map(&:to_s) %>
@@ -171,6 +175,7 @@
                 </label>
               <% end %>
             </div>
+            </fieldset>
 
             <%# Bouton "voir plus" — caché une fois déroulé ; "voir moins" apparaît à la place %>
             <% if Sport.count > 4 %>

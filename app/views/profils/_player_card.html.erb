@@ -62,7 +62,8 @@
             <div class="player-card__avatar-ring"></div>
             <div class="player-card__avatar">
               <% if profil && profil.avatar.attached? %>
-                <%= image_tag profil.avatar, alt: profil.first_name %>
+                <%# RGESN 5.2 — width/height évite le layout shift (CSS règle l'affichage circulaire) %>
+                <%= image_tag profil.avatar, alt: profil.first_name, width: 56, height: 56 %>
               <% else %>
                 <%= avatar_initial %>
               <% end %>
@@ -76,7 +77,8 @@
               </div>
               <% if show_edit %>
                 <%= link_to edit_profil_path, class: "player-card__btn-modifier" do %>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <%# RGAA 4.8 — SVG décoratif, le texte "Modifier" suffit pour l'accessibilité %>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
@@ -86,7 +88,8 @@
             </div>
 
             <div class="player-card__location">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <%# RGAA 4.8 — SVG décoratif, le texte de la ville suffit %>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
                 <circle cx="12" cy="9" r="2.5"/>
               </svg>

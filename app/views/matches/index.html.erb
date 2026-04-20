@@ -129,7 +129,10 @@
                  data-level-filter-target="dropdown"
                  style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:160px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem; max-height:340px; overflow-y:auto;">
 
+              <%# RGAA 11.5 — fieldset/legend pour grouper les checkboxes de même nature %>
               <%# Conteneur des checkboxes — reconstruit par JS quand le sport change %>
+              <fieldset style="border:none; padding:0; margin:0;">
+                <legend class="visually-hidden">Filtrer par niveau</legend>
               <div data-level-filter-target="list"
                    style="display:flex; flex-direction:column; gap:0.15rem;">
                 <% initial_levels.each do |lvl| %>
@@ -150,6 +153,7 @@
                   </label>
                 <% end %>
               </div>
+              </fieldset>
 
               <%# Bouton "?" pour ouvrir la modale des grilles %>
               <button type="button"
@@ -191,6 +195,9 @@
                    data-sport-filter-target="dropdown"
                    style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:150px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem">
 
+                <%# RGAA 11.5 — fieldset/legend pour grouper les boutons radio de même nature %>
+                <fieldset style="border:none; padding:0; margin:0;">
+                <legend class="visually-hidden">Filtrer par sport</legend>
                 <%# Un radio par sport — auto-soumet au clic %>
                 <% Sport.order(:name).each do |sport| %>
                   <%# Pré-sélectionné si dans l'URL, ou si c'est le sport actif (aucun filtre URL) %>
@@ -211,6 +218,7 @@
                     </span>
                   </label>
                 <% end %>
+                </fieldset>
 
               </div>
             </div>
