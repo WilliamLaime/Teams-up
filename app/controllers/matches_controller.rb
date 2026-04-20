@@ -246,21 +246,36 @@ class MatchesController < ApplicationController
                          .where(status: ["approved", "pending", "waiting"])
                          .includes(:user)
 
-    # Notifie chaque participant en temps réel si il est sur la page du match,
-    # et envoie un email transactionnel pour les utilisateurs absents.
-    # IMPORTANT : on utilise deliver_now (pas deliver_later) car le match est
-    # détruit juste après. Avec deliver_later, SolidQueue tente de désérialiser
-    # le Match via GlobalID mais il n'existe plus en base → DeserializationError.
+    # ── Extraction des données AVANT destruction ──────────────────────────────
+    # On sérialise uniquement des scalaires pour éviter le DeserializationError
+    # de SolidQueue lors du deliver_later (GlobalID ne peut pas recharger un
+    # enregistrement détruit).
+    match_title    = @match.title
+    match_date     = @match.date
+    match_time_str = @match.time&.strftime("%Hh%M")
+    venue_name     = @match.venue&.name
+    venue_city     = @match.venue&.city
+    organizer_name = @match.user.display_name
+
+    # Liste des destinataires : participants + organisateur
+    recipient_emails = participants.map { |mu| mu.user.email }
+    recipient_emails << @match.user.email
+
+    # Broadcasts Turbo AVANT destroy → le canal ActionCable doit encore exister
     participants.each do |mu|
       broadcast_match_cancelled_to_participant(mu.user)
-      UserMailer.match_cancelled(@match, mu.user).deliver_now
     end
 
-    # Envoie également l'email de confirmation d'annulation à l'organisateur lui-même.
-    # Il est exclu de participants (role: "organisateur") mais doit recevoir un récapitulatif.
-    UserMailer.match_cancelled(@match, @match.user).deliver_now
-
     @match.destroy
+
+    # Enqueue des emails asynchrones avec données scalaires uniquement
+    recipient_emails.each do |email|
+      MatchCancelledMailerJob.perform_later(
+        email, match_title, match_date, match_time_str,
+        venue_name, venue_city, organizer_name
+      )
+    end
+
     redirect_to matches_path, notice: "Match supprimé."
   end
 
