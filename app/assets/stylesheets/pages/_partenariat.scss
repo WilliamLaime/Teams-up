@@ -5,8 +5,8 @@
 // ═══════════════════════════════════════════════════
 
 .partenariat-page {
-  background-color: $dark-bg;
-  color: $dark-text;
+  background-color: var(--theme-page-bg);          // était $dark-bg
+  color: var(--theme-text-primary);                // était $dark-text
 
 
   // ── 1. HERO ────────────────────────────────────────
@@ -58,7 +58,7 @@
     font-size: clamp(2rem, 4.5vw, 3.25rem);
     font-weight: 800;
     line-height: 1.15;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 1.25rem;
   }
 
@@ -70,7 +70,7 @@
   // Description sous le titre
   .partenariat-hero-desc {
     font-size: 1rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     line-height: 1.7;
     max-width: 520px;
     margin-bottom: 2rem;
@@ -133,14 +133,14 @@
     position: absolute;
     width: 52px;
     height: 52px;
-    background: $dark-surface;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--theme-bg-surface);           // était $dark-surface
+    border: 1px solid var(--theme-border);         // était rgba(255,255,255,0.1)
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
 
-    i { color: $dark-muted; }
+    i { color: var(--theme-text-muted); }          // était $dark-muted
 
     // Orbit 1 : en haut
     &--1 { top: 10px;  left: 50%; transform: translateX(-50%); }
@@ -156,7 +156,7 @@
   // ── 2. CHIFFRES CLÉS ─────────────────────────────
 
   .partenariat-stats {
-    background: $dark-surface; // fond légèrement plus clair pour créer une séparation visuelle
+    background: var(--theme-bg-surface);           // était $dark-surface
     padding: 60px 0;
   }
 
@@ -177,7 +177,7 @@
   // Label sous le chiffre
   .partenariat-stat-label {
     font-size: 0.85rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -187,29 +187,29 @@
 
   .partenariat-why {
     padding: 80px 0;
-    background: $dark-bg;
+    background: var(--theme-page-bg);              // était $dark-bg
   }
 
-  // Titre de section générique (réutilisé dans plusieurs sections)
+  // Titre de section générique
   .partenariat-section-title {
     font-size: clamp(1.6rem, 3vw, 2.2rem);
     font-weight: 800;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 0.5rem;
   }
 
   // Sous-titre de section générique
   .partenariat-section-subtitle {
     font-size: 0.95rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     max-width: 560px;
     margin: 0 auto;
   }
 
   // Carte "Pourquoi nous"
   .partenariat-why-card {
-    background: $dark-card-bg;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--theme-bg-card);              // était $dark-card-bg
+    border: 1px solid var(--theme-border);         // était rgba(255,255,255,0.07)
     border-radius: 16px;
     padding: 2rem 1.75rem;
     height: 100%;
@@ -238,13 +238,13 @@
   .partenariat-why-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 0.6rem;
   }
 
   .partenariat-why-text {
     font-size: 0.875rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     line-height: 1.6;
     margin: 0;
   }
@@ -253,14 +253,14 @@
   // ── 4. TYPES DE PARTENARIATS ─────────────────────
 
   .partenariat-types {
-    background: $dark-surface;
+    background: var(--theme-bg-surface);           // était $dark-surface
     padding: 80px 0;
   }
 
   // Carte type de partenariat
   .partenariat-type-card {
-    background: $dark-card-bg;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--theme-bg-card);              // était $dark-card-bg
+    border: 1px solid var(--theme-border);         // était rgba(255,255,255,0.07)
     border-radius: 16px;
     padding: 1.75rem 1.5rem;
     height: 100%;
@@ -284,7 +284,7 @@
   .partenariat-type-num {
     font-size: 2rem;
     font-weight: 800;
-    color: rgba(255, 255, 255, 0.08); // très discret, juste décoratif
+    color: var(--theme-border);                    // discret dans les deux thèmes
     line-height: 1;
   }
 
@@ -304,13 +304,13 @@
   .partenariat-type-title {
     font-size: 1rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 0.5rem;
   }
 
   .partenariat-type-text {
     font-size: 0.85rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     line-height: 1.6;
     margin: 0;
   }
@@ -320,7 +320,7 @@
 
   .partenariat-cta {
     padding: 80px 0 100px;
-    background: $dark-bg;
+    background: var(--theme-page-bg);              // était $dark-bg
   }
 
   // Bloc centré avec fond légèrement encadré
@@ -328,7 +328,7 @@
     max-width: 640px;
     margin: 0 auto;
     padding: 3rem 2rem;
-    background: $dark-card-bg;
+    background: var(--theme-bg-card);              // était $dark-card-bg
     border: 1px solid rgba($orange, 0.2);
     border-radius: 20px;
     position: relative;
@@ -366,14 +366,14 @@
   .partenariat-cta-title {
     font-size: clamp(1.5rem, 3vw, 2rem);
     font-weight: 800;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 0.75rem;
     position: relative;
   }
 
   .partenariat-cta-desc {
     font-size: 0.95rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     line-height: 1.7;
     margin-bottom: 2rem;
     position: relative;
@@ -382,7 +382,7 @@
   // Lien email alternatif sous le bouton
   .partenariat-cta-email {
     font-size: 0.85rem;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     margin-top: 1.25rem;
     margin-bottom: 0;
     position: relative;

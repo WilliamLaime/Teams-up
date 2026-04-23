@@ -7,8 +7,9 @@
 // Section principale sombre avec fond de terrain
 
 .hero-section {
-  background-color: $dark-bg;
-  color: $dark-text;
+  // CSS variable → change automatiquement quand data-theme bascule
+  background-color: var(--theme-page-bg);
+  color: var(--theme-text-primary);
   // padding-bottom large pour que la carte qui dépasse de l'image reste dans la section
   padding: 80px 0 120px;
   position: relative;
@@ -74,7 +75,8 @@
     font-size: clamp(2.5rem, 5vw, 3.75rem);
     font-weight: 800;
     line-height: 1.1;
-    color: #fff;
+    // --theme-text-strong = #fff (dark) ou $gray (light)
+    color: var(--theme-text-strong);
     margin-bottom: 1rem;
 
     // La partie verte du titre
@@ -95,13 +97,14 @@
   .hero-sport-label {
     font-size: 0.85rem;
     font-weight: 600;
-    color: $dark-muted;
+    // --theme-text-muted change avec le thème
+    color: var(--theme-text-muted);
     white-space: nowrap;
   }
 
   // Description sous le titre
   .hero-description {
-    color: $dark-muted;
+    color: var(--theme-text-muted);
     font-size: 1rem;
     line-height: 1.6;
     max-width: 440px;
@@ -129,13 +132,14 @@
       clip-path: inset(0 round 16px);
     }
 
-    // Gradient sombre en bas de l'image pour lisibilité
+    // Gradient en bas de l'image : adapté au thème actif
     &::after {
       content: "";
       position: absolute;
       bottom: 0; left: 0; right: 0;
       height: 55%;
-      background: linear-gradient(to top, rgba($dark-bg, 0.82), transparent);
+      // Fallback sombre ; mode clair = gradient vers fond clair
+      background: linear-gradient(to top, rgba(17, 17, 17, 0.82), transparent);
       border-radius: 0 0 16px 16px;
       pointer-events: none;
       // Clippé à la forme de l'image pour ne pas déborder
@@ -150,13 +154,14 @@
     bottom: -48px;  // dépasse bien en bas de l'image
     left: -32px;    // dépasse à gauche de l'image sur le fond sombre
     width: 290px;   // largeur fixe (pas right:)
-    background: rgba(12, 18, 12, 0.92);
+    // Fond de la carte : variable CSS → sombre en dark mode, blanc en light mode
+    background: var(--theme-bg-card);
     backdrop-filter: blur(14px);
     border: 1px solid $green;
     border-radius: 8px;
     padding: 0.85rem 1rem;
     z-index: 2;
-    color: $dark-text;
+    color: var(--theme-text-primary);
     display: block;         // <a> est inline par défaut, on passe en block
     text-decoration: none;  // supprime le soulignement du lien
 
@@ -165,7 +170,7 @@
     &:hover {
       transform: scale(1.05);                       // légère grossissement
       box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55); // ombre plus marquée
-      color: $dark-text;                            // garde la couleur du texte au hover
+      color: var(--theme-text-primary);              // garde la couleur du texte au hover
     }
 
     // Icône ronde orange (éclair = urgent)
@@ -181,18 +186,18 @@
       i { color: #fff; }
     }
 
-    // Label petit "Match Urgent" en gris
+    // Label "Match Urgent" — texte secondaire de la carte
     .hero-match-label {
       font-size: 0.72rem;
-      color: rgba(255,255,255,0.45);
+      color: var(--theme-text-muted);                // était rgba(255,255,255,0.45)
       margin-bottom: 0.15rem;
     }
 
-    // Titre du match en blanc gras
+    // Titre du match — texte principal de la carte
     .hero-match-title {
       font-size: 0.95rem;
       font-weight: 700;
-      color: #fff;
+      color: var(--theme-text-strong);               // était #fff
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -210,12 +215,12 @@
     .hero-match-footer {
       margin-top: 0.55rem;
       padding-top: 0.55rem;
-      border-top: 1px solid rgba(255,255,255,0.08);
+      border-top: 1px solid var(--theme-border);     // était rgba(255,255,255,0.08)
     }
 
     .hero-match-time {
       font-size: 0.78rem;
-      color: rgba(255,255,255,0.45);
+      color: var(--theme-text-muted);                // était rgba(255,255,255,0.45)
     }
 
     // Nombre de places en vert
@@ -261,17 +266,18 @@
 // Section sombre avec cartes de matchs
 
 .matches-section {
-  background-color: $dark-surface; // légèrement plus clair que le hero pour créer du contraste
+  // CSS variable → fond plus clair que le hero en mode sombre, blanc en mode clair
+  background-color: var(--theme-bg-surface);
   padding: 72px 0;
 
   .matches-section-title {
     font-size: 1.75rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
   }
 
   .matches-section-subtitle {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     font-size: 0.9rem;
     margin-top: 0.25rem;
   }
@@ -282,7 +288,7 @@
   .matches-empty {
     text-align: center;
     padding: 3rem 0;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
   }
 }
 
@@ -291,20 +297,21 @@
 // Section "Jouez plus, organisez moins"
 
 .how-it-works-section {
-  background-color: $dark-bg; // fond sombre comme le hero
+  // CSS variable → fond page (sombre en dark, gris clair en light)
+  background-color: var(--theme-page-bg);
   padding: 72px 0;
 
   .hiw-title {
     font-size: 2rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     text-align: center;
     margin-bottom: 0.5rem;
   }
 
   .hiw-subtitle {
     text-align: center;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     font-size: 0.95rem;
     margin-bottom: 3rem;
   }
@@ -318,7 +325,7 @@
     .hiw-icon-circle {
       width: 76px;
       height: 76px;
-      background: $dark-surface; // fond surface sombre
+      background: var(--theme-bg-surface);         // était $dark-surface
       color : $green;
       border-radius: 20%;
       display: flex;
@@ -332,19 +339,19 @@
     .hiw-item-title {
       font-size: 1rem;
       font-weight: 700;
-      color: #fff;
+      color: var(--theme-text-strong);             // était #fff
       margin-bottom: 0.4rem;
     }
 
     .hiw-item-text {
       font-size: 0.875rem;
-      color: $dark-muted;
+      color: var(--theme-text-muted);              // était $dark-muted
       line-height: 1.5;
     }
   }
 
   // Séparation visuelle avec la section suivante
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--theme-border-inner); // était rgba(255,255,255,0.06)
 }
 
 
@@ -352,8 +359,9 @@
 // Section sombre avec mockup de chat
 
 .cta-section {
-  background-color: $dark-bg;
-  color: $dark-text;
+  // CSS variable → fond page (sombre ou clair selon thème)
+  background-color: var(--theme-page-bg);
+  color: var(--theme-text-primary);
   padding: 80px 0;
   overflow: hidden;
 
@@ -361,7 +369,7 @@
     font-size: clamp(1.75rem, 3.5vw, 2.75rem);
     font-weight: 800;
     line-height: 1.2;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 1rem;
 
     // Partie colorée en orange — légèrement plus grande pour dépasser la 1ère ligne
@@ -372,7 +380,7 @@
   }
 
   .cta-description {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     font-size: 0.95rem;
     line-height: 1.6;
     margin-bottom: 1.75rem;
@@ -388,7 +396,7 @@
       display: flex;
       align-items: flex-start;
       gap: 0.65rem;
-      color: rgba(255,255,255,0.8);
+      color: var(--theme-text-primary);            // était rgba(255,255,255,0.8)
       font-size: 0.9rem;
       margin-bottom: 0.75rem;
 
@@ -628,20 +636,21 @@
 // Section claire avec deux cartes : pro + utilisateur
 
 .contact-cta-section {
-  background-color: $dark-surface; // fond sombre cohérent avec le reste de la page
+  // CSS variable → fond surface (surface sombre ou blanc selon thème)
+  background-color: var(--theme-bg-surface);
   padding: 80px 0;
 
   // Titre principal de la section
   .contact-cta-title {
     font-size: 2rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--theme-text-strong);               // était #fff
     margin-bottom: 0.5rem;
   }
 
   // Sous-titre descriptif
   .contact-cta-subtitle {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     font-size: 0.95rem;
   }
 
@@ -653,10 +662,10 @@
     align-items: flex-start;
     padding: 2rem 1.75rem;
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08); // bordure discrète
-    background: $dark-card-bg;
+    border: 1px solid var(--theme-border);         // était rgba(255,255,255,0.08)
+    background: var(--theme-bg-card);              // était $dark-card-bg
     text-decoration: none;   // supprime le soulignement du lien
-    color: $dark-text;       // texte clair
+    color: var(--theme-text-primary);              // était $dark-text
     height: 100%;            // les deux cartes font la même hauteur dans le row Bootstrap
     transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
 
@@ -664,7 +673,7 @@
     &:hover {
       transform: translateY(-4px);
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
-      color: $dark-text;     // garde la couleur au hover
+      color: var(--theme-text-primary);            // garde la couleur au hover
     }
 
     // ── Cercle icône (commun) ──
@@ -682,14 +691,14 @@
     .contact-cta-card-title {
       font-size: 1.15rem;
       font-weight: 700;
-      color: #fff;
+      color: var(--theme-text-strong);             // était #fff
       margin-bottom: 0.65rem;
     }
 
     // Texte descriptif
     .contact-cta-card-text {
       font-size: 0.875rem;
-      color: $dark-muted;
+      color: var(--theme-text-muted);              // était $dark-muted
       line-height: 1.6;
       flex: 1;               // pousse le lien en bas de la carte (flex colonne)
       margin-bottom: 1.25rem;

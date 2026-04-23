@@ -104,7 +104,7 @@ export default class extends Controller {
 
     if (cities.length === 0) {
       dropdown.innerHTML = `
-        <div style="padding:0.5rem 0.75rem; font-size:0.8rem; color:rgba(255,255,255,0.4);">
+        <div style="padding:0.5rem 0.75rem; font-size:0.8rem; color:var(--theme-text-muted);">
           Aucune ville trouvée
         </div>
       `
@@ -120,7 +120,7 @@ export default class extends Controller {
       // Département pour différencier les homonymes (ex: "Lyon" → "Métropole de Lyon")
       const department = addr.county || addr.state || ""
       const deptHtml   = department
-        ? `<span style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin-left:0.4rem;">${this.escapeHtml(department)}</span>`
+        ? `<span style="font-size:0.75rem; color:var(--theme-text-muted); margin-left:0.4rem;">${this.escapeHtml(department)}</span>`
         : ""
 
       return `

@@ -14,7 +14,7 @@ body:has(.error-404-page) footer {
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background-color: $dark-bg; // Fond sombre comme le reste de l'app
+  background-color: var(--theme-page-bg); // Fond adaptatif : sombre en dark, blanc en clair
 }
 
 // Bloc central avec tout le contenu
@@ -61,14 +61,14 @@ body:has(.error-404-page) footer {
 .error-404-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: $dark-text;          // Texte clair sur fond sombre
+  color: var(--theme-text-strong); // Texte fort adaptatif
   margin-bottom: 1rem;
 }
 
 // Texte descriptif sous le titre
 .error-404-description {
   font-size: 1rem;
-  color: $dark-muted;         // Texte secondaire atténué
+  color: var(--theme-text-muted); // Texte secondaire adaptatif
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -89,18 +89,18 @@ body:has(.error-404-page) footer {
   gap: 0.5rem;
 }
 
-// Bouton secondaire (outline — "Accueil")
+// Bouton secondaire (outline — "Accueil") — couleurs adaptatives
 .error-404-btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: $dark-muted;
-  border-color: $dark-muted;
+  color: var(--theme-text-muted);
+  border-color: var(--theme-text-muted);
 
-  // Au survol, on éclaire légèrement
+  // Au survol, on renforce la visibilité
   &:hover {
-    color: $dark-text;
-    border-color: $dark-text;
+    color: var(--theme-text-primary);
+    border-color: var(--theme-border-strong);
     background-color: transparent;
   }
 }

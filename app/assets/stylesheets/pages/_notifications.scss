@@ -1,23 +1,24 @@
 // =====================================================
-// PAGE NOTIFICATIONS — Thème sombre, cohérent avec la navbar
+// PAGE NOTIFICATIONS — S'adapte au thème clair/sombre
+// via les CSS custom properties var(--theme-*)
 // =====================================================
 
 .notifications-page {
-  background-color: $dark-bg;
+  background-color: var(--theme-page-bg); // Fond selon le thème (gris clair / noir)
   min-height: 100vh;
-  color: $dark-text;
+  color: var(--theme-text-primary); // Texte principal selon le thème
 }
 
 // Titre de la page
 .notif-page-title {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--theme-text-strong); // Titre fort (presque noir en clair, blanc en dark)
 }
 
 // Flèche retour
 .notif-page-back {
-  color: rgba(255,255,255,0.6);
+  color: var(--theme-text-muted); // Discret selon le thème
   display: flex;
   align-items: center;
   transition: color 0.2s;
@@ -38,10 +39,10 @@
 
 // Conteneur de la liste
 .notif-page-list {
-  background: $dark-surface;
+  background: var(--theme-bg-surface); // Surface selon le thème (blanc / sombre)
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--theme-border); // Bordure subtile selon le thème
 }
 
 // Chaque ligne de notification
@@ -56,10 +57,10 @@
     &:hover { background: rgba($green, 0.1); }
   }
 
-  // Lue : fond neutre
+  // Lue : fond neutre, hover léger
   &.is-read {
     background: transparent;
-    &:hover { background: rgba(255,255,255,0.04); }
+    &:hover { background: var(--theme-hover-bg); } // Hover subtil selon le thème
   }
 }
 
@@ -69,22 +70,22 @@
   line-height: 1.4;
   margin-bottom: 3px;
 
-  // Non lue : blanc gras
+  // Non lue : texte fort (quasi-noir en clair, blanc en dark)
   &.unread {
-    color: #fff;
+    color: var(--theme-text-strong);
     font-weight: 600;
   }
 
-  // Lue : blanc atténué
+  // Lue : texte atténué selon le thème
   &.read {
-    color: rgba(255,255,255,0.5);
+    color: var(--theme-text-muted);
     font-weight: 400;
   }
 }
 
 // Heure sous le message
 .notif-page-time {
-  color: rgba(255,255,255,0.35);
+  color: var(--theme-text-muted); // Discret selon le thème
   font-size: 0.78rem;
   display: flex;
   align-items: center;
@@ -92,20 +93,23 @@
 }
 
 // Point vert "nouveau" à droite
+// margin-right pour ne pas se superposer au bouton poubelle (position: absolute, right: 8px)
 .notif-page-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: $green;
   flex-shrink: 0;
+  align-self: center;   // centré verticalement plutôt que collé en haut
+  margin-right: 1.5rem; // laisse la place au bouton poubelle (≈ 23px + marge)
 }
 
 // Wrapper relatif autour de chaque notification (pour positionner la croix)
 .notif-page-wrapper {
   position: relative;
 
-  // Séparateur entre les notifications (repris de notif-page-item)
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  // Séparateur entre les notifications
+  border-bottom: 1px solid var(--theme-border); // Séparateur subtil selon le thème
   &:last-child { border-bottom: none; }
 }
 
@@ -123,8 +127,8 @@
   border-radius: 4px;
   line-height: 1;
 
-  // Couleur discrète, hover rouge
-  color: rgba(255,255,255,0.25);
+  // Couleur discrète selon le thème, hover rouge
+  color: var(--theme-text-muted);
   transition: color 0.15s, background 0.15s;
 
   &:hover {
@@ -135,6 +139,6 @@
 
 // État vide
 .notif-page-empty {
-  color: rgba(255,255,255,0.4);
+  color: var(--theme-text-muted); // Discret selon le thème
   font-size: 0.95rem;
 }

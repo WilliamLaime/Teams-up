@@ -319,7 +319,8 @@
 // ── 2. WRAPPER PRINCIPAL ──────────────────────────
 
 .match-show-wrapper {
-  background-color: $dark-bg;
+  // CSS variable → fond page (sombre en dark, gris clair en light)
+  background-color: var(--theme-page-bg);          // était $dark-bg
   min-height: 100vh; // évite le fond blanc en bas sur les grands écrans
   padding: 2.5rem 0 4rem;
 
@@ -337,14 +338,15 @@
 
 // ── 3. BLOCS PARTAGÉS ─────────────────────────────
 
-// Bloc générique (carte sombre avec padding)
+// Bloc générique (carte sombre/clair selon thème)
+// Partagé entre match show ET profil
 .match-block {
-  background: $dark-card-bg;
-  border: 1px solid rgba(255,255,255,0.07);
+  background: var(--theme-bg-card);               // était $dark-card-bg
+  border: 1px solid var(--theme-border);          // était rgba(255,255,255,0.07)
   border-radius: 8px;
   padding: 1.25rem 1.35rem;
   margin-bottom: 1.25rem;
-  color: $dark-text;
+  color: var(--theme-text-primary);               // était $dark-text
 
   // Titre de section dans un bloc
   .match-block-title {
@@ -374,12 +376,12 @@
 .match-organizer-name {
   font-size: 1rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--theme-text-strong);               // était #fff
 }
 
 .match-organizer-tag {
   font-size: 0.72rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted);                // était $dark-muted
   margin-top: 0.1rem;
 }
 
@@ -897,14 +899,15 @@
 
 
 // ── 11. MODAL "DEMANDES EN ATTENTE" ───────────────
+// S'adapte au thème clair/sombre via var(--theme-*)
 
-// Fond de la modale — thème sombre cohérent avec le reste
+// Fond de la modale selon le thème
 .pending-modal-content {
-  background: $dark-card-bg;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--theme-bg-card);           // adaptatif
+  border: 1px solid var(--theme-border);      // adaptatif
   border-radius: 10px;
   padding: 1.75rem;
-  color: $dark-text;
+  color: var(--theme-text-primary);           // adaptatif — force l'héritage vers les enfants
   position: relative;
 }
 
@@ -913,7 +916,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--theme-hover-bg); // Fond selon le thème
   border: none;
   border-radius: 50%;
   width: 30px;
@@ -921,11 +924,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $dark-muted;
+  color: var(--theme-text-muted);
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+  &:hover { background: var(--theme-border-strong); color: var(--theme-text-primary); }
 }
 
 // En-tête de la modale (icône + titre + sous-titre)
@@ -955,21 +958,21 @@
 .pending-modal-title {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--theme-text-strong); // Titre fort selon le thème
   line-height: 1.2;
 }
 
 // Sous-titre (ex : "2 joueurs souhaitent rejoindre")
 .pending-modal-subtitle {
   font-size: 0.8rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // Discret selon le thème
   margin-top: 0.15rem;
 }
 
 // Séparateur entre l'en-tête et la liste
 .pending-modal-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--theme-border); // Séparateur selon le thème
   margin-bottom: 1rem;
 }
 
@@ -988,7 +991,7 @@
   align-items: center;
   gap: 0.9rem;
   padding: 0.85rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--theme-border); // Séparateur selon le thème
 
   &:last-child { border-bottom: none; }
 }
@@ -1009,7 +1012,7 @@
   height: 46px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--theme-border); // Bordure selon le thème
 }
 
 // Zone infos : nom + tags + lien profil
@@ -1022,7 +1025,7 @@
 .pending-modal-name {
   font-size: 0.92rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--theme-text-strong); // Nom bien lisible selon le thème
   margin-bottom: 0.3rem;
   white-space: nowrap;
   overflow: hidden;
@@ -1059,11 +1062,10 @@
   }
 }
 
-// Lien "Voir le profil complet" sous les tags
 // Message laissé par le joueur lors de sa demande
 .pending-modal-message {
   font-size: 0.75rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // Discret selon le thème
   font-style: italic;
   margin-top: 0.3rem;
   display: flex;
@@ -1114,7 +1116,7 @@
     color: $green;
     border: 1px solid rgba($green, 0.5);
 
-    &:hover { background: $green; color: $dark-bg; }
+    &:hover { background: $green; color: #111; }
   }
 
   // Refuser — rouge
@@ -1129,9 +1131,9 @@
   // Match complet — bouton grisé avec icône horloge (joueur sera mis en attente)
   &--disabled,
   &--disabled:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: $dark-muted;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--theme-hover-bg); // Fond discret selon le thème
+    color: var(--theme-text-muted);
+    border: 1px solid var(--theme-border);
     cursor: not-allowed;
     opacity: 0.6;
   }
@@ -1140,7 +1142,7 @@
 // Message si aucune demande (ne devrait pas s'afficher en pratique)
 .pending-modal-empty {
   font-size: 0.85rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // Discret selon le thème
   text-align: center;
   padding: 1.5rem 0;
 }
@@ -1149,11 +1151,11 @@
 // ── 12. MODAL "REJOINDRE CE MATCH ?" ──────────────
 
 .join-modal-content {
-  background: $dark-card-bg;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--theme-bg-card);           // adaptatif : sombre en dark, blanc en light
+  border: 1px solid var(--theme-border);      // adaptatif
   border-radius: 8px;
   padding: 2rem 1.75rem 1.75rem;
-  color: $dark-text;
+  color: var(--theme-text-primary);           // adaptatif
   text-align: center;
   position: relative;
 }
@@ -1163,7 +1165,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(255,255,255,0.08);
+  background: var(--theme-hover-bg);          // adaptatif
   border: none;
   border-radius: 50%;
   width: 30px;
@@ -1171,11 +1173,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $dark-muted;
+  color: var(--theme-text-muted);             // adaptatif
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  &:hover { background: var(--theme-hover-bg-strong); color: var(--theme-text-primary); }
 }
 
 // Icône en haut de la modal
@@ -1195,39 +1197,39 @@
 .join-modal-title {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--theme-text-strong);            // adaptatif : blanc en dark, quasi-noir en light
   margin-bottom: 0.3rem;
 }
 
 // Sous-titre (nom du match)
 .join-modal-subtitle {
   font-size: 0.82rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted);             // adaptatif
   margin: 0;
 }
 
 // Label du champ message
 .join-modal-label {
   font-size: 0.78rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted);             // adaptatif
   margin-bottom: 0.4rem;
   display: block;
 }
 
-// Textarea message dans le modal rejoindre
+// Textarea "Présente toi, ton niveau" — adaptatif
 .join-modal-textarea {
-  background: rgba(255,255,255,0.05) !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
+  background: var(--theme-input-bg) !important;          // adaptatif
+  border: 1px solid var(--theme-border-strong) !important;
   border-radius: 8px !important;
-  color: #fff !important;
+  color: var(--theme-text-primary) !important;           // adaptatif : blanc dark / sombre light
   font-size: 0.85rem;
   resize: none;
 
-  &::placeholder { color: $dark-muted; }
+  &::placeholder { color: var(--theme-text-muted); }
   &:focus {
     border-color: $green !important;
     box-shadow: 0 0 0 2px rgba($green, 0.2) !important;
-    background: rgba(255,255,255,0.07) !important;
+    background: var(--theme-input-focus-bg) !important;  // adaptatif
   }
 }
 

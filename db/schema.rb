@@ -234,6 +234,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_104616) do
     t.integer "homme_du_match_count", default: 0, null: false
     t.string "last_name"
     t.string "level"
+    t.boolean "light_mode", default: false, null: false
     t.string "localisation"
     t.datetime "onboarding_shown_at"
     t.string "phone"

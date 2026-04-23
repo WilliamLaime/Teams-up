@@ -13,26 +13,27 @@
      data-review-modal-auto-open-value="<%= auto_open %>"
      data-bs-backdrop="static">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:480px;">
-    <div class="modal-content" style="background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:14px;">
+    <%# Fond de la modale selon le thème via var(--theme-*) %>
+    <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:14px;">
 
       <%# En-tête de la modal %>
-      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08); padding:1.25rem 1.5rem;">
+      <div class="modal-header" style="border-bottom:1px solid var(--theme-border); padding:1.25rem 1.5rem;">
         <div style="flex:1;">
           <div style="display:flex; align-items:center; justify-content:space-between;">
-            <h5 style="color:#fff; font-size:1rem; font-weight:700; margin:0;">
+            <h5 style="color:var(--theme-text-strong); font-size:1rem; font-weight:700; margin:0;">
               <i data-lucide="star" style="width:16px; height:16px; color:#1EDD88; display:inline; vertical-align:middle; margin-right:0.4rem;"></i>
               Notez vos coéquipiers
             </h5>
             <%# Indicateur "1 / 3" mis à jour par JS (data-step-indicator) %>
             <% total_matches = pending_review_matches.count %>
             <span data-step-indicator
-                  style="font-size:0.72rem; font-weight:600; color:rgba(255,255,255,0.35); background:rgba(255,255,255,0.07); padding:0.2rem 0.55rem; border-radius:999px; <%= total_matches <= 1 ? 'display:none;' : '' %>">
+                  style="font-size:0.72rem; font-weight:600; color:var(--theme-text-muted); background:var(--theme-hover-bg); padding:0.2rem 0.55rem; border-radius:999px; <%= total_matches <= 1 ? 'display:none;' : '' %>">
               1 / <%= total_matches %>
             </span>
           </div>
           <%# Sous-titre : compte les joueurs restants dans le step courant, mis à jour par JS %>
           <% total_pending = pending_review_matches.sum { |m| m[:users].count } %>
-          <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.2rem 0 0;">
+          <p style="font-size:0.75rem; color:var(--theme-text-muted); margin:0.2rem 0 0;">
             <span data-pending-label>
               <% if total_pending > 0 %>
                 encore <%= total_pending %> <%= total_pending > 1 ? "joueurs" : "joueur" %> à noter
@@ -64,9 +65,10 @@
 
             <%# ── Cards de notation (une par joueur non encore noté) ── %>
             <% item[:users].each do |player| %>
+              <%# Fond de la card selon le thème %>
               <div class="review-card"
                    id="review-card-<%= player.id %>-<%= item[:match].id %>"
-                   style="background:#242624; border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:0.9rem 1rem; margin-bottom:0.75rem;">
+                   style="background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:10px; padding:0.9rem 1rem; margin-bottom:0.75rem;">
 
                 <%# Identité du joueur %>
                 <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.75rem;">
@@ -75,11 +77,12 @@
                         style: "width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0;",
                         alt: player.display_name %>
                   <% else %>
-                    <div style="width:38px; height:38px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                    <%# Avatar initiale : fond et texte selon le thème %>
+                    <div style="width:38px; height:38px; border-radius:50%; background:var(--theme-hover-bg); display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:800; color:var(--theme-text-muted); flex-shrink:0;">
                       <%= player.display_name.first.upcase %>
                     </div>
                   <% end %>
-                  <div style="font-size:0.85rem; font-weight:700; color:#fff;">
+                  <div style="font-size:0.85rem; font-weight:700; color:var(--theme-text-strong);">
                     <%= player.display_name %>
                   </div>
                 </div>
@@ -100,23 +103,23 @@
                   <%= hidden_field_tag "avis[rating]", "",
                       data: { "star-rating-target": "input" } %>
 
-                  <%# Étoiles cliquables %>
+                  <%# Étoiles cliquables — couleur initiale selon le thème %>
                   <div style="margin-bottom:0.6rem;">
                     <div style="display:flex; gap:0.3rem; font-size:1.65rem; cursor:pointer;"
                          data-star-rating-target="stars">
                       <% (1..5).each do |i| %>
                         <span data-action="click->star-rating#select"
                               data-value="<%= i %>"
-                              style="color:rgba(255,255,255,0.2); transition:color 0.15s; user-select:none;">★</span>
+                              style="color:var(--theme-text-muted); transition:color 0.15s; user-select:none;">★</span>
                       <% end %>
                     </div>
                   </div>
 
-                  <%# Commentaire optionnel %>
+                  <%# Commentaire optionnel — fond et texte selon le thème %>
                   <textarea name="avis[content]"
                             placeholder="Un commentaire ? (optionnel)"
                             rows="2"
-                            style="width:100%; background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:7px; color:#fff; padding:0.5rem 0.65rem; font-size:0.78rem; resize:none; margin-bottom:0.65rem;"></textarea>
+                            style="width:100%; background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:7px; color:var(--theme-text-primary); padding:0.5rem 0.65rem; font-size:0.78rem; resize:none; margin-bottom:0.65rem;"></textarea>
 
                   <%# Bouton soumettre %>
                   <button type="submit"
@@ -134,7 +137,8 @@
             <%# Affiché uniquement si can_vote_homme (co-joueurs dispo + pas encore voté) %>
             <%# ou si has_voted (pour montrer la confirmation "Vote enregistré !") %>
             <% if item[:can_vote_homme] || item[:has_voted] %>
-              <div style="height:1px; background:rgba(255,255,255,0.07); margin:0.75rem 0;"></div>
+              <%# Séparateur selon le thème %>
+              <div style="height:1px; background:var(--theme-border); margin:0.75rem 0;"></div>
 
               <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#f59e0b; margin-bottom:0.65rem;">
                 <i data-lucide="crown" style="width:11px; height:11px; display:inline; vertical-align:middle;"></i>
@@ -150,6 +154,7 @@
                   </div>
                 <% else %>
                   <%# Pas encore voté : liste des co-joueurs sélectionnables %>
+                  <%# Fond/bordure/couleur des boutons selon le thème %>
                   <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.65rem;">
                     <% item[:all_co_players].each do |player| %>
                       <button type="button"
@@ -157,7 +162,7 @@
                               data-action="click->review-modal#selectVoteCandidate"
                               data-player-id="<%= player.id %>"
                               data-match-id="<%= item[:match].id %>"
-                              style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.7rem; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:999px; color:rgba(255,255,255,0.65); font-size:0.78rem; cursor:pointer; transition:all 0.15s;">
+                              style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.7rem; background:var(--theme-hover-bg); border:1px solid var(--theme-border); border-radius:999px; color:var(--theme-text-muted); font-size:0.78rem; cursor:pointer; transition:all 0.15s;">
                         <%= player.display_name %>
                       </button>
                     <% end %>
@@ -186,12 +191,12 @@
 
       <%# Pied : "Plus tard" toujours dispo + "Match suivant" si plusieurs matchs %>
       <% total_matches = pending_review_matches.count %>
-      <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.08); padding:0.9rem 1.5rem; justify-content:space-between; align-items:center;">
+      <div class="modal-footer" style="border-top:1px solid var(--theme-border); padding:0.9rem 1.5rem; justify-content:space-between; align-items:center;">
 
         <%# Ferme la modal sans noter %>
         <button type="button"
                 data-action="click->review-modal#dismiss"
-                style="font-size:0.78rem; color:rgba(255,255,255,0.4); background:none; border:none; cursor:pointer; padding:0.2rem 0.5rem;">
+                style="font-size:0.78rem; color:var(--theme-text-muted); background:none; border:none; cursor:pointer; padding:0.2rem 0.5rem;">
           Plus tard →
         </button>
 

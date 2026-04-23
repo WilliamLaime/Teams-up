@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════
 
 .contact-page {
-  background-color: $dark-bg; // fond sombre global — cohérent avec le reste du site
+  background-color: var(--theme-page-bg);          // était $dark-bg
 
   // ── Bannière hero ────────────────────────────────
   .contact-banner {
@@ -35,16 +35,16 @@
   // ── Section principale ───────────────────────────
   .contact-main {
     padding: 72px 0;
-    background-color: $dark-bg;
+    background-color: var(--theme-page-bg);        // était $dark-bg
   }
 
-  // Titre de section (Prénom + Nom côte à côte sur mobile aussi)
+  // Titre de section
   .contact-section-title {
     font-family: $display-font;
     font-size: clamp(1.8rem, 3vw, 2.6rem);
     font-weight: 400;
     letter-spacing: 0.04em;
-    color: $dark-text;
+    color: var(--theme-text-primary);              // était $dark-text
     margin-bottom: 2rem;
   }
 
@@ -55,9 +55,9 @@
     gap: 1rem;               // espace entre l'icône et le texte
     padding: 1.25rem;
     margin-bottom: 1rem;
-    background-color: $dark-surface;
+    background-color: var(--theme-bg-surface);     // était $dark-surface
     border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--theme-border);         // était rgba(255,255,255,0.06)
 
     // Icône Lucide — taille fixe + couleur verte
     .contact-info-icon {
@@ -70,7 +70,7 @@
 
     // Label grisé au-dessus (ex : "Email")
     .contact-info-label {
-      color: $dark-muted;
+      color: var(--theme-text-muted);              // était $dark-muted
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -79,7 +79,7 @@
 
     // Valeur principale (ex : "contact@team-up.fr")
     .contact-info-value {
-      color: $dark-text;
+      color: var(--theme-text-primary);            // était $dark-text
       font-size: 0.95rem;
       margin: 0;
     }
@@ -93,12 +93,12 @@
   }
 
   .contact-social-link {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     font-size: 1.1rem;
     transition: color 0.2s ease;
 
     &:hover {
-      color: $green; // vert au survol — cohérent avec le site
+      color: $green;
     }
   }
 
@@ -107,9 +107,9 @@
     // Pas de styles spéciaux sur le form lui-même — Bootstrap gère la grille
   }
 
-  // Légende "* Champs obligatoires" — affichée au-dessus du formulaire
+  // Légende "* Champs obligatoires"
   .contact-required-legend {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     font-size: 0.8rem;
     margin-bottom: 1.5rem;
   }
@@ -123,35 +123,35 @@
   // Label des champs
   .contact-label {
     display: block;
-    color: $dark-muted;
+    color: var(--theme-text-muted);                // était $dark-muted
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 0.4rem;
   }
 
-  // Input et textarea — thème sombre uniforme
+  // Input et textarea — fond/couleur via CSS variables
   .contact-input {
     display: block;
     width: 100%;
     padding: 0.65rem 1rem;
-    // !important nécessaire pour battre le fond blanc par défaut du navigateur
-    background-color: $dark-surface !important;
-    border: 1px solid rgba(255,255,255,0.1);
+    // !important nécessaire pour battre le fond par défaut du navigateur
+    background-color: var(--theme-bg-surface) !important; // était $dark-surface
+    border: 1px solid var(--theme-border);
     border-radius: 8px;
-    color: $dark-text !important;
+    color: var(--theme-text-primary) !important;   // était $dark-text
     font-size: 0.95rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
-    // Autofill navigateur (Chrome, Safari, Edge) — tous les états
-    // Le navigateur injecte un fond jaune/bleu qu'on écrase avec box-shadow
+    // Autofill navigateur — en mode sombre on écrase avec box-shadow
+    // En mode clair, la box-shadow blanc correspond au fond clair
     &:-webkit-autofill,
     &:-webkit-autofill:hover,
     &:-webkit-autofill:focus,
     &:-webkit-autofill:active {
-      -webkit-box-shadow: 0 0 0 1000px $dark-surface inset !important;
-      -webkit-text-fill-color: $dark-text !important;
-      caret-color: $dark-text; // curseur de saisie visible
+      -webkit-box-shadow: 0 0 0 1000px var(--theme-bg-surface) inset !important;
+      -webkit-text-fill-color: var(--theme-text-primary) !important;
+      caret-color: var(--theme-text-primary);
     }
 
     // Focus : bordure verte + léger glow + outline visible en High Contrast Mode
@@ -168,7 +168,7 @@
 
     // Placeholder discret
     &::placeholder {
-      color: rgba(255,255,255,0.25);
+      color: var(--theme-text-muted);              // était rgba(255,255,255,0.25)
     }
   }
 

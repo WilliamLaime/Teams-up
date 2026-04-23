@@ -322,6 +322,21 @@ class ProfilsController < ApplicationController
     render :show_simple
   end
 
+  # PATCH /profil/update_theme
+  # Bascule la préférence de thème de l'utilisateur (mode clair ↔ mode sombre).
+  # Appelé en AJAX par le Stimulus controller theme-toggle.
+  # Réponse JSON : { theme: "light" | "dark" } pour que le controller JS mette à jour l'icône.
+  def update_theme
+    skip_authorization
+
+    # Inverse la valeur actuelle : true→false (dark) ou false→true (light)
+    new_value = !@profil.light_mode?
+    @profil.update_column(:light_mode, new_value)
+
+    # Répond en JSON avec le nouveau thème — le controller Stimulus lira cette valeur
+    render json: { theme: @profil.theme }
+  end
+
   # PATCH/PUT /profil
   # Met à jour le profil et les sports de l'utilisateur connecté
   def update
