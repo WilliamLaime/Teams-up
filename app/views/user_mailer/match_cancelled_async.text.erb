@@ -1,0 +1,19 @@
+TEAMS-UP
+========
+
+Match annulé — <%= @match_title %>
+
+Malheureusement, l'organisateur <%= @organizer_name %> a annulé ce match.
+Ta place a été libérée automatiquement.
+
+Match annulé :
+  Date : <%= I18n.l(@match_date, format: :long) %><% if @match_time_str %> à <%= @match_time_str %><% end %>
+<% if @venue_name.present? %>
+  Lieu : <%= @venue_name %><% if @venue_city %>, <%= @venue_city %><% end %>
+<% end %>
+
+Il y a d'autres matchs disponibles près de chez toi !
+Trouver un nouveau match : <%= matches_url %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.
