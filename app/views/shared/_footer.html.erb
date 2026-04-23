@@ -6,11 +6,11 @@
 <footer class="site-footer">
   <div class="container">
     <%# align-items-center : tout sur la même ligne, centré verticalement %>
-    <div class="row align-items-center">
+    <div class="row align-items-center py-3">
 
       <%# ── Logo : picto SVG + texte SVG côte à côte ── %>
       <%# justify-content-center sur mobile, justify-content-md-start sur desktop %>
-      <div class="col-md-4 d-flex justify-content-center justify-content-md-start">
+      <div class="col-md-4 d-flex align-items-center justify-content-center justify-content-md-start">
         <%= link_to root_path, class: "footer-logo" do %>
           <%# Icône picto blanc Teams-Up — RGESN 5.2 (dimensions HTML) + RGESN 6.4 (lazy loading) %>
           <%= image_tag "img_footer/teamsup_picto_blanc.svg", alt: "", height: 32, width: 32, class: "footer-logo-picto", loading: "lazy" %>
@@ -38,10 +38,10 @@
 
       <%# ── Réseaux sociaux ── %>
       <%# justify-content-center sur mobile, justify-content-md-end sur desktop %>
-      <div class="col-md-4 d-flex justify-content-center justify-content-md-end">
+      <div class="col-md-4 d-flex align-items-center justify-content-center justify-content-md-end">
         <%# Font Awesome pour les réseaux sociaux (Lucide n'a pas TikTok) %>
         <%# RGAA 13.2 — tous les liens target="_blank" ont rel="noopener noreferrer" et indication textuelle %>
-        <div class="footer-social d-flex gap-4">
+        <div class="footer-social d-flex align-items-center gap-4">
           <a href="https://www.instagram.com/teamsup33?igsh=dGs2d3F6MDBmZDJ6" target="_blank" rel="noopener noreferrer" aria-label="Instagram (nouvelle fenêtre)">
             <i class="fa-brands fa-instagram fa-lg"></i>
           </a>

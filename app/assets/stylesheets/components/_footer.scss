@@ -18,11 +18,19 @@
   color: var(--theme-text-muted);
   padding: 20px 0 0;
   transition: background-color 0.25s ease;
+  
+  .row {
+    min-height: 80px;
+  }
 
   // ── Gap entre les colonnes sur mobile ─────────────
   @media (max-width: 767.98px) {
     .row > [class*="col-"] {
       margin-bottom: 24px; // espace vertical entre logo, liens et réseaux sociaux
+    }
+    // Supprimer le margin du dernier col pour éviter l'espace excessif avant .footer-bottom
+    .row > [class*="col-"]:last-child {
+      margin-bottom: 0;
     }
   }
 
@@ -57,7 +65,7 @@
     padding: 0;
     margin: 0;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; // tous les liens sur une seule ligne sur desktop
     gap: 0.5rem 1.5rem;
 
     // Sur mobile : liens empilés verticalement et centrés
@@ -72,6 +80,7 @@
       text-decoration: none;
       font-size: 0.85rem;
       transition: color 0.15s;
+      white-space: nowrap; // empêche "Plan du site" de se couper en plusieurs lignes
 
       &:hover { color: var(--theme-footer-link-hover); }
     }
@@ -80,7 +89,7 @@
   // ── Bande copyright : fond plus contrasté, pleine largeur ──
   .footer-bottom {
     background-color: var(--theme-footer-copy-bg);
-    margin-top: 20px;
+    margin-top: 12px;
     padding: 12px 0;
     font-size: 0.78rem;
     color: var(--theme-footer-copy-color);
