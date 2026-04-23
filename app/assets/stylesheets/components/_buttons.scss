@@ -69,16 +69,16 @@
 
 
 // ── Bouton Secondaire ────────────────────────────────
-// Fond transparent, bordure verte, texte vert
-// Hover : légèrement éclairci avec bordure blanche
+// Fond adaptatif (sombre en dark, clair en light), bordure verte, texte vert
+// Hover : légère surbrillance + bordure forte
 .btn-cta-secondary {
-  background: #1B1B1B;         // fond transparent pour l'effet outline
-  color: $green;                   // texte vert
-  border: 1.5px solid $green;      // bordure verte fine
+  background: var(--theme-bg-card);  // fond adaptatif — sombre en dark, carte en clair
+  color: $green;                     // texte vert
+  border: 1.5px solid $green;        // bordure verte fine
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08); // légère surbrillance blanche au survol
-    color: #fff;                           // texte blanc au survol
-    border-color: rgba(255, 255, 255, 0.5); // bordure blanche semi-transparente
+    background: var(--theme-hover-bg);       // surbrillance adaptative au survol
+    color: var(--theme-text-primary);        // texte adaptatif au survol
+    border-color: var(--theme-border-strong); // bordure plus marquée au survol
   }
 }

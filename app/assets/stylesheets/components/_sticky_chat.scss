@@ -7,15 +7,15 @@
 .nav-chat-btn {
   background: none;
   border: none;
-  color: $dark-muted;        // couleur discrète par défaut
+  color: var(--theme-text-muted); // couleur discrète adaptative
   padding: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  position: relative;        // nécessaire pour positionner le badge en absolu
+  position: relative;              // nécessaire pour positionner le badge en absolu
   transition: color 0.15s;
 
-  &:hover { color: $dark-text; }
+  &:hover { color: var(--theme-text-primary); } // texte plus visible au survol
 }
 
 // ── Badge notification sur l'icône navbar ────────────────────────────────────
@@ -38,34 +38,34 @@
 .sticky-chat-tabs {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid $dark-surface;
+  border-bottom: 1px solid var(--theme-border); // séparateur adaptatif
   flex-shrink: 0;
   padding: 0 4px;
   gap: 2px;
 }
 
-// Bouton d'onglet individuel
+// Bouton d'onglet individuel — couleurs adaptatives
 .sticky-chat-tab {
   background: none;
   border: none;
   border-bottom: 2px solid transparent;    // soulignement vert quand actif
-  color: $dark-muted;
+  color: var(--theme-text-muted);         // texte discret adaptatif
   padding: 8px 10px;
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  position: relative;                       // pour positionner le badge
+  position: relative;                      // pour positionner le badge
   transition: color 0.15s, border-color 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
 
   &.active {
-    color: $dark-text;
-    border-bottom-color: $green;           // trait vert sous l'onglet actif
+    color: var(--theme-text-primary);     // texte fort adaptatif sur l'onglet actif
+    border-bottom-color: $green;          // trait vert sous l'onglet actif
   }
 
   &:hover:not(.active) {
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--theme-text-primary);     // texte visible au survol
   }
 }
 
@@ -98,7 +98,7 @@
 
   &::-webkit-scrollbar { width: 3px; }
   &::-webkit-scrollbar-thumb {
-    background-color: $dark-surface;
+    background-color: var(--theme-border); // scrollbar adaptative
     border-radius: 3px;
   }
 
@@ -108,11 +108,10 @@
   }
 }
 
-// ── Modale Bootstrap ─────────────────────────────────────────────────────────
-// Fond sombre pour s'intégrer dans le thème de l'application
+// ── Modale Bootstrap — fond et bordure adaptatifs ────────────────────────────
 .chat-modal-content {
-  background-color: $dark-card-bg;
-  border: 1px solid $dark-surface;
+  background-color: var(--theme-bg-card);  // fond adaptatif
+  border: 1px solid var(--theme-border);   // bordure adaptative
   border-radius: 14px;
   overflow: hidden;
 }
@@ -123,35 +122,35 @@
   overflow: hidden;
 }
 
-// ── Colonne gauche : sidebar des conversations ────────────────────────────────
+// ── Colonne gauche : sidebar des conversations — fond adaptatif ───────────────
 .sticky-chat-sidebar {
   width: 200px;
   min-width: 200px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid $dark-surface;
-  background-color: $dark-bg;
+  border-right: 1px solid var(--theme-border);  // séparateur adaptatif
+  background-color: var(--theme-bg-surface);    // fond légèrement distinct
   overflow: hidden;
 }
 
-// En-tête de la sidebar ("Chats" + bouton fermer)
+// En-tête de la sidebar ("Chats" + bouton fermer) — adaptatif
 .sticky-chat-sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 11px 12px;
   font-weight: 700;
-  color: $dark-text;
+  color: var(--theme-text-strong);           // titre fort adaptatif
   font-size: 0.85rem;
-  border-bottom: 1px solid $dark-surface;
+  border-bottom: 1px solid var(--theme-border); // séparateur adaptatif
   flex-shrink: 0;
 }
 
-// Bouton × fermer (data-bs-dismiss="modal")
+// Bouton × fermer — discret et adaptatif
 .sticky-chat-close-btn {
   background: none;
   border: none;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // discret par défaut
   padding: 3px;
   cursor: pointer;
   display: flex;
@@ -160,8 +159,8 @@
   transition: background-color 0.15s, color 0.15s;
 
   &:hover {
-    color: $dark-text;
-    background-color: $dark-surface;
+    color: var(--theme-text-primary);  // visible au survol
+    background-color: var(--theme-hover-bg); // surbrillance adaptative
   }
 }
 
@@ -172,7 +171,7 @@
 
   &::-webkit-scrollbar { width: 3px; }
   &::-webkit-scrollbar-thumb {
-    background-color: $dark-surface;
+    background-color: var(--theme-border); // scrollbar adaptative
     border-radius: 3px;
   }
 }
@@ -181,7 +180,7 @@
 .sticky-chat-convo-item-wrapper {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--theme-border); // séparateur entre conversations
   position: relative;
 
   // Affiche le bouton poubelle au survol du conteneur
@@ -210,24 +209,24 @@
   transition: background-color 0.15s;
 
   &:hover {
-    background-color: $dark-surface;
+    background-color: var(--theme-hover-bg); // surbrillance adaptative
     color: inherit;
   }
 
-  // Conversation active (sélectionnée)
+  // Conversation active (sélectionnée) — fond légèrement distinct + trait vert
   &--active {
-    background-color: $dark-surface;
+    background-color: var(--theme-hover-bg); // fond actif adaptatif
     border-left: 2px solid $green;
   }
 }
 
-// Bouton poubelle (discret par défaut, bien visible au survol)
+// Bouton poubelle (discret par défaut, bien visible au survol) — adaptatif
 .sticky-chat-dismiss-btn {
   opacity: 0.3;
   flex-shrink: 0;
   background: none;
   border: none;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // icône discrète adaptative
   padding: 6px 8px;
   cursor: pointer;
   display: flex;
@@ -263,7 +262,7 @@
 .sticky-chat-convo-title {
   font-weight: 600;
   font-size: 0.75rem;
-  color: $dark-text;
+  color: var(--theme-text-strong); // titre de conversation adaptatif
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -322,17 +321,17 @@
 
 .sticky-chat-convo-preview {
   font-size: 0.68rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // aperçu discret adaptatif
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-// État vide dans la sidebar
+// État vide dans la sidebar — adaptatif
 .sticky-chat-sidebar-empty {
   padding: 24px 12px;
   text-align: center;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // texte vide adaptatif
   font-size: 0.78rem;
 
   div { font-size: 1.4rem; margin-bottom: 6px; }
@@ -357,14 +356,14 @@
   min-height: 0;
 }
 
-// État initial "sélectionne une conversation"
+// État initial "sélectionne une conversation" — adaptatif
 .sticky-chat-no-selection {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // texte indicatif adaptatif
   font-size: 0.82rem;
   text-align: center;
   gap: 8px;
@@ -380,17 +379,17 @@
   overflow: hidden;
 }
 
-// En-tête du chat (nom du match)
+// En-tête du chat (nom du match) — adaptatif
 .sticky-chat-chat-header {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 9px 12px;
-  background-color: $dark-bg;
-  border-bottom: 1px solid $dark-surface;
+  background-color: var(--theme-bg-surface);   // fond adaptatif
+  border-bottom: 1px solid var(--theme-border); // séparateur adaptatif
   font-weight: 700;
   font-size: 0.8rem;
-  color: $dark-text;
+  color: var(--theme-text-primary);            // texte adaptatif
   flex-shrink: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -410,7 +409,7 @@
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: lighten($dark-bg, 8%);
+    background-color: var(--theme-hover-bg); // surbrillance au clic sur le profil
   }
 }
 
@@ -437,7 +436,7 @@
 
   &::-webkit-scrollbar { width: 3px; }
   &::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--theme-border); // scrollbar dans la zone messages
     border-radius: 3px;
   }
 
@@ -477,10 +476,10 @@
   }
 }
 
-// Formulaire d'envoi (bas de la colonne droite)
+// Formulaire d'envoi (bas de la colonne droite) — adaptatif
 .sticky-chat-form-zone {
   padding: 8px 10px;
-  background-color: $dark-bg;
-  border-top: 1px solid $dark-surface;
+  background-color: var(--theme-bg-surface);   // fond adaptatif
+  border-top: 1px solid var(--theme-border);   // séparateur adaptatif
   flex-shrink: 0;
 }

@@ -1,12 +1,17 @@
 // =====================================================
-// NAVBAR — Thème sombre avec accents verts
+// NAVBAR — Thème adaptatif (sombre par défaut / clair si data-theme="light")
+// Les couleurs utilisent les CSS variables définies dans config/_colors.scss
+// pour s'adapter automatiquement au thème actif de l'utilisateur.
 // =====================================================
 
-// Fond sombre + texte clair pour toute la navbar
+// Fond + texte principaux de la navbar
 .navbar-dark-custom {
-  background-color: $dark-bg;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background-color: var(--theme-nav-bg);
+  border-bottom: 1px solid var(--theme-nav-border);
   padding: 0.75rem 0;
+  // Transition douce lors du changement de thème (toggle instantané côté JS,
+  // mais la transition CSS évite un flash brutal sur les éléments les plus visibles)
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
 // Logo image dans la navbar
@@ -24,7 +29,7 @@
 
 // Style de base pour tous les liens de navigation
 .navbar-dark-custom .nav-link {
-  color: rgba(255,255,255,0.8) !important;
+  color: var(--theme-text-nav) !important;
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.4rem 0.75rem !important;
@@ -32,7 +37,7 @@
   transition: color 0.2s;
 
   &:hover {
-    color: #fff !important;
+    color: var(--theme-text-nav-hover) !important;
     background: transparent;
   }
 }
@@ -67,7 +72,7 @@
   }
 
   &.active {
-    color: #fff !important;
+    color: var(--theme-text-nav-hover) !important;
   }
 }
 
@@ -77,11 +82,11 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--theme-icon-color);
   transition: color 0.2s ease;
 
   .nav-pwa-icon {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--theme-icon-color);
     transition: color 0.2s ease;
   }
 
@@ -89,7 +94,7 @@
     color: $green;
   }
 
-  // Desktop : apparence bouton pill vert (comme avant)
+  // Desktop : apparence bouton pill vert (reste vert dans les deux thèmes)
   @media (min-width: 992px) {
     background-color: #1EDD88;
     color: #111111;
@@ -115,7 +120,7 @@
 .navbar-dark-custom .notif-bell-link {
   // Couleur de base de l'icône (via currentColor du SVG Lucide)
   .notif-bell-icon {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--theme-icon-color);
     transition: color 0.2s ease;
   }
 
@@ -124,14 +129,40 @@
   }
 }
 
-// Bouton toggler (hamburger mobile) en blanc
+// ── Bouton toggle thème ────────────────────────────────────────────────────────
+// Icône ☀️ (soleil) en mode sombre → passe en mode clair au clic
+// Icône 🌙 (lune) en mode clair → passe en mode sombre au clic
+.nav-theme-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: var(--theme-icon-color);
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: color 0.2s ease, background-color 0.15s ease;
+
+  &:hover {
+    color: var(--theme-icon-hover);
+    background-color: var(--theme-hover-bg);
+  }
+}
+
+// Bouton toggler (hamburger mobile) — adapté au thème
 .navbar-dark-custom .navbar-toggler {
-  border-color: rgba(255,255,255,0.3);
+  border-color: var(--theme-border-strong);
 
   .navbar-toggler-icon {
-    // On surcharge le SVG Bootstrap par un blanc
+    // En mode sombre : icône blanche (par défaut Bootstrap)
+    // En mode clair : icône sombre
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
   }
+}
+
+// En mode clair : toggler hamburger avec couleur sombre
+[data-theme="light"] .navbar-dark-custom .navbar-toggler .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280,0,0,0.65%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 // Avatar dans la navbar
@@ -140,7 +171,7 @@
   height: 34px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid var(--theme-border-strong);
 }
 
 // Wrapper relatif autour de l'avatar — nécessaire pour positionner le point vert
@@ -159,8 +190,8 @@
   height: 9px;
   border-radius: 50%;
   background-color: $green;
-  // Anneau sombre pour le faire ressortir sur n'importe quel fond
-  box-shadow: 0 0 0 2px $dark-bg;
+  // Anneau qui change selon le thème pour ressortir sur n'importe quel fond
+  box-shadow: 0 0 0 2px var(--theme-nav-bg);
 
   // Légère animation de pulsation pour attirer l'œil
   animation: admin-dot-pulse 2.5s ease-in-out infinite;
@@ -182,33 +213,33 @@
   50%       { opacity: 0.6; transform: scale(0.85); }
 }
 
-// Nom d'utilisateur en blanc
+// Nom d'utilisateur adaptatif au thème
 .navbar-dark-custom .navbar-user-name {
-  color: rgba(255,255,255,0.85);
+  color: var(--theme-text-nav);
   font-size: 0.875rem;
   font-weight: 600;
 }
 
-// Dropdown : fond sombre + bords légers
+// Dropdown : fond et bords adaptés au thème
 .navbar-dark-custom .dropdown-menu {
-  background-color: $dark-surface;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  background-color: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   border-radius: 10px;
   padding: 0.5rem;
   min-width: 200px;
 }
 
 .navbar-dark-custom .dropdown-item {
-  color: rgba(255,255,255,0.8);
+  color: var(--theme-text-nav);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   transition: background 0.15s;
 
   &:hover {
-    background-color: rgba(255,255,255,0.08);
-    color: #fff;
+    background-color: var(--theme-hover-bg-strong);
+    color: var(--theme-text-nav-hover);
   }
 
   &.text-danger {
@@ -218,17 +249,17 @@
 }
 
 .navbar-dark-custom .dropdown-divider {
-  border-color: rgba(255,255,255,0.1);
+  border-color: var(--theme-border-strong);
 }
 
-// Dropdown des notifications — fond sombre
+// Dropdown des notifications
 .navbar-dark-custom .notif-dropdown {
   min-width: 300px;
   padding: 0;
 
   .notif-header {
-    background: $dark-surface;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: var(--theme-bg-surface);
+    border-bottom: 1px solid var(--theme-border-strong);
     border-radius: 10px 10px 0 0;
   }
 
@@ -244,11 +275,9 @@
   }
 
   // Wrapper relatif pour positionner la croix de suppression.
-  // Le hover et le fond unread sont appliqués ici pour englober
-  // à la fois le button_to principal ET la ligne temps+boutons ami.
   .notif-item-wrapper {
     position: relative;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid var(--theme-border);
 
     &:last-child { border-bottom: none; }
 
@@ -259,14 +288,45 @@
 
     // Hover sur toute la carte
     &:hover {
-      background: rgba(255,255,255,0.06);
+      background: var(--theme-hover-bg);
     }
   }
 
   .notif-item {
     background: transparent;
-    color: rgba(255,255,255,0.8);
+    color: var(--theme-text-nav);
     font-size: 0.82rem;
+  }
+
+  // Titre "Notifications" dans le header du dropdown
+  .notif-title {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  // Message d'une notification non lue (texte principal)
+  .notif-msg {
+    color: #ffffff;
+  }
+
+  // Message d'une notification déjà lue (atténué)
+  .notif-msg--read {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  // Horodatage (ex: "il y a 3 minutes")
+  .notif-time {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+  }
+
+  // Icône check pour les notifications lues
+  .notif-read-icon {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  // État vide du dropdown (aucune notification)
+  .notif-empty {
+    color: rgba(255, 255, 255, 0.5);
   }
 
   // Poubelle de suppression dans le dropdown — coin haut droit
@@ -283,7 +343,7 @@
     line-height: 1;
 
     // Couleur discrète, hover rouge
-    color: rgba(255,255,255,0.25);
+    color: var(--theme-text-muted);
     transition: color 0.15s, background 0.15s;
 
     &:hover {
@@ -291,10 +351,80 @@
       background: rgba(231, 76, 60, 0.12);
     }
   }
-
 }
 
-// Scrollbar verte pour la modal d'avis — identique à .notif-list dans le dropdown
+// ── Modale PWA "Installer l'app" — toujours dark (identité app) ─────────────
+// !important sur le fond pour résister à [data-theme="light"] .modal-content { background:#fff }
+
+.pwa-modal-content {
+  background: #1a1c1a !important;
+  border: 1px solid rgba(30, 221, 136, 0.2) !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.pwa-modal-title {
+  color: #f0f0f0;
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.pwa-modal-desc {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.pwa-modal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pwa-modal-list-item {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pwa-modal-ios-hint {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 1rem;
+}
+
+.pwa-modal-ios-strong { color: rgba(255, 255, 255, 0.85); }
+
+.pwa-modal-hint-small {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.8rem;
+}
+
+.pwa-modal-btn-later {
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+
+// Scrollbar verte pour la modal d'avis
 .review-modal-body {
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
@@ -302,7 +432,6 @@
 }
 
 // Empêche Bootstrap d'ajouter un padding-right au body quand une modal s'ouvre
-// (évite le décalage/marge grise visible sur la droite de la page)
 body.modal-open {
   padding-right: 0 !important;
 }
@@ -330,18 +459,19 @@ body.modal-open {
 }
 
 // ── Bande sous la navbar (mobile uniquement, d-lg-none) ────────────────────
-// Fond identique à la navbar, séparateur bas discret
+// Fond adaptatif au thème, séparateur bas discret
 .mobile-sub-navbar {
-  background-color: $dark-bg;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background-color: var(--theme-nav-bg);
+  border-bottom: 1px solid var(--theme-nav-border);
   padding: 8px 0;
+  transition: background-color 0.25s ease;
 
   // Bouton pill pour le sélecteur de sport mobile
   .mobile-sport-btn {
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--theme-hover-bg-strong);
+    border: 1px solid var(--theme-border-strong);
     border-radius: 20px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--theme-text-nav);
     font-size: 0.875rem;
     font-weight: 500;
     padding: 5px 14px;
@@ -349,51 +479,50 @@ body.modal-open {
     transition: background 0.2s, color 0.2s;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
+      background: var(--theme-hover-bg-strong);
+      color: var(--theme-text-nav-hover);
     }
   }
 
-  // ── Dropdown sport : fond sombre (même style que .navbar-dark-custom) ──
-  // Nécessaire car ce dropdown est hors du sélecteur .navbar-dark-custom
+  // Dropdown sport : fond adaptatif au thème
   .dropdown-menu {
-    background-color: $dark-surface;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    background-color: var(--theme-bg-surface);
+    border: 1px solid var(--theme-border-strong);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     border-radius: 10px;
     padding: 0.5rem;
     min-width: 220px;
   }
 
   .dropdown-item {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--theme-text-nav);
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     transition: background 0.15s;
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.08);
-      color: #fff;
+      background-color: var(--theme-hover-bg-strong);
+      color: var(--theme-text-nav-hover);
     }
   }
 
   .dropdown-divider {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--theme-border-strong);
   }
 
   // Input de recherche dans le dropdown sport
   .sport-search-input {
-    background-color: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background-color: var(--theme-input-bg);
+    border: 1px solid var(--theme-border-strong);
+    color: var(--theme-input-color);
 
-    &::placeholder { color: rgba(255, 255, 255, 0.35); }
+    &::placeholder { color: var(--theme-input-placeholder); }
     &:focus {
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: var(--theme-input-focus-bg);
       border-color: $green;
       box-shadow: none;
-      color: #fff;
+      color: var(--theme-input-color);
     }
   }
 }

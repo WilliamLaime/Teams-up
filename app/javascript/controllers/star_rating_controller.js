@@ -36,7 +36,7 @@ export default class extends Controller {
       if (index < value) {
         star.style.color = "#1EDD88"  // étoile pleine
       } else {
-        star.style.color = "rgba(255,255,255,0.2)"  // étoile vide
+        star.style.color = "var(--theme-text-muted)"  // étoile vide — couleur selon le thème
       }
     })
 

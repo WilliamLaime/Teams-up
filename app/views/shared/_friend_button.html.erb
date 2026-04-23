@@ -22,21 +22,17 @@
     <%# ID unique pour la modale (évite les conflits si plusieurs cartes sur la page) %>
     <% modal_id = "removefriendModal#{profil_user.id}" %>
     <div style="display:inline-flex; align-items:center; gap:0.4rem;">
-      <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700;
-                   color:#1EDD88; border:1px solid rgba(30,221,136,0.3); border-radius:999px;
-                   padding:0.2rem 0.65rem;">
+      <%# Badge "Amis" vert — classe hardcodée claire car la player card est toujours sombre %>
+      <span class="friend-status-badge friend-status-badge--friends">
         <i data-lucide="user-check" style="width:11px; height:11px;"></i>
         Amis
       </span>
 
-      <%# Bouton qui ouvre la modale de confirmation (ne supprime pas directement) %>
+      <%# Bouton "Retirer" — style discret blanc sur fond sombre %>
       <button type="button"
+              class="friend-action-btn friend-action-btn--muted"
               data-bs-toggle="modal"
-              data-bs-target="#<%= modal_id %>"
-              style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                     font-weight:700; color:rgba(255,255,255,0.35);
-                     background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
-                     border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
+              data-bs-target="#<%= modal_id %>">
         <i data-lucide="user-minus" style="width:10px; height:10px;"></i>
         Retirer
       </button>
@@ -47,24 +43,25 @@
     <% content_for :modals do %>
       <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
-          <div class="modal-content" style="background:#111111; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+          <%# Fond et bordure selon le thème %>
+          <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:12px;">
 
             <div class="modal-body text-center" style="padding:1.5rem 1.5rem 1rem;">
               <div style="font-size:2rem; margin-bottom:0.75rem;">👋</div>
-              <p style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
+              <p style="color:var(--theme-text-strong); font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
                 Retirer <%= profil_user.profil&.first_name %> ?
               </p>
-              <p style="color:rgba(255,255,255,0.45); font-size:0.8rem; margin:0;">
+              <p style="color:var(--theme-text-muted); font-size:0.8rem; margin:0;">
                 Vous ne serez plus amis et ne pourrez plus vous envoyer de messages.
               </p>
             </div>
 
-            <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
+            <div class="modal-footer" style="border-top:1px solid var(--theme-border); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
               <%# Annuler — ferme juste la modale %>
               <button type="button"
                       data-bs-dismiss="modal"
-                      style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);
-                             background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+                      style="font-size:0.8rem; font-weight:600; color:var(--theme-text-muted);
+                             background:var(--theme-hover-bg); border:1px solid var(--theme-border);
                              border-radius:20px; padding:0.4rem 1rem; cursor:pointer;">
                 Annuler
               </button>
@@ -88,9 +85,8 @@
   <%# ── État 2 : j'ai envoyé une demande, en attente de réponse ── %>
   <% elsif pending_sent %>
     <div style="display:inline-flex; align-items:center; gap:0.4rem;">
-      <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem; font-weight:700;
-                   color:rgba(255,255,255,0.45); border:1px solid rgba(255,255,255,0.15);
-                   border-radius:999px; padding:0.2rem 0.65rem;">
+      <%# Badge "En attente" — blanc discret, lisible sur fond sombre de la player card %>
+      <span class="friend-status-badge friend-status-badge--pending">
         <i data-lucide="clock" style="width:11px; height:11px;"></i>
         En attente
       </span>
@@ -99,10 +95,7 @@
       <%= button_to user_friendship_path(profil_user),
             method: :delete,
             data: { turbo_frame: "_top" },
-            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                    font-weight:700; color:rgba(255,100,100,0.7);
-                    background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
-                    border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+            class: "friend-action-btn friend-action-btn--cancel" do %>
         <i data-lucide="x" style="width:10px; height:10px;"></i>
         Annuler
       <% end %>
@@ -111,27 +104,21 @@
   <%# ── État 3 : cette personne m'a envoyé une demande, je dois répondre ── %>
   <% elsif pending_received %>
     <div style="display:inline-flex; align-items:center; gap:0.4rem;">
-      <%# Bouton Accepter %>
+      <%# Bouton Accepter — vert %>
       <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
       <%= button_to accept_user_friendship_path(profil_user),
             method: :patch,
             data: { turbo_frame: "_top" },
-            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                    font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
-                    border:1px solid rgba(30,221,136,0.3); border-radius:999px;
-                    padding:0.2rem 0.65rem; cursor:pointer;" do %>
+            class: "friend-action-btn friend-action-btn--add" do %>
         <i data-lucide="check" style="width:11px; height:11px;"></i>
         Accepter
       <% end %>
-      <%# Bouton Refuser %>
+      <%# Bouton Refuser — rouge discret %>
       <%# data-turbo-frame="_top" → force une navigation complète pour que le toast flash s'affiche %>
       <%= button_to decline_user_friendship_path(profil_user),
             method: :patch,
             data: { turbo_frame: "_top" },
-            style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                    font-weight:700; color:rgba(255,100,100,0.7);
-                    background:rgba(255,100,100,0.06); border:1px solid rgba(255,100,100,0.2);
-                    border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;" do %>
+            class: "friend-action-btn friend-action-btn--cancel" do %>
         <i data-lucide="x" style="width:11px; height:11px;"></i>
         Refuser
       <% end %>
@@ -143,10 +130,7 @@
     <%= button_to user_friendship_path(profil_user),
           method: :post,
           data: { turbo_frame: "_top" },
-          style: "display:inline-flex; align-items:center; gap:0.3rem; font-size:0.7rem;
-                  font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
-                  border:1px solid rgba(30,221,136,0.3); border-radius:999px;
-                  padding:0.2rem 0.65rem; cursor:pointer;" do %>
+          class: "friend-action-btn friend-action-btn--add" do %>
       <i data-lucide="user-plus" style="width:11px; height:11px;"></i>
       Ajouter
     <% end %>

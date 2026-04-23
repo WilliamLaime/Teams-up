@@ -55,6 +55,28 @@ class UserMailer < ApplicationMailer
     mail(to: @user.email, subject: "Le match \"#{match.title}\" a été annulé")
   end
 
+  # ── 3b. Version asynchrone de match_cancelled via MatchCancelledMailerJob ─
+  # Accepte des données scalaires (pas d'AR objects) pour la compatibilité SolidQueue.
+  # Évite le DeserializationError causé par GlobalID sur un Match détruit.
+  #
+  # @param user_email     [String]      email du destinataire
+  # @param match_title    [String]      titre du match annulé
+  # @param match_date     [Date]        date du match
+  # @param match_time_str [String, nil] heure formatée "HHhMM" ou nil
+  # @param venue_name     [String, nil] nom du lieu ou nil
+  # @param venue_city     [String, nil] ville du lieu ou nil
+  # @param organizer_name [String]      display_name de l'organisateur
+  def match_cancelled_async(user_email:, match_title:, match_date:, match_time_str:, venue_name:, venue_city:, organizer_name:)
+    @match_title     = match_title
+    @match_date      = match_date      # Date — pour I18n.l
+    @match_time_str  = match_time_str  # String "HHhMM" ou nil — déjà formaté
+    @venue_name      = venue_name
+    @venue_city      = venue_city
+    @organizer_name  = organizer_name
+
+    mail(to: user_email, subject: "Le match \"#{match_title}\" a été annulé")
+  end
+
   # ── 4. Un joueur a quitté ton match ───────────────────────────────────────
   # Destinataire : l'organisateur du match
   # Déclenché    : match_users#destroy (uniquement si le joueur était approuvé)

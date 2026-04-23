@@ -115,7 +115,7 @@ export default class extends Controller {
     if (items.length === 0) {
       // Remplace la liste par le message vide
       list.outerHTML = `
-        <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
+        <div class="text-center py-3" style="color:var(--theme-text-muted);">
           <i data-lucide="inbox" style="width:22px;height:22px;"></i>
           <div class="small mt-1">Aucune notification</div>
         </div>
@@ -147,7 +147,7 @@ export default class extends Controller {
       const icon = item.querySelector("[data-lucide='bell-dot']")
       if (icon) {
         icon.setAttribute("data-lucide", "check-circle")
-        icon.style.color = "rgba(255,255,255,0.4)"
+        icon.style.color = "var(--theme-text-muted)" // Icône discrète selon le thème
         icon.classList.remove("text-primary")
       }
 
@@ -158,7 +158,7 @@ export default class extends Controller {
       // Passe le texte en grisé (même style que les notifications déjà lues)
       const msgDiv = item.querySelector(".notif-msg")
       if (msgDiv) {
-        msgDiv.style.color = "rgba(255,255,255,0.5)"
+        msgDiv.style.color = "var(--theme-text-muted)" // Texte atténué selon le thème
         msgDiv.classList.remove("fw-semibold")
       }
     })

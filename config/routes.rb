@@ -139,6 +139,9 @@ Rails.application.routes.draw do
     delete :dismiss_reminder, on: :member
     # POST /profil/dismiss_onboarding => l'user a vu et fermé la modale d'onboarding
     post :dismiss_onboarding, on: :member
+    # PATCH /profil/update_theme => basculer entre mode clair et mode sombre
+    # Appelé en AJAX par le Stimulus controller theme-toggle
+    patch :update_theme, on: :member
   end
 
   # Profil public d'un autre utilisateur

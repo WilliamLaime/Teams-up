@@ -64,7 +64,7 @@
                       <% if notif.notif_type == "image_rejected" %>
                         <i data-lucide="shield-alert" style="width:18px;height:18px;color:#E67E22;"></i>
                       <% elsif notif.read? %>
-                        <i data-lucide="check-circle" style="width:18px;height:18px;color:rgba(255,255,255,0.3);"></i>
+                        <i data-lucide="check-circle" style="width:18px;height:18px;color:var(--theme-text-muted);"></i>
                       <% else %>
                         <i data-lucide="bell-dot" style="width:18px;height:18px;" class="text-primary"></i>
                       <% end %>
@@ -83,7 +83,7 @@
 
                     <%# Point vert "nouveau" à droite pour les non lues %>
                     <% unless notif.read? %>
-                      <span class="notif-page-dot flex-shrink-0 mt-2"></span>
+                      <span class="notif-page-dot"></span>
                     <% end %>
 
                   </div>
@@ -111,7 +111,7 @@
         <% else %>
           <%# État vide %>
           <div class="notif-page-empty text-center py-5">
-            <i data-lucide="inbox" style="width:48px;height:48px;color:rgba(255,255,255,0.2);"></i>
+            <i data-lucide="inbox" style="width:48px;height:48px;color:var(--theme-text-muted);"></i>
             <p class="mt-3">Tu n'as aucune notification pour le moment.</p>
           </div>
         <% end %>

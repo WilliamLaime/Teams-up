@@ -4,17 +4,21 @@
 <%= link_to team_path(team), style: "text-decoration:none;" do %>
   <div class="team-card">
 
-    <%# Blason %>
+    <%# Blason — priorité : SVG généré > image uploadée > placeholder
+        Le SVG du badge builder passe en premier car il représente le blason
+        tel que le capitaine l'a conçu. L'image uploadée est un fallback
+        (anciens blasons migrés). %>
     <div class="team-card-badge">
-      <% if team.badge_image.attached? %>
-        <%= image_tag team.badge_image, alt: "Blason #{team.name}", class: "team-card-badge-img" %>
-      <% elsif team.badge_svg.present? %>
-        <%# SVG généré stocké en base — rendu inline en sécurité %>
+      <% if team.badge_svg.present? %>
+        <%# SVG généré par le badge builder — rendu inline en sécurité %>
         <div class="team-card-badge-svg"><%= team.badge_svg.html_safe %></div>
+      <% elsif team.badge_image.attached? %>
+        <%# Fallback : image uploadée directement (ancienne version) %>
+        <%= image_tag team.badge_image, alt: "Blason #{team.name}", class: "team-card-badge-img" %>
       <% else %>
-        <%# Placeholder par défaut %>
+        <%# Placeholder par défaut si aucun blason %>
         <div class="team-card-badge-placeholder">
-          <i data-lucide="shield" style="width:32px;height:32px;color:rgba(255,255,255,0.4);"></i>
+          <i data-lucide="shield" style="width:32px;height:32px;color:var(--theme-text-muted);"></i>
         </div>
       <% end %>
     </div>

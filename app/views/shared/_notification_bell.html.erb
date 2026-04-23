@@ -15,7 +15,7 @@
   <%# Le span position-relative est collé à la taille de l'icône (inline-flex)
       pour que le badge se positionne par rapport à la cloche et non au lien entier %>
   <span class="position-relative d-inline-flex">
-    <i data-lucide="bell" style="width:20px;height:20px;color:rgba(255,255,255,0.75);" aria-hidden="true"></i>
+    <i data-lucide="bell" class="notif-bell-icon" style="width:20px;height:20px;" aria-hidden="true"></i>
     <% if unread_count > 0 %>
       <%# Badge rouge au coin supérieur droit de la cloche %>
       <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -37,7 +37,7 @@
 
   <%# En-tête : titre + bouton "Tout lire" si nécessaire %>
   <div class="notif-header d-flex justify-content-between align-items-center px-3 py-2">
-    <strong class="small text-white">Notifications</strong>
+    <strong class="small notif-title">Notifications</strong>
     <% if unread_count > 0 %>
       <%#
         Bouton "Tout lire" :
@@ -81,7 +81,7 @@
             <% if notif.notif_type == "image_rejected" %>
               <i data-lucide="shield-alert" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:#E67E22;" aria-hidden="true"></i>
             <% elsif notif.read? %>
-              <i data-lucide="check-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:rgba(255,255,255,0.4);" aria-hidden="true"></i>
+              <i data-lucide="check-circle" class="notif-read-icon" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" aria-hidden="true"></i>
             <% else %>
               <i data-lucide="bell-dot" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary" aria-hidden="true"></i>
             <% end %>
@@ -90,13 +90,13 @@
                 Classe "notif-msg" utilisée par le contrôleur Stimulus pour
                 passer le texte en grisé après "Tout lire".
               %>
-              <div class="notif-msg <%= notif.read? ? '' : 'fw-semibold' %>"
-                   style="font-size:0.82rem;white-space:normal;line-height:1.3;color:<%= notif.read? ? 'rgba(255,255,255,0.5)' : '#fff' %>;">
+              <div class="notif-msg <%= notif.read? ? 'notif-msg--read' : 'fw-semibold' %>"
+                   style="font-size:0.82rem;white-space:normal;line-height:1.3;">
                 <%= notif.message %>
               </div>
               <%# On masque le temps pour les demandes d'ami — il est réaffiché avec les boutons ✓/✗ en dessous %>
               <% unless notif.notif_type == "friend_request" && notif.actor && current_user.pending_request_from?(notif.actor) %>
-                <small style="color:rgba(255,255,255,0.4);font-size:0.75rem;">
+                <small class="notif-time">
                   <%= time_ago_in_words(notif.created_at) %>
                 </small>
               <% end %>
@@ -168,7 +168,7 @@
   </div>
   <% else %>
     <%# État vide — aucune notification %>
-    <div class="text-center py-3" style="color:rgba(255,255,255,0.5);">
+    <div class="text-center py-3 notif-empty">
       <i data-lucide="inbox" style="width:22px;height:22px;" aria-hidden="true"></i>
       <div class="small mt-1">Aucune notification</div>
     </div>

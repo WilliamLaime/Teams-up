@@ -1,0 +1,691 @@
+// =====================================================
+// THEME — Overrides globaux pour le mode clair
+//
+// Importé EN DERNIER dans _index.scss → spécificité maximale.
+//
+// Approche : [data-theme="light"] est posé sur <html> côté serveur
+// (application.html.erb) pour éviter le flash de thème au chargement.
+//
+// Organisation :
+//   1. Transitions globales
+//   2. Éléments Bootstrap génériques (modales, cartes, formulaires)
+//   3. Page Home (hero, sections, cards)
+//   4. Page Matches index
+//   5. Page Match show (.match-block, etc.)
+//   6. Page Profil
+//   7. Chat sticky
+//   8. Composants divers
+// =====================================================
+
+
+// ── 1. TRANSITIONS GLOBALES ──────────────────────────────────────────────────
+// Animation douce lors de la bascule de thème sur les éléments les plus visibles.
+// On cible uniquement les éléments qui ont des changements de fond/couleur.
+[data-theme="dark"],
+[data-theme="light"] {
+  body,
+  .hero-section,
+  .matches-section,
+  .how-it-works-section,
+  .cta-section,
+  .contact-cta-section,
+  .matches-index-page,
+  .profil-page,
+  .match-block,
+  .match-page-bg,
+  .site-footer,
+  .match-card,
+  .navbar-dark-custom,
+  .mobile-sub-navbar {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  TOUT CE QUI SUIT s'applique UNIQUEMENT en mode clair
+// ═══════════════════════════════════════════════════════════════════════════════
+[data-theme="light"] {
+
+  // ── 1bis. RÈGLE GLOBALE BODY ───────────────────────────────────────────────
+  // Définit la couleur de texte de base pour tout le document en mode clair.
+  // Tout élément sans couleur explicite héritera du texte sombre ($gray).
+  // Cela couvre les paragraphes, spans, etc. qui n'ont pas de classe spécifique.
+  body {
+    color: $gray;
+  }
+
+  // Même principe pour <main> — couvre les contenus de page qui héritent du body
+  main {
+    color: $gray;
+  }
+
+
+  // ── 2. BOOTSTRAP GÉNÉRIQUES ───────────────────────────────────────────────
+
+  // Modales Bootstrap → fond blanc, texte sombre
+  .modal-content {
+    background-color: #ffffff;
+    color: $gray;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+  .modal-header { border-bottom-color: rgba(0, 0, 0, 0.1); }
+  .modal-footer { border-top-color:    rgba(0, 0, 0, 0.1); }
+  .modal-title  { color: $gray; }
+
+  // Cartes Bootstrap génériques
+  .card {
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: $gray;
+  }
+  .card-header,
+  .card-footer {
+    background-color: #f8f9fa;
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  // Inputs Bootstrap
+  .form-control,
+  .form-select {
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: $gray;
+    &::placeholder { color: rgba(0, 0, 0, 0.35); }
+    &:focus {
+      border-color: $green;
+      box-shadow: 0 0 0 0.2rem rgba($green, 0.15);
+      background-color: #ffffff;
+      color: $gray;
+    }
+  }
+  // Textarea
+  textarea.form-control { background-color: #ffffff; color: $gray; }
+
+  // Tableaux Bootstrap
+  .table {
+    color: $gray;
+    --bs-table-bg: #ffffff;
+    --bs-table-striped-bg: #f8f9fa;
+    --bs-table-border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  // Badges Bootstrap avec fond sombre custom
+  .badge.bg-dark { background-color: #e0e0e0 !important; color: $gray !important; }
+
+  // Dropdown Bootstrap
+  .dropdown-menu {
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+  .dropdown-item {
+    color: $gray;
+    &:hover { background-color: rgba(0, 0, 0, 0.05); color: darken($gray, 5%); }
+  }
+  .dropdown-divider { border-color: rgba(0, 0, 0, 0.1); }
+
+
+  // ── 3. PAGE HOME ──────────────────────────────────────────────────────────
+
+  // ─ Hero section ─
+  // La hero section garde une identité visuelle forte mais s'éclaircit :
+  // fond blanc cassé avec gradient vert très léger pour rester dans la charte.
+  .hero-section {
+    background-color: #f8fff9; // blanc très légèrement teinté vert
+    color: $gray;
+
+    // Le gradient vert passe plus visible sur fond clair
+    &::before {
+      background: radial-gradient(circle, rgba($green, 0.1) 0%, transparent 65%);
+    }
+
+    // Titre principal → sombre, accent vert garde sa couleur
+    .hero-title { color: $gray; }
+
+    // Description + labels → texte sombre muted
+    .hero-description { color: rgba(0, 0, 0, 0.6); }
+    .hero-sport-label  { color: rgba(0, 0, 0, 0.55); }
+
+    // Gradient bas de l'image : adapté pour un fond clair
+    .hero-image-wrapper::after {
+      background: linear-gradient(to top, rgba(248, 255, 249, 0.82), transparent);
+    }
+
+    // Carte "match urgente" flottante sur l'image
+    .hero-match-card {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid $green;
+      color: $gray;
+
+      &:hover { color: $gray; }
+
+      .hero-match-label { color: rgba(0, 0, 0, 0.45); }
+      .hero-match-title { color: $gray; }
+      .hero-match-footer { border-top-color: rgba(0, 0, 0, 0.1); }
+      .hero-match-time   { color: rgba(0, 0, 0, 0.45); }
+    }
+  }
+
+  // ─ Section "Matchs à proximité" ─
+  .matches-section {
+    background-color: $light-gray; // #F4F4F4 — fond clair par défaut
+
+    .matches-section-title    { color: $gray; }
+    .matches-section-subtitle { color: rgba(0, 0, 0, 0.55); }
+    .matches-empty            { color: rgba(0, 0, 0, 0.55); }
+  }
+
+  // ─ Section "Comment ça marche" ─
+  .how-it-works-section {
+    background-color: #ffffff;
+    border-bottom-color: rgba(0, 0, 0, 0.07);
+
+    .hiw-title     { color: $gray; }
+    .hiw-subtitle  { color: rgba(0, 0, 0, 0.55); }
+
+    .hiw-item {
+      // Cercle icône : fond gris clair au lieu de $dark-surface
+      .hiw-icon-circle {
+        background: #f0f0f0;
+        // L'icône garde sa couleur verte
+      }
+      .hiw-item-title { color: $gray; }
+      .hiw-item-text  { color: rgba(0, 0, 0, 0.6); }
+    }
+  }
+
+  // ─ CTA section "Dites adieu aux groupes WhatsApp" ─
+  .cta-section {
+    background-color: $light-gray;
+    color: $gray;
+
+    .cta-title       { color: $gray; }
+    .cta-description { color: rgba(0, 0, 0, 0.6); }
+
+    .cta-feature-list li {
+      color: rgba(0, 0, 0, 0.75);
+
+      .cta-check {
+        background: rgba($green, 0.12);
+        // icône garde sa couleur verte
+      }
+    }
+  }
+
+  // ─ Section "Contactez-nous" ─
+  .contact-cta-section {
+    background-color: #ffffff;
+
+    .contact-cta-title    { color: $gray; }
+    .contact-cta-subtitle { color: rgba(0, 0, 0, 0.55); }
+
+    // Cartes de contact
+    .contact-cta-card {
+      background: #f8f9fa;
+      border-color: rgba(0, 0, 0, 0.08);
+      color: $gray;
+
+      &:hover { color: $gray; }
+
+      .contact-cta-card-title { color: $gray; }
+      .contact-cta-card-text  { color: rgba(0, 0, 0, 0.6); }
+    }
+  }
+
+
+  // ── 4. PAGE MATCHES INDEX ─────────────────────────────────────────────────
+
+  .matches-index-page {
+    background-color: $light-gray;
+
+    .matches-index-title    { color: $gray; }
+    .matches-index-subtitle { color: rgba(0, 0, 0, 0.55); }
+
+    // Onglets "En cours / Terminés"
+    .matches-status-tab {
+      border-color: rgba(0, 0, 0, 0.15);
+      color: rgba(0, 0, 0, 0.55);
+
+      &:hover {
+        color: rgba(0, 0, 0, 0.8);
+        border-color: rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    // Filtres (si présents)
+    .filter-pill {
+      background: rgba(0, 0, 0, 0.06);
+      border-color: rgba(0, 0, 0, 0.12);
+      color: $gray;
+
+      &.active {
+        background: $green;
+        color: #111111;
+      }
+    }
+  }
+
+
+  // ── 5. PAGE MATCH SHOW ────────────────────────────────────────────────────
+
+  // Fond de la page de détail d'un match
+  .match-page-bg {
+    background-color: $light-gray;
+    color: $gray;
+  }
+
+  // Bloc générique (carte sombre → blanc)
+  // Utilisé sur match show ET profil
+  .match-block {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: $gray;
+
+    // Titre de section dans un bloc
+    .match-block-title { color: rgba(0, 0, 0, 0.5); }
+
+    // Texte muted dans les blocs
+    .text-muted,
+    .match-muted { color: rgba(0, 0, 0, 0.55) !important; }
+  }
+
+  // Labels de section dans le show
+  .match-section-label { color: rgba(0, 0, 0, 0.5); }
+
+  // Participants dans match show — noms, statuts
+  .match-participant-name { color: $gray; }
+  .match-participant-meta { color: rgba(0, 0, 0, 0.55); }
+
+  // Séparateurs
+  .match-block-divider { border-color: rgba(0, 0, 0, 0.08); }
+
+
+  // ── 6. PAGE PROFIL ────────────────────────────────────────────────────────
+
+  // !important nécessaire car les vues avaient un inline style background-color
+  // qu'on a supprimé, mais au cas où il en resterait dans des vues dérivées.
+  .profil-page {
+    background-color: $light-gray !important;
+
+    // Gradient vert adapté au fond clair (plus subtil)
+    &::before {
+      background: radial-gradient(circle, rgba($green, 0.08) 0%, transparent 65%);
+    }
+
+    // Nom du profil
+    .profil-name { color: $gray !important; }
+
+    // Labels de meta (rôle, localisation, etc.)
+    .profil-meta-item {
+      color: rgba(0, 0, 0, 0.55) !important;
+      i { color: rgba(0, 0, 0, 0.2) !important; }
+    }
+
+    .profil-meta-sep { color: rgba(0, 0, 0, 0.2) !important; }
+
+    // Labels de stat (XP, matchs joués, etc.)
+    .profil-stat-label { color: rgba(0, 0, 0, 0.55) !important; }
+    .profil-stat-value { color: $gray !important; }
+
+    // Fallback initiales d'avatar (quand pas de photo)
+    .profil-avatar-fallback {
+      background-color: #e8e8e8 !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+      color: rgba(0, 0, 0, 0.55) !important;
+    }
+
+    // Cards de matchs dans le profil
+    // !important nécessaire pour écraser le background-color inline qui restait sur ces divs
+    .profil-match-card {
+      background-color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+
+      &:hover { border-color: rgba(0, 0, 0, 0.2) !important; }
+
+      // Textes inline (color:#fff, color:rgba(255,255,255,...)) dans les enfants directs
+      // Ces divs dans les vues ERB avaient des couleurs blanches en inline style
+      div, span, a {
+        color: $gray !important;
+      }
+
+      // Exception : les icônes Lucide gardent leur couleur verte/orange
+      i[data-lucide] { color: rgba(0, 0, 0, 0.35) !important; }
+
+      // Exception : le badge de niveau garde ses couleurs de charte
+      .match-badge-level { color: inherit !important; }
+
+      // Exception : textes de date/heure → muted sombre
+      span[style*="rgba(255,255,255"] { color: rgba(0, 0, 0, 0.5) !important; }
+    }
+
+    .profil-match-title { color: $gray !important; }
+    .profil-match-meta  {
+      color: rgba(0, 0, 0, 0.55) !important;
+      i { color: rgba(0, 0, 0, 0.2) !important; }
+    }
+
+    // Bouton "Détails" dans les cards
+    .profil-details-btn {
+      color: rgba(0, 0, 0, 0.65) !important;
+      border-color: rgba(0, 0, 0, 0.18) !important;
+
+      &:hover { color: $gray !important; border-color: rgba(0, 0, 0, 0.4) !important; }
+    }
+
+    // Textes de description et textes vides
+    .profil-description-text { color: rgba(0, 0, 0, 0.7) !important; }
+    .profil-empty-text        { color: rgba(0, 0, 0, 0.55) !important; }
+
+    // Noms dans les listes (amis, avis, etc.)
+    .profil-reviewer-name { color: $gray !important; }
+    .profil-review-text   { color: rgba(0, 0, 0, 0.7) !important; }
+  }
+
+  // ── Page About ────────────────────────────────────────────────────────────
+  // La page "Qui sommes-nous ?" est intentionnellement 100% dark (design marketing).
+  // Elle ne s'adapte PAS au thème clair — aucun override ici.
+
+  // ── Match show wrapper ────────────────────────────────────────────────────
+  .match-show-wrapper {
+    background-color: $light-gray !important;
+  }
+
+  // Textes dans match show
+  .match-organizer-name  { color: $gray !important; }
+  .match-organizer-tag   { color: rgba(0,0,0,0.55) !important; }
+
+  // Exception : le nom de l'organisateur dans la card est un overlay posé
+  // sur l'image du match (fond toujours sombre) — on garde le texte blanc.
+  .match-card .match-organizer-name {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+  .match-player-name     { color: rgba(0,0,0,0.55) !important; }
+  .match-chat-preview-user { color: $gray !important; }
+  .match-chat-preview-text { color: rgba(0,0,0,0.55) !important; }
+  .match-chat-empty-hint   { color: rgba(0,0,0,0.55) !important; }
+
+  // Modales match show — les classes join-modal-* et pending-modal-* utilisent
+  // désormais des variables CSS adaptatives dans _match_show.scss.
+  // La share-modal et la joined-modal ont encore des couleurs hardcodées dark mode.
+
+  // ── Share modal ───────────────────────────────────────────────────────────
+  .share-modal-content {
+    background: #ffffff !important;
+    color: $gray !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+  }
+
+  .share-modal-close {
+    background: rgba(0, 0, 0, 0.06) !important;
+    color: rgba(0, 0, 0, 0.45) !important;
+
+    &:hover { background: rgba(0, 0, 0, 0.1) !important; color: $gray !important; }
+  }
+
+  .share-modal-title    { color: $gray !important; }
+  .share-modal-subtitle { color: rgba(0, 0, 0, 0.55) !important; }
+
+  // Boutons d'option : fond sombre → fond clair avec bordure
+  .share-option {
+    background: #f4f4f4 !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: $gray !important;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.06) !important;
+      border-color: rgba(0, 0, 0, 0.2) !important;
+      color: $gray !important;
+    }
+  }
+
+  .share-option-label { color: rgba(0, 0, 0, 0.65) !important; }
+
+  // Icône "copier" : fond blanc semi-transparent → gris clair visible
+  .share-copy-icon {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: $gray !important;
+  }
+
+  // Modale "Demande acceptée" (joined-modal) — hardcodée dark mode à l'origine.
+  // En light mode on adapte le fond et tous les textes blancs en couleurs sombres.
+  .joined-modal-content {
+    background: #ffffff !important;              // fond blanc à la place de $dark-surface
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: $gray !important;                     // texte sombre de base
+  }
+
+  // Croix de fermeture — icône blanche → sombre
+  .joined-modal-close {
+    background: rgba(0, 0, 0, 0.06) !important;
+    color: rgba(0, 0, 0, 0.45) !important;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.1) !important;
+      color: $gray !important;
+    }
+  }
+
+  // Titre principal "Demande acceptée !" — blanc → sombre
+  .joined-modal-title {
+    color: $gray !important;
+  }
+
+  // Sous-titre et texte en gras — blanc/semi-transparent → sombre
+  .joined-modal-subtitle {
+    color: rgba(0, 0, 0, 0.65) !important;
+
+    strong { color: $gray !important; }
+  }
+
+  // Séparateur — rgba blanc → rgba noir
+  .joined-modal-separator {
+    background: rgba(0, 0, 0, 0.08) !important;
+  }
+
+  // Bouton "Ajouter à mon calendrier" — fond vert OK, texte blanc → noir pour contraste
+  .joined-modal-btn-calendar {
+    color: #111111 !important;
+  }
+
+  // Bouton "Super, j'ai compris !" — fond/bordure/texte blancs semi-transparents → sombres
+  .joined-modal-btn-dismiss {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: rgba(0, 0, 0, 0.65) !important;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.08) !important;
+      color: $gray !important;
+    }
+  }
+
+
+  // ── Sélecteur d'équipe (formulaire match) ────────────────────────────────
+  // Couleurs hardcodées blanc → remplacées par du sombre sur fond blanc
+  .team-picker-option {
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
+
+    &:hover {
+      border-color: rgba($green, 0.45) !important;
+      background: rgba($green, 0.06) !important;
+    }
+  }
+
+  .team-picker-none-label { color: rgba(0, 0, 0, 0.55) !important; }
+  .team-picker-badge       { background: rgba(0, 0, 0, 0.06) !important; }
+  .team-picker-badge-icon  { color: rgba(0, 0, 0, 0.25) !important; }
+  .team-picker-name        { color: rgba(0, 0, 0, 0.8) !important; }
+  .team-picker-members     { color: rgba(0, 0, 0, 0.4) !important; }
+
+
+  // ── Dropdown notifications ────────────────────────────────────────────────
+  // Tous les textes du dropdown sont codés en rgba blanc pour le dark mode.
+  // En light mode le fond du dropdown-menu passe en blanc → tout devient invisible.
+  .notif-dropdown {
+
+    // Titre "Notifications"
+    .notif-title { color: $gray !important; }
+
+    // Message non lu
+    .notif-msg { color: $gray !important; }
+
+    // Message lu (atténué)
+    .notif-msg--read { color: rgba(0, 0, 0, 0.45) !important; }
+
+    // Horodatage
+    .notif-time { color: rgba(0, 0, 0, 0.4) !important; }
+
+    // Icône check (notification lue)
+    .notif-read-icon { color: rgba(0, 0, 0, 0.3) !important; }
+
+    // État vide
+    .notif-empty { color: rgba(0, 0, 0, 0.45) !important; }
+  }
+
+
+  // ── Badge numérique joueurs (match show — bloc joueurs inscrits) ─────────
+  // Badge "X" positionné sur l'avatar groupé — blanc sur blanc en light mode
+  .match-player-irl-badge {
+    background: rgba(0, 0, 0, 0.55) !important;   // fond sombre visible sur fond clair
+    color: #ffffff !important;                      // texte blanc sur fond sombre
+    border-color: #ffffff !important;              // liseré blanc pour détacher
+  }
+
+  // Label "Sur place" sous l'avatar — blanc invisible en light mode
+  .match-player-name--irl {
+    color: rgba(0, 0, 0, 0.4) !important;
+  }
+
+
+  // ── Badge sport (match show & cards) ─────────────────────────────────────
+  // Le badge dans .match-banner est TOUJOURS sur fond sombre (image + overlay),
+  // même en light mode → on exclut ce contexte et on ne renforce que hors banner
+  // (ex: match cards sur fond blanc dans les listes).
+  // Dans .match-banner, les couleurs dark-mode par défaut restent actives.
+  .match-card .match-badge-sport,
+  .match-block .match-badge-sport {
+    background: rgba(0, 0, 0, 0.07) !important;    // gris clair perceptible sur fond blanc
+    color: rgba(0, 0, 0, 0.65) !important;          // texte lisible
+    border-color: rgba(0, 0, 0, 0.12) !important;  // bordure légère
+  }
+
+
+  // ── 7. CHAT STICKY ────────────────────────────────────────────────────────
+
+  // Panneau lateral/modal de chat
+  .sticky-chat-panel {
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .sticky-chat-tabs {
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .sticky-chat-tab {
+    color: rgba(0, 0, 0, 0.6);
+
+    &:hover,
+    &.active { color: $gray; }
+  }
+
+  // Messages : bulles des autres
+  .chat-message-other .chat-bubble {
+    background-color: #f0f0f0;
+    color: $gray;
+  }
+
+  // Zone de saisie
+  .chat-input-area {
+    background-color: #f8f9fa;
+    border-top-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .chat-input {
+    background-color: #ffffff;
+    border-color: rgba(0, 0, 0, 0.15);
+    color: $gray;
+    &::placeholder { color: rgba(0, 0, 0, 0.35); }
+  }
+
+  // Bouton chat dans la navbar (icône)
+  .nav-chat-btn {
+    color: rgba(0, 0, 0, 0.6);
+    &:hover { color: $gray; }
+  }
+
+  // Badge de chat (bordure adaptée au fond clair de la navbar)
+  .nav-chat-badge { border-color: #ffffff; }
+
+
+  // ── 8. COMPOSANTS DIVERS ─────────────────────────────────────────────────
+
+  // Textes Bootstrap génériques sur fond sombre
+  // Couvre les classes comme text-white, text-light utilisées en hardcode
+  // Note : on ne peut pas annuler text-white car c'est souvent intentionnel (hero)
+  // On cible les éléments texte dans des contextes de page clairs
+
+  // Onboarding banner
+  .profile-reminder-banner {
+    background-color: #f8f9fa;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: $gray;
+  }
+
+  // Pills de sport dans la sub-navbar et les filtres
+  .sport-pill-active {
+    background-color: $green !important;
+    color: #111111 !important;
+  }
+
+  // Alert Bootstrap sombre
+  .alert-dark {
+    background-color: #f0f0f0;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: $gray;
+  }
+
+  // Badges de niveau / XP
+  .level-badge-dark {
+    background-color: #e0e0e0;
+    color: $gray;
+  }
+
+  // Section "liste vide" générique
+  .empty-state-text { color: rgba(0, 0, 0, 0.55); }
+
+  // Textes muted globaux sur fond sombre → adapté au fond clair
+  // On applique sur les éléments qui ont explicitement la classe text-muted
+  // Bootstrap gère déjà color: rgba(0,0,0,0.55) pour text-muted en mode clair.
+
+  // ── Grille de sélection des sports (inscription / onboarding) ────────────
+  // Les items sont codés en rgba blanc (pour fond sombre).
+  // En light mode on remplace par des couleurs sombres sur fond clair.
+  .sport-select-item {
+    background: rgba(0, 0, 0, 0.03) !important;       // fond très légèrement grisé
+    border-color: rgba(0, 0, 0, 0.15) !important;     // contour visible
+
+    // Nom du sport — blanc → gris foncé
+    .sport-select-name {
+      color: rgba(0, 0, 0, 0.7) !important;
+    }
+
+    // Hover : reste vert (déjà ok car rgba($green,...) fonctionne en light)
+    &:hover {
+      background: rgba($green, 0.08) !important;
+      border-color: rgba($green, 0.45) !important;
+
+      .sport-select-name { color: $green !important; }
+    }
+
+    // Sélectionné : vert (inchangé, déjà lisible)
+    &.sport-select-item--selected {
+      background: rgba($green, 0.1) !important;
+      border-color: rgba($green, 0.5) !important;
+
+      .sport-select-name { color: $green !important; }
+    }
+  }
+}

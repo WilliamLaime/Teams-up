@@ -1,21 +1,22 @@
 // =====================================================
 // MATCH CARD — Composant partagé
 // Utilisé sur la home (section matchs) ET la liste des matchs (/matches)
+// Couleurs adaptatives via les CSS variables de thème (config/_colors.scss)
 // =====================================================
 
 .match-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   overflow: hidden;
-  background: $dark-card-bg;
-  transition: box-shadow 0.2s, transform 0.2s;
+  background: var(--theme-bg-card);
+  transition: box-shadow 0.2s, transform 0.2s, background-color 0.25s ease;
   height: 100%;
   // Flex column → le footer est toujours poussé en bas
   display: flex;
   flex-direction: column;
 
   &:hover {
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
   }
 
@@ -155,7 +156,7 @@
       align-items: center;
       gap: 0.25rem;
       font-size: 0.72rem;
-      color: $dark-muted;
+      color: var(--theme-text-muted);
       white-space: nowrap;
     }
 
@@ -163,7 +164,7 @@
     .match-card-title {
       font-size: 1rem;
       font-weight: 700;
-      color: #fff;
+      color: var(--theme-text-primary);
       margin-bottom: 0.5rem;  // remplacé à 0 inline quand description présente
       line-height: 1.3;
       display: -webkit-box;
@@ -180,10 +181,10 @@
       align-items: flex-start;
       gap: 0.4rem;
       font-size: 0.82rem;
-      color: $dark-muted;
+      color: var(--theme-text-muted);
       margin-bottom: 0.5rem;
 
-      i { flex-shrink: 0; color: rgba(255, 255, 255, 0.3); margin-top: 2px; }
+      i { flex-shrink: 0; color: var(--theme-text-muted); margin-top: 2px; opacity: 0.6; }
 
       span {
         display: -webkit-box;
@@ -211,7 +212,8 @@
           height: 26px;
           border-radius: 50%;
           object-fit: cover;
-          border: 2px solid $dark-card-bg; // bord = fond carte → effet "découpé"
+          // bord = fond carte → effet "découpé" — s'adapte au thème
+          border: 2px solid var(--theme-bg-card);
           margin-left: -6px;
 
           &:first-child { margin-left: 0; }
@@ -230,8 +232,8 @@
   // ── Pied de carte ──────────────────────────────────
   .match-card-footer {
     padding: 0.75rem 1.1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    background: $dark-card-bg;
+    border-top: 1px solid var(--theme-border);
+    background: var(--theme-bg-card);
 
     // Bouton pill plein vert
     .match-card-btn {

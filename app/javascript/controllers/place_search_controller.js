@@ -319,7 +319,7 @@ export default class extends Controller {
       <button
         type="button"
         class="dropdown-item py-2"
-        style="border-top: 1px solid rgba(255,255,255,0.08);"
+        style="border-top: 1px solid var(--theme-border);"
         data-action="click->place-search#useFreeText"
         data-free-text="${this.escapeAttr(query)}"
       >
@@ -334,7 +334,7 @@ export default class extends Controller {
 
     if (venues.length === 0) {
       this.dropdownTarget.innerHTML = myPositionItem + `
-        <div class="px-3 py-2" style="font-size:0.85rem; color:rgba(255,255,255,0.55);">
+        <div class="px-3 py-2" style="font-size:0.85rem; color:var(--theme-text-muted);">
           Aucun établissement trouvé.
         </div>
       ` + freeTextItem
@@ -350,14 +350,14 @@ export default class extends Controller {
 
       // Badge "OSM" discret pour les résultats venant de Nominatim (pas en BDD)
       const sourceBadge = venue._source === "osm"
-        ? `<span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-left:4px;">OSM</span>`
+        ? `<span style="font-size:0.65rem; color:var(--theme-text-muted); margin-left:4px;">OSM</span>`
         : ""
 
       return `
         <button
           type="button"
           class="dropdown-item py-2"
-          style="white-space:normal; border-bottom: 1px solid rgba(255,255,255,0.08);"
+          style="white-space:normal; border-bottom: 1px solid var(--theme-border);"
           data-action="click->place-search#selectResult"
           data-full-value="${this.escapeAttr(fullValue)}"
           data-venue-id="${venue.id || ""}"
@@ -375,7 +375,7 @@ export default class extends Controller {
               <div class="fw-semibold" style="font-size:0.9rem;">
                 ${this.escapeHtml(venue.name)}${sourceBadge}
               </div>
-              <div style="font-size:0.8rem; color:rgba(255,255,255,0.65);">
+              <div style="font-size:0.8rem; color:var(--theme-text-muted);">
                 ${this.escapeHtml(venue.sport_type || "")} · ${this.escapeHtml(shortAddress)}
               </div>
             </div>
@@ -473,7 +473,7 @@ export default class extends Controller {
       <button
         type="button"
         class="dropdown-item py-2"
-        style="border-bottom: 1px solid rgba(255,255,255,0.08);"
+        style="border-bottom: 1px solid var(--theme-border);"
         data-action="click->place-search#useMyPosition"
       >
         <div class="d-flex align-items-center gap-2">

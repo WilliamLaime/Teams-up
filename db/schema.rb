@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_10_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_16_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -229,6 +229,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_10_170000) do
     t.integer "homme_du_match_count", default: 0, null: false
     t.string "last_name"
     t.string "level"
+    t.boolean "light_mode", default: false, null: false
     t.string "localisation"
     t.datetime "onboarding_shown_at"
     t.string "phone"

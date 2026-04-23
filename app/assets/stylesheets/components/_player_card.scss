@@ -267,6 +267,85 @@
   flex-wrap: wrap;
 }
 
+// ── Boutons d'état d'amitié (toujours sur fond sombre de la player card)
+// Ces styles sont intentionnellement hardcodés en clair car la player card
+// a TOUJOURS un fond sombre (bronze, argent ou or) quel que soit le thème.
+
+// Badge d'état : "Amis" (vert) ou "En attente" (discret blanc)
+.friend-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+
+  // Variant "Amis" — vert
+  &--friends {
+    color: #1EDD88;
+    border: 1px solid rgba(30, 221, 136, 0.3);
+    background: transparent;
+  }
+
+  // Variant "En attente" — blanc discret (lisible sur fond sombre)
+  &--pending {
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+  }
+}
+
+// Boutons d'action : Ajouter, Accepter, Annuler, Refuser, Retirer
+.friend-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  // Variant vert : Ajouter, Accepter
+  &--add {
+    color: #1EDD88;
+    background: rgba(30, 221, 136, 0.1);
+    border: 1px solid rgba(30, 221, 136, 0.3);
+
+    &:hover {
+      background: rgba(30, 221, 136, 0.18);
+      border-color: rgba(30, 221, 136, 0.5);
+    }
+  }
+
+  // Variant rouge : Annuler, Refuser, Retirer
+  &--cancel {
+    color: rgba(255, 100, 100, 0.85);
+    background: rgba(255, 100, 100, 0.08);
+    border: 1px solid rgba(255, 100, 100, 0.25);
+
+    &:hover {
+      background: rgba(255, 100, 100, 0.15);
+      border-color: rgba(255, 100, 100, 0.45);
+    }
+  }
+
+  // Variant discret : Retirer (secondaire, moins visible que Annuler)
+  &--muted {
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
 // Bouton Message
 .player-card__btn-message {
   display: inline-flex;
