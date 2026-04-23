@@ -45,7 +45,8 @@ export default class extends Controller {
       item.addEventListener("mouseout", () => {
         if (!item.classList.contains("time-picker-item--active")) {
           item.style.setProperty("background", "transparent", "important")
-          item.style.color = "rgba(255,255,255,0.7)"
+          // On retire le style inline → le CSS (var(--theme-text-muted)) reprend la main
+          item.style.color = ""
         }
       })
     })
@@ -92,13 +93,15 @@ export default class extends Controller {
     // 3. Affiche la valeur sélectionnée dans le bouton trigger
     this.triggerTarget.textContent = label
 
-    // 4. Marque l'item actif via classes ET styles inline (garantit la couleur verte)
+    // 4. Marque l'item actif via classes ET styles inline (garantit le fond vert)
+    //    La couleur du texte est gérée par le CSS (.time-picker-item--active { color: $green })
+    //    On retire le style inline color pour les items inactifs → CSS reprend la main (thème)
     this.element.querySelectorAll("[data-time-picker-item]").forEach(item => {
       const isActive = item === btn
       item.classList.toggle("time-picker-item--active", isActive)
-      // Inline styles : priorité absolue sur Bootstrap et les styles navigateur
+      // Inline background uniquement — on ne touche pas à la couleur du texte
       item.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "transparent", "important")
-      item.style.color = isActive ? "#1EDD88" : "rgba(255,255,255,0.7)"
+      item.style.color = isActive ? "#1EDD88" : "" // "" = retire l'inline, laisse le CSS (var(--theme-text-muted))
       item.style.fontWeight = isActive ? "700" : "500"
     })
 

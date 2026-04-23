@@ -52,7 +52,7 @@ export default class extends Controller {
     this.tabTargets.forEach(tab => {
       const isActive = tab.dataset.sportId === resolvedId
       tab.style.borderBottom = isActive ? "2px solid #1EDD88" : "2px solid transparent"
-      tab.style.color        = isActive ? "#1EDD88"           : "rgba(255,255,255,0.5)"
+      tab.style.color        = isActive ? "#1EDD88"           : "var(--theme-text-muted)" // Couleur selon le thème
     })
 
     // Panneaux : afficher le bon, cacher les autres

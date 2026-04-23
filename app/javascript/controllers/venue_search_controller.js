@@ -161,7 +161,7 @@ export default class extends Controller {
     const dropdown = this.resultsDropdownTarget
 
     if (venues.length === 0) {
-      dropdown.innerHTML = '<div style="padding:0.5rem; font-size:0.8rem; color:rgba(255,255,255,0.5);">Aucune venue trouvée</div>'
+      dropdown.innerHTML = '<div style="padding:0.5rem; font-size:0.8rem; color:var(--theme-text-muted);">Aucune venue trouvée</div>'
       dropdown.style.display = "block"
       return
     }
@@ -170,7 +170,7 @@ export default class extends Controller {
     dropdown.innerHTML = venues.map(venue => {
       // Badge "OSM" discret pour les résultats Nominatim non encore en BDD
       const sourceBadge = venue._source === "osm"
-        ? `<span style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-left:4px;">OSM</span>`
+        ? `<span style="font-size:0.65rem; color:var(--theme-text-muted); margin-left:4px;">OSM</span>`
         : ""
 
       const icon = this.getSportIcon(venue.sport_type)
@@ -192,7 +192,7 @@ export default class extends Controller {
             <span>${icon}</span>
             <div>
               <div style="font-weight:600;">${this.escapeHtml(venue.name)}${sourceBadge}</div>
-              <div style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
+              <div style="font-size:0.75rem; color:var(--theme-text-muted);">
                 ${this.escapeHtml(venue.sport_type || "")} · ${this.escapeHtml(venue.city)}
               </div>
             </div>
@@ -314,7 +314,7 @@ export default class extends Controller {
     `
     badge.innerHTML = `
       🏟️ ${this.escapeHtml(venueName)}
-      <span style="color:rgba(255,255,255,0.4);">(${this.escapeHtml(venueCity)})</span>
+      <span style="color:var(--theme-text-muted);">(${this.escapeHtml(venueCity)})</span>
       <button type="button"
               class="venue-remove-btn"
               style="background:none; border:none; color:#1EDD88; cursor:pointer; padding:0; font-weight:bold;"

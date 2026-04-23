@@ -3,11 +3,11 @@
 // ── Carte de prévisualisation (version compacte sur la page show) ─────────────
 
 .chat-preview-card {
-  background-color: $dark-card-bg;
-  border: 1px solid $dark-surface;
+  background-color: var(--theme-bg-card); // fond de carte adaptatif
+  border: 1px solid var(--theme-border);  // bordure adaptative
   border-radius: 12px;
   padding: 16px 20px;
-  color: $dark-text;
+  color: var(--theme-text-primary);       // texte adaptatif
 }
 
 .chat-preview-header {
@@ -18,7 +18,7 @@
 
   strong {
     font-size: 1rem;
-    color: $dark-text;
+    color: var(--theme-text-strong); // titre de la preview adaptatif
   }
 }
 
@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border-top: 1px solid $dark-surface;
+  border-top: 1px solid var(--theme-border); // séparateur adaptatif
   padding-top: 12px;
 }
 
@@ -74,12 +74,12 @@
 .chat-preview-name {
   font-size: 0.75rem;
   font-weight: 700;
-  color: $dark-text;
+  color: var(--theme-text-strong); // nom de l'expéditeur adaptatif
 }
 
 .chat-preview-text {
   font-size: 0.8rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // aperçu du message discret adaptatif
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -87,9 +87,9 @@
 
 .chat-preview-empty {
   font-size: 0.85rem;
-  color: $dark-muted;
+  color: var(--theme-text-muted); // état vide adaptatif
   margin: 0;
-  border-top: 1px solid $dark-surface;
+  border-top: 1px solid var(--theme-border); // séparateur adaptatif
   padding-top: 12px;
 }
 
@@ -99,11 +99,11 @@
   border: none;
   border-radius: 12px;
   overflow: hidden;
-  background-color: $dark-bg; // fond global sombre
+  background-color: var(--theme-bg-surface); // fond adaptatif de la modale
 
   // Pied de page (zone de saisie)
   .modal-footer {
-    background-color: $dark-bg;
+    background-color: var(--theme-bg-surface); // fond adaptatif
     border-color: $green;
     padding: 10px 14px;
   }
@@ -116,10 +116,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 16px;
-  background-color: $dark-card-bg;
+  background-color: var(--theme-bg-card); // fond adaptatif
   font-size: 0.8rem;
-  color: $dark-muted;
-  border-top: 1px solid $dark-surface;
+  color: var(--theme-text-muted);         // texte discret adaptatif
+  border-top: 1px solid var(--theme-border); // séparateur adaptatif
 }
 
 .chat-typing-name {
@@ -161,12 +161,12 @@
   overflow: hidden;
 }
 
-// En-tête du chat (fond sombre, style "groupe")
+// En-tête du chat — fond et texte adaptatifs
 .chat-header {
-  background-color: $dark-bg;
-  color: $dark-text;
+  background-color: var(--theme-bg-surface); // fond adaptatif
+  color: var(--theme-text-primary);          // texte adaptatif
   padding: 12px 16px;
-  border-bottom: 1px solid $dark-surface;
+  border-bottom: 1px solid var(--theme-border); // séparateur adaptatif
 
   .chat-header-icon {
     font-size: 1.4rem;
@@ -198,10 +198,10 @@
   flex-direction: column;
   gap: 6px; // espace entre les messages
 
-  // Scrollbar discrète sur fond sombre
+  // Scrollbar discrète adaptative
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-thumb {
-    background-color: $dark-surface;
+    background-color: var(--theme-border); // couleur adaptative
     border-radius: 4px;
   }
 
@@ -225,12 +225,12 @@
     align-self: flex-start;
 
     .chat-bubble {
-      background-color: $dark-surface; // #242624 — plus clair que le fond #111111
-      color: $dark-text;
+      background-color: var(--theme-bg-surface); // bulle "theirs" adaptative
+      color: var(--theme-text-primary);          // texte adaptatif
       border-radius: 0 14px 14px 14px;
     }
 
-    .chat-time { color: $dark-muted; }
+    .chat-time { color: var(--theme-text-muted); } // heure discrète adaptative
   }
 
   // Mon message → à droite, bulle verte, sans avatar
@@ -325,9 +325,9 @@
 
   .form-control {
     border-radius: 20px;
-    background-color: $dark-surface; // champ sombre
-    border: 1px solid lighten($dark-surface, 8%);
-    color: $dark-text;
+    background-color: var(--theme-bg-surface); // champ de saisie adaptatif
+    border: 1px solid var(--theme-border);      // bordure adaptative
+    color: var(--theme-text-primary);           // texte saisi adaptatif
     padding: 8px 16px;
     font-size: 0.9rem;
 
@@ -337,12 +337,12 @@
       font-size: 16px;
     }
 
-    &::placeholder { color: $dark-muted; }
+    &::placeholder { color: var(--theme-text-muted); } // placeholder adaptatif
 
     &:focus {
-      background-color: $dark-surface;
+      background-color: var(--theme-bg-surface); // fond conservé au focus
       border-color: $green;
-      color: $dark-text;
+      color: var(--theme-text-primary);          // texte adaptatif au focus
       box-shadow: 0 0 0 0.2rem rgba(30, 221, 136, 0.2);
     }
   }

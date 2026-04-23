@@ -25,19 +25,20 @@
      aria-labelledby="levelGridModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width:680px;">
+    <%# Fond de la modale selon le thème %>
     <div class="modal-content"
-         style="background:#1a1c1a; border:1px solid rgba(255,255,255,0.1); border-radius:1rem;">
+         style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:1rem;">
 
       <%# ── En-tête ── %>
-      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08); padding:1rem 1.25rem;">
+      <div class="modal-header" style="border-bottom:1px solid var(--theme-border); padding:1rem 1.25rem;">
         <div>
           <h5 class="modal-title"
               id="levelGridModalLabel"
               style="color:#1EDD88; font-weight:700; font-size:1rem; margin:0 0 0.2rem;">
             Grilles de niveaux
           </h5>
-          <%# Sous-titre explicatif %>
-          <p style="font-size:0.7rem; color:rgba(255,255,255,0.35); margin:0;">
+          <%# Sous-titre explicatif — texte discret selon le thème %>
+          <p style="font-size:0.7rem; color:var(--theme-text-muted); margin:0;">
             Référentiels officiels FFP · FFT · FFBad
           </p>
         </div>
@@ -53,7 +54,7 @@
         <%# Onglets sports — un bouton par sport de raquette %>
         <div data-level-grid-target="tabBar"
              style="display:flex; overflow-x:auto; gap:0.25rem;
-                    border-bottom:1px solid rgba(255,255,255,0.08);
+                    border-bottom:1px solid var(--theme-border);
                     padding:0.5rem 1rem 0;
                     scrollbar-width:none;">
           <% racquet_sports.each do |sport| %>
@@ -64,7 +65,7 @@
                     data-sport-id="<%= sport.id %>"
                     style="background:none; border:none; border-bottom:2px solid transparent;
                            padding:0.4rem 0.75rem; cursor:pointer; white-space:nowrap;
-                           color:rgba(255,255,255,0.5); font-size:1.1rem; transition:all 0.15s;">
+                           color:var(--theme-text-muted); font-size:1.1rem; transition:all 0.15s;">
               <%= sport_icon(sport, size: "1.1rem") %>
               <span style="font-size:0.72rem; font-weight:600; margin-left:0.3rem; vertical-align:middle;">
                 <%= sport.name %>
@@ -80,8 +81,8 @@
                  data-sport-id="<%= sport.id %>"
                  style="display:none;">
 
-              <%# Sous-titre : nombre de niveaux %>
-              <p style="font-size:0.7rem; font-weight:600; color:rgba(255,255,255,0.3);
+              <%# Sous-titre : nombre de niveaux — texte discret selon le thème %>
+              <p style="font-size:0.7rem; font-weight:600; color:var(--theme-text-muted);
                          text-transform:uppercase; letter-spacing:0.07em; margin:0 0 1rem;">
                 <%= sport.name %> — <%= sport.available_levels.length %> niveaux
               </p>
@@ -99,7 +100,7 @@
                       </span>
                       <%# Référence officielle sous le badge (classement) %>
                       <% if lvl[:ref].present? %>
-                        <div style="font-size:0.65rem; color:rgba(255,255,255,0.35);
+                        <div style="font-size:0.65rem; color:var(--theme-text-muted);
                                     margin-top:0.2rem; padding-left:0.1rem; font-style:italic;">
                           <%= lvl[:ref] %>
                         </div>
@@ -108,7 +109,7 @@
 
                     <%# Colonne droite : description concrète %>
                     <% if lvl[:desc].present? %>
-                      <p style="font-size:0.75rem; color:rgba(255,255,255,0.6);
+                      <p style="font-size:0.75rem; color:var(--theme-text-muted);
                                   margin:0; line-height:1.45; padding-top:0.05rem;">
                         <%= lvl[:desc] %>
                       </p>
@@ -126,9 +127,9 @@
 
       <%# ── Pied de modale : note sur les sports collectifs ── %>
       <div class="modal-footer"
-           style="border-top:1px solid rgba(255,255,255,0.05);
+           style="border-top:1px solid var(--theme-border);
                   padding:0.65rem 1.25rem; justify-content:flex-start;">
-        <p style="font-size:0.68rem; color:rgba(255,255,255,0.3); margin:0;">
+        <p style="font-size:0.68rem; color:var(--theme-text-muted); margin:0;">
           Pour les sports collectifs (foot, basket, hand, volley), l'échelle utilisée est indicative : Débutant · Amateur · Intermédiaire · Confirmé · Expert.
         </p>
       </div>

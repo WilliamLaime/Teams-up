@@ -27,20 +27,20 @@
             <%= link_to user_profil_path(friend),
                   data: { turbo_frame: "_top" },
                   style: "display:inline-flex; align-items:center; gap:0.5rem; padding:0.3rem 0.7rem;
-                          background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+                          background:var(--theme-hover-bg); border:1px solid var(--theme-border);
                           border-radius:999px; text-decoration:none;" do %>
               <% if friend.profil&.avatar&.attached? %>
                 <%= image_tag friend.profil.avatar,
                       style: "width:22px; height:22px; border-radius:50%; object-fit:cover; flex-shrink:0;",
                       alt: friend.display_name %>
               <% else %>
-                <span style="width:22px; height:22px; border-radius:50%; background:#333;
+                <span style="width:22px; height:22px; border-radius:50%; background:var(--theme-hover-bg-strong);
                              display:inline-flex; align-items:center; justify-content:center;
-                             font-size:0.6rem; font-weight:800; color:rgba(255,255,255,0.5); flex-shrink:0;">
+                             font-size:0.6rem; font-weight:800; color:var(--theme-text-muted); flex-shrink:0;">
                   <%= friend.display_name.first.upcase %>
                 </span>
               <% end %>
-              <span style="font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.75); white-space:nowrap;">
+              <span style="font-size:0.78rem; font-weight:600; color:var(--theme-text-primary); white-space:nowrap;">
                 <%= friend.display_name %>
               </span>
             <% end %>
@@ -53,8 +53,8 @@
                       data-bs-target="#<%= remove_modal_id %>"
                       style="display:inline-flex; align-items:center; justify-content:center;
                              width:20px; height:20px; padding:0;
-                             color:rgba(255,255,255,0.25); background:rgba(255,255,255,0.04);
-                             border:1px solid rgba(255,255,255,0.08); border-radius:50%;
+                             color:var(--theme-text-muted); background:var(--theme-hover-bg);
+                             border:1px solid var(--theme-border); border-radius:50%;
                              cursor:pointer; flex-shrink:0;"
                       title="Retirer <%= friend.display_name %> de vos amis">
                 <i data-lucide="x" style="width:10px; height:10px;"></i>
@@ -65,24 +65,24 @@
               <% content_for :modals do %>
               <div class="modal fade" id="<%= remove_modal_id %>" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered modal-sm">
-                  <div class="modal-content" style="background:#111111; border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+                  <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:12px;">
 
                     <div class="modal-body text-center" style="padding:1.5rem 1.5rem 1rem;">
                       <div style="font-size:2rem; margin-bottom:0.75rem;">👋</div>
-                      <p style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
+                      <p style="color:var(--theme-text-strong); font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
                         Retirer <%= friend.profil&.first_name || friend.display_name %> ?
                       </p>
-                      <p style="color:rgba(255,255,255,0.45); font-size:0.8rem; margin:0;">
+                      <p style="color:var(--theme-text-muted); font-size:0.8rem; margin:0;">
                         Vous ne serez plus amis et ne pourrez plus vous envoyer de messages.
                       </p>
                     </div>
 
-                    <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
+                    <div class="modal-footer" style="border-top:1px solid var(--theme-border); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
                       <%# Annuler — ferme juste la modale %>
                       <button type="button"
                               data-bs-dismiss="modal"
-                              style="font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.5);
-                                     background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+                              style="font-size:0.8rem; font-weight:600; color:var(--theme-text-muted);
+                                     background:var(--theme-hover-bg); border:1px solid var(--theme-border);
                                      border-radius:20px; padding:0.4rem 1rem; cursor:pointer;">
                         Annuler
                       </button>

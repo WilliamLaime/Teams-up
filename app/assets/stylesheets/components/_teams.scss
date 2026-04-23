@@ -1,22 +1,23 @@
 // ── Styles des équipes ────────────────────────────────────────────────────────
 // Utilisé dans /teams (index, show, new, edit)
 
-// Fond sombre pleine page (même convention que .matches-index-page)
+// Fond de page — CSS variable pour réagir au thème
 .teams-page {
-  background-color: $dark-bg;
+  background-color: var(--theme-page-bg);           // était $dark-bg
   min-height: calc(100vh - 130px);
   padding: 2.5rem 0 4rem;
 
   // Titre et sous-titre réutilisés depuis les pages matches
   .matches-index-title {
     font-size: 2rem;
-    color: #fff;
+    font-weight: 800;
+    color: var(--theme-text-strong);                // était #fff
     margin-bottom: 0.35rem;
     font-family: $display-font;
   }
 
   .matches-index-subtitle {
-    color: $dark-muted;
+    color: var(--theme-text-muted);                 // était $dark-muted
     font-size: 0.95rem;
     margin: 0;
   }
@@ -24,8 +25,8 @@
 
 // ── Carte équipe (index) ──────────────────────────────────────────────────────
 .team-card {
-  background: #1a1c1a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--theme-bg-card);                // était #1a1c1a
+  border: 1px solid var(--theme-border);           // était rgba(255,255,255,0.08)
   border-radius: 14px;
   padding: 1.25rem;
   display: flex;
@@ -38,28 +39,50 @@
     transform: translateY(-2px);
   }
 
-  // Blason dans la carte
+  // Blason dans la carte — pas de fond ni de bordure : le SVG définit sa propre forme
   &-badge {
     flex-shrink: 0;
     width: 60px;
     height: 60px;
-    border-radius: 10px;
-    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
 
-    &-img   { width: 100%; height: 100%; object-fit: cover; }
-    &-svg   { width: 60px; height: 60px; svg { width: 60px; height: 60px; } }
-    &-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+    // Image uploadée (fallback) : on garde le cadre arrondi uniquement pour les photos
+    &-img {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+
+    // SVG généré : drop-shadow qui suit la forme exacte du SVG (bouclier, hexagone…)
+    // Visible quel que soit le fond — indispensable pour les blasons blancs en light mode
+    &-svg {
+      width: 60px;
+      height: 60px;
+      filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.22));
+      svg { width: 60px; height: 60px; }
+    }
+
+    // Placeholder (aucun blason) : fond discret uniquement dans ce cas
+    &-placeholder {
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+      background: var(--theme-hover-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   }
 
   &-body    { flex: 1; min-width: 0; }
-  &-name    { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  &-meta    { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); margin: 0; display: flex; align-items: center; }
+  &-name    { font-size: 1rem; font-weight: 700; color: var(--theme-text-strong); margin: 0 0 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &-meta    { font-size: 0.75rem; color: var(--theme-text-muted); margin: 0; display: flex; align-items: center; }
 
-  // Badge de rôle dans la carte
+  // Badge de rôle dans la carte — capitaine vert, membre adaptatif
   &-role {
     display: inline-block;
     font-size: 0.7rem;
@@ -69,7 +92,7 @@
     margin-bottom: 0.2rem;
 
     &.captain { background: rgba(30, 221, 136, 0.15); color: #1EDD88; }
-    &.member  { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.5); }
+    &.member  { background: var(--theme-hover-bg); color: var(--theme-text-muted); } // adaptatif
   }
 }
 
@@ -93,7 +116,7 @@
   display: block;
 }
 
-// Overlay dégradé pour assurer la lisibilité du texte
+// Overlay dégradé pour assurer la lisibilité du texte (intentionnel — sur photo)
 .team-cover-overlay {
   position: absolute;
   inset: 0;
@@ -136,16 +159,20 @@
     object-fit: cover;
   }
 
-  // SVG généré : pas de fond ni de bordure, le logo s'affiche directement
-  &-svg { svg { width: 80px; height: 80px; } }
+  // SVG généré : drop-shadow qui suit la forme exacte
+  // Sur la bannière (overlay sombre), l'ombre est blanche pour ressortir
+  &-svg {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.35));
+    svg { width: 80px; height: 80px; }
+  }
 
-  // Aucun badge : on affiche un placeholder avec un fond subtil
+  // Aucun badge : placeholder sur fond de bannière sombre (intentionnel)
   &-placeholder {
     width: 80px;
     height: 80px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05); // intentionnel : sur overlay sombre de la bannière
+    border: 1px solid rgba(255, 255, 255, 0.1); // intentionnel : même raison
     display: flex;
     align-items: center;
     justify-content: center;
@@ -157,16 +184,18 @@
   min-width: 0;
 }
 
+// ⚠️ Les couleurs .team-show-* sont intentionnellement blanches :
+//    ces éléments s'affichent sur l'overlay sombre de la photo de couverture.
 .team-show-name {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #fff;
+  color: #fff; // intentionnel — sur overlay sombre de bannière
   margin: 0 0 0.25rem;
 }
 
 .team-show-meta {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.9); // intentionnel — sur overlay sombre
   margin: 0 0 0.4rem;
   display: flex;
   align-items: center;
@@ -175,7 +204,7 @@
 
 .team-show-description {
   font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.65); // intentionnel — sur overlay sombre
   margin: 0;
 }
 
@@ -197,7 +226,7 @@
 }
 
 // ── Boutons d'action dans la bannière (Modifier / Supprimer) ──────────────────
-// Effet verre dépoli cohérent avec la bannière photo
+// Effet verre dépoli sur la bannière photo — couleurs blanches intentionnelles
 .team-banner-btn {
   display: inline-flex;
   align-items: center;
@@ -215,11 +244,11 @@
   text-decoration: none;
   border: 1px solid transparent;
 
-  // Variante "Modifier" — verre blanc subtil
+  // Variante "Modifier" — verre blanc subtil sur photo (intentionnel)
   &--edit {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.25);
-    color: #fff;
+    color: #fff; // intentionnel — sur bannière photo
 
     &:hover {
       background: rgba(255, 255, 255, 0.22);
@@ -243,20 +272,21 @@
   }
 }
 
-// ── Bloc section générique (encadré sombre) ───────────────────────────────────
+// ── Bloc section générique (formulaire, cartes infos) — adaptatif ─────────────
 .team-section-card {
-  background: #1a1c1a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--theme-bg-card);             // était #1a1c1a — adaptatif
+  border: 1px solid var(--theme-border);        // était rgba(255,255,255,0.08) — adaptatif
   border-radius: 14px;
   padding: 1.25rem;
 }
 
+// Titre de section (INFORMATIONS, BLASON, etc.) — adaptatif
 .team-section-title {
   font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.6);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: var(--theme-text-muted);              // était rgba(255,255,255,0.6) — adaptatif
   margin: 0 0 1rem;
   display: flex;
   align-items: center;
@@ -273,13 +303,13 @@
   @media (max-width: 480px) { grid-template-columns: 1fr; }            // 1 mobile
 }
 
-// Carte individuelle d'un membre
+// Carte individuelle d'un membre — fond et hover adaptatifs
 .team-member-card {
   position: relative;
   border-radius: 12px;
   padding: 1rem 0.75rem 0.85rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid transparent; // surcharge par .captain / .member ci-dessous
+  background: var(--theme-hover-bg);          // était rgba(255,255,255,0.03) — adaptatif
+  border: 2px solid transparent; // surcharge par les rangs ci-dessous
   transition: background 0.15s;
 
   // Bordure colorée selon le rang XP — sans glow, juste la couleur
@@ -289,7 +319,7 @@
   &.rank-platinum { border-color: rgba(192, 132, 252, 0.6); } // violet
   &.rank-emerald  { border-color: rgba( 87, 255, 148, 0.6); } // vert émeraude
 
-  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &:hover { background: var(--theme-bg-surface); } // légère surbrillance adaptative
 }
 
 // Boutons d'action (transférer / retirer) — coin haut droit de la carte
@@ -318,22 +348,22 @@
   object-fit: cover;
 }
 
-// Placeholder avatar
+// Placeholder avatar — adaptatif
 .team-member-card-avatar-placeholder {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--theme-bg-surface);        // était rgba(255,255,255,0.07) — adaptatif
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-// Nom du membre
+// Nom du membre — adaptatif
 .team-member-card-name {
   font-size: 0.82rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--theme-text-primary);           // était rgba(255,255,255,0.85) — adaptatif
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -341,6 +371,7 @@
   max-width: 100%;
 }
 
+// Badge rôle sur carte membre — adaptatif
 .team-member-role-badge {
   display: inline-block;
   font-size: 0.68rem;
@@ -350,7 +381,7 @@
   width: fit-content;
 
   &.captain { background: rgba(30, 221, 136, 0.15); color: #1EDD88; }
-  &.member  { background: rgba(255, 255, 255, 0.07); color: rgba(255, 255, 255, 0.45); }
+  &.member  { background: var(--theme-hover-bg); color: var(--theme-text-muted); } // adaptatif
 }
 
 .team-member-actions {
@@ -359,7 +390,7 @@
   flex-shrink: 0;
 }
 
-// ── Liste amis/joueurs (colonne latérale) ─────────────────────────────────────
+// ── Liste amis/joueurs (colonne latérale) — adaptative ───────────────────────
 .team-members-list {
   list-style: none; // supprime les puces
   padding: 0;
@@ -369,16 +400,17 @@
   gap: 0.4rem;
 }
 
+// Item de la liste latérale — adaptatif
 .team-member-item {
   display: flex;
   align-items: center;
   gap: 0.6rem;
   padding: 0.45rem 0.5rem;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--theme-hover-bg);          // était rgba(255,255,255,0.03) — adaptatif
   transition: background 0.15s;
 
-  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &:hover { background: var(--theme-bg-surface); } // surbrillance adaptative
 }
 
 // Avatar rond dans la liste latérale
@@ -390,12 +422,12 @@
   flex-shrink: 0;
 }
 
-// Placeholder avatar dans la liste latérale
+// Placeholder avatar dans la liste latérale — adaptatif
 .team-member-avatar-placeholder {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--theme-bg-surface);        // était rgba(255,255,255,0.07) — adaptatif
   display: flex;
   align-items: center;
   justify-content: center;
@@ -404,10 +436,11 @@
 
 .team-member-info { flex: 1; min-width: 0; }
 
+// Nom dans la liste latérale — adaptatif
 .team-member-name {
   font-size: 0.83rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--theme-text-primary);           // était rgba(255,255,255,0.85) — adaptatif
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -423,16 +456,18 @@
   gap: 0.4rem;
 }
 
+// Item d'invitation — adaptatif
 .team-invitation-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--theme-hover-bg);          // était rgba(255,255,255,0.04) — adaptatif
   font-size: 0.83rem;
 }
 
+// Carte invitation reçue (bannière verte) — couleurs vertes intentionnelles
 .team-invitation-card {
   background: rgba(30, 221, 136, 0.06);
   border: 1px solid rgba(30, 221, 136, 0.2);
@@ -457,11 +492,12 @@
   margin-bottom: 0.75rem;
 }
 
+// Onglet du générateur — adaptatif, vert quand actif
 .badge-tab {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--theme-hover-bg);          // était rgba(255,255,255,0.06) — adaptatif
+  border: 1px solid var(--theme-border);      // était rgba(255,255,255,0.1) — adaptatif
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--theme-text-muted);             // était rgba(255,255,255,0.55) — adaptatif
   font-size: 0.78rem;
   font-weight: 600;
   padding: 0.35rem 0.75rem;
@@ -477,18 +513,18 @@
   }
 }
 
-// Label de section dans le générateur
+// Label de section dans le générateur — adaptatif
 .badge-builder-label {
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--theme-text-muted);             // était rgba(255,255,255,0.45) — adaptatif
   margin-bottom: 0.5rem;
 }
 
-// Aperçu du blason — transparent pour laisser la forme SVG s'exprimer
+// Aperçu du blason dans le builder — drop-shadow pour voir les formes claires
 .badge-preview {
   width: 110px;
   height: 110px;
@@ -496,6 +532,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  // Même principe : suit la forme du SVG, rend les blasons blancs visibles en light mode
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.20));
 
   svg { width: 110px; height: 110px; }
 }
@@ -507,12 +545,13 @@
   flex-wrap: wrap;
 }
 
+// Bouton de forme — adaptatif, vert actif
 .badge-shape-btn {
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid var(--theme-border-strong); // bordure adaptative légèrement marquée
+  background: var(--theme-hover-bg);             // fond adaptatif
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -520,7 +559,13 @@
   transition: all 0.15s;
   padding: 0;
 
-  svg path, svg circle { transition: fill 0.15s, stroke 0.15s; }
+  // Override les fill/stroke hardcodés blanc dans l'ERB (invisibles en light mode).
+  // Les propriétés CSS ont la priorité sur les attributs SVG inline.
+  svg path, svg circle {
+    fill: var(--theme-hover-bg-strong); // fond de forme adaptatif (subtil)
+    stroke: var(--theme-text-muted);    // contour visible en dark ET light
+    transition: fill 0.15s, stroke 0.15s;
+  }
 
   &:hover {
     border-color: rgba(30, 221, 136, 0.4);
@@ -550,24 +595,28 @@
   cursor: pointer;
   transition: transform 0.1s, border-color 0.15s;
   padding: 0;
+  // Liseré subtil sur tous les swatches — indispensable pour les couleurs claires
+  // (blanc, jaune) qui seraient invisibles sans contour en light mode
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
 
   &:hover  { transform: scale(1.2); }
-  &.active { border-color: #fff; transform: scale(1.2); box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
+  &.active { border-color: #1EDD88; transform: scale(1.2); box-shadow: 0 0 0 2px rgba(30, 221, 136, 0.5); }
 }
 
-// Grille de symboles emoji
+// Grille de symboles emoji — adaptatif
 .badge-icons {
   display: flex;
   gap: 0.35rem;
   flex-wrap: wrap;
 }
 
+// Bouton emoji — adaptatif, vert actif
 .badge-icon-btn {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--theme-border);      // était rgba(255,255,255,0.1) — adaptatif
+  background: var(--theme-hover-bg);          // était rgba(255,255,255,0.05) — adaptatif
   font-size: 1.1rem;
   cursor: pointer;
   display: flex;
@@ -579,7 +628,7 @@
   &.active { background: rgba(30, 221, 136, 0.2);  border-color: #1EDD88; }
 }
 
-// ── Slider zoom bannière + slider taille logo blason ─────────────────────────
+// ── Slider zoom bannière + slider taille logo blason — adaptatif ──────────────
 // Partagé entre cover-position et badge-builder controllers.
 
 // Ligne contenant l'icône + slider + valeur affichée
@@ -590,8 +639,8 @@
   gap: 0.6rem;
   margin-top: 0.6rem;
   padding: 0.5rem 0.75rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--theme-hover-bg);          // était rgba(255,255,255,0.04) — adaptatif
+  border: 1px solid var(--theme-border);      // était rgba(255,255,255,0.08) — adaptatif
   border-radius: 8px;
 }
 
@@ -602,7 +651,8 @@
   appearance: none;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--theme-border);            // était rgba(255,255,255,0.15) — adaptatif
+  outline: none;
   cursor: pointer;
 
   &:focus-visible {
@@ -647,7 +697,7 @@
   flex-shrink: 0;
 }
 
-// ── Carte d'accès au chat d'équipe ───────────────────────────────────────────
+// ── Carte d'accès au chat d'équipe — adaptative ──────────────────────────────
 // Carte bleue distincte du reste de la page (thème équipe = #4A90D9)
 .team-chat-card {
   background: rgba(74, 144, 217, 0.06);         // fond légèrement bleu
@@ -682,18 +732,18 @@
     flex-shrink: 0;
   }
 
-  // Titre "Chat de l'équipe"
+  // Titre "Chat de l'équipe" — adaptatif
   &-title {
     font-size: 0.88rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--theme-text-strong);            // était #fff — adaptatif
     margin-bottom: 0.1rem;
   }
 
-  // Aperçu du dernier message
+  // Aperçu du dernier message — adaptatif
   &-preview {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--theme-text-muted);             // était rgba(255,255,255,0.45) — adaptatif
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -724,15 +774,15 @@
   }
 }
 
-// ── Barre de recherche d'invitation ───────────────────────────────────────────
-// Champ texte + bouton "Inviter" côte à côte, thème sombre cohérent avec les cartes
+// ── Barre de recherche d'invitation — adaptative ──────────────────────────────
+// Champ texte + bouton "Inviter" côte à côte
 .invite-search-group {
   display: flex;
   gap: 0;
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--theme-border);      // était rgba(255,255,255,0.1) — adaptatif
+  background: var(--theme-hover-bg);          // était rgba(255,255,255,0.04) — adaptatif
   transition: border-color 0.15s;
 
   &:focus-within {
@@ -740,29 +790,29 @@
   }
 }
 
-// Champ texte sombre sans bordure propre (la bordure est sur le groupe)
+// Champ texte sans bordure propre (la bordure est sur le groupe) — adaptatif
 .invite-search-input {
   flex: 1;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.9);
+  outline: none;
+  color: var(--theme-text-primary);           // était rgba(255,255,255,0.9) — adaptatif
   font-size: 0.83rem;
   padding: 0.55rem 0.85rem;
 
-  &::placeholder { color: rgba(255, 255, 255, 0.3); }
-
-  &:focus-visible {
-    outline: 2px solid $green;
-    outline-offset: 2px;
-  }
+  &::placeholder { color: var(--theme-text-muted); } // adaptatif
 }
+  &:focus-visible {
+      outline: 2px solid $green;
+      outline-offset: 2px;
+    }
 
 // Bouton "Inviter" intégré à droite de l'input
 .invite-search-btn {
   flex-shrink: 0;
   background: rgba(30, 221, 136, 0.15);
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid var(--theme-border); // était rgba(255,255,255,0.08) — adaptatif
   color: #1EDD88;
   font-size: 0.82rem;
   font-weight: 700;
@@ -776,11 +826,11 @@
   }
 }
 
-// ── Autocomplete invitation ───────────────────────────────────────────────────
+// ── Autocomplete invitation — adaptatif ──────────────────────────────────────
 .invite-search-dropdown {
   position: relative;
-  background: #1e201e;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--theme-bg-card);           // était #1e201e — adaptatif
+  border: 1px solid var(--theme-border);      // était rgba(255,255,255,0.1) — adaptatif
   border-radius: 8px;
   margin-top: 4px;
   overflow: hidden;
@@ -800,24 +850,27 @@
   transition: background 0.15s;
 
   &:hover { background: rgba(30, 221, 136, 0.08); }
-  & + & { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+  & + & { border-top: 1px solid var(--theme-border); } // séparateur adaptatif
 }
 
+// Nom dans le dropdown autocomplete — adaptatif
 .invite-search-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--theme-text-primary);           // était rgba(255,255,255,0.9) — adaptatif
 }
 
+// Prénom/nom secondaire dans le dropdown — adaptatif
 .invite-search-lastname {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--theme-text-muted);             // était rgba(255,255,255,0.45) — adaptatif
 }
 
+// État vide du dropdown — adaptatif
 .invite-search-empty {
   padding: 0.6rem 0.75rem;
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--theme-text-muted);             // était rgba(255,255,255,0.35) — adaptatif
 }
 
 // ── Bouton XS (retirer membre, transférer) ────────────────────────────────────

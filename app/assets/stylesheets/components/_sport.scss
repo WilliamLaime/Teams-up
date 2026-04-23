@@ -4,16 +4,25 @@
 // =====================================================
 
 // ── Badge sport sur les cartes de matchs ──────────────────────────────────
-// Pill compacte en bleu nuit pour distinguer visuellement le sport du niveau
+// Pill compacte pour distinguer visuellement le sport du niveau
 .match-badge-sport {
   display: inline-block;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--theme-hover-bg);   // Fond selon le thème
+  color: var(--theme-text-muted);      // Texte selon le thème
+  border: 1px solid var(--theme-border);
+}
+
+// Quand le badge est dans le banner (fond sombre image + overlay), on force
+// des couleurs claires peu importe le thème actif (dark ou light).
+// Sans ça, en light mode --theme-text-muted = rgba(0,0,0,0.55) = illisible sur fond sombre.
+.match-banner .match-badge-sport {
+  background: rgba(255, 255, 255, 0.12);  // fond blanc semi-transparent — visible sur image
+  color: rgba(255, 255, 255, 0.85);       // texte blanc légèrement atténué
+  border-color: rgba(255, 255, 255, 0.2); // bordure subtile
 }
 
 // ── Badge sport actif sur la page "Trouver un match" ─────────────────────
@@ -103,40 +112,40 @@
 }
 
 // ── Dropdown des sports (navbar et hero) ─────────────────────────────────
-// Force le thème sombre sur le dropdown Bootstrap (qui est blanc par défaut)
+// S'adapte au thème clair/sombre via CSS custom properties
 .sport-dropdown {
   min-width: 220px;
-  background-color: $dark-card-bg;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--theme-bg-card); // Fond de carte selon le thème
+  border: 1px solid var(--theme-border);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
   // Hauteur max pour gérer 50+ sports sans déborder l'écran
   max-height: 320px;
   overflow-y: auto;
 
   // Séparateurs
   .dropdown-divider {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--theme-border);
   }
 
   // Champ de recherche dans le dropdown
   .sport-search-input {
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: var(--theme-bg-surface);  // Fond de surface selon le thème
+    border: 1px solid var(--theme-border);
+    color: var(--theme-text-primary);     // Texte selon le thème
     font-size: 0.82rem;
 
-    // Placeholder légèrement transparent
+    // Placeholder discret selon le thème
     &::placeholder {
-      color: rgba(255, 255, 255, 0.35);
+      color: var(--theme-text-muted);
     }
 
     // Focus : légère bordure verte pour indiquer l'état actif
     &:focus {
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--theme-bg-surface);
       border-color: rgba($green, 0.5);
       box-shadow: none;
-      color: #fff;
+      color: var(--theme-text-primary);
     }
   }
 
@@ -148,12 +157,12 @@
     border: none;
     cursor: pointer;
     font-size: 0.875rem;
-    // Couleur grisée par défaut — moins agressive que le blanc pur
-    color: rgba(255, 255, 255, 0.55) !important;
+    color: var(--theme-text-muted) !important; // Texte discret selon le thème
 
-    // Au survol : légère luminosité pour guider le clic
+    // Au survol : texte plus fort
     &:hover {
-      color: rgba(255, 255, 255, 0.85) !important;
+      color: var(--theme-text-primary) !important;
+      background: var(--theme-hover-bg);
     }
 
     // Sport actif → couleur verte pour le mettre en avant
@@ -310,30 +319,56 @@
   }
 }
 
+// ── Sport Picker : panel dropdown (formulaire match) ─────────────────────────
+// Wrapper du panel — remplace les styles inline qui bloquaient le mode clair
+.sport-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 400;
+  background: var(--theme-bg-surface); // Fond selon le thème (blanc en clair, sombre en dark)
+  border: 1px solid var(--theme-border);
+  border-radius: 10px;
+  padding: 0.35rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+// ── Sport Picker : placeholder du trigger ─────────────────────────────────────
+// Texte "Sélectionner un sport" quand aucun sport n'est choisi
+.sport-picker-placeholder {
+  color: var(--theme-text-muted); // Discret selon le thème
+}
+
 // ── Sport Picker (dropdown custom formulaire match) ──────────────────────────
 // Items du dropdown de sélection de sport dans le formulaire de création
+// S'adapte au thème clair/sombre via CSS custom properties
+// !important nécessaire : Bootstrap's button reset et form-select peuvent avoir
+// une spécificité plus haute sur les éléments <button> enfants
 .sport-picker-item {
   background: transparent;
   border: none;
   border-radius: 6px;
   padding: 0.4rem 0.6rem;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--theme-text-primary) !important; // Force la couleur — Bootstrap peut l'overrider
   font-size: 0.875rem;
   font-weight: 500;
   transition: background 0.12s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--theme-hover-bg); // Fond hover selon le thème
+    color: var(--theme-text-primary) !important;
   }
 
-  // Sport actuellement sélectionné → fond vert subtil
+  // Sport actuellement sélectionné → vert
   &--active {
     background: rgba($green, 0.1);
-    color: $green;
+    color: $green !important;
 
     &:hover {
       background: rgba($green, 0.15);
+      color: $green !important;
     }
   }
 }

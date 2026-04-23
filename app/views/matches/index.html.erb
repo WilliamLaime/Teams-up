@@ -120,14 +120,14 @@
                     class="filter-pill-group level-filter-trigger"
                     data-action="click->level-filter#toggle">
               <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
-              <span data-level-filter-target="label" style="color:rgba(255,255,255,0.9);">Niveau</span>
+              <span data-level-filter-target="label" style="color:var(--theme-text-primary);">Niveau</span>
               <i data-lucide="chevron-down" style="width:11px;height:11px;margin-left:2px;"></i>
             </button>
 
             <%# Panel dropdown %>
             <div class="level-filter-dropdown"
                  data-level-filter-target="dropdown"
-                 style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:160px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem; max-height:340px; overflow-y:auto;">
+                 style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:160px; background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.3); gap:0.15rem; max-height:340px; overflow-y:auto;">
 
               <%# RGAA 11.5 — fieldset/legend pour grouper les checkboxes de même nature %>
               <%# Conteneur des checkboxes — reconstruit par JS quand le sport change %>
@@ -157,9 +157,9 @@
 
               <%# Bouton "?" pour ouvrir la modale des grilles %>
               <button type="button"
-                      style="margin-top:0.2rem; width:100%; padding:0.3rem 0.5rem; background:rgba(255,255,255,0.04);
-                             border:1px solid rgba(255,255,255,0.1); border-radius:6px; font-size:0.72rem;
-                             color:rgba(255,255,255,0.5); cursor:pointer; text-align:left;"
+                      style="margin-top:0.2rem; width:100%; padding:0.3rem 0.5rem; background:var(--theme-hover-bg);
+                             border:1px solid var(--theme-border); border-radius:6px; font-size:0.72rem;
+                             color:var(--theme-text-muted); cursor:pointer; text-align:left;"
                       data-bs-toggle="modal"
                       data-bs-target="#levelGridModal"
                       aria-label="Voir la grille des niveaux">
@@ -186,14 +186,14 @@
               <button type="button"
                       class="filter-pill-group sport-filter-trigger"
                       data-action="click->sport-filter#toggle">
-                <span data-sport-filter-target="label" style="color:rgba(255,255,255,0.9);">Sport</span>
+                <span data-sport-filter-target="label" style="color:var(--theme-text-primary);">Sport</span>
                 <i data-lucide="chevron-down" style="width:11px;height:11px;margin-left:2px;"></i>
               </button>
 
               <%# Panel dropdown — clic sur un radio ferme et soumet automatiquement %>
               <div class="sport-filter-dropdown"
                    data-sport-filter-target="dropdown"
-                   style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:150px; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6); gap:0.15rem">
+                   style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:150px; background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.3); gap:0.15rem">
 
                 <%# RGAA 11.5 — fieldset/legend pour grouper les boutons radio de même nature %>
                 <fieldset style="border:none; padding:0; margin:0;">
@@ -212,7 +212,7 @@
                            data-action="change->sport-filter#change"
                            style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
                            <% if sport_checked %>checked<% end %>>
-                    <span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:600; color:rgba(255,255,255,0.85);">
+                    <span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:600; color:var(--theme-text-primary);">
                       <%= sport_icon(sport, size: "1.05rem") %>
                       <%= sport.name %>
                     </span>
@@ -241,7 +241,7 @@
 
             <%# Dropdown de suggestions — caché par défaut, rempli dynamiquement par JS %>
             <div data-city-search-target="dropdown"
-                 style="display:none; position:absolute; top:100%; left:0; z-index:300; min-width:200px; max-height:200px; overflow-y:auto; background:#242624; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.6);">
+                 style="display:none; position:absolute; top:100%; left:0; z-index:300; min-width:200px; max-height:200px; overflow-y:auto; background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:8px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
             </div>
           </div>
 
@@ -287,7 +287,7 @@
     <% if !params[:mine].present? %>
       <% if @active_prefilters&.any? %>
         <%# Les pré-filtres sont actifs → badges pour chaque filtre actif + lien "Voir tout" %>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.1rem 0 0.75rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+        <p style="font-size:0.75rem; color:var(--theme-text-muted); margin:0.1rem 0 0.75rem; display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem;">
           <i data-lucide="sparkles" style="width:12px; height:12px; color:#1EDD88; flex-shrink:0;"></i>
           <span>Pré-filtrés :</span>
 
@@ -325,24 +325,24 @@
 
           <%# Compteur : X matchs sur Y total %>
           <% if @filtered_matches_count && @total_matches_count %>
-            <span style="color:rgba(255,255,255,0.25);">·</span>
-            <span style="font-size:0.7rem; color:rgba(255,255,255,0.35);">
+            <span style="color:var(--theme-text-muted);">·</span>
+            <span style="font-size:0.7rem; color:var(--theme-text-muted);">
               <%= @filtered_matches_count %> match<%= @filtered_matches_count > 1 ? "s" : "" %> sur <%= @total_matches_count %>
             </span>
           <% end %>
 
-          <span style="color:rgba(255,255,255,0.25);">·</span>
-          <%= link_to "Voir tous les matchs", matches_path(no_prefilter: 1), style: "color:rgba(255,255,255,0.45); text-decoration:underline;" %>
-          <span style="color:rgba(255,255,255,0.25);">·</span>
-          <%= link_to "Modifier mes préférences", edit_profil_path(current_user.profil), style: "color:rgba(255,255,255,0.45); text-decoration:underline;" %>
+          <span style="color:var(--theme-text-muted);">·</span>
+          <%= link_to "Voir tous les matchs", matches_path(no_prefilter: 1), style: "color:var(--theme-text-muted); text-decoration:underline;" %>
+          <span style="color:var(--theme-text-muted);">·</span>
+          <%= link_to "Modifier mes préférences", edit_profil_path(current_user.profil), style: "color:var(--theme-text-muted); text-decoration:underline;" %>
         </p>
       <% elsif params[:no_prefilter].present? %>
         <%# L'user a cliqué "Voir tous les matchs" → proposer de réactiver les pré-filtres %>
-        <p style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin:0.1rem 0 0.75rem; display:flex; align-items:center; gap:0.4rem;">
-          <i data-lucide="sparkles" style="width:12px; height:12px; color:rgba(255,255,255,0.3); flex-shrink:0;"></i>
+        <p style="font-size:0.75rem; color:var(--theme-text-muted); margin:0.1rem 0 0.75rem; display:flex; align-items:center; gap:0.4rem;">
+          <i data-lucide="sparkles" style="width:12px; height:12px; color:var(--theme-text-muted); flex-shrink:0;"></i>
           Tous les matchs affichés.
           &nbsp;·&nbsp;
-          <%= link_to "Filtrer selon mon profil", matches_path, style: "color:rgba(255,255,255,0.45); text-decoration:underline;" %>
+          <%= link_to "Filtrer selon mon profil", matches_path, style: "color:var(--theme-text-muted); text-decoration:underline;" %>
         </p>
       <% end %>
     <% end %>
