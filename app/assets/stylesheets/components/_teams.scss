@@ -801,11 +801,12 @@
   padding: 0.55rem 0.85rem;
 
   &::placeholder { color: var(--theme-text-muted); } // adaptatif
-}
+
   &:focus-visible {
-      outline: 2px solid $green;
-      outline-offset: 2px;
-    }
+    outline: 2px solid $green;
+    outline-offset: 2px;
+  }
+}
 
 // Bouton "Inviter" intégré à droite de l'input
 .invite-search-btn {

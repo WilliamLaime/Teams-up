@@ -503,10 +503,11 @@
       box-shadow: 0 0 0 3px rgba($green, 0.14) !important;
       color: var(--theme-text-primary) !important;  // adaptatif de mode-clair
       outline: 2px solid transparent;               // WCAG de master
-      
-     &:focus-visible {
-          outline: 2px solid $green !important;
-          outline-offset: 2px;    
+    }
+
+    &:focus-visible {
+      outline: 2px solid $green !important;
+      outline-offset: 2px;
     }
 
     // Autofill navigateur : le navigateur force un fond clair
