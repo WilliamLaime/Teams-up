@@ -509,9 +509,12 @@ puts "Création des matchs de test..."
 if main_user.nil?
   puts "⚠️  Aucun utilisateur trouvé, les matchs de test ne seront pas créés."
 else
-  # Supprime les anciens matchs de test pour repartir d'un état propre
+  # Supprime les anciens matchs de test pour repartir d'un état propre.
+  # On supprime d'abord les avis qui référencent ces matchs (contrainte FK),
+  # sinon PostgreSQL lève une ForeignKeyViolation.
   old_test_matches = Match.where("title LIKE ?", "%[TEST]%")
   old_count = old_test_matches.count
+  Avis.where(match_id: old_test_matches.select(:id)).destroy_all
   old_test_matches.destroy_all
   puts "  → #{old_count} anciens matchs de test supprimés." if old_count > 0
 
