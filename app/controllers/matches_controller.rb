@@ -29,8 +29,9 @@ class MatchesController < ApplicationController
       # Index public : uniquement les matchs ouverts à l'inscription et publics
       # visible_for_genre filtre les matchs "féminin" pour ne les montrer qu'aux femmes
       # includes évite les N+1 sur user/profil/sport chargés dans _match_card
+      # match_users préchargé pour afficher le statut de participation dans la card
       @matches = policy_scope(Match)
-                 .includes(:sport, user: :profil)
+                 .includes(:sport, :match_users, user: :profil)
                  .upcoming
                  .publicly_visible
                  .visible_for_genre(current_user)

@@ -50,12 +50,50 @@
       </div>
     <% end %>
 
-    <%# Bandeau "TERMINÉ" sur l'image si le match est terminé (> 1h après le début) %>
+    <%#
+      ── Overlays d'état sur l'image ─────────────────────────────────────────
+      Priorité : Terminé > statut d'inscription > Complet.
+      On cherche le MatchUser du current_user sur l'association préchargée
+      (match_users inclus via includes dans le controller → pas de N+1).
+      L'organisateur est ignoré : son overlay "Ton match" est géré séparément.
+    %>
+    <%
+      my_mu = user_signed_in? && match.user != current_user \
+                ? match.match_users.find { |mu| mu.user_id == current_user.id } \
+                : nil
+    %>
+
     <% if match.completed? %>
+      <%# Match terminé — priorité absolue %>
       <div class="match-completed-overlay">Terminé</div>
-    <%# Bandeau "COMPLET" sur l'image si le match est plein (et pas encore terminé) %>
+
+    <% elsif my_mu&.approved? %>
+      <div class="match-status-overlay match-status-overlay--inscrit">
+        <i data-lucide="check-circle" style="width:22px;height:22px;" aria-hidden="true"></i>
+        Inscrit
+      </div>
+
+    <% elsif my_mu&.pending? %>
+      <div class="match-status-overlay match-status-overlay--pending">
+        <i data-lucide="clock" style="width:22px;height:22px;" aria-hidden="true"></i>
+        En attente du capitaine
+      </div>
+
+    <% elsif my_mu&.waiting? %>
+      <div class="match-status-overlay match-status-overlay--waiting">
+        <i data-lucide="hourglass" style="width:22px;height:22px;" aria-hidden="true"></i>
+        File d'attente
+      </div>
+
+    <% elsif my_mu&.rejected? %>
+      <div class="match-status-overlay match-status-overlay--rejected">
+        <i data-lucide="x-circle" style="width:22px;height:22px;" aria-hidden="true"></i>
+        Non retenu
+      </div>
+
     <% elsif match.full? %>
       <div class="match-full-overlay">Complet</div>
+
     <% end %>
 
     <%# Overlay organisateur : brassard capitaine OU "Prénom N." %>

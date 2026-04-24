@@ -80,6 +80,36 @@
     text-transform: uppercase;
   }
 
+  // ── Overlays de statut d'inscription (Inscrit / En attente / File / Non retenu) ──
+  // Même base que match-full-overlay : pleine image, centré, majuscules.
+  // Chaque variante a sa propre couleur d'arrière-plan.
+  .match-status-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fff;
+
+    // Inscrit → vert translucide
+    &--inscrit  { background: rgba(#1EDD88, 0.55); }
+
+    // En attente du capitaine → orange translucide
+    &--pending  { background: rgba(#E67E22, 0.60); }
+
+    // File d'attente (match complet) → gris sombre
+    &--waiting  { background: rgba(#2d2d2d, 0.72); }
+
+    // Non retenu → rouge translucide
+    &--rejected { background: rgba(#FD1015, 0.55); }
+  }
+
   // ── Overlay "TERMINÉ" ──────────────────────────────
   // Même style que "Complet" mais teinte grise pour les matchs passés (> 1h)
   .match-completed-overlay {
