@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    /* Réinitialise tous les styles pour la compatibilité email */
+    body, table, tr, td, div, p, a { margin: 0; padding: 0; border-collapse: collapse; }
+    body { font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+    /* Palette dark Teams-Up */
+    .dark-bg { background-color: #111111; }
+    .dark-card { background-color: #1a1c1a; }
+    .dark-text { color: #f0f0f0; }
+    .green-accent { color: #1EDD88; }
+    .muted-text { color: rgba(255, 255, 255, 0.55); }
+
+    /* Layout principal */
+    .email-wrapper {
+      width: 100%;
+      background-color: #111111;
+      padding: 40px 20px;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      padding-bottom: 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1EDD88;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .header-subtitle {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 5px;
+    }
+
+    .content {
+      background-color: #1a1c1a;
+      padding: 40px;
+      margin-top: 30px;
+      border-radius: 8px;
+      color: #f0f0f0;
+    }
+
+    .content h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
+      color: #f0f0f0;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #f0f0f0;
+    }
+
+    .highlight {
+      display: inline-block;
+      background-color: rgba(30, 221, 136, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #1EDD88;
+      font-weight: 600;
+    }
+
+    .deletion-details {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-left: 4px solid #1EDD88;
+      padding: 20px;
+      margin: 25px 0;
+      border-radius: 4px;
+    }
+
+    .deletion-details p {
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .deletion-details .label {
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .deletion-details .value {
+      color: #f0f0f0;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .list-item .checkbox {
+      color: #1EDD88;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .legal-notice {
+      background-color: rgba(255, 255, 255, 0.03);
+      padding: 20px;
+      border-radius: 4px;
+      margin-top: 25px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .legal-notice .notice-title {
+      font-weight: 600;
+      color: #f0f0f0;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .footer {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 40px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    .footer-link {
+      color: #1EDD88;
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .email-wrapper {
+        padding: 20px 15px;
+      }
+
+      .content {
+        padding: 25px;
+      }
+
+      .content h2 {
+        font-size: 18px;
+      }
+
+      .content p {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body class="dark-bg">
+  <div class="email-wrapper">
+    <div class="email-container">
+
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">TEAM-UP</div>
+        <div class="header-subtitle">Confirmation de suppression de compte</div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <h2>Ton compte a été supprimé ✓</h2>
+
+        <p>
+          Salut <strong><%= @user_name %></strong>,
+        </p>
+
+        <p>
+          Cet email confirme que ta demande de suppression de compte a été traitée avec succès,
+          conformément au <span class="highlight">droit à l'oubli (RGPD, article 17)</span>.
+        </p>
+
+        <!-- Suppression Details -->
+        <div class="deletion-details">
+          <div>
+            <span class="label">Compte supprimé</span>
+            <span class="value"><%= @user_email %></span>
+          </div>
+          <div>
+            <span class="label">Date et heure de suppression</span>
+            <span class="value"><%= I18n.l(@deleted_at, format: :long) %></span>
+          </div>
+        </div>
+
+        <!-- What was deleted -->
+        <p><strong>Données supprimées :</strong></p>
+        <div style="margin-bottom: 20px;">
+          <div class="list-item">
+            <span class="checkbox">✓</span>
+            <span>Profil personnel (prénom, nom, avatar)</span>
+          </div>
+          <div class="list-item">
+            <span class="checkbox">✓</span>
+            <span>Historique des matchs créés ou rejoints</span>
+          </div>
+          <div class="list-item">
+            <span class="checkbox">✓</span>
+            <span>Équipes captainées (transfert du capitanat ou suppression)</span>
+          </div>
+          <div class="list-item">
+            <span class="checkbox">✓</span>
+            <span>Messages privés et conversations</span>
+          </div>
+          <div class="list-item">
+            <span class="checkbox">✓</span>
+            <span>Avis reçus et donnés</span>
+          </div>
+          <div class="list-item">
+            <span class="checkbox">✓</span>
+            <span>Statistiques et accomplissements</span>
+          </div>
+        </div>
+
+        <p>
+          <strong>⚠️ Matchs futurs :</strong> Tes matchs futurs ont été <strong>annulés automatiquement</strong>,
+          et les participants en ont été notifiés par email.
+        </p>
+
+        <!-- Legal Notice -->
+        <div class="legal-notice">
+          <div class="notice-title">Informations légales — RGPD (article 17)</div>
+          <p>
+            Conformément au Règlement Général sur la Protection des Données (RGPD),
+            nous avons appliqué ton droit à l'oubli. Tes données personnelles ont été supprimées
+            de notre système.
+          </p>
+          <p style="margin-top: 10px;">
+            Les données supprimées ne peuvent être récupérées. Si tu souhaites te réinscrire,
+            tu devras créer un nouveau compte.
+          </p>
+        </div>
+
+        <p style="margin-top: 25px; font-size: 14px;">
+          Si tu as des questions ou si tu crois qu'une erreur a été commise,
+          <a href="mailto:support@team-up.com" class="footer-link" style="color: #1EDD88;">contacte notre support</a>.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>© <%= Time.current.year %> Team-Up — Plateforme de mise en relation pour sportifs</p>
+        <p style="margin-top: 10px;">
+          <a href="https://team-up.com/mentions-legales" class="footer-link">Mentions légales</a> •
+          <a href="https://team-up.com/politique-confidentialite" class="footer-link">Politique de confidentialité</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

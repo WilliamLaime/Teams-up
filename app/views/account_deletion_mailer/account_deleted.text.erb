@@ -1,0 +1,57 @@
+TEAM-UP
+Confirmation de suppression de compte
+
+==================================================
+
+Ton compte a été supprimé ✓
+
+Salut <%= @user_name %>,
+
+Cet email confirme que ta demande de suppression de compte a été traitée avec succès,
+conformément au droit à l'oubli (RGPD, article 17).
+
+──────────────────────────────────────────────────
+
+DÉTAILS DE SUPPRESSION
+
+Compte supprimé:        <%= @user_email %>
+Date et heure:          <%= I18n.l(@deleted_at, format: :long) %>
+
+──────────────────────────────────────────────────
+
+DONNÉES SUPPRIMÉES
+
+✓ Profil personnel (prénom, nom, avatar)
+✓ Historique des matchs créés ou rejoints
+✓ Équipes captainées (transfert du capitanat ou suppression)
+✓ Messages privés et conversations
+✓ Avis reçus et donnés
+✓ Statistiques et accomplissements
+
+⚠️  Matchs futurs : Tes matchs futurs ont été annulés automatiquement,
+   et les participants en ont été notifiés par email.
+
+──────────────────────────────────────────────────
+
+INFORMATIONS LÉGALES – RGPD (Article 17)
+
+Conformément au Règlement Général sur la Protection des Données (RGPD),
+nous avons appliqué ton droit à l'oubli. Tes données personnelles ont
+été supprimées de notre système.
+
+Les données supprimées ne peuvent être récupérées. Si tu souhaites te
+réinscrire, tu devras créer un nouveau compte.
+
+──────────────────────────────────────────────────
+
+Questions ?
+
+Si tu as des questions ou si tu crois qu'une erreur a été commise,
+contacte notre support : support@team-up.com
+
+──────────────────────────────────────────────────
+
+© <%= Time.current.year %> Team-Up — Plateforme de mise en relation pour sportifs
+
+Mentions légales : https://team-up.com/mentions-legales
+Politique de confidentialité : https://team-up.com/politique-confidentialite

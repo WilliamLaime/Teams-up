@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_20_104616) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_21_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -396,16 +396,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_20_104616) do
   add_foreign_key "match_votes", "users", column: "voter_id"
   add_foreign_key "matches", "sports"
   add_foreign_key "matches", "teams"
-  add_foreign_key "matches", "users"
-  add_foreign_key "matches", "users", column: "homme_du_match_id"
+  add_foreign_key "matches", "users", column: "homme_du_match_id", on_delete: :nullify
+  add_foreign_key "matches", "users", on_delete: :nullify
   add_foreign_key "matches", "venues"
   add_foreign_key "messages", "matches"
   add_foreign_key "messages", "private_conversations"
   add_foreign_key "messages", "teams"
-  add_foreign_key "messages", "users"
+  add_foreign_key "messages", "users", on_delete: :nullify
   add_foreign_key "notifications", "users"
-  add_foreign_key "private_conversations", "users", column: "recipient_id"
-  add_foreign_key "private_conversations", "users", column: "sender_id"
+  add_foreign_key "private_conversations", "users", column: "recipient_id", on_delete: :nullify
+  add_foreign_key "private_conversations", "users", column: "sender_id", on_delete: :nullify
   add_foreign_key "profil_favorite_venues", "profils"
   add_foreign_key "profil_favorite_venues", "venues"
   add_foreign_key "profils", "users"

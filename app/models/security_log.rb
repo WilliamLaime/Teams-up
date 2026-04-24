@@ -17,6 +17,7 @@ class SecurityLog < ApplicationRecord
     password_reset_request
     signup
     google_login
+    account_deletion
   ].freeze
 
   # Validation : le type d'événement doit être dans la liste ci-dessus
