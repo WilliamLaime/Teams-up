@@ -4,6 +4,7 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
          :confirmable,  # Envoie un email de confirmation à l'inscription — bloque la connexion tant que l'email n'est pas vérifié
+         :timeoutable,  # Déconnexion automatique après 1h d'inactivité (session timeout) — RGPD
          :omniauthable, omniauth_providers: [:google_oauth2] # Activation de la connexion via Google
   # dependent: :destroy supprime le profil automatiquement quand l'user est supprimé
   has_one :profil, dependent: :destroy
