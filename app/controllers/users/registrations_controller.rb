@@ -96,6 +96,69 @@ module Users
       end
     end
 
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Action DELETE : suppression de compte (droit à l'effacement, RGPD art. 17)
+    # ─────────────────────────────────────────────────────────────────────────────
+    # Surcharge Devise pour vérifier l'identité (mot de passe ou confirmation OAuth)
+    # et gérer les actions métier avant destruction :
+    # - Transfert du capitanat des équipes au membre avec le plus haut niveau XP
+    # - Annulation des matchs futurs (participants notifiés par email)
+    # - Log de sécurité
+    # - Email de confirmation RGPD
+    def destroy
+      # ────── Étape 1 : Vérifier l'identité de l'utilisateur ──────────────────
+      user = current_user
+      return redirect_to edit_user_registration_path, alert: "Impossible de supprimer ton compte." unless user
+
+      # Cas 1 : User OAuth (Google) → vérifie la checkbox de confirmation
+      if user.provider.present?
+        unless params[:delete_confirmation] == "1"
+          return redirect_to edit_user_registration_path,
+                            alert: "Veuillez confirmer la suppression de votre compte."
+        end
+      else
+        # Cas 2 : User classique → vérifie le mot de passe
+        password = params[:current_password_for_deletion].presence
+        unless user.valid_password?(password)
+          return redirect_to edit_user_registration_path,
+                            alert: "Mot de passe incorrect. Suppression annulée."
+        end
+      end
+
+      # ────── Étape 2 : Capturer les données avant destruction ──────────────────
+      # (Le user sera bientôt détruit → impossible de lire ses données après)
+      user_email = user.email
+      user_name  = user.display_name
+      deleted_at = Time.current
+
+      # ────── Étape 3 : Transférer le capitanat ou supprimer les équipes ────────
+      transfer_captainship_or_destroy(user)
+
+      # ────── Étape 4 : Annuler les matchs futurs ─────────────────────────────────
+      cancel_upcoming_matches_for(user, organizer_name: user_name)
+
+      # ────── Étape 5 : Logger l'événement ─────────────────────────────────────
+      SecurityLog.log("account_deletion", request, user: user)
+
+      # ────── Étape 6 : Envoyer email de confirmation RGPD ──────────────────────
+      AccountDeletionMailer.account_deleted(
+        user_email:  user_email,
+        user_name:   user_name,
+        deleted_at:  deleted_at
+      ).deliver_later
+
+      # ────── Étape 7 : Déconnecter et détruire ─────────────────────────────────
+      sign_out(user)
+      user.destroy!
+
+      # ────── Étape 8 : Rediriger avec confirmation ────────────────────────────
+      redirect_to root_path, notice: "Ton compte a été supprimé. Nous espérons te revoir bientôt !"
+    rescue => e
+      Rails.logger.error("[AccountDeletion] Erreur lors de la suppression : #{e.message}")
+      redirect_to edit_user_registration_path,
+                  alert: "Une erreur est survenue. Veuillez réessayer."
+    end
+
     private
 
     # Vérifie que le widget hcaptcha a bien été complété avant l'inscription
@@ -165,71 +228,6 @@ module Users
       session[:confirmation_pending_email] = resource.email
       email_confirmation_pending_path
     end
-
-    # ─────────────────────────────────────────────────────────────────────────────
-    # Action DELETE : suppression de compte (droit à l'effacement, RGPD art. 17)
-    # ─────────────────────────────────────────────────────────────────────────────
-    # Surcharge Devise pour vérifier l'identité (mot de passe ou confirmation OAuth)
-    # et gérer les actions métier avant destruction :
-    # - Transfert du capitanat des équipes au membre avec le plus haut niveau XP
-    # - Annulation des matchs futurs (participants notifiés par email)
-    # - Log de sécurité
-    # - Email de confirmation RGPD
-    def destroy
-      # ────── Étape 1 : Vérifier l'identité de l'utilisateur ──────────────────
-      user = current_user
-      return redirect_to edit_user_registration_path, alert: "Impossible de supprimer ton compte." unless user
-
-      # Cas 1 : User OAuth (Google) → vérifie la checkbox de confirmation
-      if user.provider.present?
-        unless params[:delete_confirmation] == "1"
-          return redirect_to edit_user_registration_path,
-                            alert: "Veuillez confirmer la suppression de votre compte."
-        end
-      else
-        # Cas 2 : User classique → vérifie le mot de passe
-        password = params[:current_password_for_deletion].presence
-        unless user.valid_password?(password)
-          return redirect_to edit_user_registration_path,
-                            alert: "Mot de passe incorrect. Suppression annulée."
-        end
-      end
-
-      # ────── Étape 2 : Capturer les données avant destruction ──────────────────
-      # (Le user sera bientôt détruit → impossible de lire ses données après)
-      user_email = user.email
-      user_name  = user.display_name
-      deleted_at = Time.current
-
-      # ────── Étape 3 : Transférer le capitanat ou supprimer les équipes ────────
-      transfer_captainship_or_destroy(user)
-
-      # ────── Étape 4 : Annuler les matchs futurs ─────────────────────────────────
-      cancel_upcoming_matches_for(user, organizer_name: user_name)
-
-      # ────── Étape 5 : Logger l'événement ─────────────────────────────────────
-      SecurityLog.log("account_deletion", request, user: user)
-
-      # ────── Étape 6 : Envoyer email de confirmation RGPD ──────────────────────
-      AccountDeletionMailer.account_deleted(
-        user_email:  user_email,
-        user_name:   user_name,
-        deleted_at:  deleted_at
-      ).deliver_later
-
-      # ────── Étape 7 : Déconnecter et détruire ─────────────────────────────────
-      sign_out(user)
-      user.destroy!
-
-      # ────── Étape 8 : Rediriger avec confirmation ────────────────────────────
-      redirect_to root_path, notice: "Ton compte a été supprimé. Nous espérons te revoir bientôt !"
-    rescue => e
-      Rails.logger.error("[AccountDeletion] Erreur lors de la suppression : #{e.message}")
-      redirect_to edit_user_registration_path,
-                  alert: "Une erreur est survenue. Veuillez réessayer."
-    end
-
-    private
 
     # Transfère le capitanat des équipes au membre avec le XP level le plus élevé
     # Si l'user était seul membre, l'équipe est détruite
