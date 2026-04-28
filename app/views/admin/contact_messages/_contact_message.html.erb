@@ -83,15 +83,15 @@
         <% end %>
       <% end %>
 
-      <%# Bouton supprimer — même hauteur/largeur que les autres %>
-      <%= button_to admin_contact_message_path(msg),
-                    method: :delete,
-                    class: "btn btn-sm",
-                    style: "width:32px; height:32px; font-size:0.75rem; display:inline-flex; align-items:center; justify-content:center; background:rgba(220,53,69,0.12); color:#ff6b6b; border:1px solid rgba(220,53,69,0.3);",
-                    title: "Supprimer",
-                    data: { turbo_confirm: "Supprimer ce message définitivement ?" } do %>
+      <%# Bouton supprimer — ouvre la modale de confirmation %>
+      <button type="button"
+              class="btn btn-sm"
+              style="width:32px; height:32px; font-size:0.75rem; display:inline-flex; align-items:center; justify-content:center; background:rgba(220,53,69,0.12); color:#ff6b6b; border:1px solid rgba(220,53,69,0.3);"
+              title="Supprimer"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteModal-<%= msg.id %>">
         <i data-lucide="trash-2" style="width:12px; height:12px;"></i>
-      <% end %>
+      </button>
 
     </div>
   </td>

@@ -35,14 +35,14 @@
     <%# Bouton "Tout supprimer" — padding rétabli autour de ce bouton %>
     <% if @contact_messages.any? %>
       <div class="d-flex justify-content-end" style="padding: 1.25rem 1.35rem 0.75rem;">
-        <%= button_to destroy_all_admin_contact_messages_path,
-                      method: :delete,
-                      class: "btn btn-sm",
-                      style: "font-size:0.75rem; background:rgba(220,53,69,0.12); color:#ff6b6b; border:1px solid rgba(220,53,69,0.3);",
-                      data: { turbo_confirm: "Supprimer tous les messages définitivement ? Cette action est irréversible." } do %>
+        <button type="button"
+                class="btn btn-sm"
+                style="font-size:0.75rem; background:rgba(220,53,69,0.12); color:#ff6b6b; border:1px solid rgba(220,53,69,0.3);"
+                data-bs-toggle="modal"
+                data-bs-target="#destroyAllContactMessagesModal">
           <i data-lucide="trash-2" style="width:12px; height:12px; margin-right:4px;"></i>
           Tout supprimer
-        <% end %>
+        </button>
       </div>
     <% end %>
 
@@ -97,4 +97,44 @@
   <% @contact_messages.each do |msg| %>
     <%= render "admin/contact_messages/contact_message_modal", msg: msg %>
   <% end %>
+
+  <%# Modale de confirmation — suppression de tous les messages de contact %>
+  <div class="modal fade" id="destroyAllContactMessagesModal" tabindex="-1"
+       aria-labelledby="destroyAllContactMessagesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background:#1a1c1a; border:1px solid rgba(220,53,69,0.3); color:#f0f0f0;">
+
+        <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.07);">
+          <div class="d-flex align-items-center gap-2">
+            <i data-lucide="triangle-alert" style="width:18px; height:18px; color:#ff6b6b;"></i>
+            <h5 class="modal-title" id="destroyAllContactMessagesModalLabel"
+                style="font-size:1rem; font-weight:700; color:#ff6b6b; margin:0;">
+              Supprimer tous les messages
+            </h5>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        </div>
+
+        <div class="modal-body" style="font-size:0.875rem; color:rgba(255,255,255,0.75);">
+          <p>Cette action va supprimer <strong style="color:#f0f0f0;"><%= @contact_messages.count %> message(s)</strong> de contact définitivement.</p>
+          <p class="mb-0" style="color:#ff6b6b;">
+            <i data-lucide="circle-x" style="width:13px; height:13px; margin-right:4px; vertical-align:-2px;"></i>
+            Cette action est irréversible et ne peut pas être annulée.
+          </p>
+        </div>
+
+        <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07);">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <%= button_to destroy_all_admin_contact_messages_path,
+                        method: :delete,
+                        class: "btn btn-sm",
+                        style: "background:#dc3545; color:#fff; border:none;" do %>
+            <i data-lucide="trash-2" style="width:12px; height:12px; margin-right:4px;"></i>
+            Confirmer la suppression
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </div>
