@@ -88,8 +88,8 @@ module Admin
       end
 
       # Envoie l'email de réponse via le mailer
-      # deliver_now → envoi immédiat (synchrone)
-      ContactMessageMailer.reply(@contact_message, reply_body).deliver_now
+      # deliver_later → job enfilé en arrière-plan (Solid Queue en production)
+      ContactMessageMailer.reply(@contact_message, reply_body).deliver_later
 
       # Marque le message comme lu maintenant qu'on y a répondu
       @contact_message.update(lu: true)
