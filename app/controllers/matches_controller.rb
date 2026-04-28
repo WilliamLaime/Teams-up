@@ -232,7 +232,20 @@ class MatchesController < ApplicationController
     authorize @match
     # Sécurité : seules les femmes peuvent modifier un match en "femme uniquement"
     params[:match][:genre_restriction] = "tous" if params.dig(:match, :genre_restriction) == "feminin" && current_user.genre != "femme"
+
+    # ── Capturer les valeurs AVANT la mise à jour ──────────────────────────────
+    # On sauvegarde les données actuelles pour détecter les changements pertinents.
+    previous_values = {
+      date: @match.date,
+      start_time: @match.start_time,
+      venue_id: @match.venue_id,
+      title: @match.title
+    }
+
     if @match.update(match_params)
+      # ── Après succès : notifier les participants des changements ────────────
+      # (la cloche navbar se mettra à jour en temps réel via ActionCable)
+      notify_participants_of_changes(previous_values)
       redirect_to @match, notice: "Match mis à jour avec succès !"
     else
       render :edit, status: :unprocessable_entity
@@ -516,6 +529,47 @@ class MatchesController < ApplicationController
         user:    member,
         message: "📅 #{@match.team.name} a un nouveau match : \"#{@match.title}\". Confirme ta présence !",
         link:    match_path(@match)
+      )
+    end
+  end
+
+  # ── Notifie tous les participants approuvés si les détails clés du match ont changé
+  # Invoquée après une mise à jour réussie du match (date, heure, lieu, titre).
+  # Crée des notifications qui s'affichent en temps réel dans la cloche navbar via ActionCable.
+  def notify_participants_of_changes(previous_values)
+    # ── Détecter les champs modifiés pertinents ────────────────────────────────
+    # On compare uniquement les champs importants pour les participants :
+    # date, heure de début, lieu, et titre.
+    changes = []
+    changes << "la date" if previous_values[:date] != @match.date
+    changes << "l'heure" if previous_values[:start_time] != @match.start_time
+    changes << "le lieu" if previous_values[:venue_id] != @match.venue_id
+    changes << "le titre" if previous_values[:title] != @match.title
+
+    # Si aucun champ pertinent n'a changé, on abandonne
+    return if changes.empty?
+
+    # ── Construire le message de notification ───────────────────────────────
+    # Format : "📋 Le match "X" a été modifié : [liste des champs]"
+    changed_text = changes.join(", ")
+    message = "📋 Le match \"#{@match.title}\" a été modifié : #{changed_text} a changé."
+
+    # ── Notifier tous les participants approuvés (sauf l'organisateur) ─────────
+    # On récupère les match_users avec status "approved" (excluant les en attente
+    # ou refusés), et on exclut l'organisateur du match lui-même.
+    participants = @match.match_users
+                         .where(status: "approved")
+                         .where.not(user_id: @match.user_id)
+                         .includes(:user)
+
+    # Créer une notification pour chaque participant
+    participants.each do |match_user|
+      Notification.create!(
+        user: match_user.user,
+        actor: current_user,
+        message: message,
+        link: match_path(@match),
+        read: false
       )
     end
   end
