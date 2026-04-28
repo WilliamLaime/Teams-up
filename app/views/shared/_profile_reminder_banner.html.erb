@@ -8,20 +8,33 @@
 <div id="profile-reminder-banner" class="profile-reminder-banner">
   <div class="profile-reminder-banner__inner">
 
-    <%# Icône + message %>
+    <%# Icône + message — mentionne profil ET notifications pour maximiser l'action %>
     <div class="profile-reminder-banner__content">
       <i data-lucide="settings" style="width:18px;height:18px;color:#1EDD88;flex-shrink:0;"></i>
       <span>
-        <strong>Améliore tes suggestions de matchs !</strong>
-        Ajoute ta ville et tes lieux favoris pour trouver des matchs près de chez toi.
+        <strong>Ne rate plus aucun match !</strong>
+        Complète ton profil et active les alertes pour être le premier averti près de chez toi.
       </span>
     </div>
 
-    <%# Actions %>
+    <%# Actions : deux CTAs + fermeture %>
     <div class="profile-reminder-banner__actions">
+
       <%= link_to "Compléter mon profil",
                   edit_profil_path,
                   class: "profile-reminder-banner__cta" %>
+
+      <%# Bouton d'activation des notifications push — géré par push_notification_controller.js.
+          Compact et autonome : l'OS demande la permission au clic, le texte se met à jour. %>
+      <div data-controller="push-notification"
+           data-push-notification-vapid-key-value="<%= ENV['VAPID_PUBLIC_KEY'] %>">
+        <button class="profile-reminder-banner__cta profile-reminder-banner__cta--notif btn-push-inactive"
+                data-push-notification-target="button"
+                data-action="click->push-notification#subscribe">
+          <i data-lucide="bell" style="width:13px;height:13px;"></i>
+          Activer les alertes
+        </button>
+      </div>
 
       <%# Bouton de fermeture — DELETE /profil/dismiss_reminder via Turbo %>
       <%= button_to dismiss_reminder_profil_path,
@@ -31,6 +44,7 @@
                     data: { turbo_stream: true } do %>
         <i data-lucide="x" style="width:16px;height:16px;"></i>
       <% end %>
+
     </div>
 
   </div>

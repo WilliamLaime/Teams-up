@@ -66,6 +66,60 @@
   }
 }
 
+// Bloc "Activer les notifications" dans la modale d'onboarding
+// Séparé visuellement des bénéfices profil par une bordure top
+.onboarding-push-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--theme-border);
+
+  &__info {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  // Cercle vert autour de l'icône cloche — cohérent avec .onboarding-modal-icon
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background: rgba(30, 221, 136, 0.1);
+    border: 1px solid rgba(30, 221, 136, 0.25);
+    border-radius: 50%;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+    margin-bottom: 0.1rem;
+  }
+
+  // Phrase d'accroche — urgence et bénéfice, mise en avant avec la couleur primaire
+  &__hook {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $green;
+    margin-bottom: 0.15rem;
+  }
+
+  &__desc {
+    font-size: 0.775rem;
+    color: var(--theme-text-muted);
+    line-height: 1.4;
+  }
+}
+
 .onboarding-modal-footer {
   padding: 0 2rem 1.75rem;
 }
@@ -143,6 +197,29 @@
     color: #1EDD88;
     text-decoration: none;
   }
+
+  // Variante bouton (pas un lien) pour le déclencheur push — annule les styles Bootstrap btn
+  &--notif {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    cursor: pointer;
+
+    // Quand les notifs sont activées, on efface le bouton : l'user n'a rien à faire de plus
+    &.btn-push-active {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    // Quand les notifs sont bloquées, on indique l'impossibilité sans casser le layout
+    &.btn-push-blocked {
+      color: var(--theme-text-muted);
+      border-color: var(--theme-border);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+  }
 }
 
 .profile-reminder-banner__close {
@@ -178,5 +255,15 @@
 
   .profile-reminder-banner__content {
     font-size: 0.8rem;
+  }
+
+  // Sur mobile, le bloc notif passe en colonne pour éviter l'écrasement du bouton
+  .onboarding-push-block {
+    flex-direction: column;
+    align-items: flex-start;
+
+    .btn {
+      align-self: flex-end;
+    }
   }
 }
