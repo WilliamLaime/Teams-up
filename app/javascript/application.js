@@ -67,3 +67,17 @@ document.addEventListener("turbo:load", rerenderHcaptchaWidgets)
 // turbo:load ne se déclenche PAS dans ce cas, c'est pour ça que le widget
 // disparaissait après une erreur et ne réapparaissait qu'au rechargement complet.
 document.addEventListener("turbo:render", rerenderHcaptchaWidgets)
+
+// ── Dispose toutes les modales Bootstrap avant que Turbo remplace le body ──────
+//
+// Problème : Bootstrap garde un flag interne _isAppended=true. Si le body est
+// remplacé par Turbo sans dispose(), le backdrop ne se ré-insère plus lors de la
+// prochaine ouverture de modale.
+//
+// Solution : Dispose toutes les modales actives avant turbo:before-render
+document.addEventListener("turbo:before-render", () => {
+  document.querySelectorAll(".modal").forEach(el => {
+    const instance = bootstrap.Modal.getInstance(el)
+    if (instance) instance.dispose()
+  })
+})

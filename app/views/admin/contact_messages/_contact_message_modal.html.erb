@@ -87,3 +87,43 @@
     </div>
   </div>
 </div>
+
+<%# Modale de confirmation — suppression du message de contact %>
+<div class="modal fade" id="deleteModal-<%= msg.id %>" tabindex="-1"
+     aria-labelledby="deleteModalLabel-<%= msg.id %>" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:#1a1c1a; border:1px solid rgba(220,53,69,0.3); color:#f0f0f0;">
+
+      <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.07);">
+        <div class="d-flex align-items-center gap-2">
+          <i data-lucide="triangle-alert" style="width:18px; height:18px; color:#ff6b6b;"></i>
+          <h5 class="modal-title" id="deleteModalLabel-<%= msg.id %>"
+              style="font-size:1rem; font-weight:700; color:#ff6b6b; margin:0;">
+            Supprimer ce message
+          </h5>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <div class="modal-body" style="font-size:0.875rem; color:rgba(255,255,255,0.75);">
+        <p>Êtes-vous sûr de vouloir supprimer ce message de <strong style="color:#f0f0f0;"><%= msg.prenom %> <%= msg.nom %></strong> ?</p>
+        <p class="mb-0" style="color:#ff6b6b;">
+          <i data-lucide="circle-x" style="width:13px; height:13px; margin-right:4px; vertical-align:-2px;"></i>
+          Cette action est irréversible et ne peut pas être annulée.
+        </p>
+      </div>
+
+      <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.07);">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <%= button_to admin_contact_message_path(msg),
+                      method: :delete,
+                      class: "btn btn-sm",
+                      style: "background:#dc3545; color:#fff; border:none;" do %>
+          <i data-lucide="trash-2" style="width:12px; height:12px; margin-right:4px;"></i>
+          Confirmer la suppression
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</div>
