@@ -44,6 +44,41 @@
             <span>Tes <strong>salles et terrains favoris</strong> en priorité</span>
           </li>
         </ul>
+
+        <%# ── Bloc activation notifications push ─────────────────────────────────
+            Le controller Stimulus push-notification gère l'état du bouton en temps
+            réel : inactif → permission OS → actif (ou bloqué si l'user refuse).
+            La clé VAPID publique est injectée via data attribute côté serveur. %>
+        <div class="onboarding-push-block"
+             data-controller="push-notification"
+             data-push-notification-vapid-key-value="<%= ENV['VAPID_PUBLIC_KEY'] %>">
+
+          <div class="onboarding-push-block__info">
+            <%# Icône + texte explicatif %>
+            <div class="onboarding-push-block__icon">
+              <i data-lucide="bell" style="width:16px;height:16px;color:#1EDD88;"></i>
+            </div>
+            <div>
+              <div class="onboarding-push-block__title">Ne rate plus aucun match !</div>
+              <%# Accroche : urgence + bénéfice avant le texte technique %>
+              <div class="onboarding-push-block__hook">
+                Active les notifications et sois le premier averti !
+              </div>
+              <%# Cette zone est mise à jour dynamiquement par #setActive / #setBlocked %>
+              <div class="onboarding-push-block__desc" data-push-notification-target="status">
+                Une alerte instantanée dès qu'un match correspond à ton sport, ton niveau et ta ville.
+              </div>
+            </div>
+          </div>
+
+          <%# Bouton géré entièrement par push_notification_controller.js %>
+          <button class="btn btn-sm btn-push-inactive"
+                  data-push-notification-target="button"
+                  data-action="click->push-notification#subscribe">
+            Activer
+          </button>
+
+        </div>
       </div>
 
       <%# ── Pied : deux actions ──────────────────────────────────────────────── %>

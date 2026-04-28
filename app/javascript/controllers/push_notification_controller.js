@@ -115,7 +115,7 @@ export default class extends Controller {
       this.buttonTarget.classList.add("btn-push-active")
       this.buttonTarget.classList.remove("btn-push-inactive")
     }
-    if (this.hasStatusTarget) this.statusTarget.textContent = "✓ Vous recevrez des alertes pour les matchs correspondant à votre profil."
+    if (this.hasStatusTarget) this.statusTarget.textContent = "✓ Tu recevras des alertes pour les matchs correspondant à ton profil."
   }
 
   #setInactive() {
@@ -134,7 +134,7 @@ export default class extends Controller {
       this.buttonTarget.disabled     = true
       this.buttonTarget.classList.add("btn-push-blocked")
     }
-    if (this.hasStatusTarget) this.statusTarget.textContent = "Autorisez les notifications dans les paramètres de votre navigateur."
+    if (this.hasStatusTarget) this.statusTarget.textContent = "Autorise les notifications dans les paramètres de ton navigateur."
   }
 
   #setUnsupported() {
