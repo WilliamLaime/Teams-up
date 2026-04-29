@@ -1,0 +1,23 @@
+TEAMS-UP
+========
+
+Match modifié — <%= @match.title %>
+
+L'organisateur <%= @match.user.display_name %> a mis à jour votre match.
+
+Champs modifiés :
+<% @changes.each do |change| %>
+  • <%= change.capitalize %>
+<% end %>
+
+Détails actuels :
+  Date : <%= I18n.l(@match.date, format: :long) %><% if @match.time.present? %> à <%= @match.time.strftime("%Hh%M") %><% end %>
+<% if @match.venue.present? %>
+  Lieu : <%= @match.venue.name %>, <%= @match.venue.city %>
+<% end %>
+
+Consulter votre match :
+<%= match_url(@match) %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.
