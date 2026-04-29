@@ -101,7 +101,8 @@ Rails.application.configure do
     "teams-up-sport.fr",
     "www.teams-up-sport.fr",
     "www.teams-up.fit",
-    /.*\.herokuapp\.com/   # domaine Heroku natif (health checks, deploy checks)
+    /.*\.herokuapp\.com/,   # domaine Heroku natif (health checks, deploy checks)
+    /.*\.up\.railway\.app/  # domaine Railway
   ]
 
   # Le health check Heroku (/up) est appelé sans Host header parfois → on l'exclut
