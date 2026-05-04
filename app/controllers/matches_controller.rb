@@ -237,7 +237,7 @@ class MatchesController < ApplicationController
     # On sauvegarde les données actuelles pour détecter les changements pertinents.
     previous_values = {
       date: @match.date,
-      start_time: @match.start_time,
+      time: @match.time,
       venue_id: @match.venue_id,
       title: @match.title
     }
@@ -542,7 +542,7 @@ class MatchesController < ApplicationController
     # date, heure de début, lieu, et titre.
     changes = []
     changes << "la date" if previous_values[:date] != @match.date
-    changes << "l'heure" if previous_values[:start_time] != @match.start_time
+    changes << "l'heure" if previous_values[:time] != @match.time
     changes << "le lieu" if previous_values[:venue_id] != @match.venue_id
     changes << "le titre" if previous_values[:title] != @match.title
 
@@ -562,7 +562,7 @@ class MatchesController < ApplicationController
                          .where.not(user_id: @match.user_id)
                          .includes(:user)
 
-    # Créer une notification pour chaque participant
+    # Créer une notification pour chaque participant + envoyer email
     participants.each do |match_user|
       Notification.create!(
         user: match_user.user,
@@ -571,6 +571,9 @@ class MatchesController < ApplicationController
         link: match_path(@match),
         read: false
       )
+
+      # Envoi email asynchrone (SolidQueue) — ne bloque pas la requête
+      UserMailer.match_modified(@match, match_user.user, changes: changes).deliver_later
     end
   end
 end

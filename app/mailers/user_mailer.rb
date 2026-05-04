@@ -141,4 +141,22 @@ class UserMailer < ApplicationMailer
       subject: "⏰ Rappel — \"#{match.title}\" c'est demain !"
     )
   end
+
+  # ── 8. Le match a été modifié ─────────────────────────────────────────────
+  # Destinataire : chaque participant approuvé (hors organisateur)
+  # Déclenché    : matches#update via notify_participants_of_changes
+  #
+  # @param match   [Match]        le match modifié
+  # @param user    [User]         le participant à notifier
+  # @param changes [Array<String>] liste des champs modifiés ["la date", "l'heure", ...]
+  def match_modified(match, user, changes:)
+    @match   = match
+    @user    = user
+    @changes = changes  # ex: ["la date", "le lieu"]
+
+    mail(
+      to:      @user.email,
+      subject: "📋 Le match \"#{match.title}\" a été modifié"
+    )
+  end
 end
