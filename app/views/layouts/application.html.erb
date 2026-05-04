@@ -40,6 +40,13 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
+    <%# Sentry DSN passé au JS via meta tag — évite de l'écrire en dur dans le bundle.
+        Le SDK JS lit ce tag au démarrage et ne s'initialise que si le DSN est présent
+        (vide en dev/test, renseigné en production via variable d'environnement). %>
+    <% if ENV["SENTRY_DSN"].present? %>
+      <meta name="sentry-dsn" content="<%= ENV["SENTRY_DSN"] %>">
+    <% end %>
+
     <%= yield :head %>
 
     <%# ── PWA : manifeste + couleur de thème ──────────────────────────────── %>

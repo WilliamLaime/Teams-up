@@ -4,6 +4,24 @@ import "controllers"
 import "@popperjs/core"
 import * as bootstrap from "bootstrap"
 
+// ── Sentry Browser SDK — monitoring des erreurs JavaScript ───────────────────
+//
+// On lit le DSN depuis le meta tag injecté côté serveur (layout application.html.erb).
+// Cela évite d'écrire le DSN en dur dans le JS et reste compatible avec le CSP.
+// Sentry ne s'initialise que si le DSN est présent (= absent en dev/test).
+import * as Sentry from "@sentry/browser"
+
+const sentryDsn = document.querySelector("meta[name='sentry-dsn']")?.content
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    // browserTracingIntegration surveille les navigations Turbo et les requêtes fetch
+    integrations: [Sentry.browserTracingIntegration()],
+    // Echantillonne 20 % des transactions front (navigation, XHR) pour le perf monitoring
+    tracesSampleRate: 0.2,
+  })
+}
+
 // Ré-initialise les icônes Lucide après chaque mise à jour d'un turbo_frame ou turbo:render
 // (ex: le bouton ami se met à jour en live → les nouveaux <i data-lucide="..."> doivent être convertis en SVG)
 // RGAA 4.8 — masquer tous les SVG Lucide des lecteurs d'écran avec aria-hidden=true
