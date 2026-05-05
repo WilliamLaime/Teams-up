@@ -1,0 +1,66 @@
+<%# ── Email : décision sur une demande d'ami ──────────────────────────────── %>
+<%# Envoyé à l'expéditeur de la demande quand elle est acceptée ou refusée %>
+<%# Inline CSS obligatoire — les clients mail ignorent les feuilles de style externes %>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #111111; padding: 40px 20px; min-height: 100vh;">
+
+  <%# Carte centrale %>
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+
+    <%# En-tête logo %>
+    <div style="background-color: #111111; padding: 28px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <span style="font-size: 1.6rem; font-weight: 800; color: #f0f0f0; letter-spacing: -0.5px;">
+        TEAMS<span style="color: #1EDD88;">-UP</span>
+      </span>
+    </div>
+
+    <%# Corps %>
+    <div style="padding: 36px 40px;">
+
+      <%# Icône selon la décision %>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; background-color: <%= @accepted ? 'rgba(30, 221, 136, 0.12)' : 'rgba(253, 16, 21, 0.10)' %>; border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">
+          <%= @accepted ? '🎉' : '😔' %>
+        </div>
+      </div>
+
+      <%# Titre selon la décision %>
+      <h1 style="color: #f0f0f0; font-size: 1.4rem; font-weight: 700; text-align: center; margin: 0 0 8px 0;">
+        <% if @accepted %>
+          Demande d'ami acceptée !
+        <% else %>
+          Demande d'ami refusée
+        <% end %>
+      </h1>
+
+      <%# Message principal %>
+      <p style="color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.6; margin: 24px 0 28px 0; text-align: center;">
+        <strong style="color: #f0f0f0;"><%= @receiver.display_name %></strong>
+        <% if @accepted %>
+          a <strong style="color: #1EDD88;">accepté</strong> ta demande d'ami.
+          Vous pouvez maintenant vous retrouver dans des matchs ensemble !
+        <% else %>
+          n'a pas souhaité accepter ta demande d'ami pour le moment.
+        <% end %>
+      </p>
+
+      <%# Bouton CTA — uniquement si accepté, pour voir le profil du nouvel ami %>
+      <% if @accepted %>
+        <div style="text-align: center; margin-bottom: 28px;">
+          <%= link_to user_profil_url(@receiver),
+              style: "display: inline-block; background-color: #1EDD88; color: #111111; font-weight: 700; font-size: 1rem; padding: 14px 36px; border-radius: 50px; text-decoration: none; letter-spacing: 0.3px;" do %>
+            Voir son profil
+          <% end %>
+        </div>
+      <% end %>
+
+    </div>
+
+    <%# Pied de page %>
+    <div style="background-color: #111111; padding: 20px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 0;">
+        © <%= Date.today.year %> Teams-Up — Tous droits réservés.
+      </p>
+    </div>
+
+  </div>
+</div>

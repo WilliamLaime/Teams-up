@@ -126,6 +126,44 @@ class UserMailer < ApplicationMailer
     )
   end
 
+  # ── 8. Invitation à rejoindre une équipe ──────────────────────────────────
+  # Destinataire : l'invité (invitee)
+  # Déclenché    : team_invitations#create (invitation directe du captain)
+  #                team_invitations#review avec decision "approve" (proposition validée)
+  #
+  # @param invitation [TeamInvitation] l'invitation créée (contient team + inviter + invitee)
+  def team_invitation_received(invitation)
+    @invitation = invitation
+    @team       = invitation.team
+    @inviter    = invitation.inviter
+    @invitee    = invitation.invitee
+
+    mail(
+      to:      @invitee.email,
+      subject: "#{@inviter.display_name} t'invite à rejoindre l'équipe \"#{@team.name}\" !"
+    )
+  end
+
+  # ── 9. Décision sur une demande d'ami ─────────────────────────────────────
+  # Destinataire : l'expéditeur de la demande d'ami (user qui a initié)
+  # Déclenché    : friendships#accept (demande acceptée)
+  #                friendships#decline (demande refusée)
+  #
+  # @param sender   [User]    celui qui avait envoyé la demande
+  # @param receiver [User]    celui qui a pris la décision
+  # @param accepted [Boolean] true = acceptée, false = refusée
+  def friendship_decision(sender, receiver, accepted:)
+    @sender   = sender
+    @receiver = receiver
+    @accepted = accepted
+
+    subject = accepted \
+      ? "🎉 #{@receiver.display_name} a accepté ta demande d'ami !" \
+      : "#{@receiver.display_name} a refusé ta demande d'ami"
+
+    mail(to: @sender.email, subject: subject)
+  end
+
   # ── 7. Rappel 24h avant le match ──────────────────────────────────────────
   # Destinataire : un participant (méthode appelée une fois par participant)
   # Déclenché    : MatchReminderJob, planifié à la création du match
