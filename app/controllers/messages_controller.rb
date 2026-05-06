@@ -59,8 +59,8 @@ class MessagesController < ApplicationController
       )
 
       if @message.save
-        # Vérifier les achievements liés aux messages envoyés
-        AchievementService.new(current_user).check(:message_sent)
+        # ⚠️  GAMIF_PAUSED — désactivé temporairement
+        # AchievementService.new(current_user).check(:message_sent)
 
         # Met à jour last_read_at de l'expéditeur pour éviter le badge non-lu sur soi-même
         sender_mu = @match.match_users.find_by(user: current_user)

@@ -1,11 +1,6 @@
 <%# ── Page profil utilisateur ─────────────────────────────────────────────── %>
 
-<%# Abonnement temps réel à la barre XP — uniquement sur son propre profil
-    Quand l'XP change (achievement débloqué), Turbo Stream remplace la barre
-    et le badge de niveau sans recharger la page %>
-<% if current_user == @profil_user %>
-  <%= turbo_stream_from "profil_xp_#{@profil.user_id}" %>
-<% end %>
+<%# ⚠️  GAMIF_PAUSED — turbo_stream_from "profil_xp_..." retiré temporairement %>
 
 <%# Abonnement au stream du bouton ami — reçoit les mises à jour en temps réel
     quand la relation change (demande envoyée, acceptée, refusée, retirée) %>
@@ -21,7 +16,8 @@
 
 <%# data-controller ici = hors de tout transform CSS → position:fixed fonctionne %>
 <%# background-color géré par .profil-page dans _profil.scss (et _theme.scss en mode clair) %>
-<div class="profil-page" data-controller="achievement-modal" style="min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
+<%# ⚠️  GAMIF_PAUSED — data-controller achievement-modal retiré temporairement %>
+<div class="profil-page" style="min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
   <div class="container" style="position:relative; z-index:1;">
 
     <%# ── Lien retour ──────────────────────────────────────────────────────── %>
@@ -41,29 +37,19 @@
       <div class="col-lg-5">
 
 
-        <%# Sélection du PNG de card selon le tier du joueur %>
-        <%
-          # Sélection du SVG de card selon le tier du joueur
-          card_svg = case @profil.card_tier_class
-            when "card-tier-silver"   then "card_profil_svg/2.card-silver.svg"
-            when "card-tier-gold"     then "card_profil_svg/3.card_or.svg"
-            when "card-tier-platinum" then "card_profil_svg/4.card_epique.svg"
-            when "card-tier-elite"    then "card_profil_svg/5.card_legendaire.svg"
-            else                           "card_profil_svg/1.card_bronze.svg"
-          end
-        %>
+        <%# ⚠️  GAMIF_PAUSED — SVG de tier et classe card_tier commentés temporairement %>
+        <%# card_svg = case @profil.card_tier_class ... end %>
 
         <%# Wrapper relatif — data-controller ici pour cibler ornement + inner %>
         <div class="profil-card-wrapper mb-3" data-controller="flip-card">
 
-          <%# card_tier_class retourne "card-tier-bronze/silver/gold/platinum/elite" %>
-          <div class="profil-flip-card <%= @profil.card_tier_class %>">
+          <div class="profil-flip-card">
             <div class="profil-flip-inner" data-flip-card-target="inner">
 
               <%# ══════════ RECTO : Identité + XP + Sports + Stats + Description ══════════ %>
               <div class="profil-flip-front">
-                <%# Image SVG de la card — fond absolu derrière le contenu %>
-                <%= image_tag card_svg, class: "profil-card-frame", alt: "" %>
+                <%# ⚠️  GAMIF_PAUSED — cadre SVG ornemental retiré temporairement %>
+                <%#= image_tag card_svg, class: "profil-card-frame", alt: "" %>
                 <%# Wrapper de contenu — zoom pour réduire légèrement tout l'intérieur %>
                 <div class="profil-card-content">
 
@@ -137,8 +123,9 @@
                         avg   = @profil.average_rating.to_f
                         full  = avg.floor
                         empty = 5 - full
-                        badge_color     = @profil.level_badge_color
-                        profil_xp_level = @profil.xp_level || 1
+                        # ⚠️  GAMIF_PAUSED — variables badge XP désactivées
+                        # badge_color     = @profil.level_badge_color
+                        # profil_xp_level = @profil.xp_level || 1
                       %>
                       <% if @profil.avis_count.to_i > 0 %>
                         <%# Étoiles colorées selon la vraie moyenne %>
@@ -150,21 +137,15 @@
                         <span style="color:rgba(255,255,255,0.2); font-size:0.8rem;">★★★★★</span>
                         <span style="font-size:0.68rem; color:rgba(255,255,255,0.35);">Pas encore noté</span>
                       <% end %>
-                      <span style="color:rgba(255,255,255,0.25); font-size:0.75rem;">·</span>
-                      <%# id ciblé par broadcast pour mettre à jour le niveau en temps réel %>
-                      <span id="profil-level-badge-<%= @profil.id %>"
-                            class="badge bg-<%= badge_color %>"
-                            style="font-size:0.72rem; font-weight:800; padding:0.25rem 0.55rem; border-radius:999px;">
-                        Lvl <%= profil_xp_level %>
-                      </span>
+                      <%# ⚠️  GAMIF_PAUSED — séparateur · et badge "Lvl X" retirés temporairement %>
                     </div>
 
                   </div>
                 </div>
                 <%# / identité %>
 
-                <%# ── Barre XP compacte — rendue via partial pour mise à jour temps réel ── %>
-                <%= render "profils/xp_bar", profil: @profil, profil_user: @profil_user %>
+                <%# ⚠️  GAMIF_PAUSED — barre XP masquée temporairement %>
+                <%#= render "profils/xp_bar", profil: @profil, profil_user: @profil_user %>
 
                 <%# ── Sports pratiqués ──────────────────────────────────────────────── %>
                 <% user_sports = @profil_user.sports.order(:name) %>
@@ -250,13 +231,13 @@
                 </div>
                 <%# / description %>
 
-                <%# Bouton flip — à l'intérieur du contenu, aligné à droite sous la description %>
-                <div style="display:flex; justify-content:flex-end; margin-top:calc(0.5rem + 10px);">
-                  <button class="profil-flip-btn" data-action="click->flip-card#flip">
-                    <i data-lucide="trophy" style="width:11px; height:11px;"></i>
-                    Armoire à trophées
-                  </button>
-                </div>
+                <%# ⚠️  GAMIF_PAUSED — bouton flip "Armoire à trophées" masqué temporairement %>
+                <%# <div style="display:flex; justify-content:flex-end; margin-top:calc(0.5rem + 10px);"> %>
+                <%#   <button class="profil-flip-btn" data-action="click->flip-card#flip"> %>
+                <%#     <i data-lucide="trophy" style="width:11px; height:11px;"></i> %>
+                <%#     Armoire à trophées %>
+                <%#   </button> %>
+                <%# </div> %>
 
                 </div><%# / profil-card-content %>
 
@@ -264,45 +245,10 @@
               <%# / recto %>
 
 
-              <%# ══════════ VERSO : Armoire à trophées ══════════ %>
+              <%# ⚠️  GAMIF_PAUSED — verso "Armoire à trophées" entièrement masqué temporairement %>
+              <%# Les divs wrapper sont conservées pour ne pas casser le CSS flip-card %>
               <div class="profil-flip-back">
-                <%= image_tag card_svg, class: "profil-card-frame", alt: "" %>
-                <div class="profil-card-content">
-
-                <%# ── Titre ──────────────────────────────────────────────────── %>
-                <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
-                  <i data-lucide="trophy" style="width:14px; height:14px;"></i>
-                  Armoire à trophées
-                </div>
-
-                <%# Récupère tous les achievements et ceux déverrouillés %>
-                <%
-                  all_achievements = Achievement.order(:category, :xp_reward)
-                  unlocked_ids     = @profil_user.user_achievements.pluck(:achievement_id)
-                %>
-
-                <%# Grille — chaque badge déclenche achievement-modal#open via le helper %>
-                <div data-controller="achievement-tooltip" class="achievement-badge-grid">
-                  <% all_achievements.each do |achievement| %>
-                    <% is_unlocked = unlocked_ids.include?(achievement.id) %>
-                    <%= achievement_badge(achievement, is_unlocked: is_unlocked, size: 44) %>
-                  <% end %>
-                </div>
-
-                <%# Légende %>
-                <p style="font-size:0.62rem; color:rgba(255,255,255,0.22); margin-bottom:0;">
-                  Clique sur un badge pour l'inspecter.
-                </p>
-
-                <%# Bouton retour — même positionnement que le bouton recto %>
-                <div style="display:flex; justify-content:flex-end; margin-top:calc(0.5rem + 10px);">
-                  <button class="profil-flip-btn" data-action="click->flip-card#flip">
-                    <i data-lucide="rotate-ccw" style="width:11px; height:11px;"></i>
-                    Retour au profil
-                  </button>
-                </div>
-
-                </div><%# / profil-card-content %>
+                <%# GAMIF_PAUSED : contenu retiré — sera restauré lors de la réactivation de la gamification %>
               </div>
               <%# / verso %>
 
@@ -835,84 +781,8 @@
 
   </div><%# / container %>
 
-  <%# ══ MODAL achievement — EN DEHORS de tout transform CSS ════════════════ %>
-  <div class="achievement-modal-overlay"
-       data-achievement-modal-target="overlay"
-  >
-
-    <div class="achievement-modal-wrapper" data-achievement-modal-target="wrapper">
-
-      <button class="achievement-modal-close"
-              data-action="click->achievement-modal#close"
-              aria-label="Fermer">
-        <i data-lucide="x" style="width:18px;height:18px;"></i>
-      </button>
-
-      <p class="achievement-modal-hint">
-        <i data-lucide="move-horizontal" style="width:13px;height:13px;vertical-align:middle;"></i>
-        Attrape et fais glisser pour retourner
-      </p>
-
-      <div class="achievement-modal-flip-row">
-
-        <button class="achievement-modal-arrow"
-                data-action="click->achievement-modal#flipLeft"
-                aria-label="Retourner à gauche">
-          <i data-lucide="chevron-left" style="width:22px;height:22px;"></i>
-        </button>
-
-        <div class="achievement-modal-scene"
-             data-action="mousedown->achievement-modal#dragStart touchstart->achievement-modal#dragStart">
-
-          <div class="achievement-modal-card" data-achievement-modal-target="card">
-
-          <%# RECTO : gros emoji + reflet lumineux %>
-          <div class="achievement-modal-front">
-            <div class="achievement-modal-shine"
-                 data-achievement-modal-target="shine"></div>
-            <span class="achievement-modal-emoji"
-                  data-achievement-modal-target="emoji">🏅</span>
-          </div>
-
-          <%# VERSO : infos %>
-          <div class="achievement-modal-back">
-            <div class="achievement-modal-shine"
-                 data-achievement-modal-target="shine"></div>
-            <div class="achievement-modal-locked"
-                 data-achievement-modal-target="locked"
-                 style="display:none;">
-              <i data-lucide="lock" style="width:12px;height:12px;"></i>
-              Verrouillé
-            </div>
-            <div class="achievement-modal-unlocked"
-                 data-achievement-modal-target="unlocked"
-                 style="display:none;">
-              <i data-lucide="check-circle" style="width:12px;height:12px;"></i>
-              Déverrouillé
-            </div>
-            <span class="achievement-modal-back-emoji"
-                  data-achievement-modal-target="emoji">🏅</span>
-            <div class="achievement-modal-back-name"
-                 data-achievement-modal-target="name"></div>
-            <div class="achievement-modal-back-xp"
-                 data-achievement-modal-target="xp"></div>
-            <div class="achievement-modal-back-description"
-                 data-achievement-modal-target="description"></div>
-          </div>
-
-          </div><%# / card %>
-        </div><%# / scene %>
-
-        <button class="achievement-modal-arrow"
-                data-action="click->achievement-modal#flipRight"
-                aria-label="Retourner à droite">
-          <i data-lucide="chevron-right" style="width:22px;height:22px;"></i>
-        </button>
-
-      </div><%# / flip-row %>
-
-    </div><%# / wrapper %>
-  </div><%# / overlay %>
+  <%# ⚠️  GAMIF_PAUSED — modale achievement entièrement masquée temporairement %>
+  <%# Restaurer ce bloc lors de la réactivation de la gamification (grep GAMIF_PAUSED) %>
 
 </div><%# / profil-page %>
 

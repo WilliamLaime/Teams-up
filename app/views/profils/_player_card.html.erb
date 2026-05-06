@@ -10,14 +10,12 @@
 <%# La map sport_id => sport_profil permet d'accéder au niveau/rôle par sport %>
 <% sport_profils_map = profil.sport_profils.index_by(&:sport_id) %>
 
-<%# Tous les achievements et ceux débloqués par le joueur (pour le verso) %>
-<% all_achievements = Achievement.order(:category, :xp_reward) %>
-<% unlocked_ids     = profil_user.user_achievements.pluck(:achievement_id) %>
+<%# ⚠️  GAMIF_PAUSED — all_achievements + unlocked_ids retirés temporairement %>
 
 
 <%# ── 2. Thème CSS selon le rang du joueur ───────────────────────────────── %>
-<%# Thème dynamique selon le rang XP du joueur (bronze/silver/gold/platinum/emerald) %>
-<% theme_class = "theme-#{profil_user.rank}" %>
+<%# ⚠️  GAMIF_PAUSED — thème XP retiré temporairement %>
+<% theme_class = "" %>
 
 
 <%# ── 3. Préparer les données ───────────────────────────────────────────── %>
@@ -42,19 +40,7 @@
     <div class="player-card__face player-card__front">
       <div class="player-card__inner">
 
-        <%# Texte "TEAMS-UP" défilant discrètement en fond %>
-        <div class="player-card__marquee">
-          <div class="player-card__marquee-track">
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-          </div>
-        </div>
-
-        <%# Brouillard lumineux en bas %>
-        <div class="player-card__mist"></div>
+        <%# ⚠️  GAMIF_PAUSED — marquee TEAMS-UP et brouillard retirés temporairement %>
 
         <%# ── En-tête : avatar + nom + bouton modifier ── %>
         <div class="player-card__header">
@@ -186,72 +172,25 @@
           </p>
         </div>
 
-        <%# ── Bouton flip vers l'armoire à trophées ── %>
-        <div class="player-card__flip-btn-wrap">
-          <button class="player-card__flip-btn" data-action="click->flip-card#flip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-              <path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-            </svg>
-            Armoire à trophées
-          </button>
-        </div>
+        <%# ⚠️  GAMIF_PAUSED — bouton flip "Armoire à trophées" masqué temporairement %>
+        <%# <div class="player-card__flip-btn-wrap"> %>
+        <%#   <button class="player-card__flip-btn" data-action="click->flip-card#flip"> %>
+        <%#     Armoire à trophées %>
+        <%#   </button> %>
+        <%# </div> %>
 
       </div><%# / player-card__inner %>
     </div><%# / player-card__front %>
 
 
-    <%# ════════════════════════════════════════════════════════════ VERSO ══ %>
+    <%# ⚠️  GAMIF_PAUSED — verso "Armoire à trophées" masqué temporairement %>
+    <%# Les divs wrapper sont conservées pour ne pas casser le CSS flip-card %>
     <div class="player-card__face player-card__back">
       <div class="player-card__inner">
+      <%# GAMIF_PAUSED : contenu retiré — sera restauré lors de la réactivation %>
 
         <%# Texte "TEAMS-UP" en fond %>
-        <div class="player-card__marquee">
-          <div class="player-card__marquee-track">
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-            <span class="player-card__marquee-word">TEAMS-UP</span>
-          </div>
-        </div>
-
-        <div class="player-card__mist"></div>
-
-        <%# ── Titre ── %>
-        <div class="player-card__trophy-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
-            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-            <path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-          </svg>
-          Armoire à trophées
-        </div>
-
-        <%# ── Grille des badges ── %>
-        <div class="player-card__trophy-grid" data-controller="achievement-tooltip">
-          <% all_achievements.each do |achievement| %>
-            <% is_unlocked = unlocked_ids.include?(achievement.id) %>
-            <%= achievement_badge(achievement, is_unlocked: is_unlocked, size: 40) %>
-          <% end %>
-        </div>
-
-        <p class="player-card__trophy-hint">Clique sur un badge pour l'inspecter.</p>
-
-        <%# ── Bouton retour vers le recto ── %>
-        <div class="player-card__flip-btn-wrap">
-          <button class="player-card__flip-btn" data-action="click->flip-card#flip">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;">
-              <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
-            </svg>
-            Retour au profil
-          </button>
-        </div>
-
-      </div><%# / player-card__inner %>
+      </div><%# / player-card__inner — GAMIF_PAUSED : contenu vide temporairement %>
     </div><%# / player-card__back %>
 
   </div><%# / player-card__flip-inner %>

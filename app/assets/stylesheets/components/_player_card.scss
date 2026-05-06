@@ -4,7 +4,7 @@
 // =============================================
 
 .player-card {
-  // Variables de thème par défaut (bronze)
+  /* ⚠️  GAMIF_PAUSED — variables de thème XP commentées temporairement
   --c1: #1c0e06;
   --c2: #c87028;
   --c-mid: #2a1608;
@@ -15,6 +15,11 @@
   --c-mist: rgba(180, 100, 40, 0.4);
   --c-accent: #d08040;
   --c-star: #c07030;
+  */
+
+  // Valeurs neutres pendant la pause gamification
+  --c-accent: rgba(255,255,255,0.6);
+  --c-star:   rgba(255,255,255,0.4);
 
   position: relative;
   width: 100%;
@@ -23,26 +28,32 @@
   border-radius: 0px 2rem;
   padding: 2px;
 
-  // Bordure dégradée selon le thème
+  /* ⚠️  GAMIF_PAUSED — bordure dégradée et halo pulsant commentés temporairement
   background-image:
     radial-gradient(#1a1a1acc, #121212ee),
     linear-gradient(35deg, var(--c1) 62%, var(--c2) 100%);
   background-origin: border-box;
   background-clip: content-box, border-box;
-
   box-shadow: 0 0 2rem var(--c-glow);
-  transition: transform 0.5s ease, box-shadow 0.5s ease;
-  cursor: pointer;
   animation: pulse_bronze 3s infinite;
+  */
+
+  // Bordure et ombre neutres pendant la pause
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+
+  transition: transform 0.5s ease;
+  cursor: pointer;
 
   &:hover {
-    // Le hover ne s'applique pas quand la card est en train de flip
+    /* ⚠️  GAMIF_PAUSED — box-shadow hover commenté temporairement
     box-shadow: 0 8px 3rem var(--c-glow);
+    */
   }
 
-  // ----- THÈMES -----
+  // ----- THÈMES ----- ⚠️  GAMIF_PAUSED — tous les thèmes XP commentés temporairement
 
-  &.theme-bronze {
+  /* &.theme-bronze {
     --c1: #1c0e06; --c2: #c87028; --c-mid: #2a1608;
     --c-glow: #a85c18; --c-logo1: #7a3a10; --c-logo2: #d89050;
     --c-logo3: #b06020; --c-mist: rgba(180, 100, 40, 0.4);
@@ -80,7 +91,7 @@
     --c-logo3: #1ccc5d; --c-mist: rgba(87, 255, 149, 0.4);
     --c-accent: #57ff95; --c-star: #57ff95;
     animation: pulse_emerald 3s infinite;
-  }
+  } */
 }
 
 // Fond intérieur de la card
@@ -157,12 +168,13 @@
 }
 
 // Anneau conic animé autour de l'avatar
+// ⚠️  GAMIF_PAUSED — anneau tournant commenté temporairement
 .player-card__avatar-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: conic-gradient(var(--c2) 0%, transparent 55%, var(--c2) 100%);
-  animation: spin_ring 3s linear infinite;
+  /* background: conic-gradient(var(--c2) 0%, transparent 55%, var(--c2) 100%);
+  animation: spin_ring 3s linear infinite; */
 }
 
 // Avatar
@@ -629,6 +641,7 @@
 // ANIMATIONS
 // =============================================
 
+/* ⚠️  GAMIF_PAUSED — animations de halo pulsant commentées temporairement
 @keyframes pulse_bronze {
   0%, 100% { box-shadow: 0 0 1.5rem #a85c1866; }
   70%       { box-shadow: 0 0 3rem #c8702899; }
@@ -648,4 +661,4 @@
 @keyframes pulse_emerald {
   0%, 100% { box-shadow: 0 0 1.5rem #57ff9566; }
   70%       { box-shadow: 0 0 3rem #57ff9599; }
-}
+} */
