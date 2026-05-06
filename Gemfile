@@ -63,6 +63,10 @@ gem "valid_email2" # Validation format + existence MX record des emails
 gem "csv"
 gem "web-push" # Envoi de notifications push navigateur (PWA) via protocole Web Push + VAPID
 
+# Monitoring des erreurs en production — capture exceptions Rails, jobs SolidQueue et JS front
+gem "sentry-ruby"
+gem "sentry-rails"
+
 # SEO — gestion centralisée des balises <title>, <meta description>, OpenGraph, Twitter Card
 gem "meta-tags"
 # SEO — génération automatique du sitemap.xml pour les moteurs de recherche

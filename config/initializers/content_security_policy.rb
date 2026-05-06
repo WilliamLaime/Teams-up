@@ -19,8 +19,10 @@ Rails.application.configure do
     # Scripts : notre serveur + scripts inline (Stimulus/Turbo en ont besoin)
     # + unpkg.com pour la librairie d'icônes Lucide utilisée dans les vues
     # + hcaptcha.com et newassets.hcaptcha.com pour le widget captcha
+    # + cdn.jsdelivr.net pour le SDK Sentry Browser (chargé via importmap)
     policy.script_src :self, :unsafe_inline, "https://unpkg.com",
-                      "https://hcaptcha.com", "https://newassets.hcaptcha.com"
+                      "https://hcaptcha.com", "https://newassets.hcaptcha.com",
+                      "https://cdn.jsdelivr.net"
 
     # Styles : notre serveur + styles inline (Bootstrap en a besoin)
     # + Google Fonts pour charger les polices Nunito et Bebas Neue
@@ -45,9 +47,11 @@ Rails.application.configure do
     policy.connect_src :self,
                        "https://accounts.google.com",
                        "https://oauth2.googleapis.com",
-                       "https://unpkg.com",                   # source maps de Lucide (icônes)
-                       "https://nominatim.openstreetmap.org", # recherche de lieux (création de match)
-                       "https://hcaptcha.com"                 # vérification captcha
+                       "https://unpkg.com",                        # source maps de Lucide (icônes)
+                       "https://nominatim.openstreetmap.org",      # recherche de lieux (création de match)
+                       "https://hcaptcha.com",                     # vérification captcha
+                       "https://*.ingest.de.sentry.io",            # envoi des erreurs JS à Sentry (région EU)
+                       "https://cdn.jsdelivr.net"                  # chargement du SDK Sentry via importmap
 
     # Frames : Google OAuth + Google Maps (carte intégrée dans les pages de match)
     # + newassets.hcaptcha.com pour le challenge hcaptcha (affiché dans une iframe)
