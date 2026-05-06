@@ -195,8 +195,8 @@ class MatchesController < ApplicationController
       # Ils devront confirmer leur participation depuis la page du match
       invite_team_members if @match.team
 
-      # 🎮 Vérifier les achievements liés à la création de match
-      AchievementService.new(current_user).check(:match_created)
+      # ⚠️  GAMIF_PAUSED — désactivé temporairement
+      # AchievementService.new(current_user).check(:match_created)
 
       # Email de confirmation avec récapitulatif du match pour l'organisateur
       UserMailer.match_created(@match).deliver_later
