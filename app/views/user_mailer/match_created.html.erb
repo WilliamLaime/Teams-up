@@ -47,7 +47,7 @@
           <tr>
             <td style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px 0; width: 36%;">📅 Date</td>
             <td style="color: #f0f0f0; font-size: 0.85rem; padding: 5px 0;">
-              <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+              <%= I18n.l(@match.date, format: :long) %><% if @match.time.present? %> à <%= @match.time.strftime("%Hh%M") %><% end %>
             </td>
           </tr>
           <% if @match.venue.present? %>

@@ -6,7 +6,7 @@ TEAMS-UP
 Prépare tes affaires, le match approche !
 
 Infos du match :
-  Quand  : <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+  Quand  : <%= I18n.l(@match.date, format: :long) %><% if @match.time.present? %> à <%= @match.time.strftime("%Hh%M") %><% end %>
 <% if @match.venue.present? %>
   Où     : <%= @match.venue.name %>, <%= @match.venue.address %>, <%= @match.venue.city %>
 <% elsif @match.place.present? %>
