@@ -4,11 +4,10 @@
 # quelles sources de contenu sont autorisées. Elle protège contre les attaques XSS
 # (injection de scripts malveillants).
 #
-# MODE ACTUEL : report_only = true
-# En mode "report only", les violations sont signalées dans la console du navigateur
-# MAIS le contenu n'est PAS bloqué. C'est idéal pour tester sans risquer de casser
-# le site. Une fois que tu as vérifié qu'il n'y a plus de violations dans la console,
-# tu pourras passer report_only à false pour enforcer la politique.
+# MODE ACTUEL : report_only = false → CSP ACTIVE EN PRODUCTION
+# La politique est appliquée : toute ressource non autorisée ci-dessous sera bloquée.
+# Si tu constates des régressions, repasse temporairement report_only à true,
+# ajoute la source manquante dans les règles ci-dessous, puis repasse à false.
 
 Rails.application.configure do
   config.content_security_policy do |policy|
@@ -67,12 +66,8 @@ Rails.application.configure do
   end
 
   # -----------------------------------------------------------------------
-  # IMPORTANT : mode "report only" activé
-  #
-  # En mode report_only, la politique est signalée mais PAS appliquée.
-  # Ouvre la console de ton navigateur (F12 > Console) et navigue dans le site.
-  # Si tu vois des erreurs CSP → ajuste les règles ci-dessus.
-  # Quand la console est propre → passe cette ligne à false pour activer la CSP.
+  # false = CSP activée et appliquée (bloque les violations)
+  # true  = mode "report only" (signale sans bloquer — utile pour déboguer)
   # -----------------------------------------------------------------------
   config.content_security_policy_report_only = false
 end
