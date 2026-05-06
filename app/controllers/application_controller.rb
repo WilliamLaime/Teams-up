@@ -103,13 +103,17 @@ class ApplicationController < ActionController::Base
         # :title et :description font référence aux valeurs définies ci-dessus
         title:       :title,
         description: :description,
-        url:         -> { request.original_url }
+        url:         -> { request.original_url },
+        # Image affichée lors du partage sur Facebook, WhatsApp, LinkedIn, etc.
+        image:       -> { helpers.asset_url("logo_teams-up_logo_vert.png") }
       },
       # ── Twitter Card (partage sur X/Twitter) ──
       twitter: {
         card:        "summary",
         title:       :title,
-        description: :description
+        description: :description,
+        # Image affichée dans les aperçus Twitter/X
+        image:       -> { helpers.asset_url("logo_teams-up_logo_vert.png") }
       },
       # ── Canonical URL ──────────────────────────────────────────────────────
       # Pointe toujours vers l'URL propre sans query string.
