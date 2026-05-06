@@ -84,12 +84,15 @@ class FriendshipsController < ApplicationController
     broadcast_friends_list_update(current_user) # la liste de B ajoute A en direct
     broadcast_friends_list_update(@sender)       # la liste de A ajoute B en direct
 
-    # Notifie l'expéditeur que sa demande a été acceptée
+    # Notifie l'expéditeur via notification in-app que sa demande a été acceptée
     Notification.create(
       user: @sender,
       message: "🎉 #{current_user.display_name} a accepté votre demande d'ami !",
       link: user_profil_path(current_user)
     )
+
+    # Envoie un email à l'expéditeur pour qu'il soit notifié même s'il n'est pas connecté
+    UserMailer.friendship_decision(@sender, current_user, accepted: true).deliver_later
 
     redirect_back fallback_location: profil_path,
                   notice: "Vous êtes maintenant amis avec #{@sender.display_name} !"
@@ -121,6 +124,9 @@ class FriendshipsController < ApplicationController
     # Met à jour le bouton ami en temps réel pour les deux côtés
     broadcast_friend_button_update(current_user, @sender) # B voit profil A : passe à "Ajouter"
     broadcast_friend_button_update(@sender, current_user) # A voit profil B : passe à "Ajouter"
+
+    # Envoie un email à l'expéditeur pour l'informer du refus (même s'il n'est pas connecté)
+    UserMailer.friendship_decision(@sender, current_user, accepted: false).deliver_later
 
     redirect_back fallback_location: profil_path,
                   notice: "Demande d'ami refusée."

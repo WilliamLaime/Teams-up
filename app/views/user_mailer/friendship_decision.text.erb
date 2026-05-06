@@ -1,0 +1,18 @@
+TEAMS-UP
+========
+
+<% if @accepted %>
+Demande d'ami acceptée !
+
+<%= @receiver.display_name %> a accepté ta demande d'ami.
+Vous pouvez maintenant vous retrouver dans des matchs ensemble !
+
+Voir son profil : <%= user_profil_url(@receiver) %>
+<% else %>
+Demande d'ami refusée
+
+<%= @receiver.display_name %> n'a pas souhaité accepter ta demande d'ami pour le moment.
+<% end %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

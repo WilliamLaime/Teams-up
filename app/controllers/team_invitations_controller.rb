@@ -56,13 +56,17 @@ class TeamInvitationsController < ApplicationController
     authorize @invitation
 
     if @invitation.save
-      # Notifie l'invité
+      # Notifie l'invité via notification in-app
       Notification.create(
         user:    invitee,
         actor:   current_user,
         message: "#{current_user.profil&.first_name} t'a invité à rejoindre l'équipe \"#{@team.name}\".",
         link:    team_path(@team)
       )
+
+      # Envoie un email à l'invité pour qu'il ne rate pas l'invitation s'il n'est pas connecté
+      UserMailer.team_invitation_received(@invitation).deliver_later
+
       redirect_to @team, notice: "Invitation envoyée à #{invitee.profil&.first_name} !"
     else
       redirect_to @team, alert: @invitation.errors.full_messages.to_sentence
@@ -138,12 +142,18 @@ class TeamInvitationsController < ApplicationController
     when "approve"
       # Transforme la proposition en vraie invitation pending → l'invité reçoit la notif
       @invitation.update!(status: "pending", proposed_by: @invitation.proposed_by)
+
+      # Notifie l'invité via notification in-app
       Notification.create(
         user:    @invitation.invitee,
         actor:   current_user,
         message: "#{current_user.profil&.first_name} t'a invité à rejoindre l'équipe \"#{@team.name}\".",
         link:    team_path(@team)
       )
+
+      # Envoie un email à l'invité (proposition validée par le captain = invitation officielle)
+      UserMailer.team_invitation_received(@invitation).deliver_later
+
       redirect_to @team, notice: "Invitation envoyée à #{@invitation.invitee.profil&.first_name} !"
     when "decline"
       @invitation.destroy
