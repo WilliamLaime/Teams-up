@@ -93,7 +93,8 @@ body {
 // IMPORTANT : "clip" sur le body coupe les débordements SANS créer de scroll container,
 // ce qui préserve position:sticky ET permet aux enfants (table-responsive) de scroller
 // horizontalement via leur propre overflow-x: auto.
-// On n'applique PAS overflow-x: hidden sur html car ça bloque les scroll containers enfants.
+// On n'applique PAS overflow-x: clip sur html car ça crée un clip container qui affecte
+// les éléments positionnés (fixed/absolute), cassant les icônes Lucide et autres overlays.
 body {
   overflow-x: clip;
 }

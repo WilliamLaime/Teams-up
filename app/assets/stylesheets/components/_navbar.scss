@@ -20,6 +20,18 @@
   align-items: center;
   gap: 4rem; // Espace équivalent entre chaque section majeure
   flex-wrap: nowrap; // Empêche le retour à la ligne hérité de Bootstrap pour garder logo + icônes sur une seule ligne
+
+  // À 992px-1199px (lg) : réduire le gap pour éviter l'overflow du contenu navbar
+  // Container Bootstrap lg = 960px max-width
+  // Logo (~150px) + liens (~400px) + icônes (~290px sans pill) + gaps réduits doivent tenir
+  @media (min-width: 992px) and (max-width: 1199.98px) {
+    gap: 1rem;
+
+    // Logo légèrement réduit à lg pour laisser plus de place
+    .navbar-brand .navbar-logo {
+      height: 16px;
+    }
+  }
 }
 
 .navbar-dark-custom .navbar-brand {
@@ -51,9 +63,9 @@
   align-items: center;
   padding: 0;
 
-  // Taille desktop (≥ 992px) — réduit de 15%
+  // Taille desktop (≥ 992px) — réduit de 20%
   .navbar-logo {
-    height: 26px;
+    height: 21px;
     width: auto;
     display: block; // Force le SVG à respecter le viewBox (fix WebKit/Safari)
   }
@@ -77,6 +89,12 @@
   padding: 0.4rem 0.75rem !important;
   border-radius: 6px;
   transition: color 0.2s;
+
+  // À lg (992-1199px) : légère réduction pour gagner de la place
+  @media (min-width: 992px) and (max-width: 1199.98px) {
+    font-size: calc(0.9rem - 2px);
+    padding: 0.4rem 0.5rem !important; // paddings latéraux réduits aussi
+  }
 
   &:hover {
     color: var(--theme-text-nav-hover) !important;
@@ -136,8 +154,16 @@
     color: $green;
   }
 
+  // À lg (992-1199px) : masquer le label texte, garder uniquement l'icône
+  @media (min-width: 992px) and (max-width: 1199.98px) {
+    .nav-pwa-label {
+      display: none !important;
+    }
+  }
+
   // Desktop : apparence bouton pill vert (reste vert dans les deux thèmes)
-  @media (min-width: 992px) {
+  // À partir de 1200px (xl) uniquement pour éviter overflow à 992-1199px
+  @media (min-width: 1200px) {
     background-color: #1EDD88;
     color: #111111;
     border-radius: 8px;
@@ -478,18 +504,18 @@ body.modal-open {
   padding-right: 0 !important;
 }
 
-// ── Taille du logo : tablette (768px – 991px) ────────────────────────────────
+// ── Taille du logo : tablette (768px – 991px) — réduit de 20% ────────────────────────────────
 @media (min-width: 768px) and (max-width: 991.98px) {
   .navbar-dark-custom .navbar-brand .navbar-logo {
-    height: 34px;
+    height: 18px;
     width: auto; // Fix WebKit : forcer le SVG à utiliser le viewBox
   }
 }
 
-// ── Taille du logo : mobile (< 768px) ────────────────────────────────────────
+// ── Taille du logo : mobile (< 768px) — réduit de 20% ────────────────────────────────────────
 @media (max-width: 767.98px) {
   .navbar-dark-custom .navbar-brand .navbar-logo {
-    height: 14px;
+    height: 12px;
     width: auto; // Fix WebKit : forcer le SVG à utiliser le viewBox
   }
 }
