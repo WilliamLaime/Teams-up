@@ -14,6 +14,32 @@
   transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 
+// Équilibre les espaces entre logo, liens, et actions droite
+.navbar-dark-custom > .container {
+  display: flex;
+  align-items: center;
+  gap: 4rem; // Espace équivalent entre chaque section majeure
+}
+
+.navbar-dark-custom .navbar-brand {
+  flex: 0 0 auto; // Ne pas grandir, taille fixe du logo
+  margin-right: 0;
+}
+
+.navbar-dark-custom .navbar-nav.mx-auto {
+  flex: 1 0 auto; // Prend l'espace central disponible
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  justify-content: center; // Centre les liens au milieu de cet espace
+}
+
+.navbar-dark-custom > .container > .d-flex.gap-2,
+.navbar-dark-custom > .container > .d-flex.gap-lg-3 {
+  flex: 0 0 auto; // Ne pas grandir, taille au contenu
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 // Logo image dans la navbar
 .navbar-dark-custom .navbar-brand {
   display: flex;
@@ -22,8 +48,18 @@
 
   // Taille desktop
   .navbar-logo {
-    height: 28px;
+    height: 30px;
     width: auto;
+  }
+
+  // Par défaut (mode sombre) : logo blanc visible, logo noir caché
+  .navbar-logo--dark { display: none; }
+  .navbar-logo--white { display: block; }
+
+  // Mode clair : on inverse — logo noir visible, logo blanc caché
+  [data-theme="light"] & {
+    .navbar-logo--white { display: none; }
+    .navbar-logo--dark { display: block; }
   }
 }
 
@@ -454,7 +490,7 @@ body.modal-open {
 
   // Logo réduit sur mobile — sans inline style bloquant
   .navbar-dark-custom .navbar-brand .navbar-logo {
-    height: 18px;
+    height: 45px;
   }
 }
 
