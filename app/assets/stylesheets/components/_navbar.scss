@@ -19,6 +19,7 @@
   display: flex;
   align-items: center;
   gap: 4rem; // Espace équivalent entre chaque section majeure
+  flex-wrap: nowrap; // Empêche le retour à la ligne hérité de Bootstrap pour garder logo + icônes sur une seule ligne
 }
 
 .navbar-dark-custom .navbar-brand {
@@ -36,8 +37,12 @@
 .navbar-dark-custom > .container > .d-flex.gap-2,
 .navbar-dark-custom > .container > .d-flex.gap-lg-3 {
   flex: 0 0 auto; // Ne pas grandir, taille au contenu
-  margin-left: 0 !important;
   margin-right: 0 !important;
+  // Sur desktop uniquement : annule le ms-auto (les liens prennent l'espace central)
+  @media (min-width: 992px) {
+    margin-left: 0 !important;
+  }
+  // Sur tablette/mobile : ms-auto de Bootstrap est préservé → icônes poussées à droite
 }
 
 // Logo image dans la navbar
@@ -46,10 +51,11 @@
   align-items: center;
   padding: 0;
 
-  // Taille desktop
+  // Taille desktop (≥ 992px) — réduit de 15%
   .navbar-logo {
-    height: 30px;
+    height: 26px;
     width: auto;
+    display: block; // Force le SVG à respecter le viewBox (fix WebKit/Safari)
   }
 
   // Par défaut (mode sombre) : logo blanc visible, logo noir caché
@@ -472,12 +478,29 @@ body.modal-open {
   padding-right: 0 !important;
 }
 
+// ── Taille du logo : tablette (768px – 991px) ────────────────────────────────
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .navbar-dark-custom .navbar-brand .navbar-logo {
+    height: 34px;
+    width: auto; // Fix WebKit : forcer le SVG à utiliser le viewBox
+  }
+}
+
+// ── Taille du logo : mobile (< 768px) ────────────────────────────────────────
+@media (max-width: 767.98px) {
+  .navbar-dark-custom .navbar-brand .navbar-logo {
+    height: 14px;
+    width: auto; // Fix WebKit : forcer le SVG à utiliser le viewBox
+  }
+}
+
 // ── Alignement mobile : logo + cloche + avatar sur la même ligne ───────────
 @media (max-width: 991.98px) {
   // Force l'alignement vertical centré sur tous les éléments du container
   .navbar-dark-custom > .container {
     align-items: center;
     display: flex;
+    gap: 0.5rem; // Réduit de 4rem à 0.5rem sur tablette/mobile pour éviter débordement
   }
 
   // Supprime les paddings Bootstrap du brand qui décalent l'alignement
@@ -488,10 +511,7 @@ body.modal-open {
     align-items: center;
   }
 
-  // Logo réduit sur mobile — sans inline style bloquant
-  .navbar-dark-custom .navbar-brand .navbar-logo {
-    height: 45px;
-  }
+  // Les tailles du logo (tablette/mobile) sont gérées par les media queries dédiées ci-dessus
 }
 
 // ── Bande sous la navbar (mobile uniquement, d-lg-none) ────────────────────
