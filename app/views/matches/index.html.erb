@@ -64,6 +64,8 @@
           <%# Date %>
           <div class="filter-pill-group">
             <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+            <%# RGAA 11.1 — label visible uniquement pour les lecteurs d'écran %>
+            <label class="visually-hidden" for="date">Date du match</label>
             <%= f.date_field :date,
                 value: params[:date],
                 min: Date.today,
@@ -228,6 +230,8 @@
           <%# position:relative nécessaire pour positionner le dropdown absolu dans ce bloc %>
           <div class="filter-pill-group" data-controller="city-search" style="position:relative;">
             <i data-lucide="map-pin" style="width:14px;height:14px; flex-shrink:0;"></i>
+            <%# RGAA 11.1 — label visible uniquement pour les lecteurs d'écran %>
+            <label class="visually-hidden" for="place">Ville</label>
             <%# Pré-rempli avec la ville du préfiltre profil si aucun filtre URL actif %>
             <%= f.text_field :place,
                 value: params[:place].presence || (@active_prefilters&.dig(:city) ? @prefilter_params[:city] : nil),
@@ -270,6 +274,8 @@
           <%# Barre de recherche texte libre %>
           <div class="filter-search-wrap">
             <i data-lucide="search" style="width:15px;height:15px;" class="filter-search-icon"></i>
+            <%# RGAA 11.1 — label visible uniquement pour les lecteurs d'écran %>
+            <label class="visually-hidden" for="query">Rechercher un match</label>
             <%= f.text_field :query,
                 value: params[:query],
                 placeholder: "Rechercher un match...",

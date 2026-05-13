@@ -139,9 +139,12 @@
       ══════════════════════════════════════════════ %>
   <section class="a2-section a2-section--img-5">
 
+    <%# RGAA 9.2 — titre de section accessible mais invisible visuellement %>
+    <h2 class="visually-hidden">Nos valeurs</h2>
+
     <div class="a2-section-inner text-center mx-auto" style="max-width: 90vw;">
       <%# SVG texte section 5 %>
-      <%= image_tag "img_qsn/texte_qsn_5.svg", alt: "", class: "a2-hero-svg" %>
+      <%= image_tag "img_qsn/texte_qsn_5.svg", alt: "", class: "a2-hero-svg", loading: "lazy" %>
     </div>
 
     <div class="a2-arrow">
