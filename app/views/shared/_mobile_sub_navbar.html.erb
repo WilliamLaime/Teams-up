@@ -25,7 +25,9 @@
                   aria-label="Sport actif : <%= multisport_mode? ? 'Multisport' : (current_sport&.name || 'Sport') %>. Changer de sport">
             <% if multisport_mode? %>
               <%# Icône multisport %>
+              <%# RGAA 1.1 : alt="" car icône décorative (le nom du sport est dans le <span> suivant) %>
               <%= image_tag sport_misc_image(:multisports),
+                  alt: "",
                   style: "width:1rem;height:1rem;object-fit:contain;" %>
             <% elsif current_sport %>
               <%= sport_icon(current_sport, size: "1rem") %>
@@ -40,10 +42,12 @@
 
             <%# Barre de recherche %>
             <li class="px-2 pb-1" data-action="click->sport-search#stopPropagation">
+              <%# RGAA 11.1 : aria-label car le label est visually intégré au placeholder %>
               <input
                 type="text"
                 class="form-control form-control-sm sport-search-input"
                 placeholder="Rechercher un sport..."
+                aria-label="Rechercher un sport"
                 data-sport-search-target="input"
                 data-action="input->sport-search#filter"
                 autocomplete="off"
@@ -58,7 +62,8 @@
                   method: :post,
                   class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
                   form: { "data-turbo": "false" } do %>
-                <%= image_tag sport_misc_image(:multisports), style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
+                <%# RGAA 1.1 : alt="" car "Multisport" est dans le <span> adjacent %>
+                <%= image_tag sport_misc_image(:multisports), alt: "", style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
                 <span>Multisport</span>
                 <% if multisport_mode? %>
                   <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>

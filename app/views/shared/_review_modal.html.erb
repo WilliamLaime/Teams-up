@@ -20,10 +20,11 @@
       <div class="modal-header" style="border-bottom:1px solid var(--theme-border); padding:1.25rem 1.5rem;">
         <div style="flex:1;">
           <div style="display:flex; align-items:center; justify-content:space-between;">
-            <h5 style="color:var(--theme-text-strong); font-size:1rem; font-weight:700; margin:0;">
+            <%# RGAA 9.1 : h3 dans la modale — évite le saut h1→h2→h5 %>
+            <h3 style="color:var(--theme-text-strong); font-size:1rem; font-weight:700; margin:0;">
               <i data-lucide="star" style="width:16px; height:16px; color:#1EDD88; display:inline; vertical-align:middle; margin-right:0.4rem;"></i>
               Notez vos coéquipiers
-            </h5>
+            </h3>
             <%# Indicateur "1 / 3" mis à jour par JS (data-step-indicator) %>
             <% total_matches = pending_review_matches.count %>
             <span data-step-indicator
@@ -41,9 +42,10 @@
             </span>
           </p>
         </div>
-        <%# Bouton fermer (croix) %>
+        <%# Bouton fermer (croix) — RGAA 11.9 : aria-label obligatoire sur btn-close sans texte visible %>
         <button type="button"
                 class="btn-close btn-close-white ms-3"
+                aria-label="Fermer la fenêtre de notation"
                 data-action="click->review-modal#dismiss"
                 style="opacity:0.5;">
         </button>
@@ -73,9 +75,11 @@
                 <%# Identité du joueur %>
                 <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.75rem;">
                   <% if player.profil&.avatar&.attached? %>
+                    <%# RGESN 6.6 : lazy car la modale est masquée au chargement initial %>
                     <%= image_tag player.profil.avatar,
                         style: "width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0;",
-                        alt: player.display_name %>
+                        alt: player.display_name,
+                        loading: "lazy" %>
                   <% else %>
                     <%# Avatar initiale : fond et texte selon le thème %>
                     <div style="width:38px; height:38px; border-radius:50%; background:var(--theme-hover-bg); display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:800; color:var(--theme-text-muted); flex-shrink:0;">

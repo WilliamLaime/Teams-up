@@ -65,6 +65,19 @@
       }
     <% end %>
 
+    <%# ── RGESN 4.11 — Respect de la préférence système de l'OS (prefers-color-scheme) ──────────
+        Pour les visiteurs non-connectés, data-theme est toujours "dark" (valeur par défaut serveur).
+        Ce script inline, exécuté AVANT le CSS, lit la préférence OS et bascule data-theme="light"
+        si l'OS est en mode clair — sans flash de thème. Les utilisateurs connectés ont leur thème
+        géré côté serveur via current_user.profil.theme (ce script ne s'applique pas à eux). %>
+    <% unless user_signed_in? %>
+      <script>
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      </script>
+    <% end %>
+
     <%# ── Google Fonts — chargement optimisé ──────────────────────────────────
         Placé AVANT le stylesheet principal pour que le navigateur lance la connexion
         vers Google Fonts en parallèle du téléchargement de application.css.

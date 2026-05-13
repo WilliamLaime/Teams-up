@@ -401,6 +401,14 @@
           <div class="mb-3 d-flex justify-content-center">
             <%= hcaptcha_tags %>
           </div>
+          <%# RGAA 11.1 : les textareas injectés par hCaptcha (display:none) n'ont pas de label.
+              Ce script les masque aux lecteurs d'écran pour éviter la fausse non-conformité. %>
+          <script>
+            document.addEventListener("DOMContentLoaded", function() {
+              document.querySelectorAll('textarea[name="g-recaptcha-response"], textarea[name="h-captcha-response"]')
+                .forEach(function(el) { el.setAttribute("aria-hidden", "true"); });
+            });
+          </script>
 
           <%# ── Bouton S'inscrire + lien Se connecter sous les inputs ──────── %>
           <div class="form-actions mt-3">

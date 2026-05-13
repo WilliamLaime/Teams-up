@@ -597,13 +597,14 @@
 
           <%# ── Sélecteur d'équipe (optionnel, visible si l'user est capitaine d'une équipe) ── %>
           <% if @my_captained_teams&.any? %>
-            <div class="mb-0 mt-3">
-              <label class="form-label d-block">
+            <%# RGAA 11.5 : fieldset + legend pour grouper les boutons radio de même nature %>
+            <fieldset class="mb-0 mt-3" style="border:none; padding:0; margin:0;">
+              <legend class="form-label d-block">
                 Associer une équipe
                 <span class="css-tooltip" data-tip="Si vous associez une équipe, le match sera privé et les membres seront automatiquement invités à confirmer leur place.">
                   <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
                 </span>
-              </label>
+              </legend>
 
               <%# Champ hidden qui sera soumis — vide = pas d'équipe %>
               <%= f.hidden_field :team_id, value: @match.team_id, id: "match_team_id" %>
@@ -657,7 +658,7 @@
                 <% end %>
 
               </div>
-            </div>
+            </fieldset>
           <% end %>
 
           <%# ── Toggle : Restriction de genre Tous / Femme ── %>

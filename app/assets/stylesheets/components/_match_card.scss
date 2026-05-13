@@ -54,6 +54,9 @@
     .match-sport-overlay-icon {
       font-size: 0.85rem;
       line-height: 1;
+      // RGAA 3.2 : forcer color:white pour que le ratio de contraste soit calculé correctement
+      // par les outils d'audit (l'emoji hérite sinon d'une couleur quasi-transparente du body)
+      color: #fff;
     }
 
     .match-sport-overlay-name {

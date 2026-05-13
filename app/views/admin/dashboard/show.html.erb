@@ -172,6 +172,8 @@
       <%# min-width force le tableau à garder toutes ses colonnes visibles,
           ce qui déclenche le scroll quand l'écran est trop étroit %>
       <table class="table table-dark table-hover mb-0" style="font-size:0.85rem; min-width: 460px;">
+        <%# RGAA 5.4 : caption obligatoire pour associer un titre au tableau de données %>
+        <caption class="visually-hidden">Classement des meilleurs joueurs : rang, joueur, note moyenne, nombre d'avis et XP</caption>
         <thead>
           <tr style="color:rgba(255,255,255,0.4); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
             <th style="border-color:rgba(255,255,255,0.07); padding: 0.75rem 1rem;">#</th>
