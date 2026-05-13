@@ -79,7 +79,9 @@
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-    <%= favicon_link_tag "favicon.png" %>
+    <%# Favicon adaptative au thème système — noir sur fond clair, blanc sur fond sombre %>
+    <%= favicon_link_tag "elements_graphiques/favicon_noir.svg", media: "(prefers-color-scheme: light)", type: "image/svg+xml" %>
+    <%= favicon_link_tag "elements_graphiques/favicon_blanc.svg", media: "(prefers-color-scheme: dark)", type: "image/svg+xml" %>
   </head>
 
   <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler

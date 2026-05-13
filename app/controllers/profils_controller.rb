@@ -404,13 +404,12 @@ class ProfilsController < ApplicationController
 
     if @profil.update(profil_params)
 
-      # Vérifier l'achievement "profil complété" après la mise à jour
-      # Le rescue évite qu'une erreur du service (ex: broadcast ActionCable) n'empêche la sauvegarde
-      begin
-        AchievementService.new(current_user).check(:profile_updated)
-      rescue => e
-        Rails.logger.error "[AchievementService] Erreur lors du check profile_updated : #{e.message}"
-      end
+      # ⚠️  GAMIF_PAUSED — désactivé temporairement
+      # begin
+      #   AchievementService.new(current_user).check(:profile_updated)
+      # rescue => e
+      #   Rails.logger.error "[AchievementService] Erreur lors du check profile_updated : #{e.message}"
+      # end
       redirect_to profil_path, notice: "Profil mis à jour avec succès !"
     else
       render :edit, status: :unprocessable_entity

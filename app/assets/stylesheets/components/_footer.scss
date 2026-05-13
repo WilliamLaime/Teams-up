@@ -18,7 +18,7 @@
   color: var(--theme-text-muted);
   padding: 20px 0 0;
   transition: background-color 0.25s ease;
-  
+
   .row {
     min-height: 80px;
   }
@@ -58,6 +58,10 @@
   .footer-logo-texte {
     display: block; // le texte reste immobile
   }
+
+  // Logo adaptatif au thème — blanc en mode sombre (défaut), noir en mode clair
+  .footer-logo--dark { display: none; }
+  .footer-logo--white { display: block; }
 
   // ── Liens de navigation ───────────────────────────
   .footer-links {
@@ -113,4 +117,10 @@
 
     &:hover { color: $green; }
   }
+}
+
+// Mode clair : logo noir visible, logo blanc caché
+[data-theme="light"] .site-footer {
+  .footer-logo--white { display: none; }
+  .footer-logo--dark { display: block; }
 }

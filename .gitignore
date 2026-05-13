@@ -42,3 +42,8 @@
 # Ignore Mac and Linux file system files
 *.swp
 .DS_Store
+app/assets/images/sports/
+
+# Fichiers de travail temporaires (documents générés, non versionnés)
+calendrier_editorial_teamup.html
+plan_communaute_teamup.html

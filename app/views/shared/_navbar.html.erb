@@ -17,7 +17,10 @@
 
     <%# ── Logo (toujours visible) ── %>
     <%= link_to root_path, class: "navbar-brand" do %>
-      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", class: "navbar-logo", width: 32, height: 32 %>
+      <%# Logo blanc (mode sombre, défaut) — caché en mode clair via CSS %>
+      <%= image_tag "logo/logo_vf_1_blanc.svg", alt: "Teams-Up", class: "navbar-logo navbar-logo--white", width: 32, height: 32 %>
+      <%# Logo noir (mode clair) — caché en mode sombre via CSS %>
+      <%= image_tag "logo/logo_vf_1_noir.svg", alt: "Teams-Up", class: "navbar-logo navbar-logo--dark", width: 32, height: 32 %>
     <% end %>
 
     <%# ── Liens du centre (desktop uniquement, cachés sur mobile) ── %>
@@ -100,7 +103,7 @@
 
                 <%# En-tête commun aux deux états — RGESN 5.2 (dimensions HTML) %>
                 <div class="modal-header border-0 pb-0 pt-4 px-4">
-                  <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-up", width: 100, height: 28, style: "height:28px;" %>
+                  <%= image_tag "logo/logo_vf_1_blanc.svg", alt: "Teams-up", width: 100, height: 28, style: "height:28px;" %>
                   <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
 
@@ -295,4 +298,6 @@
     </div><%# fin actions droite %>
 
   </div>
+
+
 </nav>

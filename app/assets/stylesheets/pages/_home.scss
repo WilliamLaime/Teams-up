@@ -13,6 +13,9 @@
   // padding-bottom large pour que la carte qui dépasse de l'image reste dans la section
   padding: 80px 0 120px;
   position: relative;
+  // Empêche le gradient ::before (left: -120px) de créer un scroll horizontal
+  // "clip" ne crée pas de scroll container → préserve position:sticky et les éléments fixed
+  overflow-x: clip;
 
   // Gradient décoratif vert en haut à gauche (comme la maquette)
   &::before {
