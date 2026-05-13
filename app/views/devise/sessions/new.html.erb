@@ -47,7 +47,21 @@
         </div>
 
         <%# Case à cocher "Se souvenir de moi" (si activé dans Devise) %>
-        <%= f.input :remember_me, as: :boolean if devise_mapping.rememberable? %>
+        <%# RGAA 11.6 — simple_form génère un <fieldset> pour les booléens, il doit avoir une <legend> %>
+        <% if devise_mapping.rememberable? %>
+          <fieldset class="mb-3 boolean optional user_remember_me">
+            <legend class="visually-hidden">Options de connexion</legend>
+            <div class="form-check">
+              <%= hidden_field_tag "user[remember_me]", "0" %>
+              <%= check_box_tag "user[remember_me]", "1", false,
+                  class: "form-check-input boolean optional",
+                  id: "user_remember_me" %>
+              <label class="form-check-label boolean optional" for="user_remember_me">
+                Se souvenir de moi
+              </label>
+            </div>
+          </fieldset>
+        <% end %>
       </div>
 
       <%# Bouton de soumission — centré, taille auto %>

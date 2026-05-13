@@ -156,11 +156,12 @@
     <%= render "shared/level_grid_modal" %>
 
     <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
-    <%# Version fixée (pas de @latest) : cache navigateur stable, pas de régression surprise,
-        meilleure empreinte écologique (cache HTTP long durable côté CDN).
+    <%# RGESN 3.4 — fichier auto-hébergé (vendor/javascript/lucide.min.js) pour éviter
+        la résolution DNS externe vers unpkg.com.
+        Version fixée 0.474.0 : cache navigateur stable, pas de régression surprise.
         defer : ne bloque pas le parsing HTML — s'exécute après le DOM prêt.
         Doc : https://lucide.dev/icons/ — utilisation : <i data-lucide="nom-icone"></i> %>
-    <script src="https://unpkg.com/lucide@0.474.0/dist/umd/lucide.min.js" defer></script>
+    <script src="<%= asset_path('lucide.min.js') %>" defer></script>
 
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Avec defer, le script Lucide s'exécute après DOMContentLoaded —

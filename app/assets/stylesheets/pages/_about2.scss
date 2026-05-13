@@ -136,6 +136,13 @@ html.page-scroll-snap {
       background: linear-gradient(to right, rgba(0,0,0,0.30) 0%, transparent 70%);
       pointer-events: none;
     }
+
+    // Le ::before (position:absolute) se peint au-dessus du flux normal en CSS.
+    // z-index: 1 sur le contenu garantit que le texte passe devant l'overlay sombre.
+    .container {
+      position: relative;
+      z-index: 1;
+    }
   }
 }
 

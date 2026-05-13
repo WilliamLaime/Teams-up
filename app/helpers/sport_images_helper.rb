@@ -67,10 +67,11 @@ module SportImagesHelper
   }.freeze
 
   # Images diverses (icônes, illustrations génériques)
+  # RGESN 5.2 — f_auto sert WebP/AVIF si le navigateur le supporte, q_auto optimise la qualité
   SPORT_MISC_IMAGES = {
-    multisports:     "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061664/sports/misc/multisports.png",
-    multisports_img: "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061666/sports/misc/multisports-img.png",
-    padel_icon:      "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png"
+    multisports:     "https://res.cloudinary.com/dfw8rlluc/image/upload/f_auto,q_auto/v1775061664/sports/misc/multisports.png",
+    multisports_img: "https://res.cloudinary.com/dfw8rlluc/image/upload/f_auto,q_auto/v1775061666/sports/misc/multisports-img.png",
+    padel_icon:      "https://res.cloudinary.com/dfw8rlluc/image/upload/f_auto,q_auto/v1775061667/sports/misc/padel.png"
   }.freeze
 
   # Méthode helper pour accéder à SPORT_MISC_IMAGES depuis les vues.
