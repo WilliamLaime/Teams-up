@@ -306,20 +306,16 @@ html.page-scroll-snap {
 
 
 // ── Logo origine (section 1) ──────────────────────────
+// Logo complet blanc avec picto + texte combinés dans une seule image
 .a2-origin-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
   margin-bottom: 0.5rem;
 }
 
-.a2-origin-picto {
-  height: 72px;       // agrandi (était 44px)
+.a2-origin-logo-img {
+  height: 72px;                                            // agrandi (était picto 44px + texte 20px)
   width: auto;
   filter: drop-shadow(0 0 16px rgba($green, 0.6));
-}
-
-.a2-origin-texte {
-  height: 34px;       // agrandi (était 20px)
-  width: auto;
 }
