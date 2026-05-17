@@ -1,0 +1,60 @@
+<%# ── Admin : Waitlist pré-lancement ────────────────────────────────────────── %>
+<%# Liste de tous les emails collectés via la landing page "Bientôt disponible". %>
+<%# Accessible uniquement aux admins (Admin::BaseController). %>
+
+<div style="background-color:#111111; min-height:100vh;">
+<div class="container py-4">
+
+  <%# ── En-tête ── %>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i data-lucide="mail-check" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
+      Espace <span style="color:#1EDD88;">Admin</span>
+    </h1>
+  </div>
+
+  <%# ── Navigation par onglets ── %>
+  <%= render "admin/shared/nav", active_tab: :waitlist %>
+
+  <%# ── Compteur ── %>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <span style="font-size:2rem; font-weight:700; color:#1EDD88;"><%= @total_count %></span>
+    <span style="color:rgba(255,255,255,0.6); font-size:0.95rem;">
+      <%= @total_count == 1 ? "personne inscrite" : "personnes inscrites" %>
+    </span>
+  </div>
+
+  <% if @waitlist_entries.any? %>
+    <%# ── Tableau des inscrits ── %>
+    <div class="table-responsive">
+      <table class="table table-dark table-hover table-sm align-middle" style="border-color:rgba(255,255,255,0.1);">
+        <thead>
+          <tr style="color:rgba(255,255,255,0.5); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <th scope="col">#</th>
+            <th scope="col">Email</th>
+            <th scope="col">Date d'inscription</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @waitlist_entries.each_with_index do |entry, index| %>
+            <tr>
+              <td style="color:rgba(255,255,255,0.4); font-size:0.85rem;"><%= @total_count - index %></td>
+              <td style="color:#f0f0f0; font-size:0.9rem;"><%= entry.email %></td>
+              <td style="color:rgba(255,255,255,0.5); font-size:0.85rem;">
+                <%= entry.created_at.strftime("%d/%m/%Y à %H:%M") %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <%# ── État vide ── %>
+    <div class="text-center py-5" style="color:rgba(255,255,255,0.4);">
+      <i data-lucide="inbox" style="width:40px; height:40px; margin-bottom:1rem;"></i>
+      <p style="margin:0;">Aucune inscription pour l'instant.</p>
+    </div>
+  <% end %>
+
+</div>
+</div>
