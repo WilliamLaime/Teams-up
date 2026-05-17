@@ -10,7 +10,7 @@
 <section class="hero-section">
 
   <%# Picto décoratif en arrière-plan — flouté avec glow vert léger %>
-  <%= image_tag "elements_graphiques/logo_teams-up_seul_picto.svg", class: "hero-picto-bg", alt: "" %>
+  <%= image_tag "elements_graphiques/logo_teams-up_seul_picto_2.svg", class: "hero-picto-bg", alt: "" %>
 
   <div class="container">
     <div class="row align-items-center g-5">
@@ -364,8 +364,12 @@
 
       <%# ── Colonne droite : image de la fenêtre de dialogue ── %>
       <div class="col-lg-6 d-flex justify-content-center align-items-center">
+        <%# RGESN 5.2 — WebP (30 Ko) avec fallback PNG (408 Ko) pour les navigateurs anciens %>
         <%# RGESN 6.4 — lazy loading sur image below fold %>
-        <%= image_tag "fenetre_dialogue_home.png", class: "cta-chat-image", alt: "Aperçu du chat Team Up", style: "width: 450px; max-width: 100%; height: auto; display: block;", loading: "lazy", width: 450, height: 400 %>
+        <picture>
+          <source srcset="<%= asset_path('fenetre_dialogue_home.webp') %>" type="image/webp">
+          <%= image_tag "fenetre_dialogue_home.png", class: "cta-chat-image", alt: "Aperçu du chat Team Up", style: "width: 450px; max-width: 100%; height: auto; display: block;", loading: "lazy", width: 450, height: 400 %>
+        </picture>
       </div>
 
     </div>

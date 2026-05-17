@@ -619,8 +619,8 @@
             <% if irl_count > 0 %>
               <div class="match-player-item match-player-item--irl">
                 <div class="match-player-avatar-irl">
-                  <%# Image SVG aléatoire à la place de l'icône grise — style géré par le CSS %>
-                  <%= image_tag irl_svg, alt: "Joueurs sur place" %>
+                  <%# Image SVG aléatoire — RGESN 6.6 : lazy car hors viewport initial %>
+                  <%= image_tag irl_svg, alt: "Joueurs sur place", loading: "lazy" %>
                   <%# Badge avec le nombre de joueurs IRL %>
                   <span class="match-player-irl-badge"><%= irl_count %></span>
                 </div>

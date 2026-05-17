@@ -19,14 +19,15 @@
     background-position: center;
   }
 
-  // Calque sombre dégradé — sombre en bas, transparent en haut
+  // Calque sombre dégradé — renforcé en haut (0.80) pour garantir le contraste RGAA
+  // sur les textes et boutons, quelle que soit la luminosité de la photo de fond
   .match-banner-overlay {
     position: absolute;
     inset: 0;
     background: linear-gradient(
       to bottom,
-      rgba(#111111, 0.65) 0%,
-      rgba(#111111, 0.96) 100%
+      rgba(#111111, 0.80) 0%,
+      rgba(#111111, 0.97) 100%
     );
   }
 
@@ -119,15 +120,19 @@
   color: #fff;
   line-height: 1.2;
   margin-bottom: 0.6rem;
+  // Ombre portée : filet de sécurité si une image claire perce le gradient
+  text-shadow: 0 1px 6px rgba(0,0,0,0.55);
 }
 
 // Description courte
 .match-banner-desc {
-  color: rgba(255,255,255,0.7);
+  // 0.92 au lieu de 0.7 : garantit un ratio RGAA ≥ 4.5:1 quel que soit le fond
+  color: rgba(255,255,255,0.92);
   font-size: 0.9rem;
   line-height: 1.55;
   max-width: 560px;
   margin-bottom: 0.85rem;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.45);
 }
 
 // Date + heure — bloc icône + label + valeur
@@ -156,7 +161,8 @@
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: rgba(255,255,255,0.50);
+    // 0.75 au lieu de 0.50 : texte petit → contraste renforcé (RGAA NC 1/10)
+    color: rgba(255,255,255,0.75);
     line-height: 1;
     margin-bottom: 0.2rem;
   }

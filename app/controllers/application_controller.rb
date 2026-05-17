@@ -105,7 +105,7 @@ class ApplicationController < ActionController::Base
         description: :description,
         url:         -> { request.original_url },
         # Image affichée lors du partage sur Facebook, WhatsApp, LinkedIn, etc.
-        image:       -> { helpers.asset_url("logo_teams-up_logo_vert.png") }
+        image:       -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
       },
       # ── Twitter Card (partage sur X/Twitter) ──
       twitter: {
@@ -113,7 +113,7 @@ class ApplicationController < ActionController::Base
         title:       :title,
         description: :description,
         # Image affichée dans les aperçus Twitter/X
-        image:       -> { helpers.asset_url("logo_teams-up_logo_vert.png") }
+        image:       -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
       },
       # ── Canonical URL ──────────────────────────────────────────────────────
       # Pointe toujours vers l'URL propre sans query string.

@@ -65,6 +65,19 @@
       }
     <% end %>
 
+    <%# ── RGESN 4.11 — Respect de la préférence système de l'OS (prefers-color-scheme) ──────────
+        Pour les visiteurs non-connectés, data-theme est toujours "dark" (valeur par défaut serveur).
+        Ce script inline, exécuté AVANT le CSS, lit la préférence OS et bascule data-theme="light"
+        si l'OS est en mode clair — sans flash de thème. Les utilisateurs connectés ont leur thème
+        géré côté serveur via current_user.profil.theme (ce script ne s'applique pas à eux). %>
+    <% unless user_signed_in? %>
+      <script>
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      </script>
+    <% end %>
+
     <%# ── Google Fonts — chargement optimisé ──────────────────────────────────
         Placé AVANT le stylesheet principal pour que le navigateur lance la connexion
         vers Google Fonts en parallèle du téléchargement de application.css.
@@ -79,7 +92,9 @@
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
-    <%= favicon_link_tag "favicon.png" %>
+    <%# Favicon adaptative au thème système — noir sur fond clair, blanc sur fond sombre %>
+    <%= favicon_link_tag "elements_graphiques/favicon_noir.svg", media: "(prefers-color-scheme: light)", type: "image/svg+xml" %>
+    <%= favicon_link_tag "elements_graphiques/favicon_blanc.svg", media: "(prefers-color-scheme: dark)", type: "image/svg+xml" %>
   </head>
 
   <%# data-controller="scroll-to-error" : sur chaque chargement de page, fait défiler
@@ -154,11 +169,12 @@
     <%= render "shared/level_grid_modal" %>
 
     <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
-    <%# Version fixée (pas de @latest) : cache navigateur stable, pas de régression surprise,
-        meilleure empreinte écologique (cache HTTP long durable côté CDN).
+    <%# RGESN 3.4 — fichier auto-hébergé (vendor/javascript/lucide.min.js) pour éviter
+        la résolution DNS externe vers unpkg.com.
+        Version fixée 0.474.0 : cache navigateur stable, pas de régression surprise.
         defer : ne bloque pas le parsing HTML — s'exécute après le DOM prêt.
         Doc : https://lucide.dev/icons/ — utilisation : <i data-lucide="nom-icone"></i> %>
-    <script src="https://unpkg.com/lucide@0.474.0/dist/umd/lucide.min.js" defer></script>
+    <script src="<%= asset_path('lucide.min.js') %>" defer></script>
 
     <%# Initialise toutes les icônes Lucide présentes dans la page %>
     <%# Avec defer, le script Lucide s'exécute après DOMContentLoaded —

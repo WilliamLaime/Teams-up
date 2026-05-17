@@ -143,7 +143,9 @@ module ApplicationHelper
     return "" unless sport
 
     if sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i)
-      image_tag sport.icon,
+      # RGESN 5.2 — ajoute f_auto,q_auto aux URLs Cloudinary (PNG → WebP auto selon navigateur)
+      icon_url = cloudinary_optimized_url(sport.icon)
+      image_tag icon_url,
                 alt: sport.name,
                 class: css_class,
                 width: px_size,
@@ -206,11 +208,24 @@ module ApplicationHelper
 
     if sport.icon.match?(/\.(png|jpg|svg|gif|webp)$/i)
       # On construit le tag manuellement pour retourner une string ordinaire (non safe)
-      src = asset_path(sport.icon)
+      src = cloudinary_optimized_url(sport.icon)
       img_style = "width:#{size};height:#{size};object-fit:contain;vertical-align:middle;"
       "<img src=\"#{src}\" alt=\"#{sport.name}\" style=\"#{img_style}\"> #{sport.name}"
     else
       "#{sport.icon} #{sport.name}"
     end
+  end
+
+  private
+
+  # RGESN 5.2 — injecte les transformations Cloudinary f_auto,q_auto dans une URL Cloudinary.
+  # f_auto : sert WebP ou AVIF selon le navigateur (30-50% plus léger que PNG/JPEG).
+  # q_auto : compression automatique sans perte de qualité perceptible.
+  # Les URLs non-Cloudinary sont retournées inchangées.
+  def cloudinary_optimized_url(url)
+    return url unless url.to_s.include?("res.cloudinary.com")
+    return url if url.include?("f_auto") # déjà optimisée
+
+    url.sub(%r{/image/upload/}, "/image/upload/f_auto,q_auto/")
   end
 end
