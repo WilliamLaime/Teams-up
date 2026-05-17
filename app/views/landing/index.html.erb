@@ -1,0 +1,53 @@
+<%# Landing page "Bientôt disponible" — visible par tous les visiteurs non connectés.
+    Objectif : présenter la marque, collecter les emails, créer l'attente. %>
+
+<main class="landing-page">
+  <div class="landing-content">
+
+    <%# ── Logo Teams-up ── %>
+    <%= image_tag "logo/logo_vf_1_blanc.svg",
+                  alt:    "Teams-up",
+                  class:  "landing-logo",
+                  width:  240,
+                  height: 240 %>
+
+    <%# ── Accroche principale ── %>
+    <h1 class="landing-title">Bientôt<br>disponible.</h1>
+
+    <%# ── Description courte ── %>
+    <p class="landing-subtitle">
+      Crée ou rejoins un match, forme une équipe, joue.
+    </p>
+
+    <%# ── Formulaire de pré-inscription ── %>
+    <%# POST /inscription → LandingController#subscribe %>
+    <div class="landing-cta">
+      <p class="landing-cta__label">
+        Inscris ton email pour être averti en avant-première
+      </p>
+
+      <%= form_with url: waitlist_subscribe_path, method: :post, class: "landing-form" do |f| %>
+        <div class="landing-form__row">
+          <%# Champ email — autocomplete pour faciliter la saisie sur mobile %>
+          <%= f.email_field :email,
+                            placeholder:  "ton@email.com",
+                            class:        "landing-form__input",
+                            required:     true,
+                            autocomplete: "email",
+                            aria:         { label: "Adresse email" } %>
+
+          <%# Bouton d'envoi ── style cohérent avec .btn-cta-primary du design system %>
+          <%= f.submit "Je m'inscris", class: "landing-form__btn" %>
+        </div>
+
+        <%# Mention RGPD — collecte de données personnelles (Art. 13 RGPD) %>
+        <p class="landing-form__rgpd">
+          Ton email est collecté par Teams-up pour te notifier du lancement et,
+          si tu ne t'es pas encore inscrit(e), pour te recontacter ponctuellement.
+          Aucun partage avec des tiers. Désinscription possible à tout moment.
+        </p>
+      <% end %>
+    </div>
+
+  </div>
+</main>

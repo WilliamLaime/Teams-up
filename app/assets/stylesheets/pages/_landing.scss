@@ -1,0 +1,209 @@
+// ── Landing page "Bientôt disponible" ────────────────────────────────────────
+// Styles dédiés à la page vitrine pré-lancement.
+// Toujours en mode sombre (data-theme="dark" fixé dans le layout landing.html.erb).
+// Les variables ($green, $dark-bg, etc.) viennent de config/_colors.scss.
+
+// Conteneur plein écran centré
+// align-items: flex-start sur mobile pour éviter que le haut du contenu
+// soit coupé hors écran quand le contenu dépasse 100vh
+.landing-page {
+  min-height: 100vh;
+  background-color: $dark-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+
+  @media (max-width: 768px) {
+    align-items: flex-start;
+    padding: 2rem 1.25rem;
+  }
+}
+
+// Colonne centrale — max-width pour rester lisible sur grand écran
+.landing-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  max-width: 540px;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    gap: 1rem;
+  }
+}
+
+// ── Logo ──────────────────────────────────────────────────────────────────────
+.landing-logo {
+  width: 240px;
+  height: auto;
+
+  @media (max-width: 768px) {
+    width: 120px;
+  }
+}
+
+// ── Titre principal ───────────────────────────────────────────────────────────
+// Bebas Neue + vert = identité visuelle Teams-up
+.landing-title {
+  font-family: $display-font;
+  font-size: 5rem;
+  color: $green;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0;
+
+  @media (max-width: 768px) {
+    font-size: 2.5rem;
+  }
+}
+
+// ── Sous-titre ────────────────────────────────────────────────────────────────
+.landing-subtitle {
+  font-family: $body-font;
+  font-size: 1rem;
+  color: $dark-muted;
+  line-height: 1.7;
+  margin: 0;
+}
+
+// ── Bloc CTA email ────────────────────────────────────────────────────────────
+// Encadre visuellement le formulaire pour lui donner plus de poids
+.landing-cta {
+  width: 100%;
+  background-color: $dark-surface;
+  border: 1px solid rgba(30, 221, 136, 0.2);
+  border-radius: 12px;
+  padding: 1.75rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+
+  // Label au-dessus du formulaire — attire l'attention sur l'action à faire
+  &__label {
+    font-family: $body-font;
+    font-size: 1rem;
+    font-weight: 700;
+    color: $dark-text;
+    margin: 0 0 1rem 0;
+    text-align: center;
+  }
+}
+
+// ── Formulaire d'inscription ─────────────────────────────────────────────────
+.landing-form {
+  width: 100%;
+
+  // Ligne input + bouton — côte à côte sur desktop, empilés sur mobile
+  &__row {
+    display: flex;
+    gap: 0.5rem;
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+    }
+  }
+
+  // Champ email stylé dark, cohérent avec le design system
+  // $dark-card-bg plutôt que $dark-surface pour être distinguable du fond du bloc CTA
+  &__input {
+    flex: 1;
+    padding: 0.8rem 1rem;
+    background-color: $dark-card-bg;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: $dark-text;
+    font-family: $body-font;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &::placeholder {
+      color: $dark-muted;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $green;
+      // Halo vert léger — cohérent avec les inputs du site
+      box-shadow: 0 0 0 3px rgba(30, 221, 136, 0.15);
+    }
+  }
+
+  // Bouton CTA — même style que .btn-cta-primary du design system
+  &__btn {
+    padding: 0.8rem 1.5rem;
+    background-color: $green;
+    color: #111111;
+    border: none;
+    border-radius: 8px;
+    font-family: $body-font;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.88;
+    }
+
+    // Pleine largeur quand empilé sur mobile — sinon le bouton est auto-sized
+    @media (max-width: 576px) {
+      width: 100%;
+    }
+  }
+
+  // Mention RGPD — Art. 13 RGPD : informer l'utilisateur sur la collecte de données
+  &__rgpd {
+    font-family: $body-font;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1.5;
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+    text-align: center;
+  }
+
+}
+
+// ── Flash messages ─────────────────────────────────────────────────────────────
+// Overlay en haut de page — indépendant du layout pour ne pas décaler le contenu
+.landing-flash {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-family: $body-font;
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 9999;
+  max-width: 90vw;
+  text-align: center;
+  // Apparaît en 0.3s, reste 4s, puis disparaît en 0.5s
+  animation: landing-flash-in 0.3s ease, landing-flash-out 0.5s ease 4s forwards;
+
+  &--success {
+    background-color: $green;
+    color: #111111;
+  }
+
+  &--error {
+    background-color: $red;
+    color: #ffffff;
+  }
+}
+
+@keyframes landing-flash-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes landing-flash-out {
+  from { opacity: 1; }
+  to   { opacity: 0; pointer-events: none; }
+}

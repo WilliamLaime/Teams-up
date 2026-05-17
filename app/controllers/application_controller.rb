@@ -5,6 +5,10 @@ class ApplicationController < ActionController::Base
   # 301 = redirection permanente → Google transfère tout le "link juice" SEO vers le .fr
   before_action :redirect_com_to_fr
 
+  # Redirige les visiteurs non connectés vers la landing page.
+  # Doit être AVANT authenticate_user! pour intercepter la requête avant Devise.
+  # Exceptions : le contrôleur landing lui-même, Devise (login/signup), PWA et erreurs.
+  before_action :redirect_to_landing_if_visitor
   before_action :authenticate_user!
   # Initialise les meta tags SEO par défaut avant chaque action.
   # Chaque controller peut appeler set_meta_tags() pour surcharger ces valeurs.
@@ -140,9 +144,22 @@ class ApplicationController < ActionController::Base
     skip_pundit? || action_name != "index"
   end
 
-  # Ignore Pundit pour Devise et les pages publiques
+  # Ignore Pundit pour Devise, l'admin, les pages publiques et la landing
   def skip_pundit?
-    devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)/
+    devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)|(^landing$)/
+  end
+
+  # ── Verrou pré-lancement ─────────────────────────────────────────────────────
+  #
+  # Redirige tous les visiteurs non connectés vers la landing page.
+  # Les développeurs se connectent via /users/sign_in et ont accès à tout.
+  # Exceptions : landing controller (la page elle-même), Devise, PWA, erreurs.
+  def redirect_to_landing_if_visitor
+    return if user_signed_in?
+    return if devise_controller?
+    return if %w[landing pwa errors].include?(controller_name)
+
+    redirect_to root_path
   end
 
   # ── Onboarding post-inscription ──────────────────────────────────────────
