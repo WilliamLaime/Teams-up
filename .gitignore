@@ -44,3 +44,13 @@ app/assets/images/sports/
 # Fichiers de travail temporaires (documents générés, non versionnés)
 calendrier_editorial_teamup.html
 plan_communaute_teamup.html
+posts_instagram_teamup.html
+scripts_tiktok_teamup.html
+stories_instagram_teamup.html
+reels_instagram_teamup.html
+retroplanning_teamup.html
+retroplanning_teamup.xlsx
+generate_excel.js
+node_modules/
+package.json
+package-lock.json
