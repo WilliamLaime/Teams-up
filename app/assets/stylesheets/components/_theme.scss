@@ -665,23 +665,7 @@
   }
 
 
-  // ── Sélecteur d'équipe (formulaire match) ────────────────────────────────
-  // Couleurs hardcodées blanc → remplacées par du sombre sur fond blanc
-  .team-picker-option {
-    border-color: rgba(0, 0, 0, 0.12) !important;
-    background: rgba(0, 0, 0, 0.02) !important;
-
-    &:hover {
-      border-color: rgba($green, 0.45) !important;
-      background: rgba($green, 0.06) !important;
-    }
-  }
-
-  .team-picker-none-label { color: rgba(0, 0, 0, 0.55) !important; }
-  .team-picker-badge       { background: rgba(0, 0, 0, 0.06) !important; }
-  .team-picker-badge-icon  { color: rgba(0, 0, 0, 0.25) !important; }
-  .team-picker-name        { color: rgba(0, 0, 0, 0.8) !important; }
-  .team-picker-members     { color: rgba(0, 0, 0, 0.4) !important; }
+  // Sélecteur d'équipe : supprimé — utilise désormais .match-level-btn (compatible thème clair nativement)
 
 
   // ── Dropdown notifications ────────────────────────────────────────────────

@@ -26,7 +26,9 @@ Rails.application.configure do
     # Styles : notre serveur + styles inline (Bootstrap en a besoin)
     # + Google Fonts pour charger les polices Nunito et Bebas Neue
     # + hcaptcha.com pour les styles du widget captcha
-    policy.style_src :self, :unsafe_inline, "https://fonts.googleapis.com", "https://hcaptcha.com"
+    # + cdn.jsdelivr.net pour la feuille de style Leaflet (map_picker_controller)
+    policy.style_src :self, :unsafe_inline, "https://fonts.googleapis.com", "https://hcaptcha.com",
+                     "https://cdn.jsdelivr.net"
 
     # Images : notre serveur + Cloudinary (avatars/photos) + Google (avatars OAuth)
     # + data: (images encodées en base64 parfois utilisées par Bootstrap)

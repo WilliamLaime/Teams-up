@@ -13,7 +13,7 @@ export default class extends Controller {
   // "input"    → le champ texte visible (lieu saisi par l'user)
   // "dropdown" → le div qui affiche les suggestions
   // "venueId"  → champ caché stockant l'id de l'établissement sélectionné (si en BDD)
-  static targets = ["input", "dropdown", "venueId"]
+  static targets = ["input", "dropdown", "venueId", "inputWrapper"]
 
   connect() {
     this.timeout = null   // Pour le debounce (évite une requête à chaque frappe)
@@ -524,7 +524,13 @@ export default class extends Controller {
   }
 
   handleOutsideClick(event) {
-    if (!this.element.contains(event.target)) this.hideDropdown()
+    // On compare par rapport au wrapper direct (input + dropdown), PAS this.element.
+    // this.element = toute la section 2 → un clic n'importe où dans la section
+    // retournerait contains()=true et garderait le dropdown ouvert indéfiniment.
+    // inputWrapper = uniquement le div qui contient le champ et les suggestions.
+    if (this.hasInputWrapperTarget && !this.inputWrapperTarget.contains(event.target)) {
+      this.hideDropdown()
+    }
   }
 
   // Échappe les caractères spéciaux pour l'affichage HTML (anti-XSS)
