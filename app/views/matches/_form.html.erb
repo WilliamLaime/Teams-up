@@ -17,6 +17,16 @@
     et les affiche en temps réel dans le récap (data-match-form-target="recapXxx").
     ═══════════════════════════════════════════════════════════════ %>
 
+<%# Leaflet CSS — chargé uniquement sur les pages avec ce formulaire
+    Via content_for :head : inséré dans le <head> du layout application.html.erb
+    Le JS Leaflet est chargé via importmap (config/importmap.rb) %>
+<% content_for :head do %>
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="anonymous">
+<% end %>
+
 <%# Détermine le chemin du bouton Annuler selon qu'on crée ou modifie un match %>
 <% cancel_path = @match.persisted? ? match_path(@match) : matches_path %>
 
@@ -217,7 +227,11 @@
           <div class="mb-0">
             <%= f.label :place, class: "form-label" do %>Rechercher un club ou une adresse <span class="required-star">*</span><% end %>
 
-            <div class="position-relative">
+            <%# data-place-search-target="inputWrapper" : utilisé par handleOutsideClick pour
+                détecter les clics EN DEHORS du champ+dropdown uniquement.
+                Sans ça, this.element (= toute la section 2) rendrait le dropdown inféreable
+                uniquement en cliquant hors de la section entière. %>
+            <div class="position-relative" data-place-search-target="inputWrapper">
               <%# Le champ texte :
                   - data-place-search-target="input"   → autocomplétion
                   - data-match-form-target="placeInput" → récap Stimulus
@@ -246,9 +260,114 @@
                    style="display:none; position:absolute; top:100%; left:0; z-index:1050; max-height:250px; overflow-y:auto;">
               </div>
             </div>
+
+            <%# Bouton secondaire : ouvre la modale de sélection sur carte
+                Utile si aucun résultat ne correspond (terrain privé, coin de rue, etc.) %>
+            <button type="button"
+                    class="map-picker-trigger-btn mt-2"
+                    data-bs-toggle="modal"
+                    data-bs-target="#mapPickerModal">
+              <i data-lucide="map-pin" style="width:14px; height:14px;"></i>
+              Choisir sur la carte
+            </button>
+
           </div>
 
         </div><%# fin section 2 %>
+
+
+        <%# ════════════════════════════════════════════════════
+            MODALE : Sélecteur de lieu sur carte
+            Contrôleur Stimulus : map-picker
+            ════════════════════════════════════════════════════
+            data-controller="map-picker" est sur la modale elle-même.
+            Stimulus l'initialise dès que la modale entre dans le DOM.
+            La carte Leaflet est créée au premier "shown.bs.modal". %>
+        <div class="modal fade"
+             id="mapPickerModal"
+             tabindex="-1"
+             aria-labelledby="mapPickerModalLabel"
+             aria-hidden="true"
+             data-controller="map-picker">
+
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content map-picker-modal-content">
+
+              <%# En-tête de la modale %>
+              <div class="modal-header map-picker-modal-header">
+                <h5 class="modal-title" id="mapPickerModalLabel">
+                  <i data-lucide="map-pin" style="width:16px; height:16px; color:#1EDD88; margin-right:6px;"></i>
+                  Choisir un lieu sur la carte
+                </h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Fermer"></button>
+              </div>
+
+              <%# Corps de la modale %>
+              <div class="modal-body p-0">
+
+                <%# Barre de recherche d'adresse — permet de centrer la carte sur un lieu
+                    sans avoir à naviguer manuellement.
+                    keydown.enter → déclenche searchAddress dès que l'user appuie sur Entrée %>
+                <div class="map-picker-search-bar">
+                  <i data-lucide="search" style="width:15px; height:15px; flex-shrink:0;"></i>
+                  <input type="text"
+                         data-map-picker-target="searchInput"
+                         class="map-picker-search-input"
+                         placeholder="Rechercher une adresse pour centrer la carte…"
+                         autocomplete="off"
+                         data-action="keydown.enter->map-picker#searchAddress">
+                  <button type="button"
+                          class="map-picker-search-btn"
+                          data-action="click->map-picker#searchAddress">
+                    Centrer
+                  </button>
+                </div>
+
+                <%# Instruction affichée au-dessus de la carte %>
+                <p class="map-picker-instruction">
+                  Clique sur l'endroit exact où se déroule le match.
+                </p>
+
+                <%# Conteneur de la carte Leaflet
+                    La hauteur est fixe (CSS) pour que Leaflet ait une taille calculée.
+                    data-map-picker-target="mapContainer" → Stimulus monte la carte ici %>
+                <div id="map-picker-container"
+                     data-map-picker-target="mapContainer"
+                     class="map-picker-container">
+                </div>
+
+              </div>
+
+              <%# Pied de la modale : affichage de l'adresse + bouton Confirmer %>
+              <div class="modal-footer map-picker-modal-footer">
+
+                <%# Zone d'affichage de l'adresse reverse-géocodée
+                    Remplie par Stimulus après le clic sur la carte %>
+                <div class="map-picker-address-wrap">
+                  <i data-lucide="map-pin" style="width:14px; height:14px; color:#1EDD88; flex-shrink:0;"></i>
+                  <span data-map-picker-target="addressDisplay"
+                        class="map-picker-address-text">
+                    Clique sur la carte pour choisir un lieu
+                  </span>
+                </div>
+
+                <%# Bouton Confirmer — désactivé jusqu'à ce qu'un lieu soit choisi %>
+                <button type="button"
+                        class="map-picker-confirm-btn"
+                        data-map-picker-target="confirmBtn"
+                        data-action="click->map-picker#confirmLocation"
+                        disabled>
+                  Confirmer ce lieu
+                </button>
+
+              </div>
+
+            </div>
+          </div>
+        </div><%# fin modale map-picker %>
 
 
         <%# ────────────────────────────────────────────────
@@ -597,68 +716,77 @@
 
           <%# ── Sélecteur d'équipe (optionnel, visible si l'user est capitaine d'une équipe) ── %>
           <% if @my_captained_teams&.any? %>
-            <%# RGAA 11.5 : fieldset + legend pour grouper les boutons radio de même nature %>
-            <fieldset class="mb-0 mt-3" style="border:none; padding:0; margin:0;">
-              <legend class="form-label d-block">
+            <%# role="group" + aria-labelledby remplace fieldset/legend (même valeur RGAA 11.5)
+                sans les bugs de layout causés par Bootstrap qui applique float:left sur <legend> %>
+            <div role="group" aria-labelledby="team-section-label" class="mt-3">
+              <p id="team-section-label" class="form-label d-block mb-2">
                 Associer une équipe
-                <span class="css-tooltip" data-tip="Si vous associez une équipe, le match sera privé et les membres seront automatiquement invités à confirmer leur place.">
+                <span class="css-tooltip" data-tip="Associez votre équipe à ce match. Les membres seront automatiquement notifiés et invités à confirmer leur place.">
                   <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
                 </span>
-              </legend>
+              </p>
 
               <%# Champ hidden qui sera soumis — vide = pas d'équipe %>
               <%= f.hidden_field :team_id, value: @match.team_id, id: "match_team_id" %>
 
-              <%# Boutons radio stylisés : "Aucune équipe" + une ligne par équipe %>
-              <div class="team-picker-list">
+              <%# Boutons styled comme les autres choix du formulaire (Public/Privé, niveau, etc.)
+                  L'onclick met à jour :
+                    1. Le champ caché match_team_id (valeur soumise au serveur)
+                    2. Le champ caché match_visibility (équipe = match privé)
+                    3. Les classes .active sur les boutons de visibilité
+                    4. Les classes .active sur les boutons d'équipe eux-mêmes %>
+              <div class="match-level-buttons" style="margin-top:0.6rem; flex-wrap:wrap;">
 
-                <%# Option "aucune équipe" %>
-                <label class="team-picker-option" id="team-option-none">
-                  <input type="radio" name="team_picker" value=""
-                         <%= @match.team_id.blank? ? "checked" : "" %>
-                         style="accent-color:#1EDD88;"
-                         onchange="
-                           document.getElementById('match_team_id').value = '';
-                           document.getElementById('match_visibility').value = 'public';
-                           document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
-                             btn.classList.toggle('active', btn.dataset.visibilityChoice === 'public');
-                           });
-                         ">
-                  <span class="team-picker-none-label">Aucune équipe</span>
-                </label>
+                <%# Bouton "Aucune équipe" — remet le match en public %>
+                <button type="button"
+                        class="match-level-btn <%= 'active' if @match.team_id.blank? %>"
+                        data-team-choice=""
+                        onclick="
+                          document.getElementById('match_team_id').value = '';
+                          document.getElementById('match_visibility').value = 'public';
+                          document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
+                            btn.classList.toggle('active', btn.dataset.visibilityChoice === 'public');
+                          });
+                          document.querySelectorAll('[data-team-choice]').forEach(function(btn) {
+                            btn.classList.toggle('active', btn.dataset.teamChoice === '');
+                          });
+                        ">
+                  Aucune équipe
+                </button>
 
-                <%# Une ligne par équipe %>
+                <%# Un bouton par équipe dont l'user est capitaine %>
                 <% @my_captained_teams.each do |team| %>
-                  <label class="team-picker-option">
-                    <input type="radio" name="team_picker" value="<%= team.id %>"
-                           <%= @match.team_id == team.id ? "checked" : "" %>
-                           style="accent-color:#1EDD88;"
-                           onchange="
-                             document.getElementById('match_team_id').value = '<%= team.id %>';
-                             document.getElementById('match_visibility').value = 'private';
-                             document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
-                               btn.classList.toggle('active', btn.dataset.visibilityChoice === 'private');
-                             });
-                           ">
-                    <%# Mini blason %>
-                    <div class="team-picker-badge">
+                  <button type="button"
+                          class="match-level-btn d-inline-flex align-items-center gap-2 <%= 'active' if @match.team_id == team.id %>"
+                          data-team-choice="<%= team.id %>"
+                          onclick="
+                            document.getElementById('match_team_id').value = '<%= team.id %>';
+                            document.getElementById('match_visibility').value = 'private';
+                            document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
+                              btn.classList.toggle('active', btn.dataset.visibilityChoice === 'private');
+                            });
+                            document.querySelectorAll('[data-team-choice]').forEach(function(btn) {
+                              btn.classList.toggle('active', btn.dataset.teamChoice === '<%= team.id %>');
+                            });
+                          ">
+                    <%# Mini blason de l'équipe %>
+                    <span style="width:22px; height:22px; border-radius:4px; overflow:hidden;
+                                 display:inline-flex; align-items:center; justify-content:center;
+                                 flex-shrink:0; background:rgba(255,255,255,0.08);">
                       <% if team.badge_image.attached? %>
                         <%= image_tag team.badge_image, style: "width:100%; height:100%; object-fit:cover;", alt: "" %>
                       <% elsif team.badge_svg.present? %>
                         <%= team.badge_svg.html_safe %>
                       <% else %>
-                        <i data-lucide="shield" class="team-picker-badge-icon" style="width:13px;height:13px;"></i>
+                        <i data-lucide="shield" style="width:12px; height:12px;"></i>
                       <% end %>
-                    </div>
-                    <span class="team-picker-name"><%= team.name %></span>
-                    <span class="team-picker-members">
-                      <%= team.members_count %> membre<%= "s" if team.members_count > 1 %>
                     </span>
-                  </label>
+                    <%= team.name %>
+                  </button>
                 <% end %>
 
               </div>
-            </fieldset>
+            </div><%# fin role="group" team picker %>
           <% end %>
 
           <%# ── Toggle : Restriction de genre Tous / Femme ── %>
