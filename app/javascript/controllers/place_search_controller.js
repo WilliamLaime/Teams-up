@@ -503,7 +503,9 @@ export default class extends Controller {
     if (type.includes("athletisme") || type.includes("piste") ||
         type.includes("parcours") || type.includes("track"))                           return "🏃"
     if (type.includes("golf"))                                                         return "⛳"
-    if (type.includes("padel") || type.includes("squash"))                             return "🏓"
+    if (type.includes("padel"))
+      return `<img src="https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png" style="width:20px;height:20px;object-fit:contain;" alt="padel">`
+    if (type.includes("squash"))                                                        return "🏓"
     if (type.includes("escalade") || type.includes("sae"))                             return "🧗"
     if (type.includes("salle") || type.includes("gymnase") ||
         type.includes("multisports") || type.includes("sports_centre"))                return "🏋️"

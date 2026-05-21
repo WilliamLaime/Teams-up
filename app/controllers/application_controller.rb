@@ -153,11 +153,13 @@ class ApplicationController < ActionController::Base
   #
   # Redirige tous les visiteurs non connectés vers la landing page.
   # Les développeurs se connectent via /users/sign_in et ont accès à tout.
-  # Exceptions : landing controller (la page elle-même), Devise, PWA, erreurs.
+  # Exceptions : landing controller (la page elle-même), Devise, PWA, erreurs, sitemap.
   def redirect_to_landing_if_visitor
     return if user_signed_in?
     return if devise_controller?
     return if %w[landing pwa errors].include?(controller_name)
+    # Le sitemap doit rester accessible aux robots Google même en mode pré-lancement
+    return if request.path.start_with?("/sitemap")
 
     redirect_to root_path
   end
