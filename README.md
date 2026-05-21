@@ -199,55 +199,6 @@ Typographie : **Work Sans** (corps) · **Nunito** (titres) · **Bebas Neue** (di
 
 ---
 
-## Déploiement (Railway.app)
-
-L'application est conteneurisée et déployée sur [Railway](https://railway.app/) via Docker + Thruster (reverse proxy devant Puma).
-
-```bash
-# Construire l'image Docker localement
-docker build -t teams-up .
-
-# Variables à définir dans Railway Dashboard
-DATABASE_URL=...
-CLOUDINARY_URL=...
-GOOGLE_CLIENT_ID=...
-# etc.
-```
-
-Le health-check est exposé sur `GET /up` (Rails 8 built-in).
-
----
-
-## Tests
-
-```bash
-# Lancer toute la suite de tests
-rails test
-
-# Tests système (Capybara + Selenium)
-rails test:system
-
-# Audit de sécurité des gems
-bundle exec bundler-audit check --update
-
-# Analyse statique de sécurité
-bundle exec brakeman
-```
-
----
-
-## Contribution
-
-1. Forkez le dépôt
-2. Créez une branche feature : `git checkout -b ma-feature`
-3. Committez vos changements : `git commit -m "Ajout ma feature"`
-4. Pushez la branche : `git push origin ma-feature`
-5. Ouvrez une Pull Request
-
-> Consultez `CLAUDE.md` pour les conventions de code, nommage, et les patterns attendus.
-
----
-
 ## License
 
 Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
