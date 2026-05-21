@@ -10,6 +10,12 @@ require "csv"
 # Les données proviennent du fichier des équipements sportifs (RES) du ministère.
 # ─────────────────────────────────────────────────────────────────────────────
 namespace :db do
+  desc "Insère uniquement les venues custom manquants du dataset gouvernemental"
+  task seed_custom_venues: :environment do
+    load Rails.root.join("db", "custom_venues.rb")
+    seed_custom_venues
+  end
+
   desc "Importe les établissements sportifs depuis db/DB Etablissement.csv"
   task import_venues: :environment do
     # Chemin vers le fichier CSV
@@ -86,5 +92,10 @@ namespace :db do
     puts "   Total lignes lues   : #{total}"
     puts "   Établissements importés : #{imported}"
     puts "   Lignes ignorées (GPS manquant) : #{skipped}"
+
+    # Réinsérer les venues custom manquants du dataset gouvernemental
+    # (complexes privés : padel, football indoor, etc.)
+    load Rails.root.join("db", "custom_venues.rb")
+    seed_custom_venues
   end
 end
