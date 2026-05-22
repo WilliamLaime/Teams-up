@@ -893,29 +893,33 @@
 // ══════════════════════════════════════════════════════════════
 
 // ── Bouton déclencheur "Choisir sur la carte" ─────────────────
-// Affiché sous le champ de recherche de lieu — style lien discret
+// Affiché sous le champ de recherche de lieu.
+// Style : petit bouton bordé vert — clairement cliquable sans écraser le champ principal.
 .map-picker-trigger-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  background: none;
-  border: none;
-  padding: 0;
+  gap: 0.4rem;
+  background: rgba($green, 0.08);           // Fond vert très léger
+  border: 1px solid rgba($green, 0.45);     // Contour vert semi-transparent
+  border-radius: 6px;
+  padding: 0.32rem 0.8rem;
   font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--theme-text-muted); // Discret par défaut
+  font-weight: 600;
+  color: $green;                            // Texte vert — visible sans être agressif
   cursor: pointer;
-  transition: color 0.15s;
+  transition: background-color 0.15s, border-color 0.15s;
   text-decoration: none;
+  margin-top: 0.5rem;                       // Espace avec le champ au-dessus
 
-  svg {
+  // Lucide remplace <i> par <svg> au chargement → on cible les deux
+  i, svg {
     flex-shrink: 0;
-    color: $green; // Icône toujours verte
-    opacity: 0.8;
+    color: $green;
   }
 
   &:hover {
-    color: $green; // Passe au vert au survol
+    background: rgba($green, 0.15);
+    border-color: $green;
   }
 }
 
@@ -954,7 +958,10 @@
   border-bottom: 1px solid var(--theme-border);
 
   // Icône loupe — couleur atténuée
-  > i {
+  // On cible > i (avant traitement Lucide) ET > svg (après remplacement par Lucide)
+  // car Lucide remplace le tag <i data-lucide="..."> par un <svg> au chargement de la page
+  > i,
+  > svg {
     color: var(--theme-text-muted);
     flex-shrink: 0;
   }
