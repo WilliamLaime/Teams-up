@@ -1,8 +1,9 @@
 <%# =====================================================
    MOBILE SUB-NAVBAR — Bande visible uniquement sur mobile (< lg)
    Affichée juste sous la navbar principale.
-   - Connecté     : sélecteur de sport toujours visible
+   - Connecté     : bouton "Créer un match" centré (CTA rapide, 1 tap)
    - Non connecté : boutons Se connecter + S'inscrire
+   Les autres liens (Trouver, Équipes, etc.) sont dans le drawer burger.
    ===================================================== %>
 
 <div class="mobile-sub-navbar d-lg-none">
@@ -10,105 +11,24 @@
 
     <% if user_signed_in? %>
 
-      <%# ── Sélecteur de sport mobile ──────────────────────────────────────────
-          Bouton pill centré → ouvre le dropdown avec la liste des sports.
-          Réutilise le même controller Stimulus "sport-search" que la navbar desktop.
-          ──────────────────────────────────────────────────────────────────────── %>
+      <%# CTA "Créer un match" — toujours accessible en 1 tap sans ouvrir le drawer %>
       <div class="d-flex justify-content-center">
-        <div class="dropdown">
-
-          <%# Bouton pill qui affiche le sport actif (ou "Multisport") %>
-          <button class="mobile-sport-btn d-flex align-items-center gap-2"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                  aria-label="Sport actif : <%= multisport_mode? ? 'Multisport' : (current_sport&.name || 'Sport') %>. Changer de sport">
-            <% if multisport_mode? %>
-              <%# Icône multisport %>
-              <%# RGAA 1.1 : alt="" car icône décorative (le nom du sport est dans le <span> suivant) %>
-              <%= image_tag sport_misc_image(:multisports),
-                  alt: "",
-                  style: "width:1rem;height:1rem;object-fit:contain;" %>
-            <% elsif current_sport %>
-              <%= sport_icon(current_sport, size: "1rem") %>
-            <% end %>
-            <%# Nom du sport actif %>
-            <span><%= multisport_mode? ? "Multisport" : (current_sport&.name || "Sport") %></span>
-            <i data-lucide="chevron-down" style="width:13px;height:13px;"></i>
-          </button>
-
-          <%# Dropdown avec recherche + liste de tous les sports %>
-          <ul class="dropdown-menu sport-dropdown" data-controller="sport-search">
-
-            <%# Barre de recherche %>
-            <li class="px-2 pb-1" data-action="click->sport-search#stopPropagation">
-              <%# RGAA 11.1 : aria-label car le label est visually intégré au placeholder %>
-              <input
-                type="text"
-                class="form-control form-control-sm sport-search-input"
-                placeholder="Rechercher un sport..."
-                aria-label="Rechercher un sport"
-                data-sport-search-target="input"
-                data-action="input->sport-search#filter"
-                autocomplete="off"
-              >
-            </li>
-
-            <li><hr class="dropdown-divider my-1"></li>
-
-            <%# Option Multisport %>
-            <li data-sport-search-target="item" data-sport-name="multisport">
-              <%= button_to multisport_switch_path,
-                  method: :post,
-                  class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{multisport_mode? ? 'sport-dropdown-item--active' : ''}",
-                  form: { "data-turbo": "false" } do %>
-                <%# RGAA 1.1 : alt="" car "Multisport" est dans le <span> adjacent %>
-                <%= image_tag sport_misc_image(:multisports), alt: "", style: "width:1.1rem;height:1.1rem;object-fit:contain;" %>
-                <span>Multisport</span>
-                <% if multisport_mode? %>
-                  <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
-                <% end %>
-              <% end %>
-            </li>
-
-            <li><hr class="dropdown-divider my-1"></li>
-
-            <%# Liste de tous les sports %>
-            <% Sport.order(:name).each do |sport| %>
-              <li data-sport-search-target="item" data-sport-name="<%= sport.name.downcase %>">
-                <%= button_to switch_sport_path(sport),
-                    method: :post,
-                    class: "dropdown-item sport-dropdown-item d-flex align-items-center gap-2 #{'sport-dropdown-item--active' if current_sport&.id == sport.id}",
-                    form: { "data-turbo": "false" } do %>
-                  <%= sport_icon(sport, size: "1.1rem") %>
-                  <span><%= sport.name %></span>
-                  <% if current_sport&.id == sport.id %>
-                    <i data-lucide="check" style="width:13px;height:13px;margin-left:auto;" class="text-success"></i>
-                  <% end %>
-                <% end %>
-              </li>
-            <% end %>
-
-          </ul>
-        </div>
+        <%= link_to new_match_path,
+            class: "btn btn-primary btn-sm px-4 btn-cta-primary d-flex align-items-center gap-1" do %>
+          <i data-lucide="plus" style="width:13px;height:13px;" aria-hidden="true"></i>
+          Créer un match
+        <% end %>
       </div>
 
     <% else %>
 
-      <%# ── Boutons Se connecter / S'inscrire (non connecté) ────────────────────
-          Affichés sous la navbar sur mobile car la navbar est épurée (logo seul).
-          ──────────────────────────────────────────────────────────────────────── %>
+      <%# ── Boutons Se connecter / S'inscrire (non connecté) ── %>
       <div class="d-flex justify-content-center align-items-center gap-3">
-
-        <%# Lien texte vert %>
         <%= link_to "Se connecter", new_user_session_path, class: "btn-cta-link" %>
-
-        <%# Bouton vert primaire %>
         <%= link_to new_user_registration_path,
             class: "btn btn-primary btn-sm px-3 btn-cta-primary" do %>
           S'inscrire
         <% end %>
-
       </div>
 
     <% end %>

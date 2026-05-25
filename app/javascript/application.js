@@ -99,3 +99,16 @@ document.addEventListener("turbo:before-render", () => {
     if (instance) instance.dispose()
   })
 })
+
+// ── Ferme le drawer offcanvas mobile avant que Turbo remplace le body ──────────
+//
+// Même problème que les modales : Bootstrap garde un état interne sur l'offcanvas.
+// On cache le drawer proprement avant chaque navigation Turbo pour éviter qu'il
+// reste ouvert (ou bloqué) après le remplacement du DOM.
+document.addEventListener("turbo:before-render", () => {
+  const offcanvasEl = document.getElementById("mobileNavDrawer")
+  if (offcanvasEl) {
+    const instance = bootstrap.Offcanvas.getInstance(offcanvasEl)
+    if (instance) instance.hide()
+  }
+})
