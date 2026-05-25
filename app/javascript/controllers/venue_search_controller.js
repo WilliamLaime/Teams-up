@@ -339,7 +339,9 @@ export default class extends Controller {
     if (type.includes("gym") || type.includes("fitness"))                              return "💪"
     if (type.includes("boxe") || type.includes("combat") || type.includes("martial")) return "🥊"
     if (type.includes("golf"))                                                         return "⛳"
-    if (type.includes("padel") || type.includes("squash"))                             return "🏓"
+    if (type.includes("padel"))
+      return `<img src="https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png" style="width:20px;height:20px;object-fit:contain;" alt="padel">`
+    if (type.includes("squash"))                                                        return "🏓"
     if (type.includes("escalade"))                                                     return "🧗"
     if (type.includes("salle") || type.includes("gymnase") || type.includes("sports_centre")) return "🏋️"
     return "🏟️"
