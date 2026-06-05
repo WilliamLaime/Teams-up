@@ -83,9 +83,9 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path
-  test "POST /matches/:match_id/messages redirige vers root pour un visiteur non connecté" do
+  test "POST /matches/:match_id/messages redirige vers login pour un visiteur non connecté" do
     post match_messages_path(@match), params: { message: { content: "Intrus" } }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Edge case : un message avec contenu vide ne doit pas provoquer un 500
@@ -125,9 +125,9 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : visiteur non connecté → redirection root_path
-  test "POST /teams/:team_id/messages redirige vers root pour un visiteur non connecté" do
+  test "POST /teams/:team_id/messages redirige vers login pour un visiteur non connecté" do
     post team_messages_path(@team), params: { message: { content: "Intrus" } }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # ════════════════════════════════════════════════════════════════════════════
@@ -158,9 +158,9 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : visiteur non connecté → redirection root_path
-  test "POST /private_conversations/:id/messages redirige vers root pour un visiteur non connecté" do
+  test "POST /private_conversations/:id/messages redirige vers login pour un visiteur non connecté" do
     post private_conversation_messages_path(@private_conv),
          params: { message: { content: "Intrus" } }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end

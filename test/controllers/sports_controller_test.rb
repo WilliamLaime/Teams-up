@@ -59,7 +59,7 @@ class SportsControllerTest < ActionDispatch::IntegrationTest
   # (redirect_to_landing_if_visitor dans ApplicationController)
   test "POST /switch_sport/:id redirige vers root pour un visiteur non connecté" do
     post switch_sport_path(@football)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Edge case : si l'id du sport n'existe pas, le controller ne crash pas
@@ -118,6 +118,6 @@ class SportsControllerTest < ActionDispatch::IntegrationTest
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path
   test "POST /switch_sport/all redirige vers root pour un visiteur non connecté" do
     post multisport_switch_path
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end

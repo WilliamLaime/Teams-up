@@ -56,9 +56,9 @@ class ConversationsControllerTest < ActionDispatch::IntegrationTest
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path.
   # ApplicationController#redirect_to_landing_if_visitor intercepte avant Devise.
-  test "GET /conversations/:id redirige vers root pour un visiteur non connecté" do
+  test "GET /conversations/:id redirige vers login pour un visiteur non connecté" do
     get conversation_path(@match)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Edge case : un utilisateur connecté mais NON inscrit au match reçoit 403.
@@ -97,9 +97,9 @@ class ConversationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path.
-  test "DELETE /conversations/:id/dismiss redirige vers root pour un visiteur non connecté" do
+  test "DELETE /conversations/:id/dismiss redirige vers login pour un visiteur non connecté" do
     delete dismiss_conversation_path(@match)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Edge case : si le match n'existe pas, le controller répond 404 (head :not_found).

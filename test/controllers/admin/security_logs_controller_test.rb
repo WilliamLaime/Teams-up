@@ -66,10 +66,8 @@ class Admin::SecurityLogsControllerTest < ActionDispatch::IntegrationTest
   # ════════════════════════════════════════════════════════════════════════════
 
   # Vérifie qu'un visiteur non connecté ne peut pas voir les logs
-  test "GET /admin/security_logs redirige vers root pour un visiteur" do
-    # Pas de sign_in → redirect_to_landing_if_visitor prend le relais
+  test "GET /admin/security_logs redirige vers login pour un visiteur" do
     get admin_security_logs_path
-
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end
