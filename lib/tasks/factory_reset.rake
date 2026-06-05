@@ -101,6 +101,10 @@ namespace :factory_reset do
       puts "  Suppression des messages de match..."
       Message.where.not(match_id: nil).delete_all
 
+      # Avis référence matches via FK — doit être supprimé avant Match
+      puts "  Suppression des avis..."
+      Avis.delete_all
+
       puts "  Suppression des matchs..."
       Match.destroy_all  # destroy_all pour déclencher les callbacks ActiveStorage
 
@@ -125,9 +129,6 @@ namespace :factory_reset do
       PrivateConversation.delete_all
 
       # --- Relations sociales ---
-      puts "  Suppression des avis..."
-      Avis.delete_all
-
       puts "  Suppression des amitiés..."
       Friendship.delete_all
 
