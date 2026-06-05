@@ -1,0 +1,19 @@
+# Captain de l'équipe "one" — rôle "captain"
+# Ce membre est créé manuellement car le callback after_create du modèle Team
+# ne s'exécute pas lors du chargement des fixtures.
+captain_one:
+  team: one
+  user: one
+  role: captain
+
+# Membre ordinaire de l'équipe "one" (pas captain)
+member_two_in_one:
+  team: one
+  user: two
+  role: member
+
+# Captain de l'équipe "two"
+captain_two:
+  team: two
+  user: two
+  role: captain

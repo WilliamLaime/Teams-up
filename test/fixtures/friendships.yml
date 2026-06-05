@@ -1,0 +1,5 @@
+# Demande d'ami envoyée par "one" vers "two", encore en attente
+pending_one_to_two:
+  user: one
+  friend: two
+  status: pending
