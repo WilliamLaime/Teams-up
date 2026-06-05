@@ -5,10 +5,6 @@ class ApplicationController < ActionController::Base
   # 301 = redirection permanente → Google transfère tout le "link juice" SEO vers le .fr
   before_action :redirect_com_to_fr
 
-  # Redirige les visiteurs non connectés vers la landing page.
-  # Doit être AVANT authenticate_user! pour intercepter la requête avant Devise.
-  # Exceptions : le contrôleur landing lui-même, Devise (login/signup), PWA et erreurs.
-  before_action :redirect_to_landing_if_visitor
   before_action :authenticate_user!
   # Initialise les meta tags SEO par défaut avant chaque action.
   # Chaque controller peut appeler set_meta_tags() pour surcharger ces valeurs.
@@ -151,18 +147,6 @@ class ApplicationController < ActionController::Base
 
   # ── Verrou pré-lancement ─────────────────────────────────────────────────────
   #
-  # Redirige tous les visiteurs non connectés vers la landing page.
-  # Les développeurs se connectent via /users/sign_in et ont accès à tout.
-  # Exceptions : landing controller (la page elle-même), Devise, PWA, erreurs, sitemap.
-  def redirect_to_landing_if_visitor
-    return if user_signed_in?
-    return if devise_controller?
-    return if %w[landing pwa errors].include?(controller_name)
-    # Le sitemap doit rester accessible aux robots Google même en mode pré-lancement
-    return if request.path.start_with?("/sitemap")
-
-    redirect_to root_path
-  end
 
   # ── Onboarding post-inscription ──────────────────────────────────────────
 

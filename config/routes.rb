@@ -14,15 +14,8 @@ Rails.application.routes.draw do
     omniauth_callbacks: "users/omniauth_callbacks"  # Controller pour gérer le retour de Google OAuth
   }
 
-  # Landing page "Bientôt disponible" — visible par tous les visiteurs non connectés.
-  # Les développeurs connectés sont redirigés vers /matches par LandingController#index.
-  root to: "landing#index"
-
-  # POST /inscription → enregistre l'email du visiteur dans la waitlist
-  post "inscription", to: "landing#subscribe", as: :waitlist_subscribe
-
-  # Ancienne page d'accueil — conservée pour les développeurs connectés
-  get "accueil", to: "pages#home", as: :home
+  # Page d'accueil publique — accessible à tous, connectés ou non
+  root to: "pages#home"
 
   # Page post-inscription : invite l'utilisateur à confirmer son email
   get "confirmation-en-attente", to: "pages#email_confirmation", as: :email_confirmation_pending
