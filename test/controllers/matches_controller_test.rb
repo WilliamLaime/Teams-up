@@ -53,14 +53,10 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   # GET /matches — action index
   # ════════════════════════════════════════════════════════════════════════════
 
-  # Comportement réel : un visiteur non connecté est redirigé vers root_path.
-  # ApplicationController#redirect_to_landing_if_visitor redirige TOUS les visiteurs
-  # vers la landing page, même pour les actions sans authenticate_user!.
-  # skip_before_action :authenticate_user! ne skip pas ce before_action global.
-  test "GET /matches redirige vers root pour un visiteur non connecté" do
+  # matches#index est public (skip_before_action :authenticate_user!) → 200 pour tout le monde
+  test "GET /matches retourne 200 pour un visiteur non connecté" do
     get matches_path
-    # L'app est en mode pré-lancement → tout visiteur non connecté va vers root
-    assert_redirected_to root_path
+    assert_response :success
   end
 
   # Cas nominal : un utilisateur connecté peut aussi voir la liste des matchs
@@ -97,10 +93,10 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  # Cas d'erreur : un visiteur non connecté sur un match public est redirigé vers root
-  test "GET /matches/:id redirige vers root pour un visiteur non connecté" do
+  # matches#show est public (skip_before_action :authenticate_user!) → 200 pour tout le monde
+  test "GET /matches/:id retourne 200 pour un visiteur non connecté" do
     get match_path(@match)
-    assert_redirected_to root_path
+    assert_response :success
   end
 
   # Cas d'erreur : un user connecté sur un match privé sans token → redirigé vers root
@@ -184,12 +180,10 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   # GET /matches/new — formulaire de création
   # ════════════════════════════════════════════════════════════════════════════
 
-  # Comportement réel : un visiteur non connecté est redirigé vers root_path.
-  # redirect_to_landing_if_visitor s'exécute avant authenticate_user! (Devise),
-  # donc on atterrit sur root et non sur la page de login Devise.
-  test "GET /matches/new redirige vers root si non connecté" do
+  # Visiteur non connecté → Devise redirige vers la page de login
+  test "GET /matches/new redirige vers login si non connecté" do
     get new_match_path
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Cas nominal : un utilisateur connecté peut voir le formulaire
@@ -203,16 +197,15 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   # POST /matches — création d'un match
   # ════════════════════════════════════════════════════════════════════════════
 
-  # Comportement réel : un visiteur non connecté est redirigé vers root_path.
-  # redirect_to_landing_if_visitor s'exécute avant authenticate_user! (Devise).
-  test "POST /matches redirige vers root si non connecté" do
+  # Visiteur non connecté → Devise redirige vers la page de login
+  test "POST /matches redirige vers login si non connecté" do
     post matches_path, params: {
       match: { title: "Test", date: Date.tomorrow, time: "18:00",
                level: "Débutant", player_left: 4, sport_id: @sport.id,
                visibility: "public", validation_mode: "automatic",
                genre_restriction: "tous" }
     }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Cas nominal : un match valide est créé et on est redirigé vers sa page
@@ -283,11 +276,10 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   # GET /matches/:id/edit — formulaire de modification
   # ════════════════════════════════════════════════════════════════════════════
 
-  # Comportement réel : non connecté → redirigé vers root_path (landing guard).
-  # redirect_to_landing_if_visitor s'exécute avant authenticate_user! (Devise).
-  test "GET /matches/:id/edit redirige vers root si non connecté" do
+  # Visiteur non connecté → Devise redirige vers la page de login
+  test "GET /matches/:id/edit redirige vers login si non connecté" do
     get edit_match_path(@match)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Cas nominal : l'organisateur peut voir le formulaire d'édition

@@ -60,11 +60,8 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
 
   # Vérifie qu'un visiteur non connecté est redirigé vers root
   # ApplicationController#redirect_to_landing_if_visitor intercepte AVANT Devise
-  test "GET /admin redirige vers root pour un visiteur non connecté" do
-    # Aucun sign_in → visiteur anonyme
+  test "GET /admin redirige vers login pour un visiteur non connecté" do
     get admin_root_path
-
-    # redirect_to_landing_if_visitor renvoie vers root_path (landing page)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end

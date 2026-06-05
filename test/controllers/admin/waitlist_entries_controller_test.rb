@@ -59,9 +59,7 @@ class Admin::WaitlistEntriesControllerTest < ActionDispatch::IntegrationTest
 
   # Vérifie qu'un visiteur anonyme est redirigé vers la landing page
   test "GET /admin/waitlist_entries redirige un visiteur non connecté" do
-    # Pas de sign_in → redirect_to_landing_if_visitor intercepte avant Devise
     get admin_waitlist_entries_path
-
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end

@@ -53,7 +53,7 @@ class TeamsControllerTest < ActionDispatch::IntegrationTest
   # ApplicationController#redirect_to_landing_if_visitor s'exécute avant authenticate_user!.
   test "GET /equipes redirige vers root si non connecté" do
     get teams_path
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Cas nominal : un user connecté voit la liste de ses équipes (200 OK)
@@ -80,7 +80,7 @@ class TeamsControllerTest < ActionDispatch::IntegrationTest
   # Comportement réel : non connecté → redirigé vers root_path (landing guard).
   test "GET /equipes/:id redirige vers root si non connecté" do
     get team_path(@team)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Cas nominal : un membre de l'équipe peut voir la page détail
@@ -114,7 +114,7 @@ class TeamsControllerTest < ActionDispatch::IntegrationTest
   # Comportement réel : non connecté → redirigé vers root_path (landing guard).
   test "GET /equipes/new redirige vers root si non connecté" do
     get new_team_path
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Cas nominal : un utilisateur connecté peut voir le formulaire de création

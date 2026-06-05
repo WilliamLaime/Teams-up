@@ -69,9 +69,9 @@ class PushSubscriptionsControllerTest < ActionDispatch::IntegrationTest
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path
   # (redirect_to_landing_if_visitor + authenticate_user! bloquent les visiteurs)
-  test "POST /push_subscriptions redirige vers root pour un visiteur non connecté" do
+  test "POST /push_subscriptions redirige vers login pour un visiteur non connecté" do
     post push_subscriptions_path, params: @valid_subscription_params
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # ════════════════════════════════════════════════════════════════════════════
@@ -109,8 +109,8 @@ class PushSubscriptionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path
-  test "DELETE /push_subscriptions redirige vers root pour un visiteur non connecté" do
+  test "DELETE /push_subscriptions redirige vers login pour un visiteur non connecté" do
     delete push_subscriptions_path, params: { endpoint: "https://test.example.com" }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end
