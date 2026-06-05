@@ -145,6 +145,25 @@ namespace :factory_reset do
       # level est nullable — nil = "non renseigné", valeur d'usine
       SportProfil.where(profil_id: founder_profil_ids).update_all(level: nil)
 
+      puts "  Reset XP et stats RPG des fondateurs..."
+      # Remet à zéro toutes les stats accumulées pendant les tests
+      Profil.where(id: founder_profil_ids).update_all(
+        xp: 0,
+        xp_level: 1,
+        stat_points: 0,
+        homme_du_match_count: 0,
+        average_rating: 0.0,
+        avis_count: 0,
+        attr_attack: 0,
+        attr_defense: 0,
+        attr_endurance: 0,
+        attr_mental: 0,
+        attr_precision: 0,
+        attr_speed: 0,
+        attr_tactics: 0,
+        attr_teamwork: 0
+      )
+
       # --- Préférences de lieux des fondateurs ---
       puts "  Suppression des profil_favorite_venues des fondateurs..."
       ProfilFavoriteVenue.where(profil_id: founder_profil_ids).delete_all
