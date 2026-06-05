@@ -53,10 +53,14 @@ class MatchesController < ApplicationController
     # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
     sport_name = current_sport&.name
     set_meta_tags(
-      title:       sport_name ? "Matchs de #{sport_name}" : "Trouver un match",
-      description: sport_name \
-        ? "Trouve et rejoins un match de #{sport_name} près de chez toi. Tous niveaux, toutes villes — inscris-toi en quelques secondes sur Teams-up." \
-        : "Trouve et rejoins un match de sport amateur près de chez toi. Football, basket, tennis et plus — Teams-up."
+      title: sport_name ? "Matchs de #{sport_name}" : "Trouver un match",
+      description: if sport_name
+                     "Trouve et rejoins un match de #{sport_name} près de chez toi. " \
+                       "Tous niveaux, toutes villes — inscris-toi en quelques secondes sur Teams-up."
+                   else
+                     "Trouve et rejoins un match de sport amateur près de chez toi. " \
+                       "Football, basket, tennis et plus — Teams-up."
+                   end
     )
   end
 
@@ -88,11 +92,11 @@ class MatchesController < ApplicationController
     sport_label = @match.sport&.name || "Sport"
     place_label = @match.place.present? ? " à #{@match.place}" : ""
     set_meta_tags(
-      title:       "Match de #{sport_label} — #{@match.title}",
+      title: "Match de #{sport_label} — #{@match.title}",
       description: "Rejoins ce match de #{sport_label}#{place_label} sur Teams-up. " \
                    "#{@match.title} — Niveau #{@match.level}. Inscris-toi en quelques secondes.",
       # noindex pour les matchs privés — ils ne doivent pas apparaître dans Google
-      noindex:     @match.private?
+      noindex: @match.private?
     )
 
     # Si l'utilisateur n'est pas connecté, on mémorise l'URL du match.
@@ -231,7 +235,8 @@ class MatchesController < ApplicationController
   def update
     authorize @match
     # Sécurité : seules les femmes peuvent modifier un match en "femme uniquement"
-    params[:match][:genre_restriction] = "tous" if params.dig(:match, :genre_restriction) == "feminin" && current_user.genre != "femme"
+    params[:match][:genre_restriction] = "tous" if params.dig(:match,
+                                                              :genre_restriction) == "feminin" && current_user.genre != "femme"
 
     # ── Capturer les valeurs AVANT la mise à jour ──────────────────────────────
     # On sauvegarde les données actuelles pour détecter les changements pertinents.
@@ -391,14 +396,14 @@ class MatchesController < ApplicationController
     @matches = @matches.where("time >= ?", params[:time_from]) if params[:time_from].present?
 
     # Filtre par nombre de places disponibles minimum (> 0 pour ignorer un param vide converti en 0)
-    @matches = @matches.where("player_left >= ?", params[:player_left].to_i) if params[:player_left].to_i > 0
+    @matches = @matches.where("player_left >= ?", params[:player_left].to_i) if params[:player_left].to_i.positive?
 
     # Filtre "Mes lieux" — restreint aux venues favorites de l'utilisateur
     # Disponible comme filtre manuel pour combiner avec d'autres filtres (date, niveau, etc.)
-    if params[:favorite_venues].present? && user_signed_in?
-      venue_ids = current_user.profil&.favorite_venues&.pluck(:id)
-      @matches = @matches.where(venue_id: venue_ids) if venue_ids&.any?
-    end
+    return unless params[:favorite_venues].present? && user_signed_in?
+
+    venue_ids = current_user.profil&.favorite_venues&.pluck(:id)
+    @matches = @matches.where(venue_id: venue_ids) if venue_ids&.any?
   end
 
   # Vérifie si les pré-filtres doivent être appliqués
@@ -428,7 +433,7 @@ class MatchesController < ApplicationController
   # 3. Niveau de compétence pour le sport courant (if sport actif)
   def apply_prefilters
     profil = current_user.profil
-    return unless profil  # Sécurité : pas de profil = pas de pré-filtres
+    return unless profil # Sécurité : pas de profil = pas de pré-filtres
 
     # Hashes pour tracker quels pré-filtres sont actifs (utilisés dans la vue)
     @active_prefilters = {}
@@ -526,9 +531,9 @@ class MatchesController < ApplicationController
     @match.team.members.where.not(id: current_user.id).each do |member|
       @match.match_users.create(user: member, role: "joueur", status: "pending")
       Notification.create(
-        user:    member,
+        user: member,
         message: "📅 #{@match.team.name} a un nouveau match : \"#{@match.title}\". Confirme ta présence !",
-        link:    match_path(@match)
+        link: match_path(@match)
       )
     end
   end

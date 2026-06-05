@@ -11,6 +11,22 @@
     {
       "fingerprint": "96b74d23849d87c45390d187d75c8b438edbb40a86d6dc97a49d6ab341139688",
       "note": "Faux positif : même protection que ci-dessus — File.basename() + liste blanche dans registrations_controller."
+    },
+    {
+      "fingerprint": "3c06df35d4bded3496c4fb2c7dd3638952f9d855d21d85c538bd8edc9206c169",
+      "note": "Faux positif : badge_svg est un SVG généré programmatiquement par l'app (formes géométriques + emoji). Aucune donnée utilisateur n'est injectée dans ce SVG."
+    },
+    {
+      "fingerprint": "51d0ef2c47823f3a3e41e0d8df6f088aa269809859efd7f7868bd75e90a0eacf",
+      "note": "Faux positif : même raison que ci-dessus — badge_svg généré par l'app, pas de contenu utilisateur."
+    },
+    {
+      "fingerprint": "a5a1f9eb8edbf3514fde652a132af4a28d010661f91203f3cb71ec22dc573181",
+      "note": "Faux positif : badge_svg généré par l'app dans le partial profil_teams. Aucune entrée utilisateur dans le SVG."
+    },
+    {
+      "fingerprint": "63595ad4cba11c68b3a8180d824e1bd304dc7b7d9b270686ff628bd9539d6489",
+      "note": "Faux positif : favorite_venue_ids est un tableau d'IDs d'adresses sportives choisies par l'utilisateur. Attribut intentionnellement permis — aucun attribut sensible exposé."
     }
   ]
 }

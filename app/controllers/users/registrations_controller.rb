@@ -114,14 +114,14 @@ module Users
       if user.provider.present?
         unless params[:delete_confirmation] == "1"
           return redirect_to edit_user_registration_path,
-                            alert: "Veuillez confirmer la suppression de votre compte."
+                             alert: "Veuillez confirmer la suppression de votre compte."
         end
       else
         # Cas 2 : User classique → vérifie le mot de passe
         password = params[:current_password_for_deletion].presence
         unless user.valid_password?(password)
           return redirect_to edit_user_registration_path,
-                            alert: "Mot de passe incorrect. Suppression annulée."
+                             alert: "Mot de passe incorrect. Suppression annulée."
         end
       end
 
@@ -142,9 +142,9 @@ module Users
 
       # ────── Étape 6 : Envoyer email de confirmation RGPD ──────────────────────
       AccountDeletionMailer.account_deleted(
-        user_email:  user_email,
-        user_name:   user_name,
-        deleted_at:  deleted_at
+        user_email: user_email,
+        user_name: user_name,
+        deleted_at: deleted_at
       ).deliver_later
 
       # ────── Étape 7 : Déconnecter et détruire ─────────────────────────────────
@@ -153,7 +153,7 @@ module Users
 
       # ────── Étape 8 : Rediriger avec confirmation ────────────────────────────
       redirect_to root_path, notice: "Ton compte a été supprimé. Nous espérons te revoir bientôt !"
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error("[AccountDeletion] Erreur lors de la suppression : #{e.message}")
       redirect_to edit_user_registration_path,
                   alert: "Une erreur est survenue. Veuillez réessayer."
@@ -265,13 +265,13 @@ module Users
              .each do |match_user|
           # Utilise la version asynchrone de match_cancelled (scalaires uniquement)
           UserMailer.match_cancelled_async(
-            user_email:      match_user.user.email,
-            match_title:     match.title,
-            match_date:      match.date,
-            match_time_str:  match.time&.strftime("%Hh%M"),
-            venue_name:      match.venue&.name,
-            venue_city:      match.venue&.city,
-            organizer_name:  organizer_name
+            user_email: match_user.user.email,
+            match_title: match.title,
+            match_date: match.date,
+            match_time_str: match.time&.strftime("%Hh%M"),
+            venue_name: match.venue&.name,
+            venue_city: match.venue&.city,
+            organizer_name: organizer_name
           ).deliver_later
         end
 

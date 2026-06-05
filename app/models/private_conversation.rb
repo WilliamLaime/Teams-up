@@ -12,8 +12,8 @@ class PrivateConversation < ApplicationRecord
   def self.between(user_a, user_b)
     # Cherche dans les deux sens possibles
     find_by(sender: user_a, recipient: user_b) ||
-    find_by(sender: user_b, recipient: user_a) ||
-    create!(sender: user_a, recipient: user_b)
+      find_by(sender: user_b, recipient: user_a) ||
+      create!(sender: user_a, recipient: user_b)
   end
 
   # ── Retourner l'autre participant (pas le current_user) ───────────────────

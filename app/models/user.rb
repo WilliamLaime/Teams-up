@@ -161,18 +161,16 @@ class User < ApplicationRecord
       google_first_name = auth.info.first_name.presence || auth.info.name&.split&.first || "Google"
       google_last_name  = auth.info.last_name.presence  || auth.info.name&.split&.last  || "User"
 
-      user = create!(
-        email:        auth.info.email,
-        provider:     auth.provider,
-        uid:          auth.uid,
-        password:     Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
-        # confirmed_at renseigné maintenant → l'email Google est déjà vérifié par Google,
-        # pas besoin de renvoyer un email de confirmation depuis notre app
-        confirmed_at: Time.current,
-        # first_name et last_name sont des attributs virtuels (attr_accessor sur User)
-        # nécessaires pour passer les validations on: :create
-        first_name:   google_first_name,
-        last_name:    google_last_name
+      # create (sans !) pour récupérer un user invalide plutôt que lever une exception.
+      # Le controller vérifie ensuite user.persisted? pour savoir si la création a réussi.
+      user = new(
+        email: auth.info.email,
+        provider: auth.provider,
+        uid: auth.uid,
+        password: Devise.friendly_token[0, 20], # Token aléatoire — jamais utilisé par l'user
+        confirmed_at: Time.current, # Google a déjà vérifié l'email
+        first_name: google_first_name, # attr_accessor pour les validations on: :create
+        last_name: google_last_name
       )
 
       # Crée le Profil immédiatement avec les données Google.
@@ -180,7 +178,7 @@ class User < ApplicationRecord
       # ce comportement ici pour que current_user.profil ne soit jamais nil.
       profil = user.create_profil(
         first_name: google_first_name,
-        last_name:  google_last_name
+        last_name: google_last_name
       )
 
       # Télécharge et attache la photo de profil Google si disponible.
@@ -190,11 +188,11 @@ class User < ApplicationRecord
         begin
           require "open-uri"
           profil.avatar.attach(
-            io:           URI.open(auth.info.image), # Télécharge l'image depuis l'URL Google
-            filename:     "google_avatar.jpg",
+            io: URI.open(auth.info.image), # rubocop:disable Security/Open -- URL Google contrôlée par OAuth, pas une entrée utilisateur
+            filename: "google_avatar.jpg",
             content_type: "image/jpeg"
           )
-        rescue => e
+        rescue StandardError => e
           Rails.logger.warn("Échec téléchargement avatar Google pour user #{user.id} : #{e.message}")
         end
       end

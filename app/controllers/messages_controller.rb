@@ -30,19 +30,16 @@ class MessagesController < ApplicationController
               # 1. Déplace la conversation d'équipe en tête de la sidebar
               turbo_stream.remove("sticky-team-convo-#{@team.id}"),
               turbo_stream.prepend("sticky-chat-sidebar-list",
-                partial: "shared/team_convo_item",
-                locals: { team: @team, team_member: @team_member }
-              ),
+                                   partial: "shared/team_convo_item",
+                                   locals: { team: @team, team_member: @team_member }),
               # 2. Réinitialise le formulaire du sticky chat
               turbo_stream.update("sticky-chat-form",
-                partial: "messages/form",
-                locals: { team: @team, message: Message.new }
-              ),
+                                  partial: "messages/form",
+                                  locals: { team: @team, message: Message.new }),
               # 3. Réinitialise le formulaire de la page équipe (si ouvert)
               turbo_stream.update("team-chat-form",
-                partial: "messages/form",
-                locals: { team: @team, message: Message.new }
-              )
+                                  partial: "messages/form",
+                                  locals: { team: @team, message: Message.new })
             ]
           end
           format.html { redirect_to @team }
@@ -81,14 +78,12 @@ class MessagesController < ApplicationController
             streams = [
               # 1. Réinitialise le formulaire de la page match (si ouvert)
               turbo_stream.update("chat-form",
-                partial: "messages/form",
-                locals: { match: @match, message: Message.new }
-              ),
+                                  partial: "messages/form",
+                                  locals: { match: @match, message: Message.new }),
               # 2. Réinitialise le formulaire du sticky chat
               turbo_stream.update("sticky-chat-form",
-                partial: "messages/form",
-                locals: { match: @match, message: Message.new }
-              )
+                                  partial: "messages/form",
+                                  locals: { match: @match, message: Message.new })
             ]
 
             # 3. Déplace la conversation en tête de la sidebar pour l'expéditeur
@@ -97,9 +92,8 @@ class MessagesController < ApplicationController
               streams.unshift(
                 turbo_stream.remove("sticky-convo-#{@match.id}"),
                 turbo_stream.prepend("sticky-chat-sidebar-list",
-                  partial: "shared/sticky_convo_item",
-                  locals: { match: @match, match_user: sender_mu }
-                )
+                                     partial: "shared/sticky_convo_item",
+                                     locals: { match: @match, match_user: sender_mu })
               )
             end
 
@@ -118,7 +112,7 @@ class MessagesController < ApplicationController
       # - Premier message : l'item n'est pas encore dans la sidebar de l'expéditeur
       # - Expéditeur avait masqué la conv : l'item a été retiré du DOM
       # Dans les deux cas → prepend seul. Sinon → remove puis prepend.
-      is_first_message    = !Message.exists?(private_conversation_id: @conversation.id)
+      is_first_message = !Message.exists?(private_conversation_id: @conversation.id)
       sender_was_dismissed = @conversation.dismissed_for?(current_user)
 
       @message = @conversation.messages.build(
@@ -148,28 +142,22 @@ class MessagesController < ApplicationController
             # 1. Déplace la conversation privée en tête de la sidebar de l'expéditeur
             if is_first_message || sender_was_dismissed
               # Item absent du DOM (premier message ou conv masquée) → insère en haut
-              streams << turbo_stream.prepend("private-chat-sidebar-list",
-                partial: "shared/private_convo_item",
-                locals:  { conversation: @conversation, current_user: current_user }
-              )
             else
               # Item déjà présent → supprime de sa position puis insère en tête
               streams << turbo_stream.remove("private-convo-#{@conversation.id}")
-              streams << turbo_stream.prepend("private-chat-sidebar-list",
-                partial: "shared/private_convo_item",
-                locals:  { conversation: @conversation, current_user: current_user }
-              )
             end
+            streams << turbo_stream.prepend("private-chat-sidebar-list",
+                                            partial: "shared/private_convo_item",
+                                            locals: { conversation: @conversation, current_user: current_user })
 
             # 2. Réinitialise le formulaire du sticky chat
             streams << turbo_stream.update("sticky-chat-form",
-              partial: "messages/form",
-              locals: {
-                match: nil,
-                message: Message.new,
-                private_conversation: @conversation
-              }
-            )
+                                           partial: "messages/form",
+                                           locals: {
+                                             match: nil,
+                                             message: Message.new,
+                                             private_conversation: @conversation
+                                           })
 
             render turbo_stream: streams
           end

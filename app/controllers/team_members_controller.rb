@@ -11,10 +11,10 @@ class TeamMembersController < ApplicationController
 
     # Notifie le membre retiré
     Notification.create(
-      user:    removed_user,
-      actor:   current_user,
+      user: removed_user,
+      actor: current_user,
       message: "Tu as été retiré de l'équipe \"#{@team.name}\".",
-      link:    teams_path
+      link: teams_path
     )
 
     redirect_to @team, notice: "#{removed_user.profil&.first_name} a été retiré de l'équipe."

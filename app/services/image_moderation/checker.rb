@@ -78,7 +78,7 @@ class ImageModeration
     # qu'on a bien une seule ligne par couple.
     def moderation
       @moderation ||= ImageModeration.find_or_create_by!(
-        moderatable:     record,
+        moderatable: record,
         attachment_name: attachment_name
       ) do |m|
         m.status   = "pending"
@@ -115,9 +115,9 @@ class ImageModeration
     # les actions dérivées (purge + notification si NSFW).
     def apply_verdict!(result)
       moderation.update!(
-        status:     result.nsfw? ? "rejected" : "approved",
-        score:      result.score,
-        reason:     result.nsfw? ? "nsfw_detected" : "safe",
+        status: result.nsfw? ? "rejected" : "approved",
+        score: result.score,
+        reason: result.nsfw? ? "nsfw_detected" : "safe",
         checked_at: Time.current
       )
 
@@ -147,10 +147,10 @@ class ImageModeration
       return unless owner
 
       Notification.create!(
-        user:       owner,
+        user: owner,
         notif_type: "image_rejected",
-        message:    notification_message,
-        link:       notification_link
+        message: notification_message,
+        link: notification_link
       )
     end
 
@@ -186,8 +186,8 @@ class ImageModeration
     # d'exception, c'est la branche fail-open.
     def mark_errored!(reason)
       moderation.update!(
-        status:     "errored",
-        reason:     reason,
+        status: "errored",
+        reason: reason,
         checked_at: Time.current
       )
     end
