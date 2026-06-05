@@ -78,15 +78,31 @@
     <% end %>
 
     <%# ── RGESN 4.11 — Respect de la préférence système de l'OS (prefers-color-scheme) ──────────
-        Pour les visiteurs non-connectés, data-theme est toujours "dark" (valeur par défaut serveur).
-        Ce script inline, exécuté AVANT le CSS, lit la préférence OS et bascule data-theme="light"
-        si l'OS est en mode clair — sans flash de thème. Les utilisateurs connectés ont leur thème
-        géré côté serveur via current_user.profil.theme (ce script ne s'applique pas à eux). %>
-    <% unless user_signed_in? %>
+        Pour les utilisateurs connectés : le thème vient de la BDD (posé ligne 9 via data-theme).
+        On le sauvegarde aussi dans localStorage pour qu'il soit connu après déconnexion.
+
+        Pour les visiteurs non-connectés : on lit localStorage en priorité (préférence issue d'une
+        session précédente), puis on fait fallback sur la préférence OS.
+        Ce script est synchrone et s'exécute AVANT le CSS → pas de flash de thème. %>
+    <% if user_signed_in? %>
+      <%# Sauvegarde le thème BDD dans localStorage pour le conserver après déconnexion %>
       <script>
-        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
+        localStorage.setItem('theme', '<%= current_theme %>');
+      </script>
+    <% else %>
+      <%# Visiteur : priorité localStorage → sinon préférence OS → sinon dark (défaut) %>
+      <script>
+        (function() {
+          var saved = localStorage.getItem('theme');
+          if (saved === 'light' || saved === 'dark') {
+            // Préférence explicitement sauvegardée lors d'une session précédente
+            document.documentElement.setAttribute('data-theme', saved);
+          } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+            // Aucune préférence sauvegardée → on respecte la préférence OS
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+          // Sinon : on garde "dark" posé par le serveur (valeur par défaut)
+        })();
       </script>
     <% end %>
 

@@ -62,6 +62,10 @@ export default class extends Controller {
     // Met à jour l'attribut data-theme sur <html> — tout le CSS réagit à cet attribut
     document.documentElement.setAttribute("data-theme", theme)
 
+    // Sauvegarde dans localStorage pour conserver la préférence après déconnexion.
+    // Le script inline du layout lit cette valeur en priorité pour les visiteurs.
+    localStorage.setItem("theme", theme)
+
     // Met à jour l'icône du bouton (soleil en mode sombre, lune en mode clair)
     this.updateButtonIcon(theme)
   }
