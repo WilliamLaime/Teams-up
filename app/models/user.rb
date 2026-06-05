@@ -156,19 +156,48 @@ class User < ApplicationRecord
     else
       # Nouvel utilisateur : on crée le compte avec un mot de passe aléatoire
       # (il n'en aura pas besoin puisqu'il se connectera toujours via Google)
+
+      # Prénom et nom récupérés depuis les données Google — utilisés pour l'User ET le Profil
+      google_first_name = auth.info.first_name.presence || auth.info.name&.split&.first || "Google"
+      google_last_name  = auth.info.last_name.presence  || auth.info.name&.split&.last  || "User"
+
       user = create!(
-        email: auth.info.email,
-        provider: auth.provider,
-        uid: auth.uid,
-        password: Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
+        email:        auth.info.email,
+        provider:     auth.provider,
+        uid:          auth.uid,
+        password:     Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
         # confirmed_at renseigné maintenant → l'email Google est déjà vérifié par Google,
         # pas besoin de renvoyer un email de confirmation depuis notre app
         confirmed_at: Time.current,
-        # first_name et last_name sont des attributs virtuels pour créer le Profil
-        # On les récupère depuis les données Google
-        first_name: auth.info.first_name.presence || auth.info.name&.split&.first || "Google",
-        last_name: auth.info.last_name.presence || auth.info.name&.split&.last || "User"
+        # first_name et last_name sont des attributs virtuels (attr_accessor sur User)
+        # nécessaires pour passer les validations on: :create
+        first_name:   google_first_name,
+        last_name:    google_last_name
       )
+
+      # Crée le Profil immédiatement avec les données Google.
+      # Le RegistrationsController fait ça après un signup classique — on reproduit
+      # ce comportement ici pour que current_user.profil ne soit jamais nil.
+      profil = user.create_profil(
+        first_name: google_first_name,
+        last_name:  google_last_name
+      )
+
+      # Télécharge et attache la photo de profil Google si disponible.
+      # Cela évite à l'utilisateur de devoir uploader une photo manuellement.
+      # rescue silencieux : l'absence de photo n'est pas bloquante pour la connexion.
+      if auth.info.image.present? && profil.persisted?
+        begin
+          require "open-uri"
+          profil.avatar.attach(
+            io:           URI.open(auth.info.image), # Télécharge l'image depuis l'URL Google
+            filename:     "google_avatar.jpg",
+            content_type: "image/jpeg"
+          )
+        rescue => e
+          Rails.logger.warn("Échec téléchargement avatar Google pour user #{user.id} : #{e.message}")
+        end
+      end
     end
 
     user
