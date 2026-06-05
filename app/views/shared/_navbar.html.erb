@@ -92,15 +92,17 @@
                       sinon → modale d'installation normale %>
         <%# data-controller seul sur le bouton — la modale est en dehors du <nav>
             pour éviter le stacking context de sticky-top qui bloquerait le backdrop %>
+        <%# Le controller Stimulus reste présent pour capturer beforeinstallprompt
+            et gérer la modale — le bouton est masqué sur tous les breakpoints car
+            l'install PWA n'a d'intérêt que sur mobile (accessible via le drawer). %>
         <div data-controller="pwa-install">
-          <%# d-none d-lg-flex : masqué sur mobile (déplacé dans le drawer burger) %>
           <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
-                  class="nav-pwa-btn d-none d-lg-flex align-items-center gap-2"
+                  class="nav-pwa-btn d-none align-items-center gap-2"
                   aria-label="Installer l'application sur votre appareil"
                   title="Installer l'application sur votre appareil">
             <i data-lucide="download" class="nav-pwa-icon" style="width:20px;height:20px;" aria-hidden="true"></i>
-            <span class="d-none d-lg-inline nav-pwa-label">Installer l'app</span>
+            <span class="nav-pwa-label">Installer l'app</span>
           </button>
         </div>
 
@@ -256,15 +258,33 @@
             </li>
           </ul>
         </div>
-        <%# Instructions iOS — Safari ne supporte pas le prompt natif %>
-        <div id="pwaIosInstructions" style="display:none; padding: 0 1.5rem 1rem;">
-          <p class="pwa-modal-ios-hint">
-            Sur iOS, appuie sur
-            <strong class="pwa-modal-ios-strong">Partager</strong>
-            <i data-lucide="share" style="width:13px;height:13px;color:#1EDD88;vertical-align:middle;"></i>
-            puis
-            <strong class="pwa-modal-ios-strong">Sur l'écran d'accueil</strong>.
-          </p>
+        <%# Instructions iOS — Safari ne supporte pas le prompt natif, on guide
+            l'utilisateur pas à pas avec un encadré visuel bien contrasté. %>
+        <div id="pwaIosInstructions" style="display:none; padding: 0 1.5rem 1.25rem;">
+          <div style="background:#242624; border-radius:12px; padding:1rem 1.25rem;">
+            <p style="color:rgba(255,255,255,0.55); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:700; margin-bottom:0.85rem;">
+              Comment installer
+            </p>
+            <%# Étape 1 %>
+            <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:0.75rem;">
+              <span style="background:#1EDD88; color:#111111; border-radius:50%; width:22px; height:22px; min-width:22px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem;">1</span>
+              <p style="margin:0; color:#f0f0f0; font-size:0.875rem; line-height:1.4;">
+                Appuie sur
+                <strong>Partager</strong>
+                <i data-lucide="share" style="width:14px;height:14px;color:#1EDD88;vertical-align:middle;margin-left:2px;"></i>
+                en bas de Safari
+              </p>
+            </div>
+            <%# Étape 2 %>
+            <div style="display:flex; align-items:flex-start; gap:0.75rem;">
+              <span style="background:#1EDD88; color:#111111; border-radius:50%; width:22px; height:22px; min-width:22px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem;">2</span>
+              <p style="margin:0; color:#f0f0f0; font-size:0.875rem; line-height:1.4;">
+                Sélectionne
+                <strong>Sur l'écran d'accueil</strong>
+                <i data-lucide="plus-square" style="width:14px;height:14px;color:#1EDD88;vertical-align:middle;margin-left:2px;"></i>
+              </p>
+            </div>
+          </div>
         </div>
         <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
           <button type="button" class="btn btn-sm pwa-modal-btn-later" data-bs-dismiss="modal">Plus tard</button>
