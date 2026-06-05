@@ -112,3 +112,16 @@ document.addEventListener("turbo:before-render", () => {
     if (instance) instance.hide()
   }
 })
+
+// ── PWA : capture globale de beforeinstallprompt ─────────────────────────────
+//
+// Problème : beforeinstallprompt ne se déclenche qu'une seule fois par session.
+// Le controller Stimulus se reconnecte après chaque navigation Turbo et remet
+// this.installPrompt = null, perdant l'événement capturé.
+//
+// Solution : intercepter l'événement ici, tôt dans le cycle de vie, et le stocker
+// dans window._pwaInstallPrompt. Le controller Stimulus n'a plus qu'à lire ce global.
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault()
+  window._pwaInstallPrompt = event
+})
