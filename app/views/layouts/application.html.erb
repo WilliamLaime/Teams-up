@@ -65,6 +65,18 @@
       }
     <% end %>
 
+    <%# ── Capture PWA beforeinstallprompt ──────────────────────────────────
+        Cet événement se déclenche très tôt, AVANT que les ES modules importmap
+        (application.js, Stimulus) aient fini de charger (ils sont defer par défaut).
+        On le capture ici en script inline synchrone pour ne pas le manquer.
+        Le Stimulus controller pwa_install lit ensuite window._pwaInstallPrompt. %>
+    <%= javascript_tag nonce: true do %>
+      window.addEventListener("beforeinstallprompt", function(e) {
+        e.preventDefault();
+        window._pwaInstallPrompt = e;
+      });
+    <% end %>
+
     <%# ── RGESN 4.11 — Respect de la préférence système de l'OS (prefers-color-scheme) ──────────
         Pour les visiteurs non-connectés, data-theme est toujours "dark" (valeur par défaut serveur).
         Ce script inline, exécuté AVANT le CSS, lit la préférence OS et bascule data-theme="light"

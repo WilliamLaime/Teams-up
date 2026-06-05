@@ -112,3 +112,4 @@ document.addEventListener("turbo:before-render", () => {
     if (instance) instance.hide()
   }
 })
+
