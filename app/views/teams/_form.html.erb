@@ -139,7 +139,7 @@
       <div class="d-flex gap-3 mt-4">
         <%= f.submit f.object.persisted? ? "Enregistrer les modifications" : "Créer l'équipe",
             class: "btn btn-primary btn-cta-primary px-4" %>
-        <%= link_to "Annuler", f.object.persisted? ? f.object : teams_path, class: "btn btn-outline-light" %>
+        <%= link_to "Annuler", f.object.persisted? ? f.object : teams_path, class: "btn btn-outline-secondary" %>
       </div>
     </div>
 

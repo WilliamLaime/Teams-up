@@ -278,6 +278,26 @@
   border: 1px solid var(--theme-border);        // était rgba(255,255,255,0.08) — adaptatif
   border-radius: 14px;
   padding: 1.25rem;
+
+  // Champs texte et textarea — fond gris adaptatif comme les autres formulaires
+  .form-control,
+  .form-select {
+    background-color: var(--theme-bg-surface) !important; // fond gris selon le thème
+    border: 1px solid var(--theme-border);
+    color: var(--theme-text-primary) !important;
+    border-radius: 0.5rem;
+
+    &::placeholder {
+      color: var(--theme-text-muted);
+    }
+
+    &:focus {
+      background-color: var(--theme-bg-surface) !important;
+      border-color: rgba(30, 221, 136, 0.5);
+      box-shadow: 0 0 0 0.2rem rgba(30, 221, 136, 0.15);
+      color: var(--theme-text-primary) !important;
+    }
+  }
 }
 
 // Titre de section (INFORMATIONS, BLASON, etc.) — adaptatif
