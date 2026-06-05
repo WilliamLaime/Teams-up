@@ -1,0 +1,12 @@
+# Équipe appartenant à l'utilisateur "one" (il en est le captain)
+# Le callback after_create ajoute automatiquement le captain comme TeamMember,
+# mais dans les fixtures les callbacks ne s'exécutent PAS — on devra donc
+# créer les team_members manuellement dans les fixtures.
+one:
+  name: Les Testeurs
+  captain: one
+
+# Équipe secondaire pour tester les cas "non-captain"
+two:
+  name: Les Adversaires
+  captain: two

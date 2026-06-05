@@ -1,0 +1,15 @@
+# Notification non lue appartenant à l'utilisateur "one"
+unread_for_one:
+  user: one
+  message: "Tu as reçu une nouvelle invitation"
+  notif_type: team_invitation
+  read: false
+  link: /teams/1
+
+# Notification lue appartenant à l'utilisateur "two"
+read_for_two:
+  user: two
+  message: "Ton match a démarré"
+  notif_type: match_start
+  read: true
+  link: /matches/1

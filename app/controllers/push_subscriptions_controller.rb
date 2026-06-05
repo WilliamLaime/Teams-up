@@ -3,6 +3,13 @@
 class PushSubscriptionsController < ApplicationController
   before_action :authenticate_user!
 
+  # Ce controller ne gère pas de ressources métier soumises à Pundit :
+  # les subscriptions appartiennent toujours à current_user (pas d'accès cross-user).
+  # On skip les after_actions Pundit pour éviter une PunditAuthorizationNotPerformedError
+  # (même pattern que VenuesController et SportsController).
+  skip_after_action :verify_authorized
+  skip_after_action :verify_policy_scoped
+
   # POST /push_subscriptions
   # Reçoit une subscription JSON du navigateur et la persiste en base.
   # Utilise find_or_create_by pour gérer les doublons (même endpoint = même appareil).

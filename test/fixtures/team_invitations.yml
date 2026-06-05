@@ -1,0 +1,7 @@
+# Invitation envoyée par le captain "one" à l'utilisateur "two" pour l'équipe "one"
+# Status "pending" = en attente de réponse de l'invitee
+pending_invite:
+  team: one
+  inviter: one
+  invitee: two
+  status: pending

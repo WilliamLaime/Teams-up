@@ -1,0 +1,14 @@
+# Inscription de l'organisateur du match (user "one") au match "one"
+# Role "organisateur" = créateur du match
+organisateur_one:
+  match: one
+  user: one
+  role: organisateur
+  status: approved
+
+# Inscription d'un joueur ordinaire (user "two") au même match
+joueur_two:
+  match: one
+  user: two
+  role: joueur
+  status: approved
