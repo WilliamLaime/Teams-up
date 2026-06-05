@@ -28,7 +28,10 @@ class User < ApplicationRecord
               with: PASSWORD_REGEX,
               message: "doit contenir au moins 6 caractères, une majuscule, un chiffre et un symbole"
             },
-            if: :password_required? # Méthode Devise : n'exécute la validation que si le mot de passe est renseigné
+            # On skip la validation de format pour les users OAuth (provider présent) :
+            # leur mot de passe est un token aléatoire qu'ils n'utiliseront jamais.
+            # Devise.friendly_token ne génère pas de symbole → la regex échouerait sinon.
+            if: -> { password_required? && provider.blank? }
 
   # Validations uniquement à la création du compte (on: :create)
   # Sans ça, Devise crée l'User même si le prénom/nom est vide,
@@ -161,19 +164,21 @@ class User < ApplicationRecord
       google_first_name = auth.info.first_name.presence || auth.info.name&.split&.first || "Google"
       google_last_name  = auth.info.last_name.presence  || auth.info.name&.split&.last  || "User"
 
-      user = create!(
+      # create (sans !) pour récupérer un user invalide plutôt que lever une exception.
+      # Le controller vérifie ensuite user.persisted? pour savoir si la création a réussi.
+      user = new(
         email:        auth.info.email,
         provider:     auth.provider,
         uid:          auth.uid,
-        password:     Devise.friendly_token[0, 20], # Mot de passe aléatoire obligatoire pour Devise
-        # confirmed_at renseigné maintenant → l'email Google est déjà vérifié par Google,
-        # pas besoin de renvoyer un email de confirmation depuis notre app
-        confirmed_at: Time.current,
-        # first_name et last_name sont des attributs virtuels (attr_accessor sur User)
-        # nécessaires pour passer les validations on: :create
-        first_name:   google_first_name,
+        password:     Devise.friendly_token[0, 20], # Token aléatoire — jamais utilisé par l'user
+        confirmed_at: Time.current,                 # Google a déjà vérifié l'email
+        first_name:   google_first_name,            # attr_accessor pour les validations on: :create
         last_name:    google_last_name
       )
+
+      # Si la sauvegarde échoue (validation inattendue), on retourne le user invalide
+      # → le controller détecte persisted? == false et redirige avec un message d'erreur
+      return user unless user.save
 
       # Crée le Profil immédiatement avec les données Google.
       # Le RegistrationsController fait ça après un signup classique — on reproduit
@@ -184,7 +189,6 @@ class User < ApplicationRecord
       )
 
       # Télécharge et attache la photo de profil Google si disponible.
-      # Cela évite à l'utilisateur de devoir uploader une photo manuellement.
       # rescue silencieux : l'absence de photo n'est pas bloquante pour la connexion.
       if auth.info.image.present? && profil.persisted?
         begin
