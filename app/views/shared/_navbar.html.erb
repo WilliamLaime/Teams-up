@@ -90,13 +90,9 @@
         <%# ── Bouton "Installer l'app" PWA — toujours visible pour les connectés ──
             Au clic : si déjà installé sur cet appareil → modale "déjà installé"
                       sinon → modale d'installation normale %>
+        <%# data-controller seul sur le bouton — la modale est en dehors du <nav>
+            pour éviter le stacking context de sticky-top qui bloquerait le backdrop %>
         <div data-controller="pwa-install">
-
-          <%# Bouton toujours visible (mobile + desktop) %>
-          <%# Sur mobile : icône seule (pas de texte) pour économiser l'espace navbar
-              Sur desktop (lg+) : icône + texte "Installer l'app" %>
-          <%# Sur desktop : bouton vert avec texte. Sur mobile : icône discrète style nav (comme la cloche et le chat) %>
-          <%# aria-label : nom accessible fiable (sur mobile l'icône est seule sans texte) %>
           <%# d-none d-lg-flex : masqué sur mobile (déplacé dans le drawer burger) %>
           <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
@@ -106,95 +102,6 @@
             <i data-lucide="download" class="nav-pwa-icon" style="width:20px;height:20px;" aria-hidden="true"></i>
             <span class="d-none d-lg-inline nav-pwa-label">Installer l'app</span>
           </button>
-
-          <%# ── Modale unique avec deux états gérés par Stimulus ──────────────
-              État 1 (installable)    : titre + avantages + bouton Installer
-              État 2 (déjà installé) : message informatif + bouton Fermer %>
-          <%# id="pwaInstallModal" permet au bouton du drawer de l'ouvrir directement %>
-          <div id="pwaInstallModal"
-               data-pwa-install-target="modal"
-               class="modal fade" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content pwa-modal-content">
-
-                <%# En-tête commun aux deux états — RGESN 5.2 (dimensions HTML) %>
-                <div class="modal-header border-0 pb-0 pt-4 px-4">
-                  <%# RGESN 6.9 : lazy pour éviter de charger ce logo 2× — la modale n'est pas visible au chargement %>
-                  <%= image_tag "logo/logo_vf_1_blanc.svg", alt: "Teams-up", width: 100, height: 28, style: "height:28px;", loading: "lazy" %>
-                  <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-
-                <%# ── État 1 : installation disponible ── %>
-                <div data-pwa-install-target="installView">
-                  <div class="modal-body px-4 py-4">
-                    <h5 class="pwa-modal-title">
-                      Installe Teams-up sur ton appareil
-                    </h5>
-                    <p class="pwa-modal-desc">
-                      Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application — sans passer par le navigateur.
-                    </p>
-                    <ul class="pwa-modal-list">
-                      <li class="pwa-modal-list-item">
-                        <i data-lucide="zap" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
-                        Lancement instantané
-                      </li>
-                      <li class="pwa-modal-list-item">
-                        <i data-lucide="smartphone" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
-                        Expérience plein écran
-                      </li>
-                    </ul>
-                  </div>
-                  <%# Instructions spécifiques iOS (Safari ne supporte pas le prompt natif) %>
-                  <div data-pwa-install-target="iosInstructions" style="display:none; padding: 0 1.5rem 1rem;">
-                    <p class="pwa-modal-ios-hint">
-                      Sur iOS, appuie sur
-                      <strong class="pwa-modal-ios-strong">Partager</strong>
-                      <i data-lucide="share" style="width:13px;height:13px;color:#1EDD88;vertical-align:middle;"></i>
-                      puis
-                      <strong class="pwa-modal-ios-strong">Sur l'écran d'accueil</strong>.
-                    </p>
-                  </div>
-
-                  <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
-                    <button type="button" class="btn btn-sm pwa-modal-btn-later" data-bs-dismiss="modal">
-                      Plus tard
-                    </button>
-                    <%# Bouton principal : caché sur iOS (pas de prompt natif), actif si le navigateur le supporte %>
-                    <button type="button"
-                            data-pwa-install-target="installBtn"
-                            data-action="click->pwa-install#install"
-                            class="btn btn-sm d-flex align-items-center gap-2"
-                            style="background-color:#1EDD88; color:#111111; border:none; font-weight:700; border-radius:8px; padding:8px 20px;">
-                      <i data-lucide="download" style="width:15px;height:15px;"></i>
-                      Installer
-                    </button>
-                  </div>
-                </div>
-
-                <%# ── État 2 : déjà installé sur cet appareil ── %>
-                <div data-pwa-install-target="alreadyInstalledView" style="display:none;">
-                  <div class="modal-body px-4 py-4 text-center">
-                    <div style="margin-bottom:1rem;">
-                      <i data-lucide="circle-check" style="width:40px;height:40px;color:#1EDD88;"></i>
-                    </div>
-                    <h5 class="pwa-modal-title">
-                      Déjà installée sur cet appareil
-                    </h5>
-                    <p class="pwa-modal-desc">
-                      Teams-up est déjà installé ici. Tu peux l'ouvrir directement depuis ton écran d'accueil.<br>
-                      <span class="pwa-modal-hint-small">Pour installer sur un autre appareil, utilise ce bouton depuis ce nouvel appareil.</span>
-                    </p>
-                  </div>
-                  <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-sm w-100 pwa-modal-btn-later" data-bs-dismiss="modal">
-                      Fermer
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
         </div>
 
         <%# ── Cloche + chat regroupés pour économiser l'espace ── %>
@@ -316,6 +223,81 @@
   </div>
 
 </nav>
+
+<%# ── Modale PWA — en dehors du <nav> pour éviter le stacking context sticky-top ──
+    La navbar a position:sticky + z-index:1030, ce qui créerait un stacking context
+    plaçant le backdrop Bootstrap (z-index:1040) AU-DESSUS de la modale → rien cliquable.
+    Ici, la modale est enfant direct du <body> (via le partial) et Bootstrap peut
+    positionner le backdrop correctement. %>
+<div id="pwaInstallModal" class="modal fade" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pwa-modal-content">
+
+      <div class="modal-header border-0 pb-0 pt-4 px-4">
+        <%= image_tag "logo/logo_vf_1_blanc.svg", alt: "Teams-up", width: 100, height: 28, style: "height:28px;", loading: "lazy" %>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <%# ── État 1 : installation disponible ── %>
+      <div id="pwaInstallView">
+        <div class="modal-body px-4 py-4">
+          <h5 class="pwa-modal-title">Installe Teams-up sur ton appareil</h5>
+          <p class="pwa-modal-desc">
+            Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application — sans passer par le navigateur.
+          </p>
+          <ul class="pwa-modal-list">
+            <li class="pwa-modal-list-item">
+              <i data-lucide="zap" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
+              Lancement instantané
+            </li>
+            <li class="pwa-modal-list-item">
+              <i data-lucide="smartphone" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
+              Expérience plein écran
+            </li>
+          </ul>
+        </div>
+        <%# Instructions iOS — Safari ne supporte pas le prompt natif %>
+        <div id="pwaIosInstructions" style="display:none; padding: 0 1.5rem 1rem;">
+          <p class="pwa-modal-ios-hint">
+            Sur iOS, appuie sur
+            <strong class="pwa-modal-ios-strong">Partager</strong>
+            <i data-lucide="share" style="width:13px;height:13px;color:#1EDD88;vertical-align:middle;"></i>
+            puis
+            <strong class="pwa-modal-ios-strong">Sur l'écran d'accueil</strong>.
+          </p>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+          <button type="button" class="btn btn-sm pwa-modal-btn-later" data-bs-dismiss="modal">Plus tard</button>
+          <button type="button"
+                  id="pwaInstallBtn"
+                  class="btn btn-sm d-flex align-items-center gap-2"
+                  style="background-color:#1EDD88; color:#111111; border:none; font-weight:700; border-radius:8px; padding:8px 20px;">
+            <i data-lucide="download" style="width:15px;height:15px;"></i>
+            Installer
+          </button>
+        </div>
+      </div>
+
+      <%# ── État 2 : déjà installé ── %>
+      <div id="pwaAlreadyInstalledView" style="display:none;">
+        <div class="modal-body px-4 py-4 text-center">
+          <div style="margin-bottom:1rem;">
+            <i data-lucide="circle-check" style="width:40px;height:40px;color:#1EDD88;"></i>
+          </div>
+          <h5 class="pwa-modal-title">Déjà installée sur cet appareil</h5>
+          <p class="pwa-modal-desc">
+            Teams-up est déjà installé ici. Tu peux l'ouvrir directement depuis ton écran d'accueil.<br>
+            <span class="pwa-modal-hint-small">Pour installer sur un autre appareil, utilise ce bouton depuis ce nouvel appareil.</span>
+          </p>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4 pt-0">
+          <button type="button" class="btn btn-sm w-100 pwa-modal-btn-later" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <%# ══════════════════════════════════════════════════════════════════════════
     DRAWER MOBILE — Offcanvas gauche Bootstrap 5
