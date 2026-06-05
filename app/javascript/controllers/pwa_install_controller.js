@@ -12,31 +12,55 @@ export default class extends Controller {
   static targets = ["button", "modal", "installView", "alreadyInstalledView", "installBtn", "iosInstructions"]
 
   connect() {
-    // Stocke l'événement d'installation natif du navigateur (Chrome/Edge uniquement)
-    this.installPrompt = null
+    // Lit le prompt capturé globalement dans application.js (résiste aux reconnexions Turbo).
+    // beforeinstallprompt ne se déclenche qu'une seule fois par session, donc on ne peut pas
+    // se fier à un écouteur local qui serait réinitialisé à chaque navigation Turbo.
+    this.installPrompt = window._pwaInstallPrompt || null
+
     // Instance Bootstrap Modal
     this.bsModal = null
 
-    // Écoute l'événement natif "beforeinstallprompt"
-    // Il se déclenche quand l'app est installable (HTTPS + manifest valide + SW enregistré)
     this.boundBeforeInstall = this.onBeforeInstallPrompt.bind(this)
     this.boundAppInstalled  = this.onAppInstalled.bind(this)
+    this.boundModalShow     = this.onModalShow.bind(this)
 
     window.addEventListener("beforeinstallprompt", this.boundBeforeInstall)
     window.addEventListener("appinstalled",        this.boundAppInstalled)
+
+    // Écoute l'ouverture Bootstrap de la modale — permet au bouton du drawer mobile
+    // d'ouvrir la modale directement (data-bs-toggle) tout en déclenchant la logique
+    // d'état (iOS / Chrome / déjà installé).
+    if (this.hasModalTarget) {
+      this.modalTarget.addEventListener("show.bs.modal", this.boundModalShow)
+    }
   }
 
   disconnect() {
     window.removeEventListener("beforeinstallprompt", this.boundBeforeInstall)
     window.removeEventListener("appinstalled",        this.boundAppInstalled)
+    if (this.hasModalTarget) {
+      this.modalTarget.removeEventListener("show.bs.modal", this.boundModalShow)
+    }
   }
 
   // Appelé par le navigateur quand l'app est prête à être installée (Chrome/Edge)
   onBeforeInstallPrompt(event) {
     // Empêche Chrome d'afficher son propre prompt automatiquement
     event.preventDefault()
-    // Sauvegarde l'événement pour l'utiliser quand l'utilisateur clique sur "Installer"
+    // Sauvegarde dans l'instance ET globalement (pour survivre aux reconnexions Turbo)
     this.installPrompt = event
+    window._pwaInstallPrompt = event
+  }
+
+  // Appelé automatiquement par Bootstrap à l'ouverture de la modale (quelle que soit la source)
+  onModalShow() {
+    const isAlreadyInstalled = window.matchMedia("(display-mode: standalone)").matches
+    if (isAlreadyInstalled) {
+      this.showAlreadyInstalledView()
+    } else {
+      this.showInstallView()
+    }
+    if (window.lucide) window.lucide.createIcons()
   }
 
   // Détecte si l'utilisateur est sur iOS (Safari ne supporte pas beforeinstallprompt)
@@ -45,30 +69,15 @@ export default class extends Controller {
            (navigator.userAgent.includes("Mac") && "ontouchend" in document)
   }
 
-  // Appelé au clic sur le bouton navbar
+  // Appelé au clic sur le bouton navbar — l'état est initialisé par onModalShow (show.bs.modal)
   openModal() {
     if (!this.hasModalTarget) return
 
-    // Initialise la Bootstrap Modal si ce n'est pas déjà fait
     if (!this.bsModal) {
       this.bsModal = new bootstrap.Modal(this.modalTarget)
     }
 
-    // Détecte si l'app tourne déjà en mode standalone (= installée sur cet appareil)
-    const isAlreadyInstalled = window.matchMedia("(display-mode: standalone)").matches
-
-    if (isAlreadyInstalled) {
-      // L'app est déjà installée → affiche le message d'info
-      this.showAlreadyInstalledView()
-    } else {
-      // L'app n'est pas encore installée → affiche la vue d'installation
-      this.showInstallView()
-    }
-
     this.bsModal.show()
-
-    // Ré-initialise les icônes Lucide dans la modale (chargée dynamiquement)
-    if (window.lucide) window.lucide.createIcons()
   }
 
   // Affiche la vue "installation disponible", adapte l'UI selon le navigateur
@@ -116,13 +125,15 @@ export default class extends Controller {
     // Attend la décision de l'utilisateur
     const { outcome } = await this.installPrompt.userChoice
 
-    // L'événement ne peut être utilisé qu'une seule fois, on le réinitialise
+    // L'événement ne peut être utilisé qu'une seule fois, on vide l'instance ET le global
     this.installPrompt = null
+    window._pwaInstallPrompt = null
   }
 
   // Appelé quand l'app vient d'être installée avec succès
   onAppInstalled() {
     this.installPrompt = null
+    window._pwaInstallPrompt = null
     if (this.bsModal) this.bsModal.hide()
   }
 }
