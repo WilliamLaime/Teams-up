@@ -76,27 +76,15 @@
         ══════════════════════════════════════════════════════ %>
     <div class="d-flex align-items-center gap-2 gap-lg-3 ms-auto ms-lg-0">
 
-      <% if user_signed_in? %>
+      <%# ── Bouton "Installer l'app" PWA — visible pour TOUS (connectés ou non) ──
+          Au clic : si déjà installé sur cet appareil → modale "déjà installé"
+                    sinon → modale d'installation (prompt Chrome/Edge ou instructions iOS)
+          Volontairement hors du bloc user_signed_in? : un visiteur non connecté
+          doit pouvoir installer l'app avant de s'inscrire. %>
+      <div data-controller="pwa-install">
 
-        <%# ── Bouton "Installer l'app" PWA ──────────────────────────────────
-            Caché par défaut, affiché automatiquement si le navigateur détecte
-            que l'app est installable (événement beforeinstallprompt).
-            Style : bouton vert (couleur principale de la charte) pour le rendre visible. %>
-        <%# ── Bouton "Installer l'app" PWA + modale personnalisée ──────────────
-            data-controller="pwa-install" : active le controller Stimulus
-            Le bouton ouvre notre modale custom (au lieu du prompt Chrome directement).
-            La modale custom s'affiche, et quand l'user clique "Installer" dedans,
-            on déclenche le prompt natif Chrome. %>
-        <%# ── Bouton "Installer l'app" PWA — toujours visible pour les connectés ──
-            Au clic : si déjà installé sur cet appareil → modale "déjà installé"
-                      sinon → modale d'installation normale %>
-        <%# data-controller seul sur le bouton — la modale est en dehors du <nav>
-            pour éviter le stacking context de sticky-top qui bloquerait le backdrop %>
-        <%# Le controller Stimulus reste présent pour capturer beforeinstallprompt
-            et gérer la modale — le bouton est masqué sur tous les breakpoints car
-            l'install PWA n'a d'intérêt que sur mobile (accessible via le drawer). %>
-        <div data-controller="pwa-install">
-          <button data-pwa-install-target="button"
+        <%# aria-label : nom accessible fiable (sur mobile l'icône est seule sans texte) %>
+        <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
                   class="nav-pwa-btn d-none align-items-center gap-2"
                   aria-label="Installer l'application sur votre appareil"
@@ -116,6 +104,9 @@
               <%= render "shared/notification_bell" %>
             <% end %>
           </div>
+      </div>
+
+      <% if user_signed_in? %>
 
           <%# Bouton chat — ouvre la modale globale des conversations %>
           <div class="nav-item">
@@ -245,7 +236,7 @@
         <div class="modal-body px-4 py-4">
           <h5 class="pwa-modal-title">Installe Teams-up sur ton appareil</h5>
           <p class="pwa-modal-desc">
-            Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application — sans passer par le navigateur.
+            Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application, sans passer par le navigateur.
           </p>
           <ul class="pwa-modal-list">
             <li class="pwa-modal-list-item">

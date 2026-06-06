@@ -81,33 +81,31 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  # Cas d'erreur : les pages publiques redirigent quand même les visiteurs non connectés
-  # car redirect_to_landing_if_visitor ne fait exception que pour landing, pwa, errors, sitemap
-  test "GET /quisommesnous redirige vers root pour un visiteur non connecté" do
+  # /quisommesnous et /contact sont publiques (skip_before_action :authenticate_user!)
+  test "GET /quisommesnous retourne 200 pour un visiteur non connecté" do
     get about_path
-    assert_redirected_to root_path
-  end
-
-  test "GET /contact redirige vers root pour un visiteur non connecté" do
-    get contact_path
-    assert_redirected_to root_path
-  end
-
-  # ════════════════════════════════════════════════════════════════════════════
-  # GET /accueil — action home
-  # ════════════════════════════════════════════════════════════════════════════
-
-  # Cas nominal : /accueil est accessible pour un utilisateur connecté → 200
-  test "GET /accueil retourne 200 pour un utilisateur connecté" do
-    sign_in @user
-    get home_path
     assert_response :success
   end
 
-  # Cas d'erreur : /accueil redirige un visiteur non connecté vers root_path
-  # (redirect_to_landing_if_visitor intercepte avant authenticate_user!)
-  test "GET /accueil redirige vers root pour un visiteur non connecté" do
-    get home_path
-    assert_redirected_to root_path
+  test "GET /contact retourne 200 pour un visiteur non connecté" do
+    get contact_path
+    assert_response :success
+  end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # GET / — action home (anciennement /accueil)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # La route /accueil n'existe plus — la homepage est désormais à /
+  test "GET / retourne 200 pour un utilisateur connecté" do
+    sign_in @user
+    get root_path
+    assert_response :success
+  end
+
+  # La homepage est publique — un visiteur non connecté voit la page d'accueil
+  test "GET / retourne 200 pour un visiteur non connecté" do
+    get root_path
+    assert_response :success
   end
 end

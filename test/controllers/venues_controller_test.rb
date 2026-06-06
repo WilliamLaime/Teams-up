@@ -66,7 +66,7 @@ class VenuesControllerTest < ActionDispatch::IntegrationTest
   # (redirect_to_landing_if_visitor dans ApplicationController)
   test "GET /venues/search redirige vers root pour un visiteur non connecté" do
     get search_venues_path, params: { q: "Five" }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Edge case : une query trop courte (< 2 caractères) retourne toutes les venues
@@ -150,6 +150,6 @@ class VenuesControllerTest < ActionDispatch::IntegrationTest
   # Cas d'erreur : visiteur non connecté → redirection root_path
   test "POST /venues/find_or_create redirige vers root pour un visiteur non connecté" do
     post find_or_create_venue_path, params: { name: "Test", city: "Paris" }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end

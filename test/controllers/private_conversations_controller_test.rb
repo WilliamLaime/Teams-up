@@ -57,9 +57,9 @@ class PrivateConversationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path.
-  test "POST /private_conversations redirige vers root pour un visiteur non connecté" do
+  test "POST /private_conversations redirige vers login pour un visiteur non connecté" do
     post private_conversations_path, params: { recipient_id: @recipient.id }
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # ════════════════════════════════════════════════════════════════════════════
@@ -89,9 +89,9 @@ class PrivateConversationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path.
-  test "GET /private_conversations/:id redirige vers root pour un visiteur non connecté" do
+  test "GET /private_conversations/:id redirige vers login pour un visiteur non connecté" do
     get private_conversation_path(@conversation)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # ════════════════════════════════════════════════════════════════════════════
@@ -118,9 +118,9 @@ class PrivateConversationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : visiteur non connecté → redirection root_path
-  test "PATCH mark_read redirige vers root pour un visiteur non connecté" do
+  test "PATCH mark_read redirige vers login pour un visiteur non connecté" do
     patch mark_read_private_conversation_path(@conversation)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # ════════════════════════════════════════════════════════════════════════════
@@ -147,8 +147,8 @@ class PrivateConversationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # Cas d'erreur : visiteur non connecté → redirection root_path
-  test "DELETE dismiss redirige vers root pour un visiteur non connecté" do
+  test "DELETE dismiss redirige vers login pour un visiteur non connecté" do
     delete dismiss_private_conversation_path(@conversation)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end

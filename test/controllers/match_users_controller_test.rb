@@ -127,11 +127,10 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
   # POST /matches/:match_id/match_users — rejoindre un match
   # ════════════════════════════════════════════════════════════════════════════
 
-  # Comportement réel : non connecté → redirigé vers root_path (landing guard).
-  # ApplicationController#redirect_to_landing_if_visitor s'exécute avant authenticate_user!.
-  test "POST /matches/:match_id/match_users redirige vers root si non connecté" do
+  # Visiteur non connecté → Devise redirige vers la page de login
+  test "POST /matches/:match_id/match_users redirige vers login si non connecté" do
     post match_match_users_path(@match)
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 
   # Cas nominal (mode automatique) : inscription "approved" immédiatement

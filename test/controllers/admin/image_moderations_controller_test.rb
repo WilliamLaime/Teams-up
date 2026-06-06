@@ -69,9 +69,7 @@ class Admin::ImageModerationsControllerTest < ActionDispatch::IntegrationTest
 
   # Vérifie qu'un visiteur anonyme est redirigé vers la landing
   test "GET /admin/image_moderations redirige un visiteur non connecté" do
-    # Pas de sign_in → redirect_to_landing_if_visitor intercepte
     get admin_image_moderations_path
-
-    assert_redirected_to root_path
+    assert_redirected_to new_user_session_path
   end
 end

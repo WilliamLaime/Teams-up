@@ -106,7 +106,8 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
 
   # Cas d'erreur : un visiteur non connecté ne peut pas appeler mark_all_read
   def test_patch_mark_all_read_redirige_si_non_connecte
-    patch mark_all_read_notifications_path, as: :json
-    assert_response :redirect, "mark_all_read doit rediriger un visiteur non connecté"
+    # Sans as: :json → Devise redirige vers new_user_session_path (302)
+    patch mark_all_read_notifications_path
+    assert_redirected_to new_user_session_path
   end
 end
