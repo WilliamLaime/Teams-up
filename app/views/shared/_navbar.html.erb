@@ -60,28 +60,15 @@
         ══════════════════════════════════════════════════════ %>
     <div class="d-flex align-items-center gap-2 gap-lg-3 ms-auto ms-lg-0">
 
-      <% if user_signed_in? %>
+      <%# ── Bouton "Installer l'app" PWA — visible pour TOUS (connectés ou non) ──
+          Au clic : si déjà installé sur cet appareil → modale "déjà installé"
+                    sinon → modale d'installation (prompt Chrome/Edge ou instructions iOS)
+          Volontairement hors du bloc user_signed_in? : un visiteur non connecté
+          doit pouvoir installer l'app avant de s'inscrire. %>
+      <div data-controller="pwa-install">
 
-        <%# ── Bouton "Installer l'app" PWA ──────────────────────────────────
-            Caché par défaut, affiché automatiquement si le navigateur détecte
-            que l'app est installable (événement beforeinstallprompt).
-            Style : bouton vert (couleur principale de la charte) pour le rendre visible. %>
-        <%# ── Bouton "Installer l'app" PWA + modale personnalisée ──────────────
-            data-controller="pwa-install" : active le controller Stimulus
-            Le bouton ouvre notre modale custom (au lieu du prompt Chrome directement).
-            La modale custom s'affiche, et quand l'user clique "Installer" dedans,
-            on déclenche le prompt natif Chrome. %>
-        <%# ── Bouton "Installer l'app" PWA — toujours visible pour les connectés ──
-            Au clic : si déjà installé sur cet appareil → modale "déjà installé"
-                      sinon → modale d'installation normale %>
-        <div data-controller="pwa-install">
-
-          <%# Bouton toujours visible (mobile + desktop) %>
-          <%# Sur mobile : icône seule (pas de texte) pour économiser l'espace navbar
-              Sur desktop (lg+) : icône + texte "Installer l'app" %>
-          <%# Sur desktop : bouton vert avec texte. Sur mobile : icône discrète style nav (comme la cloche et le chat) %>
-          <%# aria-label : nom accessible fiable (sur mobile l'icône est seule sans texte) %>
-          <button data-pwa-install-target="button"
+        <%# aria-label : nom accessible fiable (sur mobile l'icône est seule sans texte) %>
+        <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
                   class="nav-pwa-btn d-flex align-items-center gap-2"
                   aria-label="Installer l'application sur votre appareil"
@@ -175,7 +162,9 @@
               </div>
             </div>
           </div>
-        </div>
+      </div>
+
+      <% if user_signed_in? %>
 
         <%# ── Cloche notifications (UNE seule instance, temps réel via Turbo) ──
             turbo_stream_from : s'abonne au canal ActionCable de l'utilisateur.
