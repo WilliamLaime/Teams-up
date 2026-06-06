@@ -102,3 +102,6 @@ group :test do
   # Stub des requêtes HTTP dans les tests (utilisé pour les tests de l'adapter Sightengine)
   gem "webmock"
 end
+
+# SendGrid HTTP API — remplace SMTP (port 587 bloqué sur Railway)
+gem "sendgrid-actionmailer"
