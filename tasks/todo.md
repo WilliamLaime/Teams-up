@@ -1,205 +1,217 @@
 ---
-name: Modération d'images par IA
+name: Tests manquants — couverture complète de l'application
 status: draft
-created: 2026-04-10
+created: 2026-05-29
 ---
 
-# Modération automatique des images utilisateur
+## Objectif
 
-## Contexte
+Écrire tous les tests manquants de l'application Team Up pour couvrir les modèles, controllers et policies.
+Les fichiers de tests déjà existants (`match_test.rb`, `profil_test.rb`, `user_test.rb`, etc.) sont tous vides (squelettes sans assertions). Tout est donc à écrire.
 
-Les utilisateurs peuvent uploader trois types d'images :
-- [app/models/profil.rb:10](app/models/profil.rb#L10) — `Profil#avatar`
-- [app/models/team.rb:16](app/models/team.rb#L16) — `Team#badge_image`
-- [app/models/team.rb:19](app/models/team.rb#L19) — `Team#cover_image`
+## Fichiers impactés
 
-On veut détecter automatiquement les images NSFW et, en cas de rejet, purger l'image, notifier l'utilisateur et laisser le fallback "initiales" existant ([app/helpers/application_helper.rb:88](app/helpers/application_helper.rb#L88)) prendre le relais sur les avatars.
+### Modèles (à créer ou compléter)
+- `test/models/user_test.rb`
+- `test/models/match_test.rb`
+- `test/models/profil_test.rb`
+- `test/models/match_user_test.rb`
+- `test/models/notification_test.rb`
+- `test/models/team_test.rb`
+- `test/models/friendship_test.rb`
+- `test/models/avis_test.rb`
+- `test/models/match_vote_test.rb`
+- `test/models/team_invitation_test.rb`
+- `test/models/team_member_test.rb`
+- `test/models/sport_test.rb`
+- `test/models/venue_test.rb`
+- `test/models/message_test.rb`
+- `test/models/contact_message_test.rb`
+- `test/models/waitlist_entry_test.rb`
+- `test/models/sport_profil_test.rb`
 
-## Décisions actées
+### Controllers (à créer)
+- `test/controllers/matches_controller_test.rb`
+- `test/controllers/teams_controller_test.rb`
+- `test/controllers/match_users_controller_test.rb`
+- `test/controllers/profils_controller_test.rb`
+- `test/controllers/friendships_controller_test.rb`
+- `test/controllers/notifications_controller_test.rb`
+- `test/controllers/avis_controller_test.rb`
+- `test/controllers/match_votes_controller_test.rb`
+- `test/controllers/team_invitations_controller_test.rb`
+- `test/controllers/team_members_controller_test.rb`
+- `test/controllers/contact_messages_controller_test.rb`
 
-| Décision | Choix |
-|---|---|
-| Moteur IA | **Sightengine** (`nudity-2.1`) via API REST |
-| Raison | Free tier 2000 ops/mois illimité dans le temps, couvre notre cible 2000 users × 1 image/mois pile poil. Sur-ensemble fonctionnel de Falconsai (couvre aussi violence/armes/drogues si on en a besoin plus tard). Infra commerciale stable. |
-| Alternatives écartées | HF Falconsai (quota ~$0.10/mois = 500-1500 appels, trop serré), ONNX-in-Ruby (slug/RAM Heroku), sidecar VPS (coûte 4€/mois), Cloudinary add-on (payant) |
-| Architecture | Pattern **adapter** pour pouvoir switcher de provider sans réécrire le reste |
-| HTTP client | `net/http` natif (pas de dépendance ajoutée, POST multipart suffit) |
-| Exécution | **Asynchrone** via ActiveJob + Solid Queue (déjà en place en prod) |
-| Stratégie de rejet | Purge de l'attachement + `Notification` in-app + fallback initiales (automatique) |
-| Règle de score | `max(sexual_activity, sexual_display, erotica, very_suggestive) >= 0.8` → rejet |
-| Catégories ignorées | Tout `suggestive_classes` (bikini, cleavage, male_chest, swimwear…) — contexte sportif légitime |
-| Périmètre | Nouveaux uploads **et** existant (rake task) |
-| Notification | In-app uniquement (pas d'email) |
-| Notification sur purge rétroactive | Oui, l'utilisateur est prévenu |
-| Ton du message | Pédagogique — mentionner la possibilité de contacter le support en cas de faux positif |
-| Volume actuel / cible | Centaines au lancement, cible 2000+ users rapidement |
-| Plafond Sightengine free | 2000 ops/mois, **max 500/jour** — contrainte pour la rake task de backfill |
-| Stratégie en cas de dépassement quota | **Fail-open** : statut `errored`, image reste visible, admin alerté. On préfère un faux négatif temporaire à un blocage massif. |
-| Alerte quota | Notification admin dès qu'on atteint 80% du quota mensuel |
+### Policies (à créer)
+- `test/policies/team_policy_test.rb`
+- `test/policies/avis_policy_test.rb`
+- `test/policies/friendship_policy_test.rb`
+- `test/policies/match_user_policy_test.rb`
+- `test/policies/profil_policy_test.rb`
+- `test/policies/notification_policy_test.rb`
+- `test/policies/team_invitation_policy_test.rb`
+- `test/policies/team_member_policy_test.rb`
+- `test/policies/match_vote_policy_test.rb`
 
-## Architecture
+---
 
-### Modèle de données
+## Étapes
 
-Une seule table polymorphique pour centraliser la modération :
+### Modèles
 
-```
-image_moderations
-├── id
-├── moderatable_type      # "Profil" | "Team"
-├── moderatable_id
-├── attachment_name       # "avatar" | "badge_image" | "cover_image"
-├── status                # enum: pending | approved | rejected | errored
-├── score                 # decimal(5,4)  — proba NSFW retournée par le modèle
-├── reason                # string — "nsfw_detected" | "api_error" | …
-├── checked_at            # datetime
-├── created_at / updated_at
-└── index unique [moderatable_type, moderatable_id, attachment_name]
-```
+- [ ] `test/models/user_test.rb` — validations : password doit contenir majuscule + chiffre + symbole ; password trop simple rejeté ; first_name et last_name obligatoires à la création (on: :create) ; genre doit être dans GENRES ou nil ; méthodes : `friends_with?` retourne vrai si friendship accepted dans un sens OU l'autre ; `all_friends` retourne les deux sens ; `pending_request_sent_to?` retourne vrai si friendship pending ; `pending_request_from?` retourne vrai si inverse pending ; `display_name` retourne "Prénom Nom" si profil présent, sinon email ; `rank` retourne "bronze" pour level 1-2, "silver" 3-4, "gold" 5-6, "platinum" 7-8, "emerald" 9+
 
-Avantages :
-- Une seule table à administrer
-- Historique conservé même après purge
-- Admin interface uniforme (pas besoin de jongler entre Profil/Team)
+- [ ] `test/models/match_test.rb` — validations : level obligatoire ; player_left obligatoire, entier, >= 1 ; players_present obligatoire si format == "Libre" ; match doit être au minimum 30 min dans le futur (sinon erreur :base) ; level doit être valide pour le sport sélectionné (hors "Tout niveau") ; scopes : `upcoming` exclut les matchs passés ; `publicly_visible` exclut les matchs visibility == "private" ; `completed` retourne les matchs terminés (> 1h) ; `active_for_user` retourne les matchs pas encore terminés ; `visible_for_genre` avec user femme retourne tous les matchs, avec user non-femme exclut les matchs "feminin" ; méthodes : `private?` retourne vrai si visibility == "private" ; `public?` retourne vrai si visibility == "public" ou nil ; `full?` retourne vrai si player_left <= 0 ; `urgent?` retourne vrai si le match a lieu dans moins de 2h ; `past?` retourne vrai si déjà passé ; `in_progress?` retourne vrai si débuté mais < 1h ; `completed?` retourne vrai si > 1h après le début ; callback : `generate_private_token` est appelé avant la création d'un match privé et génère un token unique
 
-### Services
+- [ ] `test/models/profil_test.rb` — validations : first_name obligatoire ; last_name obligatoire ; preferred_city max 100 caractères ; méthodes XP : `xp_for_next_level` retourne le bon seuil selon le niveau ; `xp_for_current_level` retourne le plancher du niveau actuel ; `xp_progress_percent` retourne 0 à 100 correctement ; `recalculate_level!` met à jour xp_level et attribue 3 stat_points par niveau gagné ; `level_badge_color` retourne "success" niveaux 1-4, "primary" 5-8, "warning" 9-10 ; `card_tier_class` retourne la bonne classe CSS selon le niveau ; `theme` retourne "light" si light_mode? est vrai, sinon "dark" ; `needs_onboarding_modal?` retourne vrai si onboarding_shown_at est nil ; `needs_profile_reminder?` retourne faux si preferred_city présente, faux si onboarding < 7 jours, vrai si toutes conditions remplies
 
-```
-app/services/image_moderation/
-├── checker.rb              # API publique : Checker.call(record, :attachment_name)
-├── adapters/
-│   ├── base.rb             # Interface commune : #analyze(io, filename:) → Result
-│   └── sightengine.rb      # Impl. Sightengine check.json (multipart POST)
-├── result.rb               # Value object : score, label, raw_response
-└── errors.rb               # RateLimitError, QuotaExceededError, ApiError
-```
+- [ ] `test/models/match_user_test.rb` — validations : role doit être dans ROLES (liste à identifier) ; status doit être dans STATUSES ; user_id unique par match_id ; méthodes : `approved?` retourne vrai si status == "approved" ; `pending?` retourne vrai si status == "pending" (vérifier les méthodes d'instance existantes)
 
-`Checker.call(record, attachment_name)` :
-1. Récupère le blob de l'attachement (via `blob.id` pour éviter les race conditions sur changement d'avatar)
-2. Télécharge l'io en mémoire depuis Cloudinary (`blob.open`)
-3. Appelle l'adapter configuré (`Sightengine` par défaut) avec l'io + filename
-4. Crée ou met à jour `ImageModeration` avec le verdict (`score`, `reason`, `checked_at`)
-5. Si `score >= 0.8` → purge l'attachement **avec flag skip_moderation** (éviter boucle) + crée `Notification`
-6. Si erreur API → statut `errored`, image reste visible (fail-open)
+- [ ] `test/models/notification_test.rb` — associations : appartient à user ; appartient à actor (optionnel) ; scopes : `unread` retourne uniquement les notifications non lues ; `recent` retourne du plus récent au plus ancien
 
-### Job
+- [ ] `test/models/team_test.rb` — validations : name obligatoire ; name max 50 caractères ; name unique par captain_id (deux équipes du même nom pour le même captain rejetées) ; méthodes : `captain?` retourne vrai si l'user est le captain ; `member?` retourne vrai si l'user est dans les members ; `invitation_pending_for?` retourne vrai si une invitation pending existe pour cet user ; `members_count` retourne le bon nombre ; callback `add_captain_as_member` : le captain est automatiquement ajouté comme TeamMember avec role "captain" après création ; `sanitize_badge_svg` : supprime les balises `<script>` et les handlers "onload=" du SVG avant sauvegarde ; `badge_display` retourne :image si badge_image attaché, :svg si badge_svg présent, nil sinon
 
-`app/jobs/moderate_image_job.rb` :
-- Reçoit `(record_gid, attachment_name)`
-- Appelle `ImageModeration::Checker.call`
-- `retry_on RateLimitError, wait: :polynomially_longer, attempts: 5`
-- `discard_on RecordNotFound` (si l'image a été supprimée entre-temps)
+- [ ] `test/models/friendship_test.rb` — validations : status doit être dans STATUSES (pending/accepted/declined) ; friend_id obligatoire ; validation `cannot_friend_yourself` rejette si friend_id == user_id ; scopes : `pending` retourne les friendships en attente ; `accepted` retourne les friendships acceptées ; `declined` retourne les friendships refusées ; méthodes : `pending?`, `accepted?`, `declined?` retournent le bon booléen
 
-### Hooks modèles
+- [ ] `test/models/avis_test.rb` — validations : rating obligatoire, doit être entre 1 et 5 ; unicité reviewer_id par couple reviewed_user_id + match_id ; `cannot_review_yourself` rejette si reviewer == reviewed_user ; `both_players_must_have_played` rejette si le reviewer n'est pas "approved" dans ce match ; `both_players_must_have_played` rejette si le reviewed_user n'est pas "approved" dans ce match ; `within_review_window` rejette si le match n'est pas encore terminé ; `within_review_window` rejette si > 7 jours après la fin du match ; scopes : `mutual` retourne les avis avec mutual == true ; `non_mutual` retourne les avis avec mutual == false ; callback `set_mutual_flag` : quand A→B est créé et B→A existe, les deux passent mutual: true ; callback `clear_mutual_flag` : quand A→B est détruit, B→A repasse mutual: false ; callback `recalculate_average` : recalcule average_rating et avis_count sur le profil noté
 
-Dans `Profil` et `Team`, callback `after_commit` sur changement d'attachement :
-```ruby
-after_commit :enqueue_moderation, on: [:create, :update]
+- [ ] `test/models/match_vote_test.rb` — validations : unicité voter_id par match_id (un seul vote par match) ; `cannot_vote_for_yourself` rejette si voter == voted_for ; `both_players_must_have_played` rejette si voter n'est pas "approved" dans ce match ; `both_players_must_have_played` rejette si voted_for n'est pas "approved" dans ce match ; `within_vote_window` rejette si match pas encore terminé ; `within_vote_window` rejette si > 7 jours après la fin ; callback `recalculate_homme_du_match` : met à jour homme_du_match_id sur le match après création d'un vote ; `recalculate_homme_du_match` met à jour homme_du_match_count sur le profil gagnant/perdant
 
-private
+- [ ] `test/models/team_invitation_test.rb` — validations : status doit être dans STATUSES (pending/accepted/refused/proposed) ; unicité invitee_id par team_id pour status "pending" ; unicité invitee_id par team_id pour status "proposed" ; méthodes : `pending?`, `accepted?`, `refused?`, `proposed?` retournent le bon booléen ; scopes : `pending`, `accepted`, `refused`, `proposed` filtrent correctement
 
-def enqueue_moderation
-  ModerateImageJob.perform_later(to_gid_param, "avatar") if avatar.attached? && saved_change_to_attribute?("...")
-end
-```
-À affiner : Active Storage ne passe pas par `saved_change_to_*`, il faut écouter le blob via `after_commit` sur `ActiveStorage::Attachment` ou utiliser un concern dédié. **Cf. étape 4 pour la recherche exacte.**
+- [ ] `test/models/team_member_test.rb` — validations : role doit être dans ROLES (captain/member) ; unicité user_id par team_id (un user ne peut pas être deux fois membre de la même équipe) ; méthodes : `captain?` retourne vrai si role == "captain" ; `member?` retourne vrai si role == "member"
 
-### Gestion des erreurs API
+- [ ] `test/models/sport_test.rb` — validations : name obligatoire et unique ; slug obligatoire et unique ; icon obligatoire ; méthodes : `available_formats` retourne les bons formats selon le slug (ex: football → 5v5, 11v11, Libre) ; `available_levels` retourne les bons niveaux selon le slug (ex: tennis → 6 niveaux FFT) ; `default_player_count` retourne le players du premier format ; `max_player_count` retourne le max des formats (hors nil)
 
-- Rate limit Sightengine (429) → `retry_on RateLimitError` avec backoff exponentiel, max 5 tentatives
-- Quota mensuel dépassé (erreur Sightengine `usage_limit`) → **QuotaExceededError**, PAS de retry, statut `errored` direct + alerte admin
-- Timeout / 5xx → `retry_on ApiError`, max 5 tentatives
-- Après N échecs → status `errored`, visible dans l'admin pour retry manuel
-- **Fail-open** : jamais de blocage du user. Si l'API est down OU quota dépassé, l'image reste visible en `errored`. On préfère un faux négatif temporaire à un blocage massif.
-- **Alerte quota 80%** : un compteur `ImageModeration.where(checked_at: Time.current.beginning_of_month..).count` monitoré dans le dashboard admin, notification admin déclenchée quand on atteint 1600 ops (80% de 2000)
+- [ ] `test/models/venue_test.rb` — validations : name obligatoire ; city obligatoire ; scopes : `in_city` retourne les venues dont city contient la valeur (ILIKE) ; `by_sport` retourne les venues dont sport_type contient la valeur (ILIKE)
 
-### Admin
+- [ ] `test/models/message_test.rb` — validations : content obligatoire ; content max 1000 caractères ; `belongs_to_match_or_private_conversation_or_team` rejette si match_id ET private_conversation_id ET team_id sont tous nil
 
-Nouvelle section dans l'espace admin existant :
-- `admin/image_moderations#index` — filtres par statut (pending/approved/rejected/errored), date, type
-- `admin/image_moderations#show` — détail d'une modération (image, score, reason, possibilité de revalider ou reforcer le rejet)
-- Actions : `approve!`, `reject!`, `re_moderate!`
-- Stats en haut du dashboard admin : nb rejetés aujourd'hui / cette semaine
+- [ ] `test/models/contact_message_test.rb` — validations : prenom obligatoire ; nom obligatoire ; email obligatoire ; sujet obligatoire ; message obligatoire ; `email_valide_et_existant` rejette un format d'email invalide (ex: "pas-un-email") ; scopes : `unread` retourne les messages avec lu: false ; `recent` trie du plus récent au plus ancien
 
-### Notification
+- [ ] `test/models/waitlist_entry_test.rb` — validations : email obligatoire ; unicité de l'email (case-insensitive) ; format email valide via URI::MailTo ; callback before_validation : email est normalisé en minuscules et strip
 
-Nouveau type dans `Notification` :
-- `notification_type: "image_rejected"`
-- Ton **pédagogique** avec porte de sortie vers le support en cas de faux positif
-- Exemple (avatar) : "Votre photo de profil a été automatiquement retirée car notre système de modération a détecté un contenu potentiellement inapproprié. Vous pouvez en uploader une nouvelle à tout moment. Si vous pensez qu'il s'agit d'une erreur, contactez-nous via le formulaire de contact."
-- Variantes selon attachment_name (avatar / blason d'équipe / bannière d'équipe)
-- Lien direct vers la page concernée (édition profil ou édition équipe)
+- [ ] `test/models/sport_profil_test.rb` — validation `level_valid_for_sport` : rejette un niveau qui n'appartient pas à la grille du sport (ex: "Expert" pour un sport sans ce niveau) ; accepte un niveau vide (level est optionnel) ; accepte un niveau valide pour le sport
 
-## Étapes d'implémentation
+---
 
-### Phase 1 — Fondations (backend)
-- [x] 1.1 — ~~Ajouter gem HTTP client~~ → décision : `net/http` natif (aucune dépendance ajoutée)
-- [ ] 1.2 — Ajouter `SIGHTENGINE_API_USER` et `SIGHTENGINE_API_SECRET` à `.env.example` (Heroku plus tard, quand le local est validé)
-- [ ] 1.3 — Créer migration `create_image_moderations` avec index unique `[moderatable_type, moderatable_id, attachment_name]`
-- [ ] 1.4 — Créer modèle `ImageModeration` avec enum status (pending/approved/rejected/errored) + associations polymorphiques + scope `this_month`
-- [ ] 1.5 — Créer `ImageModeration::Adapters::Base` (interface abstraite avec `#analyze(io, filename:)`)
-- [ ] 1.6 — Créer `ImageModeration::Result` (value object : score, label, reason, raw)
-- [ ] 1.7 — Créer `ImageModeration::Errors` (RateLimitError, QuotaExceededError, ApiError)
-- [ ] 1.8 — Créer `ImageModeration::Adapters::Sightengine` (POST multipart via net/http, parsing `nudity.*`, gestion erreurs)
-- [ ] 1.9 — Créer `ImageModeration::Checker` (orchestration : blob → download → analyze → save → act)
-- [ ] 1.10 — Créer `ModerateImageJob` avec `retry_on RateLimitError, ApiError` + `discard_on ActiveRecord::RecordNotFound`
-- [ ] 1.11 — Tests unitaires : adapter (avec stub net/http), checker (avec fake adapter), job
+### Controllers
 
-### Phase 2 — Intégration modèles
-- [ ] 2.1 — Recherche : meilleure pratique Rails 8 pour déclencher un job sur changement d'`has_one_attached`
-- [ ] 2.2 — Créer concern `Moderatable` avec méthode `moderate_attachment(:name)`
-- [ ] 2.3 — Inclure `Moderatable` dans `Profil` (avatar) et `Team` (badge_image, cover_image)
-- [ ] 2.4 — Vérifier que la purge ne déclenche pas de boucle infinie de modération
-- [ ] 2.5 — Tests d'intégration : upload → job enqueue → modération → purge si rejeté
+- [ ] `test/controllers/matches_controller_test.rb`
+  - `GET /matches` (index) : retourne 200 pour un visiteur non connecté ; retourne 200 pour un user connecté ; avec `?mine=1` retourne uniquement les matchs de l'user connecté ; avec `?mine=1&status=completed` retourne uniquement les matchs terminés de l'user
+  - `GET /matches/:id` (show) : retourne 200 pour un match public ; redirige vers root pour un match privé sans token ; retourne 200 pour un match privé avec le bon token ; retourne 200 pour l'organisateur d'un match privé
+  - `GET /matches/new` : redirige vers login si non connecté ; retourne 200 si connecté
+  - `POST /matches` (create) : redirige vers login si non connecté ; crée le match et redirige si params valides ; réaffiche le formulaire (422) si params invalides ; ne permet pas à un non-femme de créer un match "feminin"
+  - `GET /matches/:id/edit` : redirige vers login si non connecté ; retourne 200 pour l'organisateur ; lève Pundit::NotAuthorizedError pour un autre user
+  - `PATCH /matches/:id` (update) : met à jour et redirige si organisateur et params valides ; réaffiche le formulaire (422) si params invalides ; lève Pundit::NotAuthorizedError pour un non-organisateur
+  - `DELETE /matches/:id` (destroy) : détruit le match et redirige si organisateur ; lève Pundit::NotAuthorizedError pour un non-organisateur
+  - `PATCH /matches/:id/make_public` : passe le match en public et redirige si organisateur ; lève Pundit::NotAuthorizedError pour un non-organisateur
 
-### Phase 3 — Notifications
-- [ ] 3.1 — Ajouter `notification_type: "image_rejected"` + locales FR
-- [ ] 3.2 — Créer partial pour affichage dans la cloche existante
-- [ ] 3.3 — Méthode `Notification.image_rejected!(user, attachment_name)` dans le modèle
-- [ ] 3.4 — Vérifier que le broadcast ActionCable fonctionne (la cloche se met à jour en live)
+- [ ] `test/controllers/teams_controller_test.rb`
+  - `GET /teams` (index) : redirige vers login si non connecté ; retourne 200 si connecté ; retourne uniquement les équipes de l'user
+  - `GET /teams/:id` (show) : redirige vers login si non connecté ; retourne 200 pour un membre ; lève Pundit::NotAuthorizedError pour un non-membre
+  - `GET /teams/new` : redirige vers login si non connecté ; retourne 200 si connecté
+  - `POST /teams` (create) : crée l'équipe et ajoute le captain comme membre ; réaffiche le formulaire (422) si params invalides
+  - `PATCH /teams/:id` (update) : met à jour et redirige si captain ; lève Pundit::NotAuthorizedError pour un non-captain
+  - `DELETE /teams/:id` (destroy) : détruit l'équipe et redirige si captain ; lève Pundit::NotAuthorizedError pour un non-captain
+  - `PATCH /teams/:id/transfer_captain` : transfère le capitanat si captain ; redirige avec alert si new_captain n'est pas membre ; lève Pundit::NotAuthorizedError pour un non-captain
+  - `DELETE /teams/:id/leave` : supprime le TeamMember de l'user ; lève Pundit::NotAuthorizedError pour le captain
 
-### Phase 4 — Fallback visuel pour équipes
-- [ ] 4.1 — Vérifier comment les vues affichent `badge_image` et `cover_image` aujourd'hui (partials concernés déjà identifiés : `teams/show`, `teams/_form`, `teams/_team_card`)
-- [ ] 4.2 — Pour le blason : utiliser la méthode `Team#badge_display` existante ([team.rb:78](app/models/team.rb#L78)) qui gère déjà la priorité `badge_image > badge_svg`. Si `badge_image` est purgé, le `badge_svg` (sanitized) prend naturellement le relais.
-- [ ] 4.3 — Pour la bannière : créer helper `team_cover_tag(team)` avec fallback gradient/couleur unie si `cover_image` absent
-- [ ] 4.4 — S'assurer que toutes les vues utilisent `badge_display` (ou un helper équivalent) plutôt que `team.badge_image.attached?` en direct, pour que le fallback soit uniforme
+- [ ] `test/controllers/match_users_controller_test.rb`
+  - `POST /matches/:match_id/match_users` (create) : redirige vers login si non connecté ; crée l'inscription approved si match en mode automatique et place disponible ; crée l'inscription pending si mode validation manuelle ; crée l'inscription waiting si match complet ; redirige avec alert si user déjà inscrit ; redirige avec alert si match "feminin" et user non-femme
+  - `DELETE /matches/:match_id/match_users/:id` (destroy) : supprime l'inscription si propriétaire ; lève Pundit::NotAuthorizedError pour un autre user ; promeut le suivant en file d'attente si was_approved
+  - `PATCH /matches/:match_id/match_users/:id/approve` : approuve le joueur si organisateur ; lève Pundit::NotAuthorizedError pour un non-organisateur ; redirige vers le match si joueur déjà traité (idempotence)
+  - `PATCH /matches/:match_id/match_users/:id/reject` : rejette le joueur si organisateur ; lève Pundit::NotAuthorizedError pour un non-organisateur
+  - `PATCH /matches/:match_id/match_users/:id/confirm` : confirme la participation si c'est l'user concerné ; redirige avec alert si match non-équipe
 
-### Phase 5 — Admin
-- [ ] 5.1 — Créer `Admin::ImageModerationsController` héritant de `Admin::BaseController`
-- [ ] 5.2 — Routes + Pundit policy `ImageModerationPolicy` (admin seulement)
-- [ ] 5.3 — Vue index avec filtres + pagination (Pagy)
-- [ ] 5.4 — Vue show avec actions approve/reject/re_moderate
-- [ ] 5.5 — Widget stats sur `admin/dashboard#index` (nb rejets 24h/7j)
-- [ ] 5.6 — Styles SCSS dans `pages/admin_image_moderations.scss`
+- [ ] `test/controllers/profils_controller_test.rb`
+  - `GET /profil` (show_simple) : redirige vers login si non connecté ; retourne 200 pour l'user connecté
+  - `GET /users/:id/profil` (show_user_simple) : retourne 200 pour un visiteur non connecté ; retourne 200 pour l'user lui-même ; retourne 200 pour un autre user connecté
+  - `GET /profil/edit` : redirige vers login si non connecté ; retourne 200 pour l'user connecté ; lève Pundit::NotAuthorizedError si on essaie d'accéder au profil d'un autre
+  - `PATCH /profil` (update) : met à jour et redirige si params valides ; réaffiche le formulaire (422) si params invalides
+  - `POST /profil/dismiss_onboarding` : met à jour onboarding_shown_at ; redirige vers root_path par défaut ; redirige vers le chemin local fourni dans params[:redirect_to] ; ignore les redirections vers des domaines externes
+  - `DELETE /profil/dismiss_reminder` : met à jour profile_reminder_dismissed_at ; répond en Turbo Stream
+  - `PATCH /profil/update_theme` : bascule light_mode et répond JSON avec le nouveau thème
 
-### Phase 6 — Existant (rake task)
-- [ ] 6.1 — Créer `lib/tasks/moderation.rake` avec `moderation:check_existing`
-- [ ] 6.2 — Itérer sur les `Profil` avec avatar + `Team` avec badge/cover
-- [ ] 6.3 — Enqueue `ModerateImageJob` avec `set(wait_until:)` croissant pour respecter le **plafond Sightengine 500 ops/jour**. Ex : 50 jobs/batch, 1 batch toutes les 2h pendant 10h → 250/jour, marge de sécurité.
-- [ ] 6.4 — Compteur et logs pour suivre la progression (nb enqueue, nb restants)
-- [ ] 6.5 — Documenter la commande dans le README (usage, durée estimée selon volume, précautions quota)
+- [ ] `test/controllers/friendships_controller_test.rb`
+  - `POST /users/:user_id/friendship` (create) : redirige vers login si non connecté ; crée la friendship pending ; redirige avec alert si on essaie de s'ajouter soi-même ; redirige avec alert si déjà amis ; redirige avec alert si demande déjà en attente
+  - `PATCH /users/:user_id/friendship/accept` : accepte la friendship et passe en "accepted" ; redirige avec alert si aucune demande en attente de cet user ; lève Pundit::NotAuthorizedError si l'user connecté n'est pas le destinataire
+  - `PATCH /users/:user_id/friendship/decline` : détruit la friendship ; redirige avec alert si aucune demande en attente
+  - `DELETE /users/:user_id/friendship` (destroy) : détruit la friendship initiée par current_user ; détruit une friendship accepted initiée par l'autre ; redirige avec alert si aucune relation
 
-### Phase 7 — Validation
-- [ ] 7.1 — Test manuel en dev : upload d'une image safe → approved
-- [ ] 7.2 — Test manuel en dev : upload d'une image NSFW (image de test neutre avec score simulé) → rejected → notification reçue → fallback initiales affiché
-- [ ] 7.3 — Test manuel admin : forcer re_moderate, approve manuel, reject manuel
-- [ ] 7.4 — Test du rake task sur un subset en dev
-- [ ] 7.5 — Vérifier logs Heroku après déploiement (pas d'erreurs API)
+- [ ] `test/controllers/notifications_controller_test.rb`
+  - `GET /notifications` (index) : redirige vers login si non connecté ; retourne 200 et uniquement les notifications de l'user connecté
+  - `PATCH /notifications/:id/mark_read` : passe la notification en read: true et redirige vers son lien ; lève Pundit::NotAuthorizedError si la notification n'appartient pas à l'user connecté
+  - `DELETE /notifications/:id` (destroy) : détruit la notification ; répond 200 JSON si format JSON ; lève Pundit::NotAuthorizedError si la notification n'appartient pas à l'user connecté
+  - `PATCH /notifications/mark_all_read` : passe toutes les notifs unread de l'user en read: true
 
-## Points de vigilance
+- [ ] `test/controllers/avis_controller_test.rb`
+  - `POST /users/:user_id/avis` (create) : redirige vers login si non connecté ; crée l'avis et redirige si params valides et match éligible ; répond JSON avec success: true si format JSON et save ok ; répond JSON avec error et 422 si modèle invalide ; redirige avec alert si modèle invalide (format HTML) ; lève Pundit::NotAuthorizedError si l'user essaie de se noter lui-même
 
-- **Plafond Sightengine 500 ops/jour** : contrainte forte pour la rake task de backfill. Étaler impérativement. Au quotidien (nouveaux uploads) c'est transparent : on reçoit bien moins de 500 uploads/jour à 2000 users actifs.
-- **Quota mensuel 2000 ops** : surveiller via dashboard admin. Au-delà → statut `errored` et fail-open.
-- **Purge en cascade** : s'assurer que purger l'attachement ne supprime pas aussi l'`ImageModeration` (on veut garder l'historique). La relation est polymorphique sur le record (Profil/Team), pas sur le blob.
-- **Race condition sur changement d'avatar** : si l'user change son avatar pendant qu'un job tourne sur l'ancien, le job ne doit pas purger le nouveau. Le job reçoit et manipule le `blob.id` de l'attachement original, pas la relation `record.avatar` qui peut avoir changé entre-temps.
-- **Contexte sportif** : NE PAS rejeter sur `suggestive_classes.*` (bikini, male_chest, swimwear…) car une photo de beach volley ou natation doit passer. Seules les 4 catégories `sexual_activity`, `sexual_display`, `erotica`, `very_suggestive` sont évaluées.
-- **Coût d'un faux positif** : un avatar légitime rejeté = user frustré. Avec seuil 0.8 et catégories restreintes, le risque est contenu, mais l'admin doit pouvoir rapidement approuver manuellement via `re_moderate!` ou `approve!`.
-- **GDPR** : l'image rejetée est purgée immédiatement. Seul l'`ImageModeration` reste en base avec le score, sans l'image → conforme.
-- **Boucle infinie purge→modération** : la purge déclenchée par la modération ne doit pas re-déclencher une modération. Utiliser `Thread.current[:skip_image_moderation] = true` autour du `purge` dans le Checker, ou filtrer dans le callback `Moderatable`.
+- [ ] `test/controllers/match_votes_controller_test.rb`
+  - `POST /matches/:match_id/match_votes` (create) : redirige vers login si non connecté ; crée le vote et redirige si params valides ; répond JSON success si format JSON ; répond JSON error 422 si modèle invalide (déjà voté, voter pour soi, hors fenêtre) ; lève Pundit::NotAuthorizedError si user vote pour lui-même
 
-## Ce qu'on ne fait PAS dans ce plan
+- [ ] `test/controllers/team_invitations_controller_test.rb`
+  - `POST /teams/:team_id/team_invitations` (create) : redirige vers login si non connecté ; crée l'invitation et redirige si captain et invitee valide ; redirige avec alert si invitee introuvable ; redirige avec alert si invitee déjà membre ; lève Pundit::NotAuthorizedError si non-captain
+  - `PATCH /teams/:team_id/team_invitations/:id` (update) avec status=accepted : crée le TeamMember et accepte l'invitation si c'est l'invitee ; lève Pundit::NotAuthorizedError si non-invitee
+  - `PATCH /teams/:team_id/team_invitations/:id` (update) avec status=refused : passe l'invitation en "refused" ; lève Pundit::NotAuthorizedError si non-invitee
+  - `DELETE /teams/:team_id/team_invitations/:id` (destroy) : détruit l'invitation si captain ; lève Pundit::NotAuthorizedError si non-captain
+  - `POST /teams/:team_id/team_invitations/propose` : crée une invitation status="proposed" si membre non-captain ; redirige avec alert si captain essaie de proposer ; redirige avec alert si invitee introuvable
 
-- Détection de violence / armes / haine (hors scope du modèle Falconsai — à envisager plus tard avec un second adapter)
-- Modération des images de match (photos uploadées par les joueurs sur un match — à traiter séparément si besoin)
-- Modération humaine pré-publication (toutes les images sont publiées immédiatement, la modération IA tourne en arrière-plan)
-- Détection de données personnelles dans les images (plaques, visages de tiers) — problème RGPD non résolvable automatiquement
+- [ ] `test/controllers/team_members_controller_test.rb`
+  - `DELETE /teams/:team_id/team_members/:id` (destroy) : redirige vers login si non connecté ; retire le membre et redirige si captain ; lève Pundit::NotAuthorizedError si non-captain ; lève Pundit::NotAuthorizedError si le captain essaie de se retirer lui-même
+
+- [ ] `test/controllers/contact_messages_controller_test.rb`
+  - `POST /contact` (create) : crée le message et redirige si tous les champs valides ; réaffiche "pages/contact" (422) si champs manquants ; accessible sans être connecté (skip_before_action)
+
+---
+
+### Policies
+
+- [ ] `test/policies/team_policy_test.rb`
+  - `index?` : retourne vrai pour tout user connecté
+  - `show?` : retourne vrai pour tout user connecté
+  - `create?` : retourne vrai pour tout user connecté
+  - `update?` : retourne vrai si l'user est le captain ; retourne faux si l'user est membre mais pas captain
+  - `destroy?` : retourne vrai si captain ; retourne faux sinon
+  - `transfer_captain?` : retourne vrai si captain ; retourne faux sinon
+  - `leave?` : retourne vrai si l'user est membre ET pas captain ; retourne faux si l'user est captain ; retourne faux si l'user n'est pas membre
+  - `Scope#resolve` : retourne les équipes dont l'user est membre ; retourne une collection vide si user non connecté
+
+- [ ] `test/policies/avis_policy_test.rb`
+  - `create?` : retourne faux si user nil (non connecté) ; retourne faux si user == reviewed_user (se noter soi-même) ; retourne vrai si user connecté et reviewed_user différent
+
+- [ ] `test/policies/friendship_policy_test.rb`
+  - `create?` : retourne vrai si user connecté ; retourne faux si user nil
+  - `destroy?` : retourne vrai si l'user est l'initiateur de la friendship (record.user == user) ; retourne vrai si l'user est le destinataire ET la friendship est accepted ; retourne faux si l'user est le destinataire ET la friendship est pending
+  - `accept?` : retourne vrai si l'user est le destinataire (record.friend == user) ; retourne faux si l'user est l'initiateur
+  - `decline?` : retourne vrai si l'user est le destinataire ; retourne faux si l'user est l'initiateur
+
+- [ ] `test/policies/match_user_policy_test.rb`
+  - `create?` : retourne vrai pour tout user connecté
+  - `destroy?` : retourne vrai si record.user == user ; retourne faux si c'est un autre user
+  - `approve?` : retourne vrai si l'user est l'organisateur du match (role "organisateur" dans match_users) ; retourne faux pour un joueur lambda
+  - `reject?` : même logique que approve?
+  - `confirm?` : retourne vrai si record.user == user ; retourne faux pour un autre user
+
+- [ ] `test/policies/profil_policy_test.rb`
+  - `show?` : retourne vrai si l'user est le propriétaire du profil (record.user == user) ; retourne faux pour un autre user
+  - `update?` : retourne vrai si propriétaire ; retourne faux pour un autre user
+
+- [ ] `test/policies/notification_policy_test.rb`
+  - `mark_read?` : retourne vrai si la notification appartient à l'user (record.user == user) ; retourne faux sinon
+  - `destroy?` : retourne vrai si appartient à l'user ; retourne faux sinon
+  - `mark_all_read?` : retourne vrai pour tout user connecté
+  - `Scope#resolve` : retourne uniquement les notifications de l'user connecté
+
+- [ ] `test/policies/team_invitation_policy_test.rb`
+  - `create?` : retourne vrai si l'user est le captain de l'équipe ; retourne faux pour un membre non-captain
+  - `update?` : retourne vrai si l'user est l'invitee (record.invitee_id == user.id) ; retourne faux pour le captain
+  - `destroy?` : retourne vrai si captain ; retourne faux pour l'invitee
+
+- [ ] `test/policies/team_member_policy_test.rb`
+  - `destroy?` : retourne vrai si l'user est le captain ET que le membre à retirer est différent de l'user ; retourne faux si l'user essaie de se retirer lui-même ; retourne faux si l'user est membre mais pas captain
+
+- [ ] `test/policies/match_vote_policy_test.rb`
+  - `create?` : retourne vrai si user connecté et voted_for != user ; retourne faux si user nil ; retourne faux si user == voted_for

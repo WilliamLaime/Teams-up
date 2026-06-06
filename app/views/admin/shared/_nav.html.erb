@@ -42,5 +42,12 @@
       Sécurité
     <% end %>
 
+    <%# ── Onglet Waitlist (emails pré-lancement collectés via landing page) ── %>
+    <%= link_to admin_waitlist_entries_path,
+                class: "admin-nav-tab #{active_tab == :waitlist ? "admin-nav-tab--active" : ""}" do %>
+      <i data-lucide="mail-check" style="width:15px; height:15px;"></i>
+      Waitlist
+    <% end %>
+
   </div>
 </div>

@@ -7,6 +7,17 @@ body:has(.error-404-page) footer {
   display: none;
 }
 
+// Logo adaptatif au thème sur les pages d'erreur
+// Mode sombre (défaut) : logo blanc visible, logo noir caché
+.error-logo--dark { display: none; }
+.error-logo--white { display: block; }
+
+// Mode clair : on inverse
+[data-theme="light"] {
+  .error-logo--white { display: none; }
+  .error-logo--dark { display: block; }
+}
+
 // Conteneur principal : centré verticalement et horizontalement
 .error-404-page {
   min-height: calc(100vh - 60px); // Prend tout l'espace sous la navbar

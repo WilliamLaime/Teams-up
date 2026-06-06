@@ -1,0 +1,10 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+# Thruster (reverse proxy devant Puma) écoute sur le port 80 par défaut.
+# PORT=80 doit être défini dans Railway Dashboard → Variables.
+healthcheckPath = "/up"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

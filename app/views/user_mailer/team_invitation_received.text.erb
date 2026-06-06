@@ -1,0 +1,16 @@
+TEAMS-UP
+========
+
+Invitation à rejoindre une équipe — <%= @team.name %>
+
+<%= @inviter.display_name %> t'invite à rejoindre l'équipe "<%= @team.name %>".
+Connecte-toi pour accepter ou refuser l'invitation.
+
+L'équipe :
+  Nom       : <%= @team.name %>
+  Capitaine : <%= @inviter.display_name %>
+
+Voir l'équipe : <%= team_url(@team) %>
+
+--
+© <%= Date.today.year %> Teams-Up — Tous droits réservés.

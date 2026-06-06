@@ -173,12 +173,13 @@
     width: 100px;
 
     &::placeholder { color: var(--theme-text-muted); } // placeholder adaptatif
-  }
-  
+
+    // RGAA 10.7 — focus visible pour la navigation clavier
     &:focus-visible {
-        outline: 2px solid $green;
-        outline-offset: 2px;
-      }
+      outline: 2px solid $green;
+      outline-offset: 2px;
+    }
+  }
 
   // Bouton "Effacer" (réinitialise les filtres) — adaptatif
   .filter-reset-btn {

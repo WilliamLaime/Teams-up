@@ -3,7 +3,13 @@
 #
 # Exemple d'utilisation :
 #   AchievementService.new(current_user).check(:first_join)
+#
+# ⚠️  GAMIF_PAUSED — Gamification temporairement suspendue.
+#     Pour réactiver : passer GAMIFICATION_PAUSED à false + grep GAMIF_PAUSED dans app/
 class AchievementService
+  # Interrupteur global — mettre à false pour réactiver toute la gamification
+  GAMIFICATION_PAUSED = true
+
   def initialize(user)
     @user   = user
     @profil = user.profil
@@ -12,6 +18,9 @@ class AchievementService
   # Point d'entrée principal — reçoit un trigger et vérifie les achievements correspondants
   # @param trigger [Symbol] — :first_join, :match_joined, :message_sent, :match_created, :profile_updated
   def check(trigger)
+    # ⚠️  GAMIF_PAUSED — court-circuit total tant que la gamification est suspendue
+    return if GAMIFICATION_PAUSED
+
     # Si le profil n'existe pas encore, on ne fait rien
     return unless @profil
 

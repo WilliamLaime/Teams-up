@@ -354,27 +354,23 @@
       color: rgba(0, 0, 0, 0.55) !important;
     }
 
-    // Cards de matchs dans le profil
-    // !important nécessaire pour écraser le background-color inline qui restait sur ces divs
+    // Cards de matchs dans le profil — textes adaptés au thème clair
+    // Le fond est géré plus bas (hors .profil-page) via .profil-match-card → #f5f5f5
     .profil-match-card {
-      background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-
       &:hover { border-color: rgba(0, 0, 0, 0.2) !important; }
 
       // Textes inline (color:#fff, color:rgba(255,255,255,...)) dans les enfants directs
-      // Ces divs dans les vues ERB avaient des couleurs blanches en inline style
       div, span, a {
         color: $gray !important;
       }
 
-      // Exception : les icônes Lucide gardent leur couleur verte/orange
+      // Exception : les icônes Lucide
       i[data-lucide] { color: rgba(0, 0, 0, 0.35) !important; }
 
       // Exception : le badge de niveau garde ses couleurs de charte
       .match-badge-level { color: inherit !important; }
 
-      // Exception : textes de date/heure → muted sombre
+      // Exception : textes de date/heure
       span[style*="rgba(255,255,255"] { color: rgba(0, 0, 0, 0.5) !important; }
     }
 
@@ -399,7 +395,109 @@
     // Noms dans les listes (amis, avis, etc.)
     .profil-reviewer-name { color: $gray !important; }
     .profil-review-text   { color: rgba(0, 0, 0, 0.7) !important; }
+
+    // ── Player card : contenu fond blanc, textes sombres ──────────────────────
+    // Le gradient noir hardcodé dans _player_card.scss est écrasé ici.
+    .player-card {
+      border-color: rgba(0, 0, 0, 0.1);
+      // Redéfinit les CSS vars de la carte pour le thème clair
+      --c-accent: #{$green};
+      --c-star:   #{$green};
+
+      .player-card__inner {
+        background: linear-gradient(160deg, #ffffff 0%, #f8fdf8 60%, #f4f4f4 100%);
+      }
+
+      // Séparateurs internes (étaient rgba(255,255,255,0.06) — invisibles en clair)
+      .player-card__header,
+      .player-card__actions,
+      .player-card__rating,
+      .player-card__stats,
+      .player-card__sports { border-bottom-color: rgba(0, 0, 0, 0.07) !important; }
+
+      // Nom du joueur
+      .player-card__name { color: $gray !important; }
+
+      // Localisation
+      .player-card__location { color: rgba(0, 0, 0, 0.45) !important; }
+
+      // Bouton Modifier
+      .player-card__btn-modifier {
+        color: rgba(0, 0, 0, 0.55) !important;
+        background: rgba(0, 0, 0, 0.05) !important;
+        border-color: rgba(0, 0, 0, 0.12) !important;
+        &:hover { background: rgba(0, 0, 0, 0.1) !important; color: $gray !important; }
+      }
+
+      // Bouton Message
+      .player-card__btn-message {
+        color: rgba(0, 0, 0, 0.55) !important;
+        background: rgba(0, 0, 0, 0.05) !important;
+        border-color: rgba(0, 0, 0, 0.12) !important;
+        &:hover { background: rgba(0, 0, 0, 0.1) !important; color: $gray !important; }
+      }
+
+      // Avatar fallback (initiale)
+      .player-card__avatar {
+        background: linear-gradient(135deg, #e0e0e0, #d0d0d0) !important;
+        color: rgba(0, 0, 0, 0.5) !important;
+      }
+
+      // Cases de stats (matchs joués / créés)
+      .player-card__stat-box {
+        background: rgba(0, 0, 0, 0.04) !important;
+        border-color: rgba(0, 0, 0, 0.08) !important;
+      }
+      .player-card__stat-label { color: rgba(0, 0, 0, 0.5) !important; }
+      .player-card__stat-value { color: $gray !important; }
+
+      // Label "Sports" + tags de sport
+      .player-card__sports-label { color: rgba(0, 0, 0, 0.5) !important; }
+      .player-card__sport-tag {
+        color: $gray !important;
+        background: rgba(0, 0, 0, 0.05) !important;
+        border-color: rgba(0, 0, 0, 0.1) !important;
+      }
+
+      // Étoiles de notation
+      .player-card__stars {
+        .star { color: rgba(0, 0, 0, 0.15) !important; }
+        .star.filled { color: $green !important; }
+      }
+      .player-card__rating-label { color: rgba(0, 0, 0, 0.5) !important; }
+
+      // Description
+      .player-card__description p { color: rgba(0, 0, 0, 0.55) !important; }
+
+      // Badge "En attente" (était blanc sur fond sombre)
+      .friend-status-badge--pending {
+        color: rgba(0, 0, 0, 0.55) !important;
+        border-color: rgba(0, 0, 0, 0.15) !important;
+      }
+
+      // Bouton Retirer / Annuler (était blanc sur fond sombre)
+      .friend-action-btn--muted {
+        color: rgba(0, 0, 0, 0.55) !important;
+        background: rgba(0, 0, 0, 0.05) !important;
+        border-color: rgba(0, 0, 0, 0.12) !important;
+        &:hover { color: $gray !important; background: rgba(0, 0, 0, 0.1) !important; }
+      }
+    }
+
+    // ── Bloc "Mes matchs" : contraste profil-match-card sur fond blanc ────────
+    // Le .match-block est blanc en mode clair. Les .profil-match-card à l'intérieur
+    // seraient aussi blancs → pas de séparation visible.
+    // Correction : fond très légèrement grisé sur les cards internes.
+    .profil-match-card {
+      background-color: #f5f5f5 !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+    }
   }
+
+  // ── Bouton de navigation (Retour / Tout voir) ────────────────────────────
+  // En dark : hover blanc (#fff) sur fond sombre → lisible.
+  // En clair : hover blanc serait illisible → on passe à un vert plus soutenu.
+  .nav-button:hover { color: darken($green, 12%) !important; }
 
   // ── Page About ────────────────────────────────────────────────────────────
   // La page "Qui sommes-nous ?" est intentionnellement 100% dark (design marketing).
@@ -567,23 +665,7 @@
   }
 
 
-  // ── Sélecteur d'équipe (formulaire match) ────────────────────────────────
-  // Couleurs hardcodées blanc → remplacées par du sombre sur fond blanc
-  .team-picker-option {
-    border-color: rgba(0, 0, 0, 0.12) !important;
-    background: rgba(0, 0, 0, 0.02) !important;
-
-    &:hover {
-      border-color: rgba($green, 0.45) !important;
-      background: rgba($green, 0.06) !important;
-    }
-  }
-
-  .team-picker-none-label { color: rgba(0, 0, 0, 0.55) !important; }
-  .team-picker-badge       { background: rgba(0, 0, 0, 0.06) !important; }
-  .team-picker-badge-icon  { color: rgba(0, 0, 0, 0.25) !important; }
-  .team-picker-name        { color: rgba(0, 0, 0, 0.8) !important; }
-  .team-picker-members     { color: rgba(0, 0, 0, 0.4) !important; }
+  // Sélecteur d'équipe : supprimé — utilise désormais .match-level-btn (compatible thème clair nativement)
 
 
   // ── Dropdown notifications ────────────────────────────────────────────────

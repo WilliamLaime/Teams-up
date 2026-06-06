@@ -14,7 +14,7 @@ Rails.application.routes.draw do
     omniauth_callbacks: "users/omniauth_callbacks"  # Controller pour gérer le retour de Google OAuth
   }
 
-  # Page d'accueil
+  # Page d'accueil publique — accessible à tous, connectés ou non
   root to: "pages#home"
 
   # Page post-inscription : invite l'utilisateur à confirmer son email
@@ -237,6 +237,10 @@ Rails.application.routes.draw do
     # Modération d'images IA — KPIs quota + tableau de toutes les modérations
     # GET /admin/image_moderations => liste filtrable par statut et type de record
     resources :image_moderations, only: [:index]
+
+    # Emails collectés via la landing page "Bientôt disponible"
+    # GET /admin/waitlist_entries => liste tous les emails inscrits
+    resources :waitlist_entries, only: [:index]
 
     # Messages reçus via le formulaire /contact
     # GET  /admin/contact_messages          => liste tous les messages

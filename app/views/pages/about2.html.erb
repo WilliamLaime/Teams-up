@@ -16,10 +16,11 @@
   <section class="a2-section a2-section--img-1">
 
     <div class="a2-section-inner text-center mx-auto">
-      <%# Logo blanc Teams-Up %>
+      <%# Logo blanc Teams-Up complet — picto + texte combinés %>
       <div class="a2-origin-logo justify-content-center">
-        <%= image_tag "img_footer/teamsup_picto_blanc.svg", alt: "", class: "a2-origin-picto" %>
-        <%= image_tag "img_footer/teamsup_texte.svg", alt: "Teams-Up", class: "a2-origin-texte" %>
+        <%= image_tag "logo/logo_vf_1_blanc.svg",
+              alt: "Teams-Up",
+              class: "a2-origin-logo-img" %>
       </div>
 
       <h1 class="a2-title">
@@ -140,8 +141,10 @@
   <section class="a2-section a2-section--img-5">
 
     <div class="a2-section-inner text-center mx-auto" style="max-width: 90vw;">
-      <%# SVG texte section 5 %>
-      <%= image_tag "img_qsn/texte_qsn_5.svg", alt: "", class: "a2-hero-svg" %>
+      <%# RGAA 9.2 : titre masqué visuellement pour que la section ait un titre accessible %>
+      <h2 class="visually-hidden">Nos valeurs</h2>
+      <%# SVG texte section 5 — RGESN 6.6 : lazy car hors viewport initial %>
+      <%= image_tag "img_qsn/texte_qsn_5.svg", alt: "", class: "a2-hero-svg", loading: "lazy" %>
     </div>
 
     <div class="a2-arrow">

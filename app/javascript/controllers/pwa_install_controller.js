@@ -1,128 +1,138 @@
 // Controller Stimulus : gère le bouton "Installer l'app" PWA
 //
+// La modale (#pwaInstallModal) est placée en dehors du <nav> pour éviter le
+// stacking context de sticky-top (z-index:1030) qui bloquerait le backdrop Bootstrap.
+// Le controller accède donc à la modale et ses éléments internes par ID, pas par targets.
+//
 // Logique :
-//   - Chrome/Edge : on attend l'événement "beforeinstallprompt" → bouton actif
-//   - iOS (Safari) : pas de prompt natif → on affiche les instructions manuelles
+//   - Chrome/Edge : beforeinstallprompt capturé dans le layout → bouton actif
+//   - iOS (Safari) : pas de prompt natif → instructions manuelles
 //   - App déjà installée (mode standalone) → message "déjà installé"
 
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  // Les "targets" sont les éléments HTML reliés au controller via data-pwa-install-target="..."
-  static targets = ["button", "modal", "installView", "alreadyInstalledView", "installBtn", "iosInstructions"]
+  // Seul le bouton navbar est enfant du controller
+  static targets = ["button"]
+
+  // ── Accesseurs vers les éléments de la modale (hors scope du controller) ──
+  get modal()              { return document.getElementById("pwaInstallModal") }
+  get installView()        { return document.getElementById("pwaInstallView") }
+  get alreadyInstalledView() { return document.getElementById("pwaAlreadyInstalledView") }
+  get installBtn()         { return document.getElementById("pwaInstallBtn") }
+  get iosInstructions()    { return document.getElementById("pwaIosInstructions") }
 
   connect() {
-    // Stocke l'événement d'installation natif du navigateur (Chrome/Edge uniquement)
-    this.installPrompt = null
-    // Instance Bootstrap Modal
+    // Récupère le prompt capturé tôt par le script inline du layout.
+    // beforeinstallprompt ne se déclenche qu'une fois par session — on ne peut pas
+    // se fier à un écouteur Stimulus qui est réinitialisé à chaque navigation Turbo.
+    this.installPrompt = window._pwaInstallPrompt || null
+
     this.bsModal = null
 
-    // Écoute l'événement natif "beforeinstallprompt"
-    // Il se déclenche quand l'app est installable (HTTPS + manifest valide + SW enregistré)
     this.boundBeforeInstall = this.onBeforeInstallPrompt.bind(this)
     this.boundAppInstalled  = this.onAppInstalled.bind(this)
+    this.boundInstallClick  = this.install.bind(this)
+    this.boundModalShow     = this.onModalShow.bind(this)
 
     window.addEventListener("beforeinstallprompt", this.boundBeforeInstall)
     window.addEventListener("appinstalled",        this.boundAppInstalled)
+
+    // Écoute l'ouverture Bootstrap (quelle que soit la source : bouton navbar ou drawer mobile)
+    if (this.modal) {
+      this.modal.addEventListener("show.bs.modal", this.boundModalShow)
+    }
+
+    // Le bouton "Installer" est hors scope Stimulus → on l'attache manuellement
+    if (this.installBtn) {
+      this.installBtn.addEventListener("click", this.boundInstallClick)
+    }
   }
 
   disconnect() {
     window.removeEventListener("beforeinstallprompt", this.boundBeforeInstall)
     window.removeEventListener("appinstalled",        this.boundAppInstalled)
+    if (this.modal)      this.modal.removeEventListener("show.bs.modal", this.boundModalShow)
+    if (this.installBtn) this.installBtn.removeEventListener("click", this.boundInstallClick)
   }
 
-  // Appelé par le navigateur quand l'app est prête à être installée (Chrome/Edge)
+  // Capturé par le layout en avance — ici en complément si l'event arrive après connect()
   onBeforeInstallPrompt(event) {
-    // Empêche Chrome d'afficher son propre prompt automatiquement
     event.preventDefault()
-    // Sauvegarde l'événement pour l'utiliser quand l'utilisateur clique sur "Installer"
     this.installPrompt = event
+    window._pwaInstallPrompt = event
   }
 
-  // Détecte si l'utilisateur est sur iOS (Safari ne supporte pas beforeinstallprompt)
+  // Déclenché par Bootstrap à l'ouverture de la modale (bouton navbar OU drawer mobile)
+  onModalShow() {
+    const isAlreadyInstalled = window.matchMedia("(display-mode: standalone)").matches
+    if (isAlreadyInstalled) {
+      this.showAlreadyInstalledView()
+    } else {
+      this.showInstallView()
+    }
+    if (window.lucide) window.lucide.createIcons()
+  }
+
   isIos() {
     return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
            (navigator.userAgent.includes("Mac") && "ontouchend" in document)
   }
 
-  // Appelé au clic sur le bouton navbar
+  // Clic sur le bouton navbar → ouvre la modale Bootstrap
   openModal() {
-    if (!this.hasModalTarget) return
+    if (!this.modal) return
 
-    // Initialise la Bootstrap Modal si ce n'est pas déjà fait
     if (!this.bsModal) {
-      this.bsModal = new bootstrap.Modal(this.modalTarget)
-    }
-
-    // Détecte si l'app tourne déjà en mode standalone (= installée sur cet appareil)
-    const isAlreadyInstalled = window.matchMedia("(display-mode: standalone)").matches
-
-    if (isAlreadyInstalled) {
-      // L'app est déjà installée → affiche le message d'info
-      this.showAlreadyInstalledView()
-    } else {
-      // L'app n'est pas encore installée → affiche la vue d'installation
-      this.showInstallView()
+      this.bsModal = new bootstrap.Modal(this.modal)
     }
 
     this.bsModal.show()
-
-    // Ré-initialise les icônes Lucide dans la modale (chargée dynamiquement)
-    if (window.lucide) window.lucide.createIcons()
   }
 
-  // Affiche la vue "installation disponible", adapte l'UI selon le navigateur
   showInstallView() {
-    if (this.hasInstallViewTarget)          this.installViewTarget.style.display          = "block"
-    if (this.hasAlreadyInstalledViewTarget) this.alreadyInstalledViewTarget.style.display = "none"
+    if (this.installView)          this.installView.style.display          = "block"
+    if (this.alreadyInstalledView) this.alreadyInstalledView.style.display = "none"
 
     if (this.isIos()) {
-      // iOS : cacher le bouton natif, afficher les instructions manuelles
-      if (this.hasInstallBtnTarget)        this.installBtnTarget.style.display        = "none"
-      if (this.hasIosInstructionsTarget)   this.iosInstructionsTarget.style.display   = "block"
+      if (this.installBtn)      this.installBtn.style.display      = "none"
+      if (this.iosInstructions) this.iosInstructions.style.display = "block"
     } else if (this.installPrompt) {
-      // Chrome/Edge avec prompt disponible : bouton actif, pas d'instructions iOS
-      if (this.hasInstallBtnTarget)        this.installBtnTarget.style.display        = ""
-      if (this.hasIosInstructionsTarget)   this.iosInstructionsTarget.style.display   = "none"
+      if (this.installBtn)      this.installBtn.style.display      = ""
+      if (this.iosInstructions) this.iosInstructions.style.display = "none"
     } else {
-      // Navigateur non supporté ou prompt pas encore reçu : bouton désactivé
-      if (this.hasInstallBtnTarget) {
-        this.installBtnTarget.style.display  = ""
-        this.installBtnTarget.disabled       = true
-        this.installBtnTarget.style.opacity  = "0.4"
-        this.installBtnTarget.title          = "Installation non disponible sur ce navigateur"
+      // Navigateur non supporté ou prompt pas encore reçu
+      if (this.installBtn) {
+        this.installBtn.style.display  = ""
+        this.installBtn.disabled       = true
+        this.installBtn.style.opacity  = "0.4"
+        this.installBtn.title          = "Installation non disponible sur ce navigateur"
       }
-      if (this.hasIosInstructionsTarget) this.iosInstructionsTarget.style.display = "none"
+      if (this.iosInstructions) this.iosInstructions.style.display = "none"
     }
   }
 
-  // Affiche la vue "déjà installé", cache la vue "installation"
   showAlreadyInstalledView() {
-    if (this.hasInstallViewTarget)          this.installViewTarget.style.display          = "none"
-    if (this.hasAlreadyInstalledViewTarget) this.alreadyInstalledViewTarget.style.display = "block"
+    if (this.installView)          this.installView.style.display          = "none"
+    if (this.alreadyInstalledView) this.alreadyInstalledView.style.display = "block"
   }
 
-  // Appelé au clic sur "Installer" → déclenche le prompt natif Chrome/Edge
+  // Clic sur "Installer" → déclenche le prompt natif Chrome/Edge
   async install() {
-    // Si pas de prompt disponible, on ne fait rien (bouton désactivé visuellement)
     if (!this.installPrompt) return
 
-    // Ferme notre modale avant d'afficher le prompt natif
     if (this.bsModal) this.bsModal.hide()
 
-    // Affiche le prompt d'installation du navigateur
     await this.installPrompt.prompt()
-
-    // Attend la décision de l'utilisateur
     const { outcome } = await this.installPrompt.userChoice
 
-    // L'événement ne peut être utilisé qu'une seule fois, on le réinitialise
     this.installPrompt = null
+    window._pwaInstallPrompt = null
   }
 
-  // Appelé quand l'app vient d'être installée avec succès
   onAppInstalled() {
     this.installPrompt = null
+    window._pwaInstallPrompt = null
     if (this.bsModal) this.bsModal.hide()
   }
 }

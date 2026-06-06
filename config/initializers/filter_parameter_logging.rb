@@ -4,5 +4,9 @@
 # Use this to limit dissemination of sensitive information.
 # See the ActiveSupport::ParameterFilter documentation for supported notations and behaviors.
 Rails.application.config.filter_parameters += [
-  :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc
+  :passw, :email, :secret, :token, :_key, :crypt, :salt, :certificate, :otp, :ssn, :cvv, :cvc,
+  # Code d'autorisation OAuth renvoyé par Google dans l'URL de callback (peut être échangé contre un access_token)
+  :code,
+  # Tokens hCaptcha/reCaptcha soumis dans les formulaires auth — noms exacts utilisés par les widgets
+  "h-captcha-response", "g-recaptcha-response"
 ]

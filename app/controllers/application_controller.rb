@@ -103,13 +103,17 @@ class ApplicationController < ActionController::Base
         # :title et :description font référence aux valeurs définies ci-dessus
         title:       :title,
         description: :description,
-        url:         -> { request.original_url }
+        url:         -> { request.original_url },
+        # Image affichée lors du partage sur Facebook, WhatsApp, LinkedIn, etc.
+        image:       -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
       },
       # ── Twitter Card (partage sur X/Twitter) ──
       twitter: {
         card:        "summary",
         title:       :title,
-        description: :description
+        description: :description,
+        # Image affichée dans les aperçus Twitter/X
+        image:       -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
       },
       # ── Canonical URL ──────────────────────────────────────────────────────
       # Pointe toujours vers l'URL propre sans query string.
@@ -136,10 +140,13 @@ class ApplicationController < ActionController::Base
     skip_pundit? || action_name != "index"
   end
 
-  # Ignore Pundit pour Devise et les pages publiques
+  # Ignore Pundit pour Devise, l'admin, les pages publiques et la landing
   def skip_pundit?
-    devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)/
+    devise_controller? || params[:controller] =~ /(^(rails_)?admin)|(^pages$)|(^landing$)/
   end
+
+  # ── Verrou pré-lancement ─────────────────────────────────────────────────────
+  #
 
   # ── Onboarding post-inscription ──────────────────────────────────────────
 

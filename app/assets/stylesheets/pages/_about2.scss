@@ -136,6 +136,13 @@ html.page-scroll-snap {
       background: linear-gradient(to right, rgba(0,0,0,0.30) 0%, transparent 70%);
       pointer-events: none;
     }
+
+    // Le ::before (position:absolute) se peint au-dessus du flux normal en CSS.
+    // z-index: 1 sur le contenu garantit que le texte passe devant l'overlay sombre.
+    .container {
+      position: relative;
+      z-index: 1;
+    }
   }
 }
 
@@ -299,20 +306,16 @@ html.page-scroll-snap {
 
 
 // ── Logo origine (section 1) ──────────────────────────
+// Logo complet blanc avec picto + texte combinés dans une seule image
 .a2-origin-logo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
   margin-bottom: 0.5rem;
 }
 
-.a2-origin-picto {
-  height: 72px;       // agrandi (était 44px)
+.a2-origin-logo-img {
+  height: 72px;                                            // agrandi (était picto 44px + texte 20px)
   width: auto;
   filter: drop-shadow(0 0 16px rgba($green, 0.6));
-}
-
-.a2-origin-texte {
-  height: 34px;       // agrandi (était 20px)
-  width: auto;
 }

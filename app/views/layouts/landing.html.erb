@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<%# Layout minimal pour la landing page — pas de navbar, pas de footer,
+    pas de modales ni de canaux Turbo. Charte graphique identique au reste. %>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%# Meta tags SEO — set_default_meta_tags dans ApplicationController les prépare %>
+    <%= display_meta_tags site: "Teams-up" %>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%# Google Fonts — mêmes polices que le reste du site %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;700&display=swap" rel="stylesheet">
+
+    <%# Application.css inclut Bootstrap + nos variables SCSS + _landing.scss %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+
+    <%# Importmap nécessaire pour Bootstrap JS (modales, dropdown potentiels) %>
+    <%= javascript_importmap_tags %>
+
+    <%# Favicon blanc — fond toujours sombre sur la landing %>
+    <%= favicon_link_tag "elements_graphiques/favicon_blanc.svg", type: "image/svg+xml" %>
+  </head>
+
+  <body>
+    <%# Flash messages positionnés en overlay en haut de page %>
+    <% if notice.present? %>
+      <div class="landing-flash landing-flash--success" role="alert">
+        <%= notice %>
+      </div>
+    <% end %>
+    <% if alert.present? %>
+      <div class="landing-flash landing-flash--error" role="alert">
+        <%= alert %>
+      </div>
+    <% end %>
+
+    <%= yield %>
+  </body>
+</html>

@@ -1,9 +1,9 @@
 <%# =====================================================
    NAVBAR — Thème sombre avec accents verts
-   Structure simplifiée : plus de collapse/burger
    - Logo à gauche
    - Liens centre → d-none d-lg-flex (desktop uniquement)
    - Actions droite → toujours visibles (cloche + avatar)
+   - Burger mobile (d-lg-none) → offcanvas gauche #mobileNavDrawer
    ===================================================== %>
 
 <%# Abonnement Turbo Stream pour les admins — met à jour le voyant vert en temps réel
@@ -12,16 +12,42 @@
   <%= turbo_stream_from "admin_contact_messages" %>
 <% end %>
 
-<nav class="navbar navbar-expand-lg navbar-dark-custom">
+<nav class="navbar navbar-expand-lg navbar-dark-custom sticky-top">
   <div class="container">
 
-    <%# ── Logo (toujours visible) ── %>
+    <%# ── Burger mobile (gauche, d-lg-none) — logo centré via CSS en dessous ── %>
+    <button type="button"
+            class="navbar-burger-btn d-lg-none"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#mobileNavDrawer"
+            aria-controls="mobileNavDrawer"
+            aria-label="Ouvrir le menu de navigation"
+            title="Menu">
+      <i data-lucide="menu" style="width:22px;height:22px;" aria-hidden="true"></i>
+    </button>
+
+    <%# ── Logo : gauche sur desktop, centré absolument sur mobile ── %>
     <%= link_to root_path, class: "navbar-brand" do %>
-      <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-Up", class: "navbar-logo", width: 32, height: 32 %>
+      <%# Logo blanc (mode sombre, défaut) — caché en mode clair via CSS %>
+      <%= image_tag "logo/logo_vf_1_blanc.svg", alt: "Teams-Up", class: "navbar-logo navbar-logo--white", width: 32, height: 32 %>
+      <%# Logo noir (mode clair) — caché en mode sombre via CSS %>
+      <%= image_tag "logo/logo_vf_1_noir.svg", alt: "Teams-Up", class: "navbar-logo navbar-logo--dark", width: 32, height: 32 %>
     <% end %>
 
     <%# ── Liens du centre (desktop uniquement, cachés sur mobile) ── %>
-    <ul class="navbar-nav d-none d-lg-flex flex-row mx-auto gap-1 align-items-center">
+    <ul class="navbar-nav d-none d-lg-flex flex-row mx-auto gap-2 align-items-center">
+
+      <%# ── Bouton "Créer un match" (connectés uniquement) — CTA principal, en avant-plan ── %>
+      <% if user_signed_in? %>
+        <li class="nav-item">
+          <%= link_to new_match_path,
+              class: "btn btn-primary btn-sm px-3 btn-cta-primary navbar-create-match-btn d-flex align-items-center gap-1" do %>
+            <i data-lucide="plus" style="width:14px;height:14px;" aria-hidden="true"></i>
+            Créer un match
+          <% end %>
+        </li>
+      <% end %>
+
       <li class="nav-item">
         <%# "active" si on est sur /matches SANS le filtre ?mine=true
             aria-current="page" : indique la page active aux lecteurs d'écran (RGAA 12.4) %>
@@ -42,16 +68,6 @@
           <% end %>
         </li>
       <% end %>
-      <li class="nav-item">
-        <% about_active = current_page?(about_path) %>
-        <%= link_to about_path,
-            class: "nav-link #{about_active ? 'active' : ''}",
-            "aria-current": (about_active ? "page" : nil) do %>
-          Qui sommes-nous ?
-        <% end %>
-      </li>
-
-
     </ul>
 
     <%# ══════════════════════════════════════════════════════
@@ -70,128 +86,43 @@
         <%# aria-label : nom accessible fiable (sur mobile l'icône est seule sans texte) %>
         <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
-                  class="nav-pwa-btn d-flex align-items-center gap-2"
+                  class="nav-pwa-btn d-none align-items-center gap-2"
                   aria-label="Installer l'application sur votre appareil"
                   title="Installer l'application sur votre appareil">
             <i data-lucide="download" class="nav-pwa-icon" style="width:20px;height:20px;" aria-hidden="true"></i>
-            <span class="d-none d-lg-inline nav-pwa-label">Installer l'app</span>
+            <span class="nav-pwa-label">Installer l'app</span>
           </button>
+        </div>
 
-          <%# ── Modale unique avec deux états gérés par Stimulus ──────────────
-              État 1 (installable)    : titre + avantages + bouton Installer
-              État 2 (déjà installé) : message informatif + bouton Fermer %>
-          <div data-pwa-install-target="modal"
-               class="modal fade" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content pwa-modal-content">
+        <%# ── Cloche + chat regroupés pour économiser l'espace ── %>
+        <div class="d-flex align-items-center gap-1">
 
-                <%# En-tête commun aux deux états — RGESN 5.2 (dimensions HTML) %>
-                <div class="modal-header border-0 pb-0 pt-4 px-4">
-                  <%= image_tag "elements_graphiques/logo_vert.svg", alt: "Teams-up", width: 100, height: 28, style: "height:28px;" %>
-                  <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                </div>
-
-                <%# ── État 1 : installation disponible ── %>
-                <div data-pwa-install-target="installView">
-                  <div class="modal-body px-4 py-4">
-                    <h5 class="pwa-modal-title">
-                      Installe Teams-up sur ton appareil
-                    </h5>
-                    <p class="pwa-modal-desc">
-                      Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application — sans passer par le navigateur.
-                    </p>
-                    <ul class="pwa-modal-list">
-                      <li class="pwa-modal-list-item">
-                        <i data-lucide="zap" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
-                        Lancement instantané
-                      </li>
-                      <li class="pwa-modal-list-item">
-                        <i data-lucide="smartphone" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
-                        Expérience plein écran
-                      </li>
-                    </ul>
-                  </div>
-                  <%# Instructions spécifiques iOS (Safari ne supporte pas le prompt natif) %>
-                  <div data-pwa-install-target="iosInstructions" style="display:none; padding: 0 1.5rem 1rem;">
-                    <p class="pwa-modal-ios-hint">
-                      Sur iOS, appuie sur
-                      <strong class="pwa-modal-ios-strong">Partager</strong>
-                      <i data-lucide="share" style="width:13px;height:13px;color:#1EDD88;vertical-align:middle;"></i>
-                      puis
-                      <strong class="pwa-modal-ios-strong">Sur l'écran d'accueil</strong>.
-                    </p>
-                  </div>
-
-                  <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
-                    <button type="button" class="btn btn-sm pwa-modal-btn-later" data-bs-dismiss="modal">
-                      Plus tard
-                    </button>
-                    <%# Bouton principal : caché sur iOS (pas de prompt natif), actif si le navigateur le supporte %>
-                    <button type="button"
-                            data-pwa-install-target="installBtn"
-                            data-action="click->pwa-install#install"
-                            class="btn btn-sm d-flex align-items-center gap-2"
-                            style="background-color:#1EDD88; color:#111111; border:none; font-weight:700; border-radius:8px; padding:8px 20px;">
-                      <i data-lucide="download" style="width:15px;height:15px;"></i>
-                      Installer
-                    </button>
-                  </div>
-                </div>
-
-                <%# ── État 2 : déjà installé sur cet appareil ── %>
-                <div data-pwa-install-target="alreadyInstalledView" style="display:none;">
-                  <div class="modal-body px-4 py-4 text-center">
-                    <div style="margin-bottom:1rem;">
-                      <i data-lucide="circle-check" style="width:40px;height:40px;color:#1EDD88;"></i>
-                    </div>
-                    <h5 class="pwa-modal-title">
-                      Déjà installée sur cet appareil
-                    </h5>
-                    <p class="pwa-modal-desc">
-                      Teams-up est déjà installé ici. Tu peux l'ouvrir directement depuis ton écran d'accueil.<br>
-                      <span class="pwa-modal-hint-small">Pour installer sur un autre appareil, utilise ce bouton depuis ce nouvel appareil.</span>
-                    </p>
-                  </div>
-                  <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-sm w-100 pwa-modal-btn-later" data-bs-dismiss="modal">
-                      Fermer
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-            </div>
+          <%# Cloche notifications (UNE seule instance, temps réel via Turbo) %>
+          <%= turbo_stream_from current_user, :notifications %>
+          <div class="nav-item dropdown">
+            <%= turbo_frame_tag "notification_bell" do %>
+              <%= render "shared/notification_bell" %>
+            <% end %>
           </div>
       </div>
 
       <% if user_signed_in? %>
 
-        <%# ── Cloche notifications (UNE seule instance, temps réel via Turbo) ──
-            turbo_stream_from : s'abonne au canal ActionCable de l'utilisateur.
-            turbo_frame_tag   : ce fragment est remplacé à chaque nouvelle notif. %>
-        <%= turbo_stream_from current_user, :notifications %>
-        <div class="nav-item dropdown">
-          <%= turbo_frame_tag "notification_bell" do %>
-            <%= render "shared/notification_bell" %>
-          <% end %>
-        </div>
+          <%# Bouton chat — ouvre la modale globale des conversations %>
+          <div class="nav-item">
+            <%# aria-label : bouton icône-seule → nom accessible nécessaire (RGAA 11.9) %>
+            <button type="button"
+                    class="nav-chat-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#global-chat-modal"
+                    aria-label="Mes conversations"
+                    title="Mes conversations">
+              <i data-lucide="message-circle" style="width:20px;height:20px;" aria-hidden="true"></i>
+              <span id="chat-navbar-badge" class="nav-chat-badge" style="display:none;"></span>
+            </button>
+          </div>
 
-        <%# ── Bouton chat — ouvre la modale globale des conversations ──
-            Le badge vert (#chat-navbar-badge) est géré par le Stimulus controller
-            sticky-chat : il s'affiche quand il y a des messages non lus. %>
-        <div class="nav-item">
-          <%# aria-label : bouton icône-seule → nom accessible nécessaire (RGAA 11.9) %>
-          <button type="button"
-                  class="nav-chat-btn"
-                  data-bs-toggle="modal"
-                  data-bs-target="#global-chat-modal"
-                  aria-label="Mes conversations"
-                  title="Mes conversations">
-            <%# Pas de color inline — hérite de .nav-chat-btn { color: var(--theme-text-muted) } %>
-            <i data-lucide="message-circle" style="width:20px;height:20px;" aria-hidden="true"></i>
-            <span id="chat-navbar-badge" class="nav-chat-badge" style="display:none;"></span>
-          </button>
-        </div>
+        </div><%# fin groupe cloche + chat %>
 
         <%# ── Avatar + dropdown utilisateur (mobile + desktop) ── %>
         <div class="nav-item dropdown">
@@ -223,7 +154,7 @@
             </span>
           </button>
 
-          <%# Dropdown desktop : Mon profil / Mon compte / Admin (si admin) / Déconnexion %>
+          <%# Dropdown desktop : Mon profil / Mon compte / Qui sommes-nous / Admin (si admin) / Déconnexion %>
           <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
             <%= link_to profil_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="user" style="width:14px;height:14px;" aria-hidden="true"></i> Mon profil
@@ -231,6 +162,10 @@
             <%= link_to edit_user_registration_path,
                 class: "dropdown-item d-flex align-items-center gap-2" do %>
               <i data-lucide="settings" style="width:14px;height:14px;" aria-hidden="true"></i> Mon compte
+            <% end %>
+            <div class="dropdown-divider"></div>
+            <%= link_to about_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i data-lucide="info" style="width:14px;height:14px;" aria-hidden="true"></i> Qui sommes-nous ?
             <% end %>
             <%# Lien Admin — visible uniquement pour les administrateurs %>
             <% if current_user&.admin? %>
@@ -264,24 +199,250 @@
         </div>
       <% end %>
 
-      <%# ── Bouton toggle mode clair / mode sombre ───────────────────────────────
-          Visible pour TOUS les utilisateurs (connectés ou non).
-          data-theme-toggle-target="button" : le Stimulus controller "theme-toggle"
-          (attaché sur <body>) détecte ce bouton et met à jour son icône au chargement
-          et après chaque toggle.
-          aria-label et title mis à jour dynamiquement par le controller JS. %>
+      <%# ── Bouton toggle thème — desktop uniquement (d-none d-lg-flex)
+          Sur mobile il est remplacé par l'entrée texte dans le drawer burger.
+          Le controller "theme-toggle" met à jour l'icône de TOUS les buttonTargets. %>
       <button type="button"
-              class="nav-theme-btn"
+              class="nav-theme-btn d-none d-lg-flex"
               data-theme-toggle-target="button"
               data-action="click->theme-toggle#toggle"
               title="Changer le thème"
               aria-label="Changer le thème">
-        <%# L'icône est initialement "sun" (pour mode sombre → inviter à passer en clair).
-            Le Stimulus controller la met à jour dès le connect() selon data-theme de <html>. %>
         <i data-lucide="sun" style="width:20px;height:20px;" aria-hidden="true"></i>
       </button>
 
     </div><%# fin actions droite %>
 
   </div>
+
 </nav>
+
+<%# ── Modale PWA — en dehors du <nav> pour éviter le stacking context sticky-top ──
+    La navbar a position:sticky + z-index:1030, ce qui créerait un stacking context
+    plaçant le backdrop Bootstrap (z-index:1040) AU-DESSUS de la modale → rien cliquable.
+    Ici, la modale est enfant direct du <body> (via le partial) et Bootstrap peut
+    positionner le backdrop correctement. %>
+<div id="pwaInstallModal" class="modal fade" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pwa-modal-content">
+
+      <div class="modal-header border-0 pb-0 pt-4 px-4">
+        <%= image_tag "logo/logo_vf_1_blanc.svg", alt: "Teams-up", width: 100, height: 28, style: "height:28px;", loading: "lazy" %>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <%# ── État 1 : installation disponible ── %>
+      <div id="pwaInstallView">
+        <div class="modal-body px-4 py-4">
+          <h5 class="pwa-modal-title">Installe Teams-up sur ton appareil</h5>
+          <p class="pwa-modal-desc">
+            Accède à Teams-up directement depuis ton écran d'accueil, comme une vraie application, sans passer par le navigateur.
+          </p>
+          <ul class="pwa-modal-list">
+            <li class="pwa-modal-list-item">
+              <i data-lucide="zap" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
+              Lancement instantané
+            </li>
+            <li class="pwa-modal-list-item">
+              <i data-lucide="smartphone" style="width:15px;height:15px;color:#1EDD88;flex-shrink:0;"></i>
+              Expérience plein écran
+            </li>
+          </ul>
+        </div>
+        <%# Instructions iOS — Safari ne supporte pas le prompt natif, on guide
+            l'utilisateur pas à pas avec un encadré visuel bien contrasté. %>
+        <div id="pwaIosInstructions" style="display:none; padding: 0 1.5rem 1.25rem;">
+          <div style="background:#242624; border-radius:12px; padding:1rem 1.25rem;">
+            <p style="color:rgba(255,255,255,0.55); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:700; margin-bottom:0.85rem;">
+              Comment installer
+            </p>
+            <%# Étape 1 %>
+            <div style="display:flex; align-items:flex-start; gap:0.75rem; margin-bottom:0.75rem;">
+              <span style="background:#1EDD88; color:#111111; border-radius:50%; width:22px; height:22px; min-width:22px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem;">1</span>
+              <p style="margin:0; color:#f0f0f0; font-size:0.875rem; line-height:1.4;">
+                Appuie sur
+                <strong>Partager</strong>
+                <i data-lucide="share" style="width:14px;height:14px;color:#1EDD88;vertical-align:middle;margin-left:2px;"></i>
+                en bas de Safari
+              </p>
+            </div>
+            <%# Étape 2 %>
+            <div style="display:flex; align-items:flex-start; gap:0.75rem;">
+              <span style="background:#1EDD88; color:#111111; border-radius:50%; width:22px; height:22px; min-width:22px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.7rem;">2</span>
+              <p style="margin:0; color:#f0f0f0; font-size:0.875rem; line-height:1.4;">
+                Sélectionne
+                <strong>Sur l'écran d'accueil</strong>
+                <i data-lucide="plus-square" style="width:14px;height:14px;color:#1EDD88;vertical-align:middle;margin-left:2px;"></i>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
+          <button type="button" class="btn btn-sm pwa-modal-btn-later" data-bs-dismiss="modal">Plus tard</button>
+          <button type="button"
+                  id="pwaInstallBtn"
+                  class="btn btn-sm d-flex align-items-center gap-2"
+                  style="background-color:#1EDD88; color:#111111; border:none; font-weight:700; border-radius:8px; padding:8px 20px;">
+            <i data-lucide="download" style="width:15px;height:15px;"></i>
+            Installer
+          </button>
+        </div>
+      </div>
+
+      <%# ── État 2 : déjà installé ── %>
+      <div id="pwaAlreadyInstalledView" style="display:none;">
+        <div class="modal-body px-4 py-4 text-center">
+          <div style="margin-bottom:1rem;">
+            <i data-lucide="circle-check" style="width:40px;height:40px;color:#1EDD88;"></i>
+          </div>
+          <h5 class="pwa-modal-title">Déjà installée sur cet appareil</h5>
+          <p class="pwa-modal-desc">
+            Teams-up est déjà installé ici. Tu peux l'ouvrir directement depuis ton écran d'accueil.<br>
+            <span class="pwa-modal-hint-small">Pour installer sur un autre appareil, utilise ce bouton depuis ce nouvel appareil.</span>
+          </p>
+        </div>
+        <div class="modal-footer border-0 px-4 pb-4 pt-0">
+          <button type="button" class="btn btn-sm w-100 pwa-modal-btn-later" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%# ══════════════════════════════════════════════════════════════════════════
+    DRAWER MOBILE — Offcanvas gauche Bootstrap 5
+    Visible uniquement sur mobile/tablette (d-lg-none sur le bouton burger).
+    Contient : CTA Créer un match + liens nav + PWA installer.
+    Toujours dark (fond #111111) indépendamment du thème utilisateur.
+    ══════════════════════════════════════════════════════════════════════════ %>
+<div class="offcanvas offcanvas-start navbar-offcanvas"
+     id="mobileNavDrawer"
+     tabindex="-1"
+     aria-labelledby="mobileNavDrawerLabel">
+
+  <%# ── En-tête : logo + bouton fermer ── %>
+  <div class="offcanvas-header">
+    <%= link_to root_path,
+        class: "navbar-brand",
+        id: "mobileNavDrawerLabel",
+        "aria-label": "Retour à l'accueil" do %>
+      <%= image_tag "logo/logo_vf_1_blanc.svg", alt: "Teams-Up", class: "navbar-logo navbar-logo--white", height: 24, width: 24 %>
+      <%= image_tag "logo/logo_vf_1_noir.svg",  alt: "Teams-Up", class: "navbar-logo navbar-logo--dark",  height: 24, width: 24 %>
+    <% end %>
+    <button type="button"
+            class="btn-close btn-close-white ms-auto"
+            data-bs-dismiss="offcanvas"
+            aria-label="Fermer le menu"></button>
+  </div>
+
+  <%# ── Corps du drawer ── %>
+  <div class="offcanvas-body">
+
+    <% if user_signed_in? %>
+
+      <%# CTA principal — Créer un match (pleine largeur, vert) %>
+      <%# Pas de data-bs-dismiss : Bootstrap preventDefault() bloquerait la navigation.
+          Le drawer est fermé par turbo:before-render dans application.js. %>
+      <%= link_to new_match_path,
+          class: "btn btn-primary btn-cta-primary drawer-cta w-100 d-flex align-items-center justify-content-center gap-2" do %>
+        <i data-lucide="plus" style="width:16px;height:16px;" aria-hidden="true"></i>
+        Créer un match
+      <% end %>
+
+      <hr class="drawer-divider">
+
+      <%# Liens de navigation principale %>
+      <nav aria-label="Navigation principale">
+        <% matches_active = current_page?(matches_path) && params[:mine].blank? %>
+        <%= link_to matches_path,
+            class: "drawer-nav-link #{'active' if matches_active}",
+            "aria-current": (matches_active ? "page" : nil) do %>
+          <i data-lucide="search" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Trouver un match
+        <% end %>
+
+        <% teams_active = request.path.start_with?('/teams') %>
+        <%= link_to teams_path,
+            class: "drawer-nav-link #{'active' if teams_active}",
+            "aria-current": (teams_active ? "page" : nil) do %>
+          <i data-lucide="users" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Mes équipes
+        <% end %>
+
+        <% about_active = current_page?(about_path) %>
+        <%= link_to about_path,
+            class: "drawer-nav-link #{'active' if about_active}",
+            "aria-current": (about_active ? "page" : nil) do %>
+          <i data-lucide="info" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Qui sommes-nous ?
+        <% end %>
+      </nav>
+
+      <hr class="drawer-divider">
+
+      <%# Bouton PWA — déplacé ici depuis la navbar mobile.
+          data-bs-dismiss ferme le drawer avant d'ouvrir la modal. %>
+      <button type="button"
+              class="drawer-pwa-btn"
+              data-bs-toggle="modal"
+              data-bs-target="#pwaInstallModal"
+              data-bs-dismiss="offcanvas"
+              aria-label="Installer l'application sur votre appareil">
+        <i data-lucide="download" style="width:17px;height:17px;" aria-hidden="true"></i>
+        Installer l'app
+      </button>
+
+    <% else %>
+
+      <%# Non connecté : Se connecter + S'inscrire %>
+      <div class="d-flex flex-column gap-3">
+        <%= link_to new_user_registration_path,
+            class: "btn btn-primary btn-cta-primary w-100 d-flex align-items-center justify-content-center gap-2" do %>
+          S'inscrire
+        <% end %>
+
+        <%= link_to "Se connecter", new_user_session_path, class: "btn-cta-link text-center" %>
+      </div>
+
+      <hr class="drawer-divider">
+
+      <%# Accès "Qui sommes-nous ?" pour les visiteurs %>
+      <nav aria-label="Navigation principale">
+        <% about_active = current_page?(about_path) %>
+        <%= link_to about_path,
+            class: "drawer-nav-link #{'active' if about_active}" do %>
+          <i data-lucide="info" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Qui sommes-nous ?
+        <% end %>
+
+        <% matches_active = current_page?(matches_path) && params[:mine].blank? %>
+        <%= link_to matches_path,
+            class: "drawer-nav-link #{'active' if matches_active}" do %>
+          <i data-lucide="search" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Trouver un match
+        <% end %>
+      </nav>
+
+    <% end %>
+
+    <%# ── Toggle thème — commun connecté ET non connecté ────────────────────
+        data-theme-toggle-target="button" : le controller Stimulus met à jour
+        l'icône ET les aria-labels sur TOUS les targets (buttonTargets).
+        Les deux spans de texte sont gérés par CSS selon data-theme sur <html>. %>
+    <hr class="drawer-divider">
+
+    <button type="button"
+            class="drawer-theme-btn"
+            data-theme-toggle-target="button"
+            data-action="click->theme-toggle#toggle">
+      <i data-lucide="sun" style="width:17px;height:17px;" aria-hidden="true"></i>
+      <%# Mode sombre actif → proposer "Mode clair" %>
+      <span class="drawer-theme-label-dark">Mode clair</span>
+      <%# Mode clair actif → proposer "Mode sombre" %>
+      <span class="drawer-theme-label-light">Mode sombre</span>
+    </button>
+
+  </div><%# fin offcanvas-body %>
+
+</div><%# fin #mobileNavDrawer %>

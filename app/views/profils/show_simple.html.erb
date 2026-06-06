@@ -11,7 +11,8 @@
 <% end %>
 
 <%# background-color géré par la classe CSS .profil-page dans _profil.scss (et _theme.scss en mode clair) %>
-<div class="profil-page" data-controller="achievement-modal" style="min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
+<%# ⚠️  GAMIF_PAUSED — data-controller achievement-modal retiré temporairement %>
+<div class="profil-page" style="min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
   <div class="container">
 
     <%# ── Lien retour ────────────────────────────────────────────────────────── %>
@@ -43,31 +44,33 @@
                    pending_received: @pending_received,
                    friendship_initiated_by_me: @friendship_initiated_by_me %>
 
-        <%# ── Notifications push ─────────────────────────────────────────────── %>
-        <div class="match-block" style="margin-top:1rem; padding:1rem 1.25rem;"
-             data-controller="push-notification"
-             data-push-notification-vapid-key-value="<%= ENV['VAPID_PUBLIC_KEY'] %>"
-             data-push-notification-subscribed-value="<%= current_user.push_subscriptions.any? %>">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
-            <div>
-              <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
-                          text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.25rem;">
-                <i data-lucide="bell" style="width:14px; height:14px;"></i>
-                Alertes matchs
+        <%# ── Notifications push — visible uniquement sur son propre profil ── %>
+        <% if user_signed_in? && current_user == @profil_user %>
+          <div class="match-block" style="margin-top:1rem; padding:1rem 1.25rem;"
+               data-controller="push-notification"
+               data-push-notification-vapid-key-value="<%= ENV['VAPID_PUBLIC_KEY'] %>"
+               data-push-notification-subscribed-value="<%= current_user.push_subscriptions.any? %>">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
+                            text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.25rem;">
+                  <i data-lucide="bell" style="width:14px; height:14px;"></i>
+                  Alertes matchs
+                </div>
+                <p style="font-size:0.75rem; color:var(--theme-text-muted); margin:0;"
+                   data-push-notification-target="status">
+                  Recevez une alerte dès qu'un match correspond à votre profil.
+                </p>
               </div>
-              <p style="font-size:0.75rem; color:var(--theme-text-muted); margin:0;"
-                 data-push-notification-target="status">
-                Recevez une alerte dès qu'un match correspond à votre profil.
-              </p>
+              <button class="btn btn-sm btn-push-inactive"
+                      data-push-notification-target="button"
+                      data-action="click->push-notification#subscribe"
+                      style="white-space:nowrap; flex-shrink:0;">
+                Activer les notifications
+              </button>
             </div>
-            <button class="btn btn-sm btn-push-inactive"
-                    data-push-notification-target="button"
-                    data-action="click->push-notification#subscribe"
-                    style="white-space:nowrap; flex-shrink:0;">
-              Activer les notifications
-            </button>
           </div>
-        </div>
+        <% end %>
 
       </div>
       <%# / col-lg-4 %>
@@ -135,7 +138,9 @@
                       <% end %>
                     </div>
                   </div>
+                  <%# RGAA 6.1+6.2 : aria-label avec le titre du match pour que le lien soit explicite hors contexte %>
                   <%= link_to "Détails", match_path(match),
+                      aria_label: "Voir les détails du match : #{match.title}",
                       style: "flex-shrink:0; font-size:0.75rem; font-weight:600; color:var(--theme-text-muted); border:1px solid var(--theme-border); border-radius:999px; padding:0.25rem 0.8rem; text-decoration:none; white-space:nowrap;" %>
                 </div>
               <% end %>
@@ -492,61 +497,8 @@
   </div>
   <%# / container %>
 
-  <%# ══ Modale achievement — en dehors du container pour éviter les conflits CSS ══ %>
-  <div class="achievement-modal-overlay" data-achievement-modal-target="overlay">
-    <div class="achievement-modal-wrapper" data-achievement-modal-target="wrapper">
-
-      <button class="achievement-modal-close" data-action="click->achievement-modal#close" aria-label="Fermer">
-        <i data-lucide="x" style="width:18px;height:18px;"></i>
-      </button>
-
-      <p class="achievement-modal-hint">
-        <i data-lucide="move-horizontal" style="width:13px;height:13px;vertical-align:middle;"></i>
-        Attrape et fais glisser pour retourner
-      </p>
-
-      <div class="achievement-modal-flip-row">
-
-        <button class="achievement-modal-arrow" data-action="click->achievement-modal#flipLeft" aria-label="Retourner à gauche">
-          <i data-lucide="chevron-left" style="width:22px;height:22px;"></i>
-        </button>
-
-        <div class="achievement-modal-scene" data-action="mousedown->achievement-modal#dragStart touchstart->achievement-modal#dragStart">
-          <div class="achievement-modal-card" data-achievement-modal-target="card">
-
-            <%# Recto : emoji du badge %>
-            <div class="achievement-modal-front">
-              <div class="achievement-modal-shine" data-achievement-modal-target="shine"></div>
-              <span class="achievement-modal-emoji" data-achievement-modal-target="emoji">🏅</span>
-            </div>
-
-            <%# Verso : détails du badge %>
-            <div class="achievement-modal-back">
-              <div class="achievement-modal-shine" data-achievement-modal-target="shine"></div>
-              <div class="achievement-modal-locked" data-achievement-modal-target="locked" style="display:none;">
-                <i data-lucide="lock" style="width:12px;height:12px;"></i>
-                Verrouillé
-              </div>
-              <div class="achievement-modal-unlocked" data-achievement-modal-target="unlocked" style="display:none;">
-                <i data-lucide="check-circle" style="width:12px;height:12px;"></i>
-                Déverrouillé
-              </div>
-              <span class="achievement-modal-back-emoji" data-achievement-modal-target="emoji">🏅</span>
-              <div class="achievement-modal-back-name" data-achievement-modal-target="name"></div>
-              <div class="achievement-modal-back-xp" data-achievement-modal-target="xp"></div>
-              <div class="achievement-modal-back-description" data-achievement-modal-target="description"></div>
-            </div>
-
-          </div><%# / card %>
-        </div><%# / scene %>
-
-        <button class="achievement-modal-arrow" data-action="click->achievement-modal#flipRight" aria-label="Retourner à droite">
-          <i data-lucide="chevron-right" style="width:22px;height:22px;"></i>
-        </button>
-
-      </div><%# / flip-row %>
-    </div><%# / wrapper %>
-  </div><%# / overlay %>
+  <%# ⚠️  GAMIF_PAUSED — modale achievement entièrement masquée temporairement %>
+  <%# Restaurer ce bloc lors de la réactivation de la gamification (grep GAMIF_PAUSED) %>
 
 <%# ── Ouverture automatique du chat si redirection depuis le bouton "Message" ──
     Le PrivateConversationsController redirige vers ?open_chat=:id après création

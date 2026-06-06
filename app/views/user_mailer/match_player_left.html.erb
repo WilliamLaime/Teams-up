@@ -43,7 +43,7 @@
       <div style="background-color: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 20px; margin-bottom: 28px;">
         <p style="color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 10px 0;">Récapitulatif</p>
         <p style="color: #f0f0f0; font-size: 0.9rem; margin: 0 0 6px 0;">
-          📅 <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+          📅 <%= I18n.l(@match.date, format: :long) %><% if @match.time.present? %> à <%= @match.time.strftime("%Hh%M") %><% end %>
         </p>
         <% if @match.venue.present? %>
           <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0 0 6px 0;">

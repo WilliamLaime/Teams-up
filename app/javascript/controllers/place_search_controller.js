@@ -13,7 +13,7 @@ export default class extends Controller {
   // "input"    → le champ texte visible (lieu saisi par l'user)
   // "dropdown" → le div qui affiche les suggestions
   // "venueId"  → champ caché stockant l'id de l'établissement sélectionné (si en BDD)
-  static targets = ["input", "dropdown", "venueId"]
+  static targets = ["input", "dropdown", "venueId", "inputWrapper"]
 
   connect() {
     this.timeout = null   // Pour le debounce (évite une requête à chaque frappe)
@@ -503,7 +503,9 @@ export default class extends Controller {
     if (type.includes("athletisme") || type.includes("piste") ||
         type.includes("parcours") || type.includes("track"))                           return "🏃"
     if (type.includes("golf"))                                                         return "⛳"
-    if (type.includes("padel") || type.includes("squash"))                             return "🏓"
+    if (type.includes("padel"))
+      return `<img src="https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png" style="width:20px;height:20px;object-fit:contain;" alt="padel">`
+    if (type.includes("squash"))                                                        return "🏓"
     if (type.includes("escalade") || type.includes("sae"))                             return "🧗"
     if (type.includes("salle") || type.includes("gymnase") ||
         type.includes("multisports") || type.includes("sports_centre"))                return "🏋️"
@@ -524,7 +526,13 @@ export default class extends Controller {
   }
 
   handleOutsideClick(event) {
-    if (!this.element.contains(event.target)) this.hideDropdown()
+    // On compare par rapport au wrapper direct (input + dropdown), PAS this.element.
+    // this.element = toute la section 2 → un clic n'importe où dans la section
+    // retournerait contains()=true et garderait le dropdown ouvert indéfiniment.
+    // inputWrapper = uniquement le div qui contient le champ et les suggestions.
+    if (this.hasInputWrapperTarget && !this.inputWrapperTarget.contains(event.target)) {
+      this.hideDropdown()
+    }
   }
 
   // Échappe les caractères spéciaux pour l'affichage HTML (anti-XSS)

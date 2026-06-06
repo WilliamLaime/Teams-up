@@ -50,4 +50,11 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Désactive le comportement de turbo-rails qui, après chaque `visit`, attend que tous
+  # les <turbo-cable-stream-source> soient "connected" (= WebSocket ouvert).
+  # Avec le driver :rack_test, il n'y a pas de JavaScript, donc ces éléments ne
+  # deviennent jamais "connected" → Capybara lève ExpectationNotMet.
+  # En mettant ce tableau à vide, on désactive complètement cette attente automatique.
+  config.turbo.test_connect_after_actions = []
 end

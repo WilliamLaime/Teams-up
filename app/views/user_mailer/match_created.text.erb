@@ -4,7 +4,7 @@ TEAMS-UP
 Votre match "<%= @match.title %>" a bien été créé !
 
 Récapitulatif :
-  Date       : <%= I18n.l(@match.date, format: :long) %> à <%= @match.time&.strftime("%Hh%M") %>
+  Date       : <%= I18n.l(@match.date, format: :long) %><% if @match.time.present? %> à <%= @match.time.strftime("%Hh%M") %><% end %>
 <% if @match.venue.present? %>
   Lieu       : <%= @match.venue.name %>, <%= @match.venue.city %>
 <% elsif @match.place.present? %>

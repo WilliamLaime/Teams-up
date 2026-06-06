@@ -4,11 +4,10 @@
 # quelles sources de contenu sont autorisées. Elle protège contre les attaques XSS
 # (injection de scripts malveillants).
 #
-# MODE ACTUEL : report_only = true
-# En mode "report only", les violations sont signalées dans la console du navigateur
-# MAIS le contenu n'est PAS bloqué. C'est idéal pour tester sans risquer de casser
-# le site. Une fois que tu as vérifié qu'il n'y a plus de violations dans la console,
-# tu pourras passer report_only à false pour enforcer la politique.
+# MODE ACTUEL : report_only = false → CSP ACTIVE EN PRODUCTION
+# La politique est appliquée : toute ressource non autorisée ci-dessous sera bloquée.
+# Si tu constates des régressions, repasse temporairement report_only à true,
+# ajoute la source manquante dans les règles ci-dessous, puis repasse à false.
 
 Rails.application.configure do
   config.content_security_policy do |policy|
@@ -19,13 +18,17 @@ Rails.application.configure do
     # Scripts : notre serveur + scripts inline (Stimulus/Turbo en ont besoin)
     # + unpkg.com pour la librairie d'icônes Lucide utilisée dans les vues
     # + hcaptcha.com et newassets.hcaptcha.com pour le widget captcha
+    # + cdn.jsdelivr.net pour le SDK Sentry Browser (chargé via importmap)
     policy.script_src :self, :unsafe_inline, "https://unpkg.com",
-                      "https://hcaptcha.com", "https://newassets.hcaptcha.com"
+                      "https://hcaptcha.com", "https://newassets.hcaptcha.com",
+                      "https://cdn.jsdelivr.net"
 
     # Styles : notre serveur + styles inline (Bootstrap en a besoin)
     # + Google Fonts pour charger les polices Nunito et Bebas Neue
     # + hcaptcha.com pour les styles du widget captcha
-    policy.style_src :self, :unsafe_inline, "https://fonts.googleapis.com", "https://hcaptcha.com"
+    # + cdn.jsdelivr.net pour la feuille de style Leaflet (map_picker_controller)
+    policy.style_src :self, :unsafe_inline, "https://fonts.googleapis.com", "https://hcaptcha.com",
+                     "https://cdn.jsdelivr.net"
 
     # Images : notre serveur + Cloudinary (avatars/photos) + Google (avatars OAuth)
     # + data: (images encodées en base64 parfois utilisées par Bootstrap)
@@ -45,9 +48,11 @@ Rails.application.configure do
     policy.connect_src :self,
                        "https://accounts.google.com",
                        "https://oauth2.googleapis.com",
-                       "https://unpkg.com",                   # source maps de Lucide (icônes)
-                       "https://nominatim.openstreetmap.org", # recherche de lieux (création de match)
-                       "https://hcaptcha.com"                 # vérification captcha
+                       "https://unpkg.com",                        # source maps de Lucide (icônes)
+                       "https://nominatim.openstreetmap.org",      # recherche de lieux (création de match)
+                       "https://hcaptcha.com",                     # vérification captcha
+                       "https://*.ingest.de.sentry.io",            # envoi des erreurs JS à Sentry (région EU)
+                       "https://cdn.jsdelivr.net"                  # chargement du SDK Sentry via importmap
 
     # Frames : Google OAuth + Google Maps (carte intégrée dans les pages de match)
     # + newassets.hcaptcha.com pour le challenge hcaptcha (affiché dans une iframe)
@@ -63,12 +68,8 @@ Rails.application.configure do
   end
 
   # -----------------------------------------------------------------------
-  # IMPORTANT : mode "report only" activé
-  #
-  # En mode report_only, la politique est signalée mais PAS appliquée.
-  # Ouvre la console de ton navigateur (F12 > Console) et navigue dans le site.
-  # Si tu vois des erreurs CSP → ajuste les règles ci-dessus.
-  # Quand la console est propre → passe cette ligne à false pour activer la CSP.
+  # false = CSP activée et appliquée (bloque les violations)
+  # true  = mode "report only" (signale sans bloquer — utile pour déboguer)
   # -----------------------------------------------------------------------
   config.content_security_policy_report_only = false
 end

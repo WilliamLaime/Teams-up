@@ -887,69 +887,232 @@
   line-height: 1.5;
 }
 
-// ── Sélecteur d'équipe dans le formulaire de match ────────────────────────
-// Styles dark mode par défaut (fond sombre du formulaire)
+// ══════════════════════════════════════════════════════════════
+// MAP PICKER — Sélecteur de lieu sur carte OpenStreetMap
+// Bouton déclencheur + modale Bootstrap + carte Leaflet
+// ══════════════════════════════════════════════════════════════
 
-// Conteneur de la liste des options
-.team-picker-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-}
-
-// Ligne de chaque option (radio + contenu)
-.team-picker-option {
-  display: flex;
+// ── Bouton déclencheur "Choisir sur la carte" ─────────────────
+// Affiché sous le champ de recherche de lieu.
+// Style : petit bouton bordé vert — clairement cliquable sans écraser le champ principal.
+.map-picker-trigger-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.45rem 0.7rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);  // contour subtil sur fond sombre
-  background: rgba(255, 255, 255, 0.03);
+  gap: 0.4rem;
+  background: rgba($green, 0.08);           // Fond vert très léger
+  border: 1px solid rgba($green, 0.45);     // Contour vert semi-transparent
+  border-radius: 6px;
+  padding: 0.32rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $green;                            // Texte vert — visible sans être agressif
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: background-color 0.15s, border-color 0.15s;
+  text-decoration: none;
+  margin-top: 0.5rem;                       // Espace avec le champ au-dessus
+
+  // Lucide remplace <i> par <svg> au chargement → on cible les deux
+  i, svg {
+    flex-shrink: 0;
+    color: $green;
+  }
 
   &:hover {
-    border-color: rgba($green, 0.4);
-    background: rgba($green, 0.06);
+    background: rgba($green, 0.15);
+    border-color: $green;
   }
 }
 
-// Texte "Aucune équipe"
-.team-picker-none-label {
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.6);
+// ── Modale : fond et arrondis ─────────────────────────────────
+.map-picker-modal-content {
+  background-color: var(--theme-bg-card); // Fond selon le thème
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  overflow: hidden; // Évite que la carte dépasse les coins arrondis
 }
 
-// Mini blason de l'équipe
-.team-picker-badge {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  border-radius: 5px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
+// ── En-tête de la modale ──────────────────────────────────────
+.map-picker-modal-header {
+  background-color: var(--theme-bg-surface);
+  border-bottom: 1px solid var(--theme-border);
+  padding: 1rem 1.25rem;
+
+  .modal-title {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+  }
+}
+
+// ── Barre de recherche d'adresse dans la modale ───────────────
+// Affichée entre l'en-tête et la carte — permet de centrer la vue sur une adresse
+// sans avoir à naviguer manuellement sur la carte.
+.map-picker-search-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background-color: var(--theme-bg-surface);
+  border-bottom: 1px solid var(--theme-border);
+
+  // Icône loupe — couleur atténuée
+  // On cible > i (avant traitement Lucide) ET > svg (après remplacement par Lucide)
+  // car Lucide remplace le tag <i data-lucide="..."> par un <svg> au chargement de la page
+  > i,
+  > svg {
+    color: var(--theme-text-muted);
+    flex-shrink: 0;
+  }
 }
 
-// Icône fallback du blason (pas d'image)
-.team-picker-badge-icon {
-  color: rgba(255, 255, 255, 0.3);
+// Champ de saisie de l'adresse
+.map-picker-search-input {
+  flex: 1;               // Prend tout l'espace disponible entre l'icône et le bouton
+  min-width: 0;          // Empêche le débordement en flex
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--theme-text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+
+  &::placeholder {
+    color: var(--theme-text-muted);
+  }
+
+  &:focus {
+    border-color: $green; // Bordure verte au focus — cohérent avec le design system
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-// Nom de l'équipe
-.team-picker-name {
-  font-size: 0.82rem;
+// Bouton "Centrer"
+.map-picker-search-btn {
+  flex-shrink: 0;
+  background-color: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: $green;         // Vert pour attirer l'œil sans écraser le CTA principal
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: rgba($green, 0.1); // Fond vert très léger au survol
+    border-color: $green;
+  }
 }
 
-// Nombre de membres (aligné à droite)
-.team-picker-members {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.35);
-  margin-left: auto;
+// ── Instruction au-dessus de la carte ─────────────────────────
+.map-picker-instruction {
+  font-size: 0.82rem;
+  color: var(--theme-text-muted);
+  text-align: center;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  background-color: var(--theme-bg-surface);
+  border-bottom: 1px solid var(--theme-border);
 }
+
+// ── Conteneur de la carte Leaflet ─────────────────────────────
+// La hauteur fixe est obligatoire — Leaflet calcule ses tuiles depuis cette valeur.
+// Sans hauteur définie, la carte s'affiche vide (hauteur 0px).
+//
+// position: relative → requis par Leaflet : toutes ses couches internes
+// (.leaflet-map-pane, .leaflet-tile-container…) sont en position: absolute
+// et se positionnent par rapport à ce conteneur.
+//
+// PAS de overflow:hidden ici : avec overflow:hidden, le navigateur crée un nouveau
+// contexte de composition GPU séparé. Les couches Leaflet (transform: translate3d)
+// se retrouvent dans un contexte différent du document → les tuiles se découpent
+// en 2-3 panneaux qui se chevauchent. Le clipping visuel est géré par la propriété
+// border-radius du parent .map-picker-modal-content.
+.map-picker-container {
+  height: 420px;        // Hauteur fixe — référence de Leaflet pour le calcul des tuiles
+  width: 100%;          // Prend toute la largeur du modal-body
+  display: block;       // Explicite : annule tout héritage flex/grid du parent
+  position: relative;   // CRITIQUE : référentiel pour les couches Leaflet en position:absolute
+                        // Sans ça, les tuiles se positionnent par rapport à .modal (full viewport)
+  overflow: hidden;     // Sûr ici car on a position:relative → les couches Leaflet restent confinées
+
+  // Mobile : réduit la hauteur pour laisser de la place au footer de la modale
+  @media (max-width: 576px) {
+    height: 320px;
+  }
+}
+
+// ── Pied de la modale : adresse + bouton Confirmer ────────────
+.map-picker-modal-footer {
+  background-color: var(--theme-bg-surface);
+  border-top: 1px solid var(--theme-border);
+  padding: 0.875rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap; // Sur mobile, le bouton passe en dessous si nécessaire
+}
+
+// ── Zone affichant l'adresse reverse-géocodée ─────────────────
+.map-picker-address-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;          // Prend tout l'espace disponible avant le bouton
+  min-width: 0;     // Évite le débordement du texte
+}
+
+.map-picker-address-text {
+  font-size: 0.85rem;
+  color: var(--theme-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ── Bouton "Confirmer ce lieu" ─────────────────────────────────
+.map-picker-confirm-btn {
+  flex-shrink: 0;
+  background-color: $green;    // Vert principal
+  color: $dark-bg;             // Texte sombre sur fond vert
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.25rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    background-color: darken($green, 8%);
+  }
+
+  // État désactivé (avant qu'un lieu soit choisi)
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// ── Surcharge du z-index des contrôles Leaflet ────────────────
+// Bootstrap modal est à z-index 1055 — les contrôles Leaflet (+/-) doivent
+// être au-dessus du fond de la modale mais en dessous des dropdowns Bootstrap
+.map-picker-container {
+  .leaflet-control {
+    z-index: 400; // Valeur par défaut Leaflet — OK car on est déjà dans la modale
+  }
+}
+
+
+// ── Sélecteur d'équipe : utilise désormais .match-level-btn (même style que Public/Privé)
+// Les anciens styles .team-picker-* ont été supprimés.
