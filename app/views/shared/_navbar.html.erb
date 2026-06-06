@@ -406,6 +406,19 @@
 
       <hr class="drawer-divider">
 
+      <%# Bouton PWA — visible pour les visiteurs non connectés dans le drawer %>
+      <button type="button"
+              class="drawer-pwa-btn"
+              data-bs-toggle="modal"
+              data-bs-target="#pwaInstallModal"
+              data-bs-dismiss="offcanvas"
+              aria-label="Installer l'application sur votre appareil">
+        <i data-lucide="download" style="width:17px;height:17px;" aria-hidden="true"></i>
+        Installer l'app
+      </button>
+
+      <hr class="drawer-divider">
+
       <%# Accès "Qui sommes-nous ?" pour les visiteurs %>
       <nav aria-label="Navigation principale">
         <% about_active = current_page?(about_path) %>
