@@ -14,16 +14,16 @@ class TeamInvitation < ApplicationRecord
 
   # Un user ne peut avoir qu'une seule invitation pending par équipe
   validates :invitee_id, uniqueness: {
-    scope:      :team_id,
+    scope: :team_id,
     conditions: -> { where(status: "pending") },
-    message:    "a déjà une invitation en attente pour cette équipe"
+    message: "a déjà une invitation en attente pour cette équipe"
   }
 
   # Un user ne peut avoir qu'une seule proposition en attente par équipe
   validates :invitee_id, uniqueness: {
-    scope:      :team_id,
+    scope: :team_id,
     conditions: -> { where(status: "proposed") },
-    message:    "a déjà une proposition en attente pour cette équipe"
+    message: "a déjà une proposition en attente pour cette équipe"
   }
 
   # ── Scopes ─────────────────────────────────────────────────────────────────

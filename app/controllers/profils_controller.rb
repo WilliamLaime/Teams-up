@@ -3,7 +3,7 @@ class ProfilsController < ApplicationController
   VALID_PRESET_AVATARS = %w[01 02 3 4 5 6 7 8 9 10 11 12].freeze
   # Retrouver le profil de l'utilisateur connecté avant chaque action
   # On exclut show_user et show_user_simple car ils chargent le profil d'un autre utilisateur
-  before_action :set_profil, except: [:show_user, :show_user_simple]
+  before_action :set_profil, except: %i[show_user show_user_simple]
 
   # GET /profil/old
   # Ancien profil gamifié — conservé mais non exposé depuis la navigation principale
@@ -56,11 +56,11 @@ class ProfilsController < ApplicationController
     # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
     # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
     @profil_teams = current_user.teams
-                                 .preload(:captain)
-                                 .left_joins(:team_members)
-                                 .select("teams.*, COUNT(team_members.id) AS members_count")
-                                 .group("teams.id")
-                                 .order(:name)
+                                .preload(:captain)
+                                .left_joins(:team_members)
+                                .select("teams.*, COUNT(team_members.id) AS members_count")
+                                .group("teams.id")
+                                .order(:name)
   end
 
   # GET /users/:id/profil/old
@@ -119,11 +119,11 @@ class ProfilsController < ApplicationController
     # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
     # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
     @profil_teams = @profil_user.teams
-                                 .preload(:captain)
-                                 .left_joins(:team_members)
-                                 .select("teams.*, COUNT(team_members.id) AS members_count")
-                                 .group("teams.id")
-                                 .order(:name)
+                                .preload(:captain)
+                                .left_joins(:team_members)
+                                .select("teams.*, COUNT(team_members.id) AS members_count")
+                                .group("teams.id")
+                                .order(:name)
 
     # Équipes où current_user est captain et peut encore inviter ce joueur
     # (uniquement si on consulte le profil de quelqu'un d'autre)
@@ -188,7 +188,7 @@ class ProfilsController < ApplicationController
       @profil.decrement!(:stat_points)       # -1 point disponible
     end
 
-    redirect_to profil_path  # profil_path → GET /profil → show_simple
+    redirect_to profil_path # profil_path → GET /profil → show_simple
   end
 
   # GET /profil
@@ -237,11 +237,11 @@ class ProfilsController < ApplicationController
     # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
     # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
     @profil_teams = current_user.teams
-                                 .preload(:captain)
-                                 .left_joins(:team_members)
-                                 .select("teams.*, COUNT(team_members.id) AS members_count")
-                                 .group("teams.id")
-                                 .order(:name)
+                                .preload(:captain)
+                                .left_joins(:team_members)
+                                .select("teams.*, COUNT(team_members.id) AS members_count")
+                                .group("teams.id")
+                                .order(:name)
   end
 
   # GET /users/:id/profil
@@ -257,7 +257,7 @@ class ProfilsController < ApplicationController
     player_name = "Joueur" if player_name.blank? # fallback si profil vide
 
     set_meta_tags(
-      title:       "#{player_name} — Profil joueur",
+      title: "#{player_name} — Profil joueur",
       description: "Consulte le profil de #{player_name} sur Teams-up. Ses matchs joués, son niveau et ses avis de coéquipiers.",
       # noindex : les profils ne sont pas indexés par Google.
       # Raisons : données personnelles (RGPD), contenu qui change souvent, pas de valeur SEO externe.
@@ -305,11 +305,11 @@ class ProfilsController < ApplicationController
     # Utilise preload pour les captains (requête séparée) + left_joins + COUNT
     # pour calculer le nombre de membres en SQL plutôt que de charger tous les enregistrements
     @profil_teams = @profil_user.teams
-                                 .preload(:captain)
-                                 .left_joins(:team_members)
-                                 .select("teams.*, COUNT(team_members.id) AS members_count")
-                                 .group("teams.id")
-                                 .order(:name)
+                                .preload(:captain)
+                                .left_joins(:team_members)
+                                .select("teams.*, COUNT(team_members.id) AS members_count")
+                                .group("teams.id")
+                                .order(:name)
 
     # Équipes où current_user est captain et peut encore inviter ce joueur
     # (uniquement si on consulte le profil de quelqu'un d'autre)
@@ -373,11 +373,11 @@ class ProfilsController < ApplicationController
         sp.level = sp_params[:level].presence
         sp.role  = sp_params[:role].presence
         # save (sans !) pour ne pas propager une exception non gérée → 500
-        unless sp.save
-          @profil.errors.add(:base, "Erreur sur le sport #{sport_id} : #{sp.errors.full_messages.join(', ')}")
-          render :edit, status: :unprocessable_entity
-          return
-        end
+        next if sp.save
+
+        @profil.errors.add(:base, "Erreur sur le sport #{sport_id} : #{sp.errors.full_messages.join(', ')}")
+        render :edit, status: :unprocessable_entity
+        return
       end
 
       # Supprime les SportProfil des sports désélectionnés
@@ -529,7 +529,7 @@ class ProfilsController < ApplicationController
     params.require(:profil).permit( # brakeman: ignore
       :first_name, :last_name, :address, :description,
       :level, :phone, :role, :localisation, :time_available, :avatar,
-      :preferred_city,      # Ville préférée pour les pré-filtres
+      :preferred_city, # Ville préférée pour les pré-filtres
       favorite_venue_ids: [] # Lieux favoris (multi-select)
     )
   end

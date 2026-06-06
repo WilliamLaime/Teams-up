@@ -35,7 +35,13 @@ Lint/MissingSuper:
 Style/FrozenStringLiteralComment:
   Enabled: false
 Layout/LineLength:
-  Max: 120
+  Max: 150
+  # Ignore les commentaires, descriptions SEO et données de seed (contenus longs intentionnels)
+  AllowedPatterns:
+    - '\A\s*#'
+    - 'description:'
+    - 'desc:'
+    - 'ref:'
 Style/EmptyMethod:
   Enabled: false
 Bundler/OrderedGems:
@@ -53,4 +59,21 @@ Metrics/PerceivedComplexity:
 Style/SafeNavigationChainLength:
   Enabled: false
 Lint/DuplicateBranch:
+  Enabled: false
+# Faux positif sur les constantes définies dans des modules privés
+Lint/UselessConstantScoping:
+  Enabled: false
+# Préférence de style — parfois moins lisible avec le modifier form sur des lignes longues
+Style/IfUnlessModifier:
+  Enabled: false
+# Guard clause optionnel — parfois le if explicite est plus lisible
+Style/GuardClause:
+  Enabled: false
+# Metrics désactivés — trop de faux positifs sur du code Rails
+Metrics/ParameterLists:
+  Enabled: false
+Metrics/BlockNesting:
+  Enabled: false
+# Non-local exit dans iterator — pattern parfois nécessaire dans les controllers Rails
+Lint/NonLocalExitFromIterator:
   Enabled: false

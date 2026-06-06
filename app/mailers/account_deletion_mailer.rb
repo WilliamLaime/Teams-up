@@ -2,7 +2,6 @@
 # L'user est DÉJÀ détruit avant l'exécution de ce job (via SolidQueue).
 # On ne peut donc pas utiliser des AR objects — seulement des scalaires.
 class AccountDeletionMailer < ApplicationMailer
-
   # Email de confirmation : ton compte a été supprimé (RGPD art. 17)
   # Paramètres scalaires pour compatibilité avec SolidQueue (pas de GlobalID sur un user détruit)
   #
@@ -15,7 +14,7 @@ class AccountDeletionMailer < ApplicationMailer
     @deleted_at = deleted_at
 
     mail(
-      to:      user_email,
+      to: user_email,
       subject: "Confirmation — Ton compte Team-Up a été supprimé"
     )
   end

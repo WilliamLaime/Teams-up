@@ -152,10 +152,12 @@
 }
 
 // Bouton "Installer l'app" PWA — secondaire (bordure verte, fond transparent)
-// Mobile : icône seule. Desktop (lg+) : icône + texte via d-none d-lg-inline dans le HTML.
+// Sur mobile : toujours caché — le drawer offcanvas fournit ce bouton pour tous les utilisateurs,
+// ce qui évite l'encombrement navbar sur les petits écrans (chevauche le logo).
+// Sur desktop (lg+) : icône + texte "Installer l'app" visible.
 .nav-pwa-btn {
   background: none;
-  border: 1.5px solid transparent; // invisible sur mobile, visible sur desktop via media query
+  border: 1.5px solid transparent;
   cursor: pointer;
   padding: 4px 6px;
   color: var(--theme-icon-color);
@@ -165,6 +167,15 @@
   font-size: 0.8rem;
   font-weight: 600;
   transition: color 0.2s ease, background-color 0.15s ease, border-color 0.15s ease;
+
+  // Caché sur mobile (< 992px) uniquement pour les utilisateurs connectés (.nav-pwa-btn--auth)
+  // → le drawer offcanvas contient déjà le bouton pour eux.
+  // Pour les visiteurs non connectés, le bouton reste visible sur mobile.
+  &--auth {
+    @media (max-width: 991.98px) {
+      display: none !important;
+    }
+  }
 
   .nav-pwa-icon {
     color: var(--theme-icon-color);

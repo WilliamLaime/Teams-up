@@ -44,13 +44,13 @@ class SecurityLog < ApplicationRecord
   #   SecurityLog.log("login_success", request, user: @user, provider: "google")
   def self.log(event_type, request, user: nil, **details)
     create!(
-      event_type:  event_type,
-      user:        user,
-      ip_address:  request.remote_ip,
-      user_agent:  request.user_agent,
-      details:     details
+      event_type: event_type,
+      user: user,
+      ip_address: request.remote_ip,
+      user_agent: request.user_agent,
+      details: details
     )
-  rescue => e
+  rescue StandardError => e
     # Si le log échoue (ex: base indisponible), on n'interrompt PAS l'action principale.
     # On écrit juste l'erreur dans le log serveur pour investigation.
     Rails.logger.error("[SecurityLog] Échec de création du log : #{e.message}")

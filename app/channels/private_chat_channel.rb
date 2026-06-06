@@ -25,7 +25,7 @@ class PrivateChatChannel < ApplicationCable::Channel
       "private_chat_typing_#{@conversation.id}",
       {
         user_name: current_user.display_name,
-        user_id:   current_user.id
+        user_id: current_user.id
       }
     )
   end
@@ -35,6 +35,6 @@ class PrivateChatChannel < ApplicationCable::Channel
   # Vérifie que current_user est bien sender ou recipient de la conversation
   def participant?
     @conversation.sender_id == current_user.id ||
-    @conversation.recipient_id == current_user.id
+      @conversation.recipient_id == current_user.id
   end
 end

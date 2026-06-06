@@ -74,8 +74,8 @@ class ApplicationController < ActionController::Base
     return if request.host == CANONICAL_HOST
 
     redirect_to "https://#{CANONICAL_HOST}#{request.fullpath}",
-                status:           :moved_permanently, # 301 — permanent pour Google
-                allow_other_host: true                # Rails 7+ exige ce flag cross-domain
+                status: :moved_permanently, # 301 — permanent pour Google
+                allow_other_host: true # Rails 7+ exige ce flag cross-domain
   end
 
   # ── Meta tags SEO par défaut ───────────────────────────────────────────────
@@ -89,31 +89,31 @@ class ApplicationController < ActionController::Base
   def set_default_meta_tags
     set_meta_tags(
       # Nom du site — apparaît après le séparateur " | " dans le title
-      site:        "Teams-up",
+      site: "Teams-up",
       # Title par défaut utilisé si la page ne définit pas le sien
-      title:       "Sport, matchs et équipes",
+      title: "Sport, matchs et équipes",
       # Description par défaut — affichée sous le titre dans les résultats Google
       description: "Teams-up — Crée ou rejoins un match de sport amateur près de chez toi. Football, basket, tennis et plus. Inscris-toi gratuitement.",
       # Séparateur entre le titre de la page et le nom du site
-      separator:   "|",
+      separator: "|",
       # ── OpenGraph (partage sur réseaux sociaux : Facebook, LinkedIn, WhatsApp) ──
       og: {
-        site_name:   "Teams-up",
-        type:        "website",
+        site_name: "Teams-up",
+        type: "website",
         # :title et :description font référence aux valeurs définies ci-dessus
-        title:       :title,
+        title: :title,
         description: :description,
-        url:         -> { request.original_url },
+        url: -> { request.original_url },
         # Image affichée lors du partage sur Facebook, WhatsApp, LinkedIn, etc.
-        image:       -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
+        image: -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
       },
       # ── Twitter Card (partage sur X/Twitter) ──
       twitter: {
-        card:        "summary",
-        title:       :title,
+        card: "summary",
+        title: :title,
         description: :description,
         # Image affichée dans les aperçus Twitter/X
-        image:       -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
+        image: -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
       },
       # ── Canonical URL ──────────────────────────────────────────────────────
       # Pointe toujours vers l'URL propre sans query string.

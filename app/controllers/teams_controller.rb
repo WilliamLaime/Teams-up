@@ -75,10 +75,10 @@ class TeamsController < ApplicationController
     # Notifie tous les membres avant suppression
     @team.team_members.where.not(user_id: current_user.id).each do |tm|
       Notification.create(
-        user:    tm.user,
-        actor:   current_user,
+        user: tm.user,
+        actor: current_user,
         message: "L'équipe \"#{@team.name}\" a été supprimée par le capitaine.",
-        link:    teams_path
+        link: teams_path
       )
     end
 
@@ -110,10 +110,10 @@ class TeamsController < ApplicationController
 
     # Notifie le nouveau captain
     Notification.create(
-      user:    new_captain,
-      actor:   current_user,
+      user: new_captain,
+      actor: current_user,
       message: "Tu es maintenant le capitaine de l'équipe \"#{@team.name}\" !",
-      link:    team_path(@team)
+      link: team_path(@team)
     )
 
     redirect_to @team, notice: "Le capitanat a été transféré à #{new_captain.profil&.first_name}."
@@ -137,6 +137,7 @@ class TeamsController < ApplicationController
 
   # Paramètres autorisés pour la création/modification d'une équipe
   def team_params
-    params.require(:team).permit(:name, :description, :badge_image, :badge_svg, :cover_image, :cover_position, :cover_zoom)
+    params.require(:team).permit(:name, :description, :badge_image, :badge_svg, :cover_image, :cover_position,
+                                 :cover_zoom)
   end
 end

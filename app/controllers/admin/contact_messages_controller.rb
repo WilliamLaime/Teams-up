@@ -45,7 +45,7 @@ module Admin
           render turbo_stream: turbo_stream.replace(
             "contact_message_#{@contact_message.id}",
             partial: "admin/contact_messages/contact_message",
-            locals:  { msg: @contact_message }
+            locals: { msg: @contact_message }
           )
         end
         # Fallback HTML si Turbo n'est pas disponible

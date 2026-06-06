@@ -19,7 +19,7 @@ class PushSubscriptionsController < ApplicationController
     )
     subscription.assign_attributes(
       p256dh: subscription_params[:p256dh],
-      auth:   subscription_params[:auth]
+      auth: subscription_params[:auth]
     )
 
     if subscription.save
