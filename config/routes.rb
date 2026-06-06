@@ -239,8 +239,9 @@ Rails.application.routes.draw do
     resources :image_moderations, only: [:index]
 
     # Emails collectés via la landing page "Bientôt disponible"
-    # GET /admin/waitlist_entries => liste tous les emails inscrits
-    resources :waitlist_entries, only: [:index]
+    # GET  /admin/waitlist_entries => liste tous les emails inscrits
+    # POST /admin/waitlist_entries => ajoute un email manuellement (admin)
+    resources :waitlist_entries, only: [:index, :create]
 
     # Gestion des utilisateurs — confirmation manuelle et renvoi d'email
     # GET   /admin/users?q=xxx        → recherche par email/nom
