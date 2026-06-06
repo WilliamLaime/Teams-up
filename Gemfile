@@ -103,5 +103,5 @@ group :test do
   gem "webmock"
 end
 
-# SendGrid HTTP API — remplace SMTP (port 587 bloqué sur Railway)
-gem "sendgrid-actionmailer"
+# Resend — service email avec API HTTP, 3000 emails/mois gratuit
+gem "resend"
