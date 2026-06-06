@@ -258,18 +258,15 @@
                 <span class="required-star">*</span>
               </label>
 
-              <%# Boutons de sélection genre — data-genre lu par le script ci-dessous %>
+              <%# Boutons de sélection genre — data-genre lu par le script ci-dessous.
+                  Les styles (dark/light) sont gérés par CSS via data-active, pas en inline. %>
               <div class="d-flex gap-2 flex-wrap genre-btn-group">
                 <% [["femme", "Femme"], ["homme", "Homme"], ["autre", "Autre"]].each do |valeur, libelle| %>
                   <% est_selectionne = genre_actuel == valeur %>
                   <button type="button"
-                          class="genre-btn btn"
+                          class="genre-btn"
                           data-genre="<%= valeur %>"
-                          data-active="<%= est_selectionne ? 'true' : 'false' %>"
-                          style="padding:0.45rem 1.1rem; border-radius:0.5rem; font-size:0.9rem;
-                                 border: 2px solid <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.3)' %>;
-                                 background: <%= est_selectionne ? 'rgba(30,221,136,0.12)' : 'rgba(255,255,255,0.06)' %>;
-                                 color: <%= est_selectionne ? '#1EDD88' : 'rgba(255,255,255,0.85)' %>;">
+                          data-active="<%= est_selectionne ? 'true' : 'false' %>">
                     <%= libelle %>
                   </button>
                 <% end %>
@@ -288,7 +285,8 @@
                 Sélectionne ton genre pour continuer.
               </small>
 
-              <%# Script de sélection genre + validation client-side %>
+              <%# Script de sélection genre + validation client-side.
+                  On toggle data-active="true/false" → le CSS gère les couleurs pour les deux thèmes. %>
               <script>
                 document.querySelectorAll('.genre-btn-group .genre-btn').forEach(function(btn) {
                   btn.addEventListener('click', function() {
@@ -296,16 +294,12 @@
                     document.getElementById('user_genre_value').value = btn.dataset.genre;
                     // Cache le message d'erreur client si un genre est sélectionné
                     document.getElementById('genre-error-client').classList.add('d-none');
-                    // Réinitialise le style de tous les boutons
+                    // Réinitialise l'état de tous les boutons
                     document.querySelectorAll('.genre-btn-group .genre-btn').forEach(function(b) {
-                      b.style.border = '2px solid rgba(255,255,255,0.3)';
-                      b.style.background = 'rgba(255,255,255,0.06)';
-                      b.style.color = 'rgba(255,255,255,0.85)';
+                      b.dataset.active = 'false';
                     });
-                    // Active le style du bouton cliqué
-                    btn.style.border = '2px solid #1EDD88';
-                    btn.style.background = 'rgba(30,221,136,0.12)';
-                    btn.style.color = '#1EDD88';
+                    // Active le bouton cliqué (le CSS réagit à data-active="true")
+                    btn.dataset.active = 'true';
                   });
                 });
 
