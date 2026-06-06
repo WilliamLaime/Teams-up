@@ -84,9 +84,11 @@
       <div data-controller="pwa-install">
 
         <%# aria-label : nom accessible fiable (sur mobile l'icône est seule sans texte) %>
+        <%# nav-pwa-btn--auth : modificateur BEM qui masque le bouton sur mobile quand connecté
+            (le drawer offcanvas le contient déjà pour les utilisateurs authentifiés). %>
         <button data-pwa-install-target="button"
                   data-action="click->pwa-install#openModal"
-                  class="nav-pwa-btn d-none align-items-center gap-2"
+                  class="nav-pwa-btn <%= 'nav-pwa-btn--auth' if user_signed_in? %> d-none align-items-center gap-2"
                   aria-label="Installer l'application sur votre appareil"
                   title="Installer l'application sur votre appareil">
             <i data-lucide="download" class="nav-pwa-icon" style="width:20px;height:20px;" aria-hidden="true"></i>
