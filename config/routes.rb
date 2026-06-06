@@ -240,8 +240,9 @@ Rails.application.routes.draw do
 
     # Emails collectés via la landing page "Bientôt disponible"
     # GET  /admin/waitlist_entries                      => liste tous les emails inscrits
+    # POST /admin/waitlist_entries                      => ajoute un email manuellement (admin)
     # POST /admin/waitlist_entries/send_launch_email    => envoie l'email de lancement à tous
-    resources :waitlist_entries, only: [:index] do
+    resources :waitlist_entries, only: [:index, :create] do
       collection do
         post :send_launch_email
       end
