@@ -94,6 +94,8 @@
           </button>
         </div>
 
+      <% if user_signed_in? %>
+
         <%# ── Cloche + chat regroupés pour économiser l'espace ── %>
         <div class="d-flex align-items-center gap-1">
 
@@ -104,9 +106,6 @@
               <%= render "shared/notification_bell" %>
             <% end %>
           </div>
-      </div>
-
-      <% if user_signed_in? %>
 
           <%# Bouton chat — ouvre la modale globale des conversations %>
           <div class="nav-item">
