@@ -47,6 +47,13 @@ export default class extends Controller {
     if (this.installBtn) {
       this.installBtn.addEventListener("click", this.boundInstallClick)
     }
+
+    // Affiche le bouton si : prompt déjà capturé (Chrome/Edge), iOS (instructions manuelles),
+    // ou navigateur supportant l'installation — sauf si l'app est déjà en standalone.
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+    if (!isStandalone && (this.installPrompt || this.isIos())) {
+      this.showButton()
+    }
   }
 
   disconnect() {
@@ -61,6 +68,15 @@ export default class extends Controller {
     event.preventDefault()
     this.installPrompt = event
     window._pwaInstallPrompt = event
+    // Le prompt peut arriver après connect() → révéler le bouton si pas encore visible
+    this.showButton()
+  }
+
+  // Retire d-none et passe à d-flex pour que gap/align-items fonctionnent
+  showButton() {
+    if (!this.hasButtonTarget) return
+    this.buttonTarget.classList.remove("d-none")
+    this.buttonTarget.classList.add("d-flex")
   }
 
   // Déclenché par Bootstrap à l'ouverture de la modale (bouton navbar OU drawer mobile)
@@ -134,5 +150,10 @@ export default class extends Controller {
     this.installPrompt = null
     window._pwaInstallPrompt = null
     if (this.bsModal) this.bsModal.hide()
+    // Cacher le bouton — l'app est maintenant installée
+    if (this.hasButtonTarget) {
+      this.buttonTarget.classList.add("d-none")
+      this.buttonTarget.classList.remove("d-flex")
+    }
   }
 }

@@ -23,16 +23,26 @@ module Users
         # Afficher un message de bienvenue si ce n'est pas déjà fait
         set_flash_message(:notice, :success, kind: "Google") if is_navigational_format?
       else
-        # Quelque chose s'est mal passé (email déjà pris avec autre méthode, etc.)
+        # Quelque chose s'est mal passé (validation échouée, email déjà pris, etc.)
         # On stocke temporairement les données OAuth pour les réafficher dans le formulaire
         session["devise.google_data"] = request.env["omniauth.auth"].except(:extra)
-        redirect_to new_user_registration_url, alert: @user.errors.full_messages.join("\n")
+        # Message d'erreur lisible ou message générique si pas d'erreur de validation
+        error_message = @user.errors.full_messages.presence&.join(", ") ||
+                        "Impossible de créer le compte avec Google. Réessaie ou inscris-toi manuellement."
+        redirect_to new_user_registration_url, alert: error_message
       end
+    rescue => e
+      # Filet de sécurité : si from_omniauth lève une exception inattendue,
+      # on redirige proprement au lieu d'afficher une page d'erreur 500.
+      Rails.logger.error("[OmniAuth] Erreur Google OAuth : #{e.class} — #{e.message}")
+      redirect_to new_user_session_url,
+                  alert: "Une erreur est survenue lors de la connexion avec Google. Réessaie dans quelques instants."
     end
 
-    # Appelé si l'utilisateur annule la connexion Google
+    # Appelé si l'utilisateur annule la connexion Google ou si OmniAuth détecte une erreur
+    # (ex : state mismatch CSRF, timeout, accès refusé côté Google)
     def failure
-      redirect_to root_path, alert: "Connexion annulée."
+      redirect_to new_user_session_url, alert: "Connexion avec Google annulée ou expirée. Réessaie."
     end
   end
 end
