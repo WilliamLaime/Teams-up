@@ -242,6 +242,17 @@ Rails.application.routes.draw do
     # GET /admin/waitlist_entries => liste tous les emails inscrits
     resources :waitlist_entries, only: [:index]
 
+    # Gestion des utilisateurs — confirmation manuelle et renvoi d'email
+    # GET   /admin/users?q=xxx        → recherche par email/nom
+    # PATCH /admin/users/:id/confirm  → confirme le compte manuellement
+    # POST  /admin/users/:id/resend_confirmation → renvoie l'email Devise
+    resources :users, only: [:index] do
+      member do
+        patch :confirm
+        post  :resend_confirmation
+      end
+    end
+
     # Messages reçus via le formulaire /contact
     # GET  /admin/contact_messages          => liste tous les messages
     # PATCH /admin/contact_messages/:id/toggle_lu => bascule lu/non-lu

@@ -8,6 +8,19 @@ module Users
     # Vérifie le captcha AVANT de traiter l'inscription
     before_action :verify_captcha_on_signup, only: [:create]
 
+    # ── Confirmation automatique à l'inscription ─────────────────────────────
+    # Surcharge de build_resource : appelée par Devise avant de sauvegarder
+    # le nouvel utilisateur. On appelle skip_confirmation! pour que confirmed_at
+    # soit renseigné dès l'INSERT — l'email de confirmation n'est jamais envoyé
+    # et l'utilisateur peut se connecter immédiatement après l'inscription.
+    # On conserve la colonne confirmed_at et le module :confirmable pour que
+    # l'espace admin (confirmation manuelle, renvoi d'email) reste opérationnel.
+    def build_resource(hash = {})
+      super
+      # skip_confirmation! marque confirmed_at = Time.current avant la sauvegarde
+      resource.skip_confirmation!
+    end
+
     # Action appelée quand l'utilisateur arrive sur la page d'inscription (GET)
     # Si l'utilisateur arrive directement (pas depuis la page de connexion),
     # on efface la "stored location" de Devise pour éviter une redirection non désirée
@@ -80,7 +93,18 @@ module Users
           avatar = resolve_avatar
           profil_attrs[:avatar] = avatar if avatar.present?
 
-          user.create_profil(profil_attrs)
+          # Tente de créer le profil avec prénom + nom (+ avatar éventuel).
+          # Si la validation échoue (ex : avatar invalide, champ vide inattendu),
+          # on logge et on recrée un profil vide sans validation pour garantir
+          # que current_user.profil n'est jamais nil après l'inscription.
+          # L'utilisateur pourra compléter via /profil/edit.
+          profil = user.build_profil(profil_attrs)
+          unless profil.save
+            Rails.logger.error("[Registration] Profil non créé pour user #{user.id} : #{profil.errors.full_messages.join(', ')}")
+            # Fallback : profil minimal sans validation pour éviter les 500 ultérieurs
+            profil = user.build_profil
+            profil.save(validate: false)
+          end
 
           # Ajoute les sports sélectionnés par l'utilisateur lors de l'inscription
           sport_ids = params.dig(:user, :sport_ids).to_a.reject(&:blank?).map(&:to_i)
@@ -220,13 +244,13 @@ module Users
       allowed_types.include?(file.content_type) && file.size <= 5.megabytes
     end
 
-    # Redirection après inscription avec confirmation en attente (:confirmable activé)
-    # Devise appelle cette méthode quand l'utilisateur n'est pas encore confirmé.
-    # On stocke l'email en session pour l'afficher sur la page de confirmation,
-    # puis on redirige vers la page dédiée qui explique quoi faire.
+    # Redirection après inscription avec confirmation en attente.
+    # Depuis l'ajout de skip_confirmation! dans build_resource, cette méthode
+    # n'est plus appelée (tous les nouveaux comptes sont auto-confirmés).
+    # On la conserve comme filet de sécurité et on redirige vers l'accueil
+    # plutôt que vers la page "en attente de confirmation" qui n'a plus lieu d'être.
     def after_inactive_sign_up_path_for(resource)
-      session[:confirmation_pending_email] = resource.email
-      email_confirmation_pending_path
+      root_path
     end
 
     # Transfère le capitanat des équipes au membre avec le XP level le plus élevé
