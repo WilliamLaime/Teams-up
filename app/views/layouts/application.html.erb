@@ -90,18 +90,17 @@
         localStorage.setItem('theme', '<%= current_theme %>');
       </script>
     <% else %>
-      <%# Visiteur : priorité localStorage → sinon préférence OS → sinon dark (défaut) %>
+      <%# Visiteur : priorité localStorage (préférence explicitement choisie) → sinon dark par défaut.
+          On ne respecte PAS la préférence OS (prefers-color-scheme) pour les nouveaux visiteurs :
+          l'app est conçue dark-first et les premiers utilisateurs doivent la découvrir en mode sombre. %>
       <script>
         (function() {
           var saved = localStorage.getItem('theme');
           if (saved === 'light' || saved === 'dark') {
-            // Préférence explicitement sauvegardée lors d'une session précédente
+            // L'utilisateur a déjà explicitement choisi un thème lors d'une session précédente
             document.documentElement.setAttribute('data-theme', saved);
-          } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-            // Aucune préférence sauvegardée → on respecte la préférence OS
-            document.documentElement.setAttribute('data-theme', 'light');
           }
-          // Sinon : on garde "dark" posé par le serveur (valeur par défaut)
+          // Sinon : on garde "dark" posé par le serveur — jamais de mode clair par défaut
         })();
       </script>
     <% end %>

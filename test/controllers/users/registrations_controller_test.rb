@@ -62,8 +62,9 @@ class Users::RegistrationsControllerTest < ActionDispatch::IntegrationTest
   #   3. Crée l'User via super (Devise)
   #   4. Crée le Profil avec first_name/last_name
   #   5. Attache les sports sélectionnés
-  # Devise :confirmable → redirige vers email_confirmation_pending_path
-  test "POST /users crée le compte et redirige vers la confirmation d'email" do
+  # skip_confirmation! est appelé dans build_resource → l'user est auto-confirmé
+  # et connecté immédiatement, pas de redirection vers la page de confirmation
+  test "POST /users crée le compte, auto-confirme l'utilisateur et redirige" do
     user_params = {
       email:                 "nouveau@example.com",
       password:              "Test1234!",       # Respecte PASSWORD_REGEX : maj + chiffre + symbole
@@ -84,9 +85,11 @@ class Users::RegistrationsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil created_user.profil, "Le Profil doit être créé avec le compte"
     assert_equal "Alice", created_user.profil.first_name
 
-    # Avec :confirmable actif, l'user n'est pas encore connecté
-    # after_inactive_sign_up_path_for redirige vers la page de confirmation
-    assert_redirected_to email_confirmation_pending_path
+    # Avec skip_confirmation!, l'user est auto-confirmé dès la création
+    assert_not_nil created_user.confirmed_at, "L'utilisateur doit être auto-confirmé"
+
+    # Devise connecte l'user et redirige (root ou after_sign_up_path)
+    assert_response :redirect
   end
 
   # Cas d'erreur : mot de passe trop simple.
