@@ -709,3 +709,37 @@
     opacity: 1;
   }
 }
+
+// ── Boutons de sélection de genre (formulaire d'inscription) ──────────────────
+// Utilise data-active="true/false" comme hook CSS plutôt que des inline styles
+// → compatible avec les deux thèmes sans duplication de logique JS.
+.genre-btn {
+  padding: 0.45rem 1.1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  border: 2px solid rgba(255, 255, 255, 0.3); // Inactif — dark mode
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  // État actif (genre sélectionné)
+  &[data-active="true"] {
+    border-color: $green;
+    background: rgba(30, 221, 136, 0.12);
+    color: $green;
+  }
+
+  // Override light mode — les rgba blancs sont invisibles sur fond clair
+  [data-theme="light"] & {
+    border-color: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.7);
+
+    &[data-active="true"] {
+      border-color: $green;
+      background: rgba(30, 221, 136, 0.12);
+      color: darken($green, 8%);
+    }
+  }
+}
