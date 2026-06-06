@@ -57,7 +57,8 @@ class ImageModeration
       #
       # Par défaut, on lit les variables d'environnement directement. Les tests
       # peuvent injecter des fake credentials sans toucher à l'environnement.
-      def initialize(api_user: ENV["SIGHTENGINE_API_USER"], api_secret: ENV["SIGHTENGINE_API_SECRET"])
+      def initialize(api_user: ENV.fetch("SIGHTENGINE_API_USER", nil),
+                     api_secret: ENV.fetch("SIGHTENGINE_API_SECRET", nil))
         super()
         @api_user   = api_user
         @api_secret = api_secret
@@ -185,7 +186,11 @@ class ImageModeration
       #   - "usage_limit" → quota mensuel dépassé (QuotaExceededError, pas de retry)
       #   - autres      → ApiError (retry)
       def parse_client_error(response)
-        json = JSON.parse(response.body) rescue {}
+        json = begin
+          JSON.parse(response.body)
+        rescue StandardError
+          {}
+        end
         error_type = json.dig("error", "type").to_s
 
         case error_type

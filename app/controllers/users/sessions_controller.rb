@@ -11,9 +11,7 @@ module Users
     def new
       # Devise définit flash[:timedout] = true lors du timeout automatique
       # On transforme cela en un message d'alerte lisible
-      if flash[:timedout]
-        flash[:alert] = I18n.t("devise.failure.timeout")
-      end
+      flash[:alert] = I18n.t("devise.failure.timeout") if flash[:timedout]
       super
     end
 

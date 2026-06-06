@@ -65,21 +65,11 @@ Rails.application.configure do
   # Remplace par ton vrai domaine Heroku (ex: "team-up-xxxx.herokuapp.com")
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST", "localhost") }
 
-  # Activation de l'envoi d'emails en production
-  config.action_mailer.delivery_method = :smtp
+  # Envoi d'emails via l'API HTTP Resend (3000 emails/mois gratuit)
+  # Railway bloque les connexions SMTP sortantes — Resend utilise HTTPS (port 443).
+  config.action_mailer.delivery_method = :resend
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
-
-  # Configuration SendGrid (les variables sont définies automatiquement par le addon Heroku)
-  config.action_mailer.smtp_settings = {
-    address:              "smtp.sendgrid.net",
-    port:                 587,
-    domain:               ENV.fetch("APP_HOST", "localhost"),
-    user_name:            "apikey",                          # toujours "apikey" avec SendGrid
-    password:             ENV.fetch("SENDGRID_API_KEY", ""), # clé API SendGrid dans les vars Heroku
-    authentication:       :plain,
-    enable_starttls_auto: true
-  }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

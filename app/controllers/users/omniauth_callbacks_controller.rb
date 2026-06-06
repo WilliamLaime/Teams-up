@@ -31,7 +31,7 @@ module Users
                         "Impossible de créer le compte avec Google. Réessaie ou inscris-toi manuellement."
         redirect_to new_user_registration_url, alert: error_message
       end
-    rescue => e
+    rescue StandardError => e
       # Filet de sécurité : si from_omniauth lève une exception inattendue,
       # on redirige proprement au lieu d'afficher une page d'erreur 500.
       Rails.logger.error("[OmniAuth] Erreur Google OAuth : #{e.class} — #{e.message}")

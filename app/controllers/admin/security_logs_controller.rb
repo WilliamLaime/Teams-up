@@ -13,21 +13,15 @@ module Admin
       # ── Filtre par type d'événement ────────────────────────────────────────
       # params[:event_type] vient du formulaire de filtre dans la vue
       # .present? vérifie que la valeur n'est ni nil ni une chaîne vide
-      if params[:event_type].present?
-        logs = logs.by_type(params[:event_type])
-      end
+      logs = logs.by_type(params[:event_type]) if params[:event_type].present?
 
       # ── Filtre par date de début ────────────────────────────────────────────
       # beginning_of_day → 00:00:00 du jour sélectionné
-      if params[:date_from].present?
-        logs = logs.where("created_at >= ?", params[:date_from].to_date.beginning_of_day)
-      end
+      logs = logs.where("created_at >= ?", params[:date_from].to_date.beginning_of_day) if params[:date_from].present?
 
       # ── Filtre par date de fin ──────────────────────────────────────────────
       # end_of_day → 23:59:59 du jour sélectionné
-      if params[:date_to].present?
-        logs = logs.where("created_at <= ?", params[:date_to].to_date.end_of_day)
-      end
+      logs = logs.where("created_at <= ?", params[:date_to].to_date.end_of_day) if params[:date_to].present?
 
       # ── Pagination : 50 logs par page ──────────────────────────────────────
       # pagy retourne [objet_pagination, collection_paginée]

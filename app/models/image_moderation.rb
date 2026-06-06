@@ -36,10 +36,10 @@ class ImageModeration < ApplicationRecord
   # `moderation.status_rejected?` plutôt que `moderation.rejected?` qui
   # pourrait entrer en conflit avec d'autres concerns plus tard.
   enum :status, {
-    pending:  "pending",   # Job enfilé, pas encore traité
+    pending: "pending", # Job enfilé, pas encore traité
     approved: "approved",  # Score < seuil, image OK
     rejected: "rejected",  # Score >= seuil, image purgée
-    errored:  "errored"    # Erreur API / quota dépassé (fail-open : image visible)
+    errored: "errored" # Erreur API / quota dépassé (fail-open : image visible)
   }, prefix: true
 
   # ── Scopes ─────────────────────────────────────────────────────────────────

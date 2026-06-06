@@ -102,3 +102,6 @@ group :test do
   # Stub des requêtes HTTP dans les tests (utilisé pour les tests de l'adapter Sightengine)
   gem "webmock"
 end
+
+# Resend — service email avec API HTTP, 3000 emails/mois gratuit
+gem "resend"

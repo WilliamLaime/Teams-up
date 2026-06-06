@@ -2,7 +2,6 @@
 # Chaque méthode correspond à un événement métier clé dans l'application.
 # Tous les emails utilisent deliver_later → envoi asynchrone via SolidQueue (non bloquant).
 class UserMailer < ApplicationMailer
-
   # ── 1. Un joueur a rejoint ton match ──────────────────────────────────────
   # Destinataire : l'organisateur du match
   # Déclenché    : join_automatically, join_with_manual_validation, join_waiting_list
@@ -17,7 +16,7 @@ class UserMailer < ApplicationMailer
     @status       = status
 
     mail(
-      to:      @organizer.email,
+      to: @organizer.email,
       subject: "#{joining_user.display_name} a rejoint votre match !"
     )
   end
@@ -34,9 +33,11 @@ class UserMailer < ApplicationMailer
     @user       = match_user.user
     @accepted   = accepted
 
-    subject = accepted \
-      ? "✅ Tu as été accepté dans \"#{@match.title}\" !" \
-      : "Ta demande pour \"#{@match.title}\" a été refusée"
+    subject = if accepted
+                "✅ Tu as été accepté dans \"#{@match.title}\" !"
+              else
+                "Ta demande pour \"#{@match.title}\" a été refusée"
+              end
 
     mail(to: @user.email, subject: subject)
   end
@@ -66,7 +67,8 @@ class UserMailer < ApplicationMailer
   # @param venue_name     [String, nil] nom du lieu ou nil
   # @param venue_city     [String, nil] ville du lieu ou nil
   # @param organizer_name [String]      display_name de l'organisateur
-  def match_cancelled_async(user_email:, match_title:, match_date:, match_time_str:, venue_name:, venue_city:, organizer_name:)
+  def match_cancelled_async(user_email:, match_title:, match_date:, match_time_str:, venue_name:, venue_city:,
+                            organizer_name:)
     @match_title     = match_title
     @match_date      = match_date      # Date — pour I18n.l
     @match_time_str  = match_time_str  # String "HHhMM" ou nil — déjà formaté
@@ -89,7 +91,7 @@ class UserMailer < ApplicationMailer
     @organizer    = match.user
 
     mail(
-      to:      @organizer.email,
+      to: @organizer.email,
       subject: "#{leaving_user.display_name} a quitté votre match"
     )
   end
@@ -106,7 +108,7 @@ class UserMailer < ApplicationMailer
     @match         = avis.match
 
     mail(
-      to:      @reviewed_user.email,
+      to: @reviewed_user.email,
       subject: "#{@reviewer.display_name} t'a laissé un avis !"
     )
   end
@@ -121,7 +123,7 @@ class UserMailer < ApplicationMailer
     @organizer = match.user
 
     mail(
-      to:      @organizer.email,
+      to: @organizer.email,
       subject: "Votre match \"#{match.title}\" a bien été créé !"
     )
   end
@@ -139,7 +141,7 @@ class UserMailer < ApplicationMailer
     @invitee    = invitation.invitee
 
     mail(
-      to:      @invitee.email,
+      to: @invitee.email,
       subject: "#{@inviter.display_name} t'invite à rejoindre l'équipe \"#{@team.name}\" !"
     )
   end
@@ -157,9 +159,11 @@ class UserMailer < ApplicationMailer
     @receiver = receiver
     @accepted = accepted
 
-    subject = accepted \
-      ? "🎉 #{@receiver.display_name} a accepté ta demande d'ami !" \
-      : "#{@receiver.display_name} a refusé ta demande d'ami"
+    subject = if accepted
+                "🎉 #{@receiver.display_name} a accepté ta demande d'ami !"
+              else
+                "#{@receiver.display_name} a refusé ta demande d'ami"
+              end
 
     mail(to: @sender.email, subject: subject)
   end
@@ -175,7 +179,7 @@ class UserMailer < ApplicationMailer
     @user  = user
 
     mail(
-      to:      @user.email,
+      to: @user.email,
       subject: "⏰ Rappel — \"#{match.title}\" c'est demain !"
     )
   end
@@ -190,10 +194,10 @@ class UserMailer < ApplicationMailer
   def match_modified(match, user, changes:)
     @match   = match
     @user    = user
-    @changes = changes  # ex: ["la date", "le lieu"]
+    @changes = changes # ex: ["la date", "le lieu"]
 
     mail(
-      to:      @user.email,
+      to: @user.email,
       subject: "📋 Le match \"#{match.title}\" a été modifié"
     )
   end

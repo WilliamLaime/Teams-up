@@ -11,7 +11,7 @@ class ContactMessageMailer < ApplicationMailer
     @reply_body      = reply_body
 
     mail(
-      to:      "#{@contact_message.prenom} #{@contact_message.nom} <#{@contact_message.email}>",
+      to: "#{@contact_message.prenom} #{@contact_message.nom} <#{@contact_message.email}>",
       subject: "Re : #{@contact_message.sujet}"
     )
   end

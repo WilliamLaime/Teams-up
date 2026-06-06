@@ -1,0 +1,95 @@
+<%# ── Email : annonce de lancement Teams-Up ──────────────────────────────── %>
+<%# Envoyé aux inscrits en waitlist quand l'appli est officiellement lancée. %>
+<%# Inline CSS obligatoire — les clients mail ignorent les feuilles de style externes %>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #111111; padding: 40px 20px; min-height: 100vh;">
+
+  <%# Carte centrale %>
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+
+    <%# En-tête logo %>
+    <div style="background-color: #111111; padding: 28px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <span style="font-size: 1.6rem; font-weight: 800; color: #f0f0f0; letter-spacing: -0.5px;">
+        TEAMS<span style="color: #1EDD88;">-UP</span>
+      </span>
+    </div>
+
+    <%# Corps %>
+    <div style="padding: 36px 40px;">
+
+      <%# Logo picto blanc/vert centré — extrait de logo_vf_1_blanc.svg %>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 83" width="72" height="72">
+          <path d="M62.4,50.06c-2.68,7.32-9.24,12.79-16.93,14.1v14.92c15.93-1.59,29.04-13.38,32.3-29.02h-15.37ZM22.88,53.66l-13.18,6.77c6.52,11.65,18.78,18.83,32.11,18.85h.08v-14.8c-7.79.08-15.04-4.09-19.01-10.82ZM41.78,5.77c-9.87,0-19.39,4.04-26.27,11.1l10.45,10.44c4.14-4.29,9.87-6.74,15.82-6.74,2.36,0,4.67.38,6.86,1.11l10.03-11.79c-5.18-2.69-11.01-4.12-16.89-4.12ZM23.7,30.1l-10.56-10.57c-5.23,6.51-8.11,14.63-8.11,22.99,0,5.05,1.01,9.92,2.98,14.46l13.22-6.79c-.92-2.45-1.39-5.03-1.39-7.66,0-4.46,1.33-8.75,3.86-12.42Z" fill="#eefff6"/>
+          <path d="M89.37,36.75c0,2.09-.18,4.17-.53,6.17h-15.16c.58-1.98.9-4.05.9-6.17,0-8.95-5.49-17.01-13.74-20.36l9.89-11.62c11.51,6.55,18.64,18.74,18.64,31.97Z" fill="#0fc487"/>
+        </svg>
+      </div>
+
+      <%# Titre %>
+      <h1 style="color: #f0f0f0; font-size: 1.5rem; font-weight: 700; text-align: center; margin: 0 0 8px 0;">
+        C'est parti, Teams-Up est lancé !
+      </h1>
+
+      <%# Sous-titre %>
+      <p style="color: rgba(255,255,255,0.45); font-size: 0.9rem; text-align: center; margin: 0 0 28px 0;">
+        Tu t'étais inscrit sur la liste d'attente. Le moment est venu.
+      </p>
+
+      <%# Message principal %>
+      <p style="color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.7; margin: 0 0 20px 0;">
+        Teams-Up, c'est la plateforme qui permet aux sportifs amateurs de
+        <strong style="color: #f0f0f0;">créer et rejoindre des matchs</strong>
+        près de chez toi, former des équipes et retrouver des partenaires de jeu.
+        Plus besoin de groupes WhatsApp qui s'emballent.
+      </p>
+
+      <%# Encart bénéfices %>
+      <div style="background-color: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px 24px; margin-bottom: 28px;">
+        <p style="color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 14px 0;">Ce que tu peux faire dès maintenant</p>
+
+        <p style="color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0 0 10px 0;">
+          <span style="color: #1EDD88; font-weight: 700; margin-right: 8px;">✓</span>
+          Créer ou rejoindre un match en quelques secondes
+        </p>
+        <p style="color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0 0 10px 0;">
+          <span style="color: #1EDD88; font-weight: 700; margin-right: 8px;">✓</span>
+          Former une équipe avec tes amis
+        </p>
+        <p style="color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0 0 10px 0;">
+          <span style="color: #1EDD88; font-weight: 700; margin-right: 8px;">✓</span>
+          Tchatter avec les participants en temps réel
+        </p>
+        <p style="color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0;">
+          <span style="color: #1EDD88; font-weight: 700; margin-right: 8px;">✓</span>
+          Suivre tes stats et monter en niveau
+        </p>
+      </div>
+
+      <%# Bouton CTA principal %>
+      <div style="text-align: center; margin-bottom: 16px;">
+        <%= link_to @signup_url,
+            style: "display: inline-block; background-color: #1EDD88; color: #111111; font-weight: 700; font-size: 1rem; padding: 14px 40px; border-radius: 50px; text-decoration: none; letter-spacing: 0.3px;" do %>
+          Créer mon compte gratuitement
+        <% end %>
+      </div>
+
+      <%# Lien secondaire %>
+      <p style="text-align: center; margin: 0;">
+        <%= link_to root_url, style: "color: rgba(255,255,255,0.35); font-size: 0.82rem; text-decoration: underline;" do %>
+          Ou découvrir l'appli d'abord
+        <% end %>
+      </p>
+
+    </div>
+
+    <%# Pied de page %>
+    <div style="background-color: #111111; padding: 20px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 0 0 6px 0;">
+        © <%= Date.today.year %> Teams-Up — Tous droits réservés.
+      </p>
+      <p style="color: rgba(255,255,255,0.18); font-size: 0.72rem; margin: 0;">
+        Tu reçois cet email car tu t'es inscrit sur notre liste d'attente avec l'adresse <%= @email %>.
+      </p>
+    </div>
+
+  </div>
+</div>

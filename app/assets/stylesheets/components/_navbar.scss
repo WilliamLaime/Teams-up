@@ -168,9 +168,13 @@
   font-weight: 600;
   transition: color 0.2s ease, background-color 0.15s ease, border-color 0.15s ease;
 
-  // Caché sur mobile (< 992px) — le drawer offcanvas contient déjà le bouton PWA
-  @media (max-width: 991.98px) {
-    display: none !important;
+  // Caché sur mobile (< 992px) uniquement pour les utilisateurs connectés (.nav-pwa-btn--auth)
+  // → le drawer offcanvas contient déjà le bouton pour eux.
+  // Pour les visiteurs non connectés, le bouton reste visible sur mobile.
+  &--auth {
+    @media (max-width: 991.98px) {
+      display: none !important;
+    }
   }
 
   .nav-pwa-icon {

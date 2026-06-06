@@ -43,11 +43,10 @@ class PrivateConversationsController < ApplicationController
           # Remet le placeholder "Sélectionne une conversation" dans le panneau droit
           # pour que l'utilisateur ne voie plus les messages de la conv supprimée
           turbo_stream.update("sticky-chat-frame",
-            html: '<div class="sticky-chat-no-selection">'\
-                  '<div style="font-size: 1.8rem;">💬</div>'\
-                  '<p>Sélectionne une conversation</p>'\
-                  "</div>"
-          )
+                              html: '<div class="sticky-chat-no-selection">' \
+                                    '<div style="font-size: 1.8rem;">💬</div>' \
+                                    '<p>Sélectionne une conversation</p>' \
+                                    "</div>")
         ]
       end
       format.html { redirect_back fallback_location: root_path }

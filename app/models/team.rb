@@ -94,6 +94,7 @@ class Team < ApplicationRecord
   # Priorité : image uploadée > SVG généré > nil
   def badge_display
     return nil unless badge_image.attached? || badge_svg.present?
+
     badge_image.attached? ? :image : :svg
   end
 
@@ -150,12 +151,12 @@ class Team < ApplicationRecord
   #
   # Seuls les types image sûrs sont autorisés (pas SVG, qui peut contenir
   # des scripts via <script> ou des event handlers).
-  SAFE_IMAGE_DATA_URL_PATTERN = /
+  SAFE_IMAGE_DATA_URL_PATTERN = %r{
     href=["']                          # attribut href ouvert
-    (data:image\/(?:png|jpeg|gif|webp) # type MIME image sûr uniquement
-    ;base64,[A-Za-z0-9+\/=]+)          # données base64
+    (data:image/(?:png|jpeg|gif|webp) # type MIME image sûr uniquement
+    ;base64,[A-Za-z0-9+/=]+)          # données base64
     ["']                               # attribut href fermé
-  /x.freeze
+  }x
 
   def sanitize_badge_svg
     svg = badge_svg
@@ -194,8 +195,8 @@ class Team < ApplicationRecord
   # Ajoute le captain comme premier membre avec le rôle "captain"
   def add_captain_as_member
     team_members.create!(
-      user:      captain,
-      role:      "captain",
+      user: captain,
+      role: "captain",
       joined_at: Time.current
     )
   end

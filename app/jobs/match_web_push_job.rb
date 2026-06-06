@@ -5,7 +5,7 @@ class MatchWebPushJob < ApplicationJob
   queue_as :default
 
   # Une subscription expirée (navigateur réinitialisé, etc.) → on la supprime proprement
-  retry_on WebPush::ExpiredSubscription, attempts: 1 do |job, error|
+  retry_on WebPush::ExpiredSubscription, attempts: 1 do |job, _error|
     PushSubscription.find_by(endpoint: job.arguments.first)&.destroy
   end
 
@@ -20,7 +20,7 @@ class MatchWebPushJob < ApplicationJob
 
     # On n'envoie des notifications que pour les matchs publics avec des places disponibles
     return unless match.visibility == "public"
-    return unless match.player_left.nil? || match.player_left > 0
+    return unless match.player_left.nil? || match.player_left.positive?
 
     candidates = find_candidates(match)
     return if candidates.empty?
@@ -52,14 +52,14 @@ class MatchWebPushJob < ApplicationJob
 
     # Filtre par localisation : lieu favori en priorité, sinon ville préférée
     candidates = if match.venue_id.present?
-      candidates.joins(profil: :profil_favorite_venues)
-                .where(profil_favorite_venues: { venue_id: match.venue_id })
-    elsif match.place.present?
-      candidates.joins(:profil)
-                .where("profils.preferred_city ILIKE ?", "%#{match.place}%")
-    else
-      User.none # Pas de localisation → on n'envoie pas de push (risque de spam)
-    end
+                   candidates.joins(profil: :profil_favorite_venues)
+                             .where(profil_favorite_venues: { venue_id: match.venue_id })
+                 elsif match.place.present?
+                   candidates.joins(:profil)
+                             .where("profils.preferred_city ILIKE ?", "%#{match.place}%")
+                 else
+                   User.none # Pas de localisation → on n'envoie pas de push (risque de spam)
+                 end
 
     # Exclure le créateur du match (inutile de se notifier soi-même)
     candidates.where.not(id: match.user_id).distinct
@@ -73,18 +73,18 @@ class MatchWebPushJob < ApplicationJob
 
     payload = JSON.generate(
       title: "Nouveau match de #{sport_name}",
-      body:  "Un match à #{city} vous correspond#{level_text}",
-      url:   Rails.application.routes.url_helpers.match_path(match)
+      body: "Un match à #{city} vous correspond#{level_text}",
+      url: Rails.application.routes.url_helpers.match_path(match)
     )
 
     WebPush.payload_send(
-      message:     payload,
-      endpoint:    subscription.endpoint,
-      p256dh:      subscription.p256dh,
-      auth:        subscription.auth,
+      message: payload,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.p256dh,
+      auth: subscription.auth,
       vapid: {
-        subject:     "mailto:contact@teams-up-sport.fr",
-        public_key:  ENV.fetch("VAPID_PUBLIC_KEY"),
+        subject: "mailto:contact@teams-up-sport.fr",
+        public_key: ENV.fetch("VAPID_PUBLIC_KEY"),
         private_key: ENV.fetch("VAPID_PRIVATE_KEY")
       }
     )

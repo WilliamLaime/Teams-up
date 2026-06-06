@@ -97,6 +97,7 @@ module Moderatable
 
     pending.each do |name|
       next unless public_send(name).attached?
+
       ModerateImageJob.perform_later(self, name)
     end
   ensure
