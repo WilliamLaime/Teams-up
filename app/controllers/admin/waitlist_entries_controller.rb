@@ -21,6 +21,9 @@ module Admin
         redirect_to admin_waitlist_entries_path,
                     notice: "#{@new_entry.email} ajouté à la waitlist."
       else
+        # Recharge la liste pour réafficher la page avec l'erreur inline
+        @waitlist_entries = WaitlistEntry.order(created_at: :desc)
+        @total_count      = @waitlist_entries.count
         # Affiche l'erreur en flash pour rester simple (pas de turbo frame)
         redirect_to admin_waitlist_entries_path,
                     alert: "Erreur : #{@new_entry.errors.full_messages.join(', ')}"
