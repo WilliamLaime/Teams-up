@@ -1,6 +1,66 @@
 // ── Styles de l'espace Admin ──────────────────────────────────────────────
 // Utilisés pour le dashboard et toutes les sous-pages admin
 
+// ── Fond de page ─────────────────────────────────────────────────────────
+// Cohérent avec les autres pages admin (dashboard, contact_messages)
+// qui utilisent background-color:#111111 en inline style.
+.admin-page {
+  background-color: #111111;    // Fond sombre — identique aux autres pages admin
+  min-height: 100vh;            // Couvre toute la hauteur visible
+  padding-bottom: 3rem;
+}
+
+// Titre principal (H1) de la page
+.admin-page-title {
+  font-family: $display-font;   // Bebas Neue — cohérent avec les titres admin existants
+  font-size: 2.2rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: $dark-text;            // #f0f0f0
+}
+
+// ── Tableau de données ────────────────────────────────────────────────────
+// Wrapper avec bord arrondi et fond légèrement plus clair que le fond de page
+.admin-table-wrapper {
+  background: $dark-card-bg;                     // #1a1c1a
+  border: 1px solid rgba(255, 255, 255, 0.07);  // Contour subtil
+  border-radius: 12px;
+  overflow: hidden;                               // Clips les coins du tableau
+}
+
+// Tableau lui-même — remplace le .table Bootstrap générique
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  // En-têtes : fond légèrement éclairé, texte muted, uppercase
+  th {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 0.8rem 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  // Cellules de données
+  td {
+    padding: 0.75rem 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: $dark-text;           // #f0f0f0
+    font-size: 0.88rem;
+    vertical-align: middle;
+  }
+
+  // Supprime la bordure sur la dernière ligne
+  tr:last-child td { border-bottom: none; }
+
+  // Survol discret
+  tr:hover td { background: rgba(255, 255, 255, 0.02); }
+}
+
 // ── Navigation par onglets ────────────────────────────────────────────────
 
 // Wrapper pour permettre le scroll horizontal sur mobile sans casser la mise en page
