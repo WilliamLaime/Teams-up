@@ -82,7 +82,7 @@ class FriendshipsController < ApplicationController
 
     # Met à jour la liste d'amis en temps réel sur le propre profil de chaque user
     broadcast_friends_list_update(current_user) # la liste de B ajoute A en direct
-    broadcast_friends_list_update(@sender)       # la liste de A ajoute B en direct
+    broadcast_friends_list_update(@sender) # la liste de A ajoute B en direct
 
     # Notifie l'expéditeur via notification in-app que sa demande a été acceptée
     Notification.create(
@@ -140,9 +140,7 @@ class FriendshipsController < ApplicationController
 
     # Si pas trouvée, cherche dans les amitiés reçues (l'autre a initié)
     # uniquement si elles sont acceptées (on ne peut pas "annuler" à la place de l'autre)
-    if @friendship.nil?
-      @friendship = current_user.inverse_friendships.accepted.find_by(user_id: params[:user_id])
-    end
+    @friendship = current_user.inverse_friendships.accepted.find_by(user_id: params[:user_id]) if @friendship.nil?
 
     if @friendship.nil?
       redirect_back fallback_location: user_profil_path(params[:user_id]), alert: "Aucune relation trouvée."
@@ -153,7 +151,7 @@ class FriendshipsController < ApplicationController
 
     # Mémorise l'état et les ids avant suppression
     was_accepted = @friendship.accepted?
-    other_user_id = (@friendship.user_id == current_user.id) ? @friendship.friend_id : @friendship.user_id
+    other_user_id = @friendship.user_id == current_user.id ? @friendship.friend_id : @friendship.user_id
     @friendship.destroy
 
     # Supprime toutes les notifications "friend_request" liées à cette relation dans les deux sens
@@ -184,13 +182,13 @@ class FriendshipsController < ApplicationController
   # user : le propriétaire du profil dont la liste d'amis doit se mettre à jour
   def broadcast_friends_list_update(user)
     Turbo::StreamsChannel.broadcast_update_to(
-      "friends_list_#{user.id}",              # canal auquel seul le propriétaire est abonné
-      target:  "friends_list_#{user.id}",     # id du turbo_frame dans le DOM
+      "friends_list_#{user.id}", # canal auquel seul le propriétaire est abonné
+      target: "friends_list_#{user.id}", # id du turbo_frame dans le DOM
       partial: "profils/friends_list",
-      locals:  {
-        friends:          user.all_friends.includes(:profil),
+      locals: {
+        friends: user.all_friends.includes(:profil),
         pending_requests: user.inverse_friendships.pending.includes(user: :profil),
-        own_profile:      true                # on broadcast uniquement pour son propre profil
+        own_profile: true # on broadcast uniquement pour son propre profil
       }
     )
   end
@@ -201,15 +199,15 @@ class FriendshipsController < ApplicationController
   # profil_user : l'utilisateur dont on consulte le profil
   def broadcast_friend_button_update(viewer, profil_user)
     Turbo::StreamsChannel.broadcast_replace_to(
-      "friend_button_#{viewer.id}_#{profil_user.id}",  # canal unique par paire viewer/profil
-      target:  "friend_button_#{profil_user.id}",       # id du turbo_frame dans le DOM
+      "friend_button_#{viewer.id}_#{profil_user.id}", # canal unique par paire viewer/profil
+      target: "friend_button_#{profil_user.id}", # id du turbo_frame dans le DOM
       partial: "shared/friend_button",
-      locals:  {
-        current_user:               viewer,               # passé comme local (pas de session en broadcast)
-        profil_user:                profil_user,
-        already_friends:            viewer.friends_with?(profil_user),
-        pending_sent:               viewer.pending_request_sent_to?(profil_user),
-        pending_received:           viewer.pending_friendship_from(profil_user).present?,
+      locals: {
+        current_user: viewer, # passé comme local (pas de session en broadcast)
+        profil_user: profil_user,
+        already_friends: viewer.friends_with?(profil_user),
+        pending_sent: viewer.pending_request_sent_to?(profil_user),
+        pending_received: viewer.pending_friendship_from(profil_user).present?,
         friendship_initiated_by_me: viewer.friendships.accepted.exists?(friend: profil_user)
       }
     )

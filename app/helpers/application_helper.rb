@@ -2,6 +2,7 @@ module ApplicationHelper
   # Pagy::Frontend fournit les helpers de vue pour afficher la navigation de pagination
   # ex: pagy_bootstrap_nav(@pagy) dans les vues admin
   include Pagy::Frontend
+
   # Génère un badge achievement avec le style exactement issu du Figma Teams-Up :
   # — cercle plein (border-radius 9999px), fond rgba(255,255,255,0.05)
   # — glow blanc quand déverrouillé, grayscale + opacité réduite quand verrouillé
@@ -182,7 +183,7 @@ module ApplicationHelper
     else
       # Pas de contexte sport → fallback sur le nom du label
       case level_label
-      when "Débutant"          then "level-tier-1"
+      when "Débutant" then "level-tier-1"
       when "Amateur", "Initié", "Perfectionnement", "Élémentaire" then "level-tier-2"
       when "Intermédiaire"     then "level-tier-3"
       when "Confirmé"          then "level-tier-5"

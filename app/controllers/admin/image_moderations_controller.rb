@@ -34,9 +34,7 @@ module Admin
       end
 
       # Filtre par type de record (query param ?type=Profil ou ?type=Team)
-      if params[:type].present?
-        scope = scope.where(moderatable_type: params[:type])
-      end
+      scope = scope.where(moderatable_type: params[:type]) if params[:type].present?
 
       @pagy, @moderations = pagy(scope, limit: 25)
     end

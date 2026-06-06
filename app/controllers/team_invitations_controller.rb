@@ -1,6 +1,6 @@
 class TeamInvitationsController < ApplicationController
   before_action :set_team
-  before_action :set_invitation, only: [:update, :destroy, :review]
+  before_action :set_invitation, only: %i[update destroy review]
 
   # GET /teams/:team_id/team_invitations/search?q=lucas — autocomplete JSON (captain seulement)
   def search
@@ -20,9 +20,9 @@ class TeamInvitationsController < ApplicationController
 
     render json: users.map { |u|
       {
-        email:      u.email,
+        email: u.email,
         first_name: u.profil&.first_name,
-        last_name:  u.profil&.last_name
+        last_name: u.profil&.last_name
       }
     }
   end
@@ -48,20 +48,20 @@ class TeamInvitationsController < ApplicationController
     end
 
     @invitation = TeamInvitation.new(
-      team:    @team,
+      team: @team,
       inviter: current_user,
       invitee: invitee,
-      status:  "pending"
+      status: "pending"
     )
     authorize @invitation
 
     if @invitation.save
       # Notifie l'invité via notification in-app
       Notification.create(
-        user:    invitee,
-        actor:   current_user,
+        user: invitee,
+        actor: current_user,
         message: "#{current_user.profil&.first_name} t'a invité à rejoindre l'équipe \"#{@team.name}\".",
-        link:    team_path(@team)
+        link: team_path(@team)
       )
 
       # Envoie un email à l'invité pour qu'il ne rate pas l'invitation s'il n'est pas connecté
@@ -99,29 +99,25 @@ class TeamInvitationsController < ApplicationController
 
     invitee = find_invitee(params[:invitee_query])
 
-    if invitee.nil?
-      redirect_to @team, alert: "Aucun joueur trouvé avec cet email ou ce prénom." and return
-    end
+    redirect_to @team, alert: "Aucun joueur trouvé avec cet email ou ce prénom." and return if invitee.nil?
 
-    if @team.member?(invitee)
-      redirect_to @team, alert: "Ce joueur est déjà membre de l'équipe." and return
-    end
+    redirect_to @team, alert: "Ce joueur est déjà membre de l'équipe." and return if @team.member?(invitee)
 
     @invitation = TeamInvitation.new(
-      team:        @team,
-      inviter:     @team.captain,  # l'inviteur officiel sera le capitaine
-      invitee:     invitee,
-      proposed_by: current_user,   # le membre qui propose
-      status:      "proposed"
+      team: @team,
+      inviter: @team.captain, # l'inviteur officiel sera le capitaine
+      invitee: invitee,
+      proposed_by: current_user, # le membre qui propose
+      status: "proposed"
     )
 
     if @invitation.save
       # Notifie le capitaine
       Notification.create(
-        user:    @team.captain,
-        actor:   current_user,
+        user: @team.captain,
+        actor: current_user,
         message: "#{current_user.profil&.first_name} propose #{invitee.profil&.first_name} pour rejoindre \"#{@team.name}\".",
-        link:    team_path(@team)
+        link: team_path(@team)
       )
       redirect_to @team, notice: "Proposition envoyée au capitaine !"
     else
@@ -145,10 +141,10 @@ class TeamInvitationsController < ApplicationController
 
       # Notifie l'invité via notification in-app
       Notification.create(
-        user:    @invitation.invitee,
-        actor:   current_user,
+        user: @invitation.invitee,
+        actor: current_user,
         message: "#{current_user.profil&.first_name} t'a invité à rejoindre l'équipe \"#{@team.name}\".",
-        link:    team_path(@team)
+        link: team_path(@team)
       )
 
       # Envoie un email à l'invité (proposition validée par le captain = invitation officielle)
@@ -193,18 +189,18 @@ class TeamInvitationsController < ApplicationController
     ActiveRecord::Base.transaction do
       @invitation.update!(status: "accepted")
       @team.team_members.create!(
-        user:      current_user,
-        role:      "member",
+        user: current_user,
+        role: "member",
         joined_at: Time.current
       )
     end
 
     # Notifie le captain
     Notification.create(
-      user:    @team.captain,
-      actor:   current_user,
+      user: @team.captain,
+      actor: current_user,
       message: "#{current_user.profil&.first_name} a accepté de rejoindre l'équipe \"#{@team.name}\" !",
-      link:    team_path(@team)
+      link: team_path(@team)
     )
 
     redirect_to @team, notice: "Tu as rejoint l'équipe \"#{@team.name}\" !"

@@ -184,7 +184,7 @@ class User < ApplicationRecord
       # ce comportement ici pour que current_user.profil ne soit jamais nil.
       profil = user.create_profil(
         first_name: google_first_name,
-        last_name:  google_last_name
+        last_name: google_last_name
       )
 
       # Télécharge et attache la photo de profil Google si disponible.
@@ -193,11 +193,11 @@ class User < ApplicationRecord
         begin
           require "open-uri"
           profil.avatar.attach(
-            io:           URI.open(auth.info.image), # Télécharge l'image depuis l'URL Google
-            filename:     "google_avatar.jpg",
+            io: URI.open(auth.info.image), # rubocop:disable Security/Open -- URL Google contrôlée par OAuth, pas une entrée utilisateur
+            filename: "google_avatar.jpg",
             content_type: "image/jpeg"
           )
-        rescue => e
+        rescue StandardError => e
           Rails.logger.warn("Échec téléchargement avatar Google pour user #{user.id} : #{e.message}")
         end
       end

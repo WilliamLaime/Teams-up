@@ -22,10 +22,10 @@ class SecurityLogCleanupJob < ApplicationJob
     cutoff = retention.ago
     loop do
       deleted = SecurityLog
-                  .where(event_type: event_type)
-                  .where("created_at < ?", cutoff)
-                  .limit(BATCH_SIZE)
-                  .delete_all
+                .where(event_type: event_type)
+                .where("created_at < ?", cutoff)
+                .limit(BATCH_SIZE)
+                .delete_all
       break if deleted < BATCH_SIZE
     end
   end
@@ -35,10 +35,10 @@ class SecurityLogCleanupJob < ApplicationJob
     cutoff = retention.ago
     loop do
       deleted = SecurityLog
-                  .where.not(event_type: excluded_type)
-                  .where("created_at < ?", cutoff)
-                  .limit(BATCH_SIZE)
-                  .delete_all
+                .where.not(event_type: excluded_type)
+                .where("created_at < ?", cutoff)
+                .limit(BATCH_SIZE)
+                .delete_all
       break if deleted < BATCH_SIZE
     end
   end

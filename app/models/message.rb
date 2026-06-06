@@ -27,9 +27,9 @@ class Message < ApplicationRecord
 
   # ── Validation : match_id OU private_conversation_id OU team_id doit être présent ────
   def belongs_to_match_or_private_conversation_or_team
-    if match_id.blank? && private_conversation_id.blank? && team_id.blank?
-      errors.add(:base, "Un message doit appartenir à un match, une conversation privée ou une équipe")
-    end
+    return unless match_id.blank? && private_conversation_id.blank? && team_id.blank?
+
+    errors.add(:base, "Un message doit appartenir à un match, une conversation privée ou une équipe")
   end
 
   # ── Diffuse les badges non-lus dans la sidebar ────────────────────────────
@@ -83,25 +83,19 @@ class Message < ApplicationRecord
 
       if total_messages == 1 || recipient_dismissed
         # Premier message OU conversation réactivée : l'item n'existe pas encore → prepend direct
-        Turbo::StreamsChannel.broadcast_prepend_to(
-          "user_conversations_#{recipient.id}",
-          target: "private-chat-sidebar-list",
-          partial: "shared/private_convo_item",
-          locals: { conversation: private_conversation, current_user: recipient }
-        )
       else
         # Conversation existante : supprime de sa position puis insère en tête
         Turbo::StreamsChannel.broadcast_remove_to(
           "user_conversations_#{recipient.id}",
           target: "private-convo-#{private_conversation_id}"
         )
-        Turbo::StreamsChannel.broadcast_prepend_to(
-          "user_conversations_#{recipient.id}",
-          target: "private-chat-sidebar-list",
-          partial: "shared/private_convo_item",
-          locals: { conversation: private_conversation, current_user: recipient }
-        )
       end
+      Turbo::StreamsChannel.broadcast_prepend_to(
+        "user_conversations_#{recipient.id}",
+        target: "private-chat-sidebar-list",
+        partial: "shared/private_convo_item",
+        locals: { conversation: private_conversation, current_user: recipient }
+      )
     end
   end
 

@@ -48,9 +48,9 @@ class ContactMessage < ApplicationRecord
     adresse = ValidEmail2::Address.new(email)
 
     # valid? vérifie le format, valid_mx? vérifie l'existence du domaine via DNS
-    unless adresse.valid? && adresse.valid_mx?
-      errors.add(:email, "n'est pas valide ou n'existe pas")
-    end
+    return if adresse.valid? && adresse.valid_mx?
+
+    errors.add(:email, "n'est pas valide ou n'existe pas")
   end
 
   # Insère la nouvelle ligne en tête du tableau ET sa modale dans le container dédié.
@@ -60,16 +60,16 @@ class ContactMessage < ApplicationRecord
     # Prepend = insère en premier dans le <tbody id="contact_messages_tbody">
     Turbo::StreamsChannel.broadcast_prepend_to(
       "admin_contact_messages",
-      target:  "contact_messages_tbody",
+      target: "contact_messages_tbody",
       partial: "admin/contact_messages/contact_message",
-      locals:  { msg: self }
+      locals: { msg: self }
     )
     # Append = ajoute la modale dans le <div id="contact_messages_modals">
     Turbo::StreamsChannel.broadcast_append_to(
       "admin_contact_messages",
-      target:  "contact_messages_modals",
+      target: "contact_messages_modals",
       partial: "admin/contact_messages/contact_message_modal",
-      locals:  { msg: self }
+      locals: { msg: self }
     )
     # Supprime la ligne "état vide" si elle est encore présente dans le DOM
     # (cas où l'admin était sur la page avec 0 messages au chargement)
@@ -93,29 +93,29 @@ class ContactMessage < ApplicationRecord
 
     # HTML inline — DOIT être marqué html_safe sinon Rails échappe les < > en &lt; &gt;
     # badge_html : span vert avec le compteur, ou vide si tout est lu
-    badge_html  = (unread > 0 ? "<span class='admin-nav-badge'>#{unread}</span>" : "").html_safe
+    badge_html  = (unread.positive? ? "<span class='admin-nav-badge'>#{unread}</span>" : "").html_safe
     # dot_html : point vert sur l'avatar
-    dot_html    = (unread > 0 ? "<span class='navbar-admin-dot' aria-label='Messages non lus'></span>" : "").html_safe
+    dot_html    = (unread.positive? ? "<span class='navbar-admin-dot' aria-label='Messages non lus'></span>" : "").html_safe
     # inline_html : point vert à droite de "Administration" dans le dropdown
-    inline_html = (unread > 0 ? "<span class='navbar-admin-dot navbar-admin-dot--inline' aria-label='Messages non lus'></span>" : "").html_safe
+    inline_html = (unread.positive? ? "<span class='navbar-admin-dot navbar-admin-dot--inline' aria-label='Messages non lus'></span>" : "").html_safe
 
     # broadcast_update_to = met à jour le innerHTML du wrapper fixe sans supprimer l'élément lui-même
     Turbo::StreamsChannel.broadcast_update_to(
       "admin_contact_messages",
       target: "admin-nav-unread-badge",
-      html:   badge_html
+      html: badge_html
     )
 
     Turbo::StreamsChannel.broadcast_update_to(
       "admin_contact_messages",
       target: "navbar-admin-avatar-dot",
-      html:   dot_html
+      html: dot_html
     )
 
     Turbo::StreamsChannel.broadcast_update_to(
       "admin_contact_messages",
       target: "navbar-admin-inline-dot",
-      html:   inline_html
+      html: inline_html
     )
 
     Rails.logger.info "[ContactMessage] broadcast badge envoyé — unread=#{unread}"

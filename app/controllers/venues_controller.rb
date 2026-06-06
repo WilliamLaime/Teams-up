@@ -28,14 +28,14 @@ class VenuesController < ApplicationController
     if venue.nil?
       # Crée la venue avec les données Nominatim
       venue = Venue.create(
-        name:           name,
-        city:           city,
-        address:        params[:address].to_s.strip.presence,
-        postal_code:    params[:postal_code].to_s.strip.presence,
-        sport_type:     params[:sport_type].to_s.strip.presence,
-        latitude:       params[:latitude].to_f.nonzero?,
-        longitude:      params[:longitude].to_f.nonzero?,
-        from_nominatim: true   # Marque cette venue comme ajoutée via OSM
+        name: name,
+        city: city,
+        address: params[:address].to_s.strip.presence,
+        postal_code: params[:postal_code].to_s.strip.presence,
+        sport_type: params[:sport_type].to_s.strip.presence,
+        latitude: params[:latitude].to_f.nonzero?,
+        longitude: params[:longitude].to_f.nonzero?,
+        from_nominatim: true # Marque cette venue comme ajoutée via OSM
       )
     end
 

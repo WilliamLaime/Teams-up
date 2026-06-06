@@ -184,9 +184,7 @@ class MatchUsersController < ApplicationController
     authorize @match_user
 
     # Le match doit être un match d'équipe
-    unless @match.team_id.present?
-      return redirect_to @match, alert: "Ce match n'est pas un match d'équipe."
-    end
+    return redirect_to @match, alert: "Ce match n'est pas un match d'équipe." unless @match.team_id.present?
 
     # Garde idempotente : seul un statut "pending" peut être confirmé
     return redirect_to @match unless @match_user.pending?
@@ -315,12 +313,12 @@ class MatchUsersController < ApplicationController
     end
 
     # Notifications en dehors du verrou (non critiques pour la cohérence des données)
-    if promoted_record
-      message = "🎉 Une place s'est libérée ! Tu as été automatiquement inscrit au match \"#{@match.title}\"."
-      notify(promoted_record.user, message)
-      # Email transactionnel : informe le joueur de sa promotion depuis la file d'attente
-      UserMailer.match_status_changed(promoted_record, accepted: true).deliver_later
-    end
+    return unless promoted_record
+
+    message = "🎉 Une place s'est libérée ! Tu as été automatiquement inscrit au match \"#{@match.title}\"."
+    notify(promoted_record.user, message)
+    # Email transactionnel : informe le joueur de sa promotion depuis la file d'attente
+    UserMailer.match_status_changed(promoted_record, accepted: true).deliver_later
   end
 
   # Retourne les options de redirect pour le match — inclut le token si match privé
