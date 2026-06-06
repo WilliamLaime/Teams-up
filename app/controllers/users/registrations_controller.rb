@@ -80,7 +80,18 @@ module Users
           avatar = resolve_avatar
           profil_attrs[:avatar] = avatar if avatar.present?
 
-          user.create_profil(profil_attrs)
+          # Tente de créer le profil avec prénom + nom (+ avatar éventuel).
+          # Si la validation échoue (ex : avatar invalide, champ vide inattendu),
+          # on logge et on recrée un profil vide sans validation pour garantir
+          # que current_user.profil n'est jamais nil après l'inscription.
+          # L'utilisateur pourra compléter via /profil/edit.
+          profil = user.build_profil(profil_attrs)
+          unless profil.save
+            Rails.logger.error("[Registration] Profil non créé pour user #{user.id} : #{profil.errors.full_messages.join(', ')}")
+            # Fallback : profil minimal sans validation pour éviter les 500 ultérieurs
+            profil = user.build_profil
+            profil.save(validate: false)
+          end
 
           # Ajoute les sports sélectionnés par l'utilisateur lors de l'inscription
           sport_ids = params.dig(:user, :sport_ids).to_a.reject(&:blank?).map(&:to_i)

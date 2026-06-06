@@ -418,10 +418,21 @@ class ProfilsController < ApplicationController
 
   private
 
-  # Retrouve le profil de l'utilisateur connecté
-  # Si le profil n'existe pas encore, on le crée automatiquement
+  # Retrouve le profil de l'utilisateur connecté.
+  # Si le profil n'existe pas encore, on le construit et on le sauvegarde
+  # SANS validation (first_name/last_name pas encore renseignés) pour garantir
+  # qu'il a bien un ID en base — nécessaire pour les associations (sport_profils,
+  # favorite_venues...) et pour éviter un 500 lors du premier update.
+  # L'utilisateur renseignera prénom/nom via le formulaire d'édition.
   def set_profil
-    @profil = current_user.profil || current_user.build_profil
+    @profil = current_user.profil
+    unless @profil
+      @profil = current_user.build_profil
+      # save(validate: false) : contourne les validations presence sur first_name/last_name
+      # qui bloqueraient l'INSERT alors que l'utilisateur n'a pas encore eu la chance de
+      # remplir le formulaire. La DB accepte NULL sur ces colonnes.
+      @profil.save(validate: false)
+    end
   end
 
   # Vérifie que le fichier uploadé est bien une image autorisée et dans la limite de taille
