@@ -49,5 +49,12 @@
       Waitlist
     <% end %>
 
+    <%# ── Onglet Utilisateurs (confirmation manuelle, renvoi email) ── %>
+    <%= link_to admin_users_path,
+                class: "admin-nav-tab #{active_tab == :users ? "admin-nav-tab--active" : ""}" do %>
+      <i data-lucide="users" style="width:15px; height:15px;"></i>
+      Utilisateurs
+    <% end %>
+
   </div>
 </div>

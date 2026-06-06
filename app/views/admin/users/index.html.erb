@@ -1,0 +1,121 @@
+<%# Page admin : gestion des utilisateurs — confirmation manuelle, renvoi email %>
+<% content_for :title, "Utilisateurs — Admin" %>
+
+<div class="admin-page">
+  <%= render "admin/shared/nav", active_tab: :users %>
+
+  <div class="container-xl">
+
+    <%# Titre + barre de recherche %>
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+      <h1 class="admin-page-title mb-0">Utilisateurs</h1>
+
+      <%# Formulaire de recherche par email ou nom %>
+      <%= form_with url: admin_users_path, method: :get, local: true, class: "d-flex gap-2" do |f| %>
+        <%= f.text_field :q,
+            value: @query,
+            placeholder: "Rechercher par email ou nom...",
+            class: "form-control form-control-sm",
+            style: "min-width: 280px;",
+            autofocus: true %>
+        <%= f.submit "Rechercher", class: "btn btn-sm btn-primary" %>
+        <% if @query.present? %>
+          <%= link_to "Réinitialiser", admin_users_path, class: "btn btn-sm btn-outline-secondary" %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Contexte affiché selon la situation %>
+    <p class="text-muted small mb-3">
+      <% if @query.present? %>
+        <%= @users.count %> résultat(s) pour <strong>"<%= @query %>"</strong>
+      <% else %>
+        Comptes <strong>non confirmés</strong> (les plus récents en premier)
+      <% end %>
+    </p>
+
+    <%# Tableau des utilisateurs %>
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nom</th>
+            <th>Inscrit le</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @users.empty? %>
+            <tr>
+              <td colspan="5" class="text-center text-muted py-4">
+                Aucun compte trouvé.
+              </td>
+            </tr>
+          <% else %>
+            <% @users.each do |user| %>
+              <tr>
+                <%# Email %>
+                <td><code style="font-size:0.82rem;"><%= user.email %></code></td>
+
+                <%# Nom complet depuis le profil %>
+                <td>
+                  <% if user.profil %>
+                    <%= user.profil.first_name %> <%= user.profil.last_name %>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                </td>
+
+                <%# Date d'inscription %>
+                <td style="font-size:0.82rem; color: var(--theme-text-muted);">
+                  <%= user.created_at.strftime("%d/%m/%Y à %H:%M") %>
+                </td>
+
+                <%# Statut de confirmation %>
+                <td>
+                  <% if user.confirmed? %>
+                    <span style="background: rgba(30,221,136,0.15); color: #1EDD88; font-size:0.72rem; font-weight:700; padding: 0.2rem 0.55rem; border-radius: 20px;">
+                      Confirmé
+                    </span>
+                  <% else %>
+                    <span style="background: rgba(253,16,21,0.12); color: #FD1015; font-size:0.72rem; font-weight:700; padding: 0.2rem 0.55rem; border-radius: 20px;">
+                      Non confirmé
+                    </span>
+                  <% end %>
+                </td>
+
+                <%# Boutons d'action %>
+                <td>
+                  <div class="d-flex gap-2">
+                    <% unless user.confirmed? %>
+                      <%# Confirme le compte sans envoyer d'email %>
+                      <%= button_to "✅ Confirmer",
+                          confirm_admin_user_path(user, q: @query),
+                          method: :patch,
+                          data: { turbo: false, confirm: "Confirmer manuellement #{user.email} ?" },
+                          class: "btn btn-sm",
+                          style: "background:#1EDD88; color:#111; border:none; font-weight:700; font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px;" %>
+
+                      <%# Renvoie l'email de confirmation Devise %>
+                      <%= button_to "📧 Renvoyer email",
+                          resend_confirmation_admin_user_path(user, q: @query),
+                          method: :post,
+                          data: { turbo: false },
+                          class: "btn btn-sm btn-outline-secondary",
+                          style: "font-size:0.78rem; padding:0.25rem 0.65rem;" %>
+                    <% else %>
+                      <span class="text-muted" style="font-size:0.78rem;">—</span>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
