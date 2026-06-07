@@ -16,12 +16,11 @@
     <%# Corps %>
     <div style="padding: 36px 40px;">
 
-      <%# Logo picto blanc centré — servi depuis public/ pour une URL stable sans fingerprint.
-          Les SVG inline sont bloqués par Gmail. Les assets pipelinés ont un digest qui change.
-          public/logo_blanc.png est accessible à https://[host]/logo_blanc.png de façon permanente. %>
+      <%# Picto logo blanc/vert centré — servi depuis public/ pour une URL stable sans fingerprint.
+          width seul (sans height) pour préserver le ratio réel de l'image (505x446). %>
       <div style="text-align: center; margin-bottom: 24px;">
-        <img src="<%= root_url.chomp('/') + '/logo_blanc.png' %>"
-             width="72" height="72"
+        <img src="<%= root_url.chomp('/') + '/picto_logo_blanc.png' %>"
+             width="80"
              alt="Teams-Up"
              style="display: block; margin: 0 auto;">
       </div>
