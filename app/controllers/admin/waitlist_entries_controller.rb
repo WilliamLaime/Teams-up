@@ -7,6 +7,9 @@ module Admin
     def index
       @waitlist_entries = WaitlistEntry.order(created_at: :desc)
       @total_count      = @waitlist_entries.count
+      # Compteurs pour les badges et le bouton d'envoi
+      @sent_count       = WaitlistEntry.where.not(launch_email_sent_at: nil).count
+      @pending_count    = WaitlistEntry.where(launch_email_sent_at: nil).count
       # Objet vide pour le formulaire d'ajout manuel sur la même page
       @new_entry        = WaitlistEntry.new
     end
