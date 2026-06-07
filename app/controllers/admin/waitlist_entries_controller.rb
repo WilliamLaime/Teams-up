@@ -26,31 +26,32 @@ module Admin
     end
 
     # POST /admin/waitlist_entries/send_launch_email
-    # Envoie l'email de lancement à tous les inscrits.
-    # Utilise deliver_now (synchrone) pour éviter la dépendance à Solid Queue.
-    # En cas d'erreur SMTP, affiche le message dans le flash pour débugger.
+    # Envoie l'email de lancement uniquement aux inscrits qui ne l'ont pas encore reçu
+    # (launch_email_sent_at IS NULL). Marque chaque entrée après envoi réussi.
+    # Respecte la limite Resend de 5 req/s avec une pause toutes les 4 requêtes.
     def send_launch_email
-      entries = WaitlistEntry.order(created_at: :desc)
+      # On ne cible que les inscrits sans email envoyé — évite les doublons
+      entries = WaitlistEntry.where(launch_email_sent_at: nil).order(created_at: :desc)
       sent    = 0
       errors  = []
 
       entries.each_with_index do |entry, index|
-        # Pause toutes les 4 requêtes pour respecter la limite Resend (5 req/s).
-        # On attend 1.1s après chaque groupe de 4 pour rester sous le seuil.
+        # Pause toutes les 4 requêtes pour respecter la limite Resend (5 req/s)
         sleep(1.1) if index > 0 && index % 4 == 0
 
-        # deliver_now envoie immédiatement via l'API Resend
+        # Envoi immédiat via l'API Resend
         WaitlistMailer.launch_announcement(entry.email).deliver_now
+
+        # Horodate l'envoi pour ne pas renvoyer à cette personne si on relance
+        entry.update_column(:launch_email_sent_at, Time.current)
         sent += 1
       rescue => e
-        # On collecte l'erreur pour l'afficher dans le flash admin
         error_msg = "#{entry.email} : #{e.class} — #{e.message}"
         Rails.logger.error("[WaitlistMailer] Échec envoi — #{error_msg}")
         errors << error_msg
       end
 
       if errors.any?
-        # Affiche les erreurs directement dans le flash pour les voir sans accès aux logs
         redirect_to admin_waitlist_entries_path,
                     alert: "#{sent} envoyé(s), #{errors.count} échec(s) : #{errors.first}"
       else
