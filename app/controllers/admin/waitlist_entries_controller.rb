@@ -34,8 +34,12 @@ module Admin
       sent    = 0
       errors  = []
 
-      entries.each do |entry|
-        # deliver_now envoie immédiatement via SMTP SendGrid
+      entries.each_with_index do |entry, index|
+        # Pause toutes les 4 requêtes pour respecter la limite Resend (5 req/s).
+        # On attend 1.1s après chaque groupe de 4 pour rester sous le seuil.
+        sleep(1.1) if index > 0 && index % 4 == 0
+
+        # deliver_now envoie immédiatement via l'API Resend
         WaitlistMailer.launch_announcement(entry.email).deliver_now
         sent += 1
       rescue => e
