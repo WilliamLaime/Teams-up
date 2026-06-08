@@ -16,7 +16,8 @@
     <%# Corps %>
     <div style="padding: 36px 40px;">
 
-      <%# Picto logo blanc/vert centré — servi depuis public/ pour une URL stable sans fingerprint %>
+      <%# Picto logo blanc/vert centré — servi depuis public/ pour une URL stable sans fingerprint.
+          width seul (sans height) pour préserver le ratio réel de l'image (505x446). %>
       <div style="text-align: center; margin-bottom: 24px;">
         <img src="<%= root_url.chomp('/') + '/picto_logo_blanc.png' %>"
              width="80"

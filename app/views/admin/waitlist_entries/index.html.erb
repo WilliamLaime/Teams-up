@@ -19,12 +19,27 @@
   <%# ── Compteur + formulaire d'ajout manuel + bouton d'envoi ── %>
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
 
-    <%# Compteur %>
-    <div class="d-flex align-items-center gap-2">
-      <span style="font-size:2rem; font-weight:700; color:#1EDD88;"><%= @total_count %></span>
-      <span style="color:rgba(255,255,255,0.6); font-size:0.95rem;">
-        <%= @total_count == 1 ? "personne inscrite" : "personnes inscrites" %>
-      </span>
+    <%# Compteur total + indicateur d'envoi %>
+    <div class="d-flex align-items-center gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <span style="font-size:2rem; font-weight:700; color:#1EDD88;"><%= @total_count %></span>
+        <span style="color:rgba(255,255,255,0.6); font-size:0.95rem;">
+          <%= @total_count == 1 ? "personne inscrite" : "personnes inscrites" %>
+        </span>
+      </div>
+      <%# Badges envoyé / en attente %>
+      <div class="d-flex gap-2">
+        <span style="background:rgba(30,221,136,0.15); color:#1EDD88; border:1px solid rgba(30,221,136,0.3);
+                     font-size:0.78rem; font-weight:600; padding:0.25rem 0.7rem; border-radius:20px;">
+          <%= @sent_count %> envoyé<%= @sent_count > 1 ? "s" : "" %>
+        </span>
+        <% if @pending_count > 0 %>
+          <span style="background:rgba(255,198,90,0.15); color:#FFC65A; border:1px solid rgba(255,198,90,0.3);
+                       font-size:0.78rem; font-weight:600; padding:0.25rem 0.7rem; border-radius:20px;">
+            <%= @pending_count %> en attente
+          </span>
+        <% end %>
+      </div>
     </div>
 
     <%# Formulaire d'ajout manuel — une seule ligne email + bouton %>
@@ -42,17 +57,17 @@
                     font-size:0.88rem; padding:0.5rem 1rem; border-radius:8px; cursor:pointer;" %>
     <% end %>
 
-    <% if @total_count > 0 %>
-      <%# Bouton d'envoi de l'email de lancement — confirmation obligatoire avant envoi %>
+    <%# Bouton d'envoi — visible uniquement s'il reste des inscrits sans email %>
+    <% if @pending_count > 0 %>
       <%= button_to send_launch_email_admin_waitlist_entries_path,
             method: :post,
             data: {
               turbo: false,
-              confirm: "Envoyer l'email de lancement à \#{@total_count} personne\#{@total_count > 1 ? 's' : ''} ? Cette action ne peut pas être annulée."
+              confirm: "Envoyer l'email de lancement à #{@pending_count} personne#{@pending_count > 1 ? 's' : ''} qui ne l'ont pas encore reçu ?"
             },
             style: "background-color:#1EDD88; color:#111; border:none; font-weight:700; font-size:0.88rem; padding:0.55rem 1.2rem; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem;" do %>
         <i data-lucide="send" style="width:15px; height:15px;"></i>
-        Envoyer l'email de lancement
+        Envoyer (<%= @pending_count %> en attente)
       <% end %>
     <% end %>
   </div>
@@ -66,6 +81,7 @@
             <th scope="col">#</th>
             <th scope="col">Email</th>
             <th scope="col">Date d'inscription</th>
+            <th scope="col">Email lancement</th>
           </tr>
         </thead>
         <tbody>
@@ -75,6 +91,20 @@
               <td style="color:#f0f0f0; font-size:0.9rem;"><%= entry.email %></td>
               <td style="color:rgba(255,255,255,0.5); font-size:0.85rem;">
                 <%= entry.created_at.strftime("%d/%m/%Y à %H:%M") %>
+              </td>
+              <%# Badge vert si email envoyé, jaune si en attente %>
+              <td>
+                <% if entry.launch_email_sent_at? %>
+                  <span style="background:rgba(30,221,136,0.15); color:#1EDD88; border:1px solid rgba(30,221,136,0.3);
+                               font-size:0.75rem; font-weight:600; padding:0.2rem 0.6rem; border-radius:20px; white-space:nowrap;">
+                    ✓ <%= entry.launch_email_sent_at.strftime("%d/%m à %H:%M") %>
+                  </span>
+                <% else %>
+                  <span style="background:rgba(255,198,90,0.1); color:#FFC65A; border:1px solid rgba(255,198,90,0.25);
+                               font-size:0.75rem; font-weight:600; padding:0.2rem 0.6rem; border-radius:20px;">
+                    En attente
+                  </span>
+                <% end %>
               </td>
             </tr>
           <% end %>
