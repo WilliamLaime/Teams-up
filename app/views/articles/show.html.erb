@@ -1,0 +1,91 @@
+<%# Article de blog individuel %>
+<%# SEO : title, meta description et og:image personnalisés par article %>
+
+<%# meta-tags gem + Schema.org JSON-LD pour Google %>
+<% description = @article.meta_description.presence || truncate(@article.body, length: 155) %>
+<% set_meta_tags title: @article.title,
+                 description: description,
+                 og: {
+                   title: @article.title,
+                   description: description,
+                   type: "article",
+                   url: article_url(@article.slug),
+                   image: @article.cover_image_url.presence
+                 } %>
+
+<%# Schema.org Article : données structurées lues par Google pour les rich snippets %>
+<% content_for :head do %>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "<%= j @article.title %>",
+    "description": "<%= j description %>",
+    "datePublished": "<%= @article.published_at.iso8601 %>",
+    "dateModified": "<%= @article.updated_at.iso8601 %>",
+    "publisher": { "@type": "Organization", "name": "Teams-Up", "url": "<%= root_url %>" },
+    "url": "<%= article_url(@article.slug) %>"
+    <%= ", \"image\": \"#{j @article.cover_image_url}\"" if @article.cover_image_url.present? %>
+  }
+  </script>
+<% end %>
+
+<div class="blog-show">
+  <div class="container">
+    <div class="blog-show__wrapper">
+
+      <%# Fil d'Ariane : aide la navigation et le SEO %>
+      <nav class="blog-show__breadcrumb" aria-label="Fil d'Ariane">
+        <%= link_to "Accueil", root_path %> /
+        <%= link_to "Blog", articles_path %> /
+        <span><%= truncate(@article.title, length: 40) %></span>
+      </nav>
+
+      <%# En-tête article %>
+      <header class="blog-show__header">
+        <%# Catégorie + temps de lecture %>
+        <div class="blog-show__meta">
+          <% if @article.category.present? %>
+            <%= link_to @article.category.capitalize, articles_path(category: @article.category),
+                  class: "blog-show__category" %>
+          <% end %>
+          <span class="blog-show__reading-time">
+            <i data-lucide="clock" style="width:13px; height:13px;"></i>
+            <%= @article.reading_time_minutes %> min de lecture
+          </span>
+        </div>
+
+        <h1 class="blog-show__title"><%= @article.title %></h1>
+
+        <p class="blog-show__date">
+          Publié le <%= @article.published_at.strftime("%d %B %Y") %>
+        </p>
+      </header>
+
+      <%# Image de couverture %>
+      <% if @article.cover_image_url.present? %>
+        <div class="blog-show__cover">
+          <img src="<%= @article.cover_image_url %>"
+               alt="<%= @article.title %>"
+               style="width:100%; border-radius:12px; object-fit:cover; max-height:420px;">
+        </div>
+      <% end %>
+
+      <%# Corps de l'article : simple_format transforme les sauts de ligne en paragraphes %>
+      <div class="blog-show__body">
+        <%= simple_format(@article.body) %>
+      </div>
+
+      <%# Pied d'article : retour blog + CTA inscription %>
+      <footer class="blog-show__footer">
+        <%= link_to "← Retour au blog", articles_path, class: "blog-show__back" %>
+
+        <div class="blog-show__cta">
+          <p>Prêt à jouer ? Rejoins Teams-Up gratuitement.</p>
+          <%= link_to "Créer mon compte", new_user_registration_path, class: "btn btn-cta-primary" %>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+</div>

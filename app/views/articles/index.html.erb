@@ -1,0 +1,55 @@
+<%# Blog Teams-Up : liste des articles publiés %>
+<%# SEO : title + meta description %>
+
+<% set_meta_tags title: "Blog — Conseils sport, matchs et équipes amateurs",
+                description: "Découvrez nos conseils pour organiser vos matchs, former vos équipes et progresser en sport amateur.",
+                og: { title: "Blog Teams-Up", description: "Conseils sport, matchs et équipes amateurs" } %>
+
+<div class="blog-index">
+
+  <%# En-tête %>
+  <div class="blog-index__hero">
+    <div class="container">
+      <p class="blog-index__label">Blog</p>
+      <h1 class="blog-index__title">Conseils sport & vie d'équipe</h1>
+      <p class="blog-index__subtitle">
+        Astuces, guides et actualités pour les sportifs amateurs qui veulent jouer plus et mieux.
+      </p>
+
+      <%# Filtres par catégorie %>
+      <div class="blog-index__filters">
+        <%# articles_path génère /blog (défini par path: "blog" dans routes.rb) %>
+        <%= link_to "Tous", articles_path,
+              class: "blog-filter-btn #{@selected_category.blank? ? "blog-filter-btn--active" : ""}" %>
+        <% Article.categories.each do |cat| %>
+          <%= link_to cat.capitalize, articles_path(category: cat),
+                class: "blog-filter-btn #{@selected_category == cat ? "blog-filter-btn--active" : ""}" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Grille d'articles %>
+  <div class="container py-5">
+    <% if @articles.any? %>
+      <div class="blog-index__grid">
+        <% @articles.each do |article| %>
+          <%= render "article_card", article: article %>
+        <% end %>
+      </div>
+
+      <%# Pagination Pagy %>
+      <div class="d-flex justify-content-center mt-5">
+        <%== pagy_bootstrap_nav(@pagy) if @pagy.pages > 1 %>
+      </div>
+
+    <% else %>
+      <%# État vide %>
+      <div class="text-center py-5">
+        <i data-lucide="file-text" style="width:48px; height:48px; color:rgba(255,255,255,0.2); margin-bottom:1rem;"></i>
+        <p style="color:rgba(255,255,255,0.4);">Aucun article pour l'instant.</p>
+      </div>
+    <% end %>
+  </div>
+
+</div>

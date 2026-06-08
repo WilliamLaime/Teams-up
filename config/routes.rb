@@ -17,6 +17,12 @@ Rails.application.routes.draw do
   # Page d'accueil publique — accessible à tous, connectés ou non
   root to: "pages#home"
 
+  # ── Blog SEO ───────────────────────────────────────────────────────────────
+  # GET /blog             → liste des articles publiés
+  # GET /blog/:slug       → article individuel (slug unique)
+  # path: 'blog' donne des URLs propres (/blog/...) tout en gardant les helpers articles_path
+  resources :articles, only: [:index, :show], param: :slug, path: "blog"
+
   # Page post-inscription : invite l'utilisateur à confirmer son email
   get "confirmation-en-attente", to: "pages#email_confirmation", as: :email_confirmation_pending
 
@@ -245,6 +251,22 @@ Rails.application.routes.draw do
     resources :waitlist_entries, only: [:index, :create] do
       collection do
         post :send_launch_email
+      end
+    end
+
+    # Articles de blog — CRUD complet + publier/dépublier
+    # GET    /admin/articles            → liste tous les articles
+    # GET    /admin/articles/new        → formulaire création
+    # POST   /admin/articles            → créer
+    # GET    /admin/articles/:id/edit   → modifier
+    # PATCH  /admin/articles/:id        → mettre à jour
+    # DELETE /admin/articles/:id        → supprimer
+    # PATCH  /admin/articles/:id/publish   → publier
+    # PATCH  /admin/articles/:id/unpublish → dépublier
+    resources :articles do
+      member do
+        patch :publish
+        patch :unpublish
       end
     end
 

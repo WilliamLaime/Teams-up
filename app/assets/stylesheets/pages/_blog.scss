@@ -1,0 +1,372 @@
+// ── Blog Teams-Up ────────────────────────────────────────────────────────────
+// Styles pour /blog (index) et /blog/:slug (show)
+
+// ── Page index : liste des articles ──────────────────────────────────────────
+
+.blog-index {
+  // Fond sombre sur toute la page — cohérent avec le reste de l'app
+  background-color: $dark-bg;
+  min-height: 100vh;
+  // clip clipe le débordement SANS créer de scroll container (contrairement à hidden)
+  // body a déjà overflow-x: clip globalement — on renforce ici pour le blog
+  overflow-x: clip;
+
+  // Hero avec titre et filtres
+  &__hero {
+    background-color: $dark-bg;
+    padding: 3rem 0 2.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  &__label {
+    color: $green;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 0.5rem;
+  }
+
+  &__title {
+    font-family: $headers-font;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: $dark-text;
+    margin: 0 0 0.75rem;
+
+    @media (max-width: 576px) { font-size: 1.6rem; }
+  }
+
+  &__subtitle {
+    color: $dark-muted;
+    font-size: 1rem;
+    margin: 0 0 1.5rem;
+    max-width: 520px;
+  }
+
+  // Filtres par catégorie
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  // Grille 3 colonnes desktop, 2 tablette, 1 mobile
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+
+    @media (max-width: 992px) { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 576px) { grid-template-columns: 1fr; }
+
+    // Les grid items ont min-width: auto par défaut — ils peuvent dépasser
+    // leur cellule si leur contenu est plus large. min-width: 0 les contraint.
+    > * { min-width: 0; }
+  }
+}
+
+// Bouton filtre catégorie
+.blog-filter-btn {
+  display: inline-block;
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.55);
+  background: transparent;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $green;
+    color: $green;
+  }
+
+  &--active {
+    background: rgba(30, 221, 136, 0.12);
+    border-color: rgba(30, 221, 136, 0.4);
+    color: $green;
+  }
+}
+
+// ── Carte article ─────────────────────────────────────────────────────────────
+
+.blog-card {
+  background: $dark-card-bg;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    border-color: rgba(30, 221, 136, 0.3);
+    transform: translateY(-2px);
+  }
+
+  // Image de couverture
+  &__cover {
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    background-color: $dark-surface;
+
+    &--placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  &__body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  &__category {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $green;
+    background: rgba(30, 221, 136, 0.1);
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+  }
+
+  &__reading-time {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin: 0 0 0.6rem;
+
+    a {
+      color: $dark-text;
+      text-decoration: none;
+
+      &:hover { color: $green; }
+    }
+  }
+
+  &__excerpt {
+    color: $dark-muted;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin: 0 0 1rem;
+    flex: 1;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+  }
+
+  &__date {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  &__link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: $green;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+// ── Page article individuel ───────────────────────────────────────────────────
+
+.blog-show {
+  // Fond sombre sur toute la page article — cohérent avec le reste de l'app
+  background-color: $dark-bg;
+  min-height: 100vh;
+  // Empêche le scroll horizontal sur mobile
+  overflow-x: hidden;
+  padding: 3rem 0 5rem;
+
+  // Colonne centrale limitée en largeur pour une meilleure lisibilité
+  &__wrapper {
+    max-width: 740px;
+    margin: 0 auto;
+  }
+
+  // Fil d'Ariane
+  &__breadcrumb {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 2rem;
+
+    a {
+      color: rgba(255, 255, 255, 0.4);
+      text-decoration: none;
+
+      &:hover { color: $green; }
+    }
+  }
+
+  &__header { margin-bottom: 2rem; }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  &__category {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $green;
+    background: rgba(30, 221, 136, 0.1);
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+    text-decoration: none;
+
+    &:hover { background: rgba(30, 221, 136, 0.2); }
+  }
+
+  &__reading-time {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__title {
+    font-family: $headers-font;
+    font-size: 2rem;
+    font-weight: 800;
+    color: $dark-text;
+    line-height: 1.3;
+    margin: 0 0 0.75rem;
+
+    @media (max-width: 576px) { font-size: 1.5rem; }
+  }
+
+  &__date {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 0;
+  }
+
+  &__cover { margin-bottom: 2rem; }
+
+  // Corps de l'article — typographie soignée pour la lecture
+  &__body {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.05rem;
+    line-height: 1.8;
+
+    p {
+      margin-bottom: 1.4rem;
+    }
+
+    strong { color: $dark-text; }
+
+    a {
+      color: $green;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    h2 {
+      font-family: $headers-font;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: $dark-text;
+      margin: 2rem 0 1rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: $dark-text;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+      margin-bottom: 1.4rem;
+
+      li { margin-bottom: 0.4rem; }
+    }
+  }
+
+  // Pied de l'article
+  &__footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  &__back {
+    color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+    font-size: 0.88rem;
+
+    &:hover { color: $green; }
+  }
+
+  // CTA inscription en bas d'article
+  &__cta {
+    text-align: center;
+    background: rgba(30, 221, 136, 0.08);
+    border: 1px solid rgba(30, 221, 136, 0.35);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    width: 100%;
+
+    p {
+      color: rgba(255, 255, 255, 0.7);
+      margin: 0 0 1.25rem;
+      font-size: 0.95rem;
+    }
+
+    // Forcer le style du bouton vert dans ce contexte sombre
+    .btn-cta-primary {
+      background-color: $green;
+      color: #111;
+      font-weight: 700;
+      padding: 0.6rem 1.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-block;
+
+      &:hover {
+        background-color: darken($green, 8%);
+        color: #111;
+      }
+    }
+  }
+}
