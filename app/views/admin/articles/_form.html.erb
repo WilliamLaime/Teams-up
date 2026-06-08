@@ -1,0 +1,116 @@
+<%# ── Formulaire article admin (partagé new/edit) ── %>
+
+<div style="background-color:#111111; min-height:100vh;">
+<div class="container py-4" style="max-width:860px;">
+
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i data-lucide="file-text" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
+      Espace <span style="color:#1EDD88;">Admin</span>
+    </h1>
+  </div>
+
+  <%= render "admin/shared/nav", active_tab: :blog %>
+
+  <%# Erreurs de validation %>
+  <% if article.errors.any? %>
+    <div style="background:rgba(253,16,21,0.1); border:1px solid rgba(253,16,21,0.3); border-radius:8px; padding:1rem; margin-bottom:1.5rem;">
+      <p style="color:#FD1015; font-weight:600; margin:0 0 8px;">
+        <%= article.errors.count %> erreur<%= article.errors.count > 1 ? "s" : "" %> :
+      </p>
+      <ul style="color:rgba(253,16,21,0.8); margin:0; padding-left:1.2rem;">
+        <% article.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with model: [:admin, article], local: true, data: { turbo: false } do |f| %>
+    <div style="display:grid; gap:1.5rem;">
+
+      <%# Titre %>
+      <div>
+        <%= f.label :title, "Titre *", style: "color:rgba(255,255,255,0.6); font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;" %>
+        <%= f.text_field :title,
+              placeholder: "Ex: Comment trouver un match de foot près de chez toi",
+              style: "width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+                      border-radius:8px; color:#f0f0f0; padding:0.6rem 0.9rem; font-size:0.95rem;" %>
+      </div>
+
+      <%# Slug (auto-généré, modifiable) %>
+      <div>
+        <%= f.label :slug, "Slug URL", style: "color:rgba(255,255,255,0.6); font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;" %>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:rgba(255,255,255,0.3); font-size:0.88rem;">/blog/</span>
+          <%= f.text_field :slug,
+                placeholder: "mon-article-seo",
+                style: "flex:1; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+                        border-radius:8px; color:#f0f0f0; padding:0.6rem 0.9rem; font-size:0.88rem;" %>
+        </div>
+        <p style="color:rgba(255,255,255,0.3); font-size:0.75rem; margin:4px 0 0;">Laisse vide pour générer automatiquement depuis le titre.</p>
+      </div>
+
+      <%# Catégorie + Temps de lecture %>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div>
+          <%= f.label :category, "Catégorie", style: "color:rgba(255,255,255,0.6); font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;" %>
+          <%= f.select :category,
+                options_for_select(Article.categories.map { |c| [c.capitalize, c] }, article.category),
+                { include_blank: "— Choisir —" },
+                style: "width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+                        border-radius:8px; color:#f0f0f0; padding:0.6rem 0.9rem; font-size:0.88rem;" %>
+        </div>
+        <div>
+          <%= f.label :reading_time_minutes, "Temps de lecture (min)", style: "color:rgba(255,255,255,0.6); font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;" %>
+          <%= f.number_field :reading_time_minutes, min: 1,
+                style: "width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+                        border-radius:8px; color:#f0f0f0; padding:0.6rem 0.9rem; font-size:0.88rem;" %>
+        </div>
+      </div>
+
+      <%# URL image de couverture %>
+      <div>
+        <%= f.label :cover_image_url, "URL image de couverture", style: "color:rgba(255,255,255,0.6); font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;" %>
+        <%= f.url_field :cover_image_url,
+              placeholder: "https://...",
+              style: "width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+                      border-radius:8px; color:#f0f0f0; padding:0.6rem 0.9rem; font-size:0.88rem;" %>
+      </div>
+
+      <%# Meta description SEO %>
+      <div>
+        <%= f.label :meta_description, "Meta description SEO (160 caractères max)", style: "color:rgba(255,255,255,0.6); font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;" %>
+        <%= f.text_area :meta_description,
+              rows: 2,
+              maxlength: 160,
+              placeholder: "Résumé de l'article affiché dans les résultats Google...",
+              style: "width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+                      border-radius:8px; color:#f0f0f0; padding:0.6rem 0.9rem; font-size:0.88rem; resize:vertical;" %>
+      </div>
+
+      <%# Corps de l'article %>
+      <div>
+        <%= f.label :body, "Contenu de l'article *", style: "color:rgba(255,255,255,0.6); font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;" %>
+        <%= f.text_area :body,
+              rows: 20,
+              placeholder: "Écris ton article ici. Les sauts de ligne seront automatiquement transformés en paragraphes.",
+              style: "width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+                      border-radius:8px; color:#f0f0f0; padding:0.6rem 0.9rem; font-size:0.95rem;
+                      line-height:1.7; resize:vertical; font-family:inherit;" %>
+      </div>
+
+      <%# Boutons %>
+      <div class="d-flex gap-3">
+        <%= f.submit article.new_record? ? "Enregistrer le brouillon" : "Mettre à jour",
+              style: "background:#1EDD88; color:#111; border:none; font-weight:700; font-size:0.9rem;
+                      padding:0.65rem 1.4rem; border-radius:8px; cursor:pointer;" %>
+        <%= link_to "Annuler", admin_articles_path,
+              style: "color:rgba(255,255,255,0.4); font-size:0.88rem; text-decoration:none; padding:0.65rem 0; display:inline-block;" %>
+      </div>
+
+    </div>
+  <% end %>
+
+</div>
+</div>
