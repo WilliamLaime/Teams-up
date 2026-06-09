@@ -43,7 +43,7 @@
     <%# Date de publication %>
     <div class="blog-card__footer">
       <span class="blog-card__date">
-        <%= article.published_at.strftime("%d %B %Y") %>
+        <%= I18n.l(article.published_at.to_date, format: :long) %>
       </span>
       <%= link_to "Lire →", article_path(article.slug), class: "blog-card__link" %>
     </div>
