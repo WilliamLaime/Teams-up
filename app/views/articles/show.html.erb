@@ -77,7 +77,7 @@
         <h1 class="blog-show__title"><%= @article.title %></h1>
 
         <p class="blog-show__date">
-          Publié le <%= @article.published_at.strftime("%d %B %Y") %>
+          Publié le <%= I18n.l(@article.published_at.to_date, format: :long) %>
         </p>
       </header>
 
