@@ -29,6 +29,23 @@
     </div>
   </div>
 
+  <%# Bandeau CTA : convertit les visiteurs organiques en inscrits %>
+  <%# Affiché uniquement aux visiteurs non connectés — inutile pour les membres %>
+  <% unless user_signed_in? %>
+    <div class="blog-cta-banner">
+      <div class="container">
+        <div class="blog-cta-banner__inner">
+          <div class="blog-cta-banner__text">
+            <strong>Prêt à jouer ?</strong>
+            Crée ou rejoins un match de sport amateur près de chez toi en 30 secondes.
+          </div>
+          <%= link_to "Créer mon compte gratuit", new_user_registration_path,
+                class: "btn-cta-primary btn-cta-primary--sm" %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
   <%# Grille d'articles %>
   <div class="container py-5">
     <% if @articles.any? %>

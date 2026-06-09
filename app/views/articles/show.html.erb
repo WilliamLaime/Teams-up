@@ -13,8 +13,9 @@
                    image: @article.cover_image_url.presence
                  } %>
 
-<%# Schema.org Article : données structurées lues par Google pour les rich snippets %>
+<%# Schema.org Article + BreadcrumbList : données structurées lues par Google pour les rich snippets %>
 <% content_for :head do %>
+  <%# Schema Article — author requis pour le signal E-E-A-T (expertise identifiable) %>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -23,9 +24,27 @@
     "description": "<%= j description %>",
     "datePublished": "<%= @article.published_at.iso8601 %>",
     "dateModified": "<%= @article.updated_at.iso8601 %>",
-    "publisher": { "@type": "Organization", "name": "Teams-Up", "url": "<%= root_url %>" },
+    "author": { "@type": "Organization", "name": "Teams-Up", "url": "<%= root_url %>" },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Teams-Up",
+      "url": "<%= root_url %>",
+      "logo": { "@type": "ImageObject", "url": "<%= asset_url('icon.png') %>" }
+    },
     "url": "<%= article_url(@article.slug) %>"
     <%= ", \"image\": \"#{j @article.cover_image_url}\"" if @article.cover_image_url.present? %>
+  }
+  </script>
+  <%# BreadcrumbList — affiche le fil d'Ariane directement dans les résultats Google %>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "<%= root_url %>" },
+      { "@type": "ListItem", "position": 2, "name": "Blog", "item": "<%= articles_url %>" },
+      { "@type": "ListItem", "position": 3, "name": "<%= j @article.title %>" }
+    ]
   }
   </script>
 <% end %>
@@ -71,9 +90,20 @@
         </div>
       <% end %>
 
-      <%# Corps de l'article : simple_format transforme les sauts de ligne en paragraphes %>
+      <%# Corps de l'article : rendu par blocs pour préserver les balises h2/h3 sémantiqu %>
+      <%# simple_format entourerait les h2 de <p> (HTML invalide), donc on itère bloc par bloc %>
       <div class="blog-show__body">
-        <%= simple_format(@article.body) %>
+        <% @article.body.split(/\n\n+/).each do |bloc| %>
+          <% bloc = bloc.strip %>
+          <% next if bloc.blank? %>
+          <%# Blocs qui commencent par une balise HTML bloc (h2, h3, ul, ol) → rendu direct %>
+          <% if bloc.start_with?('<h2>', '<h3>', '<ul>', '<ol>') %>
+            <%= bloc.html_safe %>
+          <% else %>
+            <%# Bloc de texte normal → transformé en paragraphe avec gestion des sauts de ligne %>
+            <%= simple_format(bloc) %>
+          <% end %>
+        <% end %>
       </div>
 
       <%# Pied d'article : retour blog + CTA inscription %>

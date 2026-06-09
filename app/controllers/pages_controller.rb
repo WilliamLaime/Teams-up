@@ -84,7 +84,7 @@ class PagesController < ApplicationController
     set_meta_tags(
       site: "Teams-up",
       title: false, # Désactive le titre de page → affiche uniquement le site name
-      description: "Crée ou rejoins un match de sport amateur près de chez toi en 30 secondes. Football, basket, tennis et bien plus — #{@available_matches_count} matchs disponibles.",
+      description: "Crée ou rejoins un match de sport amateur près de chez toi en 30 secondes. Football, basket, tennis et bien plus. Inscris-toi gratuitement.",
       og: { title: "Teams-up — Trouve un match de sport amateur" }
     )
   end
