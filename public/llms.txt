@@ -1,0 +1,33 @@
+# Teams-Up — llms.txt
+# Ce fichier aide les moteurs de recherche IA (ChatGPT, Claude, Perplexity, Gemini)
+# à comprendre et citer correctement le contenu de ce site.
+
+> Teams-Up est une application web française qui permet aux sportifs amateurs
+> de créer des matchs, rejoindre des équipes, tchatter en temps réel et suivre
+> leurs statistiques. Sports couverts : football, padel, basketball, tennis,
+> badminton, rugby, volleyball.
+
+## Application
+
+- URL : https://www.teams-up-sport.fr
+- Catégorie : Plateforme de mise en relation sportive / SaaS sportif
+- Public cible : sportifs amateurs en France
+- Accès : gratuit à l'inscription
+
+## Pages clés
+
+- Accueil : https://www.teams-up-sport.fr/
+- Trouver un match : https://www.teams-up-sport.fr/matches
+- Blog conseils : https://www.teams-up-sport.fr/blog
+- Inscription gratuite : https://www.teams-up-sport.fr/users/sign_up
+- Contact : https://www.teams-up-sport.fr/contact
+
+## Blog (contenu citable)
+
+Articles sur l'organisation de matchs, la vie d'équipe et les sports populaires
+en France, publiés régulièrement à https://www.teams-up-sport.fr/blog
+
+## Contact
+
+- Formulaire : https://www.teams-up-sport.fr/contact
+- Instagram : https://www.instagram.com/teams.up.sport

@@ -58,6 +58,15 @@
           Trouver un match
         <% end %>
       </li>
+      <%# Blog — lien SEO stratégique, visible sur desktop pour tous les profils %>
+      <li class="nav-item">
+        <% blog_active = request.path.start_with?('/blog') %>
+        <%= link_to articles_path,
+            class: "nav-link #{blog_active ? 'active' : ''}",
+            "aria-current": (blog_active ? "page" : nil) do %>
+          Blog
+        <% end %>
+      </li>
       <% if user_signed_in? %>
         <li class="nav-item">
           <% teams_active = request.path.start_with?('/teams') %>
@@ -371,6 +380,14 @@
           Mes équipes
         <% end %>
 
+        <% blog_active = request.path.start_with?('/blog') %>
+        <%= link_to articles_path,
+            class: "drawer-nav-link #{'active' if blog_active}",
+            "aria-current": (blog_active ? "page" : nil) do %>
+          <i data-lucide="book-open" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Blog
+        <% end %>
+
         <% about_active = current_page?(about_path) %>
         <%= link_to about_path,
             class: "drawer-nav-link #{'active' if about_active}",
@@ -421,20 +438,27 @@
 
       <hr class="drawer-divider">
 
-      <%# Accès "Qui sommes-nous ?" pour les visiteurs %>
+      <%# Accès rapide pour les visiteurs non connectés %>
       <nav aria-label="Navigation principale">
-        <% about_active = current_page?(about_path) %>
-        <%= link_to about_path,
-            class: "drawer-nav-link #{'active' if about_active}" do %>
-          <i data-lucide="info" style="width:17px;height:17px;" aria-hidden="true"></i>
-          Qui sommes-nous ?
-        <% end %>
-
         <% matches_active = current_page?(matches_path) && params[:mine].blank? %>
         <%= link_to matches_path,
             class: "drawer-nav-link #{'active' if matches_active}" do %>
           <i data-lucide="search" style="width:17px;height:17px;" aria-hidden="true"></i>
           Trouver un match
+        <% end %>
+
+        <% blog_active = request.path.start_with?('/blog') %>
+        <%= link_to articles_path,
+            class: "drawer-nav-link #{'active' if blog_active}" do %>
+          <i data-lucide="book-open" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Blog
+        <% end %>
+
+        <% about_active = current_page?(about_path) %>
+        <%= link_to about_path,
+            class: "drawer-nav-link #{'active' if about_active}" do %>
+          <i data-lucide="info" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Qui sommes-nous ?
         <% end %>
       </nav>
 

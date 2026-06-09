@@ -66,6 +66,32 @@
   }
 }
 
+// Bandeau CTA sous le hero — visible uniquement aux visiteurs non connectés
+.blog-cta-banner {
+  background: rgba(30, 221, 136, 0.07);
+  border-top: 1px solid rgba(30, 221, 136, 0.2);
+  border-bottom: 1px solid rgba(30, 221, 136, 0.2);
+  padding: 0.9rem 0;
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__text {
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.9rem;
+
+    strong {
+      color: $green;
+      margin-right: 0.3rem;
+    }
+  }
+}
+
 // Bouton filtre catégorie
 .blog-filter-btn {
   display: inline-block;
