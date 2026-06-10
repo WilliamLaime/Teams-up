@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_08_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_091613) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -82,6 +82,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_100000) do
     t.index ["match_id"], name: "index_avis_on_match_id"
     t.index ["mutual"], name: "index_avis_on_mutual"
     t.index ["reviewed_user_id", "created_at"], name: "index_avis_on_reviewed_user_id_created_at"
+    t.index ["reviewed_user_id", "mutual"], name: "index_avis_on_reviewed_user_id_mutual"
     t.index ["reviewed_user_id"], name: "index_avis_on_reviewed_user_id"
     t.index ["reviewer_id", "reviewed_user_id", "match_id"], name: "index_avis_on_reviewer_id_and_reviewed_user_id_and_match_id", unique: true
     t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"
@@ -137,6 +138,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_08_100000) do
     t.bigint "user_id", null: false
     t.index ["match_id", "status"], name: "index_match_users_on_match_id_status"
     t.index ["match_id"], name: "index_match_users_on_match_id"
+    t.index ["user_id", "status"], name: "index_match_users_on_user_id_status"
     t.index ["user_id"], name: "index_match_users_on_user_id"
   end
 
