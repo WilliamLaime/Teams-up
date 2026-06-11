@@ -1,56 +1,60 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <style>
-      /* Styles inline pour maximiser la compatibilité email */
-      body        { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:0; }
-      .wrapper    { max-width:600px; margin:0 auto; background:#fff; border-radius:8px; overflow:hidden; }
-      .header     { background:#111111; padding:24px 32px; }
-      .header img { height:28px; }
-      .body       { padding:32px; color:#333; line-height:1.6; }
-      .reply-box  { background:#f9f9f9; border-left:3px solid #1EDD88; padding:16px 20px; border-radius:4px; margin-bottom:24px; font-size:15px; white-space:pre-wrap; }
-      .original   { margin-top:32px; border-top:1px solid #eee; padding-top:24px; color:#888; font-size:13px; }
-      .original p { margin:4px 0; }
-      .footer     { background:#f4f4f4; text-align:center; padding:16px; font-size:12px; color:#aaa; }
-      h2          { color:#111; margin-top:0; }
-    </style>
-  </head>
-  <body>
-    <div class="wrapper">
+<%# ── Email de réponse à un message de contact ──────────────────────────── %>
+<%# Envoyé à l'utilisateur quand un admin répond à son message de contact %>
+<%# Utilise le layout commun mailer.html.erb (logo + DOCTYPE) %>
+<%# Inline CSS obligatoire dans les emails — les clients mail ignorent les feuilles de style externes %>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: transparent; padding: 0 20px 40px; min-height: 100vh;">
 
-      <%# ── En-tête avec logo ── %>
-      <div class="header">
-        <span style="color:#1EDD88; font-size:1.2rem; font-weight:700; letter-spacing:0.05em;">Team-Up</span>
-      </div>
+  <%# Carte centrale %>
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
 
-      <%# ── Corps de l'email ── %>
-      <div class="body">
-        <h2>Bonjour <%= @contact_message.prenom %>,</h2>
+    <%# Corps du message %>
+    <div style="padding: 36px 40px;">
 
-        <p>
-          Merci pour ton message concernant <strong>"<%= @contact_message.sujet %>"</strong>.
-          Voici notre réponse :
-        </p>
-
-        <%# Texte de la réponse rédigée par l'admin %>
-        <div class="reply-box"><%= @reply_body %></div>
-
-        <%# Message original en citation %>
-        <div class="original">
-          <p><strong>Ton message original :</strong></p>
-          <p><em><%= @contact_message.message %></em></p>
-          <p style="margin-top:8px; color:#bbb; font-size:12px;">
-            Envoyé le <%= @contact_message.created_at.strftime("%d/%m/%Y à %Hh%M") %>
-          </p>
+      <%# Icône message %>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; background-color: rgba(30, 221, 136, 0.12); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">
+          💬
         </div>
       </div>
 
-      <%# ── Pied de page ── %>
-      <div class="footer">
-        © <%= Time.current.year %> Team-Up — Ne pas répondre directement à cet email.
+      <%# Titre %>
+      <h1 style="color: #f0f0f0; font-size: 1.4rem; font-weight: 700; text-align: center; margin: 0 0 8px 0;">
+        Réponse à ton message
+      </h1>
+
+      <%# Sous-titre avec le sujet %>
+      <p style="color: rgba(255,255,255,0.45); font-size: 0.9rem; text-align: center; margin: 0 0 28px 0;">
+        Sujet : <strong style="color: rgba(255,255,255,0.7);"><%= @contact_message.sujet %></strong>
+      </p>
+
+      <%# Salutation %>
+      <p style="color: rgba(255,255,255,0.65); font-size: 0.95rem; line-height: 1.6; margin: 0 0 20px 0;">
+        Bonjour <strong style="color: #f0f0f0;"><%= @contact_message.prenom %></strong>,
+      </p>
+
+      <%# Bloc réponse de l'admin — encart vert %>
+      <div style="background-color: rgba(255,255,255,0.04); border-left: 3px solid #1EDD88; border-radius: 4px; padding: 16px 20px; margin-bottom: 24px;">
+        <p style="color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 10px 0;">Notre réponse</p>
+        <p style="color: #f0f0f0; font-size: 0.95rem; line-height: 1.6; margin: 0; white-space: pre-wrap;"><%= @reply_body %></p>
+      </div>
+
+      <%# Message original en citation — bloc plus discret %>
+      <div style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 16px 20px;">
+        <p style="color: rgba(255,255,255,0.35); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 10px 0;">Ton message original</p>
+        <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; line-height: 1.5; margin: 0 0 10px 0; font-style: italic;"><%= @contact_message.message %></p>
+        <p style="color: rgba(255,255,255,0.25); font-size: 0.75rem; margin: 0;">
+          Envoyé le <%= @contact_message.created_at.strftime("%d/%m/%Y à %Hh%M") %>
+        </p>
       </div>
 
     </div>
-  </body>
-</html>
+
+    <%# Pied de page %>
+    <div style="background-color: #111111; padding: 20px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 0;">
+        © <%= Date.today.year %> Teams-Up — Ne pas répondre directement à cet email.
+      </p>
+    </div>
+
+  </div>
+</div>
