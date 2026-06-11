@@ -50,7 +50,8 @@
         <%= link_to user_profil_path(@team.captain),
               style: "color:inherit; font-weight:600;",
               data: { turbo_frame: "_top" } do %>
-          <%= @team.captain.profil&.first_name %>
+          <%# Prénom + initiale du nom pour distinguer deux capitaines homonymes %>
+          <%= @team.captain.short_name %>
         <% end %>
       </p>
       <% if @team.description.present? %>
@@ -73,6 +74,29 @@
           Modifier
         <% end %>
 
+        <%# Transmettre le capitanat — toujours visible pour le capitaine.
+            Actif s'il existe au moins un autre membre (ouvre la modale de choix),
+            sinon désactivé avec un message invitant à recruter d'abord. %>
+        <% if @team.team_members.size > 1 %>
+          <button type="button"
+                  class="team-banner-btn team-banner-btn--edit"
+                  data-bs-toggle="modal"
+                  data-bs-target="#transferCaptainModal"
+                  title="Transmettre le capitanat à un autre membre">
+            <i data-lucide="award" style="width:13px;height:13px;"></i>
+            Transmettre le capitanat
+          </button>
+        <% else %>
+          <button type="button"
+                  class="team-banner-btn team-banner-btn--edit"
+                  disabled
+                  style="opacity:0.5; cursor:not-allowed;"
+                  title="Invite d'abord un membre pour pouvoir lui transmettre le capitanat">
+            <i data-lucide="award" style="width:13px;height:13px;"></i>
+            Transmettre le capitanat
+          </button>
+        <% end %>
+
         <%# Supprimer — icône seule pour ne pas surcharger la bannière %>
         <%= button_to team_path(@team), method: :delete,
             class: "team-banner-btn team-banner-btn--delete",
@@ -81,6 +105,67 @@
           <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
         <% end %>
       </div>
+
+      <%# ── Modale « Transmettre le capitanat » ───────────────────────────────
+          Le capitaine choisit ici le membre à qui passer le brassard. Chaque
+          ligne soumet l'action transfer_captain avec l'id du nouveau capitaine.
+          Hissée via content_for :modals pour éviter les conflits CSS (cf. CLAUDE.md). %>
+      <% if @team.team_members.size > 1 %>
+        <% content_for :modals do %>
+          <div class="modal fade" id="transferCaptainModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:12px;">
+
+                <div class="modal-header" style="border-bottom:1px solid var(--theme-border); padding:1rem 1.25rem;">
+                  <h5 style="font-size:1rem; font-weight:700; color:var(--theme-text-strong); margin:0;">
+                    🎖️ Transmettre le capitanat
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+
+                <div class="modal-body" style="padding:1.25rem;">
+                  <p style="font-size:0.85rem; color:var(--theme-text-muted); margin-bottom:1rem;">
+                    Choisis le membre qui deviendra capitaine. Tu deviendras simple membre et
+                    perdras les droits de gestion de l'équipe.
+                  </p>
+
+                  <%# Liste des membres éligibles (tous sauf le capitaine actuel) %>
+                  <ul class="team-members-list">
+                    <% @team_members.reject(&:captain?).each do |tm| %>
+                      <li class="team-member-item">
+                        <%# Avatar + nom %>
+                        <div style="display:flex; align-items:center; gap:0.6rem; flex:1; min-width:0;">
+                          <% if tm.user.profil&.avatar&.attached? %>
+                            <%= image_tag tm.user.profil.avatar, class: "team-member-avatar", alt: tm.user.profil.first_name, width: 28, height: 28, loading: "lazy" %>
+                          <% else %>
+                            <div class="team-member-avatar-placeholder">
+                              <i data-lucide="user" style="width:18px;height:18px;color:var(--theme-text-muted);"></i>
+                            </div>
+                          <% end %>
+                          <span class="team-member-name">
+                            <%= tm.user.profil&.first_name %> <%= tm.user.profil&.last_name %>
+                          </span>
+                        </div>
+
+                        <%# Bouton « Donner le brassard » — confirmation avant transfert %>
+                        <%= button_to transfer_captain_team_path(@team),
+                              method: :patch,
+                              params: { new_captain_id: tm.user_id },
+                              class: "btn btn-xs btn-outline-warning",
+                              data: { confirm: "Transmettre le capitanat à #{tm.user.profil&.first_name} ? Tu deviendras simple membre." } do %>
+                          <i data-lucide="award" style="width:11px;height:11px;margin-right:3px;"></i>
+                          Donner le brassard
+                        <% end %>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
     <% elsif policy(@team).leave? %>
       <%# Bouton Quitter — ouvre une modale de confirmation %>
       <button type="button"
@@ -183,18 +268,11 @@
               <% rank_class = "rank-#{tm.user.rank}" %>
               <div class="team-member-card <%= rank_class %>">
 
-                <%# Actions capitaine (coin haut droit) — visibles uniquement pour le captain %>
+                <%# Action capitaine (coin haut droit) — retirer un membre.
+                    La transmission du capitanat se fait via le bouton groupé
+                    « Transmettre le capitanat » dans la bannière (modale dédiée). %>
                 <% if @team.captain?(current_user) && !tm.captain? %>
-                  <% modal_id = "transferCapitanModal#{tm.user_id}" %>
                   <div class="team-member-card-actions">
-                    <%# Bouton transférer le capitanat %>
-                    <button type="button"
-                            class="btn btn-xs btn-outline-light"
-                            data-bs-toggle="modal"
-                            data-bs-target="#<%= modal_id %>"
-                            title="Transférer le capitanat">
-                      <i data-lucide="star" style="width:10px;height:10px;"></i>
-                    </button>
                     <%# Bouton retirer le membre %>
                     <%= button_to team_team_member_path(@team, tm),
                           method: :delete,
@@ -204,42 +282,6 @@
                       <i data-lucide="user-minus" style="width:10px;height:10px;"></i>
                     <% end %>
                   </div>
-
-                  <%# Modale de confirmation transfert capitanat — hissée via content_for %>
-                  <% content_for :modals do %>
-                    <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-hidden="true">
-                      <div class="modal-dialog modal-dialog-centered modal-sm">
-                        <div class="modal-content" style="background:var(--theme-bg-card); border:1px solid var(--theme-border); border-radius:12px;">
-                          <div class="modal-body text-center" style="padding:1.5rem 1.5rem 1rem;">
-                            <div style="font-size:2rem; margin-bottom:0.75rem;">⚡</div>
-                            <p style="color:var(--theme-text-strong); font-weight:700; font-size:0.95rem; margin-bottom:0.3rem;">
-                              Transférer le capitanat à <%= tm.user.profil&.first_name %> ?
-                            </p>
-                            <p style="color:var(--theme-text-muted); font-size:0.8rem; margin:0;">
-                              Tu deviendras simple membre et tu perdras les droits de gestion de l'équipe.
-                            </p>
-                          </div>
-                          <div class="modal-footer" style="border-top:1px solid var(--theme-border); padding:0.75rem 1.5rem; gap:0.5rem; justify-content:center;">
-                            <button type="button"
-                                    data-bs-dismiss="modal"
-                                    style="font-size:0.8rem; font-weight:600; color:var(--theme-text-muted);
-                                           background:var(--theme-hover-bg); border:1px solid var(--theme-border);
-                                           border-radius:20px; padding:0.4rem 1rem; cursor:pointer;">
-                              Annuler
-                            </button>
-                            <%= button_to transfer_captain_team_path(@team),
-                                  method: :patch,
-                                  params: { new_captain_id: tm.user_id },
-                                  style: "font-size:0.8rem; font-weight:700; color:#fff;
-                                          background:rgba(255,193,7,0.8); border:1px solid rgba(255,193,7,0.5);
-                                          border-radius:20px; padding:0.4rem 1rem; cursor:pointer;" do %>
-                              ⚡ Confirmer
-                            <% end %>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  <% end %>
                 <% end %>
 
                 <%# Avatar + nom cliquables → profil du membre %>
@@ -392,6 +434,47 @@
             <p style="color:var(--theme-text-muted); font-size:0.85rem;">Aucune invitation en attente.</p>
           <% end %>
         </div>
+
+        <%# Demandes d'adhésion spontanées des joueurs (en attente de validation) %>
+        <% if @pending_requests&.any? %>
+          <div class="team-section-card mb-3">
+            <h2 class="team-section-title">
+              <i data-lucide="user-plus" style="width:16px;height:16px;margin-right:6px;"></i>
+              Demandes pour rejoindre
+            </h2>
+            <ul class="team-invitations-list">
+              <% @pending_requests.each do |req| %>
+                <li class="team-invitation-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem;">
+                  <%# Joueur qui demande à rejoindre %>
+                  <%= link_to user_profil_path(req.invitee),
+                        style: "text-decoration:none;",
+                        data: { turbo_frame: "_top" } do %>
+                    <span class="team-member-name">
+                      <%= req.invitee.profil&.first_name %> <%= req.invitee.profil&.last_name %>
+                    </span>
+                  <% end %>
+                  <%# Boutons accepter / refuser → réutilisent l'action review %>
+                  <div class="d-flex gap-2">
+                    <%= button_to review_team_team_invitation_path(@team, req),
+                          method: :patch,
+                          params: { decision: "approve" },
+                          class: "btn btn-xs btn-outline-success" do %>
+                      <i data-lucide="check" style="width:11px;height:11px;margin-right:3px;"></i>
+                      Accepter
+                    <% end %>
+                    <%= button_to review_team_team_invitation_path(@team, req),
+                          method: :patch,
+                          params: { decision: "decline" },
+                          class: "btn btn-xs btn-outline-danger" do %>
+                      <i data-lucide="x" style="width:11px;height:11px;margin-right:3px;"></i>
+                      Refuser
+                    <% end %>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
 
         <%# Propositions des membres en attente de validation %>
         <% if @pending_proposals&.any? %>

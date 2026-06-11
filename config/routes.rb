@@ -66,6 +66,8 @@ Rails.application.routes.draw do
       patch :transfer_captain
       # DELETE /teams/:id/leave → quitter l'équipe (membres non-captain)
       delete :leave
+      # POST /teams/:id/join → demander à rejoindre l'équipe (validation par le capitaine)
+      post :join
     end
 
     # Invitations imbriquées dans l'équipe

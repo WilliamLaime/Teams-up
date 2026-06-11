@@ -134,6 +134,18 @@ class User < ApplicationRecord
     full.present? ? full : email
   end
 
+  # Retourne "Prénom N." (prénom + initiale du nom) pour les contextes compacts
+  # où l'on n'affiche que le prénom : l'initiale du nom permet de distinguer
+  # deux joueurs homonymes (ex. deux "Williame"). Si aucun prénom n'est
+  # renseigné, on retombe sur display_name (email en dernier recours).
+  def short_name
+    first   = profil&.first_name.to_s.strip
+    initial = profil&.last_name.to_s.strip.first
+    return display_name if first.blank?
+
+    initial.present? ? "#{first} #{initial.upcase}." : first
+  end
+
   # Méthode appelée lors du retour depuis Google OAuth
   # Elle cherche un user existant avec le même uid+provider, ou le crée
   def self.from_omniauth(auth)
