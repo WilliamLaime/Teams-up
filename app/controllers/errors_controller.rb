@@ -12,16 +12,18 @@ class ErrorsController < ApplicationController
   skip_after_action :verify_policy_scoped, raise: false
 
   # GET /404 — page introuvable
-  # Appelée quand un match (ou n'importe quelle ressource) n'existe plus
+  # Appelée quand un match (ou n'importe quelle ressource) n'existe plus.
+  # On force le format HTML : des bots scannent des URLs WordPress en XML
+  # (ex: /wp-includes/wlwmanifest.xml) — sans ce forçage, Rails cherche un
+  # template errors/not_found.xml.erb qui n'existe pas et lève un 500.
   def not_found
-    # On force le status HTTP 404 (Not Found)
-    render status: :not_found
+    render status: :not_found, formats: [:html]
   end
 
   # GET /500 — erreur serveur interne
-  # Appelée quand Rails lève une exception non gérée
+  # Appelée quand Rails lève une exception non gérée.
+  # Même raison que not_found : on force HTML pour éviter un double 500.
   def internal_server_error
-    # On force le status HTTP 500 (Internal Server Error)
-    render status: :internal_server_error
+    render status: :internal_server_error, formats: [:html]
   end
 end
