@@ -121,7 +121,8 @@ Rails.application.routes.draw do
       member do
         patch :approve
         patch :reject
-        patch :confirm  # Membre d'équipe qui confirme sa propre place (team match)
+        patch :confirm        # Membre d'équipe qui confirme sa propre place (team match)
+        patch :toggle_payment # Bascule le statut de paiement (organisateur ou joueur lui-même)
       end
     end
 

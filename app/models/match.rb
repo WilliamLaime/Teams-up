@@ -157,6 +157,12 @@ class Match < ApplicationRecord
   # Validation : le match doit être prévu au minimum 30 minutes à l'avance
   validate :match_must_be_at_least_30min_in_future, on: %i[create update]
 
+  # Validation : le lien de réservation doit être une URL valide si renseigné
+  validates :booking_link, format: {
+    with: URI::DEFAULT_PARSER.make_regexp(%w[http https]),
+    message: "doit être une URL valide (commençant par http:// ou https://)"
+  }, allow_blank: true
+
   # Vérifie que le niveau choisi appartient à la grille du sport sélectionné.
   # Tolère les niveaux hérités ("Tout niveau", "Avancé", etc.) sur les anciens matchs.
   def level_valid_for_sport
