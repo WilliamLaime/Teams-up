@@ -194,6 +194,28 @@ class MatchUsersController < ApplicationController
     redirect_to @match, notice: "Tu es inscrit au match !"
   end
 
+  # PATCH /matches/:match_id/match_users/:id/toggle_payment
+  # Bascule le statut de paiement d'un joueur (payé / non payé)
+  # Accessible à l'organisateur (pour tous les joueurs) ou au joueur lui-même
+  def toggle_payment
+    authorize @match_user
+
+    # Inverse le statut : payé → non payé, non payé → payé
+    @match_user.update!(payment_confirmed: !@match_user.payment_confirmed)
+
+    respond_to do |format|
+      format.turbo_stream do
+        # Met à jour uniquement le badge de paiement du joueur concerné sans recharger la page
+        render turbo_stream: turbo_stream.replace(
+          "payment_badge_#{@match_user.id}",
+          partial: "match_users/payment_badge",
+          locals: { match_user: @match_user, match: @match, current_match_user: current_user.match_users.find_by(match: @match) }
+        )
+      end
+      format.html { redirect_to @match }
+    end
+  end
+
   private
 
   # Retrouve le match parent via l'id dans l'URL

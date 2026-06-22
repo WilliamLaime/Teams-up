@@ -33,6 +33,11 @@ class MatchUser < ApplicationRecord
     status == "waiting"
   end
 
+  # Retourne vrai si le joueur a confirmé son paiement
+  def paid?
+    payment_confirmed?
+  end
+
   private
 
   # Ajoute la nouvelle conversation en haut de la sidebar sticky chat de l'utilisateur.

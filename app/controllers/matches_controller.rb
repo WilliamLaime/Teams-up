@@ -521,7 +521,8 @@ class MatchesController < ApplicationController
       :level, :player_left, :players_present, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
       :genre_restriction, # Restriction de genre : "tous" ou "feminin"
-      :team_id            # Équipe organisatrice (optionnel)
+      :team_id,           # Équipe organisatrice (optionnel)
+      :booking_link       # Lien de réservation/paiement du terrain (optionnel)
     )
   end
 

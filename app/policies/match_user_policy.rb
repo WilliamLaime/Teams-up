@@ -24,6 +24,12 @@ class MatchUserPolicy < ApplicationPolicy
     record.user == user
   end
 
+  # L'organisateur peut marquer n'importe quel joueur comme payé/non payé
+  # Un joueur peut aussi basculer son propre statut de paiement
+  def toggle_payment?
+    organizer? || record.user == user
+  end
+
   private
 
   # Vérifie si l'utilisateur connecté est l'organisateur du match
