@@ -87,6 +87,30 @@ body {
   outline-offset: 2px;
 }
 
+// ── iOS Safari — empêche le zoom automatique sur les inputs ─────────────────
+// iOS Safari zoome automatiquement sur tout input/select dont le font-size
+// est inférieur à 16px (ex: .form-control-sm de Bootstrap = 14px).
+// Le zoom s'applique au focus mais ne se corrige pas au blur → l'utilisateur
+// reste bloqué en zoom même après avoir quitté le champ.
+// @supports (-webkit-touch-callout: none) cible UNIQUEMENT Safari iOS
+// (ce préfixe n'existe que sur iOS), ce qui évite d'impacter les autres navigateurs.
+@supports (-webkit-touch-callout: none) {
+  input,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    // 16px est le seuil minimum en dessous duquel iOS déclenche le zoom.
+    // !important est nécessaire pour surcharger les règles Bootstrap (font-size: 0.875rem).
+    font-size: 16px !important;
+  }
+}
+
 // ── Empêche le scroll horizontal ────────────────────
 // Certains éléments dépassent légèrement du viewport (gradients avec left: -120px,
 // Bootstrap rows avec marges négatives, etc.) et créent une barre de scroll inutile.
