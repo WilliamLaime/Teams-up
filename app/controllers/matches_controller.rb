@@ -194,15 +194,16 @@ class MatchesController < ApplicationController
     # Si un non-femme envoie cette valeur (ex: via requête HTTP directe), on la remet à "tous"
     @match.genre_restriction = "tous" unless current_user.genre == "femme"
 
-    # Si une équipe est associée, on force la visibilité à "private"
+    # Si une équipe est associée, on vérifie juste que l'user en est bien
+    # capitaine (sécurité). On NE force PLUS la visibilité : le choix
+    # public/privé envoyé par le formulaire fait foi (côté form, choisir une
+    # équipe met "privé" par défaut, mais l'user peut cliquer "Public").
     if @match.team_id.present?
-      # Vérifie que l'user est bien captain de cette équipe
       @match.team = Team.find_by(id: @match.team_id)
       unless @match.team&.captain?(current_user)
         @match.team = nil
         @match.team_id = nil
       end
-      @match.visibility = "private" if @match.team
     end
 
     authorize @match
