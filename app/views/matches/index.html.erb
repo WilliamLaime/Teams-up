@@ -383,32 +383,20 @@
     <% else %>
 
       <%#
-        Stimulus "load-more" :
-          data-load-more-step-value="6" → 6 cartes révélées par clic sur le bouton
-          Chaque carte (_match.html.erb) a data-load-more-target="card"
+        id="matches" obligatoire → cible des broadcasts ActionCable.
+        Quand un nouveau match est créé, Turbo l'insère ici automatiquement (prepend).
       %>
-      <div data-controller="load-more" data-load-more-step-value="6">
-
-        <%#
-          id="matches" obligatoire → cible des broadcasts ActionCable.
-          Quand un nouveau match est créé, Turbo l'insère ici automatiquement (prepend).
-        %>
-        <div id="matches" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-          <%= render @matches %>
-        </div>
-
-        <%# Bouton "Afficher plus" — géré par le Stimulus load-more controller %>
-        <div class="text-center mt-5">
-          <button
-            class="matches-load-more-btn"
-            data-load-more-target="button"
-            data-action="click->load-more#more">
-            Afficher plus de matchs
-            <i data-lucide="chevron-down" style="width:16px;height:16px;margin-left:6px;"></i>
-          </button>
-        </div>
-
+      <div id="matches" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <%= render @matches %>
       </div>
+
+      <%# Pagination serveur (Pagy) — n'affiche la nav que s'il y a plus d'une page.
+          Les paramètres de filtre sont conservés automatiquement dans les liens. %>
+      <% if @pagy && @pagy.pages > 1 %>
+        <nav class="matches-pagination mt-5 d-flex justify-content-center" aria-label="Pagination des matchs">
+          <%== pagy_bootstrap_nav(@pagy) %>
+        </nav>
+      <% end %>
     <% end %>
 
   </div>
