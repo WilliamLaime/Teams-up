@@ -1,4 +1,7 @@
 class TeamsController < ApplicationController
+  # Pagination serveur de la section « explorer » (toutes les autres équipes).
+  include Pagy::Backend
+
   before_action :set_team, only: %i[show edit update destroy transfer_captain leave join]
 
   # GET /teams — mes équipes (mises en avant) + toutes les autres (à rejoindre)
@@ -10,9 +13,14 @@ class TeamsController < ApplicationController
 
     # Toutes les AUTRES équipes — section "exploration / rejoindre".
     # On exclut celles déjà dans @my_teams via une sous-requête sur leurs ids.
-    @other_teams = Team.where.not(id: @my_teams.select(:id))
-                       .preload(:captain, :team_members)
-                       .order(created_at: :desc)
+    # Section « explorer » paginée (9 équipes/page) — @my_teams reste entier
+    # (un user a rarement beaucoup d'équipes à lui).
+    @pagy, @other_teams = pagy(
+      Team.where.not(id: @my_teams.select(:id))
+          .preload(:captain, :team_members)
+          .order(created_at: :desc),
+      items: 9
+    )
 
     # Ids des équipes où l'user a déjà une demande en attente → bouton "Demande envoyée"
     @requested_team_ids = current_user.team_invitations_received.requested.pluck(:team_id)

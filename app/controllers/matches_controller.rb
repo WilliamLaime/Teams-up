@@ -1,4 +1,8 @@
 class MatchesController < ApplicationController
+  # Pagination serveur de la liste des matchs (évite de charger tous les matchs
+  # + leurs avatars préchargés d'un coup — indispensable à la montée en charge).
+  include Pagy::Backend
+
   # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
   # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
   skip_before_action :authenticate_user!, only: %i[index show]
@@ -51,6 +55,12 @@ class MatchesController < ApplicationController
         apply_filters
       end
     end
+
+    # Pagination : 12 matchs par page (3 colonnes × 4 lignes sur desktop).
+    # Appliquée en dernier, après tous les filtres, pour ne charger et ne
+    # précharger (avatars, sport…) que les matchs réellement affichés.
+    # Pagy conserve automatiquement les paramètres de filtre dans les liens.
+    @pagy, @matches = pagy(@matches, items: 12)
 
     # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
     sport_name = current_sport&.name
