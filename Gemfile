@@ -93,6 +93,9 @@ group :development do
   # Ouvre les emails dans une interface web à /letter_opener (compatible WSL2)
   # Contrairement à letter_opener, ne tente pas d'ouvrir un navigateur système
   gem "letter_opener_web"
+  # Détecte automatiquement les requêtes N+1, les eager-loads inutiles et les
+  # index de compteur manquants pendant le développement.
+  gem "bullet"
 end
 
 group :test do
