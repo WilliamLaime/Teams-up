@@ -249,6 +249,15 @@
             </div>
           </div>
 
+          <%# Bouton "Effacer" — placé à droite de la localisation, %>
+          <%# visible seulement si au moins un filtre est actif ; réinitialise tous les filtres d'un coup %>
+          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? || params[:favorite_venues].present? %>
+            <%= link_to matches_path, class: "filter-reset-btn" do %>
+              <i data-lucide="x" style="width:13px;height:13px;"></i>
+              Effacer les filtres
+            <% end %>
+          <% end %>
+
           <%# Filtre "Mes lieux favoris" — visible seulement si connecté ET lieux favoris renseignés %>
           <% if user_signed_in? && current_user.profil&.favorite_venues&.any? %>
             <label class="filter-pill-group" style="cursor:pointer; user-select:none;">
@@ -257,14 +266,6 @@
                   style: "accent-color:#1EDD88; width:13px; height:13px; cursor:pointer;" %>
               <span style="font-size:0.8rem; white-space:nowrap;">Mes lieux ⭐</span>
             </label>
-          <% end %>
-
-          <%# Bouton "Effacer" visible seulement si un filtre est actif %>
-          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? || params[:favorite_venues].present? %>
-            <%= link_to matches_path, class: "filter-reset-btn" do %>
-              <i data-lucide="x" style="width:13px;height:13px;"></i>
-              Effacer
-            <% end %>
           <% end %>
         </div>
 
