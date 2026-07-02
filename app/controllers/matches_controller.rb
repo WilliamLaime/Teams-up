@@ -385,13 +385,14 @@ class MatchesController < ApplicationController
     # Recherche full-text — titre, ville, description ou prénom/nom du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
 
-    # Filtre par sport :
-    # - sport sélectionné dans l'URL → filtrer par ce sport
-    # - Aucun param sport dans l'URL → fallback sur le sport actif de l'utilisateur
+    # Filtre par sport (multi-sélection) :
+    # - sport(s) sélectionné(s) dans l'URL → filtrer par ces sports
+    # - Aucun param sport ET pas de no_prefilter → fallback sur le sport actif de l'utilisateur
+    # - no_prefilter=1 (bouton "Effacer les filtres") → aucun filtre sport = TOUS les sports
     sport_ids = params[:sport_ids]&.reject(&:blank?) || []
     if sport_ids.any?
       @matches = @matches.where(sport_id: sport_ids)
-    elsif current_sport.present?
+    elsif current_sport.present? && params[:no_prefilter].blank?
       @matches = @matches.where(sport_id: current_sport.id)
     end
 

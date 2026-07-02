@@ -234,6 +234,30 @@ module ApplicationHelper
     end
   end
 
+  # Libellé de date relatif et lisible pour un match (ex. carte "match à la une").
+  #   - Aujourd'hui       → "Ce soir" si le match est à 18h ou plus, sinon "Aujourd'hui"
+  #   - Demain            → "Demain"
+  #   - Dans la semaine   → jour en toutes lettres (ex. "Mardi")
+  #   - Au-delà           → date courte (ex. "14 juil.")
+  def match_day_label(match)
+    return "" unless match&.date
+
+    date  = match.date
+    today = Date.current
+
+    if date == today
+      match.time && match.time.hour >= 18 ? "Ce soir" : "Aujourd'hui"
+    elsif date == today + 1
+      "Demain"
+    elsif date <= today + 6
+      # Jour de la semaine en français, première lettre en majuscule
+      I18n.l(date, format: "%A").capitalize
+    else
+      # Date courte : jour + mois abrégé (ex. "14 juil.")
+      I18n.l(date, format: "%-d %b")
+    end
+  end
+
   private
 
   # RGESN 5.2 — injecte les transformations Cloudinary f_auto,q_auto dans une URL Cloudinary.
