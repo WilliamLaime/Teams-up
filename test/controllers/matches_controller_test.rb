@@ -193,6 +193,20 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  # Régression : sans sport actif (mode multisport « Tous les sports » où
+  # current_sport = nil), un sport doit tout de même être présélectionné.
+  # Sinon le JS (updateSport) ne génère aucun bouton de niveau ni format et
+  # le champ « Niveau requis » reste vide au chargement du formulaire.
+  test "GET /matches/new présélectionne un sport même sans sport actif" do
+    # @user n'a aucun sport ni current_sport_id → current_sport renvoie nil
+    sign_in @user
+    get new_match_path
+    assert_response :success
+    # Le placeholder ne doit PAS apparaître : un sport réel est présélectionné
+    assert_not_includes response.body, "Sélectionner un sport",
+                        "Aucun sport présélectionné → le champ Niveau resterait vide"
+  end
+
   # ════════════════════════════════════════════════════════════════════════════
   # POST /matches — création d'un match
   # ════════════════════════════════════════════════════════════════════════════

@@ -269,10 +269,12 @@
             </div>
           </div>
 
-          <%# Bouton "Effacer" — placé à droite de la localisation, %>
-          <%# visible seulement si au moins un filtre est actif ; réinitialise tous les filtres d'un coup. %>
+          <%# Bouton "Effacer" — placé à droite de la localisation. %>
+          <%# Visible dès qu'il y a quelque chose de filtré : soit un filtre manuel (params d'URL), %>
+          <%# soit les préfiltres profil appliqués automatiquement à l'arrivée (@active_prefilters). %>
+          <%# Ne disparaît que quand aucune donnée n'est remplie (aucun filtre du tout). %>
           <%# no_prefilter=1 → ignore aussi les préfiltres profil ET le fallback sport → affiche TOUS les sports. %>
-          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? || params[:favorite_venues].present? %>
+          <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? || params[:favorite_venues].present? || @active_prefilters&.any? %>
             <%= link_to matches_path(no_prefilter: 1), class: "filter-reset-btn" do %>
               <i data-lucide="x" style="width:13px;height:13px;"></i>
               Effacer les filtres
