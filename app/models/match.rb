@@ -1,6 +1,14 @@
 class Match < ApplicationRecord
+  # URL propre basée sur un slug (ex: /matches/foot-5v5-paris-a1b2c3) — voir Sluggable
+  include Sluggable
+
   # Permet la recherche full-text avec pg_search
   include PgSearch::Model
+
+  # Champ texte servant de base au slug (le titre du match).
+  def slug_source
+    title
+  end
 
   # Scope de recherche : cherche dans title, place, description du match
   # et dans l'email de l'utilisateur créateur (via la relation belongs_to :user)

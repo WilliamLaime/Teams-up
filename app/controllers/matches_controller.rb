@@ -31,7 +31,9 @@ class MatchesController < ApplicationController
       # includes évite les N+1 sur user/profil/sport chargés dans _match_card
       # match_users préchargé pour afficher le statut de participation dans la card
       @matches = policy_scope(Match)
-                 .includes(:sport, :match_users, user: :profil)
+                 .includes(:sport,
+                           { user: { profil: { avatar_attachment: :blob } } },
+                           { match_users: { user: { profil: { avatar_attachment: :blob } } } })
                  .upcoming
                  .publicly_visible
                  .visible_for_genre(current_user)
@@ -511,7 +513,7 @@ class MatchesController < ApplicationController
 
   # Retrouve le match par son id dans les paramètres de l'URL
   def set_match
-    @match = Match.find(params[:id])
+    @match = Match.from_param(params[:id])
   end
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match

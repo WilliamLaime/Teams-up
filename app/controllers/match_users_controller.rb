@@ -220,7 +220,7 @@ class MatchUsersController < ApplicationController
 
   # Retrouve le match parent via l'id dans l'URL
   def set_match
-    @match = Match.find(params[:match_id])
+    @match = Match.from_param(params[:match_id])
   end
 
   # Retrouve l'inscription spécifique via l'id dans l'URL

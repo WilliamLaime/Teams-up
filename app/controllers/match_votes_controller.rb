@@ -2,7 +2,7 @@ class MatchVotesController < ApplicationController
   # POST /matches/:match_id/match_votes
   def create
     # Récupère le match depuis l'URL
-    @match = Match.find(params[:match_id])
+    @match = Match.from_param(params[:match_id])
 
     # Construit le vote avec le joueur connecté comme votant
     @vote = MatchVote.new(

@@ -175,7 +175,7 @@ class MessagesController < ApplicationController
   def set_context_and_check_access
     if params[:team_id]
       # Message d'équipe — vérifie que l'utilisateur est membre
-      @team = Team.find(params[:team_id])
+      @team = Team.from_param(params[:team_id])
       @team_member = @team.team_members.find_by(user: current_user)
 
       return if @team_member
@@ -184,7 +184,7 @@ class MessagesController < ApplicationController
 
     elsif params[:match_id]
       # Message de match — comportement existant
-      @match = Match.find(params[:match_id])
+      @match = Match.from_param(params[:match_id])
       match_user = @match.match_users.find_by(user: current_user)
 
       # Seuls les participants approuvés et organisateurs peuvent écrire
@@ -198,6 +198,7 @@ class MessagesController < ApplicationController
 
       unless [@conversation.sender_id, @conversation.recipient_id].include?(current_user.id)
         redirect_to root_path, alert: "Accès refusé."
+        return
       end
     end
   end
