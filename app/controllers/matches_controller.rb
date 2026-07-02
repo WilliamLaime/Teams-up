@@ -168,7 +168,11 @@ class MatchesController < ApplicationController
     @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
-    @match.sport           = current_sport # Sport : pré-rempli avec le sport actif
+    # Sport : pré-rempli avec le sport actif. En mode multisport (« Tous les sports »),
+    # current_sport vaut nil → on retombe sur le 1er sport pour qu'un sport soit toujours
+    # présélectionné. Sinon aucun sport n'est choisi au chargement et le JS (updateSport)
+    # ne génère ni boutons de niveau ni formats (le champ « Niveau requis » reste vide).
+    @match.sport           = current_sport || Sport.order(:name).first
 
     # Si on vient depuis une page équipe (?team_id=X), pré-associer l'équipe
     if params[:team_id].present?
