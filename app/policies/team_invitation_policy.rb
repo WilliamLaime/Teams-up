@@ -9,9 +9,11 @@ class TeamInvitationPolicy < ApplicationPolicy
     record.invitee_id == user.id
   end
 
-  # Seul le captain peut annuler une invitation en attente
+  # Le captain peut annuler une invitation en attente ;
+  # un joueur peut annuler sa propre demande d'adhésion (statut "requested").
   def destroy?
-    record.team.captain_id == user.id
+    record.team.captain_id == user.id ||
+      (record.requested? && record.invitee_id == user.id)
   end
 
   class Scope < ApplicationPolicy::Scope

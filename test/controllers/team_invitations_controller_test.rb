@@ -198,4 +198,36 @@ class TeamInvitationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to @team
     assert_not_nil flash[:alert]
   end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # PATCH .../review — captain valide/refuse une demande d'adhésion (requested)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # Approuver une demande "requested" ajoute directement le joueur comme membre
+  def test_review_approve_demande_ajoute_le_membre
+    request = TeamInvitation.create!(
+      team: @team, inviter: @captain, invitee: @invitee, status: "requested"
+    )
+    sign_in @captain
+    assert_difference "TeamMember.count", 1 do
+      patch review_team_team_invitation_path(@team, request), params: { decision: "approve" }
+    end
+    assert @team.reload.member?(@invitee), "Le joueur doit être devenu membre"
+    assert_equal "accepted", request.reload.status
+    assert_redirected_to @team
+  end
+
+  # Refuser une demande "requested" la supprime sans créer de membre
+  def test_review_decline_demande_supprime_sans_membre
+    request = TeamInvitation.create!(
+      team: @team, inviter: @captain, invitee: @invitee, status: "requested"
+    )
+    sign_in @captain
+    assert_no_difference "TeamMember.count" do
+      assert_difference "TeamInvitation.count", -1 do
+        patch review_team_team_invitation_path(@team, request), params: { decision: "decline" }
+      end
+    end
+    assert_redirected_to @team
+  end
 end

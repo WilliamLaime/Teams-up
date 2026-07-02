@@ -1,11 +1,23 @@
 class TeamsController < ApplicationController
-  before_action :set_team, only: %i[show edit update destroy transfer_captain leave]
+  before_action :set_team, only: %i[show edit update destroy transfer_captain leave join]
 
-  # GET /teams — liste des équipes dont l'user est membre
+  # GET /teams — mes équipes (mises en avant) + toutes les autres (à rejoindre)
   def index
+    # Équipes dont l'user est membre — mises en avant en haut de page.
     # preload (au lieu de includes) pour éviter que le JOIN du policy_scope
-    # ne filtre les team_members et n'affiche que 1 membre par équipe
-    @teams = policy_scope(Team).preload(:captain, :team_members).order(created_at: :desc)
+    # ne filtre les team_members et n'affiche que 1 membre par équipe.
+    @my_teams = policy_scope(Team).preload(:captain, :team_members).order(created_at: :desc)
+
+    # Toutes les AUTRES équipes — section "exploration / rejoindre".
+    # On exclut celles déjà dans @my_teams via une sous-requête sur leurs ids.
+    @other_teams = Team.where.not(id: @my_teams.select(:id))
+                       .preload(:captain, :team_members)
+                       .order(created_at: :desc)
+
+    # Ids des équipes où l'user a déjà une demande en attente → bouton "Demande envoyée"
+    @requested_team_ids = current_user.team_invitations_received.requested.pluck(:team_id)
+    # Ids des équipes où l'user a une invitation reçue en attente → bouton "Tu es invité·e"
+    @invited_team_ids   = current_user.team_invitations_received.pending.pluck(:team_id)
   end
 
   # GET /teams/:id — page détail de l'équipe
@@ -19,6 +31,9 @@ class TeamsController < ApplicationController
 
       # Propositions en attente envoyées par les membres (visible par le captain)
       @pending_proposals = @team.team_invitations.proposed.includes(invitee: :profil, proposed_by: :profil)
+
+      # Demandes d'adhésion spontanées des joueurs (visible par le captain)
+      @pending_requests = @team.team_invitations.requested.includes(invitee: :profil)
 
       # Amis du captain qui peuvent encore être invités (pas membres, pas déjà invités)
       excluded_ids = @team.members.pluck(:id) + @team.team_invitations.pending.pluck(:invitee_id)
@@ -127,6 +142,41 @@ class TeamsController < ApplicationController
 
     @team.team_members.find_by(user: current_user)&.destroy
     redirect_to teams_path, notice: "Tu as quitté l'équipe \"#{@team.name}\"."
+  end
+
+  # POST /teams/:id/join — un joueur demande à rejoindre l'équipe
+  # La demande doit être validée par le capitaine (statut "requested").
+  def join
+    authorize @team
+
+    # Garde-fous : déjà membre, ou une demande/invitation est déjà en cours
+    if @team.member?(current_user)
+      redirect_to teams_path, alert: "Tu es déjà membre de cette équipe." and return
+    end
+    if @team.join_request_pending_for?(current_user) || @team.invitation_pending_for?(current_user)
+      redirect_to teams_path, alert: "Une demande ou une invitation est déjà en cours pour cette équipe." and return
+    end
+
+    # inviter = capitaine (cohérent avec le flux des propositions), invitee = le demandeur
+    invitation = TeamInvitation.new(
+      team: @team,
+      inviter: @team.captain,
+      invitee: current_user,
+      status: "requested"
+    )
+
+    if invitation.save
+      # Notifie le capitaine de la nouvelle demande
+      Notification.create(
+        user: @team.captain,
+        actor: current_user,
+        message: "#{current_user.profil&.first_name} demande à rejoindre l'équipe \"#{@team.name}\".",
+        link: team_path(@team)
+      )
+      redirect_to teams_path, notice: "Demande envoyée au capitaine de \"#{@team.name}\" !"
+    else
+      redirect_to teams_path, alert: invitation.errors.full_messages.to_sentence
+    end
   end
 
   private

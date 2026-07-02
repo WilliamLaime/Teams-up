@@ -33,6 +33,11 @@ class TeamPolicy < ApplicationPolicy
     member? && !captain?
   end
 
+  # Tout utilisateur connecté qui n'est pas déjà membre peut demander à rejoindre
+  def join?
+    user.present? && !member?
+  end
+
   class Scope < ApplicationPolicy::Scope
     # Retourne toutes les équipes dont l'user est membre
     # (ou toutes si non connecté — liste publique)

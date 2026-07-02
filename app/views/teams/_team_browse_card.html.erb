@@ -1,0 +1,65 @@
+<%# ── Carte d'une équipe à explorer / rejoindre — affichée dans /equipes ──────
+    Variables attendues :
+      team               (Team)
+      requested_team_ids (Array<Integer>) → équipes où l'user a déjà une demande
+      invited_team_ids   (Array<Integer>) → équipes où l'user a une invitation reçue %>
+
+<div class="team-card team-browse-card">
+
+  <%# Blason cliquable → permet de consulter l'équipe avant de la rejoindre.
+      Priorité : SVG généré > image uploadée > placeholder (même logique que _team_card). %>
+  <%= link_to team_path(team), style: "text-decoration:none;" do %>
+    <div class="team-card-badge">
+      <% if team.badge_svg.present? %>
+        <div class="team-card-badge-svg"><%= team.badge_svg.html_safe %></div>
+      <% elsif team.badge_image.attached? %>
+        <%= image_tag team.badge_image, alt: "Blason #{team.name}", class: "team-card-badge-img" %>
+      <% else %>
+        <div class="team-card-badge-placeholder">
+          <i data-lucide="shield" style="width:32px;height:32px;color:var(--theme-text-muted);"></i>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Infos %>
+    <div class="team-card-body">
+      <h3 class="team-card-name"><%= team.name %></h3>
+
+      <%# Capitaine — prénom + initiale du nom (distingue les homonymes) %>
+      <p class="team-card-captain">
+        <i data-lucide="crown" style="width:12px;height:12px;margin-right:3px;"></i>
+        <%= team.captain.short_name %>
+      </p>
+
+      <p class="team-card-meta">
+        <i data-lucide="users" style="width:12px;height:12px;margin-right:3px;"></i>
+        <%= team.team_members.size %> membre<%= team.team_members.size > 1 ? "s" : "" %>
+      </p>
+    </div>
+  <% end %>
+
+  <%# ── Zone d'action — état du bouton selon la situation de l'utilisateur ──── %>
+  <div class="team-browse-card-action">
+    <% if invited_team_ids.include?(team.id) %>
+      <%# Le capitaine a déjà invité l'user → l'inviter à répondre sur la page équipe %>
+      <%= link_to team_path(team), class: "btn btn-sm btn-cta-secondary w-100" do %>
+        <i data-lucide="mail" style="width:13px;height:13px;margin-right:4px;"></i>
+        Tu es invité·e
+      <% end %>
+    <% elsif requested_team_ids.include?(team.id) %>
+      <%# Demande déjà envoyée → bouton désactivé informatif %>
+      <button type="button" class="btn btn-sm w-100 team-browse-btn-pending" disabled>
+        <i data-lucide="clock" style="width:13px;height:13px;margin-right:4px;"></i>
+        Demande envoyée
+      </button>
+    <% else %>
+      <%# Aucune relation → bouton pour demander à rejoindre %>
+      <%= button_to join_team_path(team), method: :post,
+            class: "btn btn-sm btn-primary btn-cta-primary w-100" do %>
+        <i data-lucide="user-plus" style="width:13px;height:13px;margin-right:4px;"></i>
+        Rejoindre
+      <% end %>
+    <% end %>
+  </div>
+
+</div>

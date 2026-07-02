@@ -245,6 +245,30 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "display2@example.com", user.display_name
   end
 
+  # ─── Méthode short_name ─────────────────────────────────────────────────────
+
+  # Cas nominal : "Prénom" + initiale majuscule du nom suivie d'un point.
+  test "short_name retourne Prénom + initiale du nom" do
+    user = create_user(email: "short1@example.com", first_name: "Williame", last_name: "laime")
+    assert_equal "Williame L.", user.short_name
+  end
+
+  # Sans nom de famille : on retourne juste le prénom (pas d'initiale orpheline).
+  test "short_name retourne juste le prénom si pas de nom" do
+    user = create_user(email: "short2@example.com", first_name: "Williame", last_name: "Laime")
+    user.profil.update_columns(last_name: nil)
+    user.reload
+    assert_equal "Williame", user.short_name
+  end
+
+  # Sans prénom : on retombe sur display_name (email en dernier recours).
+  test "short_name retombe sur display_name si pas de prénom" do
+    user = create_user(email: "short3@example.com", first_name: "Williame", last_name: "Laime")
+    user.profil.update_columns(first_name: nil, last_name: nil)
+    user.reload
+    assert_equal "short3@example.com", user.short_name
+  end
+
   # ─── Méthode rank ───────────────────────────────────────────────────────────
 
   # rank dépend de profil.xp_level → on crée un user avec profil via create_test_user.

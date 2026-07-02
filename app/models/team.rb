@@ -85,6 +85,12 @@ class Team < ApplicationRecord
     team_invitations.exists?(invitee: user, status: "pending")
   end
 
+  # Retourne vrai si l'user a déjà une demande d'adhésion en attente pour cette équipe
+  # (demande spontanée du joueur, en attente de validation par le capitaine)
+  def join_request_pending_for?(user)
+    team_invitations.exists?(invitee: user, status: "requested")
+  end
+
   # Nombre total de membres
   def members_count
     team_members.count
