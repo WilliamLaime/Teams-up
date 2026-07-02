@@ -382,7 +382,7 @@
               </h5>
               <div class="d-flex align-items-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
-                  <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
+                  <%= user_avatar_link organizer, css_class: "match-organizer-avatar" if organizer %>
                   <div>
                     <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
                       <% if organizer&.profil %>

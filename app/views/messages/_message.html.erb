@@ -23,20 +23,27 @@
 <div class="chat-message chat-message--theirs mb-2"
      data-user-id="<%= message.user_id %>">
 
-  <%# Avatar : photo de profil ou initiales colorées (caché pour mes propres messages via CSS) %>
-  <div class="chat-avatar" style="<%= has_avatar ? '' : "background-color: #{user_color};" %>">
-    <% if has_avatar %>
-      <%# blob.url = URL Cloudinary directe (fonctionne aussi dans les broadcasts Turbo Stream) %>
-      <%# RGESN 5.2 — width/height évite le layout shift ; loading=lazy car les messages sont sous le fold %>
-      <%= image_tag message.user.profil.avatar.blob.url,
-          class: "chat-avatar-img",
-          alt: sender_name,
-          width: 30, height: 30,
-          loading: "lazy" %>
-    <% else %>
-      <%= initials %>
-    <% end %>
-  </div>
+  <%# Avatar : photo de profil ou initiales colorées (caché pour mes propres messages via CSS)
+      Cliquable → profil public de l'expéditeur. data-turbo-frame="_top" : navigation pleine
+      page même si le message est dans la fenêtre de chat (turbo-frame). %>
+  <%= link_to user_profil_path(message.user),
+      class: "chat-avatar-link",
+      title: "Voir le profil de #{sender_name}",
+      data: { turbo_frame: "_top" } do %>
+    <div class="chat-avatar" style="<%= has_avatar ? '' : "background-color: #{user_color};" %>">
+      <% if has_avatar %>
+        <%# blob.url = URL Cloudinary directe (fonctionne aussi dans les broadcasts Turbo Stream) %>
+        <%# RGESN 5.2 — width/height évite le layout shift ; loading=lazy car les messages sont sous le fold %>
+        <%= image_tag message.user.profil.avatar.blob.url,
+            class: "chat-avatar-img",
+            alt: sender_name,
+            width: 30, height: 30,
+            loading: "lazy" %>
+      <% else %>
+        <%= initials %>
+      <% end %>
+    </div>
+  <% end %>
 
   <%# Bulle : contient le nom, le texte et l'heure (tout dans la bulle comme sur le design) %>
   <div class="chat-bubble">
