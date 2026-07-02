@@ -1,4 +1,4 @@
-<%# ── Liste des équipes de l'utilisateur connecté ───────────────────────── %>
+<%# ── Page équipes : mes équipes (en avant) + toutes les autres (à rejoindre) ── %>
 
 <div class="teams-page">
 <div class="container py-4">
@@ -7,8 +7,8 @@
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
       <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
-      <h1 class="matches-index-title mb-1">Mes équipes</h1>
-      <p class="matches-index-subtitle mb-0">Les équipes dont tu fais partie.</p>
+      <h1 class="matches-index-title mb-1">Équipes</h1>
+      <p class="matches-index-subtitle mb-0">Retrouve tes équipes et rejoins-en de nouvelles.</p>
     </div>
     <%= link_to new_team_path, class: "btn btn-primary btn-cta-primary px-3" do %>
       <i data-lucide="plus" style="width:15px;height:15px;margin-right:4px;"></i>
@@ -16,24 +16,56 @@
     <% end %>
   </div>
 
-  <%# Liste des équipes %>
-  <% if @teams.any? %>
-    <div class="row g-3">
-      <% @teams.each do |team| %>
-        <div class="col-12 col-md-6 col-lg-4">
-          <%= render "teams/team_card", team: team %>
-        </div>
-      <% end %>
-    </div>
+  <%# ── Section 1 : Mes équipes (mises en avant) ────────────────────────────── %>
+  <section class="mb-5">
+    <h2 class="teams-section-title">
+      <i data-lucide="shield" style="width:18px;height:18px;margin-right:6px;"></i>
+      Mes équipes
+    </h2>
 
-  <%# État vide %>
-  <% else %>
-    <div class="text-center py-5">
-      <i data-lucide="users" style="width:48px;height:48px;color:var(--theme-text-muted);margin-bottom:1rem;"></i>
-      <p style="color:var(--theme-text-muted); font-size:1rem;">Tu n'es encore membre d'aucune équipe.</p>
-      <%= link_to "Créer ma première équipe", new_team_path, class: "btn btn-primary btn-cta-primary mt-2" %>
-    </div>
-  <% end %>
+    <% if @my_teams.any? %>
+      <div class="row g-3">
+        <% @my_teams.each do |team| %>
+          <div class="col-12 col-md-6 col-lg-4">
+            <%= render "teams/team_card", team: team %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <%# État vide léger — l'utilisateur peut quand même explorer les autres équipes %>
+      <div class="teams-empty-inline">
+        <i data-lucide="users" style="width:32px;height:32px;color:var(--theme-text-muted);"></i>
+        <p style="color:var(--theme-text-muted); font-size:0.9rem; margin:0.5rem 0 0;">
+          Tu n'es encore membre d'aucune équipe. Crées-en une ou rejoins celles ci-dessous.
+        </p>
+      </div>
+    <% end %>
+  </section>
+
+  <%# ── Section 2 : Toutes les autres équipes (à rejoindre) ─────────────────── %>
+  <section>
+    <h2 class="teams-section-title">
+      <i data-lucide="compass" style="width:18px;height:18px;margin-right:6px;"></i>
+      Toutes les équipes
+    </h2>
+
+    <% if @other_teams.any? %>
+      <div class="row g-3">
+        <% @other_teams.each do |team| %>
+          <div class="col-12 col-md-6 col-lg-4">
+            <%= render "teams/team_browse_card",
+                  team: team,
+                  requested_team_ids: @requested_team_ids,
+                  invited_team_ids: @invited_team_ids %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p style="color:var(--theme-text-muted); font-size:0.9rem;">
+        Aucune autre équipe pour le moment.
+      </p>
+    <% end %>
+  </section>
 
 </div>
 </div>
