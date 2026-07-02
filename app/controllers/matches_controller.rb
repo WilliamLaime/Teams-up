@@ -1,4 +1,8 @@
 class MatchesController < ApplicationController
+  # Pagination serveur de la liste des matchs (évite de charger tous les matchs
+  # + leurs avatars préchargés d'un coup — indispensable à la montée en charge).
+  include Pagy::Backend
+
   # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
   # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
   skip_before_action :authenticate_user!, only: %i[index show]
@@ -31,7 +35,9 @@ class MatchesController < ApplicationController
       # includes évite les N+1 sur user/profil/sport chargés dans _match_card
       # match_users préchargé pour afficher le statut de participation dans la card
       @matches = policy_scope(Match)
-                 .includes(:sport, :match_users, user: :profil)
+                 .includes(:sport,
+                           { user: { profil: { avatar_attachment: :blob } } },
+                           { match_users: { user: { profil: { avatar_attachment: :blob } } } })
                  .upcoming
                  .publicly_visible
                  .visible_for_genre(current_user)
@@ -49,6 +55,12 @@ class MatchesController < ApplicationController
         apply_filters
       end
     end
+
+    # Pagination : 12 matchs par page (3 colonnes × 4 lignes sur desktop).
+    # Appliquée en dernier, après tous les filtres, pour ne charger et ne
+    # précharger (avatars, sport…) que les matchs réellement affichés.
+    # Pagy conserve automatiquement les paramètres de filtre dans les liens.
+    @pagy, @matches = pagy(@matches, items: 12)
 
     # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
     sport_name = current_sport&.name
@@ -511,7 +523,7 @@ class MatchesController < ApplicationController
 
   # Retrouve le match par son id dans les paramètres de l'URL
   def set_match
-    @match = Match.find(params[:id])
+    @match = Match.from_param(params[:id])
   end
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match

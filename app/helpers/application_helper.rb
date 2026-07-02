@@ -136,6 +136,23 @@ module ApplicationHelper
     end
   end
 
+  # ── Avatar cliquable → profil public de l'utilisateur ───────────────────────
+  # Identique à user_avatar_tag, mais enveloppe l'avatar dans un lien vers le
+  # profil public. À utiliser UNIQUEMENT là où l'avatar n'est pas déjà à
+  # l'intérieur d'un autre lien (les liens HTML imbriqués sont invalides).
+  # data-turbo-frame="_top" force la navigation pleine page même si l'avatar est
+  # rendu à l'intérieur d'un turbo-frame (ex: fenêtre de chat).
+  def user_avatar_link(user, **options)
+    return user_avatar_tag(user, **options) if user.blank?
+
+    link_to user_profil_path(user),
+            class: "user-avatar-link",
+            title: (user.try(:display_name).presence || user.email),
+            data: { turbo_frame: "_top" } do
+      user_avatar_tag(user, **options)
+    end
+  end
+
   # ── Icônes de sport ───────────────────────────────────────────────────────
   # Affiche l'icône d'un sport : image si c'est un fichier, emoji sinon
   # Utilisé partout où on affiche l'icône d'un sport

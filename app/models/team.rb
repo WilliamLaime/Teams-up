@@ -1,5 +1,12 @@
 class Team < ApplicationRecord
   include Moderatable
+  # URL propre basée sur un slug (ex: /equipes/les-aigles-x9y8z7) — voir Sluggable
+  include Sluggable
+
+  # Champ texte servant de base au slug (le nom de l'équipe).
+  def slug_source
+    name
+  end
 
   # ── Associations ───────────────────────────────────────────────────────────
   belongs_to :captain, class_name: "User"

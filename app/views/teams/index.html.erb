@@ -60,6 +60,13 @@
           </div>
         <% end %>
       </div>
+
+      <%# Pagination serveur (Pagy) — affichée seulement s'il y a plus d'une page. %>
+      <% if @pagy && @pagy.pages > 1 %>
+        <nav class="teams-pagination mt-4 d-flex justify-content-center" aria-label="Pagination des équipes">
+          <%== pagy_bootstrap_nav(@pagy) %>
+        </nav>
+      <% end %>
     <% else %>
       <p style="color:var(--theme-text-muted); font-size:0.9rem;">
         Aucune autre équipe pour le moment.

@@ -155,9 +155,12 @@
     <%# Avatars des joueurs inscrits + places manquantes %>
     <div class="match-players-row">
       <div class="match-avatars">
-        <% match.users.first(3).each do |player| %>
+        <%# On itère sur match_users (préchargé avec user > profil > avatar dans les
+            controllers) plutôt que sur match.users (association through NON préchargée
+            qui déclenchait un N+1 : 1 requête users + 1 profil + 1 blob avatar par carte). %>
+        <% match.match_users.first(3).each do |mu| %>
           <%# Avatar du joueur ou initiales colorées si pas de photo %>
-          <%= user_avatar_tag player, css_class: "match-avatar" %>
+          <%= user_avatar_tag mu.user, css_class: "match-avatar" %>
         <% end %>
       </div>
       <span class="match-players-text">

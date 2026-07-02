@@ -49,6 +49,7 @@ export default class extends Controller {
     // ── Champs Libre : saisie directe ──────────────────────
     "playersPresentInput",    // Input number : joueurs présents (players_present soumis)
     "playersLibreInput",      // Input number visible : joueurs manquants (synchronise playersInput)
+    "libreTotal",             // Span : total joueurs attendus en mode Libre (présents + recherchés)
 
     // ── Éléments du récapitulatif (destinations) ──────────
     "recapTitle",        // Zone affichant le titre dans la sidebar
@@ -283,6 +284,8 @@ export default class extends Controller {
       // Met à jour le récap
       this.recapPresentTarget.textContent  = presentVal
       this.recapPlayersTarget.textContent  = libreVal
+      // Affiche le total attendu (présents + recherchés)
+      this._updateLibreTotal()
 
     } else {
       // ── Mode standard : 1 compteur avec max défini par le format ──
@@ -444,6 +447,7 @@ export default class extends Controller {
     const val = Math.max(1, parseInt(this.playersPresentInputTarget.value) || 1)
     this.playersPresentInputTarget.value = val
     this.recapPresentTarget.textContent  = val
+    this._updateLibreTotal()
   }
 
   // Appelé à chaque frappe dans le champ "Manquants" — met à jour playersInput (hidden) + récap
@@ -452,6 +456,16 @@ export default class extends Controller {
     this.playersLibreInputTarget.value  = val
     this.playersInputTarget.value       = val   // hidden field soumis avec le formulaire
     this.recapPlayersTarget.textContent = val
+    this._updateLibreTotal()
+  }
+
+  // Recalcule le total de joueurs attendus en mode Libre = présents + recherchés.
+  // No-op si la target n'est pas présente (mode standard).
+  _updateLibreTotal() {
+    if (!this.hasLibreTotalTarget) return
+    const present = Math.max(1, parseInt(this.playersPresentInputTarget.value) || 1)
+    const missing = Math.max(1, parseInt(this.playersLibreInputTarget.value) || 1)
+    this.libreTotalTarget.textContent = present + missing
   }
 
   // ── Niveau : génère les boutons de niveau pour le sport sélectionné ──
@@ -460,7 +474,13 @@ export default class extends Controller {
     const container = this.levelButtonsTarget
     container.innerHTML = ""
 
-    levels.forEach((lvl) => {
+    // "Tout niveau" : option ouverte à tous les niveaux, proposée en plus des
+    // niveaux propres au sport. La valeur "Tout niveau" est déjà tolérée par la
+    // validation Rails (match.rb) et stylée via la classe level-tout.
+    const hasTous  = levels.some((l) => l.label === "Tout niveau")
+    const options  = hasTous ? levels : levels.concat([{ label: "Tout niveau" }])
+
+    options.forEach((lvl) => {
       const btn = document.createElement("button")
       btn.type = "button"
       const isActive = lvl.label === savedLevel

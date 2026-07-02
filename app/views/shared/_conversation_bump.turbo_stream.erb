@@ -1,0 +1,26 @@
+<%# ── Partial Turbo Stream : remonte une conversation en tête de la sidebar ──────
+    Émis en UN SEUL frame Turbo Stream : le "remove" et le "prepend" partent
+    ensemble.
+
+    Pourquoi c'est important : avant, le modèle Message diffusait deux broadcasts
+    séparés (broadcast_remove_to PUIS broadcast_prepend_to). Si le rendu du
+    partial d'item échouait entre les deux, le "remove" était déjà parti et la
+    conversation disparaissait de la sidebar jusqu'au prochain rechargement
+    complet (le conteneur #sticky-chat-global est data-turbo-permanent, donc
+    jamais régénéré lors d'une navigation Turbo). C'était la cause du bug
+    « la conversation disparaît parfois ».
+
+    Ici, si le rendu du partial d'item lève une exception, l'exception survient
+    AVANT toute diffusion → aucun des deux ordres n'est envoyé, l'item reste
+    en place.
+
+    Variables attendues :
+      - remove_target : id DOM de l'item à retirer de sa position actuelle
+      - list_target   : id DOM de la liste où réinsérer l'item en tête
+      - item_partial  : partial de l'item (ex: "shared/sticky_convo_item")
+      - item_locals   : hash de locals pour le partial d'item
+%>
+<%= turbo_stream.remove remove_target %>
+<%= turbo_stream.prepend list_target do %>
+  <%= render partial: item_partial, formats: [:html], locals: item_locals %>
+<% end %>

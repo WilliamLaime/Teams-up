@@ -96,9 +96,14 @@
         <% @article.body.split(/\n\n+/).each do |bloc| %>
           <% bloc = bloc.strip %>
           <% next if bloc.blank? %>
-          <%# Blocs qui commencent par une balise HTML bloc (h2, h3, ul, ol) → rendu direct %>
+          <%# Blocs qui commencent par une balise HTML bloc (h2, h3, ul, ol) → rendu direct.
+              sanitize (allowlist) plutôt que html_safe : le contenu est admin-only mais on
+              neutralise tout <script>/onload… par défense en profondeur, sans perdre la
+              structure sémantique voulue. %>
           <% if bloc.start_with?('<h2>', '<h3>', '<ul>', '<ol>') %>
-            <%= bloc.html_safe %>
+            <%= sanitize bloc,
+                         tags: %w[h2 h3 h4 ul ol li p a strong em b i br blockquote],
+                         attributes: %w[href target rel] %>
           <% else %>
             <%# Bloc de texte normal → transformé en paragraphe avec gestion des sauts de ligne %>
             <%= simple_format(bloc) %>
