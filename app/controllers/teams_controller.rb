@@ -182,7 +182,7 @@ class TeamsController < ApplicationController
   private
 
   def set_team
-    @team = Team.find(params[:id])
+    @team = Team.from_param(params[:id])
   end
 
   # Paramètres autorisés pour la création/modification d'une équipe

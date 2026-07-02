@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_22_125930) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -138,6 +138,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_125930) do
     t.bigint "user_id", null: false
     t.index ["match_id", "status"], name: "index_match_users_on_match_id_status"
     t.index ["match_id"], name: "index_match_users_on_match_id"
+    t.index ["user_id", "status"], name: "index_match_users_on_user_id_status"
     t.index ["user_id"], name: "index_match_users_on_user_id"
   end
 
@@ -171,6 +172,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_125930) do
     t.integer "players_present"
     t.integer "price_per_player", default: 0
     t.string "private_token"
+    t.string "slug", null: false
     t.bigint "sport_id"
     t.bigint "team_id"
     t.time "time"
@@ -182,6 +184,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_125930) do
     t.string "visibility", default: "public", null: false
     t.index ["homme_du_match_id"], name: "index_matches_on_homme_du_match_id"
     t.index ["private_token"], name: "index_matches_on_private_token", unique: true
+    t.index ["slug"], name: "index_matches_on_slug", unique: true
     t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["team_id"], name: "index_matches_on_team_id"
     t.index ["user_id", "created_at"], name: "index_matches_on_user_id_created_at"
@@ -197,8 +200,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_125930) do
     t.bigint "team_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["match_id", "created_at"], name: "index_messages_on_match_id_created_at"
     t.index ["match_id"], name: "index_messages_on_match_id"
+    t.index ["private_conversation_id", "created_at"], name: "index_messages_on_private_conversation_id_created_at"
     t.index ["private_conversation_id"], name: "index_messages_on_private_conversation_id"
+    t.index ["team_id", "created_at"], name: "index_messages_on_team_id_created_at"
     t.index ["team_id"], name: "index_messages_on_team_id"
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
@@ -212,6 +218,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_125930) do
     t.boolean "read", default: false, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["user_id", "read", "created_at"], name: "index_notifications_on_user_id_read_created_at"
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
@@ -495,10 +503,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_125930) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.string "slug", null: false
     t.datetime "updated_at", null: false
     t.string "visibility", default: "public", null: false
     t.index ["captain_id"], name: "index_teams_on_captain_id"
     t.index ["name", "captain_id"], name: "index_teams_on_name_and_captain_id", unique: true
+    t.index ["slug"], name: "index_teams_on_slug", unique: true
     t.index ["visibility"], name: "index_teams_on_visibility"
   end
 

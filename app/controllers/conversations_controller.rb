@@ -22,7 +22,7 @@ class ConversationsController < ApplicationController
     # find_by au lieu de find : si le match a été supprimé, on retourne une page vide
     # plutôt que de crasher (cas possible quand le sticky chat est data-turbo-permanent
     # et contient encore un lien vers un match qui n'existe plus)
-    @match = Match.find_by(id: params[:id])
+    @match = Match.find_by_param(params[:id])
     unless @match
       # Match supprimé — retourne une frame vide plutôt que de crasher
       render inline: '<turbo-frame id="sticky-chat-frame">' \
@@ -52,7 +52,7 @@ class ConversationsController < ApplicationController
     skip_authorization
 
     # Trouve le match et la participation de l'utilisateur (find_by pour éviter le crash si supprimé)
-    @match = Match.find_by(id: params[:id])
+    @match = Match.find_by_param(params[:id])
     return head(:not_found) unless @match
 
     match_user = @match.match_users.find_by(user: current_user)

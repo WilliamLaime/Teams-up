@@ -5,7 +5,7 @@ class TeamConversationsController < ApplicationController
     skip_authorization
 
     # Trouve l'équipe (find_by évite un crash si l'équipe a été supprimée)
-    @team = Team.find_by(id: params[:id])
+    @team = Team.find_by_param(params[:id])
     unless @team
       render inline: '<turbo-frame id="sticky-chat-frame">' \
                      '<div class="sticky-chat-no-selection">' \

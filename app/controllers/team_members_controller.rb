@@ -23,7 +23,7 @@ class TeamMembersController < ApplicationController
   private
 
   def set_team
-    @team = Team.find(params[:team_id])
+    @team = Team.from_param(params[:team_id])
   end
 
   def set_team_member

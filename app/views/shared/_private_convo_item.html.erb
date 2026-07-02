@@ -9,8 +9,9 @@
 
 <%# L'autre participant (pas current_user) %>
 <% other = conversation.other_user(current_user) %>
-<% last_msg = conversation.messages.last %>
-<% unread = conversation.unread_for?(current_user) %>
+<%# last_msg / unread peuvent être fournis pré-calculés en locals (cf. _sticky_convo_item). %>
+<% last_msg = local_assigns.fetch(:last_msg) { conversation.messages.last } %>
+<% unread = local_assigns.fetch(:unread) { conversation.unread_for?(current_user) } %>
 
 <%# Conteneur de l'item — id ciblé par les broadcasts Turbo Stream %>
 <div class="sticky-chat-convo-item-wrapper" id="private-convo-<%= conversation.id %>">

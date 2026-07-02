@@ -100,7 +100,11 @@ class PagesController < ApplicationController
   # Récupère les 3 prochains matchs à venir publics, filtrés par sport actif si connecté
   def load_upcoming_matches
     matches = Match.upcoming.publicly_visible
-                   .includes(:sport, :match_users, user: :profil) # évite les N+1 dans _match_card
+                   # évite les N+1 dans _match_card : sport, organisateur + profil + avatar,
+                   # et chaque participant (match_users > user > profil > blob avatar)
+                   .includes(:sport,
+                             { user: { profil: { avatar_attachment: :blob } } },
+                             { match_users: { user: { profil: { avatar_attachment: :blob } } } })
                    .visible_for_genre(current_user) # Cache les matchs "femme uniquement" aux non-femmes
                    .order(date: :asc, time: :asc)
     # Si l'utilisateur est connecté et a un sport actif, on filtre par ce sport

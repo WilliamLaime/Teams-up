@@ -7,15 +7,20 @@
       2. Via broadcast Turbo Stream depuis Message model (mise à jour du badge non-lu)
 %>
 
-<% last_msg = match.messages.last %>
+<%# last_msg / unread peuvent être fournis pré-calculés en locals (chargement de la
+    sidebar, pour éviter un N+1 sur chaque page — cf. _sticky_chat.html.erb).
+    Sinon (broadcast d'un seul item), on retombe sur la requête directe. %>
+<% last_msg = local_assigns.fetch(:last_msg) { match.messages.last } %>
 
 <%# Détermine si l'utilisateur a des messages non lus dans cette conversation
     Non lu = il existe des messages postés APRÈS son dernier last_read_at %>
-<% unread = if match_user.last_read_at.nil?
-               match.messages.exists?
-             else
-               match.messages.where("created_at > ?", match_user.last_read_at).exists?
-             end %>
+<% unread = local_assigns.fetch(:unread) do
+     if match_user.last_read_at.nil?
+       match.messages.exists?
+     else
+       match.messages.where("created_at > ?", match_user.last_read_at).exists?
+     end
+   end %>
 
 <%# Conteneur de l'item — id ciblé par le broadcast Turbo Stream %>
 <div class="sticky-chat-convo-item-wrapper" id="sticky-convo-<%= match.id %>">
