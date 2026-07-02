@@ -93,14 +93,19 @@
             }
 
             # Niveaux à afficher au chargement de la page
-            initial_levels = if selected_sport_ids.length == 1
-              # 1 sport → grille complète du sport
-              sp = Sport.find_by(id: selected_sport_ids.first)
-              sp ? levels_for.(sp) : (default_sport ? levels_for.(default_sport) : [])
+            initial_levels = if selected_sport_ids.any?
+              # 1+ sport(s) → union dédupliquée des grilles (dans l'ordre des sports)
+              sports = Sport.where(id: selected_sport_ids).index_by(&:id)
+              selected_sport_ids
+                .filter_map { |id| sports[id] }
+                .flat_map { |sp| levels_for.(sp) }
+                .uniq { |lvl| lvl[:label] }
             else
               # 0 sport → grille du sport actif par défaut
               default_sport ? levels_for.(default_sport) : []
             end
+            # Sécurité : si aucun sport valide trouvé, retomber sur le sport par défaut
+            initial_levels = default_sport ? levels_for.(default_sport) : [] if initial_levels.empty?
 
             # Map sport_id → [{label, css}] passée en JSON au controller Stimulus.
             # Clé "0" = niveaux du sport actif (fallback JS quand aucun sport sélectionné).
@@ -180,7 +185,7 @@
             </div>
           </div>
 
-          <%# Sport — dropdown custom sélection unique (radio buttons) %>
+          <%# Sport — dropdown custom multi-sélection (checkboxes) %>
           <% if Sport.count > 0 %>
             <div class="sport-filter-pill" data-controller="sport-filter" style="position:relative">
 
@@ -192,21 +197,27 @@
                 <i data-lucide="chevron-down" style="width:11px;height:11px;margin-left:2px;"></i>
               </button>
 
-              <%# Panel dropdown — clic sur un radio ferme et soumet automatiquement %>
+              <%# Panel dropdown — coche plusieurs sports puis "Appliquer" (ou ferme pour soumettre) %>
               <div class="sport-filter-dropdown"
                    data-sport-filter-target="dropdown"
                    style="display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:300; flex-direction:column; width:fit-content; min-width:150px; background:var(--theme-bg-surface); border:1px solid var(--theme-border); border-radius:10px; padding:0.35rem; box-shadow:0 10px 30px rgba(0,0,0,0.3); gap:0.15rem">
 
-                <%# RGAA 11.5 — fieldset/legend pour grouper les boutons radio de même nature %>
+                <%# RGAA 11.5 — fieldset/legend pour grouper les cases de même nature %>
                 <fieldset style="border:none; padding:0; margin:0;">
                 <legend class="visually-hidden">Filtrer par sport</legend>
-                <%# Un radio par sport — auto-soumet au clic %>
+                <%# Une checkbox par sport — multi-sélection %>
                 <% Sport.order(:name).each do |sport| %>
-                  <%# Pré-sélectionné si dans l'URL, ou si c'est le sport actif (aucun filtre URL) %>
+                  <%#
+                    Pré-cochée si :
+                    - le sport est dans l'URL, OU
+                    - aucun filtre sport ET mode "tous les sports" (no_prefilter) → toutes cochées, OU
+                    - aucun filtre sport ET c'est le sport actif du contexte (fallback par défaut)
+                  %>
                   <% sport_checked = params[:sport_ids]&.include?(sport.id.to_s) ||
-                                     (params[:sport_ids].blank? && current_sport&.id == sport.id) %>
+                                     (params[:sport_ids].blank? && params[:no_prefilter].present?) ||
+                                     (params[:sport_ids].blank? && params[:no_prefilter].blank? && current_sport&.id == sport.id) %>
                   <label style="display:flex; flex-direction:row; align-items:center; gap:0.6rem; padding:0.35rem 0.5rem; border-radius:6px; cursor:pointer; margin:0; width:100%;">
-                    <input type="radio"
+                    <input type="checkbox"
                            name="sport_ids[]"
                            value="<%= sport.id %>"
                            data-sport-filter-target="checkbox"
@@ -221,6 +232,15 @@
                   </label>
                 <% end %>
                 </fieldset>
+
+                <%# Bouton Appliquer — soumet la sélection multiple %>
+                <button type="button"
+                        data-action="click->sport-filter#apply"
+                        style="margin-top:0.3rem; width:100%; padding:0.35rem 0; background:#1EDD88; color:#111; border:none; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; transition:opacity 0.15s;"
+                        onmouseover="this.style.opacity='0.85'"
+                        onmouseout="this.style.opacity='1'">
+                  Appliquer
+                </button>
 
               </div>
             </div>
@@ -250,9 +270,10 @@
           </div>
 
           <%# Bouton "Effacer" — placé à droite de la localisation, %>
-          <%# visible seulement si au moins un filtre est actif ; réinitialise tous les filtres d'un coup %>
+          <%# visible seulement si au moins un filtre est actif ; réinitialise tous les filtres d'un coup. %>
+          <%# no_prefilter=1 → ignore aussi les préfiltres profil ET le fallback sport → affiche TOUS les sports. %>
           <% if params[:date].present? || params[:levels].present? || params[:place].present? || params[:query].present? || params[:sport_ids].present? || params[:favorite_venues].present? %>
-            <%= link_to matches_path, class: "filter-reset-btn" do %>
+            <%= link_to matches_path(no_prefilter: 1), class: "filter-reset-btn" do %>
               <i data-lucide="x" style="width:13px;height:13px;"></i>
               Effacer les filtres
             <% end %>
