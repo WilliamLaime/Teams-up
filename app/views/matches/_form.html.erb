@@ -619,6 +619,14 @@
 
             </div><%# fin flex wrapper %>
 
+            <%# Total attendu = présents + recherchés. Mis à jour en direct par Stimulus
+                (changePresent / changeLibre) et initialisé côté serveur en édition. %>
+            <p class="mt-3 mb-0" style="font-size:0.9rem; color:var(--theme-text-primary);">
+              Soit
+              <strong data-match-form-target="libreTotal"><%= (@match.players_present || 1).to_i + (@match.player_left || 1).to_i %></strong>
+              joueur·euse·s au total sur le terrain.
+            </p>
+
           </div><%# fin section Libre %>
 
           <%# ── Boutons de niveau (générés dynamiquement par Stimulus selon le sport) ── %>
