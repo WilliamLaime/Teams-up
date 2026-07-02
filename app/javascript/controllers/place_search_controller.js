@@ -90,7 +90,7 @@ export default class extends Controller {
     ])
 
     // Fusionne : DB en premier, Nominatim complète avec ce qui manque
-    const merged = this.mergeResults(dbVenues, nominatimVenues)
+    const merged = this.mergeResults(dbVenues, nominatimVenues, query)
     this.showResults(merged, query)
   }
 
@@ -255,10 +255,11 @@ export default class extends Controller {
   // ── FUSION DES DEUX SOURCES ─────────────────────────────────────────────────
   // Notre BDD passe en premier. Nominatim complète avec ce qui manque.
   // Règle géographique :
-  //   1. Si GPS disponible → affiche uniquement les résultats dans ~30km, triés par distance
-  //   2. Si aucun résultat dans les 30km → élargit à tout le pool, toujours triés par distance
-  //   3. Sans GPS → ordre tel quel (BDD d'abord, puis Nominatim)
-  mergeResults(dbVenues, nominatimVenues) {
+  //   1. Recherche texte (query) → toute la France, triée par distance (pas de filtre rayon)
+  //   2. Sans texte + GPS disponible → affiche uniquement les résultats dans ~30km, triés par distance
+  //   3. Sans texte + aucun résultat dans les 30km → élargit à tout le pool, toujours triés par distance
+  //   4. Sans GPS → ordre tel quel (BDD d'abord, puis Nominatim)
+  mergeResults(dbVenues, nominatimVenues, query = "") {
     // Fusionne BDD + Nominatim en éliminant les doublons exacts (même nom + même ville).
     // On utilise une déduplication EXACTE (après normalisation) plutôt qu'un préfixe approximatif.
     //
@@ -289,6 +290,14 @@ export default class extends Controller {
           ...v,
           _dist: (v.latitude - lat) ** 2 + (v.longitude - lon) ** 2
         }))
+
+      // Recherche texte explicite (ex: "Hoops Factory") → pas de filtre par rayon :
+      // sinon un établissement du réseau proche de l'user masquerait silencieusement
+      // les autres résultats correspondant au même nom ailleurs en France.
+      if (query.trim().length >= 2) {
+        withDistance.sort((a, b) => a._dist - b._dist)
+        return withDistance.slice(0, 8)
+      }
 
       // delta² correspondant à ~30km (0.27° ≈ 30km → 0.27² ≈ 0.0729)
       const delta30km = 0.27 * 0.27
