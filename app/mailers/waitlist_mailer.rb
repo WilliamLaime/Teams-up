@@ -10,7 +10,7 @@ class WaitlistMailer < ApplicationMailer
     @signup_url = new_user_registration_url
 
     mail(
-      to:      email,
+      to: email,
       subject: "Teams-Up est lancé, crée ton compte maintenant !"
     )
   end

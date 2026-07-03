@@ -40,7 +40,7 @@ module Admin
 
       entries.each_with_index do |entry, index|
         # Pause toutes les 4 requêtes pour respecter la limite Resend (5 req/s)
-        sleep(1.1) if index > 0 && index % 4 == 0
+        sleep(1.1) if index.positive? && (index % 4).zero?
 
         # Envoi immédiat via l'API Resend
         WaitlistMailer.launch_announcement(entry.email).deliver_now
@@ -48,7 +48,7 @@ module Admin
         # Horodate l'envoi pour ne pas renvoyer à cette personne si on relance
         entry.update_column(:launch_email_sent_at, Time.current)
         sent += 1
-      rescue => e
+      rescue StandardError => e
         error_msg = "#{entry.email} : #{e.class} — #{e.message}"
         Rails.logger.error("[WaitlistMailer] Échec envoi — #{error_msg}")
         errors << error_msg
@@ -59,7 +59,7 @@ module Admin
                     alert: "#{sent} envoyé(s), #{errors.count} échec(s) : #{errors.first}"
       else
         redirect_to admin_waitlist_entries_path,
-                    notice: "#{sent} email#{sent > 1 ? 's' : ''} envoyé#{sent > 1 ? 's' : ''} avec succès."
+                    notice: "#{sent} email#{'s' if sent > 1} envoyé#{'s' if sent > 1} avec succès."
       end
     end
   end
