@@ -14,7 +14,7 @@
 SPORTS = [
   { name: "Football",   icon: "⚽", slug: "football"   },
   { name: "Tennis",     icon: "🎾", slug: "tennis"     },
-  { name: "Padel",      icon: "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png", slug: "padel"      },
+  { name: "Padel",      icon: "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png", slug: "padel" },
   { name: "Volleyball", icon: "🏐", slug: "volleyball" },
   { name: "Basketball", icon: "🏀", slug: "basketball" },
   { name: "Handball",   icon: "🤾", slug: "handball"   },
