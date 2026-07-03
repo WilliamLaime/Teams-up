@@ -21,7 +21,7 @@ class ArticlesController < ApplicationController
   def index
     @pagy, @articles = pagy(
       Article.published.recent,
-      items: 9  # 9 articles par page (grille 3x3)
+      items: 9 # 9 articles par page (grille 3x3)
     )
 
     # Catégories disponibles pour le filtre (si paramètre passé)

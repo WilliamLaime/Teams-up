@@ -40,7 +40,7 @@ namespace :chat do
       Match.upcoming.where.not(id: match_ids).order("RANDOM()")
            .limit(3 - match_ids.size).each do |m|
         mu = m.match_users.find_or_initialize_by(user: target)
-        mu.update!(status: "approved", role: (mu.role.presence || "joueur"))
+        mu.update!(status: "approved", role: mu.role.presence || "joueur")
         match_ids << m.id
       end
     end
@@ -51,7 +51,7 @@ namespace :chat do
       unless partner
         partner = (others - [target]).sample
         pmu = m.match_users.find_or_initialize_by(user: partner)
-        pmu.update!(status: "approved", role: (pmu.role.presence || "joueur"))
+        pmu.update!(status: "approved", role: pmu.role.presence || "joueur")
       end
       participants = [target, partner].compact
       rand(4..8).times do
@@ -63,8 +63,9 @@ namespace :chat do
     # ── 2. Chat d'équipe ──────────────────────────────────────────────────────
     team = target.team_members.first&.team
     team ||= Team.create!(name: "Les Testeurs #{rand(100..999)}", captain: target)
-    (others.sample([2, others.size].min)).each do |u|
+    others.sample([2, others.size].min).each do |u|
       next if team.team_members.exists?(user: u)
+
       team.team_members.create!(user: u, role: "member")
     end
     team_members = team.reload.team_members.map(&:user)

@@ -249,7 +249,7 @@ module Users
     # n'est plus appelée (tous les nouveaux comptes sont auto-confirmés).
     # On la conserve comme filet de sécurité et on redirige vers l'accueil
     # plutôt que vers la page "en attente de confirmation" qui n'a plus lieu d'être.
-    def after_inactive_sign_up_path_for(resource)
+    def after_inactive_sign_up_path_for(_resource)
       root_path
     end
 
