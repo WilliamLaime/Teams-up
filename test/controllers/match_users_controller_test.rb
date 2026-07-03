@@ -47,7 +47,7 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
       title: "Match MatchUsers Test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 18, min: 0),
-      player_left: 4,
+      players_needed: 4,
       level: "Débutant",
       visibility: "public",
       validation_mode: "automatic",
@@ -65,7 +65,7 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
       title: "Match Manuel Test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 20, min: 0),
-      player_left: 3,
+      players_needed: 3,
       level: "Débutant",
       visibility: "public",
       validation_mode: "manual",
@@ -77,14 +77,13 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
       user: @organizer, role: "organisateur", status: "approved"
     )
 
-    # Match complet (0 places restantes).
-    # player_left: 0 est invalide (validates: >= 1), donc on crée avec 1
-    # puis on force 0 en base via update_column (bypass validations).
+    # Match complet : capacité cible de 1 place, déjà occupée par un joueur confirmé.
+    # player_left (places restantes) est recalculé automatiquement à 0 par le callback.
     @full_match = Match.create!(
       title: "Match Complet Test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 21, min: 0),
-      player_left: 1,  # valeur minimale valide
+      players_needed: 1,
       level: "Débutant",
       visibility: "public",
       validation_mode: "automatic",
@@ -92,10 +91,12 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
       user: @organizer,
       sport: @sport
     )
-    # On passe à 0 en bypassant les validations pour simuler un match sans place
-    @full_match.update_column(:player_left, 0)
     @full_match.match_users.create!(
       user: @organizer, role: "organisateur", status: "approved"
+    )
+    # L'unique place recherchée est prise par un joueur confirmé → match complet
+    @full_match.match_users.create!(
+      user: @player2, role: "joueur", status: "approved"
     )
 
     # Match réservé aux femmes
@@ -103,7 +104,7 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
       title: "Match Féminin Test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 22, min: 0),
-      player_left: 4,
+      players_needed: 4,
       level: "Débutant",
       visibility: "public",
       validation_mode: "automatic",
@@ -208,7 +209,6 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
   test "DELETE supprime l'inscription si propriétaire du MatchUser" do
     sign_in @player
     mu = @match.match_users.create!(user: @player, role: "joueur", status: "approved")
-    @match.decrement!(:player_left)
 
     assert_difference "MatchUser.count", -1 do
       delete match_match_user_path(@match, mu)
@@ -298,7 +298,7 @@ class MatchUsersControllerTest < ActionDispatch::IntegrationTest
       title: "Match Équipe Confirm",
       date: Date.tomorrow,
       time: Time.current.change(hour: 17, min: 0),
-      player_left: 3,
+      players_needed: 3,
       level: "Débutant",
       visibility: "private",
       validation_mode: "automatic",

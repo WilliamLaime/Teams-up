@@ -1,0 +1,8 @@
+<%# Point de notification "nouveau membre" affiché à côté du lien "Mes équipes".
+    Rendu au chargement de la navbar (local user = current_user) ET poussé en
+    temps réel via broadcast_update_to (local user = le capitaine ciblé).
+    Les wrappers à id fixe (#navbar-teams-dot / #navbar-teams-dot-mobile) sont
+    dans _navbar.html.erb. %>
+<% if user&.has_new_captained_members? %>
+  <span class="navbar-admin-dot navbar-admin-dot--inline" aria-label="Nouveau membre dans une équipe"></span>
+<% end %>

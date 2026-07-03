@@ -28,7 +28,7 @@ class MatchWebPushJobTest < ActiveJob::TestCase
       title:       "Match push test",
       date:        future_date.to_date,
       time:        future_date.strftime("%H:%M"),
-      player_left: 5,
+      players_needed: 5,
       level:       "Tout niveau",
       place:       "Paris",
       visibility:  "public"
@@ -61,7 +61,7 @@ class MatchWebPushJobTest < ActiveJob::TestCase
       title:       "Match privé",
       date:        future_date.to_date,
       time:        future_date.strftime("%H:%M"),
-      player_left: 2,
+      players_needed: 2,
       level:       "Tout niveau",
       place:       "Paris",
       visibility:  "private"  # ← privé : le job doit court-circuiter dès la ligne 2 de perform
@@ -105,7 +105,7 @@ class MatchWebPushJobTest < ActiveJob::TestCase
       title:       "Match sans sport",
       date:        future_date.to_date,
       time:        future_date.strftime("%H:%M"),
-      player_left: 3,
+      players_needed: 3,
       level:       "Tout niveau",
       place:       "Bordeaux",
       visibility:  "public"

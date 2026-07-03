@@ -26,7 +26,7 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
       title: "Match Messages Test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 18, min: 0),
-      player_left: 4,
+      players_needed: 4,
       level: "Débutant",
       visibility: "public",
       validation_mode: "automatic",

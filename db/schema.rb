@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_03_102500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -82,6 +82,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
     t.index ["match_id"], name: "index_avis_on_match_id"
     t.index ["mutual"], name: "index_avis_on_mutual"
     t.index ["reviewed_user_id", "created_at"], name: "index_avis_on_reviewed_user_id_created_at"
+    t.index ["reviewed_user_id", "mutual"], name: "index_avis_on_reviewed_user_id_mutual"
     t.index ["reviewed_user_id"], name: "index_avis_on_reviewed_user_id"
     t.index ["reviewer_id", "reviewed_user_id", "match_id"], name: "index_avis_on_reviewer_id_and_reviewed_user_id_and_match_id", unique: true
     t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"
@@ -169,6 +170,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
     t.float "pin_longitude"
     t.string "place"
     t.integer "player_left"
+    t.integer "players_needed"
     t.integer "players_present"
     t.integer "price_per_player", default: 0
     t.string "private_token"
@@ -498,6 +500,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
   create_table "teams", force: :cascade do |t|
     t.text "badge_svg"
     t.bigint "captain_id", null: false
+    t.datetime "captain_members_seen_at"
     t.string "cover_position", default: "50% 50%"
     t.float "cover_zoom", default: 1.0
     t.datetime "created_at", null: false

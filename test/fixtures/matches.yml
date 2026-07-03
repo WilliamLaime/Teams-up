@@ -6,6 +6,7 @@ one:
   slug: match-de-test-fixture-one
   date: <%= Date.today + 1.day %>
   time: "18:00:00"
+  players_needed: 4
   player_left: 4
   level: "Débutant"
   visibility: public

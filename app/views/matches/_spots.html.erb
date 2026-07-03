@@ -1,0 +1,57 @@
+<%# =====================================================
+    BLOC "PLACES" D'UN MATCH — ratio inscrits/total + places libres
+
+    Diffusé en TEMPS RÉEL via Turbo Stream : la div racine porte l'id
+    ciblé par Match#broadcast_spots (broadcast_replace_to). À chaque
+    join / acceptation / refus / départ / promotion, ce bloc est
+    re-rendu et remplacé chez tous les visiteurs abonnés (turbo_stream_from
+    @match dans show.html.erb).
+
+    IMPORTANT : ce partial ne dépend QUE de `match` (aucun current_user).
+    Le bouton "Rejoindre" (spécifique au visiteur) reste HORS de ce partial
+    dans show.html.erb, sinon il serait faussé pour les autres visiteurs.
+    ===================================================== %>
+<div id="match_spots_<%= match.id %>">
+
+  <%# Phrase accrocheuse selon le nombre de places restantes %>
+  <% if match.player_left == 1 %>
+    <p class="match-spots-hook match-spots-hook--urgent">Dernière chance !</p>
+  <% elsif match.player_left == 2 %>
+    <p class="match-spots-hook match-spots-hook--warning">Presque complet !</p>
+  <% elsif match.player_left == 3 %>
+    <p class="match-spots-hook match-spots-hook--notice">Dépêchez-vous !</p>
+  <% end %>
+
+  <div class="match-spots-display">
+
+    <%# Ratio vivant "inscrits / total" — le numérateur GRANDIT à chaque
+        joueur accepté, le nombre de places libres plus bas diminue d'autant.
+        Ex : 1/18 (17 libres) → 2/18 (16 libres) quand un joueur rejoint.
+        • Libre         : présents / (présents + manquants)
+        • Autres formats : inscrits (orga + approuvés + sur place) / total
+        Comptage centralisé dans le modèle (Match#secured_players_count). %>
+    <div class="match-spots-fraction">
+      <% if match.libre? && match.players_present.present? %>
+        <% total_libre = match.players_present + match.player_left.to_i %>
+        <%= match.players_present %><span class="match-spots-sep">/</span><%= total_libre %>
+      <% else %>
+        <% secured = match.secured_players_count %>
+        <%= secured %><span class="match-spots-sep">/</span><%= secured + match.player_left.to_i %>
+      <% end %>
+    </div>
+
+    <%# Nombre de places restantes — ou statut si match complet/terminé %>
+    <div class="match-spots-label">
+      <% if match.completed? %>
+        <span style="color:var(--theme-text-muted);">Match terminé</span>
+      <% elsif match.full? %>
+        <span style="color:#ff6b6b;">Complet</span>
+      <% else %>
+        <%= match.player_left %>
+        place<%= match.player_left > 1 ? "s" : "" %>
+        libre<%= match.player_left > 1 ? "s" : "" %>
+      <% end %>
+    </div>
+
+  </div>
+</div>

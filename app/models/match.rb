@@ -152,10 +152,22 @@ class Match < ApplicationRecord
   validates :level, presence: true
   validate :level_valid_for_sport
 
-  # Validation : nombre de joueurs manquants obligatoire, entier, minimum 1
-  validates :player_left,
+  # Validation : capacité cible (joueurs recherchés via l'app) obligatoire, entier, minimum 1.
+  # `player_left` (places restantes) n'est plus saisi : il est DÉRIVÉ de players_needed
+  # moins les joueurs confirmés (voir recompute_player_left!).
+  validates :players_needed,
             presence: true,
             numericality: { only_integer: true, greater_than: 0, message: "doit être au moins 1" }
+
+  # Recalcule les places restantes dès que la capacité cible change
+  # (création via new/create, ou édition par l'organisateur).
+  # update_column ne redéclenche pas les callbacks → aucune récursion.
+  after_save :recompute_player_left!, if: :saved_change_to_players_needed?
+
+  # Rafraîchit le bloc "places" en temps réel quand l'organisateur modifie la
+  # capacité, le format ou le nombre de présents (Libre) → le total du ratio change.
+  after_update_commit :broadcast_spots,
+                      if: -> { saved_change_to_players_needed? || saved_change_to_format? || saved_change_to_players_present? }
 
   # Validation : joueurs présents obligatoire uniquement pour le format Libre
   validates :players_present,
@@ -203,9 +215,69 @@ class Match < ApplicationRecord
     match_users.find_by(role: "organisateur")
   end
 
+  # Nombre de joueurs CONFIRMÉS occupant une place (approved, hors organisateur).
+  # Les demandes "pending" (validation manuelle) et "waiting" (file d'attente)
+  # ne comptent pas tant qu'elles ne sont pas approuvées.
+  def confirmed_players_count
+    match_users.where(status: "approved").where.not(role: "organisateur").count
+  end
+
+  # Recalcule et persiste `player_left` (places restantes) à partir de la source de vérité :
+  # capacité cible immuable − joueurs confirmés, borné à 0.
+  # Appelé par les callbacks de MatchUser (join/quit/approve/reject/confirm/promotion)
+  # et à l'édition de la cible → compteur self-healing, insensible aux dérives.
+  # update_column : écriture atomique sans valider ni relancer les callbacks.
+  def recompute_player_left!
+    update_column(:player_left, [players_needed.to_i - confirmed_players_count, 0].max)
+  end
+
   # Retourne vrai si le match est complet (plus de places disponibles)
   def full?
     player_left.to_i <= 0
+  end
+
+  # ── Ratio de places affiché "inscrits / total" ─────────────────────────────
+  # Source de vérité partagée par la vue initiale ET le partial diffusé en
+  # temps réel (matches/_spots). Le numérateur (secured_players_count) GRANDIT
+  # à chaque joueur accepté ; player_left (places libres) diminue d'autant.
+  # Ex (18 joueurs) : 1/18 (17 libres) → 2/18 (16 libres) → …
+
+  # Total de joueurs visé par un format chiffré (ex "6v6" → 12), sinon nil.
+  def format_total
+    return nil unless format.present? && format.match?(/\d+v\d+/i)
+
+    format.scan(/\d+/).map(&:to_i).sum
+  end
+
+  # Joueurs occupant une place dans le grid : approuvés + organisateur.
+  # `where` interroge toujours la base → valeur fraîche même en broadcast.
+  def approved_including_organizer_count
+    match_users.where("status = ? OR role = ?", "approved", "organisateur").count
+  end
+
+  # Joueurs "sur place" (sans compte app), déduits du total d'un format chiffré.
+  def irl_players_count
+    total = format_total
+    return 0 unless total
+
+    [total - approved_including_organizer_count - player_left.to_i, 0].max
+  end
+
+  # Numérateur du ratio = inscrits app (organisateur inclus) + joueurs sur place.
+  def secured_players_count
+    approved_including_organizer_count + irl_players_count
+  end
+
+  # Diffuse le bloc "places" à jour à tous les visiteurs abonnés (turbo_stream_from
+  # @match). Appelé après chaque variation du nombre de joueurs (cf callbacks
+  # MatchUser) et après édition de la capacité/format par l'organisateur.
+  def broadcast_spots
+    broadcast_replace_to(
+      self,
+      target: "match_spots_#{id}",
+      partial: "matches/spots",
+      locals: { match: self }
+    )
   end
 
   # Retourne vrai si le match a lieu dans moins de 2 heures (et n'est pas encore passé)

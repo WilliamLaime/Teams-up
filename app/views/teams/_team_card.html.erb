@@ -25,7 +25,15 @@
 
     <%# Infos %>
     <div class="team-card-body">
-      <h3 class="team-card-name"><%= team.name %></h3>
+      <h3 class="team-card-name">
+        <%= team.name %>
+        <%# Point "nouveau membre" — visible uniquement par le capitaine concerné %>
+        <% if team.has_new_members_for_captain?(current_user) %>
+          <span class="navbar-admin-dot"
+                aria-label="Nouveau membre a rejoint cette équipe"
+                style="display:inline-block;vertical-align:middle;margin-left:6px;"></span>
+        <% end %>
+      </h3>
 
       <%# Rôle de l'user dans cette équipe %>
       <% tm = team.team_members.find { |m| m.user_id == current_user.id } %>

@@ -24,12 +24,25 @@
      data-user-id="<%= message.user_id %>">
 
   <%# Avatar : photo de profil ou initiales colorées (caché pour mes propres messages via CSS)
-      Cliquable → profil public de l'expéditeur. data-turbo-frame="_top" : navigation pleine
-      page même si le message est dans la fenêtre de chat (turbo-frame). %>
+      Cliquable → profil public de l'expéditeur.
+      • data-action goToProfile : ferme d'abord la modale du sticky chat PUIS navigue
+        (sinon, le conteneur étant data-turbo-permanent, la modale garde sa classe .show
+        et reste affichée après la navigation Turbo — il fallait recharger pour la fermer).
+      • data-turbo="false" : indispensable. Si on laissait Turbo intercepter le clic,
+        une visite Turbo déclencherait turbo:before-render → dispose() de la modale EN
+        PLEINE fermeture → backdrop orphelin collé à l'écran (bug Bootstrap+Turbo). En
+        désactivant Turbo, goToProfile ferme la modale proprement (attend hidden.bs.modal)
+        puis fait la navigation pleine page lui-même.
+      • On conserve le link_to (href réel) : clic droit / clic-milieu "ouvrir dans un
+        onglet" et fallback sans JS fonctionnent toujours. %>
   <%= link_to user_profil_path(message.user),
       class: "chat-avatar-link",
       title: "Voir le profil de #{sender_name}",
-      data: { turbo_frame: "_top" } do %>
+      data: {
+        turbo: false,
+        action: "click->sticky-chat#goToProfile",
+        url: user_profil_path(message.user)
+      } do %>
     <div class="chat-avatar" style="<%= has_avatar ? '' : "background-color: #{user_color};" %>">
       <% if has_avatar %>
         <%# blob.url = URL Cloudinary directe (fonctionne aussi dans les broadcasts Turbo Stream) %>

@@ -24,7 +24,7 @@ class MatchChatChannelTest < ActionCable::Channel::TestCase
 
   # Crée un Match avec tous les champs requis par les validations :
   #   - level: "Tout niveau" → passe level_valid_for_sport (backward compat)
-  #   - player_left: 5 → passe validates :player_left, greater_than: 0
+  #   - players_needed: 5 → passe validates :player_left, greater_than: 0
   #   - date: Date.tomorrow + time futur → passe match_must_be_at_least_30min_in_future
   def make_match(user)
     sport = Sport.create!(
@@ -39,7 +39,7 @@ class MatchChatChannelTest < ActionCable::Channel::TestCase
       time:        "15:00:00",
       place:       "Terrain de test",
       level:       "Tout niveau",
-      player_left: 5
+      players_needed: 5
     )
   end
 
