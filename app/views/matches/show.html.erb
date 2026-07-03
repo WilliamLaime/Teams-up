@@ -29,6 +29,12 @@
   <% end %>
 <% end %>
 
+<%# Abonnement temps réel : place à jour (ratio inscrits/total + places libres)
+    poussée à TOUS les visiteurs de la page dès qu'un joueur rejoint, est
+    accepté/refusé, part, ou est promu depuis la file d'attente.
+    Cible : #match_spots_<id> (voir Match#broadcast_spots + partial matches/_spots). %>
+<%= turbo_stream_from @match %>
+
 <%# ── Données calculées une seule fois en haut ── %>
 <%
   # Image de couverture via le helper SportImagesHelper (URLs Cloudinary)
@@ -724,53 +730,12 @@
             ────────────────────────────────────── %>
         <div class="match-block match-block-join">
 
-          <%# Phrase accrocheuse selon le nombre de places restantes %>
-          <% if @match.player_left == 1 %>
-            <p class="match-spots-hook match-spots-hook--urgent">Dernière chance !</p>
-          <% elsif @match.player_left == 2 %>
-            <p class="match-spots-hook match-spots-hook--warning">Presque complet !</p>
-          <% elsif @match.player_left == 3 %>
-            <p class="match-spots-hook match-spots-hook--notice">Dépêchez-vous !</p>
-          <% end %>
-
-          <%# Bloc format + places libres
-              Affiche le format du match (ex : "6v6") comme élément principal
-              et le nombre de places libres en dessous
-              Format Libre : affiche présents / total (présents + manquants) %>
-          <div class="match-spots-display">
-
-            <%# Format affiché en grand ─────────────────────────────────────────
-                Libre : "présents / total" (ex : "3/8")
-                Autre format : label du format (ex : "5v5")
-                Pas de format : approuvés / total estimé (fallback) %>
-            <div class="match-spots-fraction">
-              <% if @match.libre? && @match.players_present.present? %>
-                <%# Format Libre : présents / (présents + manquants) %>
-                <% total_libre = @match.players_present + @match.player_left.to_i %>
-                <%= @match.players_present %><span class="match-spots-sep">/</span><%= total_libre %>
-              <% elsif @match.format.present? %>
-                <%= @match.format %>
-              <% else %>
-                <%# Fallback : approuvés / total estimé %>
-                <% total_est = approved_users.count + @match.player_left.to_i %>
-                <%= approved_users.count %><span class="match-spots-sep">/</span><%= total_est %>
-              <% end %>
-            </div>
-
-            <%# Nombre de places restantes — ou statut si match terminé %>
-            <div class="match-spots-label">
-              <% if @match.completed? %>
-                <span style="color:var(--theme-text-muted);">Match terminé</span>
-              <% elsif @match.full? %>
-                <span style="color:#ff6b6b;">Complet</span>
-              <% else %>
-                <%= @match.player_left %>
-                place<%= @match.player_left > 1 ? "s" : "" %>
-                libre<%= @match.player_left > 1 ? "s" : "" %>
-              <% end %>
-            </div>
-
-          </div>
+          <%# Bloc "places" (ratio inscrits/total + places libres).
+              Extrait dans un partial pour être diffusé en temps réel :
+              show s'abonne via `turbo_stream_from @match` (voir plus haut) et
+              Match#broadcast_spots remplace #match_spots_<id> à chaque
+              variation du nombre de joueurs. %>
+          <%= render "matches/spots", match: @match %>
 
           <%# Action selon le statut de l'utilisateur %>
           <% if user_signed_in? %>
