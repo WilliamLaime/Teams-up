@@ -37,7 +37,7 @@ class Notification < ApplicationRecord
     # → Solid Cable → client en ~100 ms, SANS passer par Solid Queue.
     html = ApplicationController.render(
       partial: "shared/notification_bell",
-      locals:  { current_user: user }
+      locals: { current_user: user }
     )
 
     # On utilise broadcast_update_to (et non broadcast_replace_to) pour conserver
@@ -45,11 +45,11 @@ class Notification < ApplicationRecord
     # broadcast_replace_to remplacerait le frame lui-même → son id disparaît
     # → les broadcasts suivants ne trouvent plus la cible → cloche figée.
     broadcast_update_to(
-      [user, :notifications],   # canal unique par utilisateur
+      [user, :notifications], # canal unique par utilisateur
       target: "notification_bell",
-      html:   html
+      html: html
     )
-  rescue => e
+  rescue StandardError => e
     # Filet de sécurité : si le rendu ou le broadcast échoue, on logue sans
     # propager l'exception — la notification est déjà sauvegardée en base.
     Rails.logger.error("[Notification] Broadcast cloche échoué (user #{user_id}) : #{e.class} — #{e.message}")

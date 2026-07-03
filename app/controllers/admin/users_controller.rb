@@ -4,7 +4,7 @@
 module Admin
   class UsersController < BaseController
     # Avant chaque action sur un user spécifique, on charge le user
-    before_action :set_user, only: [:confirm, :resend_confirmation]
+    before_action :set_user, only: %i[confirm resend_confirmation]
 
     # GET /admin/users?q=dorothee
     # Recherche un utilisateur par email ou nom
