@@ -16,6 +16,12 @@ namespace :db do
     seed_custom_venues
   end
 
+  desc "Insère les sports manquants (joué à chaque déploiement)"
+  task seed_sports: :environment do
+    load Rails.root.join("db", "sports.rb")
+    seed_sports
+  end
+
   desc "Importe les établissements sportifs depuis db/DB Etablissement.csv"
   task import_venues: :environment do
     # Chemin vers le fichier CSV

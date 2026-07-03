@@ -62,6 +62,11 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
 
 **Pièges** : `home.html.erb` switche sur `name` (les autres endroits sur `slug`) ; le dossier `app/assets/images/sports/` est vide en local (images uniquement sur Cloudinary) ; le `cd` persiste entre appels Bash (utiliser des chemins absolus pour `bin/rails`).
 
+## Sports absents en prod (Railway) alors que présents en dev
+
+**Cause racine** : un nouveau sport n'est ajouté que dans `db/seeds.rb`, mais l'entrypoint Docker (`bin/docker-entrypoint`) ne joue **jamais** `db:seed` en déploiement — seulement `db:prepare` (migrations) + `db:seed_custom_venues`. Donc le sport n'existe pas dans la base Railway. Ce n'est **pas** un problème de migration (un ajout de sport n'en crée aucune).
+
+**Fix durable (en place)** : liste des sports extraite dans `db/sports.rb` (constante `SPORTS` + méthode idempotente `seed_sports`, même pattern que `db/custom_venues.rb`). Chargée par `db/seeds.rb` **et** par la tâche `rails db:seed_sports`, elle-même appelée dans `bin/docker-entrypoint`. Tout nouveau sport remonte désormais automatiquement à chaque déploiement.
 ## CI `scan_ruby` rouge : `--ensure-latest` de Brakeman masquait `bundler-audit`
 
 **Symptôme** : `scan_ruby` échouait sur `master` depuis plusieurs merges (#348→#350), qu'on attribuait aux 2 warnings XSS `badge_svg`.

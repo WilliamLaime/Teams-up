@@ -270,22 +270,7 @@ puts "✅ #{Achievement.count} achievements en base."
 
 puts "Création des sports..."
 
-sports_data = [
-  { name: "Football",   icon: "⚽", slug: "football"   },
-  { name: "Tennis",     icon: "🎾", slug: "tennis"     },
-  { name: "Padel",      icon: "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061667/sports/misc/padel.png", slug: "padel"      },
-  { name: "Volleyball", icon: "🏐", slug: "volleyball" },
-  { name: "Basketball", icon: "🏀", slug: "basketball" },
-  { name: "Handball",   icon: "🤾", slug: "handball"   },
-  { name: "Badminton",  icon: "🏸", slug: "badminton"  },
-  { name: "Ping-Pong",  icon: "🏓", slug: "ping-pong"  }
-]
-
-sports_data.each do |sport|
-  Sport.find_or_create_by!(slug: sport[:slug]) do |s|
-    s.name = sport[:name]
-    s.icon = sport[:icon]
-  end
-end
-
-puts "✅ #{Sport.count} sports en base."
+# Source unique de vérité pour la liste des sports (cf. db/sports.rb).
+# Le même fichier est rejoué à chaque déploiement via `rails db:seed_sports`.
+load Rails.root.join("db", "sports.rb")
+seed_sports
