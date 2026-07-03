@@ -71,9 +71,11 @@
         <li class="nav-item">
           <% teams_active = request.path.start_with?('/teams') %>
           <%= link_to teams_path,
-              class: "nav-link #{teams_active ? 'active' : ''}",
+              class: "nav-link d-inline-flex align-items-center gap-1 #{teams_active ? 'active' : ''}",
               "aria-current": (teams_active ? "page" : nil) do %>
             Mes équipes
+            <%# Point "nouveau membre" (capitaine) — mis à jour en temps réel %>
+            <span id="navbar-teams-dot"><%= render "shared/navbar_teams_dot", user: current_user %></span>
           <% end %>
         </li>
       <% end %>
@@ -378,6 +380,8 @@
             "aria-current": (teams_active ? "page" : nil) do %>
           <i data-lucide="users" style="width:17px;height:17px;" aria-hidden="true"></i>
           Mes équipes
+          <%# Point "nouveau membre" (capitaine) — version drawer mobile %>
+          <span id="navbar-teams-dot-mobile" class="ms-1"><%= render "shared/navbar_teams_dot", user: current_user %></span>
         <% end %>
 
         <% blog_active = request.path.start_with?('/blog') %>

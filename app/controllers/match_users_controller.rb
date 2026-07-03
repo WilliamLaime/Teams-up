@@ -80,7 +80,7 @@ class MatchUsersController < ApplicationController
     authorize @match_user
 
     # Garde idempotente : si le joueur n'est plus en attente (déjà traité),
-    # on ne fait rien pour éviter de décrémenter player_left plusieurs fois.
+    # on ne fait rien (évite un double traitement en cas de double-clic).
     # Cela arrive quand l'organisateur clique plusieurs fois car la modal
     # de notification (newRequestModal) ne se met pas à jour visuellement.
     return redirect_to @match unless @match_user.pending?
@@ -90,16 +90,16 @@ class MatchUsersController < ApplicationController
     flash_msg = nil
 
     # with_lock : SELECT FOR UPDATE sur le match — garantit qu'un seul organisateur
-    # peut approuver et décrémenter player_left à la fois (ex: double-clic ou appel concurrent)
+    # peut approuver à la fois (ex: double-clic ou appel concurrent). Les places
+    # restantes sont recalculées automatiquement par le callback de MatchUser.
     @match.with_lock do
-      if @match.full?
-        # Si le match est complet, on place le joueur en liste d'attente plutôt que de l'approuver
+      if @match.confirmed_players_count >= @match.players_needed.to_i
+        # Match complet : on place le joueur en liste d'attente plutôt que de l'approuver
         @match_user.update(status: "waiting")
         flash_msg = "#{approved_user.display_name} a été placé en liste d'attente (match complet)."
       else
-        # Place normale disponible : on approuve et on décrémente le compteur
+        # Place disponible : on approuve (le callback recalcule player_left)
         @match_user.update(status: "approved")
-        @match.decrement!(:player_left)
         flash_msg = "#{approved_user.display_name} a été approuvé !"
       end
     end
@@ -325,13 +325,13 @@ class MatchUsersController < ApplicationController
       next_in_line = @match.match_users.where(status: "waiting").order(created_at: :asc).first
 
       if next_in_line
-        # Promeut automatiquement le joueur — player_left reste à 0 car la place est reprise
+        # Promeut automatiquement le joueur : son passage à "approved" déclenche
+        # le recalcul de player_left (la place reste occupée, reprise par le promu).
         next_in_line.update(status: "approved")
         promoted_record = next_in_line
-      else
-        # Personne en attente : on rend la place disponible
-        @match.increment!(:player_left)
       end
+      # Si personne n'attend, aucune action ici : le départ du joueur (destroy)
+      # déclenche à son tour le recalcul de player_left → la place est rendue.
     end
 
     # Notifications en dehors du verrou (non critiques pour la cohérence des données)
@@ -382,21 +382,17 @@ class MatchUsersController < ApplicationController
     status_assigned = nil
 
     # with_lock ouvre une transaction et pose un SELECT FOR UPDATE sur la ligne du match.
-    # Un seul process à la fois peut lire puis modifier player_left — plus de race condition.
+    # Un seul process à la fois évalue le nombre de confirmés puis inscrit — plus de
+    # race condition. player_left est recalculé par le callback de MatchUser au save.
     @match.with_lock do
-      if @match.full?
+      if @match.confirmed_players_count >= @match.players_needed.to_i
         # La place a été prise par un autre joueur entre le check initial (create) et maintenant
         @match_user.status = "waiting"
         @match_user.save
         status_assigned = :waiting
       else
         @match_user.status = "approved"
-        if @match_user.save
-          @match.decrement!(:player_left)
-          status_assigned = :approved
-        else
-          status_assigned = :error
-        end
+        status_assigned = @match_user.save ? :approved : :error
       end
     end
 

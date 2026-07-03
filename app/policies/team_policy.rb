@@ -28,6 +28,11 @@ class TeamPolicy < ApplicationPolicy
     captain?
   end
 
+  # Seul le capitaine peut marquer les nouveaux membres comme vus
+  def mark_members_seen?
+    captain?
+  end
+
   # Tout membre non-captain peut quitter l'équipe
   def leave?
     member? && !captain?

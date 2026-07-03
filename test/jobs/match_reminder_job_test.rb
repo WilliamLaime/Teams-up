@@ -39,7 +39,7 @@ class MatchReminderJobTest < ActiveJob::TestCase
       title:           "Match test rappel",
       date:            future_date.to_date,
       time:            future_date.strftime("%H:%M"),
-      player_left:     5,
+      players_needed:     5,
       level:           "Tout niveau",
       place:           "Paris",
       validation_mode: "automatic",
@@ -79,7 +79,7 @@ class MatchReminderJobTest < ActiveJob::TestCase
       title:       "Match sans joueurs",
       date:        future_date.to_date,
       time:        future_date.strftime("%H:%M"),
-      player_left: 2,
+      players_needed: 2,
       level:       "Tout niveau",
       place:       "Lyon",
       visibility:  "public"
@@ -132,7 +132,7 @@ class MatchReminderJobTest < ActiveJob::TestCase
       title:       "Match passé",
       date:        past_date.to_date,
       time:        past_date.strftime("%H:%M"),
-      player_left: 3,
+      players_needed: 3,
       level:       "Tout niveau",
       place:       "Marseille",
       visibility:  "public"

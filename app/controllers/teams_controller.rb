@@ -2,7 +2,7 @@ class TeamsController < ApplicationController
   # Pagination serveur de la section « explorer » (toutes les autres équipes).
   include Pagy::Backend
 
-  before_action :set_team, only: %i[show edit update destroy transfer_captain leave join]
+  before_action :set_team, only: %i[show edit update destroy transfer_captain leave join mark_members_seen]
 
   # GET /teams — mes équipes (mises en avant) + toutes les autres (à rejoindre)
   def index
@@ -129,6 +129,9 @@ class TeamsController < ApplicationController
       @team.team_members.find_by(user: new_captain).update!(role: "captain")
       # Met à jour la référence captain sur l'équipe
       @team.update!(captain: new_captain)
+      # Repart d'une ardoise propre : le nouveau capitaine ne voit pas de point
+      # pour les membres arrivés avant son arrivée au capitanat.
+      @team.update_column(:captain_members_seen_at, Time.current)
     end
 
     # Notifie le nouveau captain
@@ -184,6 +187,25 @@ class TeamsController < ApplicationController
       redirect_to teams_path, notice: "Demande envoyée au capitaine de \"#{@team.name}\" !"
     else
       redirect_to teams_path, alert: invitation.errors.full_messages.to_sentence
+    end
+  end
+
+  # PATCH /teams/:id/mark_members_seen — le capitaine efface le point "nouveau membre"
+  def mark_members_seen
+    authorize @team
+
+    @team.update_column(:captain_members_seen_at, Time.current)
+
+    respond_to do |format|
+      # Rafraîchit en direct le point navbar (les deux versions) + retire le bouton
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.update("navbar-teams-dot", partial: "shared/navbar_teams_dot", locals: { user: current_user }),
+          turbo_stream.update("navbar-teams-dot-mobile", partial: "shared/navbar_teams_dot", locals: { user: current_user }),
+          turbo_stream.remove("team-new-members-banner")
+        ]
+      end
+      format.html { redirect_to @team, notice: "Nouveaux membres marqués comme vus." }
     end
   end
 

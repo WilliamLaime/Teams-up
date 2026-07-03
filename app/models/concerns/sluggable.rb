@@ -24,7 +24,16 @@ module Sluggable
   SLUG_BASE_MAX_LENGTH = 60
 
   included do
+    # Deux hooks pour garantir l'invariant « slug toujours présent » (colonne NOT NULL) :
+    #   - before_validation : le slug existe avant le contrôle de présence ci-dessous
+    #     (chemin normal), et reste modifiable/inspectable pendant la validation.
+    #   - before_create : filet de sécurité pour les écritures qui sautent la
+    #     validation (save(validate: false), utilisé en test pour créer des matchs
+    #     passés). Sans lui, le slug resterait nil et violerait la contrainte NOT NULL.
+    # generate_slug est idempotent (return si slug déjà présent) → le double appel
+    # sur le chemin normal est un no-op.
     before_validation :generate_slug, on: :create
+    before_create :generate_slug
     validates :slug, presence: true, uniqueness: true
   end
 
