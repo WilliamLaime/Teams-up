@@ -2,11 +2,15 @@
 # Le callback after_create ajoute automatiquement le captain comme TeamMember,
 # mais dans les fixtures les callbacks ne s'exécutent PAS — on devra donc
 # créer les team_members manuellement dans les fixtures.
+# slug explicite : les fixtures insèrent en base sans passer par les callbacks
+# du modèle (qui génèrent normalement le slug), or la colonne est NOT NULL + unique.
 one:
   name: Les Testeurs
+  slug: les-testeurs-fixture
   captain: one
 
 # Équipe secondaire pour tester les cas "non-captain"
 two:
   name: Les Adversaires
+  slug: les-adversaires-fixture
   captain: two

@@ -114,8 +114,25 @@ export default class extends Controller {
     // Récupère la map sport_id → [{label, css}] depuis le data attribute
     const map = JSON.parse(this.element.dataset.sportsLevels || "{}")
 
-    // 1 sport sélectionné → sa grille complète ; fallback sur clé "0" (sport actif du contexte)
-    const levels = (sportIds.length > 0 ? map[String(sportIds[0])] : null) || map["0"] || []
+    // Construit la liste des niveaux selon le nombre de sports cochés :
+    //   - 0 sport  → fallback clé "0" (sport actif du contexte)
+    //   - 1 sport  → sa grille complète
+    //   - N sports → union dédupliquée (par label), dans l'ordre des sports
+    let levels
+    if (sportIds.length === 0) {
+      levels = map["0"] || []
+    } else {
+      const seen = new Set()
+      levels = []
+      sportIds.forEach(id => {
+        (map[String(id)] || []).forEach(lvl => {
+          if (!seen.has(lvl.label)) {
+            seen.add(lvl.label)
+            levels.push(lvl)
+          }
+        })
+      })
+    }
 
     // Conserve les labels actuellement cochés pour les re-cocher si présents dans la nouvelle liste
     const selected = new Set(this.checkboxTargets.filter(cb => cb.checked).map(cb => cb.value))

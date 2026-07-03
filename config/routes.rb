@@ -66,6 +66,10 @@ Rails.application.routes.draw do
       patch :transfer_captain
       # DELETE /teams/:id/leave → quitter l'équipe (membres non-captain)
       delete :leave
+      # POST /teams/:id/join → demander à rejoindre l'équipe (validation par le capitaine)
+      post :join
+      # PATCH /teams/:id/mark_members_seen → le capitaine efface le point "nouveau membre"
+      patch :mark_members_seen
     end
 
     # Invitations imbriquées dans l'équipe
@@ -121,7 +125,8 @@ Rails.application.routes.draw do
       member do
         patch :approve
         patch :reject
-        patch :confirm  # Membre d'équipe qui confirme sa propre place (team match)
+        patch :confirm        # Membre d'équipe qui confirme sa propre place (team match)
+        patch :toggle_payment # Bascule le statut de paiement (organisateur ou joueur lui-même)
       end
     end
 

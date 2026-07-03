@@ -5,15 +5,18 @@
     Affiché avec un point BLEU (vs vert pour les matchs) pour différencier.
 %>
 
-<% last_msg = team.messages.last %>
+<%# last_msg / unread peuvent être fournis pré-calculés en locals (cf. _sticky_convo_item). %>
+<% last_msg = local_assigns.fetch(:last_msg) { team.messages.last } %>
 
 <%# Détermine si l'utilisateur a des messages non lus dans ce chat d'équipe
     Non lu = messages postés APRÈS son dernier chat_last_read_at %>
-<% unread = if team_member.chat_last_read_at.nil?
-               team.messages.exists?
-             else
-               team.messages.where("created_at > ?", team_member.chat_last_read_at).exists?
-             end %>
+<% unread = local_assigns.fetch(:unread) do
+     if team_member.chat_last_read_at.nil?
+       team.messages.exists?
+     else
+       team.messages.where("created_at > ?", team_member.chat_last_read_at).exists?
+     end
+   end %>
 
 <%# Conteneur de l'item — id ciblé par les broadcasts Turbo Stream %>
 <div class="sticky-chat-convo-item-wrapper" id="sticky-team-convo-<%= team.id %>">

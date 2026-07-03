@@ -27,7 +27,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 18, min: 0),
-      player_left: 4,
+      players_needed: 4,
       level: "Débutant",
       visibility: "public",
       validation_mode: "automatic",
@@ -107,7 +107,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match privé",
       date: Date.tomorrow,
       time: Time.current.change(hour: 19, min: 0),
-      player_left: 2,
+      players_needed: 2,
       level: "Débutant",
       visibility: "private",
       validation_mode: "automatic",
@@ -133,7 +133,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match privé avec token",
       date: Date.tomorrow,
       time: Time.current.change(hour: 20, min: 0),
-      player_left: 2,
+      players_needed: 2,
       level: "Débutant",
       visibility: "private",
       validation_mode: "automatic",
@@ -158,7 +158,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match privé organisateur",
       date: Date.tomorrow,
       time: Time.current.change(hour: 21, min: 0),
-      player_left: 2,
+      players_needed: 2,
       level: "Débutant",
       visibility: "private",
       validation_mode: "automatic",
@@ -193,6 +193,20 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  # Régression : sans sport actif (mode multisport « Tous les sports » où
+  # current_sport = nil), un sport doit tout de même être présélectionné.
+  # Sinon le JS (updateSport) ne génère aucun bouton de niveau ni format et
+  # le champ « Niveau requis » reste vide au chargement du formulaire.
+  test "GET /matches/new présélectionne un sport même sans sport actif" do
+    # @user n'a aucun sport ni current_sport_id → current_sport renvoie nil
+    sign_in @user
+    get new_match_path
+    assert_response :success
+    # Le placeholder ne doit PAS apparaître : un sport réel est présélectionné
+    assert_not_includes response.body, "Sélectionner un sport",
+                        "Aucun sport présélectionné → le champ Niveau resterait vide"
+  end
+
   # ════════════════════════════════════════════════════════════════════════════
   # POST /matches — création d'un match
   # ════════════════════════════════════════════════════════════════════════════
@@ -201,7 +215,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   test "POST /matches redirige vers login si non connecté" do
     post matches_path, params: {
       match: { title: "Test", date: Date.tomorrow, time: "18:00",
-               level: "Débutant", player_left: 4, sport_id: @sport.id,
+               level: "Débutant", players_needed: 4, sport_id: @sport.id,
                visibility: "public", validation_mode: "automatic",
                genre_restriction: "tous" }
     }
@@ -218,7 +232,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
           date: Date.tomorrow,
           time: "18:00",
           level: "Débutant",
-          player_left: 4,
+          players_needed: 4,
           sport_id: @sport.id,
           visibility: "public",
           validation_mode: "automatic",
@@ -240,7 +254,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
           date: Date.tomorrow,
           time: "18:00",
           level: "",         # level manquant → invalide
-          player_left: 0,    # 0 = invalide
+          players_needed: 0,    # 0 = invalide
           sport_id: @sport.id
         }
       }
@@ -259,7 +273,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
         date: Date.tomorrow,
         time: "18:00",
         level: "Débutant",
-        player_left: 4,
+        players_needed: 4,
         sport_id: @sport.id,
         visibility: "public",
         validation_mode: "automatic",
@@ -317,7 +331,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   test "PATCH /matches/:id réaffiche le formulaire (422) si params invalides" do
     sign_in @user
     patch match_path(@match), params: {
-      match: { player_left: -5 }  # valeur négative = invalide
+      match: { players_needed: -5 }  # valeur négative = invalide
     }
     assert_response :unprocessable_entity
   end

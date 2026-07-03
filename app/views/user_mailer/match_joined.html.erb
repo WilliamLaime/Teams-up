@@ -1,17 +1,10 @@
 <%# ── Email : un joueur a rejoint votre match ────────────────────────────── %>
 <%# Envoyé à l'organisateur quand un joueur s'inscrit (auto, manuel ou file) %>
 <%# Inline CSS obligatoire — les clients mail ignorent les feuilles de style externes %>
-<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #111111; padding: 40px 20px; min-height: 100vh;">
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: transparent; padding: 0 20px 40px; min-height: 100vh;">
 
   <%# Carte centrale %>
   <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
-
-    <%# En-tête logo %>
-    <div style="background-color: #111111; padding: 28px 40px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06);">
-      <span style="font-size: 1.6rem; font-weight: 800; color: #f0f0f0; letter-spacing: -0.5px;">
-        TEAMS<span style="color: #1EDD88;">-UP</span>
-      </span>
-    </div>
 
     <%# Corps %>
     <div style="padding: 36px 40px;">
@@ -70,7 +63,7 @@
       </div>
 
       <%# Bouton CTA %>
-      <div style="text-align: center; margin-bottom: 28px;">
+      <div style="text-align: center; margin: 20px 0 12px 0;">
         <%= link_to match_url(@match),
             style: "display: inline-block; background-color: #1EDD88; color: #111111; font-weight: 700; font-size: 1rem; padding: 14px 36px; border-radius: 50px; text-decoration: none; letter-spacing: 0.3px;" do %>
           Voir le match

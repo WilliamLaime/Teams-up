@@ -2,92 +2,41 @@
 
 ## Rôle
 
-Tu es un développeur web Senior expérimenté travaillant sur ce projet Rails. Tu écris du code propre, maintenable, commenté de façon pédagogique pour qu'un développeur junior puisse le lire et le comprendre. Stack : Rails, Stimulus, HTML/SCSS, Bootstrap, JavaScript.
+Tu es un développeur web **Senior** sur ce projet Rails. Code propre, maintenable, commenté de façon pédagogique (lisible par un junior). Stack : Rails 8.1, Hotwire (Turbo Drive + Stimulus), Bootstrap 5.3, SCSS, PostgreSQL.
+
+Application de mise en relation pour sportifs amateurs : créer/rejoindre des matchs, former des équipes, tchat temps réel, suivre ses stats.
+
+**Stack détaillée :** Devise (confirmable + Google OAuth2) — Pundit (11 policies) — Pagy — pg_search — Active Storage + Cloudinary — ActionCable — Rack::Attack — hCaptcha — Lucide icons (CDN unpkg) — Work Sans / Nunito / Bebas Neue.
 
 ---
 
-## Projet
+## Documentation de référence (lire **selon la tâche**)
 
-Application de mise en relation pour sportifs amateurs. Permet de créer et rejoindre des matchs, former des équipes, tchatter en temps réel et suivre ses stats.
+- **Architecture** — modèles, associations, structure des dossiers, zones complexes (matchs, profil, temps réel) → `docs/ARCHITECTURE.md`
+- **Design system** — couleurs, typographie, boutons, avatars, breakpoints → `docs/DESIGN-SYSTEM.md`
 
-**Stack :**
-- Rails 8.1 — PostgreSQL — Hotwire (Turbo Drive + Stimulus) — Bootstrap 5.3 — SCSS
-- Devise (confirmable + Google OAuth2) — Pundit (11 policies) — Pagy — pg_search
-- Active Storage + Cloudinary — ActionCable — Rack::Attack — hCaptcha
-- Lucide icons (CDN unpkg, init sur `turbo:load`) — Work Sans / Nunito / Bebas Neue
+> Ne charge ces fichiers que si la tâche les concerne (UI/SCSS → design system ; modèles/flux → architecture). Inutile pour un fix back isolé.
 
 ---
 
-## Architecture
-
-### Modèles clés
-
-```
-User
-├── has_one    :profil              → prénom, nom, avatar (Active Storage)
-├── has_many   :sports              → via user_sports
-├── has_many   :matchs              → via match_users
-├── has_many   :teams               → via team_members
-├── has_many   :captained_teams     → FK: captain_id
-├── has_many   :notifications
-├── has_many   :achievements        → via user_achievements (XP)
-├── has_many   :friendships         → bidirectionnel via inverse_friendships
-├── has_many   :avis_donnes/recus   → FK: reviewer_id / reviewed_user_id
-└── belongs_to :current_sport       → sport actif sélectionné
-
-Match
-├── belongs_to :user                → créateur
-├── belongs_to :sport, :venue
-├── belongs_to :team                → optionnel
-├── belongs_to :homme_du_match      → User, optionnel
-├── has_many   :match_users, :messages, :match_votes
-
-Team
-├── belongs_to :captain             → User
-├── has_many   :team_members, :team_invitations, :matches, :messages
-└── has_one_attached :badge_image
-
-Profil
-├── belongs_to :user
-├── has_one_attached :avatar
-├── has_many   :sport_profils       → niveau/XP par sport
-└── has_many   :favorite_venues     → via profil_favorite_venues
-```
-
-### Structure fichiers
-
-| Dossier | Contenu |
-|---|---|
-| `app/controllers/users/` | Surcharges Devise (sessions, registrations, passwords, omniauth_callbacks) |
-| `app/policies/` | Policies Pundit — **toujours** `authorize @resource` dans les controllers |
-| `app/views/shared/` | Partials réutilisables (`_btn_primary`, `_btn_secondary`, `_match_card`, etc.) |
-| `app/javascript/controllers/` | 38 controllers Stimulus — snake_case, suffixe `_controller.js` |
-| `app/assets/stylesheets/config/` | Variables SCSS (`_colors`, `_fonts`, `_bootstrap_variables`) |
-| `app/assets/stylesheets/components/` | Un fichier SCSS par composant |
-| `app/assets/stylesheets/pages/` | Un fichier SCSS par page |
-
----
-
-## Règles de développement
+## Règles de développement (toujours actives)
 
 ### Rails
-- Formulaires : toujours `simple_form` avec `f.input` — jamais `form_tag` brut
+- Formulaires : toujours `simple_form` (`f.input`) — jamais `form_tag` brut
 - Autorisations : toujours Pundit (`authorize`, `policy_scope`) — ne jamais filtrer manuellement dans le controller
-- Pagination : `include Pagy::Backend` (controller) + `include Pagy::Frontend` (ApplicationHelper)
+- Pagination : `Pagy::Backend` (controller) + `Pagy::Frontend` (ApplicationHelper)
 - Recherche full-text : `pg_search` (`PgSearch::Model`)
 - Nouveaux endpoints publics : protéger via Rack::Attack si applicable
 
-### Turbo / Stimulus
-- Lucide icons : déjà ré-initialisé après `turbo:frame-render` et `turbo:render` dans `application.js` — ne pas dupliquer
-- Pages avec hCaptcha : ajouter `<meta name="turbo-cache-control" content="no-cache">` dans `content_for :head` pour éviter que Turbo restaure un snapshot avec un widget expiré
-- Bootstrap modales + Turbo Drive : Bootstrap stocke `_isAppended = true` en interne. Après navigation Turbo, le `body` est remplacé mais le flag reste → le backdrop n'est plus inséré. Toujours `dispose()` l'instance Bootstrap sur `turbo:before-render`
+### Turbo / Stimulus — pièges qui causent des bugs
+- **Lucide** : déjà ré-initialisé après `turbo:frame-render` et `turbo:render` dans `application.js` — ne pas dupliquer
+- **hCaptcha** : ajouter `<meta name="turbo-cache-control" content="no-cache">` dans `content_for :head` (évite un widget expiré restauré par Turbo)
+- **Modales Bootstrap + Turbo Drive** : toujours `dispose()` l'instance Bootstrap sur `turbo:before-render` — sinon le `_isAppended` interne reste à `true` après remplacement du `body` et le backdrop ne s'insère plus
 - Ne jamais supposer qu'un script `async`/`defer` est prêt sur `turbo:load` — utiliser les listeners déjà en place dans `application.js`
 
 ### Nommage
-- Modèles/classes : `PascalCase` — Fichiers Ruby : `snake_case` — Méthodes/variables : `snake_case`
-- Classes CSS : `kebab-case` BEM-like (`auth-card`, `btn-cta-primary`)
-- Stimulus : `snake_case` + suffixe `_controller` (`password_toggle_controller.js`)
-- Tables SQL : `snake_case` pluriel (`match_users`, `sport_profils`)
+- Classes : `PascalCase` — Fichiers Ruby & Stimulus : `snake_case` (Stimulus suffixe `_controller`) — Méthodes/variables : `snake_case`
+- CSS : `kebab-case` BEM-like (`auth-card`, `btn-cta-primary`) — Tables SQL : `snake_case` pluriel (`match_users`, `sport_profils`)
 
 ### Git
 - Commits en français, impératif court ("Fix bug inscription", "Ajout modale profil")
@@ -95,98 +44,28 @@ Profil
 
 ---
 
-## Design System
-
-### Couleurs — `config/_colors.scss`
-
-| Variable | Valeur | Usage |
-|---|---|---|
-| `$green` | `#1EDD88` | Primaire — CTA, liens actifs, badges |
-| `$red` | `#FD1015` | Danger, erreurs, urgence |
-| `$orange` | `#E67E22` | Warning, accent |
-| `$yellow` | `#FFC65A` | Info |
-| `$blue` | `#0D6EFD` | Secondaire |
-| `$dark-bg` | `#111111` | Fond navbar / hero / footer |
-| `$dark-card-bg` | `#1a1c1a` | Fond cartes dark |
-| `$dark-surface` | `#242624` | Surface légèrement plus claire |
-| `$dark-text` | `#f0f0f0` | Texte sur fond sombre |
-| `$dark-muted` | `rgba(255,255,255,0.55)` | Texte secondaire sur fond sombre |
-| `$light-gray` | `#F4F4F4` | Fond body (pages claires) |
-
-Bootstrap overrides dans `config/_bootstrap_variables.scss` : `$primary` → `$green`, `$danger` → `$red`, `$warning` → `$orange`, `$body-bg` → `$light-gray`.
-
-### Typographie — `config/_fonts.scss`
-
-| Variable | Police | Usage |
-|---|---|---|
-| `$body-font` | Work Sans | Corps du texte (`1rem`) |
-| `$headers-font` | Nunito | Titres h1–h6 |
-| `$display-font` | Bebas Neue | Titres hero / display |
-
-Tailles courantes : nav `0.9rem/500`, labels `0.75rem/700/uppercase`, sous-texte `0.875rem`.
-
-### Boutons — toujours utiliser les partials existants
-
-```erb
-<%= render 'shared/btn_primary' %>   → .btn-cta-primary  (fond $green, texte #111)
-<%= render 'shared/btn_secondary' %> → .btn-cta-secondary (fond dark, bordure $green)
-```
-
-Classes Bootstrap associées : `btn btn-primary btn-lg px-4 btn-cta-primary` / `btn btn-lg px-4 btn-cta-secondary`.
-
-### Avatars
-
-| Usage | Taille |
-|---|---|
-| Standard / profil | `40px` |
-| Page profil large | `56px` |
-| Navbar | `34px` (border 2px blanc) |
-| Match card empilés | `26px` (overlap `-6px`) |
-| Chat preview | `30px` |
-
-### Responsive
-
-| Breakpoint | Largeur |
-|---|---|
-| Desktop | `≥ 992px` |
-| Tablette | `< 992px` |
-| Mobile | `< 768px` |
-| Petit téléphone | `< 576px` |
-
----
-
-## Commandes utiles
+## Commandes
 
 ```bash
-rails server          # Lancer le serveur
-rails db:migrate      # Lancer les migrations
-rails test            # Lancer les tests
+rails server      # serveur
+rails db:migrate  # migrations
+rails test        # tests
 ```
 
 ---
 
-## Comportements attendus de Claude
+## Frugalité tokens (économise le contexte à chaque requête)
 
-### Planification
-- Activer le mode planification pour toute tâche complexe (3 étapes ou plus, décision architecturale)
-- Rédiger un plan dans `tasks/todo.md` avec des cases cochables avant de coder
-- En cas d'imprévu : s'arrêter et replanifier immédiatement
+- Pour fouiller de **gros fichiers** (`matches/show.html.erb` ~1570 l., `matches/_form.html.erb` ~1045 l., `_match_form.scss` / `_match_show.scss` ~36 Ko), **déléguer à un sous-agent Explore** plutôt que tout lire dans la fenêtre principale
+- Lire des **plages de lignes ciblées** dans les méga-fichiers, pas l'intégralité
+- Les commandes bash passent déjà par RTK (proxy économe) — ne rien changer
 
-### Sous-agents
-- Déléguer la recherche, l'exploration et l'analyse aux sous-agents pour préserver la fenêtre principale
-- Une tâche ciblée par sous-agent
+---
 
-### Qualité
-- Ne jamais marquer une tâche terminée sans avoir prouvé son fonctionnement
-- Se demander : « Un ingénieur senior approuverait-il cela ? »
-- Pour les changements importants, chercher la solution la plus élégante et simple
+## Comportements attendus
 
-### Bugs
-- Corriger autonomement sans demander d'assistance constante
-- Trouver la cause racine — pas de correctifs temporaires
-- Mettre à jour `tasks/lessons.md` après chaque correction pour ne pas répéter l'erreur
-
-### Principes
-- **Simplicité** : impact minimal sur le code existant
-- **Commentaires** : commenter tout le code de façon pédagogique
-- **Sécurité** : ne jamais introduire d'injection SQL, XSS, ou exposition de données sensibles
+- **Planification** : mode plan pour toute tâche complexe (≥ 3 étapes ou décision archi) ; plan dans `tasks/todo.md` avant de coder ; en cas d'imprévu, s'arrêter et replanifier
+- **Sous-agents** : déléguer recherche / exploration / analyse — une tâche ciblée par agent
+- **Qualité** : ne jamais marquer terminé sans preuve de fonctionnement ; se demander « un ingénieur senior approuverait-il cela ? » ; viser la solution simple et élégante
+- **Bugs** : corriger en autonomie, trouver la **cause racine** (pas de rustine), noter l'apprentissage dans `tasks/lessons.md`
+- **Sécurité** : jamais d'injection SQL, XSS, ni exposition de données sensibles

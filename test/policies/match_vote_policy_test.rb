@@ -22,7 +22,7 @@ class MatchVotePolicyTest < ActiveSupport::TestCase
       place:       "Terrain",
       date:        Date.yesterday,
       time:        2.hours.ago,
-      player_left: 10,
+      players_needed: 10,
       level:       "Tout niveau", # champ obligatoire
       user:        @voter,
       sport:       sport

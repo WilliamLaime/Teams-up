@@ -1,0 +1,61 @@
+<%# ═══════════════════════════════════════════════════════════════
+    Partial : _payment_badge.html.erb
+    Affiche le badge de paiement d'un match_user avec le bouton de bascule.
+
+    Locals :
+      - match_user        : l'inscription du joueur (MatchUser)
+      - match             : le match parent (Match)
+      - current_match_user : l'inscription de l'utilisateur connecté (MatchUser ou nil)
+
+    Logique d'affichage :
+      - Si le joueur a payé → badge vert "Payé" avec icône check
+      - Si le joueur n'a pas payé → badge gris/rouge "Non payé"
+      - Le bouton de bascule est visible si :
+          · l'utilisateur connecté est l'organisateur, OU
+          · c'est le propre badge du joueur connecté
+    ═══════════════════════════════════════════════════════════════ %>
+
+<%
+  # L'utilisateur connecté est-il organisateur de ce match ?
+  is_organizer = current_match_user&.role == "organisateur"
+
+  # L'utilisateur connecté est-il le propriétaire de cette inscription ?
+  is_own_badge = current_match_user&.user_id == match_user.user_id
+
+  # Peut-il basculer le statut ? (organisateur ou joueur lui-même)
+  can_toggle = is_organizer || is_own_badge
+%>
+
+<%# Wrapper avec turbo_frame_tag pour la mise à jour sans rechargement de page %>
+<span id="payment_badge_<%= match_user.id %>">
+
+  <% if match_user.paid? %>
+    <%# Badge vert : joueur a payé %>
+    <span class="match-payment-badge match-payment-badge--paid"
+          title="A payé">
+      <i data-lucide="check-circle" style="width:10px;height:10px;"></i>
+      Payé
+    </span>
+  <% else %>
+    <%# Badge gris : joueur n'a pas encore payé — visible seulement pour organisateur et joueur lui-même %>
+    <% if can_toggle %>
+      <span class="match-payment-badge match-payment-badge--unpaid"
+            title="N'a pas encore payé">
+        <i data-lucide="circle" style="width:10px;height:10px;"></i>
+        Non payé
+      </span>
+    <% end %>
+  <% end %>
+
+  <%# Bouton de bascule — visible pour l'organisateur ou le joueur lui-même %>
+  <% if can_toggle && match.booking_link.present? %>
+    <%= button_to toggle_payment_match_match_user_path(match, match_user),
+        method: :patch,
+        class: "match-payment-toggle-btn",
+        title: match_user.paid? ? "Marquer comme non payé" : "Marquer comme payé",
+        data: { turbo_stream: true } do %>
+      <i data-lucide="<%= match_user.paid? ? 'x' : 'check' %>" style="width:9px;height:9px;"></i>
+    <% end %>
+  <% end %>
+
+</span>

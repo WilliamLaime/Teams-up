@@ -90,6 +90,82 @@ CUSTOM_VENUES = [
     latitude:       44.90800,
     longitude:      -0.63400,
     from_nominatim: false
+  },
+
+  # ── Bordeaux Lac ────────────────────────────────────────────────────────────
+  {
+    name:           "Hoops Factory",
+    sport_type:     "Terrain de basketball",
+    city:           "Bordeaux",
+    address:        "9 Rue Dumont d'Urville",
+    postal_code:    "33300",
+    latitude:       44.8800467,
+    longitude:      -0.5597128,
+    from_nominatim: false
+  },
+
+  # ── Paris 14e ──────────────────────────────────────────────────────────────
+  {
+    name:           "Stade Élisabeth",
+    sport_type:     "Stade multisports",
+    city:           "Paris",
+    address:        "7 Avenue Paul Appell",
+    postal_code:    "75014",
+    latitude:       48.8211520,
+    longitude:      2.3286298,
+    from_nominatim: false
+  },
+
+  # ── Réseau Hoops Factory (complexes de basketball indoor) ───────────────────
+  {
+    name:           "Hoops Factory",
+    sport_type:     "Terrain de basketball",
+    city:           "Aubervilliers",
+    address:        "3 Rue Pierre Larousse",
+    postal_code:    "93300",
+    latitude:       48.9046121,
+    longitude:      2.3795189,
+    from_nominatim: false
+  },
+  {
+    name:           "Hoops Factory",
+    sport_type:     "Terrain de basketball",
+    city:           "Mons-en-Baroeul",
+    address:        "11 Rue Louis Braille",
+    postal_code:    "59370",
+    latitude:       50.6382862,
+    longitude:      3.0963938,
+    from_nominatim: false
+  },
+  {
+    name:           "Hoops Factory",
+    sport_type:     "Terrain de basketball",
+    city:           "Toulouse",
+    address:        "2 Rue de l'Égalité",
+    postal_code:    "31200",
+    latitude:       43.6310235,
+    longitude:      1.4124745,
+    from_nominatim: false
+  },
+  {
+    name:           "Hoops Factory",
+    sport_type:     "Terrain de basketball",
+    city:           "Aubière",
+    address:        "28 Rue des Sauzes",
+    postal_code:    "63170",
+    latitude:       45.7563234,
+    longitude:      3.1331627,
+    from_nominatim: false
+  },
+  {
+    name:           "Hoops Factory",
+    sport_type:     "Terrain de basketball",
+    city:           "Saran",
+    address:        "Rue de l'Ormeteau",
+    postal_code:    "45770",
+    latitude:       47.9448544,
+    longitude:      1.8951436,
+    from_nominatim: false
   }
 ].freeze
 

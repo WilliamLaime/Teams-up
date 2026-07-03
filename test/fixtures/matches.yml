@@ -1,8 +1,12 @@
 # Match appartenant à l'utilisateur one — utilisé dans MatchPolicyTest
 one:
   title: Match de test
+  # slug explicite : les fixtures insèrent en base sans passer par les callbacks
+  # du modèle (qui génèrent normalement le slug), or la colonne est NOT NULL + unique.
+  slug: match-de-test-fixture-one
   date: <%= Date.today + 1.day %>
   time: "18:00:00"
+  players_needed: 4
   player_left: 4
   level: "Débutant"
   visibility: public

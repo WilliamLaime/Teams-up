@@ -850,7 +850,7 @@ namespace :matches do
         sport:            data[:sport],
         level:            data[:level],
         format:           data[:format],
-        player_left:      data[:player_left],
+        players_needed:   data[:player_left], # capacité cible ; player_left est recalculé par callback
         place:            data[:place],
         date:             match_date,
         time:             Time.zone.local(match_date.year, match_date.month, match_date.day, h, m, 0),

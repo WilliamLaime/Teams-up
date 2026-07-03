@@ -33,37 +33,44 @@ class Message < ApplicationRecord
   end
 
   # ── Diffuse les badges non-lus dans la sidebar ────────────────────────────
+  # Remonte la conversation en tête de la sidebar des DESTINATAIRES (pas de
+  # l'expéditeur) et affiche le badge non-lu.
+  #
+  # Chaque « remontée » (retrait de la position actuelle + réinsertion en tête)
+  # est diffusée en UN SEUL frame Turbo Stream via #broadcast_conversation_bump.
+  # Voir shared/_conversation_bump.turbo_stream.erb : c'est ce qui corrige le bug
+  # « la conversation disparaît parfois » (avant, remove et prepend partaient en
+  # deux broadcasts distincts et un échec de rendu du prepend laissait l'item
+  # supprimé jusqu'au prochain rechargement complet).
   def broadcast_unread_notifications
     if team_id?
-      # Message d'équipe : déplace la conv en tête de sidebar pour tous les membres SAUF l'expéditeur
+      # Message d'équipe : tous les membres voient le chat d'équipe dans leur sidebar,
+      # on remonte donc la conv pour chaque membre SAUF l'expéditeur.
       team.team_members.where.not(user_id: user_id).each do |tm|
-        # 1. Supprime l'item de sa position actuelle
-        Turbo::StreamsChannel.broadcast_remove_to(
+        broadcast_conversation_bump(
           "user_conversations_#{tm.user_id}",
-          target: "sticky-team-convo-#{team_id}"
-        )
-        # 2. Insère en tête de liste (avec badge non-lu car tm n'est pas l'expéditeur)
-        Turbo::StreamsChannel.broadcast_prepend_to(
-          "user_conversations_#{tm.user_id}",
-          target: "sticky-chat-sidebar-list",
-          partial: "shared/team_convo_item",
-          locals: { team: team, team_member: tm }
+          remove_target: "sticky-team-convo-#{team_id}",
+          list_target: "sticky-chat-sidebar-list",
+          item_partial: "shared/team_convo_item",
+          item_locals: { team: team, team_member: tm }
         )
       end
     elsif match_id?
-      # Message de match : déplace la conv en tête de sidebar pour tous les participants SAUF l'expéditeur
-      match.match_users.where.not(user_id: user_id).each do |mu|
-        # 1. Supprime l'item de sa position actuelle
-        Turbo::StreamsChannel.broadcast_remove_to(
+      # Message de match : on ne remonte la conv QUE pour les participants qui la
+      # voient réellement dans leur sidebar. Le filtre doit rester identique à
+      # celui de _sticky_chat.html.erb ("status = 'approved' OR role = 'organisateur'"),
+      # sinon on injecterait un item fantôme dans la sidebar d'un joueur
+      # pending/waiting/rejected.
+      match.match_users
+           .where.not(user_id: user_id)
+           .where("status = 'approved' OR role = 'organisateur'")
+           .each do |mu|
+        broadcast_conversation_bump(
           "user_conversations_#{mu.user_id}",
-          target: "sticky-convo-#{match_id}"
-        )
-        # 2. Insère en tête de liste (avec badge non-lu car mu n'est pas l'expéditeur)
-        Turbo::StreamsChannel.broadcast_prepend_to(
-          "user_conversations_#{mu.user_id}",
-          target: "sticky-chat-sidebar-list",
-          partial: "shared/sticky_convo_item",
-          locals: { match: match, match_user: mu }
+          remove_target: "sticky-convo-#{match_id}",
+          list_target: "sticky-chat-sidebar-list",
+          item_partial: "shared/sticky_convo_item",
+          item_locals: { match: match, match_user: mu }
         )
       end
     elsif private_conversation_id?
@@ -82,21 +89,42 @@ class Message < ApplicationRecord
       recipient_dismissed = private_conversation.dismissed_for?(recipient)
 
       if total_messages == 1 || recipient_dismissed
-        # Premier message OU conversation réactivée : l'item n'existe pas encore → prepend direct
-      else
-        # Conversation existante : supprime de sa position puis insère en tête
-        Turbo::StreamsChannel.broadcast_remove_to(
+        # Premier message OU conversation réactivée : l'item n'existe pas encore
+        # dans le DOM → simple prepend (déjà atomique, un seul ordre).
+        Turbo::StreamsChannel.broadcast_prepend_to(
           "user_conversations_#{recipient.id}",
-          target: "private-convo-#{private_conversation_id}"
+          target: "private-chat-sidebar-list",
+          partial: "shared/private_convo_item",
+          locals: { conversation: private_conversation, current_user: recipient }
+        )
+      else
+        # Conversation existante : remontée atomique (retrait + réinsertion en tête).
+        broadcast_conversation_bump(
+          "user_conversations_#{recipient.id}",
+          remove_target: "private-convo-#{private_conversation_id}",
+          list_target: "private-chat-sidebar-list",
+          item_partial: "shared/private_convo_item",
+          item_locals: { conversation: private_conversation, current_user: recipient }
         )
       end
-      Turbo::StreamsChannel.broadcast_prepend_to(
-        "user_conversations_#{recipient.id}",
-        target: "private-chat-sidebar-list",
-        partial: "shared/private_convo_item",
-        locals: { conversation: private_conversation, current_user: recipient }
-      )
     end
+  end
+
+  # ── Remonte une conversation en tête de la sidebar en UN SEUL frame ───────────
+  # Diffuse remove + prepend groupés (voir shared/_conversation_bump.turbo_stream.erb).
+  # Si le rendu du partial d'item échoue, l'exception survient avant toute diffusion
+  # et l'item reste en place plutôt que de disparaître.
+  def broadcast_conversation_bump(stream, remove_target:, list_target:, item_partial:, item_locals:)
+    Turbo::StreamsChannel.broadcast_render_to(
+      stream,
+      partial: "shared/conversation_bump",
+      locals: {
+        remove_target: remove_target,
+        list_target: list_target,
+        item_partial: item_partial,
+        item_locals: item_locals
+      }
+    )
   end
 
   # ── Réactive les conversations de match dismissées ────────────────────────

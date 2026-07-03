@@ -94,6 +94,76 @@
     &.captain { background: rgba(30, 221, 136, 0.15); color: #1EDD88; }
     &.member  { background: var(--theme-hover-bg); color: var(--theme-text-muted); } // adaptatif
   }
+
+  // Nom du capitaine sur les cartes d'exploration (section "Toutes les équipes")
+  &-captain {
+    font-size: 0.75rem;
+    color: var(--theme-text-muted);
+    margin: 0 0 0.15rem;
+    display: flex;
+    align-items: center;
+  }
+}
+
+// ── Titres de section (index : "Mes équipes" / "Toutes les équipes") ──────────
+.teams-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--theme-text-strong);
+  font-family: $headers-font;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+// État vide léger affiché quand l'user n'a encore aucune équipe
+.teams-empty-inline {
+  border: 1px dashed var(--theme-border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--theme-bg-card);
+}
+
+// ── Carte équipe à rejoindre (section "Toutes les équipes") ───────────────────
+// On bascule en colonne : blason + infos en haut, bouton d'action en bas.
+.team-browse-card {
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+
+  // Le bloc cliquable (blason + infos) reste centré
+  > a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .team-card-captain,
+  .team-card-meta { justify-content: center; }
+
+  // Zone du bouton d'action, séparée par un léger filet
+  &-action {
+    margin-top: 0.5rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--theme-border);
+  }
+
+  // Le hover de translation est géré par .team-card ; on neutralise l'effet
+  // de soulèvement ici pour ne pas perturber le clic sur le bouton.
+  &:hover { transform: none; }
+}
+
+// Bouton "Demande envoyée" — état désactivé informatif
+.team-browse-btn-pending {
+  background: var(--theme-hover-bg);
+  color: var(--theme-text-muted);
+  border: 1px solid var(--theme-border);
+  font-weight: 600;
+  cursor: default;
+
+  &:disabled { opacity: 1; } // garde le style lisible malgré disabled
 }
 
 // ── Bannière de couverture (show) ─────────────────────────────────────────────

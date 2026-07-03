@@ -28,7 +28,7 @@ class MatchesTest < ApplicationSystemTestCase
       title:       title,
       date:        2.days.from_now.to_date,
       time:        2.days.from_now,
-      player_left: 5,
+      players_needed: 5,
       level:       "Tout niveau",
       place:       "Paris",
       visibility:  "public"
