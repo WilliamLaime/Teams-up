@@ -36,21 +36,18 @@ class ConversationsController < ApplicationController
     match_user.update_column(:last_read_at, Time.current)
   end
 
-  def dismiss
- # Trouve le match (find_by_param pour éviter le crash si supprimé)
-    @match = Match.find_by_param(params[:id])                                                                            
-    unless @match                                       
-      skip_authorization                                                                                                 
-      return head(:not_found)                           
-    end
+    def dismiss
+    # Trouve le match (find_by_param pour éviter le crash si supprimé)                                        
+      @match = Match.find_by_param(params[:id])                                                                 
+      unless @match                                                                                             
+        skip_authorization
+        return head(:not_found)                                                                                 
+      end                                               
 
-    # Pundit vérifie que l'utilisateur est participant
-    authorize @match, policy_class: ConversationPolicy
+      # Pundit vérifie que l'utilisateur est participant
+      authorize @match, policy_class: ConversationPolicy
 
-    match_user = @match.match_users.find_by(user: current_user)
-
-
-    match_user = @match.match_users.find_by(user: current_user)
+      match_user = @match.match_users.find_by(user: current_user)
 
     # Marque la conversation comme dismissée avec un timestamp
     # La conversation réapparaîtra si un nouveau message est envoyé (cf. Message model)
