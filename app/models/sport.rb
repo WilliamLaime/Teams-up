@@ -31,6 +31,7 @@ class Sport < ApplicationRecord
                             { label: "5v5", players: 9 }, libre]
     when "handball"   then [{ label: "6v6",  players: 11 }, libre]
     when "badminton"  then [{ label: "1v1",  players: 1  }, { label: "2v2", players: 3 }, libre]
+    when "ping-pong"  then [{ label: "1v1",  players: 1  }, { label: "2v2", players: 3 }, libre]
     else                   [libre]
     end
   end
