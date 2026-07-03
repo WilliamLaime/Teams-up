@@ -170,6 +170,21 @@ class TeamInvitationsController < ApplicationController
     @invitation = TeamInvitation.find(params[:id])
   end
 
+  # Rafraîchit en temps réel le point "nouveau membre" dans la navbar du capitaine.
+  # Réutilise le canal personnel déjà écouté par la navbar (turbo_stream_from user, :notifications).
+  def broadcast_teams_dot_to(captain)
+    return unless captain
+
+    %w[navbar-teams-dot navbar-teams-dot-mobile].each do |target|
+      Turbo::StreamsChannel.broadcast_update_to(
+        [captain, :notifications],
+        target: target,
+        partial: "shared/navbar_teams_dot",
+        locals: { user: captain }
+      )
+    end
+  end
+
   # Cherche un user par email ou par prénom (via son profil)
   def find_invitee(query)
     return nil if query.blank?
@@ -197,6 +212,9 @@ class TeamInvitationsController < ApplicationController
       link: team_path(@team)
     )
 
+    # Fait apparaître en temps réel le point "nouveau membre" dans la navbar du capitaine
+    broadcast_teams_dot_to(@team.captain)
+
     redirect_to @team, notice: "Tu as rejoint l'équipe \"#{@team.name}\" !"
   rescue ActiveRecord::RecordInvalid => e
     redirect_to teams_path, alert: "Erreur : #{e.message}"
@@ -218,6 +236,9 @@ class TeamInvitationsController < ApplicationController
         role: "member",
         joined_at: Time.current
       )
+      # Le capitaine agit lui-même : on considère qu'il a "vu" ce nouveau membre,
+      # pour ne pas lui afficher un point de notification sur sa propre action.
+      @team.update_column(:captain_members_seen_at, Time.current)
     end
 
     Notification.create(

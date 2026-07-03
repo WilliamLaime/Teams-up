@@ -103,6 +103,23 @@ class Team < ApplicationRecord
     team_members.count
   end
 
+  # ── Notification "nouveau membre" (capitaine uniquement) ─────────────────────
+  # Un membre est "nouveau" s'il a rejoint après la dernière fois où le capitaine
+  # a marqué l'équipe comme vue (captain_members_seen_at). Pour les équipes
+  # existantes (seen_at null), on retombe sur created_at → aucun faux point
+  # historique. Le capitaine lui-même (role "captain") est exclu.
+  def new_members_count_for_captain(user)
+    return 0 unless captain?(user)
+
+    since = captain_members_seen_at || created_at
+    team_members.where(role: "member").where("created_at > ?", since).count
+  end
+
+  # Vrai s'il y a au moins un nouveau membre à signaler au capitaine
+  def has_new_members_for_captain?(user)
+    new_members_count_for_captain(user).positive?
+  end
+
   # Retourne l'URL ou les données du blason à afficher
   # Priorité : image uploadée > SVG généré > nil
   def badge_display

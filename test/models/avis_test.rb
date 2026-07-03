@@ -25,7 +25,7 @@ class AvisTest < ActiveSupport::TestCase
       place:       "Terrain",
       date:        2.hours.ago.to_date,
       time:        2.hours.ago,
-      player_left: 10,
+      players_needed: 10,
       level:       "Tout niveau", # champ obligatoire
       user:        user,
       sport:       sport
@@ -44,7 +44,7 @@ class AvisTest < ActiveSupport::TestCase
       place:       "Terrain",
       date:        8.days.ago.to_date,
       time:        8.days.ago,
-      player_left: 10,
+      players_needed: 10,
       level:       "Tout niveau", # champ obligatoire
       user:        user,
       sport:       sport
@@ -205,7 +205,7 @@ class AvisTest < ActiveSupport::TestCase
       place:       "Terrain",
       date:        Date.tomorrow,
       time:        1.hour.from_now, # dans le futur pour passer la validation 30min
-      player_left: 10,
+      players_needed: 10,
       level:       "Tout niveau", # champ obligatoire
       user:        reviewer,
       sport:       sport

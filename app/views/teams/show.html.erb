@@ -59,6 +59,25 @@
       <% end %>
     </div>
 
+    <%# Bandeau "nouveaux membres" — visible par le capitaine tant qu'il n'a pas
+        cliqué sur "Marquer comme vu". Efface les points navbar + carte équipe. %>
+    <% if @team.has_new_members_for_captain?(current_user) %>
+      <div id="team-new-members-banner" class="team-new-members-banner"
+           style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:12px 0; padding:10px 16px; border-radius:12px; background:rgba(30,221,136,0.12); border:1px solid rgba(30,221,136,0.35); color:var(--theme-text-primary); font-weight:600;">
+        <span>
+          <i data-lucide="user-plus" style="width:15px;height:15px;vertical-align:middle;"></i>
+          <%= @team.new_members_count_for_captain(current_user) %>
+          nouveau<%= @team.new_members_count_for_captain(current_user) > 1 ? "x" : "" %>
+          membre<%= @team.new_members_count_for_captain(current_user) > 1 ? "s" : "" %>
+          <%= @team.new_members_count_for_captain(current_user) > 1 ? "ont" : "a" %> rejoint l'équipe !
+        </span>
+        <%= button_to mark_members_seen_team_path(@team), method: :patch,
+              class: "btn btn-sm btn-light rounded-pill" do %>
+          Marquer comme vu
+        <% end %>
+      </div>
+    <% end %>
+
     <%# Actions captain %>
     <% if @team.captain?(current_user) %>
       <div class="team-show-actions">

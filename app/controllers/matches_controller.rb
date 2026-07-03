@@ -165,7 +165,7 @@ class MatchesController < ApplicationController
 
     # Valeurs par défaut explicites
     @match.date            = Date.today        # Date : aujourd'hui
-    @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
+    @match.players_needed  = 4                 # Joueurs recherchés : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
     # Sport : pré-rempli avec le sport actif. En mode multisport (« Tous les sports »),
@@ -536,7 +536,7 @@ class MatchesController < ApplicationController
   def match_params
     params.require(:match).permit(
       :title, :description, :date, :time, :place, :venue_id,
-      :level, :player_left, :players_present, :validation_mode, :price_per_player,
+      :level, :players_needed, :players_present, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
       :genre_restriction, # Restriction de genre : "tous" ou "feminin"
       :team_id,           # Équipe organisatrice (optionnel)

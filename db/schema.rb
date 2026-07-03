@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_03_102500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -169,6 +169,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
     t.float "pin_longitude"
     t.string "place"
     t.integer "player_left"
+    t.integer "players_needed"
     t.integer "players_present"
     t.integer "price_per_player", default: 0
     t.string "private_token"
@@ -498,6 +499,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_144700) do
   create_table "teams", force: :cascade do |t|
     t.text "badge_svg"
     t.bigint "captain_id", null: false
+    t.datetime "captain_members_seen_at"
     t.string "cover_position", default: "50% 50%"
     t.float "cover_zoom", default: 1.0
     t.datetime "created_at", null: false

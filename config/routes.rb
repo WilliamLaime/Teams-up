@@ -68,6 +68,8 @@ Rails.application.routes.draw do
       delete :leave
       # POST /teams/:id/join → demander à rejoindre l'équipe (validation par le capitaine)
       post :join
+      # PATCH /teams/:id/mark_members_seen → le capitaine efface le point "nouveau membre"
+      patch :mark_members_seen
     end
 
     # Invitations imbriquées dans l'équipe

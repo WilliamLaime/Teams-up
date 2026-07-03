@@ -15,6 +15,16 @@ class MatchUser < ApplicationRecord
   after_update_commit :broadcast_new_convo_to_sidebar,
                       if: -> { saved_change_to_status? && status == "approved" }
 
+  # ── Source de vérité des places restantes ───────────────────────────────────
+  # Toute variation du nombre de joueurs confirmés recalcule match.player_left.
+  # Centraliser ici couvre TOUS les chemins (join auto, validation manuelle,
+  # confirm d'un membre d'équipe, reject, départ, promotion depuis la file)
+  # sans dépendre de decrement!/increment! manuels disséminés dans le controller.
+  # after_save (pas _commit) : le recalcul reste dans la transaction, donc sous
+  # le même verrou (with_lock) que les inscriptions concurrentes.
+  after_save :recompute_match_places, if: :saved_change_to_status?
+  after_destroy :recompute_match_places
+
   # Helpers pour vérifier le statut facilement
   def approved?
     status == "approved"
@@ -39,6 +49,12 @@ class MatchUser < ApplicationRecord
   end
 
   private
+
+  # Resynchronise les places restantes du match parent.
+  # (association déjà chargée dans la plupart des chemins ; sinon un simple find)
+  def recompute_match_places
+    match.recompute_player_left!
+  end
 
   # Ajoute la nouvelle conversation en haut de la sidebar sticky chat de l'utilisateur.
   # Déclenché quand il devient organisateur ou joueur approuvé.
