@@ -3,9 +3,8 @@
 # CRUD complet + actions publier/dépublier.
 module Admin
   class ArticlesController < Admin::BaseController
-
     # Charge l'article avant les actions qui en ont besoin
-    before_action :set_article, only: [:show, :edit, :update, :destroy, :publish, :unpublish]
+    before_action :set_article, only: %i[show edit update destroy publish unpublish]
 
     # GET /admin/articles
     # Liste tous les articles (publiés ET brouillons), du plus récent au plus ancien.

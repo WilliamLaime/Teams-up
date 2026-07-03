@@ -147,7 +147,7 @@ module ApplicationHelper
 
     link_to user_profil_path(user),
             class: "user-avatar-link",
-            title: (user.try(:display_name).presence || user.email),
+            title: user.try(:display_name).presence || user.email,
             data: { turbo_frame: "_top" } do
       user_avatar_tag(user, **options)
     end

@@ -2,7 +2,6 @@
 # Les articles sont accessibles publiquement via /blog/:slug.
 # Un article avec published_at NULL est un brouillon (non visible publiquement).
 class Article < ApplicationRecord
-
   # ── Validations ────────────────────────────────────────────────────────────
 
   validates :title,            presence: true
@@ -58,13 +57,13 @@ class Article < ApplicationRecord
   # "Comment trouver un match de foot ?" → "comment-trouver-un-match-de-foot"
   def generate_slug
     self.slug = title
-      .downcase
-      .gsub(/[àáâãäå]/, "a").gsub(/[èéêë]/, "e").gsub(/[ìíîï]/, "i")
-      .gsub(/[òóôõö]/, "o").gsub(/[ùúûü]/, "u").gsub(/[ç]/, "c")
-      .gsub(/[^a-z0-9\s-]/, "")
-      .gsub(/\s+/, "-")
-      .gsub(/-+/, "-")
-      .strip
+                .downcase
+                .gsub(/[àáâãäå]/, "a").gsub(/[èéêë]/, "e").gsub(/[ìíîï]/, "i")
+                .gsub(/[òóôõö]/, "o").gsub(/[ùúûü]/, "u").gsub(/ç/, "c")
+                .gsub(/[^a-z0-9\s-]/, "")
+                .gsub(/\s+/, "-")
+                .gsub(/-+/, "-")
+                .strip
   end
 
   # Estime le temps de lecture : ~200 mots par minute

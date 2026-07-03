@@ -31,7 +31,7 @@ namespace :factory_reset do
       abort "ERREUR : les emails suivants sont introuvables en base : #{not_found.join(', ')}"
     end
 
-    founder_ids   = founder_users.pluck(:id)
+    founder_ids = founder_users.pluck(:id)
     founder_profil_ids = Profil.where(user_id: founder_ids).pluck(:id)
 
     puts "Fondateurs conservés (#{founder_users.count}) :"
@@ -42,29 +42,29 @@ namespace :factory_reset do
     # Comptage avant suppression (affiché même en dry-run)
     # ------------------------------------------------------------------
     counts = {
-      "Users (hors fondateurs)"        => User.where.not(id: founder_ids).count,
-      "Matchs"                         => Match.count,
-      "MatchUsers"                     => MatchUser.count,
-      "MatchVotes"                     => MatchVote.count,
-      "Teams"                          => Team.count,
-      "TeamMembers"                    => TeamMember.count,
-      "TeamInvitations"                => TeamInvitation.count,
-      "Messages (match)"               => Message.where.not(match_id: nil).count,
-      "Messages (team)"                => Message.where.not(team_id: nil).count,
+      "Users (hors fondateurs)" => User.where.not(id: founder_ids).count,
+      "Matchs" => Match.count,
+      "MatchUsers" => MatchUser.count,
+      "MatchVotes" => MatchVote.count,
+      "Teams" => Team.count,
+      "TeamMembers" => TeamMember.count,
+      "TeamInvitations" => TeamInvitation.count,
+      "Messages (match)" => Message.where.not(match_id: nil).count,
+      "Messages (team)" => Message.where.not(team_id: nil).count,
       "Messages (conversation privée)" => Message.where.not(private_conversation_id: nil).count,
-      "PrivateConversations"           => PrivateConversation.count,
-      "Avis"                           => Avis.count,
-      "Friendships"                    => Friendship.count,
-      "Notifications"                  => Notification.count,
-      "UserAchievements (fondateurs)"  => UserAchievement.where(user_id: founder_ids).count,
-      "SportProfils (fondateurs)"      => SportProfil.where(profil_id: founder_profil_ids).count,
-      "ProfilFavoriteVenues"           => ProfilFavoriteVenue.count,
-      "PushSubscriptions"              => PushSubscription.count,
-      "SecurityLogs"                   => SecurityLog.count,
-      "ImageModerations"               => ImageModeration.count,
-      "ContactMessages"                => ContactMessage.count,
-      "WaitlistEntries"                => WaitlistEntry.count,
-      "Active Storage blobs orphelins" => ActiveStorage::Blob.unattached.count,
+      "PrivateConversations" => PrivateConversation.count,
+      "Avis" => Avis.count,
+      "Friendships" => Friendship.count,
+      "Notifications" => Notification.count,
+      "UserAchievements (fondateurs)" => UserAchievement.where(user_id: founder_ids).count,
+      "SportProfils (fondateurs)" => SportProfil.where(profil_id: founder_profil_ids).count,
+      "ProfilFavoriteVenues" => ProfilFavoriteVenue.count,
+      "PushSubscriptions" => PushSubscription.count,
+      "SecurityLogs" => SecurityLog.count,
+      "ImageModerations" => ImageModeration.count,
+      "ContactMessages" => ContactMessage.count,
+      "WaitlistEntries" => WaitlistEntry.count,
+      "Active Storage blobs orphelins" => ActiveStorage::Blob.unattached.count
     }
 
     puts "Données qui seront supprimées :"
@@ -102,7 +102,7 @@ namespace :factory_reset do
       Message.where.not(match_id: nil).delete_all
 
       puts "  Suppression des matchs..."
-      Match.destroy_all  # destroy_all pour déclencher les callbacks ActiveStorage
+      Match.destroy_all # destroy_all pour déclencher les callbacks ActiveStorage
 
       # --- Données liées aux teams ---
       puts "  Suppression des invitations d'équipe..."
