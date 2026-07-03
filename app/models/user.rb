@@ -51,6 +51,17 @@ class User < ApplicationRecord
   has_many :team_invitations_received, class_name: "TeamInvitation", foreign_key: "invitee_id", dependent: :destroy
   has_many :team_invitations_sent,     class_name: "TeamInvitation", foreign_key: "inviter_id", dependent: :destroy
 
+  # Vrai si au moins une équipe dont je suis capitaine a un nouveau membre
+  # non encore "vu" (arrivé après captain_members_seen_at, ou created_at si null).
+  # Sert au point de notification global dans la navbar.
+  def has_new_captained_members?
+    Team.where(captain_id: id)
+        .joins(:team_members)
+        .where(team_members: { role: "member" })
+        .where("team_members.created_at > COALESCE(teams.captain_members_seen_at, teams.created_at)")
+        .exists?
+  end
+
   has_many :match_users, dependent: :destroy
   has_many :matchs, through: :match_users
   has_many :notifications, dependent: :destroy
@@ -132,6 +143,18 @@ class User < ApplicationRecord
   def display_name
     full = [profil&.first_name, profil&.last_name].compact.join(' ').strip
     full.present? ? full : email
+  end
+
+  # Retourne "Prénom N." (prénom + initiale du nom) pour les contextes compacts
+  # où l'on n'affiche que le prénom : l'initiale du nom permet de distinguer
+  # deux joueurs homonymes (ex. deux "Williame"). Si aucun prénom n'est
+  # renseigné, on retombe sur display_name (email en dernier recours).
+  def short_name
+    first   = profil&.first_name.to_s.strip
+    initial = profil&.last_name.to_s.strip.first
+    return display_name if first.blank?
+
+    initial.present? ? "#{first} #{initial.upcase}." : first
   end
 
   # Méthode appelée lors du retour depuis Google OAuth

@@ -75,24 +75,35 @@ class VenuesController < ApplicationController
       # Formule de distance euclidienne au carré (pas besoin de PostGIS pour trier)
       distance_sql = Arel.sql("(latitude - #{lat})^2 + (longitude - #{lon})^2 ASC")
 
-      # Étape 1 : chercher dans un rayon de ~30km (0.27° ≈ 30km, car 1° ≈ 111km)
-      delta = 0.27
-      candidates = venues
-                   .where(latitude: (lat - delta)..(lat + delta),
-                          longitude: (lon - delta)..(lon + delta))
-                   .order(distance_sql)
-                   .limit(60)
-                   .to_a
-                   .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
-
-      # Étape 2 : aucun résultat dans les 30km → élargit à toute la France
-      # Exemple : l'user cherche "Le Five" depuis une ville qui n'en a pas → on cherche plus loin
-      if candidates.empty?
+      if query.present?
+        # Recherche texte explicite (ex: "Hoops Factory") → on cherche dans toute la
+        # France triée par proximité, sans se limiter à un rayon. Sinon un établissement
+        # du réseau proche de l'utilisateur masquerait silencieusement les autres.
         candidates = venues
                      .order(distance_sql)
                      .limit(60)
                      .to_a
                      .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
+      else
+        # Pas de recherche texte (parcours) : d'abord un rayon de ~30km (0.27° ≈ 30km,
+        # car 1° ≈ 111km), pour ne montrer que des lieux pertinents à proximité.
+        delta = 0.27
+        candidates = venues
+                     .where(latitude: (lat - delta)..(lat + delta),
+                            longitude: (lon - delta)..(lon + delta))
+                     .order(distance_sql)
+                     .limit(60)
+                     .to_a
+                     .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
+
+        # Aucun résultat dans les 30km → élargit à toute la France
+        if candidates.empty?
+          candidates = venues
+                       .order(distance_sql)
+                       .limit(60)
+                       .to_a
+                       .uniq { |v| [v.name.to_s.downcase, v.city.to_s.downcase] }
+        end
       end
 
       venues = candidates.first(8)

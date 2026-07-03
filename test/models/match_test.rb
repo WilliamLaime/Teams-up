@@ -28,7 +28,7 @@ class MatchTest < ActiveSupport::TestCase
       title:           "Match test",
       date:            Date.tomorrow,
       time:            Time.zone.parse("18:00"),
-      player_left:     4,
+      players_needed:     4,
       level:           "Débutant",        # niveau valide pour football
       visibility:      "public",
       validation_mode: "automatic",
@@ -67,32 +67,32 @@ class MatchTest < ActiveSupport::TestCase
     assert match.valid?, "Attendu valide, erreurs : #{match.errors.full_messages}"
   end
 
-  # ─── Validations : player_left ──────────────────────────────────────────────
+  # ─── Validations : players_needed (capacité cible) ──────────────────────────
 
-  # Cas d'erreur : player_left absent est rejeté.
-  test "player_left absent est rejeté" do
-    match = Match.new(valid_match_attrs(player_left: nil))
+  # Cas d'erreur : players_needed absent est rejeté.
+  test "players_needed absent est rejeté" do
+    match = Match.new(valid_match_attrs(players_needed: nil))
     assert match.invalid?
-    assert match.errors[:player_left].any?
+    assert match.errors[:players_needed].any?
   end
 
-  # Cas d'erreur : player_left = 0 est rejeté (doit être >= 1).
-  test "player_left égal à 0 est rejeté" do
-    match = Match.new(valid_match_attrs(player_left: 0))
+  # Cas d'erreur : players_needed = 0 est rejeté (doit être >= 1).
+  test "players_needed égal à 0 est rejeté" do
+    match = Match.new(valid_match_attrs(players_needed: 0))
     assert match.invalid?
-    assert match.errors[:player_left].any?
+    assert match.errors[:players_needed].any?
   end
 
-  # Cas d'erreur : player_left négatif est rejeté.
-  test "player_left négatif est rejeté" do
-    match = Match.new(valid_match_attrs(player_left: -1))
+  # Cas d'erreur : players_needed négatif est rejeté.
+  test "players_needed négatif est rejeté" do
+    match = Match.new(valid_match_attrs(players_needed: -1))
     assert match.invalid?
-    assert match.errors[:player_left].any?
+    assert match.errors[:players_needed].any?
   end
 
-  # Cas nominal : player_left = 1 est accepté (minimum autorisé).
-  test "player_left de 1 est accepté" do
-    match = Match.new(valid_match_attrs(player_left: 1))
+  # Cas nominal : players_needed = 1 est accepté (minimum autorisé).
+  test "players_needed de 1 est accepté" do
+    match = Match.new(valid_match_attrs(players_needed: 1))
     assert match.valid?, "Attendu valide, erreurs : #{match.errors.full_messages}"
   end
 

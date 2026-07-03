@@ -12,7 +12,7 @@ class ConversationsController < ApplicationController
     # find_by au lieu de find : si le match a été supprimé, on retourne une page vide
     # plutôt que de crasher (cas possible quand le sticky chat est data-turbo-permanent
     # et contient encore un lien vers un match qui n'existe plus)
-    @match = Match.find_by(id: params[:id])
+    @match = Match.find_by_param(params[:id])
     unless @match
       # Match supprimé — autorise et retourne une frame vide plutôt que de crasher
       skip_authorization
@@ -37,15 +37,18 @@ class ConversationsController < ApplicationController
   end
 
   def dismiss
-    # Trouve le match (find_by pour éviter le crash si supprimé)
-    @match = Match.find_by(id: params[:id])
-    unless @match
-      skip_authorization
-      return head(:not_found)
+ # Trouve le match (find_by_param pour éviter le crash si supprimé)
+    @match = Match.find_by_param(params[:id])                                                                            
+    unless @match                                       
+      skip_authorization                                                                                                 
+      return head(:not_found)                           
     end
 
     # Pundit vérifie que l'utilisateur est participant
     authorize @match, policy_class: ConversationPolicy
+
+    match_user = @match.match_users.find_by(user: current_user)
+
 
     match_user = @match.match_users.find_by(user: current_user)
 

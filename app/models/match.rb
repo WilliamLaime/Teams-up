@@ -1,6 +1,14 @@
 class Match < ApplicationRecord
+  # URL propre basée sur un slug (ex: /matches/foot-5v5-paris-a1b2c3) — voir Sluggable
+  include Sluggable
+
   # Permet la recherche full-text avec pg_search
   include PgSearch::Model
+
+  # Champ texte servant de base au slug (le titre du match).
+  def slug_source
+    title
+  end
 
   # Scope de recherche : cherche dans title, place, description du match
   # et dans l'email de l'utilisateur créateur (via la relation belongs_to :user)
@@ -144,10 +152,17 @@ class Match < ApplicationRecord
   validates :level, presence: true
   validate :level_valid_for_sport
 
-  # Validation : nombre de joueurs manquants obligatoire, entier, minimum 1
-  validates :player_left,
+  # Validation : capacité cible (joueurs recherchés via l'app) obligatoire, entier, minimum 1.
+  # `player_left` (places restantes) n'est plus saisi : il est DÉRIVÉ de players_needed
+  # moins les joueurs confirmés (voir recompute_player_left!).
+  validates :players_needed,
             presence: true,
             numericality: { only_integer: true, greater_than: 0, message: "doit être au moins 1" }
+
+  # Recalcule les places restantes dès que la capacité cible change
+  # (création via new/create, ou édition par l'organisateur).
+  # update_column ne redéclenche pas les callbacks → aucune récursion.
+  after_save :recompute_player_left!, if: :saved_change_to_players_needed?
 
   # Validation : joueurs présents obligatoire uniquement pour le format Libre
   validates :players_present,
@@ -156,6 +171,12 @@ class Match < ApplicationRecord
 
   # Validation : le match doit être prévu au minimum 30 minutes à l'avance
   validate :match_must_be_at_least_30min_in_future, on: %i[create update]
+
+  # Validation : le lien de réservation doit être une URL valide si renseigné
+  validates :booking_link, format: {
+    with: URI::DEFAULT_PARSER.make_regexp(%w[http https]),
+    message: "doit être une URL valide (commençant par http:// ou https://)"
+  }, allow_blank: true
 
   # Vérifie que le niveau choisi appartient à la grille du sport sélectionné.
   # Tolère les niveaux hérités ("Tout niveau", "Avancé", etc.) sur les anciens matchs.
@@ -187,6 +208,22 @@ class Match < ApplicationRecord
   # Retourne l'inscription de l'organisateur du match
   def organizer_match_user
     match_users.find_by(role: "organisateur")
+  end
+
+  # Nombre de joueurs CONFIRMÉS occupant une place (approved, hors organisateur).
+  # Les demandes "pending" (validation manuelle) et "waiting" (file d'attente)
+  # ne comptent pas tant qu'elles ne sont pas approuvées.
+  def confirmed_players_count
+    match_users.where(status: "approved").where.not(role: "organisateur").count
+  end
+
+  # Recalcule et persiste `player_left` (places restantes) à partir de la source de vérité :
+  # capacité cible immuable − joueurs confirmés, borné à 0.
+  # Appelé par les callbacks de MatchUser (join/quit/approve/reject/confirm/promotion)
+  # et à l'édition de la cible → compteur self-healing, insensible aux dérives.
+  # update_column : écriture atomique sans valider ni relancer les callbacks.
+  def recompute_player_left!
+    update_column(:player_left, [players_needed.to_i - confirmed_players_count, 0].max)
   end
 
   # Retourne vrai si le match est complet (plus de places disponibles)

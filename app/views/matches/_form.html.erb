@@ -551,13 +551,14 @@
           <div class="mb-4"
                data-match-form-target="standardPlayerSection"
                style="<%= @match.libre? ? 'display:none;' : '' %>">
-            <label class="form-label d-block">Nombre de joueurs manquants <span class="required-star">*</span></label>
+            <label class="form-label d-block">Nombre de joueurs recherchés <span class="required-star">*</span></label>
 
             <%# Input caché : sa valeur est la vraie valeur soumise avec le formulaire.
                 Le compteur visible (+/-) met à jour cet input via Stimulus.
+                On soumet players_needed (capacité cible) — player_left en est dérivé.
                 Valeur par défaut : 1 si non défini %>
-            <%= f.hidden_field :player_left,
-                value: (@match.player_left || 1),
+            <%= f.hidden_field :players_needed,
+                value: (@match.players_needed || 1),
                 data: { "match-form-target": "playersInput" } %>
 
             <div class="match-player-counter">
@@ -572,7 +573,7 @@
               <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
               <span class="counter-value"
                     data-match-form-target="playersCount">
-                <%= @match.player_left || 1 %>
+                <%= @match.players_needed || 1 %>
               </span>
 
               <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus %>
@@ -606,18 +607,26 @@
                     } %>
               </div>
 
-              <%# Champ 2 : Places à remplir via l'app (écrit dans playersInput = player_left) %>
+              <%# Champ 2 : Places à remplir via l'app (écrit dans playersInput = players_needed) %>
               <div>
                 <label class="form-label d-block">Joueurs recherchés <span class="required-star">*</span></label>
                 <input type="number"
                        min="1"
-                       value="<%= @match.player_left || 1 %>"
+                       value="<%= @match.players_needed || 1 %>"
                        class="form-control"
                        data-match-form-target="playersLibreInput"
                        data-action="input->match-form#changeLibre">
               </div>
 
             </div><%# fin flex wrapper %>
+
+            <%# Total attendu = présents + recherchés. Mis à jour en direct par Stimulus
+                (changePresent / changeLibre) et initialisé côté serveur en édition. %>
+            <p class="mt-3 mb-0" style="font-size:0.9rem; color:var(--theme-text-primary);">
+              Soit
+              <strong data-match-form-target="libreTotal"><%= (@match.players_present || 1).to_i + (@match.players_needed || 1).to_i %></strong>
+              joueur·euse·s au total sur le terrain.
+            </p>
 
           </div><%# fin section Libre %>
 
@@ -882,6 +891,25 @@
             </p>
           </div><%# fin prix %>
 
+          <%# ── Lien de réservation du terrain (facultatif) ── %>
+          <div class="mt-3">
+            <label class="form-label d-block" for="match_booking_link">
+              Lien de réservation du terrain
+              <span class="ms-1" style="font-size:0.75rem; font-weight:400; color:#fff;">(facultatif)</span>
+            </label>
+
+            <%# Champ URL : les participants approuvés pourront cliquer pour payer directement %>
+            <%= f.url_field :booking_link,
+                class: "form-control form-control-sm",
+                placeholder: "https://...",
+                value: @match.booking_link %>
+
+            <p class="form-text mt-1" style="color: rgba(255, 255, 255, 0.55); font-size: 0.8rem;">
+              <i data-lucide="link" style="width:12px; height:12px; vertical-align:middle;"></i>
+              Les participants inscrits verront ce lien pour réserver et payer le terrain.
+            </p>
+          </div><%# fin booking_link %>
+
         </div><%# fin section 4 %>
 
         <%# Lien Annuler visible uniquement sur mobile (< lg)
@@ -987,7 +1015,7 @@
           <div class="match-recap-row">
             <span class="recap-label">Joueurs recherchés</span>
             <span class="recap-value" data-match-form-target="recapPlayers">
-              <%= @match.player_left || 4 %>
+              <%= @match.players_needed || 4 %>
             </span>
           </div>
 

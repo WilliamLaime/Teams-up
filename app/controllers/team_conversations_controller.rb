@@ -3,7 +3,7 @@ class TeamConversationsController < ApplicationController
 
   def show
     # Trouve l'équipe (find_by évite un crash si l'équipe a été supprimée)
-    @team = Team.find_by(id: params[:id])
+    @team = Team.find_by_param(params[:id])
     unless @team
       skip_authorization
       render inline: '<turbo-frame id="sticky-chat-frame">' \

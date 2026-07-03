@@ -253,4 +253,49 @@ class TeamsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
     assert_not_nil flash[:alert]
   end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # POST /equipes/:id/join — demander à rejoindre une équipe
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # Cas nominal : un non-membre crée une demande d'adhésion "requested"
+  test "POST /equipes/:id/join crée une demande requested pour un non-membre" do
+    sign_in @outsider
+    assert_difference -> { TeamInvitation.requested.count }, 1 do
+      post join_team_path(@team)
+    end
+    assert_redirected_to teams_path
+    assert_not_nil flash[:notice]
+    invitation = TeamInvitation.requested.find_by(team: @team, invitee: @outsider)
+    assert_equal @captain, invitation.inviter # l'inviteur officiel est le capitaine
+  end
+
+  # La demande notifie le capitaine de l'équipe
+  test "POST /equipes/:id/join notifie le capitaine" do
+    sign_in @outsider
+    assert_difference -> { Notification.where(user: @captain).count }, 1 do
+      post join_team_path(@team)
+    end
+  end
+
+  # Garde-fou : un membre existant ne peut pas demander à rejoindre.
+  # Pundit (join? = false pour un membre) bloque en amont → redirection root.
+  test "POST /equipes/:id/join refuse un membre déjà présent" do
+    sign_in @member
+    assert_no_difference "TeamInvitation.count" do
+      post join_team_path(@team)
+    end
+    assert_redirected_to root_path
+    assert_not_nil flash[:alert]
+  end
+
+  # Garde-fou : pas deux demandes en attente pour la même équipe
+  test "POST /equipes/:id/join refuse une seconde demande en attente" do
+    sign_in @outsider
+    post join_team_path(@team) # première demande OK
+    assert_no_difference "TeamInvitation.count" do
+      post join_team_path(@team) # seconde refusée
+    end
+    assert_not_nil flash[:alert]
+  end
 end

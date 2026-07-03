@@ -48,7 +48,7 @@
               <td style="color:#f0f0f0; font-size:0.9rem; max-width:280px;">
                 <%= article.title %>
                 <% if article.published? %>
-                  <%= link_to "↗", blog_article_path(article.slug),
+                  <%= link_to "↗", article_path(article.slug),
                         target: "_blank",
                         style: "color:#1EDD88; font-size:0.8rem; margin-left:6px;" %>
                 <% end %>

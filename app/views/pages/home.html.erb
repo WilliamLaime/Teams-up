@@ -185,9 +185,9 @@
 
               <%# Ligne haute : icône ronde + label + titre %>
               <div class="d-flex align-items-center gap-3">
-                <%# Icône orange avec éclair %>
+                <%# Rond orange avec l'icône du sport du match %>
                 <div class="hero-match-icon">
-                  <i data-lucide="zap" style="width:18px;height:18px;"></i>
+                  <%= sport_icon(@hero_match.sport, size: "1.4rem", px_size: 22) %>
                 </div>
                 <%# Infos principales %>
                 <div class="flex-grow-1 overflow-hidden">
@@ -201,7 +201,7 @@
               <%# Ligne basse : heure à gauche, places restantes à droite %>
               <div class="d-flex justify-content-between align-items-center hero-match-footer">
                 <span class="hero-match-time">
-                  <%= @hero_match.time&.strftime('%H:%M') %> · Ce soir
+                  <%= @hero_match.time&.strftime('%H:%M') %> · <%= match_day_label(@hero_match) %>
                 </span>
                 <%# Toujours des places dispo (jamais complet grâce au controller) %>
                 <span class="hero-match-spots">

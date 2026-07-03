@@ -1,4 +1,8 @@
 class MatchesController < ApplicationController
+  # Pagination serveur de la liste des matchs (évite de charger tous les matchs
+  # + leurs avatars préchargés d'un coup — indispensable à la montée en charge).
+  include Pagy::Backend
+
   # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
   # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
   skip_before_action :authenticate_user!, only: %i[index show]
@@ -31,7 +35,9 @@ class MatchesController < ApplicationController
       # includes évite les N+1 sur user/profil/sport chargés dans _match_card
       # match_users préchargé pour afficher le statut de participation dans la card
       @matches = policy_scope(Match)
-                 .includes(:sport, :match_users, user: :profil)
+                 .includes(:sport,
+                           { user: { profil: { avatar_attachment: :blob } } },
+                           { match_users: { user: { profil: { avatar_attachment: :blob } } } })
                  .upcoming
                  .publicly_visible
                  .visible_for_genre(current_user)
@@ -49,6 +55,12 @@ class MatchesController < ApplicationController
         apply_filters
       end
     end
+
+    # Pagination : 12 matchs par page (3 colonnes × 4 lignes sur desktop).
+    # Appliquée en dernier, après tous les filtres, pour ne charger et ne
+    # précharger (avatars, sport…) que les matchs réellement affichés.
+    # Pagy conserve automatiquement les paramètres de filtre dans les liens.
+    @pagy, @matches = pagy(@matches, items: 12)
 
     # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
     sport_name = current_sport&.name
@@ -153,10 +165,14 @@ class MatchesController < ApplicationController
 
     # Valeurs par défaut explicites
     @match.date            = Date.today        # Date : aujourd'hui
-    @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
+    @match.players_needed  = 4                 # Joueurs recherchés : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
-    @match.sport           = current_sport # Sport : pré-rempli avec le sport actif
+    # Sport : pré-rempli avec le sport actif. En mode multisport (« Tous les sports »),
+    # current_sport vaut nil → on retombe sur le 1er sport pour qu'un sport soit toujours
+    # présélectionné. Sinon aucun sport n'est choisi au chargement et le JS (updateSport)
+    # ne génère ni boutons de niveau ni formats (le champ « Niveau requis » reste vide).
+    @match.sport           = current_sport || Sport.order(:name).first
 
     # Si on vient depuis une page équipe (?team_id=X), pré-associer l'équipe
     if params[:team_id].present?
@@ -178,15 +194,16 @@ class MatchesController < ApplicationController
     # Si un non-femme envoie cette valeur (ex: via requête HTTP directe), on la remet à "tous"
     @match.genre_restriction = "tous" unless current_user.genre == "femme"
 
-    # Si une équipe est associée, on force la visibilité à "private"
+    # Si une équipe est associée, on vérifie juste que l'user en est bien
+    # capitaine (sécurité). On NE force PLUS la visibilité : le choix
+    # public/privé envoyé par le formulaire fait foi (côté form, choisir une
+    # équipe met "privé" par défaut, mais l'user peut cliquer "Public").
     if @match.team_id.present?
-      # Vérifie que l'user est bien captain de cette équipe
       @match.team = Team.find_by(id: @match.team_id)
       unless @match.team&.captain?(current_user)
         @match.team = nil
         @match.team_id = nil
       end
-      @match.visibility = "private" if @match.team
     end
 
     authorize @match
@@ -373,13 +390,14 @@ class MatchesController < ApplicationController
     # Recherche full-text — titre, ville, description ou prénom/nom du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
 
-    # Filtre par sport :
-    # - sport sélectionné dans l'URL → filtrer par ce sport
-    # - Aucun param sport dans l'URL → fallback sur le sport actif de l'utilisateur
+    # Filtre par sport (multi-sélection) :
+    # - sport(s) sélectionné(s) dans l'URL → filtrer par ces sports
+    # - Aucun param sport ET pas de no_prefilter → fallback sur le sport actif de l'utilisateur
+    # - no_prefilter=1 (bouton "Effacer les filtres") → aucun filtre sport = TOUS les sports
     sport_ids = params[:sport_ids]&.reject(&:blank?) || []
     if sport_ids.any?
       @matches = @matches.where(sport_id: sport_ids)
-    elsif current_sport.present?
+    elsif current_sport.present? && params[:no_prefilter].blank?
       @matches = @matches.where(sport_id: current_sport.id)
     end
 
@@ -511,17 +529,18 @@ class MatchesController < ApplicationController
 
   # Retrouve le match par son id dans les paramètres de l'URL
   def set_match
-    @match = Match.find(params[:id])
+    @match = Match.from_param(params[:id])
   end
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
     params.require(:match).permit(
       :title, :description, :date, :time, :place, :venue_id,
-      :level, :player_left, :players_present, :validation_mode, :price_per_player,
+      :level, :players_needed, :players_present, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
       :genre_restriction, # Restriction de genre : "tous" ou "feminin"
-      :team_id            # Équipe organisatrice (optionnel)
+      :team_id,           # Équipe organisatrice (optionnel)
+      :booking_link       # Lien de réservation/paiement du terrain (optionnel)
     )
   end
 
