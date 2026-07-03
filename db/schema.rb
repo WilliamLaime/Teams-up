@@ -82,6 +82,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_102500) do
     t.index ["match_id"], name: "index_avis_on_match_id"
     t.index ["mutual"], name: "index_avis_on_mutual"
     t.index ["reviewed_user_id", "created_at"], name: "index_avis_on_reviewed_user_id_created_at"
+    t.index ["reviewed_user_id", "mutual"], name: "index_avis_on_reviewed_user_id_mutual"
     t.index ["reviewed_user_id"], name: "index_avis_on_reviewed_user_id"
     t.index ["reviewer_id", "reviewed_user_id", "match_id"], name: "index_avis_on_reviewer_id_and_reviewed_user_id_and_match_id", unique: true
     t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"

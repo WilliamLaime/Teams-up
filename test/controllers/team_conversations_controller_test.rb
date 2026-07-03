@@ -55,11 +55,13 @@ class TeamConversationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success, "Le capitaine doit voir le chat de l'équipe (200)"
   end
 
-  # Cas d'erreur : un utilisateur non membre reçoit 403 Forbidden.
-  test "GET team_conversation retourne 403 pour un non-membre" do
+  # Cas d'erreur : un utilisateur non membre est redirigé par Pundit.
+  # Pundit lève NotAuthorizedError → ApplicationController redirige avec flash alert.
+  test "GET team_conversation redirige un non-membre" do
     sign_in @outsider
     get team_conversation_path(@team)
-    assert_response :forbidden, "Un non-membre doit recevoir 403"
+    assert_response :redirect, "Un non-membre doit être redirigé par Pundit"
+    assert_equal "Vous n'êtes pas autorisé à effectuer cette action.", flash[:alert]
   end
 
   # Cas d'erreur : un visiteur non connecté est redirigé.
