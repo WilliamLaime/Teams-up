@@ -277,7 +277,8 @@ sports_data = [
   { name: "Volleyball", icon: "🏐", slug: "volleyball" },
   { name: "Basketball", icon: "🏀", slug: "basketball" },
   { name: "Handball",   icon: "🤾", slug: "handball"   },
-  { name: "Badminton",  icon: "🏸", slug: "badminton"  }
+  { name: "Badminton",  icon: "🏸", slug: "badminton"  },
+  { name: "Ping-Pong",  icon: "🏓", slug: "ping-pong"  }
 ]
 
 sports_data.each do |sport|
