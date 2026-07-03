@@ -21,6 +21,7 @@ SPORT_FILES = {
   "basketball" => Dir[BASE_DIR.join("Basketball/*.webp")].sort,
   "handball"   => Dir[BASE_DIR.join("Handball/*.webp")].sort,
   "badminton"  => Dir[BASE_DIR.join("Badminton/*.webp")].sort,
+  "ping-pong"  => Dir[BASE_DIR.join("PingPong/*.webp")].sort,
   "misc"       => [
     BASE_DIR.join("multisports.png").to_s,
     BASE_DIR.join("multisports-img.png").to_s,

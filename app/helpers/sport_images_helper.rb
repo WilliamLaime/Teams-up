@@ -62,6 +62,12 @@ module SportImagesHelper
       https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061660/sports/badminton/badminton4.webp
       https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061662/sports/badminton/badminton5.webp
       https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061663/sports/badminton/badminton6.webp
+    ],
+    "ping-pong" => %w[
+      https://res.cloudinary.com/dfw8rlluc/image/upload/v1783088623/sports/ping-pong/pingpong1.webp
+      https://res.cloudinary.com/dfw8rlluc/image/upload/v1783088624/sports/ping-pong/pingpong2.webp
+      https://res.cloudinary.com/dfw8rlluc/image/upload/v1783088626/sports/ping-pong/pingpong3.webp
+      https://res.cloudinary.com/dfw8rlluc/image/upload/v1783088627/sports/ping-pong/pingpong4.webp
     ]
   }.freeze
 
