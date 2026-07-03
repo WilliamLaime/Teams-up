@@ -24,20 +24,18 @@
 
   <div class="match-spots-display">
 
-    <%# Ratio vivant "inscrits / total" — le numérateur GRANDIT à chaque
-        joueur accepté, le nombre de places libres plus bas diminue d'autant.
-        Ex : 1/18 (17 libres) → 2/18 (16 libres) quand un joueur rejoint.
-        • Libre         : présents / (présents + manquants)
-        • Autres formats : inscrits (orga + approuvés + sur place) / total
-        Comptage centralisé dans le modèle (Match#secured_players_count). %>
+    <%# Ratio vivant "présents / total" — quel que soit le format.
+        • X (numérateur)   = secured_players_count = organisateur + joueurs
+          acceptés (manuel OU auto) + joueurs "sur place" (formats chiffrés).
+        • Y (dénominateur) = X + player_left → total visé, CONSTANT : à chaque
+          acceptation X fait +1 et player_left fait −1, la somme ne bouge pas.
+        • places libres (plus bas) = player_left = Y − X.
+        Ex : 4/18 (14 libres) → 5/18 (13 libres) quand un joueur est accepté.
+        Comptage centralisé dans le modèle (Match#secured_players_count), donc
+        identique au compteur "Joueurs inscrits (N)" de la colonne de gauche. %>
     <div class="match-spots-fraction">
-      <% if match.libre? && match.players_present.present? %>
-        <% total_libre = match.players_present + match.player_left.to_i %>
-        <%= match.players_present %><span class="match-spots-sep">/</span><%= total_libre %>
-      <% else %>
-        <% secured = match.secured_players_count %>
-        <%= secured %><span class="match-spots-sep">/</span><%= secured + match.player_left.to_i %>
-      <% end %>
+      <% present = match.secured_players_count %>
+      <%= present %><span class="match-spots-sep">/</span><%= present + match.player_left.to_i %>
     </div>
 
     <%# Nombre de places restantes — ou statut si match complet/terminé %>
