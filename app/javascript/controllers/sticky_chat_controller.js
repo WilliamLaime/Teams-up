@@ -178,6 +178,11 @@ export default class extends Controller {
     const url = event.currentTarget.dataset.url
     if (!url) return
 
+    // L'élément peut être un vrai lien (avatar des bulles) : on empêche la
+    // navigation par défaut pour d'abord fermer la modale, puis naviguer nous-mêmes.
+    // (Sur un <span> comme l'en-tête, preventDefault est sans effet — inoffensif.)
+    event.preventDefault()
+
     const modal = document.getElementById("global-chat-modal")
     const bsModal = modal ? bootstrap.Modal.getInstance(modal) : null
 

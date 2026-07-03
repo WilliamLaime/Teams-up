@@ -25,6 +25,23 @@ class MatchUser < ApplicationRecord
   after_save :recompute_match_places, if: :saved_change_to_status?
   after_destroy :recompute_match_places
 
+  # ── Diffusion temps réel du bloc "places" ───────────────────────────────────
+  # Après COMMIT (données garanties en base) on pousse le bloc places à jour à
+  # tous les visiteurs de la page match. Couvre TOUS les chemins :
+  #   - create  : join auto (approved) ou file d'attente (waiting)
+  #   - update  : acceptation manuelle, refus, promotion depuis la file (status)
+  #   - destroy : départ d'un joueur
+  # after_commit (pas after_save) : évite d'émettre pendant la transaction/verrou.
+  #
+  # ⚠️ PIÈGE ActiveSupport : enregistrer le MÊME symbole de méthode pour
+  # after_create_commit + after_update_commit + after_destroy_commit fait
+  # que les callbacks se DÉDUPLIQUENT en une seule entrée aux conditions
+  # (`on:`) conflictuelles → le callback ne se déclenche JAMAIS.
+  # Solution : un unique `after_commit` couvre create + update + destroy en
+  # une seule inscription, sans collision. Re-diffuser un bloc identique est
+  # idempotent (Turbo remplace la même cible), donc sans effet de bord.
+  after_commit :broadcast_match_spots
+
   # Helpers pour vérifier le statut facilement
   def approved?
     status == "approved"
@@ -54,6 +71,15 @@ class MatchUser < ApplicationRecord
   # (association déjà chargée dans la plupart des chemins ; sinon un simple find)
   def recompute_match_places
     match.recompute_player_left!
+  end
+
+  # Pousse le bloc "places" à jour à tous les visiteurs de la page match.
+  # Garde : si le match parent est en cours de suppression (dependent: :destroy),
+  # on ne diffuse pas (le match n'existe plus).
+  def broadcast_match_spots
+    return if destroyed_by_association
+
+    match.broadcast_spots
   end
 
   # Ajoute la nouvelle conversation en haut de la sidebar sticky chat de l'utilisateur.
