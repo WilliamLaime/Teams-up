@@ -27,6 +27,14 @@
     {
       "fingerprint": "63595ad4cba11c68b3a8180d824e1bd304dc7b7d9b270686ff628bd9539d6489",
       "note": "Faux positif : favorite_venue_ids est un tableau d'IDs d'adresses sportives choisies par l'utilisateur. Attribut intentionnellement permis — aucun attribut sensible exposé."
+    },
+    {
+      "fingerprint": "8652f9729747b778d3a0495a9240cf1cc94bc162daf8d9e20b49250e888b46ca",
+      "note": "Sûr : badge_svg est nettoyé côté serveur avant stockage par Team#sanitize_badge_svg (before_save, Rails::Html::SafeListSanitizer avec allow-list SVG_ALLOWED_TAGS/ATTRS). script, foreignObject, handlers on* et data:image/svg+xml sont supprimés. Rendu inline dans matches/show sur une donnée déjà assainie."
+    },
+    {
+      "fingerprint": "f761d3800d3a1e080242cf9cfc853e83c1a74e7fcfe87f85104c1c6be761a64f",
+      "note": "Sûr : même protection que ci-dessus — badge_svg assaini par Team#sanitize_badge_svg (allow-list Loofah) avant stockage. Rendu inline dans teams/show sur une donnée déjà assainie."
     }
   ]
 }

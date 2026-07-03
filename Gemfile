@@ -52,7 +52,7 @@ gem "omniauth-google-oauth2"          # Provider OAuth pour Google
 gem "omniauth-rails_csrf_protection"  # Protection CSRF obligatoire avec OmniAuth sur Rails
 gem "autoprefixer-rails"
 gem "font-awesome-sass", "~> 6.1"
-gem "simple_form", github: "heartcombo/simple_form"
+gem "simple_form", "~> 5.4"
 gem "sassc-rails"
 gem "pundit"
 gem "rack-attack" # Protection contre le brute force et le spam

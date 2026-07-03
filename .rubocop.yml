@@ -77,3 +77,13 @@ Metrics/BlockNesting:
 # Non-local exit dans iterator — pattern parfois nécessaire dans les controllers Rails
 Lint/NonLocalExitFromIterator:
   Enabled: false
+# Préfixe has_/is_ intentionnel et lisible sur nos prédicats métier
+# (ex: has_new_members_for_captain?) — renommer casserait les appelants pour rien
+Naming/PredicatePrefix:
+  Enabled: false
+# Constantes définies dans un bloc de tâche rake — pattern courant et lisible ici
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
+# Numéros dans les identifiants (ex: sport_1) — tolérés dans les scripts de seed
+Naming/VariableNumber:
+  Enabled: false
