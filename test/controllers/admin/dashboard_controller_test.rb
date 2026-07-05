@@ -64,4 +64,33 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     get admin_root_path
     assert_redirected_to new_user_session_path
   end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Traçabilité RGPD — un accès admin doit être journalisé (Admin::BaseController)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # Vérifie qu'un accès admin réussi crée bien un SecurityLog "admin_access"
+  # contenant l'admin concerné et la section consultée.
+  test "un accès admin crée un log admin_access horodaté avec l'admin et la section" do
+    sign_in @admin
+
+    assert_difference -> { SecurityLog.where(event_type: "admin_access").count }, 1 do
+      get admin_root_path
+    end
+
+    log = SecurityLog.where(event_type: "admin_access").order(created_at: :desc).first
+    assert_equal @admin, log.user
+    assert_equal "dashboard", log.details["section"]
+    assert_equal "show", log.details["action"]
+  end
+
+  # Vérifie qu'un accès refusé (non-admin) ne crée AUCUN log admin_access :
+  # le before_action require_admin! interrompt la chaîne avant l'after_action.
+  test "un accès refusé ne crée pas de log admin_access" do
+    sign_in @user
+
+    assert_no_difference -> { SecurityLog.where(event_type: "admin_access").count } do
+      get admin_root_path
+    end
+  end
 end
