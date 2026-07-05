@@ -18,6 +18,7 @@ class SecurityLog < ApplicationRecord
     signup
     google_login
     account_deletion
+    admin_access
   ].freeze
 
   # Validation : le type d'événement doit être dans la liste ci-dessus
