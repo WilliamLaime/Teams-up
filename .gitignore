@@ -39,6 +39,9 @@
 # Ignore .env file containing credentials.
 .env
 
+# Ignore Claude Code local machine settings.
+/.claude/settings.local.json
+
 # Ignore Mac and Linux file system files
 *.swp
 .DS_Store
