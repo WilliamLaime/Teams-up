@@ -60,3 +60,7 @@ generate_excel.js
 node_modules/
 package.json
 package-lock.json
+
+# Réglages Claude Code personnels (machine-spécifiques, non partagés).
+# settings.json (sans .local) reste versionnable pour d'éventuels réglages d'équipe.
+.claude/settings.local.json
