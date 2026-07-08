@@ -91,10 +91,15 @@ class PagesController < ApplicationController
 
   private
 
-  # Compte total de tous les matchs disponibles (pas complets, dans le futur, publics)
-  # Utilisé pour le badge "X matchs disponibles" dans le hero
+  # Compte les matchs disponibles (pas complets, dans le futur, publics) pour le badge du hero.
+  # Filtré par sport actif si l'utilisateur en a sélectionné un ; en mode multisport
+  # (ou visiteur non connecté), current_sport est nil → on compte tous les sports.
   def load_available_matches_count
-    Match.upcoming.publicly_visible.where("player_left > 0").count
+    matches = Match.upcoming.publicly_visible
+                   .visible_for_genre(current_user) # cohérent avec les listes : cache les matchs "femme uniquement"
+                   .where("player_left > 0")
+    matches = matches.where(sport_id: current_sport.id) if current_sport.present?
+    matches.count
   end
 
   # Récupère les 3 prochains matchs à venir publics, filtrés par sport actif si connecté

@@ -46,7 +46,7 @@
         <%# Badge avec point animé %>
         <div class="hero-badge">
           <span class="hero-badge-dot"></span>
-          <%= @available_matches_count %> match<%= @available_matches_count > 1 ? "s" : "" %> disponible<%= @available_matches_count > 1 ? "s" : "" %>
+          <%= @available_matches_count %> match<%= @available_matches_count > 1 ? "s" : "" %> disponible<%= @available_matches_count > 1 ? "s" : "" %><%= " en #{current_sport.name}" if current_sport.present? %>
         </div>
 
         <%# Titre principal sur 2 lignes %>
