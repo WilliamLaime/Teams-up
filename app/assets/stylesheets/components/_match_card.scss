@@ -193,6 +193,42 @@
       white-space: nowrap;
     }
 
+    // Badge format (ex "5v5") en haut à droite — pill discret.
+    .match-card-format {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--theme-border);
+      background: var(--theme-hover-bg);
+      color: var(--theme-text-muted);
+      white-space: nowrap;
+    }
+
+    // Date + plage horaire mises en avant (deux lignes empilées).
+    // Mise en avant par la taille + la graisse ; texte en couleur principale
+    // pour rester sobre, seules les icônes portent l'accent vert.
+    .match-datetime-line {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.95rem;        // nettement plus gros que .match-card-date (0.72rem)
+      font-weight: 700;
+      color: var(--theme-text-primary);
+      margin-bottom: 0.3rem;     // les deux lignes restent groupées
+      white-space: nowrap;
+
+      // Icône (calendrier / horloge) en vert accent
+      i, svg {
+        color: $green;
+        stroke: $green;          // Lucide dessine en stroke via currentColor
+        flex-shrink: 0;
+      }
+    }
+
     // Titre (tronqué à 2 lignes pour uniformiser la hauteur des cartes)
     .match-card-title {
       font-size: 1rem;

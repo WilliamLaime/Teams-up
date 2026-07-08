@@ -549,29 +549,53 @@ export default class extends Controller {
   // Champs Libre : saisie directe (pas de boutons +/-)
   // ══════════════════════════════════════════════════════════
 
-  // Appelé à chaque frappe dans le champ "Présents" — met à jour le récap
+  // Appelé à chaque frappe dans le champ "Présents".
+  // On NE réécrit PAS la valeur du champ visible ici : sinon un champ vidé
+  // (backspace) est immédiatement réinjecté à 1 et l'utilisateur ne peut plus
+  // effacer pour saisir un autre nombre. La normalisation (min 1) se fait à la
+  // sortie du champ via normalizePresent (événement change/blur).
   changePresent() {
+    const raw = parseInt(this.playersPresentInputTarget.value)
+    const val = Number.isNaN(raw) ? "" : raw
+    this.recapPresentTarget.textContent = val === "" ? "—" : val
+    this._updateLibreTotal()
+  }
+
+  // Normalise "Présents" à minimum 1 quand l'utilisateur quitte le champ.
+  normalizePresent() {
     const val = Math.max(1, parseInt(this.playersPresentInputTarget.value) || 1)
     this.playersPresentInputTarget.value = val
     this.recapPresentTarget.textContent  = val
     this._updateLibreTotal()
   }
 
-  // Appelé à chaque frappe dans le champ "Manquants" — met à jour playersInput (hidden) + récap
+  // Appelé à chaque frappe dans le champ "Joueurs recherchés".
+  // Idem : on ne réécrit pas le champ visible (voir changePresent). On
+  // synchronise le hidden field soumis + le récap avec la valeur en cours.
   changeLibre() {
+    const raw = parseInt(this.playersLibreInputTarget.value)
+    const val = Number.isNaN(raw) ? "" : raw
+    this.playersInputTarget.value       = val   // hidden field soumis avec le formulaire
+    this.recapPlayersTarget.textContent = val === "" ? "—" : val
+    this._updateLibreTotal()
+  }
+
+  // Normalise "Joueurs recherchés" à minimum 1 quand l'utilisateur quitte le champ.
+  normalizeLibre() {
     const val = Math.max(1, parseInt(this.playersLibreInputTarget.value) || 1)
     this.playersLibreInputTarget.value  = val
-    this.playersInputTarget.value       = val   // hidden field soumis avec le formulaire
+    this.playersInputTarget.value       = val
     this.recapPlayersTarget.textContent = val
     this._updateLibreTotal()
   }
 
   // Recalcule le total de joueurs attendus en mode Libre = présents + recherchés.
-  // No-op si la target n'est pas présente (mode standard).
+  // No-op si la target n'est pas présente (mode standard). Un champ vide compte
+  // pour 0 pendant la saisie (le total se recale à la normalisation).
   _updateLibreTotal() {
     if (!this.hasLibreTotalTarget) return
-    const present = Math.max(1, parseInt(this.playersPresentInputTarget.value) || 1)
-    const missing = Math.max(1, parseInt(this.playersLibreInputTarget.value) || 1)
+    const present = parseInt(this.playersPresentInputTarget.value) || 0
+    const missing = parseInt(this.playersLibreInputTarget.value) || 0
     this.libreTotalTarget.textContent = present + missing
   }
 
