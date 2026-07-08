@@ -65,6 +65,40 @@ class MatchesTest < ApplicationSystemTestCase
     assert_selector "form"
   end
 
+  # Le formulaire de création propose un champ « Heure de fin »
+  # pré-rempli à début + 1h (valeur par défaut posée par le controller).
+  test "le formulaire de creation affiche un champ heure de fin par defaut a +1h" do
+    user = create_test_user(email: "endtime@match.com", first_name: "End", last_name: "Time")
+
+    sign_in_as(user)
+    visit new_match_path
+
+    assert_text "Heure de fin"
+    # end_time(4i) = heure de fin ; doit valoir heure de début + 1
+    start_hour = find("input[name='match[time(4i)]']", visible: false).value.to_i
+    end_hour   = find("input[name='match[end_time(4i)]']", visible: false).value.to_i
+    assert_equal (start_hour + 1) % 24, end_hour
+  end
+
+  # La page détail affiche la plage horaire "début – fin".
+  test "la show affiche la plage horaire debut fin" do
+    organizer = create_test_user(email: "orga2@sys.com",   first_name: "Orga2",   last_name: "Sys")
+    player    = create_test_user(email: "player2@sys.com", first_name: "Player2", last_name: "Sys")
+    sport     = build_sport
+    match     = build_match(organizer: organizer, sport: sport, title: "Match avec fin")
+    match.update_columns(time: "18:00:00", end_time: "19:30:00")
+    match.reload
+
+    sign_in_as(player)
+    visit match_path(match)
+
+    # Le bloc date & heure montre le début et la fin séparés par un tiret.
+    # On construit l'attendu depuis les valeurs relues (la colonne :time est
+    # relue avec un offset DST en été — cf. commentaires du match_test modèle).
+    expected = "#{match.time.strftime('%H:%M')} – #{match.effective_end_time.strftime('%H:%M')}"
+    assert_text expected
+  end
+
   # ── CAS NOMINAL : DÉTAIL D'UN MATCH ──────────────────────────────────────
 
   # Un user connecté peut voir la page détail d'un match.

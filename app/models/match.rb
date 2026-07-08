@@ -177,6 +177,9 @@ class Match < ApplicationRecord
   # Validation : le match doit être prévu au minimum 30 minutes à l'avance
   validate :match_must_be_at_least_30min_in_future, on: %i[create update]
 
+  # Validation : l'heure de fin ne peut pas être identique à l'heure de début
+  validate :end_time_differs_from_start, on: %i[create update]
+
   # Validation : le lien de réservation doit être une URL valide si renseigné
   validates :booking_link, format: {
     with: URI::DEFAULT_PARSER.make_regexp(%w[http https]),
@@ -322,6 +325,29 @@ class Match < ApplicationRecord
     Time.zone.local(date.year, date.month, date.day, time.hour, time.min, 0)
   end
 
+  # Heure de fin effective du match.
+  # Renvoie l'heure de fin saisie par l'organisateur si elle existe, sinon
+  # retombe sur « début + 1h » (matchs créés avant l'ajout du champ end_time).
+  # Renvoie nil si l'heure de début n'est pas définie.
+  def effective_end_time
+    return end_time if end_time.present?
+    return unless time.present?
+
+    time + 1.hour
+  end
+
+  # Construit le DateTime de fin (date du match + heure de fin effective).
+  # Gère le passage après minuit : si l'heure de fin est ≤ l'heure de début
+  # (ex. match 23h → 00h30), la fin est reportée au lendemain.
+  # Renvoie nil si date ou heure de début manquent.
+  def end_datetime
+    return unless date.present? && time.present?
+
+    et = effective_end_time
+    dt = Time.zone.local(date.year, date.month, date.day, et.hour, et.min, 0)
+    dt <= build_datetime ? dt + 1.day : dt
+  end
+
   private
 
   def cache_participant_ids
@@ -361,5 +387,15 @@ class Match < ApplicationRecord
     return unless build_datetime < Time.current + 30.minutes
 
     errors.add(:base, "Le match doit être prévu au moins 30 minutes à l'avance.")
+  end
+
+  # Vérifie que l'heure de fin n'est pas identique à l'heure de début.
+  # On autorise une fin « avant » le début (interprétée comme le lendemain,
+  # cf. end_datetime), on refuse seulement une durée nulle.
+  def end_time_differs_from_start
+    return unless time.present? && end_time.present?
+    return unless end_time.strftime("%H:%M") == time.strftime("%H:%M")
+
+    errors.add(:end_time, "doit être différente de l'heure de début")
   end
 end

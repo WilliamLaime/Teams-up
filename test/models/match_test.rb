@@ -342,6 +342,45 @@ class MatchTest < ActiveSupport::TestCase
     assert_not match.completed?
   end
 
+  # ─── Heure de fin (end_time / effective_end_time / end_datetime) ─────────────
+
+  # effective_end_time renvoie l'heure de fin saisie si elle existe.
+  test "effective_end_time retourne l'heure de fin saisie" do
+    match = create_match(time: Time.zone.parse("18:00"), end_time: Time.zone.parse("19:30"))
+    assert_equal "19:30", match.effective_end_time.strftime("%H:%M")
+  end
+
+  # effective_end_time retombe sur début + 1h si aucune heure de fin (matchs anciens).
+  test "effective_end_time retombe sur debut + 1h sans end_time" do
+    match = create_match(time: Time.zone.parse("18:00"), end_time: nil)
+    assert_equal "19:00", match.effective_end_time.strftime("%H:%M")
+  end
+
+  # end_datetime combine la date et l'heure de fin.
+  test "end_datetime combine date et heure de fin" do
+    match = create_match(date: Date.new(2030, 7, 15), time: Time.zone.parse("18:00"), end_time: Time.zone.parse("20:00"))
+    assert_equal "2030-07-15 20:00", match.end_datetime.strftime("%Y-%m-%d %H:%M")
+  end
+
+  # end_datetime reporte la fin au lendemain si elle est <= au début (passage minuit).
+  test "end_datetime reporte au lendemain si fin avant debut" do
+    match = create_match(date: Date.new(2030, 7, 15), time: Time.zone.parse("23:00"), end_time: Time.zone.parse("00:30"))
+    assert_equal "2030-07-16 00:30", match.end_datetime.strftime("%Y-%m-%d %H:%M")
+  end
+
+  # Validation : heure de fin identique au début rejetée (durée nulle).
+  test "heure de fin identique au debut est rejetee" do
+    match = Match.new(valid_match_attrs(time: Time.zone.parse("18:00"), end_time: Time.zone.parse("18:00")))
+    assert match.invalid?
+    assert match.errors[:end_time].any?
+  end
+
+  # Cas nominal : heure de fin différente du début acceptée.
+  test "heure de fin differente du debut est acceptee" do
+    match = Match.new(valid_match_attrs(time: Time.zone.parse("18:00"), end_time: Time.zone.parse("19:30")))
+    assert match.valid?, "Attendu valide, erreurs : #{match.errors.full_messages}"
+  end
+
   # ─── Callback : generate_private_token ──────────────────────────────────────
 
   # Cas nominal : un match privé reçoit un token avant création.
