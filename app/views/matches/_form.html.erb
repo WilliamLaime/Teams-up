@@ -383,8 +383,9 @@
 
           <div class="row g-3">
 
-            <%# Champ Date — dropdown calendrier custom (date_picker_controller) %>
-            <div class="col-md-6">
+            <%# Champ Date — dropdown calendrier custom (date_picker_controller)
+                Pleine largeur (col-12) : les deux heures (début/fin) occupent la ligne suivante %>
+            <div class="col-12">
               <%= f.label :date, class: "form-label" do %>Date du match <span class="required-star">*</span><% end %>
 
               <%# Conteneur du picker : même pattern que time-picker %>
@@ -438,7 +439,7 @@
             <div class="col-md-6">
               <%= f.label :time, class: "form-label" do %>Heure de début <span class="required-star">*</span><% end %>
               <div class="d-flex gap-2"
-                   data-action="change->match-form#updateTime">
+                   data-action="change->match-form#startTimeChanged">
 
                 <%# ── Dropdown custom pour les heures (time_picker_controller) ── %>
                 <%# Affiche 5 heures à la fois + scroll — même pattern que sport-picker %>
@@ -508,6 +509,86 @@
                       <button type="button"
                               class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.min == val %>"
                               style="background:<%= @match.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= val %>"
+                              data-label="<%= lbl %>">
+                        <%= lbl %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+
+            <%# Champ Heure de fin
+                Même structure que « Heure de début » (deux selects custom heures/minutes).
+                Valeur par défaut = début + 1h (posée côté serveur au new, puis synchronisée
+                en JS tant que l'utilisateur n'a pas modifié la fin manuellement). %>
+            <div class="col-md-6">
+              <%= f.label :end_time, "Heure de fin", class: "form-label" %>
+              <div class="d-flex gap-2"
+                   data-action="change->match-form#endTimeChanged">
+
+                <%# ── Dropdown custom pour les heures de fin ── %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+
+                  <%# Input hidden end_time(4i) : heures de fin %>
+                  <%= f.hidden_field "end_time(4i)",
+                      value: @match.end_time&.hour,
+                      data: { "time-picker-target": "input" } %>
+
+                  <button type="button"
+                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @match.end_time %>"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left;">
+                    <%= @match.end_time ? ("%02dh" % @match.end_time.hour) : "Heure" %>
+                  </button>
+
+                  <div class="time-picker-dropdown"
+                       data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
+                    <% (0..23).each do |h| %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.end_time&.hour == h %>"
+                              style="background:<%= @match.end_time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= h %>"
+                              data-label="<%= "%02dh" % h %>">
+                        <%= "%02dh" % h %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                </div>
+
+                <%# ── Dropdown custom pour les minutes de fin ── %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+
+                  <%# Input hidden end_time(5i) : minutes de fin %>
+                  <%= f.hidden_field "end_time(5i)",
+                      value: @match.end_time&.min,
+                      data: { "time-picker-target": "input" } %>
+
+                  <button type="button"
+                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @match.end_time %>"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left;">
+                    <%= @match.end_time ? ("%02d" % @match.end_time.min) : "Min" %>
+                  </button>
+
+                  <div class="time-picker-dropdown"
+                       data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
+                    <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.end_time&.min == val %>"
+                              style="background:<%= @match.end_time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
                               data-time-picker-item
                               data-action="click->time-picker#select"
                               data-value="<%= val %>"
@@ -986,12 +1067,20 @@
             </span>
           </div>
 
-          <%# ── Ligne Heure ── %>
+          <%# ── Ligne Heure de début ── %>
           <div class="match-recap-row">
             <span class="recap-label">Heure</span>
             <span class="recap-value" data-match-form-target="recapTime">
               <%# strftime "%Hh%M" donne "21h15" %>
               <%= @match.time.present? ? @match.time.strftime("%Hh%M") : "—" %>
+            </span>
+          </div>
+
+          <%# ── Ligne Heure de fin ── %>
+          <div class="match-recap-row">
+            <span class="recap-label">Fin</span>
+            <span class="recap-value" data-match-form-target="recapEndTime">
+              <%= @match.end_time.present? ? @match.end_time.strftime("%Hh%M") : "—" %>
             </span>
           </div>
 
