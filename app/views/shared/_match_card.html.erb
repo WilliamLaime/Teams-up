@@ -16,10 +16,14 @@
   # Classe CSS du badge de niveau — tier dynamique selon la grille du sport
   level_css = level_badge_css(match.level, match.sport)
 
-  # Date courte en français (ex: "Lun 13") — sans l'heure, affichée sur sa
-  # propre ligne mise en avant dans le corps de la carte.
-  fr_days  = %w[Dim Lun Mar Mer Jeu Ven Sam]
-  date_str = match.date ? "#{fr_days[match.date.wday]} #{match.date.strftime('%d')}" : nil
+  # Date courte en français (ex: "Lun 13 juil.") — sans l'heure, affichée sur sa
+  # propre ligne mise en avant dans le corps de la carte. Le mois est explicité
+  # via des tableaux fixes (indépendant de la locale strftime).
+  fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
+  fr_months = %w[janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.]
+  date_str  = if match.date
+    "#{fr_days[match.date.wday]} #{match.date.strftime('%d')} #{fr_months[match.date.month - 1]}"
+  end
 
   # Plage horaire début – fin (ex: "18:30 – 19:30"). effective_end_time retombe
   # sur "début + 1h" pour les anciens matchs sans end_time. nil si pas d'heure.
@@ -122,10 +126,19 @@
         <% end %>
         <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
       </div>
-      <%# Format à droite (date + heure sont désormais mises en avant dans le corps) %>
+      <%# Format à droite. Mode "Libre" : aucune taille n'est encodée dans le
+          format (contrairement à "5v5"), donc on affiche le nombre total de
+          joueurs défini par le créateur (présents + recherchés). On n'affiche
+          PAS "recherchés" ici : ce serait un doublon avec "X manquants" en bas. %>
       <div class="d-flex align-items-center gap-2">
-        <% if match.format.present? %>
-          <span class="match-card-date">
+        <% if match.libre? %>
+          <% libre_total = match.players_present.to_i + match.players_needed.to_i %>
+          <span class="match-card-format">
+            <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
+            Libre · <%= libre_total %> joueur<%= libre_total > 1 ? "s" : "" %>
+          </span>
+        <% elsif match.format.present? %>
+          <span class="match-card-format">
             <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
             <%= match.format %>
           </span>
