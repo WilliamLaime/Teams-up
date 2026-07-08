@@ -684,7 +684,7 @@
                     class: "form-control",
                     data: {
                       "match-form-target": "playersPresentInput",
-                      "action": "input->match-form#changePresent"
+                      "action": "input->match-form#changePresent change->match-form#normalizePresent"
                     } %>
               </div>
 
@@ -696,7 +696,7 @@
                        value="<%= @match.players_needed || 1 %>"
                        class="form-control"
                        data-match-form-target="playersLibreInput"
-                       data-action="input->match-form#changeLibre">
+                       data-action="input->match-form#changeLibre change->match-form#normalizeLibre">
               </div>
 
             </div><%# fin flex wrapper %>
