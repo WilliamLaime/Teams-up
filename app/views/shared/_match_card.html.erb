@@ -135,7 +135,7 @@
           <% libre_total = match.players_present.to_i + match.players_needed.to_i %>
           <span class="match-card-format">
             <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
-            Libre · <%= libre_total %> joueur<%= libre_total > 1 ? "s" : "" %>
+<%= libre_total %> joueur<%= libre_total > 1 ? "s" : "" %>
           </span>
         <% elsif match.format.present? %>
           <span class="match-card-format">
