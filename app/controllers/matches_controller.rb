@@ -168,6 +168,7 @@ class MatchesController < ApplicationController
     @match.players_needed  = 4                 # Joueurs recherchés : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
+    @match.end_time        = @match.time + 1.hour # Fin : 1h après le début par défaut (modifiable)
     # Sport : pré-rempli avec le sport actif. En mode multisport (« Tous les sports »),
     # current_sport vaut nil → on retombe sur le 1er sport pour qu'un sport soit toujours
     # présélectionné. Sinon aucun sport n'est choisi au chargement et le JS (updateSport)
@@ -260,6 +261,7 @@ class MatchesController < ApplicationController
     previous_values = {
       date: @match.date,
       time: @match.time,
+      end_time: @match.end_time,
       venue_id: @match.venue_id,
       title: @match.title
     }
@@ -339,8 +341,8 @@ class MatchesController < ApplicationController
       @match.date.year, @match.date.month, @match.date.day,
       @match.time.hour, @match.time.min, 0
     )
-    # Durée par défaut : 1h30
-    end_dt = start_dt + 90.minutes
+    # Fin réelle du match (heure de fin saisie, sinon +1h par défaut)
+    end_dt = @match.end_datetime || start_dt + 1.hour
 
     # Lieu : venue ou adresse libre
     location = @match.place.presence || ""
@@ -535,7 +537,7 @@ class MatchesController < ApplicationController
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
     params.require(:match).permit(
-      :title, :description, :date, :time, :place, :venue_id,
+      :title, :description, :date, :time, :end_time, :place, :venue_id,
       :level, :players_needed, :players_present, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
       :genre_restriction, # Restriction de genre : "tous" ou "feminin"
@@ -567,6 +569,7 @@ class MatchesController < ApplicationController
     changes = []
     changes << "la date" if previous_values[:date] != @match.date
     changes << "l'heure" if previous_values[:time] != @match.time
+    changes << "l'heure de fin" if previous_values[:end_time] != @match.end_time
     changes << "le lieu" if previous_values[:venue_id] != @match.venue_id
     changes << "le titre" if previous_values[:title] != @match.title
 

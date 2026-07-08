@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_03_102500) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -161,6 +161,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_102500) do
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
+    t.time "end_time"
     t.string "format"
     t.string "genre_restriction", default: "tous"
     t.bigint "homme_du_match_id"

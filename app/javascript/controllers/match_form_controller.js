@@ -57,7 +57,8 @@ export default class extends Controller {
     "recapSport",        // Valeur du sport dans la ligne récap
     "recapPlace",        // Valeur du lieu dans la ligne
     "recapDate",         // Zone affichant la date formatée
-    "recapTime",         // Zone affichant l'heure (ex: 21h15)
+    "recapTime",         // Zone affichant l'heure de début (ex: 21h15)
+    "recapEndTime",      // Zone affichant l'heure de fin (ex: 22h15)
     "recapPlayers",      // Zone affichant le nombre de joueurs
     "recapLevel",        // Valeur du niveau dans la ligne
     "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
@@ -78,6 +79,10 @@ export default class extends Controller {
     // Par défaut 9 si aucun sport ou sport inconnu dans le mapping
     this.maxPlayers = this._maxForCurrentSport()
 
+    // Devient true dès que l'utilisateur choisit lui-même une heure de fin.
+    // Tant qu'il est false, la fin suit automatiquement « début + 1h ».
+    this.endTimeTouched = false
+
     this.updateTitle()
     this.updateDescription()
     // updateSport() appelle updateBanner() en interne
@@ -85,6 +90,11 @@ export default class extends Controller {
     this.updatePlace()
     this.updateDate()
     this.updateTime()
+    this.updateEndTime()
+    // Édition : si la fin enregistrée n'est pas exactement « début + 1h », elle a été
+    // personnalisée → on la considère comme touchée pour ne pas l'écraser si l'organisateur
+    // ajuste ensuite l'heure de début.
+    this.endTimeTouched = this._endDiffersFromDefault()
     this.updatePlayers()
     this.updateLevel()
     this.updateValidation()
@@ -375,6 +385,103 @@ export default class extends Controller {
     } else {
       this.recapTimeTarget.textContent = "—"
     }
+  }
+
+  // ── Changement de l'heure de début (déclenché par l'utilisateur) ──
+  // Met à jour le récap ET fait suivre l'heure de fin (début + 1h) tant que
+  // l'utilisateur n'a pas fixé lui-même une heure de fin.
+  startTimeChanged() {
+    this.updateTime()
+    this._syncEndFromStart()
+  }
+
+  // ── Récap de l'heure de fin (format : "22h15") ──────────────
+  // Lit les deux inputs cachés du time-picker de fin (end_time(4i)/(5i)).
+  updateEndTime() {
+    if (!this.hasRecapEndTimeTarget) return
+    const hourEl   = this.element.querySelector('[name="match[end_time(4i)]"]')
+    const minuteEl = this.element.querySelector('[name="match[end_time(5i)]"]')
+
+    if (hourEl && minuteEl && hourEl.value !== "" && minuteEl.value !== "") {
+      const h = String(hourEl.value).padStart(2, "0")
+      const m = String(minuteEl.value).padStart(2, "0")
+      this.recapEndTimeTarget.textContent = `${h}h${m}`
+    } else {
+      this.recapEndTimeTarget.textContent = "—"
+    }
+  }
+
+  // ── L'utilisateur a choisi lui-même une heure de fin ──
+  // On mémorise ce choix pour cesser de faire suivre la fin automatiquement,
+  // puis on met à jour le récap.
+  endTimeChanged() {
+    this.endTimeTouched = true
+    this.updateEndTime()
+  }
+
+  // ── Détecte si la fin actuelle diffère de « début + 1h » ──
+  // Sert à savoir, à l'ouverture d'un formulaire d'édition, si l'organisateur
+  // avait choisi une fin personnalisée (≠ valeur par défaut).
+  _endDiffersFromDefault() {
+    const startH = this.element.querySelector('[name="match[time(4i)]"]')
+    const startM = this.element.querySelector('[name="match[time(5i)]"]')
+    const endH   = this.element.querySelector('[name="match[end_time(4i)]"]')
+    const endM   = this.element.querySelector('[name="match[end_time(5i)]"]')
+    // Sans début ou sans fin renseignés : rien de personnalisé à préserver
+    if (!startH || !startM || !endH || !endM) return false
+    if ([startH, startM, endH, endM].some(el => el.value === "")) return false
+
+    const expectedH = (parseInt(startH.value) + 1) % 24
+    const expectedM = parseInt(startM.value)
+    return parseInt(endH.value) !== expectedH || parseInt(endM.value) !== expectedM
+  }
+
+  // ── Fait suivre la fin = début + 1h (si l'utilisateur ne l'a pas fixée) ──
+  _syncEndFromStart() {
+    if (this.endTimeTouched) return
+
+    const hourEl = this.element.querySelector('[name="match[time(4i)]"]')
+    const minEl  = this.element.querySelector('[name="match[time(5i)]"]')
+    if (!hourEl || !minEl || hourEl.value === "" || minEl.value === "") return
+
+    // Modulo 24 : 23h + 1h → 00h (fin le lendemain, gérée côté serveur)
+    const endHour = (parseInt(hourEl.value) + 1) % 24
+    this._setEndTime(endHour, parseInt(minEl.value))
+  }
+
+  // ── Pose une heure de fin dans les time-pickers de fin ──
+  // Met à jour l'input caché, le bouton trigger et l'item actif du dropdown,
+  // pour chacun des deux pickers (heures et minutes), puis rafraîchit le récap.
+  // N'émet volontairement aucun event "change" → ne marque pas la fin comme
+  // "touchée par l'utilisateur" (cf. endTimeTouched).
+  _setEndTime(hour, minute) {
+    const applyPicker = (name, value, label) => {
+      const input = this.element.querySelector(`[name="match[${name}]"]`)
+      if (!input) return
+      input.value = value
+
+      const picker = input.closest('[data-controller="time-picker"]')
+      if (!picker) return
+
+      const trigger = picker.querySelector('[data-time-picker-target="trigger"]')
+      if (trigger) {
+        trigger.textContent = label
+        trigger.classList.remove("sport-picker-placeholder")
+      }
+
+      // Reflète la sélection dans la liste déroulante (visible si l'utilisateur l'ouvre)
+      picker.querySelectorAll("[data-time-picker-item]").forEach(item => {
+        const isActive = item.dataset.value === String(value)
+        item.classList.toggle("time-picker-item--active", isActive)
+        item.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "transparent", "important")
+        item.style.color = isActive ? "#1EDD88" : ""
+        item.style.fontWeight = isActive ? "700" : "500"
+      })
+    }
+
+    applyPicker("end_time(4i)", hour,   String(hour).padStart(2, "0") + "h")
+    applyPicker("end_time(5i)", minute, String(minute).padStart(2, "0"))
+    this.updateEndTime()
   }
 
   // ── Nombre de joueurs standard : décrémenter ("-") ────────────────

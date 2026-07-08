@@ -161,8 +161,11 @@
         <%
           d = @match.date
           t = @match.time
+          et = @match.effective_end_time
           date_str = d ? "#{fr_days[d.wday]} #{d.day} #{fr_months[d.month - 1]}" : "Date à définir"
+          # Plage horaire : "14:00 – 15:00" (fin affichée dès qu'une heure de début existe)
           time_str = t ? t.strftime('%H:%M') : "—"
+          time_str += " – #{et.strftime('%H:%M')}" if t && et
         %>
         <%# Wrapper flex pour aligner la date à gauche et le bouton calendrier à droite %>
         <div class="match-banner-datetime-wrapper">
@@ -181,7 +184,7 @@
             <%
               # Construit les dates en UTC pour Google Calendar (format : YYYYMMDDTHHmmSSZ)
               start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
-              end_dt   = start_dt + 90.minutes
+              end_dt   = @match.end_datetime || start_dt + 1.hour
               gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
               gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
 
@@ -1494,7 +1497,7 @@
     d = @match.date
     t = @match.time
     start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
-    end_dt   = start_dt + 90.minutes
+    end_dt   = @match.end_datetime || start_dt + 1.hour
     gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
     gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
     google_cal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \
