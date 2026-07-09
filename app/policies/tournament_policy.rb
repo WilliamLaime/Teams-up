@@ -28,6 +28,16 @@ class TournamentPolicy < ApplicationPolicy
     owner?
   end
 
+  # Gestion du tableau (lancer le tournoi, saisir les résultats).
+  # Ouverte à l'admin ET aux co-organisateurs (cf. Tournament#organizer?).
+  def start?
+    manage?
+  end
+
+  def manage?
+    record.organizer?(user)
+  end
+
   private
 
   # Le créateur du tournoi en est l'admin.

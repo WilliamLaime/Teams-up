@@ -1,5 +1,5 @@
 <%# ── Détail d'un tournoi (/tournois/:id) ────────────────────────────────────── %>
-<%# Squelette Lot 1 : le tableau / bracket (Ronde Suisse, Final 8) sera ajouté au Lot 3. %>
+<%# Lot 3 : tableau de jeu — rondes suisses + tableau final à élimination directe. %>
 <% content_for :title, @tournament.name %>
 
 <div class="tournaments-index-page">
@@ -15,10 +15,10 @@
       </p>
     </div>
 
-    <div class="tournament-show-placeholder">
-      <i data-lucide="construction" style="width:40px;height:40px;" aria-hidden="true"></i>
-      <p>Le tableau du tournoi arrive bientôt.</p>
-      <span>La visualisation des rondes et du tableau final sera disponible prochainement.</span>
+    <%# Le board est remplacé en Turbo Stream à chaque résultat saisi par l'organisateur
+        (les boutons dépendent de current_user → pas de broadcast global). %>
+    <div id="tournament_board" class="tournament-board" data-controller="bracket">
+      <%= render "tournaments/board", tournament: @tournament %>
     </div>
 
   </div>

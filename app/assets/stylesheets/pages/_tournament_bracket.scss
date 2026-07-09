@@ -1,0 +1,240 @@
+// =====================================================
+// TOURNAMENT BRACKET — Board d'un tournoi (/tournois/:id)
+// Rondes suisses + tableau final. Tokens de thème var(--theme-*) + accent $green.
+// =====================================================
+
+.tournament-board {
+  margin-top: 1.5rem;
+}
+
+// ── Panneau de lancement (tournoi "open") ────────────
+.tournament-start-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2.5rem 1.5rem;
+  background-color: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 16px;
+  text-align: center;
+
+  &__info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--theme-text-primary);
+    font-size: 1.05rem;
+
+    i { width: 20px; height: 20px; color: $green; }
+    strong { color: var(--theme-text-strong); }
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    i { width: 18px; height: 18px; }
+  }
+
+  &__hint {
+    color: var(--theme-text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+// ── Vainqueur (tournoi terminé) ──────────────────────
+.tournament-champion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, rgba($green, 0.12), transparent);
+  border: 1px solid rgba($green, 0.4);
+  border-radius: 16px;
+
+  i { width: 36px; height: 36px; color: $green; }
+  &__label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--theme-text-muted); }
+  &__name { font-size: 1.4rem; font-family: $display-font; color: var(--theme-text-strong); }
+}
+
+// ── Phases (Ronde Suisse / Tableau final) ────────────
+.tournament-phase {
+  margin-bottom: 2.5rem;
+
+  &__title {
+    font-family: $display-font;
+    font-size: 1.4rem;
+    letter-spacing: 0.03em;
+    color: var(--theme-text-strong);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid $green;
+  }
+}
+
+// ── Une ronde suisse ─────────────────────────────────
+.swiss-round {
+  margin-bottom: 1.75rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  &__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+    margin: 0;
+  }
+
+  &__status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+
+    &--completed { color: $green; background: rgba($green, 0.12); }
+    &--in_progress { color: var(--theme-text-muted); background: var(--theme-hover-bg); }
+  }
+
+  &__matches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+// ── Tableau final (colonnes de tours) ────────────────
+.bracket {
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+
+  &__round {
+    flex: 0 0 auto;
+    min-width: 260px;
+  }
+
+  &__round-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--theme-text-muted);
+    margin-bottom: 0.75rem;
+  }
+
+  // Les matchs d'un tour sont répartis verticalement (espacés pour évoquer l'arbre).
+  &__matches {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 1.25rem;
+    height: 100%;
+  }
+}
+
+// ── Carte d'un match ─────────────────────────────────
+.tmatch-card {
+  background-color: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+
+  &--bye {
+    border-style: dashed;
+    align-items: center;
+  }
+
+  &--done { border-color: var(--theme-border-strong); }
+
+  &__player {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 8px;
+    transition: background-color 0.15s ease;
+
+    &--winner {
+      background: rgba($green, 0.12);
+      .tmatch-card__name { color: var(--theme-text-strong); font-weight: 700; }
+    }
+
+    &--loser {
+      opacity: 0.55;
+      .tmatch-card__name { text-decoration: line-through; }
+    }
+
+    // Survol : joueur suivi dans tout le tableau (contrôleur bracket).
+    &--tracked { background: var(--theme-hover-bg); }
+  }
+
+  &__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+
+  &__name {
+    flex: 1 1 auto;
+    color: var(--theme-text-primary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__win-icon { width: 18px; height: 18px; color: $green; flex: 0 0 auto; }
+
+  &__bye-badge {
+    font-size: 0.75rem;
+    color: var(--theme-text-muted);
+    font-style: italic;
+  }
+
+  // Bouton « Vainqueur » (button_to → form). On neutralise le style form.
+  &__win-btn {
+    flex: 0 0 auto;
+    border: 1px solid $green;
+    background: transparent;
+    color: $green;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover { background: $green; color: #fff; }
+  }
+
+  // ── Animation de tirage au sort (contrôleur tournament-draw) ──
+  &--shuffling { animation: tmatch-shuffle 0.2s ease-in-out infinite; }
+  &--hidden { opacity: 0; transform: translateY(12px) scale(0.96); }
+  &--revealed { animation: tmatch-reveal 0.4s ease forwards; }
+}
+
+@keyframes tmatch-shuffle {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-3px) rotate(-1deg); }
+  75% { transform: translateX(3px) rotate(1deg); }
+}
+
+@keyframes tmatch-reveal {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

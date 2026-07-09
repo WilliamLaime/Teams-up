@@ -1,0 +1,34 @@
+<%# ── Board du tournoi ────────────────────────────────────────────────────────
+    Aiguillage selon l'état :
+      • open        → bouton « Lancer le tournoi » (organisateur) ou message d'attente
+      • in_progress → rondes suisses + tableau final
+      • completed   → idem, avec le vainqueur mis en avant
+    `can_manage` = l'utilisateur peut saisir les résultats / lancer (admin ou co-org). %>
+<% can_manage = user_signed_in? && policy(tournament).manage? %>
+
+<% if tournament.open? %>
+  <%= render "tournaments/start_panel", tournament: tournament, can_manage: can_manage %>
+<% else %>
+  <% if tournament.completed? && (champion = tournament.bracket_rounds.last&.tournament_matches&.first&.winner) %>
+    <div class="tournament-champion">
+      <i data-lucide="trophy" aria-hidden="true"></i>
+      <span class="tournament-champion__label">Vainqueur</span>
+      <strong class="tournament-champion__name"><%= champion.display_name %></strong>
+    </div>
+  <% end %>
+
+  <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>
+  <% if tournament.swiss_rounds.any? %>
+    <section class="tournament-phase">
+      <h2 class="tournament-phase__title">Ronde Suisse</h2>
+      <% tournament.swiss_rounds.each do |round| %>
+        <%= render "tournaments/swiss_round", round: round, can_manage: can_manage %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <%# Tableau final à élimination directe. %>
+  <% if tournament.bracket_started? %>
+    <%= render "tournaments/bracket", tournament: tournament, can_manage: can_manage %>
+  <% end %>
+<% end %>

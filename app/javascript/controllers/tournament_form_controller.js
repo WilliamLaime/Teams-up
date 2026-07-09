@@ -198,9 +198,10 @@ export default class extends Controller {
       push(16, "4 poules de 4 + quarts")
       push(32, "8 poules de 4 + huitièmes")
     } else if (format === "ronde_suisse") {
-      push(wanted, `Ronde suisse (${wanted}) → ${wanted < 12 ? "Final 4" : "Final 8"}`, true)
-      push(16, "4 rondes + Final 8")
-      push(32, "5 rondes + Final 8")
+      // Final 4 jusqu'à 8 joueurs, Final 8 au-delà (cf. Tournament#final_size).
+      push(wanted, `Ronde suisse (3 V) → ${wanted <= 8 ? "Final 4" : "Final 8"}`, true)
+      push(16, "Ronde suisse (3 V) → Final 8")
+      push(32, "Ronde suisse (3 V) → Final 8")
     } else { // championnat
       push(wanted, `${wanted} joueurs, round-robin, top ${wanted <= 10 ? 4 : 8} en playoffs`, true)
       push(16, "16 joueurs, top 8 en playoffs")

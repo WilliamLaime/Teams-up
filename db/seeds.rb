@@ -9,248 +9,248 @@ puts "Création des achievements..."
 achievements_data = [
   # ── Catégorie MATCH ──────────────────────────────────────────────────────────
   {
-    key:         "first_join",
-    name:        "Premier pas sur le terrain",
+    key: "first_join",
+    name: "Premier pas sur le terrain",
     description: "Rejoins ton premier match",
-    xp_reward:   50,
-    icon_emoji:  "⚽",
-    category:    "match"
+    xp_reward: 50,
+    icon_emoji: "⚽",
+    category: "match"
   },
   {
-    key:         "matches_5",
-    name:        "Habitué du terrain",
+    key: "matches_5",
+    name: "Habitué du terrain",
     description: "Participe à 5 matchs",
-    xp_reward:   150,
-    icon_emoji:  "🔥",
-    category:    "match"
+    xp_reward: 150,
+    icon_emoji: "🔥",
+    category: "match"
   },
   {
-    key:         "matches_10",
-    name:        "Vétéran",
+    key: "matches_10",
+    name: "Vétéran",
     description: "Participe à 10 matchs",
-    xp_reward:   300,
-    icon_emoji:  "🌟",
-    category:    "match"
+    xp_reward: 300,
+    icon_emoji: "🌟",
+    category: "match"
   },
   {
-    key:         "first_match_created",
-    name:        "Organisateur en herbe",
+    key: "first_match_created",
+    name: "Organisateur en herbe",
     description: "Crée ton premier match",
-    xp_reward:   100,
-    icon_emoji:  "🏟️",
-    category:    "match"
+    xp_reward: 100,
+    icon_emoji: "🏟️",
+    category: "match"
   },
   {
-    key:         "organized_3",
-    name:        "Chef d'équipe",
+    key: "organized_3",
+    name: "Chef d'équipe",
     description: "Organise 3 matchs",
-    xp_reward:   200,
-    icon_emoji:  "🎯",
-    category:    "match"
+    xp_reward: 200,
+    icon_emoji: "🎯",
+    category: "match"
   },
   {
-    key:         "matches_25",
-    name:        "Légende du terrain",
+    key: "matches_25",
+    name: "Légende du terrain",
     description: "Participe à 25 matchs",
-    xp_reward:   500,
-    icon_emoji:  "🏆",
-    category:    "match"
+    xp_reward: 500,
+    icon_emoji: "🏆",
+    category: "match"
   },
   {
-    key:         "matches_50",
-    name:        "Roi des terrains",
+    key: "matches_50",
+    name: "Roi des terrains",
     description: "Participe à 50 matchs",
-    xp_reward:   1000,
-    icon_emoji:  "👑",
-    category:    "match"
+    xp_reward: 1000,
+    icon_emoji: "👑",
+    category: "match"
   },
   {
-    key:         "matches_75",
-    name:        "Indestructible",
+    key: "matches_75",
+    name: "Indestructible",
     description: "Participe à 75 matchs",
-    xp_reward:   750,
-    icon_emoji:  "🛡️",
-    category:    "match"
+    xp_reward: 750,
+    icon_emoji: "🛡️",
+    category: "match"
   },
   {
-    key:         "matches_100",
-    name:        "Centurion",
+    key: "matches_100",
+    name: "Centurion",
     description: "Participe à 100 matchs",
-    xp_reward:   1500,
-    icon_emoji:  "🥇",
-    category:    "match"
+    xp_reward: 1500,
+    icon_emoji: "🥇",
+    category: "match"
   },
   {
-    key:         "organized_10",
-    name:        "Général des terrains",
+    key: "organized_10",
+    name: "Général des terrains",
     description: "Organise 10 matchs",
-    xp_reward:   400,
-    icon_emoji:  "🎖️",
-    category:    "match"
+    xp_reward: 400,
+    icon_emoji: "🎖️",
+    category: "match"
   },
   {
-    key:         "organized_25",
-    name:        "Directeur sportif",
+    key: "organized_25",
+    name: "Directeur sportif",
     description: "Organise 25 matchs",
-    xp_reward:   700,
-    icon_emoji:  "📋",
-    category:    "match"
+    xp_reward: 700,
+    icon_emoji: "📋",
+    category: "match"
   },
   {
-    key:         "hat_trick",
-    name:        "Hat-trick",
+    key: "hat_trick",
+    name: "Hat-trick",
     description: "Rejoins 3 matchs en 7 jours",
-    xp_reward:   125,
-    icon_emoji:  "⚡",
-    category:    "match"
+    xp_reward: 125,
+    icon_emoji: "⚡",
+    category: "match"
   },
   {
-    key:         "night_owl",
-    name:        "Joueur nocturne",
+    key: "night_owl",
+    name: "Joueur nocturne",
     description: "Participe à un match après 20h",
-    xp_reward:   80,
-    icon_emoji:  "🌙",
-    category:    "match"
+    xp_reward: 80,
+    icon_emoji: "🌙",
+    category: "match"
   },
   {
-    key:         "sport_explorer",
-    name:        "Touche-à-tout",
+    key: "sport_explorer",
+    name: "Touche-à-tout",
     description: "Pratique 3 sports différents",
-    xp_reward:   200,
-    icon_emoji:  "🎽",
-    category:    "match"
+    xp_reward: 200,
+    icon_emoji: "🎽",
+    category: "match"
   },
   {
-    key:         "early_bird",
-    name:        "Lève-tôt",
+    key: "early_bird",
+    name: "Lève-tôt",
     description: "Participe à un match avant 9h",
-    xp_reward:   80,
-    icon_emoji:  "🌅",
-    category:    "match"
+    xp_reward: 80,
+    icon_emoji: "🌅",
+    category: "match"
   },
   {
-    key:         "comeback",
-    name:        "Revenant",
+    key: "comeback",
+    name: "Revenant",
     description: "Reviens jouer après 30 jours d'absence",
-    xp_reward:   100,
-    icon_emoji:  "🔄",
-    category:    "match"
+    xp_reward: 100,
+    icon_emoji: "🔄",
+    category: "match"
   },
 
   # ── Catégorie SOCIAL ─────────────────────────────────────────────────────────
   {
-    key:         "first_message",
-    name:        "Première prise de parole",
+    key: "first_message",
+    name: "Première prise de parole",
     description: "Envoie ton premier message dans un chat",
-    xp_reward:   25,
-    icon_emoji:  "💬",
-    category:    "social"
+    xp_reward: 25,
+    icon_emoji: "💬",
+    category: "social"
   },
   {
-    key:         "messages_10",
-    name:        "Grande gueule",
+    key: "messages_10",
+    name: "Grande gueule",
     description: "Envoie 10 messages au total",
-    xp_reward:   100,
-    icon_emoji:  "🗣️",
-    category:    "social"
+    xp_reward: 100,
+    icon_emoji: "🗣️",
+    category: "social"
   },
   {
-    key:         "messages_50",
-    name:        "Voix du stade",
+    key: "messages_50",
+    name: "Voix du stade",
     description: "Envoie 50 messages au total",
-    xp_reward:   250,
-    icon_emoji:  "📢",
-    category:    "social"
+    xp_reward: 250,
+    icon_emoji: "📢",
+    category: "social"
   },
   {
-    key:         "messages_100",
-    name:        "DJ du vestiaire",
+    key: "messages_100",
+    name: "DJ du vestiaire",
     description: "Envoie 100 messages au total",
-    xp_reward:   350,
-    icon_emoji:  "🎙️",
-    category:    "social"
+    xp_reward: 350,
+    icon_emoji: "🎙️",
+    category: "social"
   },
   {
-    key:         "messages_250",
-    name:        "Inarrêtable",
+    key: "messages_250",
+    name: "Inarrêtable",
     description: "Envoie 250 messages au total",
-    xp_reward:   600,
-    icon_emoji:  "💥",
-    category:    "social"
+    xp_reward: 600,
+    icon_emoji: "💥",
+    category: "social"
   },
   {
-    key:         "first_review",
-    name:        "Juge de touche",
+    key: "first_review",
+    name: "Juge de touche",
     description: "Laisse ton premier avis sur un joueur",
-    xp_reward:   40,
-    icon_emoji:  "🌟",
-    category:    "social"
+    xp_reward: 40,
+    icon_emoji: "🌟",
+    category: "social"
   },
   {
-    key:         "reviews_5",
-    name:        "Arbitre confirmé",
+    key: "reviews_5",
+    name: "Arbitre confirmé",
     description: "Laisse 5 avis sur des joueurs",
-    xp_reward:   120,
-    icon_emoji:  "⚖️",
-    category:    "social"
+    xp_reward: 120,
+    icon_emoji: "⚖️",
+    category: "social"
   },
 
   # ── Catégorie PROFIL ─────────────────────────────────────────────────────────
   {
-    key:         "profile_complete",
-    name:        "Identité complète",
+    key: "profile_complete",
+    name: "Identité complète",
     description: "Complète ton profil (avatar, description et téléphone)",
-    xp_reward:   75,
-    icon_emoji:  "👤",
-    category:    "profile"
+    xp_reward: 75,
+    icon_emoji: "👤",
+    category: "profile"
   },
   {
-    key:         "avatar_added",
-    name:        "Visage révélé",
+    key: "avatar_added",
+    name: "Visage révélé",
     description: "Ajoute une photo de profil",
-    xp_reward:   50,
-    icon_emoji:  "📸",
-    category:    "profile"
+    xp_reward: 50,
+    icon_emoji: "📸",
+    category: "profile"
   },
   {
-    key:         "description_written",
-    name:        "Ma story",
+    key: "description_written",
+    name: "Ma story",
     description: "Rédige ta description de profil",
-    xp_reward:   30,
-    icon_emoji:  "✍️",
-    category:    "profile"
+    xp_reward: 30,
+    icon_emoji: "✍️",
+    category: "profile"
   },
   {
-    key:         "phone_added",
-    name:        "Joignable",
+    key: "phone_added",
+    name: "Joignable",
     description: "Ajoute ton numéro de téléphone",
-    xp_reward:   25,
-    icon_emoji:  "📱",
-    category:    "profile"
+    xp_reward: 25,
+    icon_emoji: "📱",
+    category: "profile"
   },
   {
-    key:         "location_added",
-    name:        "Localisé",
+    key: "location_added",
+    name: "Localisé",
     description: "Renseigne ta ville",
-    xp_reward:   25,
-    icon_emoji:  "📍",
-    category:    "profile"
+    xp_reward: 25,
+    icon_emoji: "📍",
+    category: "profile"
   },
   {
-    key:         "achievement_collector",
-    name:        "Collectionneur",
+    key: "achievement_collector",
+    name: "Collectionneur",
     description: "Débloque 10 achievements",
-    xp_reward:   400,
-    icon_emoji:  "💎",
-    category:    "profile"
+    xp_reward: 400,
+    icon_emoji: "💎",
+    category: "profile"
   },
   {
-    key:         "og_player",
-    name:        "OG",
+    key: "og_player",
+    name: "OG",
     description: "Membre depuis plus d'un an",
-    xp_reward:   300,
-    icon_emoji:  "🎂",
-    category:    "profile"
+    xp_reward: 300,
+    icon_emoji: "🎂",
+    category: "profile"
   }
 ]
 
@@ -330,11 +330,11 @@ else
     end
 
     # Inscrit le 1er user aux tournois marqués "registered" (→ section "Mes tournois").
-    if data[:registered]
-      TournamentUser.find_or_create_by!(tournament: tournament, user: creator) do |tu|
-        tu.role   = "joueur"
-        tu.status = "approved"
-      end
+    next unless data[:registered]
+
+    TournamentUser.find_or_create_by!(tournament: tournament, user: creator) do |tu|
+      tu.role   = "joueur"
+      tu.status = "approved"
     end
   end
 
@@ -346,6 +346,44 @@ else
     TournamentUser.find_or_create_by!(tournament: demo_open, user: co_org) do |tu|
       tu.role   = "co_organisateur"
       tu.status = "approved"
+    end
+  end
+
+  # ── Démo du moteur Ronde Suisse (Lot 3) ────────────────────────────────────
+  # On peuple le tournoi "Masters Tennis Été" (in_progress) avec de vrais joueurs,
+  # puis on génère 2 rondes et on saisit des résultats → la page /tournois/:id
+  # montre le tableau (rondes suisses + progression). Idempotent : on ne rejoue
+  # rien si des rondes existent déjà.
+  masters = Tournament.find_by(name: "Masters Tennis Été")
+  if masters&.tournament_rounds&.none?
+    # 8 joueurs de démo dédiés (idempotents) pour peupler le tableau.
+    players = (1..8).map do |i|
+      user = User.find_or_initialize_by(email: "joueur#{i}@teamup-demo.fr")
+      if user.new_record?
+        user.assign_attributes(password: "Demo1234!", confirmed_at: Time.current,
+                               first_name: "Joueur", last_name: i.to_s)
+        user.save!
+        user.create_profil!(first_name: "Joueur", last_name: i.to_s)
+      end
+      user
+    end
+
+    if players.size >= 4
+      players.each do |player|
+        TournamentUser.find_or_create_by!(tournament: masters, user: player) do |tu|
+          tu.role   = "joueur"
+          tu.status = "approved"
+        end
+      end
+
+      # Ronde 1 puis résolution (le mieux classé — player_a — gagne), puis ronde 2.
+      SwissPairing.new(masters).next_round!
+      masters.current_round.tournament_matches.where(status: "pending").find_each do |match|
+        match.update!(winner_id: match.player_a_id, status: "completed")
+      end
+      SwissPairing.new(masters).next_round!
+
+      puts "  ↳ Ronde Suisse de démo générée sur « #{masters.name} » (#{masters.swiss_rounds.count} ronde(s))."
     end
   end
 

@@ -142,7 +142,11 @@ Rails.application.routes.draw do
   resources :tournaments, path: "tournois" do
     # GET /tournois/search => autocomplete JSON pour désigner un co-organisateur
     collection { get :search }
+    # POST /tournois/:id/start => lancer le tournoi (génère la ronde suisse 1)
+    member { post :start }
     resources :tournament_users, only: [:create, :destroy]
+    # PATCH /tournois/:tournament_id/tournament_matches/:id => saisir le vainqueur
+    resources :tournament_matches, only: [:update]
   end
 
   # Route pour le profil de l'utilisateur connecté (ressource singulière)

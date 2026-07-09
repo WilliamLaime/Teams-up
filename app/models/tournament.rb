@@ -12,10 +12,14 @@ class Tournament < ApplicationRecord
   # ── Associations ────────────────────────────────────────────────────────────
   belongs_to :sport, optional: true
   belongs_to :venue, optional: true
-  belongs_to :user,  optional: true          # créateur / admin du tournoi
+  belongs_to :user,  optional: true # créateur / admin du tournoi
 
   has_many :tournament_users, dependent: :destroy
   has_many :users, through: :tournament_users
+
+  # Rondes & matchs (Lot 3 — Ronde Suisse + tableau final).
+  has_many :tournament_rounds, dependent: :destroy
+  has_many :tournament_matches, through: :tournament_rounds
 
   # ── Constantes métier ────────────────────────────────────────────────────────
   # État du tournoi (voir la catégorisation de la page liste dans le controller).
@@ -27,8 +31,8 @@ class Tournament < ApplicationRecord
   # du dictionnaire dans les vues carte/show).
   FORMAT_LABELS = {
     "ronde_suisse" => "Ronde Suisse",
-    "poules"       => "Poules",
-    "championnat"  => "Championnat"
+    "poules" => "Poules",
+    "championnat" => "Championnat"
   }.freeze
 
   # Presets rapides du nombre de joueurs proposés dans le formulaire de création.
@@ -37,17 +41,20 @@ class Tournament < ApplicationRecord
 
   # Structures figées, dérivées de (format + nombre de joueurs) — rien n'est stocké
   # en base, c'est un simple aperçu en lecture seule affiché à la création.
-  # ⚠️ Valeurs provisoires : elles seront affinées au Lot 3 (génération réelle des
-  # tableaux / rondes). Voir le point ouvert dans docs/TOURNOI.md.
+  # Ronde suisse (Lot 3) : le nombre de rondes est dynamique (3 V pour se qualifier /
+  # 3 D pour être éliminé), la seule constante est la taille du tableau final :
+  # Final 4 jusqu'à 8 joueurs, Final 8 au-delà (cf. Tournament#final_size).
+  # Poules / championnat restent provisoires (formats des lots ultérieurs).
   STRUCTURE_PRESETS = {
-    "ronde_suisse" => { 8 => "3 rondes + Final 4", 16 => "4 rondes + Final 8", 32 => "5 rondes + Final 8" },
-    "poules"       => { 8 => "2 poules de 4 + demi-finales", 16 => "4 poules de 4 + quarts", 32 => "8 poules de 4 + huitièmes" },
-    "championnat"  => { 8 => "8 joueurs, 7 journées, top 4 en playoffs", 16 => "16 joueurs, top 8 en playoffs", 32 => "32 joueurs, top 8 en playoffs" }
+    "ronde_suisse" => { 8 => "Ronde suisse (3 V) + Final 4", 16 => "Ronde suisse (3 V) + Final 8", 32 => "Ronde suisse (3 V) + Final 8" },
+    "poules" => { 8 => "2 poules de 4 + demi-finales", 16 => "4 poules de 4 + quarts", 32 => "8 poules de 4 + huitièmes" },
+    "championnat" => { 8 => "8 joueurs, 7 journées, top 4 en playoffs", 16 => "16 joueurs, top 8 en playoffs",
+                       32 => "32 joueurs, top 8 en playoffs" }
   }.freeze
 
   # ── Recherche full-text (pg_search) ──────────────────────────────────────────
   pg_search_scope :search_by_name,
-                  against: [:name, :place, :description],
+                  against: %i[name place description],
                   using: { tsearch: { prefix: true } }
 
   # ── Validations ───────────────────────────────────────────────────────────────
@@ -87,18 +94,47 @@ class Tournament < ApplicationRecord
     tournament_users.count { |tu| tu.status == "approved" && tu.role == "joueur" }
   end
 
-  # Vrai si `u` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.
+  # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.
   # (Sert aux droits de gestion du tableau à partir du Lot 3.)
-  def organizer?(u)
-    return false if u.blank?
+  def organizer?(user)
+    return false if user.blank?
 
-    user_id == u.id || tournament_users.any? { |tu| tu.user_id == u.id && tu.role == "co_organisateur" }
+    user_id == user.id || tournament_users.any? { |tu| tu.user_id == user.id && tu.role == "co_organisateur" }
   end
 
   # Aperçu de structure figée pour la combinaison (format + nombre de joueurs).
   # nil si la combinaison n'a pas de preset (ex. nombre "Libre" hors 8/16/32).
   def structure_summary
     STRUCTURE_PRESETS.dig(format, max_players)
+  end
+
+  # ── Ronde Suisse + tableau final (Lot 3) ─────────────────────────────────────
+
+  # Rondes de la phase suisse, dans l'ordre.
+  def swiss_rounds   = tournament_rounds.swiss.ordered
+  # Tours du tableau final, dans l'ordre.
+  def bracket_rounds = tournament_rounds.bracket.ordered
+  # Le tableau final a-t-il déjà commencé ?
+  def bracket_started? = tournament_rounds.bracket.exists?
+
+  # Ronde en cours : la dernière ronde générée (bracket prioritaire sur swiss).
+  def current_round
+    bracket_rounds.last || swiss_rounds.last
+  end
+
+  # Taille du tableau final selon l'effectif inscrit : Final 4 pour un petit
+  # tournoi (≤ 8 joueurs), Final 8 au-delà. Aligné sur le seuil du formulaire (< 12 → Final 4
+  # côté aperçu, mais on tranche sur l'effectif réel au lancement).
+  def final_size
+    approved_players_count <= 8 ? 4 : 8
+  end
+
+  # Nombre minimal de joueurs pour lancer un tournoi.
+  MIN_PLAYERS_TO_START = 2
+
+  # Peut-on lancer le tournoi ? (inscriptions ouvertes + effectif suffisant)
+  def startable?
+    open? && approved_players_count >= MIN_PLAYERS_TO_START
   end
 
   # Champ source du slug (utilisé par le concern Sluggable).

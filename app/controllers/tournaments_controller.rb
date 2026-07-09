@@ -4,7 +4,7 @@ class TournamentsController < ApplicationController
   # Liste et détail accessibles aux visiteurs non connectés (comme les matchs).
   skip_before_action :authenticate_user!, only: %i[index show]
 
-  before_action :set_tournament, only: %i[show]
+  before_action :set_tournament, only: %i[show start]
 
   # GET /tournois
   # Trois sections (cf. docs/TOURNOI.md) :
@@ -43,16 +43,39 @@ class TournamentsController < ApplicationController
   end
 
   # GET /tournois/:id
-  # Squelette : le tableau / bracket sera rempli au Lot 3 (Ronde Suisse).
+  # Affiche le tableau : rondes suisses + tableau final (Lot 3).
   def show
     authorize @tournament
+  end
+
+  # POST /tournois/:id/start
+  # Lance le tournoi : passe en "in_progress" et génère la première ronde suisse.
+  # Réservé à l'organisateur (admin ou co-organisateur).
+  def start
+    authorize @tournament, :start?
+
+    unless @tournament.startable?
+      redirect_to tournament_path(@tournament),
+                  alert: "Impossible de lancer : il faut au moins #{Tournament::MIN_PLAYERS_TO_START} joueurs inscrits et des inscriptions ouvertes."
+      return
+    end
+
+    ActiveRecord::Base.transaction do
+      @tournament.update!(status: "in_progress")
+      SwissPairing.new(@tournament).next_round!
+    end
+
+    respond_to do |format|
+      format.turbo_stream # start.turbo_stream.erb : remplace le board + déclenche le tirage
+      format.html { redirect_to tournament_path(@tournament), notice: "Tournoi lancé, le tirage est fait !" }
+    end
   end
 
   # GET /tournois/new
   # Formulaire de création (sport → format → paramètres → récapitulatif).
   def new
     @tournament = Tournament.new(
-      date:  Date.current,
+      date: Date.current,
       sport: current_sport || Sport.order(:name).first
     )
     authorize @tournament

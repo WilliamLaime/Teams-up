@@ -52,11 +52,20 @@ c'est de l'élimination directe d'emblée).
 - [x] `Sport#available_tournament_formats` (raquette → RS/Poules ; collectif → Championnat/Poules).
 - [x] Comptage des joueurs scopé au rôle `joueur` (admin/co-org exclus des places).
 
-### 🔜 Lot 3 — Ronde Suisse + tableau final
-- [ ] Génération des rondes (tirage intégral, jamais deux fois le même adversaire).
-- [ ] Qualification (3 V) / élimination (3 D). Configs figées par nombre de joueurs.
-- [ ] Final 8 en élimination directe, seeding (aléatoire, puis set average / point average).
-- [ ] Idée : **animation de tirage au sort** au lancement.
+### ✅ Lot 3 — Ronde Suisse + tableau final `[FAIT]`
+- [x] Génération des rondes (tirage intégral, jamais deux fois le même adversaire) —
+      service `app/services/swiss_pairing.rb` (algo pur `build_pairs` + persistance `next_round!`).
+- [x] Qualification (**3 V**) / élimination (**3 D**), gestion des byes et des effectifs
+      bâtards (impairs, 24…) **sans jamais planter** (fallback rematch en dernier recours).
+- [x] Final N en élimination directe (**Final 4 ≤ 8 joueurs, Final 8 au-delà** via
+      `Tournament#final_size`), seeding têtes de série 1 & 2 séparées jusqu'en finale —
+      service `app/services/bracket_builder.rb`. Seeding aléatoire (set/point average → Lot 4).
+- [x] **Résultat V/D minimal** : bouton « vainqueur » par match (pas de score détaillé →
+      Lot 4), génération auto de la ronde/tour suivant quand la ronde courante est complète.
+- [x] **Animation de tirage au sort** au lancement (`tournament_draw_controller.js`).
+- [x] Vrai tableau à la place du placeholder `show` (partials `_board`/`_swiss_round`/
+      `_bracket`/`_tmatch`) + `TournamentsController#start` + `TournamentMatchesController#update`
+      + policy `manage?` (admin **et** co-organisateur via `Tournament#organizer?`).
 
 ### 🔜 Lot 4 — Saisie des scores & matchs
 - [ ] Score set par set, saisissable par 4 rôles (admin, co-orga, joueur A, joueur B).
@@ -77,10 +86,19 @@ c'est de l'élimination directe d'emblée).
 
 ## 📌 État courant
 
-**Lots 1 & 2 livrés.** La page `/tournois` affiche 3 sections (cartes cohérentes avec
-les matchs). Le **formulaire de création** (`/tournois/new`) est fonctionnel : sport →
-format compatible → paramètres → date/heure/lieu → joueurs (presets ou mode Libre) &
-clôture, avec co-organisateur et auto-inscription optionnelle du créateur.
+**Lots 1, 2 & 3 livrés.** La page `/tournois` affiche 3 sections ; le **formulaire de
+création** (`/tournois/new`) est fonctionnel. Le **moteur de jeu (Lot 3)** est en place :
+un tournoi Ronde Suisse se lance (`start`), tire au sort la ronde 1 (animation), on saisit
+les vainqueurs, les rondes s'enchaînent (3 V → qualifié / 3 D → éliminé) puis basculent
+automatiquement sur le **Final 4/8** jusqu'à désigner un vainqueur. Le tableau est rendu
+sur `/tournois/:id`.
+
+### Modèle de données Lot 3
+- `tournament_rounds` : number, phase (`swiss`/`bracket`), status ; index unique
+  `[tournament_id, phase, number]`.
+- `tournament_matches` : player_a/player_b/winner (→ `tournament_users`), is_bye, position,
+  status ; index unique `[tournament_round_id, position]`.
+- `tournament_users` (+ colonnes) : wins, losses, seed, state (`active`/`qualified`/`eliminated`).
 
 ### Décisions actées
 - **Statuts** (`tournaments.status`) : `open` / `in_progress` / `completed`.
@@ -115,7 +133,8 @@ clôture, avec co-organisateur et auto-inscription optionnelle du créateur.
 
 ## ▶️ Prochaine étape proposée
 
-**Lot 3 — Ronde Suisse + tableau final.** Génération des rondes (tirage intégral, jamais
-deux fois le même adversaire), qualification (3 V) / élimination (3 D), puis Final 8 en
-élimination directe. Figer les configs par nombre de joueurs (remplacer les presets
-provisoires) et remplacer le placeholder `tournaments/show` par le vrai tableau.
+**Lot 4 — Saisie des scores & matchs.** Étendre le résultat V/D actuel avec le score
+set par set (saisissable par admin / co-orga / joueur A / joueur B), le stockage détaillé
+(pour set average / point average → seeding réel du tableau final), l'affichage score global
++ détail en modal, le verrouillage du tour, et la création de match rattachée au tournoi.
+La règle des 2 points d'écart (ping-pong) et la gestion des abandons restent à trancher.

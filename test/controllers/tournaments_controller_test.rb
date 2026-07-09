@@ -42,7 +42,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     end
 
     t = Tournament.last
-    assert_equal @user, t.user            # créateur = admin
+    assert_equal @user, t.user # créateur = admin
     assert_equal "open", t.status
     assert_equal 0, t.approved_players_count # pas inscrit comme joueur par défaut
     assert_redirected_to tournament_path(t)
@@ -76,13 +76,85 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     get search_tournaments_path(q: "Bob"), headers: { "Accept" => "application/json" }
     assert_response :success
     body = JSON.parse(response.body)
-    assert body.any? { |u| u["email"] == @co_org.email }
-    refute body.any? { |u| u["email"] == @user.email } # s'exclut lui-même
+    assert(body.any? { |u| u["email"] == @co_org.email })
+    refute(body.any? { |u| u["email"] == @user.email }) # s'exclut lui-même
   end
 
   test "GET /tournois/search retourne vide sous 3 caractères" do
     sign_in @user
     get search_tournaments_path(q: "Bo"), headers: { "Accept" => "application/json" }
     assert_equal [], JSON.parse(response.body)
+  end
+
+  # ─── POST /tournois/:id/start : lancement (Lot 3) ───────────────────────────
+  def open_tournament_with_players(count)
+    t = Tournament.create!(name: "Start Test", sport: @sport, user: @user,
+                           format: "ronde_suisse", status: "open", max_players: count)
+    count.times do |i|
+      u = create_test_user(email: "sp#{i}@example.com")
+      t.tournament_users.create!(user: u, role: "joueur", status: "approved")
+    end
+    t
+  end
+
+  test "POST start lance le tournoi et crée la ronde 1 (organisateur)" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+
+    post start_tournament_path(t)
+
+    assert_equal "in_progress", t.reload.status
+    assert_equal 1, t.swiss_rounds.count
+    assert t.swiss_rounds.first.tournament_matches.any?
+  end
+
+  test "POST start refuse un non-organisateur" do
+    sign_in @co_org # ni admin ni co-org de ce tournoi
+    t = open_tournament_with_players(8)
+
+    post start_tournament_path(t)
+    assert_response :redirect
+    assert_equal "open", t.reload.status
+  end
+
+  test "POST start refuse un effectif insuffisant" do
+    sign_in @user
+    t = open_tournament_with_players(1)
+
+    post start_tournament_path(t)
+    assert_equal "open", t.reload.status
+    assert_redirected_to tournament_path(t)
+  end
+
+  # ─── GET /tournois/:id : rendu du board (le partiel ERB compile) ────────────
+  test "GET show rend le panneau de lancement pour un tournoi ouvert" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tournament-start-panel"
+  end
+
+  test "GET show rend les rondes suisses pour un tournoi lancé" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+    SwissPairing.new(t).next_round!
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".swiss-round"
+    assert_select ".tmatch-card"
+  end
+
+  test "GET show : les boutons vainqueur n'apparaissent que pour l'organisateur" do
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+    SwissPairing.new(t).next_round!
+
+    sign_in @co_org # non-organisateur
+    get tournament_path(t)
+    assert_select ".swiss-round" # les rondes sont bien affichées
+    assert_select ".tmatch-card__win-btn", 0 # mais aucun bouton vainqueur
   end
 end

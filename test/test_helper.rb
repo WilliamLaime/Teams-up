@@ -48,8 +48,11 @@ module ActiveSupport
       Notification.delete_all
       MatchUser.delete_all
       Match.delete_all
-      # Tournois : la jointure référence users + le tournoi référence sport/user
-      # → à vider AVANT User/Sport pour éviter les violations de FK.
+      # Tournois : les matchs référencent les inscriptions (player_a/b/winner) et
+      # les rondes → vider matchs → rondes → inscriptions → tournois, puis avant
+      # User/Sport pour éviter les violations de FK.
+      TournamentMatch.delete_all
+      TournamentRound.delete_all
       TournamentUser.delete_all
       Tournament.delete_all
       Friendship.delete_all

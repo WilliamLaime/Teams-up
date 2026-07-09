@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_09_110601) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_09_120002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -516,13 +516,45 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_110601) do
     t.index ["visibility"], name: "index_teams_on_visibility"
   end
 
+  create_table "tournament_matches", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "is_bye", default: false, null: false
+    t.bigint "player_a_id"
+    t.bigint "player_b_id"
+    t.integer "position", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "tournament_round_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "winner_id"
+    t.index ["player_a_id"], name: "index_tournament_matches_on_player_a_id"
+    t.index ["player_b_id"], name: "index_tournament_matches_on_player_b_id"
+    t.index ["tournament_round_id", "position"], name: "index_tournament_matches_on_tournament_round_id_and_position", unique: true
+    t.index ["tournament_round_id"], name: "index_tournament_matches_on_tournament_round_id"
+    t.index ["winner_id"], name: "index_tournament_matches_on_winner_id"
+  end
+
+  create_table "tournament_rounds", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "number", null: false
+    t.string "phase", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tournament_id", "phase", "number"], name: "index_tournament_rounds_on_tournament_id_and_phase_and_number", unique: true
+    t.index ["tournament_id"], name: "index_tournament_rounds_on_tournament_id"
+  end
+
   create_table "tournament_users", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.integer "losses", default: 0, null: false
     t.string "role"
+    t.integer "seed"
+    t.string "state", default: "active", null: false
     t.string "status", default: "approved"
     t.bigint "tournament_id", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.integer "wins", default: 0, null: false
     t.index ["tournament_id", "user_id"], name: "index_tournament_users_on_tournament_id_and_user_id", unique: true
     t.index ["tournament_id"], name: "index_tournament_users_on_tournament_id"
     t.index ["user_id"], name: "index_tournament_users_on_user_id"
@@ -663,6 +695,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_110601) do
   add_foreign_key "team_members", "teams"
   add_foreign_key "team_members", "users"
   add_foreign_key "teams", "users", column: "captain_id"
+  add_foreign_key "tournament_matches", "tournament_rounds", on_delete: :cascade
+  add_foreign_key "tournament_matches", "tournament_users", column: "player_a_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "player_b_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "winner_id"
+  add_foreign_key "tournament_rounds", "tournaments", on_delete: :cascade
   add_foreign_key "tournament_users", "tournaments"
   add_foreign_key "tournament_users", "users"
   add_foreign_key "tournaments", "sports"
