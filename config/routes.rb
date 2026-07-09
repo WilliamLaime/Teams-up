@@ -134,6 +134,17 @@ Rails.application.routes.draw do
     resources :match_votes, only: [:create]
   end
 
+  # ── Tournois ────────────────────────────────────────────────────────────────
+  # URLs françaises (/tournois), nom de resource anglais (convention projet).
+  # Inscriptions imbriquées :
+  #   POST   /tournois/:tournament_id/tournament_users     => rejoindre
+  #   DELETE /tournois/:tournament_id/tournament_users/:id => quitter
+  resources :tournaments, path: "tournois" do
+    # GET /tournois/search => autocomplete JSON pour désigner un co-organisateur
+    collection { get :search }
+    resources :tournament_users, only: [:create, :destroy]
+  end
+
   # Route pour le profil de l'utilisateur connecté (ressource singulière)
   #
   # GET  /profil        => voir mon profil (show_simple — version principale)

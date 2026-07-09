@@ -1,0 +1,186 @@
+// =====================================================
+// TOURNAMENTS INDEX — Page "Tournois" (/tournois)
+// Réutilise les composants de la carte match (.match-card*) ; on ne style
+// ici que le layout de page, l'en-tête, la barre de filtres et les sections.
+// Tokens de thème var(--theme-*) + accent $green (cohérent avec matches_index).
+// =====================================================
+
+.tournaments-index-page {
+  background-color: var(--theme-page-bg);
+  min-height: calc(100vh - 130px);
+  padding: 2.5rem 0 4rem;
+
+  // ── En-tête ──────────────────────────────────────
+  .tournaments-index-header {
+    margin-bottom: 1.5rem;
+
+    .tournaments-index-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--theme-text-strong);
+      margin-bottom: 0.35rem;
+      font-family: $display-font;
+      letter-spacing: 0.03em;
+    }
+
+    .tournaments-index-subtitle {
+      color: var(--theme-text-muted);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+
+  // ── Barre recherche + filtres sport ───────────────
+  .tournaments-filters-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: 0.85rem 1.1rem;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+
+    // Zone de recherche (reprend le style de matches_index)
+    .filter-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1 1 260px;
+
+      .filter-search-icon {
+        position: absolute;
+        left: 0.75rem;
+        color: var(--theme-text-muted);
+        pointer-events: none;
+      }
+
+      .filter-search-input {
+        width: 100%;
+        background-color: var(--theme-bg-surface);
+        border: 1px solid var(--theme-border);
+        border-radius: 999px;
+        color: var(--theme-text-primary);
+        font-size: 0.82rem;
+        padding: 0.45rem 1rem 0.45rem 2.25rem;
+        transition: border-color 0.15s;
+
+        &::placeholder { color: var(--theme-text-muted); }
+        &:focus { border-color: $green; }
+        &:focus-visible {
+          outline: 2px solid $green;
+          outline-offset: 2px;
+        }
+      }
+    }
+
+    // Pills de filtre par sport
+    .tournaments-sport-filters {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tournament-sport-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid var(--theme-border-strong);
+      color: var(--theme-text-muted);
+      background: transparent;
+      transition: all 0.15s ease;
+
+      &:hover {
+        color: var(--theme-text-primary);
+        border-color: $green;
+      }
+
+      // Pill actif : fond vert signature
+      &.active {
+        background: $primary;
+        border-color: $primary;
+        color: #111;
+      }
+    }
+  }
+
+  // ── Sections (Mes tournois / À rejoindre / En cours) ──
+  .tournaments-section {
+    margin-bottom: 2.75rem;
+
+    .tournaments-section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: $display-font;
+      font-size: 1.5rem;
+      letter-spacing: 0.03em;
+      color: var(--theme-text-strong);
+      margin-bottom: 1.25rem;
+
+      // Icône d'accent (éclair "en cours") en vert signature
+      i { color: $green; }
+    }
+  }
+
+  // ── État vide ─────────────────────────────────────
+  .tournaments-empty-state {
+    text-align: center;
+    padding: 5rem 0;
+    color: var(--theme-text-muted);
+
+    i { opacity: 0.4; margin-bottom: 1rem; }
+    p { font-size: 1.05rem; }
+  }
+
+  // ── Placeholder show / new (tableau à venir) ──────
+  .tournament-show-placeholder {
+    text-align: center;
+    padding: 4rem 1.5rem;
+    background-color: var(--theme-bg-card);
+    border: 1px dashed var(--theme-border-strong);
+    border-radius: 16px;
+    color: var(--theme-text-muted);
+
+    i { color: $green; opacity: 0.7; margin-bottom: 1rem; }
+    p {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--theme-text-primary);
+      margin-bottom: 0.4rem;
+    }
+    span { font-size: 0.9rem; }
+  }
+}
+
+// ── Lignes info des cartes tournoi (lieu, clôture) ──
+// Sur la page tournoi, les lignes info tiennent sur une seule ligne : on recentre
+// verticalement le picto avec le texte (le composant match l'aligne en haut avec
+// un margin-top, réglé pour un lieu pouvant passer sur 2 lignes).
+// Sélecteur volontairement spécifique (0,4,0) pour surpasser la règle
+// `.match-card .match-card-body .match-info-line` (0,3,0).
+.tournaments-index-page .match-card .match-card-body .match-info-line {
+  align-items: center;
+
+  i { margin-top: 0; }
+
+  // Date limite d'inscription : texte en blanc (cohérent avec la ligne date),
+  // picto en vert accent pour signaler l'échéance.
+  &.tournament-deadline-line {
+    color: var(--theme-text-primary);
+    font-weight: 600;
+
+    i {
+      color: $green;
+      opacity: 1;
+    }
+  }
+}

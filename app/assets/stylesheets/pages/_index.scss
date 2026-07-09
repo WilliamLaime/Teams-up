@@ -7,6 +7,8 @@
 @import "match_show";
 @import "auth";          // Pages de connexion et d'inscription (thème sombre)
 @import "matches_index"; // Page liste des matchs (/matches)
+@import "tournaments_index"; // Page liste des tournois (/tournois)
+@import "tournaments_form";  // Création d'un tournoi (/tournois/new)
 @import "profil";         // Page profil utilisateur (/profil)
 @import "errors";         // Pages d'erreur 404 et 500
 @import "contact";        // Page de contact (/contact)

@@ -1,0 +1,25 @@
+<%# ── Détail d'un tournoi (/tournois/:id) ────────────────────────────────────── %>
+<%# Squelette Lot 1 : le tableau / bracket (Ronde Suisse, Final 8) sera ajouté au Lot 3. %>
+<% content_for :title, @tournament.name %>
+
+<div class="tournaments-index-page">
+  <div class="container">
+
+    <%= render "shared/nav_button", url: tournaments_path, label: "Retour aux tournois", direction: "back", extra_class: "mb-3" %>
+
+    <div class="tournaments-index-header">
+      <h1 class="tournaments-index-title"><%= @tournament.name %></h1>
+      <p class="tournaments-index-subtitle mb-0">
+        <% if @tournament.sport %><%= @tournament.sport.name %> · <% end %>
+        <%= Tournament::FORMAT_LABELS[@tournament.format] %>
+      </p>
+    </div>
+
+    <div class="tournament-show-placeholder">
+      <i data-lucide="construction" style="width:40px;height:40px;" aria-hidden="true"></i>
+      <p>Le tableau du tournoi arrive bientôt.</p>
+      <span>La visualisation des rondes et du tableau final sera disponible prochainement.</span>
+    </div>
+
+  </div>
+</div>

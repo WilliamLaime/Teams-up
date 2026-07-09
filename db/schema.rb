@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_09_110601) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -516,6 +516,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
     t.index ["visibility"], name: "index_teams_on_visibility"
   end
 
+  create_table "tournament_users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "role"
+    t.string "status", default: "approved"
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["tournament_id", "user_id"], name: "index_tournament_users_on_tournament_id_and_user_id", unique: true
+    t.index ["tournament_id"], name: "index_tournament_users_on_tournament_id"
+    t.index ["user_id"], name: "index_tournament_users_on_user_id"
+  end
+
+  create_table "tournaments", force: :cascade do |t|
+    t.string "banner_image"
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.text "description"
+    t.string "format"
+    t.integer "max_players"
+    t.string "name", null: false
+    t.string "place"
+    t.datetime "registration_deadline"
+    t.string "slug", null: false
+    t.bigint "sport_id"
+    t.string "status", default: "open", null: false
+    t.time "time"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.bigint "venue_id"
+    t.index ["slug"], name: "index_tournaments_on_slug", unique: true
+    t.index ["sport_id"], name: "index_tournaments_on_sport_id"
+    t.index ["status"], name: "index_tournaments_on_status"
+    t.index ["user_id"], name: "index_tournaments_on_user_id"
+    t.index ["venue_id"], name: "index_tournaments_on_venue_id"
+  end
+
   create_table "user_achievements", force: :cascade do |t|
     t.bigint "achievement_id", null: false
     t.datetime "created_at", null: false
@@ -627,6 +663,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
   add_foreign_key "team_members", "teams"
   add_foreign_key "team_members", "users"
   add_foreign_key "teams", "users", column: "captain_id"
+  add_foreign_key "tournament_users", "tournaments"
+  add_foreign_key "tournament_users", "users"
+  add_foreign_key "tournaments", "sports"
+  add_foreign_key "tournaments", "users", on_delete: :nullify
+  add_foreign_key "tournaments", "venues"
   add_foreign_key "user_achievements", "achievements"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_sports", "sports"

@@ -1,0 +1,155 @@
+<%#
+  Composant carte tournoi — réutilise les classes CSS du composant match (.match-card*)
+  pour rester cohérent avec le reste de l'app.
+
+  Variables locales :
+    tournament (required) — l'objet Tournament à afficher
+    context    (optional) — :mine | :join | :ongoing → détermine le bouton du pied
+%>
+<% context ||= :join %>
+
+<%
+  # Image de couverture : banner_image manuelle sinon rotation déterministe par sport.
+  cover_image = sport_cover_image(tournament)
+
+  # Date courte en français (ex: "Lun 13 juil.") — même formatage que la carte match.
+  fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
+  fr_months = %w[janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.]
+  date_str  = if tournament.date
+    "#{fr_days[tournament.date.wday]} #{tournament.date.strftime('%d')} #{fr_months[tournament.date.month - 1]}"
+  end
+
+  # Libellé lisible du format (source unique : Tournament::FORMAT_LABELS).
+  format_label = Tournament::FORMAT_LABELS[tournament.format]
+
+  # Compteur d'inscrits : uniquement le rôle "joueur" (admin/co-organisateur
+  # n'occupent pas de place). Association préchargée → pas de N+1.
+  players_count = tournament.tournament_users.count { |tu| tu.status == "approved" && tu.role == "joueur" }
+
+  # Date/heure limite d'inscription (affichée dans la section "À rejoindre").
+  # Ex: "Clôture le 13 juil. à 18h30".
+  deadline_str = if tournament.registration_deadline
+    d = tournament.registration_deadline
+    heure = d.strftime("%M") == "00" ? d.strftime("%Hh") : d.strftime("%Hh%M")
+    "Clôture le #{d.strftime('%d')} #{fr_months[d.month - 1]} à #{heure}"
+  end
+%>
+
+<div class="match-card">
+
+  <%# ── Image + overlays ──────────────────────────────────────────────────── %>
+  <div class="match-card-img-wrapper">
+    <%= image_tag cover_image, alt: "Tournoi #{tournament.name}", class: "match-card-img", loading: "lazy" %>
+
+    <%# Badge sport — coin haut gauche %>
+    <% if tournament.sport %>
+      <div class="match-sport-overlay">
+        <%= sport_icon(tournament.sport, size: "0.85rem", css_class: "match-sport-overlay-icon") %>
+        <span class="match-sport-overlay-name"><%= tournament.sport.name %></span>
+      </div>
+    <% end %>
+
+    <%# Overlay d'état — "En cours" pour un tournoi lancé, "Terminé" si clôturé %>
+    <% if tournament.completed? %>
+      <div class="match-completed-overlay">Terminé</div>
+    <% elsif tournament.in_progress? %>
+      <div class="match-status-overlay match-status-overlay--inscrit">
+        <i data-lucide="zap" style="width:18px;height:18px;" aria-hidden="true"></i>
+        En cours
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Corps ─────────────────────────────────────────────────────────────── %>
+  <div class="match-card-body">
+
+    <%# Ligne badges : format (gauche) + capacité (droite) %>
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="d-flex gap-1 flex-wrap">
+        <% if format_label %>
+          <span class="match-badge-level level-tier-1"><%= format_label %></span>
+        <% end %>
+      </div>
+      <% if tournament.max_players.present? %>
+        <%# Capacité totale du tournoi. On évite le "x/y" ici : la progression
+            des inscrits est déjà affichée plus bas (ligne des avatars). %>
+        <span class="match-card-format">
+          <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
+          <%= tournament.max_players %> joueurs
+        </span>
+      <% end %>
+    </div>
+
+    <%# Titre %>
+    <div class="match-card-title" style="margin-bottom:6px; min-height:0; -webkit-line-clamp:1;">
+      <%= tournament.name %>
+    </div>
+
+    <%# Description — hauteur fixe 2 lignes pour aligner les cartes %>
+    <div style="font-size:0.75rem; color:var(--theme-text-muted); margin-top:0; margin-bottom:18px; line-height:1.4; height:2.1rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+      <%= tournament.description %>
+    </div>
+
+    <%# Date %>
+    <% if date_str %>
+      <div class="match-datetime-line">
+        <i data-lucide="calendar" style="width:15px;height:15px;" aria-hidden="true"></i>
+        <span><%= date_str %></span>
+      </div>
+    <% end %>
+
+    <%# Lieu %>
+    <div class="match-info-line">
+      <i data-lucide="map-pin" style="width:13px;height:13px;" aria-hidden="true"></i>
+      <span><%= tournament.place || "Lieu non défini" %></span>
+    </div>
+
+    <%# Date limite d'inscription — uniquement dans la section "À rejoindre" %>
+    <% if context == :join && deadline_str %>
+      <div class="match-info-line tournament-deadline-line">
+        <i data-lucide="alarm-clock" style="width:13px;height:13px;" aria-hidden="true"></i>
+        <span><%= deadline_str %></span>
+      </div>
+    <% end %>
+
+    <%# Participants inscrits + places restantes %>
+    <div class="match-players-row">
+      <div class="match-avatars">
+        <% tournament.tournament_users.select { |tu| tu.role == "joueur" }.first(3).each do |tu| %>
+          <%= user_avatar_tag tu.user, css_class: "match-avatar" %>
+        <% end %>
+      </div>
+      <span class="match-players-text">
+        <% if tournament.max_players.present? %>
+          <%= players_count %>/<%= tournament.max_players %> joueurs
+        <% else %>
+          <%= players_count %> inscrit<%= players_count > 1 ? "s" : "" %>
+        <% end %>
+      </span>
+    </div>
+
+  </div>
+
+  <%# ── Pied : bouton contextuel ──────────────────────────────────────────── %>
+  <div class="match-card-footer">
+    <% if context == :join && user_signed_in? %>
+      <%# Rejoindre — inscription directe (POST) %>
+      <%= button_to tournament_tournament_users_path(tournament),
+            method: :post,
+            class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
+        Rejoindre
+      <% end %>
+    <% elsif context == :join %>
+      <%# Non connecté → on renvoie vers la connexion %>
+      <%= link_to new_user_session_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
+        Rejoindre
+      <% end %>
+    <% else %>
+      <%# Mes tournois / en cours publics → visualisation du tableau %>
+      <%= link_to tournament_path(tournament), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+        Voir le tableau
+      <% end %>
+    <% end %>
+  </div>
+
+</div>

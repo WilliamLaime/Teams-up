@@ -108,6 +108,21 @@ class Sport < ApplicationRecord
     end
   end
 
+  # Formats de TOURNOI compatibles avec ce sport (≠ available_formats qui gère
+  # les tailles d'équipe d'un match). Principe : les sports de raquette se jouent
+  # en ronde suisse / poules ; les sports collectifs en championnat / poules.
+  # Renvoie un array de valeurs de Tournament::FORMATS.
+  def available_tournament_formats
+    case slug
+    when "tennis", "padel", "badminton", "ping-pong"
+      %w[ronde_suisse poules]
+    when "football", "basketball", "handball", "volleyball"
+      %w[championnat poules]
+    else
+      Tournament::FORMATS
+    end
+  end
+
   # Nombre de joueurs par défaut = premier format du sport (garde-fou si nil)
   def default_player_count
     available_formats.first[:players] || 1

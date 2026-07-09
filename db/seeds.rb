@@ -274,3 +274,80 @@ puts "Création des sports..."
 # Le même fichier est rejoué à chaque déploiement via `rails db:seed_sports`.
 load Rails.root.join("db", "sports.rb")
 seed_sports
+
+# ─── TOURNOIS (démo) ──────────────────────────────────────────────────────────
+# Jeu de données couvrant les 3 sections de la page liste (/tournois) :
+#   1. Mes tournois en cours    → 1er user inscrit + statut in_progress
+#   2. Tournois à rejoindre      → statut open, deadline future, non inscrit
+#   3. Tournois en cours publics → statut in_progress, non inscrit
+# Idempotent : find_or_create_by sur le nom.
+
+puts "Création des tournois de démo..."
+
+creator = User.first
+
+if creator.nil?
+  puts "⚠️  Aucun utilisateur en base — tournois de démo ignorés."
+else
+  football = Sport.find_by(slug: "football")
+  padel    = Sport.find_by(slug: "padel")
+  tennis   = Sport.find_by(slug: "tennis")
+
+  demo_tournaments = [
+    { name: "Open Riviera Winter", sport: padel, format: "ronde_suisse", max_players: 16,
+      place: "Club Padel Riviera", status: "in_progress", registered: true,
+      date: Date.current + 2, deadline: 1.day.ago,
+      description: "Le rendez-vous hivernal du padel sur la Riviera." },
+
+    { name: "Ligue Urbaine Paris", sport: football, format: "championnat", max_players: 32,
+      place: "Five Paris 18", status: "open", registered: false,
+      date: Date.current + 20, deadline: Date.current + 10,
+      description: "Championnat urbain, tout le monde s'affronte, les 8 premiers en playoffs." },
+
+    { name: "Tournoi d'Automne P100", sport: padel, format: "poules", max_players: 16,
+      place: "Padel Club Lyon", status: "open", registered: false,
+      date: Date.current + 15, deadline: Date.current + 7,
+      description: "Phase de poules puis tableau final. Niveau P100." },
+
+    { name: "Masters Tennis Été", sport: tennis, format: "ronde_suisse", max_players: 16,
+      place: "Tennis Club Marseille", status: "in_progress", registered: false,
+      date: Date.current + 1, deadline: 3.days.ago,
+      description: "Ronde suisse suivie d'un Final 8 en élimination directe." }
+  ]
+
+  demo_tournaments.each do |data|
+    tournament = Tournament.find_or_create_by!(name: data[:name]) do |t|
+      t.sport                 = data[:sport]
+      t.format                = data[:format]
+      t.max_players           = data[:max_players]
+      t.place                 = data[:place]
+      t.status                = data[:status]
+      t.date                  = data[:date]
+      t.time                  = "18:00"
+      t.registration_deadline = data[:deadline]
+      t.description           = data[:description]
+      t.user                  = creator
+    end
+
+    # Inscrit le 1er user aux tournois marqués "registered" (→ section "Mes tournois").
+    if data[:registered]
+      TournamentUser.find_or_create_by!(tournament: tournament, user: creator) do |tu|
+        tu.role   = "joueur"
+        tu.status = "approved"
+      end
+    end
+  end
+
+  # Ajoute un co-organisateur de démo (2e user, s'il existe) sur un tournoi "open"
+  # pour visualiser le rendu du rôle co_organisateur sans passer par le formulaire.
+  co_org = User.where.not(id: creator.id).first
+  demo_open = Tournament.find_by(name: "Ligue Urbaine Paris")
+  if co_org && demo_open
+    TournamentUser.find_or_create_by!(tournament: demo_open, user: co_org) do |tu|
+      tu.role   = "co_organisateur"
+      tu.status = "approved"
+    end
+  end
+
+  puts "✅ #{Tournament.count} tournois en base."
+end

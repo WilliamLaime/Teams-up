@@ -1,0 +1,104 @@
+<%# ── Liste des tournois (/tournois) ─────────────────────────────────────────── %>
+<% content_for :title, "Tournois" %>
+
+<div class="tournaments-index-page">
+  <div class="container">
+
+    <%# ── En-tête ──────────────────────────────────────────────────────────── %>
+    <div class="tournaments-index-header">
+      <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
+
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+        <div>
+          <h1 class="tournaments-index-title">Tournois</h1>
+          <p class="tournaments-index-subtitle mb-0">Rejoignez la compétition. Dominez le terrain.</p>
+        </div>
+        <% if user_signed_in? %>
+          <%= render "shared/btn_primary", url: new_tournament_path, text: "Créer un tournoi", icon: "plus" %>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Barre recherche + filtres sport ──────────────────────────────────── %>
+    <%= form_with url: tournaments_path, method: :get do |f| %>
+      <div class="tournaments-filters-bar">
+        <%# Recherche libre %>
+        <div class="filter-search-wrap">
+          <i data-lucide="search" style="width:16px;height:16px;" class="filter-search-icon"></i>
+          <label class="visually-hidden" for="query">Rechercher un tournoi</label>
+          <%= text_field_tag :query, params[:query],
+                placeholder: "Rechercher un tournoi…",
+                class: "filter-search-input",
+                onchange: "this.form.requestSubmit()" %>
+        </div>
+
+        <%# Filtres sport (pills) — "Tous" + un lien par sport %>
+        <div class="tournaments-sport-filters">
+          <%= link_to "Tous", tournaments_path(query: params[:query]),
+                class: "tournament-sport-pill #{'active' if params[:sport].blank?}" %>
+          <% @sports.each do |sport| %>
+            <%= link_to tournaments_path(sport: sport.slug, query: params[:query]),
+                  class: "tournament-sport-pill #{'active' if params[:sport] == sport.slug}" do %>
+              <%= sport_icon(sport, size: "0.85rem") %>
+              <%= sport.name %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Section 1 : Mes tournois en cours ────────────────────────────────── %>
+    <% if @my_tournaments.present? %>
+      <section class="tournaments-section">
+        <h2 class="tournaments-section-title">
+          <i data-lucide="zap" style="width:20px;height:20px;" aria-hidden="true"></i>
+          Mes tournois en cours
+        </h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          <% @my_tournaments.each do |tournament| %>
+            <div class="col">
+              <%= render "shared/tournament_card", tournament: tournament, context: :mine %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# ── Section 2 : Tournois à rejoindre ─────────────────────────────────── %>
+    <% if @tournaments_to_join.present? %>
+      <section class="tournaments-section">
+        <h2 class="tournaments-section-title">Tournois à rejoindre</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          <% @tournaments_to_join.each do |tournament| %>
+            <div class="col">
+              <%= render "shared/tournament_card", tournament: tournament, context: :join %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# ── Section 3 : Tournois en cours (publics, non inscrit) ─────────────── %>
+    <% if @ongoing_tournaments.present? %>
+      <section class="tournaments-section">
+        <h2 class="tournaments-section-title">Tournois en cours</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          <% @ongoing_tournaments.each do |tournament| %>
+            <div class="col">
+              <%= render "shared/tournament_card", tournament: tournament, context: :ongoing %>
+            </div>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <%# ── État vide global ─────────────────────────────────────────────────── %>
+    <% if @my_tournaments.blank? && @tournaments_to_join.blank? && @ongoing_tournaments.blank? %>
+      <div class="tournaments-empty-state">
+        <i data-lucide="trophy" style="width:48px;height:48px;" aria-hidden="true"></i>
+        <p>Aucun tournoi pour le moment.</p>
+      </div>
+    <% end %>
+
+  </div>
+</div>

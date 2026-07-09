@@ -47,9 +47,11 @@ export default class extends Controller {
     const btn = event.currentTarget
     const sportId = btn.dataset.sportId
 
-    // 1. Met à jour l'input hidden (match[sport_id]) ciblé par match-form
+    // 1. Met à jour l'input hidden (sport_id) ciblé par le formulaire.
+    //    On accepte le target de match-form OU de tournament-form : ce dropdown
+    //    est réutilisé tel quel par les deux formulaires.
     const hiddenInput = this.element.closest("form")
-      .querySelector("[data-match-form-target='sportInput']")
+      .querySelector("[data-match-form-target='sportInput'], [data-tournament-form-target='sportInput']")
     if (hiddenInput) {
       hiddenInput.value = sportId
     }

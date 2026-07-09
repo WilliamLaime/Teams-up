@@ -1,0 +1,89 @@
+// =====================================================
+// TOURNAMENTS FORM — Écarts spécifiques à la création de tournoi
+// La structure (sections, récap, boutons) réutilise _match_form.scss.
+// On ne style ici que les éléments propres au tournoi :
+//   • aperçu de structure figée
+//   • propositions du mode "Libre"
+// Tokens de thème var(--theme-*) + accent $green.
+// =====================================================
+
+// ── Aperçu de structure figée (lecture seule) ──
+.tournament-structure-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.25rem 0 1rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.5rem;
+  background: rgba(30, 221, 136, 0.08);
+  border: 1px solid rgba(30, 221, 136, 0.25);
+  font-size: 0.85rem;
+  color: var(--theme-text-primary);
+
+  i { color: $green; flex-shrink: 0; }
+}
+
+// ── Mode Libre : liste de propositions ──
+.tournament-proposals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.tournament-proposal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.6rem;
+  border: 2px solid var(--theme-border-strong);
+  background: var(--theme-hover-bg);
+  color: var(--theme-text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover { border-color: $green; }
+
+  // Proposition recommandée (1re de la liste) : accent vert discret
+  &.recommended { border-color: rgba(30, 221, 136, 0.5); }
+
+  // Proposition choisie par l'utilisateur
+  &.selected {
+    border-color: $green;
+    background: rgba(30, 221, 136, 0.12);
+  }
+
+  .tournament-proposal-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .tournament-proposal-recap {
+    font-size: 0.8rem;
+    color: var(--theme-text-muted);
+  }
+}
+
+// Badge "Recommandé"
+.tournament-proposal-badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: $green;
+  color: #111;
+}
+
+// Toggle d'auto-inscription : aligne la case avec son libellé
+.tournament-self-register {
+  .form-check-input:checked { background-color: $green; border-color: $green; }
+  .form-check-label { color: var(--theme-text-primary); font-weight: 600; }
+}

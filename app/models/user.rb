@@ -64,6 +64,9 @@ class User < ApplicationRecord
 
   has_many :match_users, dependent: :destroy
   has_many :matchs, through: :match_users
+  # Inscriptions aux tournois (feature Tournoi)
+  has_many :tournament_users, dependent: :destroy
+  has_many :tournaments, through: :tournament_users
   has_many :notifications, dependent: :destroy
   # Subscriptions Web Push : un user peut avoir plusieurs appareils/navigateurs enregistrés
   has_many :push_subscriptions, dependent: :destroy
