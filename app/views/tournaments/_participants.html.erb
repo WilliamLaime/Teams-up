@@ -1,0 +1,74 @@
+<%# ── Onglet « Participants » ───────────────────────────────────────────────────
+    Grille des joueurs approuvés + rappel des organisateurs (admin + co-orga).
+    Local : tournament. %>
+<%
+  players      = tournament.approved_players
+  co_organizers = tournament.co_organizers
+  # L'organisateur peut déclarer un forfait tant que le tournoi est en cours.
+  can_manage   = user_signed_in? && policy(tournament).manage? && tournament.in_progress?
+%>
+
+<div class="tournament-participants">
+
+  <%# Organisateurs (n'occupent pas de place de joueur). %>
+  <section class="tournament-participants__section">
+    <h3 class="tournament-participants__title">
+      <i data-lucide="shield" aria-hidden="true"></i> Organisation
+    </h3>
+    <div class="tournament-participants__grid">
+      <% if tournament.user %>
+        <div class="participant-chip participant-chip--admin">
+          <%= user_avatar_tag tournament.user, css_class: "participant-chip__avatar" %>
+          <span class="participant-chip__name"><%= tournament.user.display_name %></span>
+          <span class="participant-chip__role">Admin</span>
+        </div>
+      <% end %>
+      <% co_organizers.each do |tu| %>
+        <div class="participant-chip participant-chip--admin">
+          <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
+          <span class="participant-chip__name"><%= tu.display_name %></span>
+          <span class="participant-chip__role">Co-organisateur</span>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <%# Joueurs. %>
+  <section class="tournament-participants__section">
+    <h3 class="tournament-participants__title">
+      <i data-lucide="users" aria-hidden="true"></i>
+      Joueurs
+      <span class="tournament-participants__count"><%= players.size %></span>
+    </h3>
+
+    <% if players.any? %>
+      <div class="tournament-participants__grid">
+        <% players.each do |tu| %>
+          <div class="participant-chip">
+            <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
+            <span class="participant-chip__name"><%= tu.display_name %></span>
+            <% if tu.withdrawn? %>
+              <span class="participant-chip__state participant-chip__state--eliminated">Forfait</span>
+            <% elsif tu.qualified? %>
+              <span class="participant-chip__state participant-chip__state--qualified">Qualifié</span>
+            <% elsif tu.eliminated? %>
+              <span class="participant-chip__state participant-chip__state--eliminated">Éliminé</span>
+            <% end %>
+
+            <% if can_manage && !tu.withdrawn? %>
+              <%= button_to withdraw_tournament_tournament_user_path(tournament, tu),
+                            method: :patch,
+                            class: "participant-chip__forfeit",
+                            form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
+                <i data-lucide="user-x" aria-hidden="true"></i> Forfait
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="tournament-empty">Aucun joueur inscrit pour le moment.</p>
+    <% end %>
+  </section>
+
+</div>

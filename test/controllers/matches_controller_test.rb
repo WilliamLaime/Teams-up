@@ -391,4 +391,67 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
     assert_not_nil flash[:alert]
   end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Couplage Match ↔ tournoi (Lot 4)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # Crée un tournoi organisé par @user avec deux joueurs approuvés et une carte
+  # de match suisse prête à être « transformée » en rencontre standard.
+  def build_tournament_match(owner: @user)
+    tournament = Tournament.create!(name: "Tournoi test", sport: @sport, user: owner,
+                                    format: "ronde_suisse", status: "in_progress", max_players: 8)
+    player_b_user = create_test_user(email: "tplayer-#{SecureRandom.hex(3)}@example.com")
+    a = tournament.tournament_users.create!(user: owner, role: "joueur", status: "approved")
+    b = tournament.tournament_users.create!(user: player_b_user, role: "joueur", status: "approved")
+    round = tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
+    match = round.tournament_matches.create!(player_a: a, player_b: b, position: 0)
+    [tournament, match]
+  end
+
+  test "GET /matches/new depuis une carte de tournoi préremplit le formulaire" do
+    sign_in @user
+    _tournament, tmatch = build_tournament_match
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+  end
+
+  test "POST /matches depuis un tournoi inscrit les deux joueurs et lie la carte" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match
+
+    assert_difference "Match.count", 1 do
+      post matches_path, params: { match: {
+        title: "Rencontre tournoi", date: Date.tomorrow,
+        'time(4i)': "18", 'time(5i)': "00",
+        players_needed: 2, level: "Tout niveau", visibility: "public",
+        validation_mode: "automatic", genre_restriction: "tous",
+        sport_id: @sport.id, tournament_id: tournament.id, tournament_match_id: tmatch.id
+      } }
+    end
+
+    match = Match.last
+    assert_equal tournament.id, match.tournament_id
+    assert_equal tmatch.id, match.tournament_match_id
+    # Organisateur + les 2 joueurs de la carte (le créateur n'est compté qu'une fois).
+    assert_includes match.match_users.map(&:user_id), tmatch.player_b.user_id
+  end
+
+  test "POST /matches ignore le rattachement à un tournoi qu'on n'organise pas" do
+    tournament, tmatch = build_tournament_match(owner: @other_user)
+    sign_in @user # @user n'organise pas ce tournoi
+
+    post matches_path, params: { match: {
+      title: "Rencontre pirate", date: Date.tomorrow,
+      'time(4i)': "18", 'time(5i)': "00",
+      players_needed: 2, level: "Tout niveau", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous",
+      sport_id: @sport.id, tournament_id: tournament.id, tournament_match_id: tmatch.id
+    } }
+
+    match = Match.last
+    assert_nil match.tournament_id
+    assert_nil match.tournament_match_id
+  end
 end

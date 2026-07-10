@@ -43,6 +43,8 @@ export default class extends Controller {
     this.hiddenTarget.value = item.dataset.email
     // On met le nom complet dans le champ visible
     this.inputTarget.value  = item.dataset.label
+    // Notifie les autres contrôleurs (ex: tournament-form met à jour son récap).
+    this.inputTarget.dispatchEvent(new Event("input", { bubbles: true }))
     this._closeDropdown()
   }
 

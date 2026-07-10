@@ -134,6 +134,31 @@ Rails.application.routes.draw do
     resources :match_votes, only: [:create]
   end
 
+  # ── Tournois ────────────────────────────────────────────────────────────────
+  # URLs françaises (/tournois), nom de resource anglais (convention projet).
+  # Inscriptions imbriquées :
+  #   POST   /tournois/:tournament_id/tournament_users     => rejoindre
+  #   DELETE /tournois/:tournament_id/tournament_users/:id => quitter
+  resources :tournaments, path: "tournois" do
+    # GET /tournois/search => autocomplete JSON pour désigner un co-organisateur
+    # GET /tournois/bientot => page d'attente (feature tournoi en chantier)
+    collection do
+      get :search
+      get :coming_soon, path: "bientot"
+    end
+    # POST /tournois/:id/start => lancer le tournoi (génère la ronde suisse 1)
+    member { post :start }
+    resources :tournament_users, only: [:create, :destroy] do
+      # PATCH .../tournament_users/:id/withdraw => déclarer forfait (organisateur)
+      member { patch :withdraw }
+    end
+    # PATCH /tournois/:tournament_id/tournament_matches/:id => saisir le score
+    # PATCH .../tournament_matches/:id/correct => corriger un score verrouillé
+    resources :tournament_matches, only: [:update] do
+      member { patch :correct }
+    end
+  end
+
   # Route pour le profil de l'utilisateur connecté (ressource singulière)
   #
   # GET  /profil        => voir mon profil (show_simple — version principale)

@@ -1,0 +1,27 @@
+<%# ══════════════════════════════════════════════════════════════
+    Page de création d'un tournoi (/tournois/new)
+    ══════════════════════════════════════════════════════════════
+    Même ossature que la création de match : une bannière pleine
+    largeur puis le formulaire 2 colonnes (sections + récap sticky),
+    rendu par _form.html.erb. Réutilise les classes .match-*.
+    ══════════════════════════════════════════════════════════════ %>
+<% content_for :title, "Créer un tournoi" %>
+
+<div class="match-create-page">
+
+  <%# Bannière d'en-tête %>
+  <div class="match-new-banner">
+    <div class="container">
+      <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-3" %>
+
+      <h1 class="match-new-banner-title">Créer un tournoi</h1>
+      <p class="match-new-banner-subtitle">
+        Choisis un sport, un format, et publie ton tournoi en quelques secondes.
+      </p>
+    </div>
+  </div>
+
+  <%# Formulaire 2 colonnes (sections + récapitulatif sticky) %>
+  <%= render "form" %>
+
+</div>

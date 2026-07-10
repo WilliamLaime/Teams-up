@@ -108,6 +108,36 @@ class Sport < ApplicationRecord
     end
   end
 
+  # Formats de TOURNOI compatibles avec ce sport (≠ available_formats qui gère
+  # les tailles d'équipe d'un match). Principe : les sports de raquette se jouent
+  # en ronde suisse / poules ; les sports collectifs en championnat / poules.
+  # Renvoie un array de valeurs de Tournament::FORMATS.
+  def available_tournament_formats
+    case slug
+    when "tennis", "padel", "badminton", "ping-pong"
+      %w[ronde_suisse poules]
+    when "football", "basketball", "handball", "volleyball"
+      %w[championnat poules]
+    else
+      Tournament::FORMATS
+    end
+  end
+
+  # Règles de score d'un match de tournoi pour ce sport (Lot 4). Renvoie un Hash :
+  #   best_of    : nombre de sets « au meilleur de » (3 → il faut en gagner 2)
+  #   target     : score à atteindre pour remporter un set (jeux au tennis, points ailleurs)
+  #   win_by_two : faut-il 2 d'écart pour conclure un set (règle du ping-pong / badminton)
+  #   cap        : plafond au-delà duquel 1 point d'écart suffit (tie-break) ; nil = pas de plafond
+  # Le fallback (sports sans configuration) reste jouable au meilleur des 3 sets.
+  def scoring_rules
+    case slug
+    when "tennis", "padel" then { best_of: 3, target: 6,  win_by_two: true,  cap: 7 }
+    when "badminton"       then { best_of: 3, target: 21, win_by_two: true,  cap: 30 }
+    when "ping-pong"       then { best_of: 5, target: 11, win_by_two: true,  cap: nil }
+    else                        { best_of: 3, target: 6,  win_by_two: false, cap: nil }
+    end
+  end
+
   # Nombre de joueurs par défaut = premier format du sport (garde-fou si nil)
   def default_player_count
     available_formats.first[:players] || 1

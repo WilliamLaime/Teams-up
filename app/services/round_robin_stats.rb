@@ -1,0 +1,68 @@
+# ── Module RoundRobinStats ────────────────────────────────────────────────────
+# Recalcul du bilan V/D + sets/points d'un joueur depuis les matchs d'une phase.
+# Partagé par les trois moteurs (SwissPairing, LeagueBuilder, PoolBuilder) : la
+# seule différence est la PHASE lue et l'application (ou non) de l'état suisse
+# (qualified à 3 V / eliminated à 3 D) — d'où le paramètre `apply_state`.
+#
+# Le module attend une variable d'instance `@tournament` chez l'hôte, et — quand
+# `apply_state: true` — une méthode `state_for(wins, losses)` (spécifique au suisse).
+module RoundRobinStats
+  # Recalcule wins/losses + sets_won/lost + points_won/lost de chaque joueur
+  # approuvé, à partir de TOUS les matchs de la phase donnée.
+  #   • apply_state: true  → met aussi à jour `state` via `state_for` (suisse).
+  #   • apply_state: false → laisse `state` inchangé (championnat / poules, où la
+  #     qualification est décidée par le classement final, pas par un seuil 3 V/3 D).
+  def recompute_stats_for(phase, apply_state:)
+    matches = matches_in_phase(phase).to_a
+    player_scope.find_each do |tu|
+      played = matches.select { |m| m.player_a_id == tu.id || m.player_b_id == tu.id }
+      wins   = played.count { |m| m.winner_id == tu.id }
+      losses = played.count { |m| m.winner_id.present? && m.winner_id != tu.id }
+
+      attrs = {
+        wins: wins, losses: losses,
+        sets_won: played.sum { |m| m.sets_won_by(tu) },
+        sets_lost: played.sum { |m| m.sets_won_by(m.opponent_of(tu)) },
+        points_won: played.sum { |m| m.points_won_by(tu) },
+        points_lost: played.sum { |m| m.points_lost_by(tu) }
+      }
+      # "withdrawn" est terminal : on ne le recalcule jamais (sinon un abandon
+      # serait ré-écrasé en active/eliminated et le joueur reviendrait dans les tirages).
+      attrs[:state] = state_for(wins, losses) if apply_state && !tu.withdrawn?
+      tu.update!(attrs)
+    end
+  end
+
+  # Crée un match d'une journée round-robin en gérant les cas particuliers :
+  #   • bye        : un seul joueur présent (l'autre est nil, effectif impair) ;
+  #   • forfait    : un joueur a déjà abandonné (state "withdrawn") → le match est
+  #     posé en forfait, l'adversaire gagne d'office (cf. TournamentMatch).
+  # Utilisé par LeagueBuilder / PoolBuilder pour que les journées générées APRÈS un
+  # abandon n'attendent pas un score du joueur retiré.
+  def build_match!(round, player_a, player_b, position)
+    if player_a.nil? || player_b.nil?
+      return round.tournament_matches.create!(player_a: player_a || player_b, is_bye: true, position: position)
+    end
+
+    retired = [player_a, player_b].find(&:withdrawn?)
+    if retired
+      return round.tournament_matches.create!(
+        player_a: player_a, player_b: player_b, position: position,
+        forfeit: true, retired_player: retired
+      )
+    end
+
+    round.tournament_matches.create!(player_a: player_a, player_b: player_b, position: position)
+  end
+
+  private
+
+  # Inscriptions joueurs approuvées (relation, requêtée à frais à chaque appel).
+  def player_scope = @tournament.tournament_users.players.approved
+
+  # Tous les matchs d'une phase de ce tournoi (requête fraîche).
+  def matches_in_phase(phase)
+    TournamentMatch.joins(:tournament_round)
+                   .where(tournament_rounds: { tournament_id: @tournament.id, phase: phase })
+  end
+end

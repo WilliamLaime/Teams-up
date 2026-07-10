@@ -1,0 +1,67 @@
+// ── Page d'attente « Tournois — Bientôt disponible » ─────────────────────────
+// Affichée depuis le header tant que la feature tournoi n'est pas lancée.
+// Theme-aware : utilise les variables var(--theme-*) définies dans config/_colors.scss.
+
+.tournament-soon {
+  min-height: calc(100vh - 80px); // 80px ≈ hauteur du header
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+
+// Carte centrale
+.tournament-soon__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 520px;
+  padding: 3rem 2.25rem;
+  background-color: var(--theme-bg-card);
+  border: 1px solid var(--theme-nav-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+// Badge « En préparation »
+.tournament-soon__badge {
+  font-family: $body-font;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $orange;
+  background-color: rgba($orange, 0.12);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+}
+
+// Pastille icône trophée
+.tournament-soon__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background-color: rgba($orange, 0.12);
+  color: $orange;
+
+  i {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.tournament-soon__title {
+  margin: 0;
+  color: var(--theme-text-primary);
+}
+
+.tournament-soon__text {
+  margin: 0;
+  color: var(--theme-text-muted);
+  line-height: 1.6;
+}

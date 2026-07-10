@@ -1,0 +1,41 @@
+<%# ── Modale de score partagée (Lot 4) ────────────────────────────────────────
+    Une seule modale pour tout le tableau : le contrôleur Stimulus tournament-score
+    la remplit à l'ouverture (URL PATCH du match, noms des joueurs, sets existants,
+    nombre de lignes selon le sport) et bascule entre saisie et lecture seule (Détail).
+    Le formulaire poste deux tableaux parallèles games_a[] / games_b[] (une entrée par
+    set) que le controller zippe en paires. %>
+<div class="modal fade score-modal" id="scoreModal" tabindex="-1" aria-labelledby="scoreModalTitle" aria-hidden="true"
+     data-tournament-score-target="modal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="scoreModalTitle" data-tournament-score-target="title">Score</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <%= form_with url: "#", method: :patch,
+                    data: { tournament_score_target: "form",
+                            action: "turbo:submit-end->tournament-score#close" } do %>
+        <div class="modal-body">
+          <div class="score-modal__players">
+            <span class="score-modal__player" data-tournament-score-target="nameA"></span>
+            <span class="score-modal__vs">vs</span>
+            <span class="score-modal__player" data-tournament-score-target="nameB"></span>
+          </div>
+
+          <%# Le controller injecte ici une ligne d'inputs par set. %>
+          <div class="score-modal__sets" data-tournament-score-target="rows"></div>
+
+          <p class="score-modal__hint" data-tournament-score-target="hint"></p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Fermer</button>
+          <button type="submit" class="btn btn-cta-primary" data-tournament-score-target="submit">
+            Enregistrer le score
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
