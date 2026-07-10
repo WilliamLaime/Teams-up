@@ -2,9 +2,15 @@ class TournamentsController < ApplicationController
   include Pagy::Backend
 
   # Liste et détail accessibles aux visiteurs non connectés (comme les matchs).
-  skip_before_action :authenticate_user!, only: %i[index show]
+  # coming_soon : page d'attente publique (la feature tournoi n'est pas encore lancée).
+  skip_before_action :authenticate_user!, only: %i[index show coming_soon]
 
   before_action :set_tournament, only: %i[show start]
+
+  # Tant que la feature tournoi est en chantier, on empêche son indexation par les
+  # moteurs de recherche (cf. layout application.html.erb + robots.txt). Les devs
+  # accèdent aux pages via l'URL directe ; seul le header pointe vers coming_soon.
+  before_action :mark_noindex
 
   # GET /tournois
   # Trois sections (cf. docs/TOURNOI.md) :
@@ -40,6 +46,14 @@ class TournamentsController < ApplicationController
 
     # Liste des sports pour les filtres pill de la barre.
     @sports = Sport.order(:name)
+  end
+
+  # GET /tournois/bientot
+  # Page d'attente publique affichée depuis le header tant que la feature tournoi
+  # n'est pas officiellement lancée. Les vraies pages (/tournois) restent
+  # accessibles par URL directe pour permettre aux développeurs de travailler.
+  def coming_soon
+    authorize Tournament, :coming_soon?
   end
 
   # GET /tournois/:id
@@ -126,6 +140,11 @@ class TournamentsController < ApplicationController
 
   def set_tournament
     @tournament = Tournament.from_param(params[:id])
+  end
+
+  # Marque la page comme non-indexable (voir <meta robots> dans le layout).
+  def mark_noindex
+    @noindex = true
   end
 
   def tournament_params

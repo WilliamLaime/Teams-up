@@ -10,6 +10,11 @@ class TournamentPolicy < ApplicationPolicy
     true
   end
 
+  # Page d'attente publique (feature en chantier) : accessible à tous.
+  def coming_soon?
+    true
+  end
+
   def create?
     user.present?
   end

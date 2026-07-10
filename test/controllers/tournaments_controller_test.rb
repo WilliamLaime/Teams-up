@@ -14,6 +14,14 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
 
   teardown { teardown_db }
 
+  # ─── GET /tournois/bientot : page d'attente publique + non-indexée ──────────
+  test "GET /tournois/bientot se rend pour un visiteur non connecté et est noindex" do
+    get coming_soon_tournaments_path
+    assert_response :success
+    assert_select "meta[name=?][content*=?]", "robots", "noindex"
+    assert_select ".tournament-soon__title"
+  end
+
   # ─── GET /tournois/new : le formulaire se rend (ERB compile) ────────────────
   test "GET /tournois/new retourne 200 pour un utilisateur connecté" do
     sign_in @user
