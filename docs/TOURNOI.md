@@ -67,13 +67,44 @@ c'est de l'élimination directe d'emblée).
       `_bracket`/`_tmatch`) + `TournamentsController#start` + `TournamentMatchesController#update`
       + policy `manage?` (admin **et** co-organisateur via `Tournament#organizer?`).
 
-### 🔜 Lot 4 — Saisie des scores & matchs
-- [ ] Score set par set, saisissable par 4 rôles (admin, co-orga, joueur A, joueur B).
-- [ ] Stockage détaillé des scores (pour set average / point average plus tard).
-- [ ] Affichage score global (ex. 3-1) + détail set par set en modal.
-- [ ] Verrouillage définitif du tour une fois tous les scores saisis.
-- [ ] Création de match depuis la **vue tournoi** ET depuis la **création de match standard** (association au tournoi).
-- [ ] Règle des 2 points d'écart (ping-pong).
+### ✅ Lot 4 — Saisie des scores & matchs `[FAIT]`
+- [x] Score **set par set** (colonne jsonb `tournament_matches.sets`), saisissable par les
+      4 rôles (admin, co-orga, joueur A, joueur B) via `TournamentMatchPolicy` — le
+      **vainqueur est DÉRIVÉ du score** (`TournamentMatch#assign_score` + `derive_winner_from_sets`).
+- [x] Stockage détaillé + agrégation set/point average sur `tournament_users`
+      (`sets_won/lost`, `points_won/lost`) recalculés par `SwissPairing#recompute_stats!`.
+- [x] **Seeding réel** : `build_pairs` et `BracketBuilder#ranked` départagent par
+      set average puis point average (fini l'aléatoire).
+- [x] Affichage score global (ex. 2-1) sur la carte + **modale de saisie/détail** partagée
+      (`_score_modal` + `tournament_score_controller.js`).
+- [x] **Verrouillage** du tour : score éditable tant que la ronde n'est pas `completed`
+      (garde dans la policy + le controller).
+- [x] **Règles de score par sport** (`Sport#scoring_rules`) dont la **règle des 2 points
+      d'écart** (ping-pong / badminton) et le `cap` (tie-break).
+- [x] **Couplage Match ↔ tournoi** : « Créer la rencontre » depuis une carte
+      (préremplit + inscrit les 2 joueurs) et rattachement d'un match standard à un tournoi
+      via le formulaire (`matches.tournament_id` + `tournament_match_id`).
+
+### ✅ Refonte UI — vue détail à onglets + bracket viewer `[FAIT]`
+- [x] Page `/tournois/:id` réorganisée en **4 onglets** (bascule client-side sans reload,
+      `tournament_tabs_controller.js`) : **Vue d'ensemble · Matchs · Participants · Classement**.
+      En-tête enrichi (badge de statut + méta sport/format/participants).
+      Contrainte Turbo respectée : les onglets se masquent en CSS → `#tournament_board` reste
+      dans le DOM, la saisie de score en Turbo Stream continue de fonctionner.
+- [x] **Matchs** : le board de jeu existant (rondes suisses + tableau final + saisie de
+      score + animation de tirage) — inchangé.
+- [x] **Participants** : grille des joueurs approuvés + organisateur(s), badges qualifié/éliminé.
+- [x] **Classement** : table triée (V, D, set/point average, état) — `Tournament#ranked_players`.
+- [x] **Bracket viewer** interactif dans **Vue d'ensemble** (lecture seule) : toutes les rondes
+      en colonnes, **défilement horizontal**, **zoom** (boutons −/+ **et** curseur, via variable
+      CSS `--bracket-zoom` + unités `em`, sans `transform: scale`) et **filtre par ronde**
+      (chips qui isolent une colonne). `_bracket_viewer` / `_bracket_cell` +
+      `bracket_viewer_controller.js` + helper `TournamentsHelper` (`display_rounds`, `round_label`).
+      Note : la Vue d'ensemble n'est pas rafraîchie en Turbo Stream → reflète l'état au chargement.
+
+### 🔜 Lot 5 — Poules / championnat
+- [ ] Moteur de phase de poules (format `poules`) et classement de championnat (`championnat`).
+- [ ] Gestion des **abandons** (victoire par abandon) et correction d'un score **après verrouillage**.
 
 ### 💡 Futurs
 - [ ] **Gamification** : badges, trophées, achievements (1er tournoi gagné, 500 pts, 10e set…).
@@ -86,19 +117,25 @@ c'est de l'élimination directe d'emblée).
 
 ## 📌 État courant
 
-**Lots 1, 2 & 3 livrés.** La page `/tournois` affiche 3 sections ; le **formulaire de
-création** (`/tournois/new`) est fonctionnel. Le **moteur de jeu (Lot 3)** est en place :
+**Lots 1 à 4 livrés.** La page `/tournois` affiche 3 sections ; le **formulaire de
+création** (`/tournois/new`) est fonctionnel. Le **moteur de jeu** est complet :
 un tournoi Ronde Suisse se lance (`start`), tire au sort la ronde 1 (animation), on saisit
-les vainqueurs, les rondes s'enchaînent (3 V → qualifié / 3 D → éliminé) puis basculent
-automatiquement sur le **Final 4/8** jusqu'à désigner un vainqueur. Le tableau est rendu
-sur `/tournois/:id`.
+un **score set par set** (modale) dont le vainqueur est dérivé, les rondes s'enchaînent
+(3 V → qualifié / 3 D → éliminé) puis basculent automatiquement sur le **Final 4/8** —
+dont le **seeding reflète le set/point average** — jusqu'à désigner un vainqueur. Une carte
+peut être transformée en **rencontre standard** rattachée au tournoi. La page `/tournois/:id`
+est organisée en **4 onglets** (Vue d'ensemble · Matchs · Participants · Classement) ; la Vue
+d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre par ronde).
 
-### Modèle de données Lot 3
+### Modèle de données Lot 3 + 4
 - `tournament_rounds` : number, phase (`swiss`/`bracket`), status ; index unique
   `[tournament_id, phase, number]`.
 - `tournament_matches` : player_a/player_b/winner (→ `tournament_users`), is_bye, position,
-  status ; index unique `[tournament_round_id, position]`.
-- `tournament_users` (+ colonnes) : wins, losses, seed, state (`active`/`qualified`/`eliminated`).
+  status, **`sets` (jsonb, `[[a, b], …]`)** ; index unique `[tournament_round_id, position]`.
+- `tournament_users` (+ colonnes) : wins, losses, seed, state (`active`/`qualified`/`eliminated`),
+  **`sets_won/sets_lost`, `points_won/points_lost`** (départage / seeding réel).
+- `matches` (couplage) : **`tournament_id`** (rattachement lâche) + **`tournament_match_id`**
+  (lien 1↔1, index unique).
 
 ### Décisions actées
 - **Statuts** (`tournaments.status`) : `open` / `in_progress` / `completed`.
@@ -133,8 +170,8 @@ sur `/tournois/:id`.
 
 ## ▶️ Prochaine étape proposée
 
-**Lot 4 — Saisie des scores & matchs.** Étendre le résultat V/D actuel avec le score
-set par set (saisissable par admin / co-orga / joueur A / joueur B), le stockage détaillé
-(pour set average / point average → seeding réel du tableau final), l'affichage score global
-+ détail en modal, le verrouillage du tour, et la création de match rattachée au tournoi.
-La règle des 2 points d'écart (ping-pong) et la gestion des abandons restent à trancher.
+**Lot 5 — Poules / championnat.** Câbler les deux formats restants (`poules`, `championnat`)
+sur le moteur : phase de poules (mini round-robin + classement) et championnat (round-robin
+intégral avec table de classement). Réutiliser le score set-par-set et l'agrégation
+set/point average déjà en place. Trancher au passage la **gestion des abandons** (victoire
+par abandon) et la **correction d'un score après verrouillage** du tour.
