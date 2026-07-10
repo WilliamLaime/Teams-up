@@ -1,0 +1,84 @@
+<%# ── Onglet « Vue d'ensemble » ─────────────────────────────────────────────────
+    Fiche d'informations du tournoi (sport, format, date, lieu, organisateur,
+    effectif, description). Purement lecture ; la mécanique de jeu vit dans
+    l'onglet « Matchs ». Local : tournament. %>
+<%
+  fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
+  fr_months = %w[janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.]
+  date_str  = if tournament.date
+    "#{fr_days[tournament.date.wday]} #{tournament.date.strftime('%d')} #{fr_months[tournament.date.month - 1]} #{tournament.date.year}"
+  end
+  time_str  = if tournament.time
+    tournament.time.strftime("%M") == "00" ? tournament.time.strftime("%Hh") : tournament.time.strftime("%Hh%M")
+  end
+  deadline_str = if tournament.registration_deadline
+    d = tournament.registration_deadline
+    heure = d.strftime("%M") == "00" ? d.strftime("%Hh") : d.strftime("%Hh%M")
+    "#{fr_days[d.wday]} #{d.strftime('%d')} #{fr_months[d.month - 1]} à #{heure}"
+  end
+%>
+
+<div class="tournament-overview">
+  <dl class="tournament-overview__grid">
+    <% if tournament.sport %>
+      <div class="tournament-overview__item">
+        <dt><i data-lucide="dumbbell" aria-hidden="true"></i> Sport</dt>
+        <dd><%= tournament.sport.name %></dd>
+      </div>
+    <% end %>
+
+    <div class="tournament-overview__item">
+      <dt><i data-lucide="git-fork" aria-hidden="true"></i> Format</dt>
+      <dd><%= Tournament::FORMAT_LABELS[tournament.format] || "—" %></dd>
+    </div>
+
+    <% if date_str %>
+      <div class="tournament-overview__item">
+        <dt><i data-lucide="calendar" aria-hidden="true"></i> Date</dt>
+        <dd><%= date_str %><% if time_str %> à <%= time_str %><% end %></dd>
+      </div>
+    <% end %>
+
+    <div class="tournament-overview__item">
+      <dt><i data-lucide="map-pin" aria-hidden="true"></i> Lieu</dt>
+      <dd><%= tournament.place.presence || "Non défini" %></dd>
+    </div>
+
+    <% if tournament.user %>
+      <div class="tournament-overview__item">
+        <dt><i data-lucide="shield" aria-hidden="true"></i> Organisateur</dt>
+        <dd><%= tournament.user.display_name %></dd>
+      </div>
+    <% end %>
+
+    <div class="tournament-overview__item">
+      <dt><i data-lucide="users" aria-hidden="true"></i> Inscrits</dt>
+      <dd>
+        <%= tournament.approved_players_count %><% if tournament.max_players %> / <%= tournament.max_players %><% end %>
+        joueur<%= "s" if tournament.approved_players_count > 1 %>
+      </dd>
+    </div>
+
+    <% if tournament.open? && deadline_str %>
+      <div class="tournament-overview__item">
+        <dt><i data-lucide="alarm-clock" aria-hidden="true"></i> Clôture des inscriptions</dt>
+        <dd><%= deadline_str %></dd>
+      </div>
+    <% end %>
+  </dl>
+
+  <%# Bracket viewer interactif (lecture seule) — dès qu'une ronde existe. %>
+  <% if tournament.swiss_rounds.any? || tournament.bracket_started? %>
+    <section class="tournament-overview__bracket">
+      <h3 class="tournament-overview__subtitle">Tableau du tournoi</h3>
+      <%= render "tournaments/bracket_viewer", tournament: tournament %>
+    </section>
+  <% end %>
+
+  <% if tournament.description.present? %>
+    <div class="tournament-overview__description">
+      <h3 class="tournament-overview__subtitle">À propos</h3>
+      <p><%= simple_format(tournament.description) %></p>
+    </div>
+  <% end %>
+</div>

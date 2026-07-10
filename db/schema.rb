@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_09_120002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -180,6 +180,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_120002) do
     t.bigint "team_id"
     t.time "time"
     t.string "title"
+    t.bigint "tournament_id"
+    t.bigint "tournament_match_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.string "validation_mode", default: "automatic"
@@ -190,6 +192,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_120002) do
     t.index ["slug"], name: "index_matches_on_slug", unique: true
     t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["team_id"], name: "index_matches_on_team_id"
+    t.index ["tournament_id"], name: "index_matches_on_tournament_id"
+    t.index ["tournament_match_id"], name: "index_matches_on_tournament_match_id", unique: true
     t.index ["user_id", "created_at"], name: "index_matches_on_user_id_created_at"
     t.index ["user_id"], name: "index_matches_on_user_id"
     t.index ["venue_id"], name: "index_matches_on_venue_id"
@@ -522,6 +526,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_120002) do
     t.bigint "player_a_id"
     t.bigint "player_b_id"
     t.integer "position", null: false
+    t.jsonb "sets", default: [], null: false
     t.string "status", default: "pending", null: false
     t.bigint "tournament_round_id", null: false
     t.datetime "updated_at", null: false
@@ -547,8 +552,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_120002) do
   create_table "tournament_users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "losses", default: 0, null: false
+    t.integer "points_lost", default: 0, null: false
+    t.integer "points_won", default: 0, null: false
     t.string "role"
     t.integer "seed"
+    t.integer "sets_lost", default: 0, null: false
+    t.integer "sets_won", default: 0, null: false
     t.string "state", default: "active", null: false
     t.string "status", default: "approved"
     t.bigint "tournament_id", null: false
@@ -665,6 +674,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_120002) do
   add_foreign_key "match_votes", "users", column: "voter_id"
   add_foreign_key "matches", "sports"
   add_foreign_key "matches", "teams"
+  add_foreign_key "matches", "tournament_matches"
+  add_foreign_key "matches", "tournaments"
   add_foreign_key "matches", "users", column: "homme_du_match_id", on_delete: :nullify
   add_foreign_key "matches", "users", on_delete: :nullify
   add_foreign_key "matches", "venues"

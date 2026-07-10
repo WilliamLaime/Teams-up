@@ -24,7 +24,7 @@ class SwissPairing
   end
 
   # ── Algorithme pur ────────────────────────────────────────────────────────────
-  # @param players [Array] joueurs actifs (répondent à #id et #wins)
+  # @param players [Array] joueurs actifs (répondent à #id, #wins, #set_average, #point_average)
   # @param played_pairs [Set] paires déjà jouées, chacune = [id_min, id_max]
   # @param byed_ids [Set] ids des joueurs ayant déjà été exemptés (bye)
   # @return [Hash] { pairs: [[a, b], …], bye: joueur_ou_nil }
@@ -42,7 +42,7 @@ class SwissPairing
     # 2. Trier par nombre de victoires décroissant : le backtracking essaiera
     #    d'apparier chaque joueur avec le suivant le mieux classé → il reste au
     #    plus près des « score groups » et ne fait flotter que si nécessaire.
-    ordered = players.sort_by { |p| [-p.wins, p.id] }
+    ordered = players.sort_by { |p| [-p.wins, -p.set_average, -p.point_average, p.id] }
 
     # 3. Recherche globale d'un appariement SANS rematch (backtracking borné).
     #    Si aucune solution n'existe, on relâche la contrainte (force_pair).
@@ -138,16 +138,22 @@ class SwissPairing
   # Inscriptions joueurs approuvées (relation, requêtée à frais à chaque appel).
   def player_scope = @tournament.tournament_users.players.approved
 
-  # Recalcule wins/losses depuis les matchs suisses puis met à jour l'état
-  # (qualified / eliminated / active) de chaque joueur.
+  # Recalcule les compteurs (victoires/défaites + sets/points pour le départage)
+  # depuis les matchs suisses, puis met à jour l'état (qualified/eliminated/active).
   def recompute_stats!
     matches = swiss_matches.to_a
     player_scope.find_each do |tu|
-      wins = matches.count { |m| m.winner_id == tu.id }
-      losses = matches.count do |m|
-        (m.player_a_id == tu.id || m.player_b_id == tu.id) && m.winner_id.present? && m.winner_id != tu.id
-      end
-      tu.update!(wins: wins, losses: losses, state: state_for(wins, losses))
+      played = matches.select { |m| m.player_a_id == tu.id || m.player_b_id == tu.id }
+      wins   = played.count { |m| m.winner_id == tu.id }
+      losses = played.count { |m| m.winner_id.present? && m.winner_id != tu.id }
+
+      tu.update!(
+        wins: wins, losses: losses, state: state_for(wins, losses),
+        sets_won: played.sum { |m| m.sets_won_by(tu) },
+        sets_lost: played.sum { |m| m.sets_won_by(m.opponent_of(tu)) },
+        points_won: played.sum { |m| m.points_won_by(tu) },
+        points_lost: played.sum { |m| m.points_lost_by(tu) }
+      )
     end
   end
 

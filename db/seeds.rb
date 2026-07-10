@@ -349,16 +349,20 @@ else
     end
   end
 
-  # ── Démo du moteur Ronde Suisse (Lot 3) ────────────────────────────────────
-  # On peuple le tournoi "Masters Tennis Été" (in_progress) avec de vrais joueurs,
-  # puis on génère 2 rondes et on saisit des résultats → la page /tournois/:id
-  # montre le tableau (rondes suisses + progression). Idempotent : on ne rejoue
-  # rien si des rondes existent déjà.
-  masters = Tournament.find_by(name: "Masters Tennis Été")
-  if masters&.tournament_rounds&.none?
-    # 8 joueurs de démo dédiés (idempotents) pour peupler le tableau.
-    players = (1..8).map do |i|
-      user = User.find_or_initialize_by(email: "joueur#{i}@teamup-demo.fr")
+  # ── Démo du moteur Ronde Suisse (Lot 3 + scores Lot 4) ─────────────────────
+  # Peuple un tournoi `in_progress` avec de vrais joueurs de démo, génère les
+  # rondes et saisit des SCORES set-par-set réalistes (le vainqueur en est dérivé,
+  # Lot 4). Idempotent : ne rejoue rien si des rondes existent déjà.
+  #
+  # @param tournament [Tournament] le tournoi à peupler
+  # @param count      [Integer]    nombre de joueurs de démo à inscrire
+  # @param prefix     [String]     préfixe d'email (isole les joueurs par tournoi)
+  # @param rounds     [Integer]    nombre de rondes à jouer entièrement
+  populate_swiss = lambda do |tournament, count:, prefix:, rounds:|
+    return unless tournament&.tournament_rounds&.none?
+
+    players = (1..count).map do |i|
+      user = User.find_or_initialize_by(email: "#{prefix}#{i}@teamup-demo.fr")
       if user.new_record?
         user.assign_attributes(password: "Demo1234!", confirmed_at: Time.current,
                                first_name: "Joueur", last_name: i.to_s)
@@ -367,25 +371,38 @@ else
       end
       user
     end
+    return if players.size < 4
 
-    if players.size >= 4
-      players.each do |player|
-        TournamentUser.find_or_create_by!(tournament: masters, user: player) do |tu|
-          tu.role   = "joueur"
-          tu.status = "approved"
-        end
+    players.each do |player|
+      TournamentUser.find_or_create_by!(tournament: tournament, user: player) do |tu|
+        tu.role   = "joueur"
+        tu.status = "approved"
       end
-
-      # Ronde 1 puis résolution (le mieux classé — player_a — gagne), puis ronde 2.
-      SwissPairing.new(masters).next_round!
-      masters.current_round.tournament_matches.where(status: "pending").find_each do |match|
-        match.update!(winner_id: match.player_a_id, status: "completed")
-      end
-      SwissPairing.new(masters).next_round!
-
-      puts "  ↳ Ronde Suisse de démo générée sur « #{masters.name} » (#{masters.swiss_rounds.count} ronde(s))."
     end
+
+    # Règles du sport → nombre de sets à gagner + génération d'un set gagnant varié
+    # (l'écart de jeux varie → set/point average distincts → seeding réel visible).
+    rules  = tournament.sport.scoring_rules
+    needed = (rules[:best_of] / 2) + 1
+    winning_set = -> { [rules[:target], rand(0..(rules[:target] - 2))] }
+
+    rounds.times do
+      SwissPairing.new(tournament).next_round!
+      current = tournament.current_round
+      break if current.nil? || current.phase == "bracket"
+
+      current.tournament_matches.where(status: "pending", is_bye: false).find_each do |match|
+        match.assign_score(Array.new(needed) { winning_set.call })
+        match.save!
+      end
+    end
+    SwissPairing.new(tournament).next_round! # clôt la dernière ronde jouée
+
+    puts "  ↳ Démo générée sur « #{tournament.name} » (#{tournament.tournament_rounds.count} ronde(s))."
   end
+
+  populate_swiss.call(Tournament.find_by(name: "Masters Tennis Été"), count: 8, prefix: "joueur", rounds: 2)
+  populate_swiss.call(Tournament.find_by(name: "Open Riviera Winter"), count: 5, prefix: "padeliste", rounds: 1)
 
   puts "✅ #{Tournament.count} tournois en base."
 end

@@ -184,6 +184,11 @@ class MatchesController < ApplicationController
 
     # Équipes dont l'user est capitaine (pour le select dans le formulaire)
     @my_captained_teams = current_user.captained_teams.order(:name)
+
+    # Couplage tournoi (Lot 4) : préremplissage depuis « Créer la rencontre »
+    # d'une carte, et liste des tournois qu'on organise (select du formulaire).
+    prefill_from_tournament_match
+    @organized_tournaments = organized_tournaments_for_select
   end
 
   # POST /matches
@@ -207,11 +212,18 @@ class MatchesController < ApplicationController
       end
     end
 
+    # Couplage tournoi (Lot 4) : ne conserver le rattachement que si l'utilisateur
+    # organise bien le tournoi visé (pattern défensif, comme pour team_id).
+    sanitize_tournament_link
+
     authorize @match
 
     if @match.save
       # Ajoute automatiquement le créateur comme organisateur approuvé du match
       @match.match_users.create(user: current_user, role: "organisateur", status: "approved")
+
+      # Rencontre issue d'une carte de tournoi → inscrire ses deux joueurs.
+      enroll_tournament_players if @match.tournament_match
 
       # Si c'est un match d'équipe, on pré-inscrit les autres membres en "pending"
       # Ils devront confirmer leur participation depuis la page du match
@@ -237,6 +249,7 @@ class MatchesController < ApplicationController
       redirect_to @match, notice: "Match créé avec succès !"
     else
       @my_captained_teams = current_user.captained_teams.order(:name)
+      @organized_tournaments = organized_tournaments_for_select
       # En cas d'erreur, réaffiche le formulaire
       render :new, status: :unprocessable_entity
     end
@@ -542,8 +555,63 @@ class MatchesController < ApplicationController
       :sport_id, :format, :banner_image, :visibility,
       :genre_restriction, # Restriction de genre : "tous" ou "feminin"
       :team_id,           # Équipe organisatrice (optionnel)
-      :booking_link       # Lien de réservation/paiement du terrain (optionnel)
+      :booking_link,      # Lien de réservation/paiement du terrain (optionnel)
+      :tournament_id,        # Tournoi auquel rattacher la rencontre (Lot 4, optionnel)
+      :tournament_match_id   # Carte de tournoi précise reliée (Lot 4, optionnel)
     )
+  end
+
+  # Tournois que l'utilisateur organise et qui ne sont pas terminés — proposés
+  # dans le select du formulaire pour rattacher une rencontre à un tournoi.
+  def organized_tournaments_for_select
+    Tournament.where(user_id: current_user.id).where.not(status: "completed").order(:name)
+  end
+
+  # Préremplit @match depuis une carte de tournoi (?tournament_match_id=X).
+  # Sécurité : ignoré si la carte est absente, un bye, ou si l'utilisateur
+  # n'organise pas le tournoi.
+  def prefill_from_tournament_match
+    return if params[:tournament_match_id].blank?
+
+    tm = TournamentMatch.find_by(id: params[:tournament_match_id])
+    return if tm.nil? || tm.is_bye || !tm.tournament.organizer?(current_user)
+
+    @match.tournament_match = tm
+    @match.tournament       = tm.tournament
+    @match.sport            = tm.tournament.sport
+    @match.level            = "Tout niveau" # niveau neutre : bypass la grille du sport
+    @match.players_needed   = 2
+    @match.title            = "#{tm.tournament.sport&.name} — #{tm.player_a.display_name} vs #{tm.player_b.display_name}"
+  end
+
+  # Valide le rattachement tournoi envoyé par le formulaire : ne le persiste que
+  # si l'utilisateur organise le tournoi ciblé (sinon on annule les deux refs).
+  def sanitize_tournament_link
+    if @match.tournament_match_id.present?
+      tm = TournamentMatch.find_by(id: @match.tournament_match_id)
+      if tm && !tm.is_bye && tm.tournament.organizer?(current_user)
+        @match.tournament = tm.tournament
+      else
+        @match.tournament = nil
+        @match.tournament_match = nil
+      end
+    elsif @match.tournament_id.present?
+      tournament = Tournament.find_by(id: @match.tournament_id)
+      @match.tournament = nil unless tournament&.organizer?(current_user)
+    end
+  end
+
+  # Inscrit les deux joueurs de la carte de tournoi comme participants approuvés
+  # (en plus de l'organisateur déjà créé). Idempotent, saute le créateur.
+  def enroll_tournament_players
+    @match.tournament_match.players.each do |tu|
+      next if tu.user_id == current_user.id
+
+      @match.match_users.find_or_create_by(user_id: tu.user_id) do |mu|
+        mu.role = "joueur"
+        mu.status = "approved"
+      end
+    end
   end
 
   # Pré-inscrit tous les membres de l'équipe (sauf le captain/créateur) en "pending"

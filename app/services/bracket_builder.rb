@@ -10,8 +10,8 @@
 #   • #advance! : tour suivant, en appariant les vainqueurs du tour précédent. Quand
 #     il ne reste qu'un vainqueur, le tournoi passe en "completed".
 #
-# Le seeding précis (set average / point average) viendra au Lot 4 ; pour l'instant
-# le départage se fait sur le bilan V/D puis aléatoirement.
+# Seeding réel (Lot 4) : classement par victoires, puis set average et point average
+# (cf. #ranked) — les compteurs sont recalculés par SwissPairing#recompute_stats!.
 class BracketBuilder
   def initialize(tournament)
     @tournament = tournament
@@ -73,9 +73,10 @@ class BracketBuilder
     (qualified + ranked(scope.active)).first(@tournament.final_size)
   end
 
-  # Classe une relation de joueurs par force : victoires desc, défaites asc, puis hasard.
+  # Classe une relation de joueurs par force (seeding réel, Lot 4) : victoires desc,
+  # défaites asc, puis set average et point average desc. Déterministe.
   def ranked(relation)
-    relation.to_a.sort_by { |tu| [-tu.wins, tu.losses, SecureRandom.random_number] }
+    relation.to_a.sort_by { |tu| [-tu.wins, tu.losses, -tu.set_average, -tu.point_average] }
   end
 
   # Attribue les têtes de série 1..N dans l'ordre de force.

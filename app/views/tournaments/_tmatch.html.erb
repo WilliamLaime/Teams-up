@@ -1,6 +1,11 @@
 <%# ── Carte d'un match de tournoi ─────────────────────────────────────────────
-    Affiche les deux joueurs (ou l'exempt pour un bye). Si l'utilisateur gère le
-    tournoi et que le match est en attente, deux boutons désignent le vainqueur. %>
+    Affiche les deux joueurs (ou l'exempt pour un bye), le nombre de sets gagnés
+    par chacun et le score global. Lot 4 : le résultat se saisit set-par-set via la
+    modale partagée (contrôleur Stimulus tournament-score) — le vainqueur en est
+    dérivé. Le bouton de saisie n'apparaît que si l'utilisateur peut éditer ce match
+    (organisateur OU joueur du match, tour non verrouillé — cf. TournamentMatchPolicy). %>
+<% rules = match.tournament.sport&.scoring_rules || Sport.new.scoring_rules %>
+<% can_edit = user_signed_in? && policy(match).update? %>
 <div id="tmatch_<%= match.id %>" class="tmatch-card <%= "tmatch-card--bye" if match.is_bye %> <%= "tmatch-card--done" if match.decided? %>">
   <% if match.is_bye %>
     <div class="tmatch-card__player tmatch-card__player--winner">
@@ -15,16 +20,56 @@
         <%= user_avatar_tag player.user, css_class: "tmatch-card__avatar" %>
         <span class="tmatch-card__name"><%= player.display_name %></span>
 
+        <% if match.score_entered? %>
+          <span class="tmatch-card__sets"><%= match.sets_won_by(player) %></span>
+        <% end %>
         <% if is_winner %>
           <i data-lucide="check" class="tmatch-card__win-icon" aria-hidden="true"></i>
-        <% elsif can_manage && !match.decided? %>
-          <%= button_to tournament_tournament_match_path(match.tournament, match),
-                        method: :patch,
-                        params: { tournament_match: { winner_id: player.id } },
-                        class: "tmatch-card__win-btn",
-                        title: "Désigner #{player.display_name} vainqueur" do %>
-            Vainqueur
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Score global + accès à la modale (saisie ou détail selon les droits) +
+        rattachement d'une rencontre standard (organisateur uniquement). %>
+    <% if match.score_entered? || can_edit || can_manage %>
+      <div class="tmatch-card__footer">
+        <% if match.score_entered? %>
+          <span class="tmatch-card__score" title="Sets gagnés (<%= match.player_a.display_name %> – <%= match.player_b.display_name %>)">
+            <%= match.sets_summary %>
+          </span>
+        <% end %>
+
+        <% if can_manage %>
+          <% if match.match %>
+            <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
+          <% else %>
+            <%= link_to "Créer la rencontre", new_match_path(tournament_match_id: match.id), class: "tmatch-card__link" %>
           <% end %>
+        <% end %>
+
+        <% if can_edit %>
+          <button type="button" class="tmatch-card__score-btn"
+                  data-action="tournament-score#open"
+                  data-tournament-score-url-param="<%= tournament_tournament_match_path(match.tournament, match) %>"
+                  data-tournament-score-best-of-param="<%= rules[:best_of] %>"
+                  data-tournament-score-target-param="<%= rules[:target] %>"
+                  data-tournament-score-sets-param="<%= match.sets.to_json %>"
+                  data-tournament-score-name-a-param="<%= match.player_a.display_name %>"
+                  data-tournament-score-name-b-param="<%= match.player_b.display_name %>"
+                  data-tournament-score-editable-param="true">
+            <%= match.score_entered? ? "Modifier" : "Saisir le score" %>
+          </button>
+        <% elsif match.score_entered? %>
+          <button type="button" class="tmatch-card__detail-btn"
+                  data-action="tournament-score#open"
+                  data-tournament-score-best-of-param="<%= rules[:best_of] %>"
+                  data-tournament-score-target-param="<%= rules[:target] %>"
+                  data-tournament-score-sets-param="<%= match.sets.to_json %>"
+                  data-tournament-score-name-a-param="<%= match.player_a.display_name %>"
+                  data-tournament-score-name-b-param="<%= match.player_b.display_name %>"
+                  data-tournament-score-editable-param="false">
+            Détail
+          </button>
         <% end %>
       </div>
     <% end %>

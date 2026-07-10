@@ -1,24 +1,94 @@
-<%# ── Détail d'un tournoi (/tournois/:id) ────────────────────────────────────── %>
-<%# Lot 3 : tableau de jeu — rondes suisses + tableau final à élimination directe. %>
+<%# ── Détail d'un tournoi (/tournois/:id) ──────────────────────────────────────
+    Vue à onglets : Vue d'ensemble · Matchs · Participants · Classement.
+    Les onglets basculent côté client (contrôleur Stimulus tournament-tabs) sans
+    recharger : les panneaux sont seulement masqués en CSS, jamais retirés du DOM.
+    → #tournament_board (onglet Matchs) reste toujours présent, donc la saisie de
+      score en Turbo Stream fonctionne quel que soit l'onglet affiché. %>
 <% content_for :title, @tournament.name %>
+
+<%
+  # Badge d'état (libellé + variante de couleur) — cohérent avec les overlays des cartes.
+  status_badge = case @tournament.status
+                 when "in_progress" then { label: "En cours",   variant: "live" }
+                 when "completed"   then { label: "Terminé",     variant: "done" }
+                 else                    { label: "Inscriptions ouvertes", variant: "open" }
+                 end
+%>
 
 <div class="tournaments-index-page">
   <div class="container">
 
     <%= render "shared/nav_button", url: tournaments_path, label: "Retour aux tournois", direction: "back", extra_class: "mb-3" %>
 
-    <div class="tournaments-index-header">
-      <h1 class="tournaments-index-title"><%= @tournament.name %></h1>
-      <p class="tournaments-index-subtitle mb-0">
+    <%# ── En-tête ─────────────────────────────────────────────────────────── %>
+    <header class="tournament-detail-header">
+      <div class="tournament-detail-header__top">
+        <h1 class="tournament-detail-header__title"><%= @tournament.name %></h1>
+        <span class="tournament-status-badge tournament-status-badge--<%= status_badge[:variant] %>">
+          <%= status_badge[:label] %>
+        </span>
+      </div>
+      <p class="tournament-detail-header__subtitle">
         <% if @tournament.sport %><%= @tournament.sport.name %> · <% end %>
         <%= Tournament::FORMAT_LABELS[@tournament.format] %>
+        · <%= @tournament.approved_players_count %><% if @tournament.max_players %>/<%= @tournament.max_players %><% end %> participant<%= "s" if @tournament.approved_players_count > 1 %>
       </p>
-    </div>
+    </header>
 
-    <%# Le board est remplacé en Turbo Stream à chaque résultat saisi par l'organisateur
-        (les boutons dépendent de current_user → pas de broadcast global). %>
-    <div id="tournament_board" class="tournament-board" data-controller="bracket">
-      <%= render "tournaments/board", tournament: @tournament %>
+    <%# ── Onglets ─────────────────────────────────────────────────────────── %>
+    <div data-controller="tournament-tabs">
+      <div class="tournament-tabs" role="tablist" aria-label="Sections du tournoi">
+        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
+                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
+                data-tournament-tabs-panel-param="overview">
+          <i data-lucide="info" aria-hidden="true"></i> Vue d'ensemble
+        </button>
+        <button type="button" class="tournament-tabs__tab is-active" role="tab" aria-selected="true"
+                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
+                data-tournament-tabs-panel-param="matchs">
+          <i data-lucide="swords" aria-hidden="true"></i> Matchs
+        </button>
+        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
+                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
+                data-tournament-tabs-panel-param="participants">
+          <i data-lucide="users" aria-hidden="true"></i> Participants
+        </button>
+        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
+                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
+                data-tournament-tabs-panel-param="classement">
+          <i data-lucide="list-ordered" aria-hidden="true"></i> Classement
+        </button>
+      </div>
+
+      <%# La modale de score et le contrôleur tournament-score vivent HORS de
+          #tournament_board (pour survivre à ses remplacements Turbo Stream) mais
+          englobent les panneaux → la modale reste accessible depuis l'onglet Matchs. %>
+      <div data-controller="tournament-score">
+
+        <section class="tournament-tabs__panel" role="tabpanel" hidden
+                 data-tournament-tabs-target="panel" data-panel="overview">
+          <%= render "tournaments/overview", tournament: @tournament %>
+        </section>
+
+        <section class="tournament-tabs__panel is-active" role="tabpanel"
+                 data-tournament-tabs-target="panel" data-panel="matchs">
+          <div id="tournament_board" class="tournament-board" data-controller="bracket">
+            <%= render "tournaments/board", tournament: @tournament %>
+          </div>
+        </section>
+
+        <section class="tournament-tabs__panel" role="tabpanel" hidden
+                 data-tournament-tabs-target="panel" data-panel="participants">
+          <%= render "tournaments/participants", tournament: @tournament %>
+        </section>
+
+        <section class="tournament-tabs__panel" role="tabpanel" hidden
+                 data-tournament-tabs-target="panel" data-panel="classement">
+          <%= render "tournaments/ranking", tournament: @tournament %>
+        </section>
+
+        <%= render "tournaments/score_modal" %>
+      </div>
     </div>
 
   </div>

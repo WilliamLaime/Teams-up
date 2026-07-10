@@ -21,6 +21,10 @@ class Tournament < ApplicationRecord
   has_many :tournament_rounds, dependent: :destroy
   has_many :tournament_matches, through: :tournament_rounds
 
+  # Rencontres standard rattachées à ce tournoi (Lot 4) — nullify pour préserver
+  # les rencontres (et leur chat) si le tournoi est supprimé.
+  has_many :matches, dependent: :nullify
+
   # ── Constantes métier ────────────────────────────────────────────────────────
   # État du tournoi (voir la catégorisation de la page liste dans le controller).
   STATUSES = %w[open in_progress completed].freeze
@@ -92,6 +96,26 @@ class Tournament < ApplicationRecord
   # (count { } en Ruby → exploite l'association préchargée, pas de requête N+1.)
   def approved_players_count
     tournament_users.count { |tu| tu.status == "approved" && tu.role == "joueur" }
+  end
+
+  # Inscriptions « joueur » approuvées, profils préchargés (évite les N+1 sur
+  # display_name / avatar dans les onglets Participants et Classement).
+  def approved_players
+    tournament_users.approved.players.includes(user: :profil)
+  end
+
+  # Co-organisateurs approuvés (n'occupent pas de place de joueur).
+  def co_organizers
+    tournament_users.approved.where(role: "co_organisateur").includes(user: :profil)
+  end
+
+  # Classement des joueurs : victoires décroissantes, puis départage set average
+  # puis point average (mêmes critères que le seeding — cf. SwissPairing#build_pairs),
+  # défaites croissantes en secours, nom en dernier ressort pour un ordre stable.
+  def ranked_players
+    approved_players.sort_by do |tu|
+      [-tu.wins, tu.losses, -tu.set_average, -tu.point_average, tu.display_name]
+    end
   end
 
   # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.

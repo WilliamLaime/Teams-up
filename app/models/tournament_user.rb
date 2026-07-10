@@ -38,6 +38,12 @@ class TournamentUser < ApplicationRecord
   def qualified?  = state == "qualified"
   def eliminated? = state == "eliminated"
 
+  # ── Départage fin (Lot 4 — seeding réel) ─────────────────────────────────────
+  # Set average / point average : différentiels servant à classer les joueurs à
+  # égalité de victoires (appariement suisse + seeding du tableau final).
+  def set_average   = sets_won - sets_lost
+  def point_average = points_won - points_lost
+
   # Nom affiché du joueur (délègue au profil de l'utilisateur).
   def display_name = user.display_name
 end

@@ -71,6 +71,21 @@
           <span class="required-star">*</span> Champs obligatoires
         </p>
 
+        <%# ────────────────────────────────────────────────
+            Rattachement à un tournoi (Lot 4) — optionnel.
+            Visible seulement si l'utilisateur organise au moins un tournoi.
+            Le lien précis à une carte (tournament_match_id) est posé quand on
+            arrive via « Créer la rencontre » ; on le transmet en champ caché.
+            ──────────────────────────────────────────────── %>
+        <% if @organized_tournaments&.any? %>
+          <div class="mb-3">
+            <%= f.label :tournament_id, "Tournoi (optionnel)", class: "form-label" %>
+            <%= f.collection_select :tournament_id, @organized_tournaments, :id, :name,
+                  { include_blank: "Aucun (match indépendant)" }, class: "form-select" %>
+            <%= f.hidden_field :tournament_match_id %>
+          </div>
+        <% end %>
+
 
         <%# ────────────────────────────────────────────────
             SECTION 1 : Descriptif

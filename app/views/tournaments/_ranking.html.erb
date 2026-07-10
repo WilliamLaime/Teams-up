@@ -1,0 +1,50 @@
+<%# ── Onglet « Classement » ─────────────────────────────────────────────────────
+    Table triée des joueurs (victoires puis set/point average — mêmes critères que
+    le seeding). N'a de sens qu'une fois le tournoi lancé. Local : tournament. %>
+<% players = tournament.ranked_players %>
+
+<div class="tournament-ranking">
+  <% if tournament.swiss_rounds.any? || tournament.bracket_started? %>
+    <div class="tournament-ranking__scroll">
+      <table class="tournament-ranking__table">
+        <thead>
+          <tr>
+            <th class="is-rank">#</th>
+            <th class="is-player">Joueur</th>
+            <th title="Victoires">V</th>
+            <th title="Défaites">D</th>
+            <th title="Différentiel de sets">Sets</th>
+            <th title="Différentiel de points">Points</th>
+            <th class="is-state">État</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% players.each_with_index do |tu, index| %>
+            <tr class="tournament-ranking__row tournament-ranking__row--<%= tu.state %>">
+              <td class="is-rank"><%= index + 1 %></td>
+              <td class="is-player">
+                <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar" %>
+                <span><%= tu.display_name %></span>
+              </td>
+              <td class="is-num is-win"><%= tu.wins %></td>
+              <td class="is-num"><%= tu.losses %></td>
+              <td class="is-num"><%= tu.set_average.positive? ? "+#{tu.set_average}" : tu.set_average %></td>
+              <td class="is-num"><%= tu.point_average.positive? ? "+#{tu.point_average}" : tu.point_average %></td>
+              <td class="is-state">
+                <% if tu.qualified? %>
+                  <span class="ranking-badge ranking-badge--qualified">Qualifié</span>
+                <% elsif tu.eliminated? %>
+                  <span class="ranking-badge ranking-badge--eliminated">Éliminé</span>
+                <% else %>
+                  <span class="ranking-badge ranking-badge--active">En lice</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="tournament-empty">Le classement apparaîtra une fois le tournoi lancé.</p>
+  <% end %>
+</div>

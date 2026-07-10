@@ -24,12 +24,12 @@ class TournamentEngineTest < ActiveSupport::TestCase
     tournament
   end
 
-  # Donne un vainqueur à tous les matchs en attente de la ronde courante
-  # (le premier joueur gagne, arbitraire mais déterministe).
+  # Donne un score gagnant à player_a sur tous les matchs en attente de la ronde
+  # courante (Lot 4 : le vainqueur est dérivé du score ; arbitraire mais déterministe).
   def resolve_current_round!(tournament)
     round = tournament.current_round
-    round.tournament_matches.where(status: "pending").find_each do |match|
-      match.update!(winner_id: match.player_a_id, status: "completed")
+    round.tournament_matches.where(status: "pending", is_bye: false).find_each do |match|
+      win_tournament_match!(match, match.player_a)
     end
     round
   end
@@ -87,6 +87,22 @@ class TournamentEngineTest < ActiveSupport::TestCase
     winners = tournament.tournament_users.where("wins >= 1")
     assert winners.any?
     assert tournament.tournament_users.where("losses >= 1").any?
+  end
+
+  test "recompute_stats! agrège les sets et points depuis les scores (Lot 4)" do
+    tournament = build_tournament(8)
+    SwissPairing.new(tournament).next_round!
+    resolve_current_round!(tournament)          # player_a gagne 6-0 6-0 partout
+    SwissPairing.new(tournament).next_round!    # déclenche recompute_stats!
+
+    winner = tournament.tournament_users.where("wins >= 1").first
+    assert_operator winner.sets_won, :>=, 2, "le gagnant doit avoir des sets gagnés"
+    assert_operator winner.points_won, :>, winner.points_lost
+    assert_operator winner.set_average, :>, 0
+
+    loser = tournament.tournament_users.where("losses >= 1").first
+    assert_operator loser.sets_lost, :>=, 2
+    assert_operator loser.set_average, :<, 0
   end
 
   test "flux complet 16 joueurs → Final 8 → un vainqueur, tournoi completed" do

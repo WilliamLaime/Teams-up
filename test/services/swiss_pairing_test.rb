@@ -1,11 +1,16 @@
 require "test_helper"
 
 # Tests de l'ALGORITHME PUR d'appariement (SwissPairing#build_pairs), sans base.
-# Un joueur = un simple Struct répondant à #id et #wins. On simule plusieurs rondes
-# en accumulant les paires jouées, et on vérifie les invariants critiques :
-# pas de rematch, gestion des byes, des groupes impairs, des effectifs bâtards.
+# Un joueur = un simple Struct répondant à #id, #wins, #set_average, #point_average.
+# On simule plusieurs rondes en accumulant les paires jouées, et on vérifie les
+# invariants critiques : pas de rematch, byes, groupes impairs, effectifs bâtards,
+# départage par set/point average (Lot 4).
 class SwissPairingTest < ActiveSupport::TestCase
-  Player = Struct.new(:id, :wins)
+  # set_average / point_average tombent à 0 s'ils ne sont pas fournis (Lot 4).
+  Player = Struct.new(:id, :wins, :set_average, :point_average) do
+    def set_average   = self[:set_average] || 0
+    def point_average = self[:point_average] || 0
+  end
 
   # Fabrique n joueurs (wins = 0 par défaut).
   def players(count, wins: 0)
@@ -102,6 +107,20 @@ class SwissPairingTest < ActiveSupport::TestCase
     assert_equal 2, result[:pairs].size
     ids = result[:pairs].flat_map { |a, b| [a.id, b.id] }
     assert_equal (1..4).to_a, ids.sort
+  end
+
+  test "départage : à égalité de victoires, le tri suit le set average décroissant" do
+    # Mêmes victoires, set averages distincts → l'ordre de tri est
+    # [-wins, -set_average, -point_average, id] → 1er avec 2e, 3e avec 4e.
+    pool = [
+      Player.new(1, 1, 10, 0),
+      Player.new(2, 1, 5, 0),
+      Player.new(3, 1, 1, 0),
+      Player.new(4, 1, 0, 0)
+    ]
+    result = SwissPairing.new.build_pairs(pool)
+    got = result[:pairs].map { |a, b| [a.id, b.id].sort }
+    assert_equal [[1, 2], [3, 4]], got.sort
   end
 
   test "tous les joueurs sont couverts exactement une fois à chaque ronde" do

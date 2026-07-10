@@ -238,3 +238,652 @@
   from { opacity: 0; transform: translateY(12px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+// ── Score set-par-set (Lot 4) ────────────────────────
+// Nombre de sets gagnés, affiché à droite du nom de chaque joueur.
+.tmatch-card__sets {
+  flex: 0 0 auto;
+  min-width: 1.25rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--theme-text-strong);
+}
+
+// Pied de carte : score global + bouton d'accès à la modale.
+.tmatch-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--theme-border);
+}
+
+.tmatch-card__score {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--theme-text-muted);
+  letter-spacing: 0.03em;
+}
+
+.tmatch-card__score-btn,
+.tmatch-card__detail-btn {
+  margin-left: auto;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tmatch-card__score-btn {
+  border: 1px solid $green;
+  background: transparent;
+  color: $green;
+
+  &:hover { background: $green; color: #fff; }
+}
+
+.tmatch-card__detail-btn {
+  border: 1px solid var(--theme-border-strong);
+  background: transparent;
+  color: var(--theme-text-muted);
+
+  &:hover { background: var(--theme-hover-bg); color: var(--theme-text-primary); }
+}
+
+// Lien « Créer / Voir la rencontre » (couplage Match ↔ tournoi).
+.tmatch-card__link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--theme-text-muted);
+  text-decoration: underline;
+
+  &:hover { color: var(--theme-text-primary); }
+}
+
+// ── Modale de saisie du score ────────────────────────
+.score-modal {
+  .modal-content {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    color: var(--theme-text-primary);
+  }
+
+  .modal-header,
+  .modal-footer { border-color: var(--theme-border); }
+
+  &__players {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+  }
+
+  &__vs {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--theme-text-muted);
+  }
+
+  &__set {
+    display: grid;
+    grid-template-columns: 3.5rem 1fr auto 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  &__set-label {
+    font-size: 0.8rem;
+    color: var(--theme-text-muted);
+  }
+
+  &__sep {
+    text-align: center;
+    color: var(--theme-text-muted);
+  }
+
+  &__input {
+    width: 100%;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--theme-border);
+    background: var(--theme-bg-input, var(--theme-bg-card));
+    color: var(--theme-text-primary);
+    text-align: center;
+    font-weight: 600;
+
+    &:focus {
+      outline: none;
+      border-color: $green;
+    }
+
+    &[readonly] {
+      opacity: 0.75;
+      cursor: default;
+    }
+  }
+
+  &__hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: var(--theme-text-muted);
+  }
+}
+
+// =====================================================
+// VUE DÉTAIL À ONGLETS (Vue d'ensemble / Matchs / Participants / Classement)
+// =====================================================
+
+// ── En-tête ──────────────────────────────────────────
+.tournament-detail-header {
+  margin-bottom: 1.25rem;
+
+  &__top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--theme-text-strong);
+    margin: 0;
+    font-family: $display-font;
+    letter-spacing: 0.03em;
+  }
+
+  &__subtitle {
+    color: var(--theme-text-muted);
+    font-size: 0.95rem;
+    margin: 0.4rem 0 0;
+  }
+}
+
+// Badge d'état du tournoi (aligné sur les overlays des cartes).
+.tournament-status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+
+  &--live {
+    background-color: rgba($green, 0.15);
+    color: $green;
+  }
+
+  &--done {
+    background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.08));
+    color: var(--theme-text-muted);
+  }
+
+  &--open {
+    background-color: rgba($green, 0.12);
+    color: $green;
+  }
+}
+
+// ── Barre d'onglets ──────────────────────────────────
+.tournament-tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--theme-border);
+  margin-bottom: 1.5rem;
+
+  &__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    i { width: 16px; height: 16px; }
+
+    &:hover { color: var(--theme-text-primary); }
+
+    &.is-active {
+      color: $green;
+      border-bottom-color: $green;
+    }
+  }
+
+  &__panel {
+    &[hidden] { display: none; }
+  }
+}
+
+// ── Onglet Vue d'ensemble ────────────────────────────
+.tournament-overview {
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.85rem;
+    margin: 0;
+  }
+
+  &__item {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+
+    dt {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--theme-text-muted);
+      margin-bottom: 0.35rem;
+
+      i { width: 15px; height: 15px; color: $green; }
+    }
+
+    dd {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--theme-text-strong);
+    }
+  }
+
+  &__description {
+    margin-top: 1.5rem;
+
+    p {
+      color: var(--theme-text-primary);
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin: 0;
+    }
+  }
+
+  &__subtitle {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+    margin-bottom: 0.5rem;
+  }
+}
+
+// ── Onglet Participants ──────────────────────────────
+.tournament-participants {
+  &__section { margin-bottom: 1.75rem; }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+    margin-bottom: 0.85rem;
+
+    i { width: 18px; height: 18px; color: $green; }
+  }
+
+  &__count {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    padding: 0.05rem 0.55rem;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.6rem;
+  }
+}
+
+.participant-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background-color: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  padding: 0.55rem 0.7rem;
+
+  &__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--theme-text-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__role,
+  &__state {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  &__role {
+    color: var(--theme-text-muted);
+    background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.06));
+  }
+
+  &--admin { border-color: rgba($green, 0.4); }
+
+  &__state--qualified {
+    color: $green;
+    background-color: rgba($green, 0.14);
+  }
+
+  &__state--eliminated {
+    color: #c0392b;
+    background-color: rgba(#c0392b, 0.12);
+  }
+}
+
+// ── Onglet Classement ────────────────────────────────
+.tournament-ranking {
+  &__scroll {
+    overflow-x: auto;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+
+    th, td {
+      padding: 0.6rem 0.7rem;
+      text-align: center;
+      border-bottom: 1px solid var(--theme-border);
+      white-space: nowrap;
+    }
+
+    th {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--theme-text-muted);
+      font-weight: 700;
+    }
+
+    .is-rank { width: 2.5rem; color: var(--theme-text-muted); font-weight: 700; }
+
+    .is-player {
+      text-align: left;
+
+      display: flex; // avatar + nom alignés
+      align-items: center;
+      gap: 0.55rem;
+
+      span {
+        font-weight: 600;
+        color: var(--theme-text-strong);
+      }
+    }
+
+    thead .is-player { display: table-cell; }
+
+    .is-num { font-variant-numeric: tabular-nums; color: var(--theme-text-primary); }
+    .is-win { font-weight: 700; color: $green; }
+  }
+
+  &__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__row--eliminated td { opacity: 0.6; }
+}
+
+.ranking-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+
+  &--qualified { color: $green; background-color: rgba($green, 0.14); }
+  &--eliminated { color: #c0392b; background-color: rgba(#c0392b, 0.12); }
+  &--active { color: var(--theme-text-muted); background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.06)); }
+}
+
+// État vide partagé (participants / classement).
+.tournament-empty {
+  color: var(--theme-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+// =====================================================
+// BRACKET VIEWER — tableau interactif (onglet Vue d'ensemble, lecture seule)
+// Zoom via la variable CSS --bracket-zoom + unités `em` (jamais transform: scale).
+// =====================================================
+.tournament-overview__bracket {
+  margin-top: 1.75rem;
+}
+
+.bracket-viewer {
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+  }
+
+  // Filtre par ronde
+  &__chips {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    flex: 1 1 auto;
+    padding-bottom: 0.15rem;
+  }
+
+  &__chip {
+    flex: 0 0 auto;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover { color: var(--theme-text-primary); }
+
+    &.is-active {
+      color: #fff;
+      background-color: $green;
+      border-color: $green;
+    }
+  }
+
+  // Zoom (− / + + curseur)
+  &__zoom {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+
+  &__zoom-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--theme-border);
+    background-color: var(--theme-bg-card);
+    color: var(--theme-text-strong);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover { border-color: $green; color: $green; }
+  }
+
+  &__slider {
+    width: 96px;
+    accent-color: $green;
+    cursor: pointer;
+  }
+
+  // Ruban : une colonne par ronde. Tout le contenu en `em` → zoomé d'un bloc.
+  &__scroll {
+    --bracket-zoom: 1;
+    display: flex;
+    gap: 1.5em;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    font-size: calc(0.9rem * var(--bracket-zoom));
+  }
+}
+
+.bracket-col {
+  flex: 0 0 auto;
+  min-width: 16em;
+  display: flex;
+  flex-direction: column;
+
+  &[hidden] { display: none; }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+    margin-bottom: 0.75em;
+    padding-bottom: 0.4em;
+    border-bottom: 2px solid $green;
+  }
+
+  &__label {
+    font-size: 0.95em;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &__status {
+    font-size: 0.65em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.12em 0.5em;
+    border-radius: 999px;
+
+    &--completed { color: $green; background-color: rgba($green, 0.14); }
+    &--in_progress,
+    &--pending { color: var(--theme-text-muted); background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.06)); }
+  }
+
+  &__cells {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 1em;
+    height: 100%;
+  }
+}
+
+// Carte compacte read-only (indépendante de .tmatch-card).
+.bracket-cell {
+  background-color: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 0.75em;
+  padding: 0.5em 0.65em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+
+  &--bye { border-style: dashed; }
+
+  &__player {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+
+    &--winner { .bracket-cell__name { color: var(--theme-text-strong); font-weight: 700; } }
+    &--winner .bracket-cell__score { color: $green; }
+    &--loser { opacity: 0.6; }
+  }
+
+  &__avatar {
+    width: 1.8em;
+    height: 1.8em;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--theme-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__score {
+    margin-left: auto;
+    font-size: 0.9em;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--theme-text-primary);
+  }
+
+  &__bye {
+    margin-left: auto;
+    font-size: 0.65em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--theme-text-muted);
+  }
+}
