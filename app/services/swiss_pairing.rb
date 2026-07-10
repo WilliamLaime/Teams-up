@@ -18,6 +18,9 @@
 # Exemple :
 #   SwissPairing.new(tournament).next_round!
 class SwissPairing
+  # Recalcul du bilan V/D + sets/points (partagé avec les moteurs championnat/poules).
+  include RoundRobinStats
+
   # tournament peut être nil quand on ne se sert que de l'algorithme pur (#build_pairs).
   def initialize(tournament = nil)
     @tournament = tournament
@@ -69,7 +72,7 @@ class SwissPairing
       return BracketBuilder.new(@tournament).advance! if @tournament.bracket_started?
 
       # Recalcul déterministe du bilan V/D + qualifications/éliminations.
-      recompute_stats!
+      recompute_stats_for("swiss", apply_state: true)
 
       if ready_for_bracket?
         BracketBuilder.new(@tournament).build!
@@ -135,28 +138,7 @@ class SwissPairing
 
   # ── Persistance : helpers ─────────────────────────────────────────────────────
 
-  # Inscriptions joueurs approuvées (relation, requêtée à frais à chaque appel).
-  def player_scope = @tournament.tournament_users.players.approved
-
-  # Recalcule les compteurs (victoires/défaites + sets/points pour le départage)
-  # depuis les matchs suisses, puis met à jour l'état (qualified/eliminated/active).
-  def recompute_stats!
-    matches = swiss_matches.to_a
-    player_scope.find_each do |tu|
-      played = matches.select { |m| m.player_a_id == tu.id || m.player_b_id == tu.id }
-      wins   = played.count { |m| m.winner_id == tu.id }
-      losses = played.count { |m| m.winner_id.present? && m.winner_id != tu.id }
-
-      tu.update!(
-        wins: wins, losses: losses, state: state_for(wins, losses),
-        sets_won: played.sum { |m| m.sets_won_by(tu) },
-        sets_lost: played.sum { |m| m.sets_won_by(m.opponent_of(tu)) },
-        points_won: played.sum { |m| m.points_won_by(tu) },
-        points_lost: played.sum { |m| m.points_lost_by(tu) }
-      )
-    end
-  end
-
+  # État suisse dérivé du bilan V/D (appelé par RoundRobinStats via apply_state).
   def state_for(wins, losses)
     if wins >= TournamentUser::WINS_TO_QUALIFY
       "qualified"
@@ -194,10 +176,7 @@ class SwissPairing
   end
 
   # Tous les matchs de la phase suisse de ce tournoi (requête fraîche).
-  def swiss_matches
-    TournamentMatch.joins(:tournament_round)
-                   .where(tournament_rounds: { tournament_id: @tournament.id, phase: "swiss" })
-  end
+  def swiss_matches = matches_in_phase("swiss")
 
   # Ensemble des paires déjà jouées (byes exclus).
   def played_pairs_set

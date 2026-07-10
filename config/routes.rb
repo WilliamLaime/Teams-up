@@ -144,9 +144,15 @@ Rails.application.routes.draw do
     collection { get :search }
     # POST /tournois/:id/start => lancer le tournoi (génère la ronde suisse 1)
     member { post :start }
-    resources :tournament_users, only: [:create, :destroy]
-    # PATCH /tournois/:tournament_id/tournament_matches/:id => saisir le vainqueur
-    resources :tournament_matches, only: [:update]
+    resources :tournament_users, only: [:create, :destroy] do
+      # PATCH .../tournament_users/:id/withdraw => déclarer forfait (organisateur)
+      member { patch :withdraw }
+    end
+    # PATCH /tournois/:tournament_id/tournament_matches/:id => saisir le score
+    # PATCH .../tournament_matches/:id/correct => corriger un score verrouillé
+    resources :tournament_matches, only: [:update] do
+      member { patch :correct }
+    end
   end
 
   # Route pour le profil de l'utilisateur connecté (ressource singulière)

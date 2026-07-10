@@ -1,7 +1,9 @@
-<%# ── Une ronde suisse ─────────────────────────────────────────────────────── %>
+<%# ── Une ronde / journée ──────────────────────────────────────────────────────
+    Générique : réutilisé par la ronde suisse ET les journées de championnat/poules.
+    `title` (optionnel) : intitulé affiché (défaut « Ronde N »). %>
 <div class="swiss-round">
   <div class="swiss-round__header">
-    <h3 class="swiss-round__title">Ronde <%= round.number %></h3>
+    <h3 class="swiss-round__title"><%= local_assigns.fetch(:title, "Ronde #{round.number}") %></h3>
     <span class="swiss-round__status swiss-round__status--<%= round.status %>">
       <%= round.complete? ? "Terminée" : "En cours" %>
     </span>

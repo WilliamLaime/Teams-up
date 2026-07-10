@@ -287,6 +287,15 @@
   &:hover { background: $green; color: #fff; }
 }
 
+// Correction d'un score verrouillé (organisateur) : teinte ambrée pour la
+// distinguer d'une saisie normale — c'est une action de rattrapage.
+.tmatch-card__score-btn--correct {
+  border-color: #b9770e;
+  color: #b9770e;
+
+  &:hover { background: #b9770e; color: #fff; }
+}
+
 .tmatch-card__detail-btn {
   border: 1px solid var(--theme-border-strong);
   background: transparent;
@@ -616,10 +625,53 @@
     color: #c0392b;
     background-color: rgba(#c0392b, 0.12);
   }
+
+  // Bouton « Déclarer forfait » (organisateur). button_to génère un <form> ; on
+  // neutralise sa marge et on stylise le <button> interne en pastille discrète.
+  &__forfeit {
+    margin-left: auto;
+    margin-bottom: 0;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      border: 1px solid rgba(#c0392b, 0.5);
+      background: transparent;
+      color: #c0392b;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+
+      &:hover { background: #c0392b; color: #fff; }
+      i { width: 13px; height: 13px; }
+    }
+  }
+}
+
+// Sous-titre de poule dans le board (phase poules) : « Poule A », « Poule B »…
+.pool-label {
+  margin: 0.6rem 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--theme-text-muted);
 }
 
 // ── Onglet Classement ────────────────────────────────
 .tournament-ranking {
+  // Titre de chaque table de poule (classement du format « poules »).
+  &__pool-title {
+    margin: 1rem 0 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+  }
+
   &__scroll {
     overflow-x: auto;
   }

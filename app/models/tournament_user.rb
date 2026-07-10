@@ -8,9 +8,10 @@ class TournamentUser < ApplicationRecord
   # "approved" = inscrit confirmé ; "pending" réservé à une future validation manuelle.
   STATUSES = %w[approved pending].freeze
 
-  # Parcours du joueur dans la phase suisse (Lot 3) :
-  # "active" (encore en lice) → "qualified" (3 V, passe au tableau final) | "eliminated" (3 D).
-  STATES = %w[active qualified eliminated].freeze
+  # Parcours du joueur (Lot 3, étendu Lot 5) :
+  # "active" (encore en lice) → "qualified" (passe au tableau final) | "eliminated"
+  # (sorti par le score) ; "withdrawn" = a déclaré forfait / abandonné (Lot 5).
+  STATES = %w[active qualified eliminated withdrawn].freeze
 
   # Seuils de la ronde suisse : 3 victoires pour se qualifier, 3 défaites pour être éliminé.
   WINS_TO_QUALIFY = 3
@@ -32,11 +33,13 @@ class TournamentUser < ApplicationRecord
   scope :active,     -> { where(state: "active") }
   scope :qualified,  -> { where(state: "qualified") }
   scope :eliminated, -> { where(state: "eliminated") }
+  scope :withdrawn,  -> { where(state: "withdrawn") }
 
-  # ── Prédicats de parcours (Lot 3) ────────────────────────────────────────────
+  # ── Prédicats de parcours (Lot 3, étendu Lot 5) ──────────────────────────────
   def active?     = state == "active"
   def qualified?  = state == "qualified"
   def eliminated? = state == "eliminated"
+  def withdrawn?  = state == "withdrawn"
 
   # ── Départage fin (Lot 4 — seeding réel) ─────────────────────────────────────
   # Set average / point average : différentiels servant à classer les joueurs à

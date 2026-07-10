@@ -4,6 +4,8 @@
 <%
   players      = tournament.approved_players
   co_organizers = tournament.co_organizers
+  # L'organisateur peut déclarer un forfait tant que le tournoi est en cours.
+  can_manage   = user_signed_in? && policy(tournament).manage? && tournament.in_progress?
 %>
 
 <div class="tournament-participants">
@@ -45,10 +47,21 @@
           <div class="participant-chip">
             <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
             <span class="participant-chip__name"><%= tu.display_name %></span>
-            <% if tu.qualified? %>
+            <% if tu.withdrawn? %>
+              <span class="participant-chip__state participant-chip__state--eliminated">Forfait</span>
+            <% elsif tu.qualified? %>
               <span class="participant-chip__state participant-chip__state--qualified">Qualifié</span>
             <% elsif tu.eliminated? %>
               <span class="participant-chip__state participant-chip__state--eliminated">Éliminé</span>
+            <% end %>
+
+            <% if can_manage && !tu.withdrawn? %>
+              <%= button_to withdraw_tournament_tournament_user_path(tournament, tu),
+                            method: :patch,
+                            class: "participant-chip__forfeit",
+                            form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
+                <i data-lucide="user-x" aria-hidden="true"></i> Forfait
+              <% end %>
             <% end %>
           </div>
         <% end %>

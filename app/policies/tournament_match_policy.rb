@@ -15,6 +15,13 @@ class TournamentMatchPolicy < ApplicationPolicy
     record.tournament.organizer?(user) || player_of_match?
   end
 
+  # Correction d'un score même après verrouillage du tour (Lot 5).
+  # Réservée à l'organisateur : contourne délibérément le verrou de update?,
+  # avec régénération de l'aval côté controller.
+  def correct?
+    user.present? && record.tournament.organizer?(user)
+  end
+
   private
 
   # L'utilisateur courant est-il l'un des deux joueurs de ce match ?

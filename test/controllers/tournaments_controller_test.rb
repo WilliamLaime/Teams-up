@@ -157,4 +157,42 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".swiss-round" # les rondes sont bien affichées
     assert_select ".tmatch-card__win-btn", 0 # mais aucun bouton vainqueur
   end
+
+  # ─── Formats Lot 5 : rendu des nouvelles vues (les partials ERB compilent) ────
+  def launched_tournament(format, count)
+    t = Tournament.create!(name: "Fmt #{format}", sport: @sport, user: @user,
+                           format: format, status: "open", max_players: count)
+    count.times do |i|
+      u = create_test_user(email: "f-#{format}-#{i}@example.com")
+      t.tournament_users.create!(user: u, role: "joueur", status: "approved")
+    end
+    t.update!(status: "in_progress")
+    TournamentEngine.for(t).next_round!
+    t
+  end
+
+  test "GET show rend la phase championnat" do
+    sign_in @user
+    t = launched_tournament("championnat", 8)
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tournament-phase__title", text: "Championnat"
+    assert_select ".swiss-round"
+  end
+
+  test "GET show rend la phase poules (matchs groupés par poule)" do
+    sign_in @user
+    t = launched_tournament("poules", 8)
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tournament-phase__title", text: "Poules"
+    assert_select ".pool-label"
+  end
+
+  test "GET show : bouton forfait visible pour l'organisateur d'un tournoi en cours" do
+    sign_in @user
+    t = launched_tournament("championnat", 8)
+    get tournament_path(t)
+    assert_select ".participant-chip__forfeit"
+  end
 end

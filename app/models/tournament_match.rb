@@ -11,6 +11,8 @@ class TournamentMatch < ApplicationRecord
   belongs_to :player_a, class_name: "TournamentUser"
   belongs_to :player_b, class_name: "TournamentUser", optional: true
   belongs_to :winner,   class_name: "TournamentUser", optional: true
+  # Joueur ayant abandonné (forfait, Lot 5) — l'autre gagne d'office.
+  belongs_to :retired_player, class_name: "TournamentUser", optional: true
 
   has_one :tournament, through: :tournament_round
 
@@ -94,8 +96,15 @@ class TournamentMatch < ApplicationRecord
   # ── Dérivation du vainqueur ───────────────────────────────────────────────────
   # Le vainqueur est celui qui atteint le nombre de sets requis (best_of / 2 + 1).
   # Score insuffisant → match remis en attente (winner nil). Les byes sont intacts.
+  # Forfait (Lot 5) : l'adversaire du joueur ayant abandonné gagne d'office.
   def derive_winner_from_sets
     return if is_bye
+
+    if forfeit
+      self.winner_id = forfeit_winner_id
+      self.status = "completed"
+      return
+    end
 
     needed = sets_to_win
     a = sets_won_by(player_a)
@@ -111,6 +120,14 @@ class TournamentMatch < ApplicationRecord
       self.winner_id = nil
       self.status = "pending"
     end
+  end
+
+  # Vainqueur d'un forfait : l'adversaire du joueur ayant abandonné. Si le joueur
+  # abandonnaire n'est pas identifié, on ne décide rien (winner nil).
+  def forfeit_winner_id
+    return nil if retired_player_id.blank?
+
+    retired_player_id == player_a_id ? player_b_id : player_a_id
   end
 
   # Sets nécessaires pour gagner le match selon le sport (best_of 3 → 2, best_of 5 → 3).

@@ -6,6 +6,10 @@
     (organisateur OU joueur du match, tour non verrouillé — cf. TournamentMatchPolicy). %>
 <% rules = match.tournament.sport&.scoring_rules || Sport.new.scoring_rules %>
 <% can_edit = user_signed_in? && policy(match).update? %>
+<%# Correction après verrouillage : réservée à l'organisateur, seulement quand le
+    tour est verrouillé (sinon la saisie normale can_edit suffit). %>
+<% round_locked = match.tournament_round.status == "completed" %>
+<% can_correct = round_locked && !match.is_bye && user_signed_in? && policy(match).correct? %>
 <div id="tmatch_<%= match.id %>" class="tmatch-card <%= "tmatch-card--bye" if match.is_bye %> <%= "tmatch-card--done" if match.decided? %>">
   <% if match.is_bye %>
     <div class="tmatch-card__player tmatch-card__player--winner">
@@ -31,7 +35,7 @@
 
     <%# Score global + accès à la modale (saisie ou détail selon les droits) +
         rattachement d'une rencontre standard (organisateur uniquement). %>
-    <% if match.score_entered? || can_edit || can_manage %>
+    <% if match.score_entered? || can_edit || can_manage || can_correct %>
       <div class="tmatch-card__footer">
         <% if match.score_entered? %>
           <span class="tmatch-card__score" title="Sets gagnés (<%= match.player_a.display_name %> – <%= match.player_b.display_name %>)">
@@ -69,6 +73,22 @@
                   data-tournament-score-name-b-param="<%= match.player_b.display_name %>"
                   data-tournament-score-editable-param="false">
             Détail
+          </button>
+        <% end %>
+
+        <%# Correction organisateur d'un tour verrouillé : rouvre la modale en édition,
+            mais poste sur l'action `correct` (régénère l'aval si le vainqueur change). %>
+        <% if can_correct %>
+          <button type="button" class="tmatch-card__score-btn tmatch-card__score-btn--correct"
+                  data-action="tournament-score#open"
+                  data-tournament-score-url-param="<%= correct_tournament_tournament_match_path(match.tournament, match) %>"
+                  data-tournament-score-best-of-param="<%= rules[:best_of] %>"
+                  data-tournament-score-target-param="<%= rules[:target] %>"
+                  data-tournament-score-sets-param="<%= match.sets.to_json %>"
+                  data-tournament-score-name-a-param="<%= match.player_a.display_name %>"
+                  data-tournament-score-name-b-param="<%= match.player_b.display_name %>"
+                  data-tournament-score-editable-param="true">
+            Corriger
           </button>
         <% end %>
       </div>

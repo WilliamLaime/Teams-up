@@ -25,6 +25,18 @@ class TournamentUsersController < ApplicationController
     redirect_to tournaments_path, notice: "Tu t'es désinscrit du tournoi."
   end
 
+  # PATCH /tournois/:tournament_id/tournament_users/:id/withdraw
+  # Déclare le forfait d'un joueur (organisateur) : victoire par forfait à ses
+  # adversaires et exclusion des tours suivants (cf. WithdrawPlayer).
+  def withdraw
+    tournament_user = @tournament.tournament_users.find(params[:id])
+    authorize tournament_user, :withdraw?
+
+    WithdrawPlayer.new(@tournament, tournament_user).call!
+    redirect_to tournament_path(@tournament),
+                notice: "#{tournament_user.display_name} a déclaré forfait."
+  end
+
   private
 
   def set_tournament

@@ -13,13 +13,17 @@
 # Seeding réel (Lot 4) : classement par victoires, puis set average et point average
 # (cf. #ranked) — les compteurs sont recalculés par SwissPairing#recompute_stats!.
 class BracketBuilder
-  def initialize(tournament)
+  # `finalists` (optionnel) : liste de TournamentUser à faire entrer dans le tableau.
+  # Le suisse le laisse nil (les finalistes sont dérivés de l'état qualified/active) ;
+  # le championnat / les poules injectent leur propre top-N (cf. LeagueBuilder / PoolBuilder).
+  def initialize(tournament, finalists: nil)
     @tournament = tournament
+    @finalists  = finalists
   end
 
   # Premier tour du tableau final.
   def build!
-    finalists = select_finalists
+    finalists = @finalists || select_finalists
     assign_seeds!(finalists)
 
     slots = next_power_of_two(finalists.size)

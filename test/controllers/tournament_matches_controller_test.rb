@@ -80,4 +80,43 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     assert_equal rounds_before, @tournament.reload.tournament_rounds.count
   end
+
+  # ── Correction de score après verrouillage (Lot 5) ────────────────────────────
+  # Le score « inversé » : player_b gagne (2 sets à 6-0 côté B).
+  def straight_win_b = { tournament_match: { games_a: [0, 0], games_b: [6, 6] } }
+
+  test "l'organisateur corrige un score d'un tour verrouillé (contourne le verrou)" do
+    sign_in @admin
+    @tournament.current_round.tournament_matches.where(is_bye: false).find_each { |m| win_tournament_match!(m, m.player_a) }
+    SwissPairing.new(@tournament).next_round! # verrouille la ronde 1
+    assert_equal "completed", @match.reload.tournament_round.status
+
+    loser = @match.player_b
+    patch correct_tournament_tournament_match_path(@tournament, @match), params: straight_win_b
+    assert_equal loser.id, @match.reload.winner_id, "le vainqueur doit être corrigé"
+  end
+
+  test "correction qui change le vainqueur régénère l'aval (ronde suivante)" do
+    sign_in @admin
+    @tournament.current_round.tournament_matches.where(is_bye: false).find_each { |m| win_tournament_match!(m, m.player_a) }
+    SwissPairing.new(@tournament).next_round!
+    old_round2_id = @tournament.swiss_rounds.last.id
+
+    patch correct_tournament_tournament_match_path(@tournament, @match.reload), params: straight_win_b
+
+    new_round2 = @tournament.reload.swiss_rounds.last
+    assert_not_equal old_round2_id, new_round2.id, "la ronde suivante doit être détruite puis régénérée"
+    assert_equal 2, @tournament.swiss_rounds.count, "on ne double pas les rondes"
+  end
+
+  test "un tiers ne peut pas corriger un score" do
+    sign_in @lambda
+    @tournament.current_round.tournament_matches.where(is_bye: false).find_each { |m| win_tournament_match!(m, m.player_a) }
+    SwissPairing.new(@tournament).next_round!
+    original = @match.reload.winner_id
+
+    patch correct_tournament_tournament_match_path(@tournament, @match), params: straight_win_b
+    assert_response :redirect
+    assert_equal original, @match.reload.winner_id
+  end
 end

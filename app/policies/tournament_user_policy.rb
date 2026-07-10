@@ -9,4 +9,9 @@ class TournamentUserPolicy < ApplicationPolicy
   def destroy?
     record.user == user
   end
+
+  # Déclarer le forfait d'un joueur : réservé à l'organisateur (admin ou co-org).
+  def withdraw?
+    user.present? && record.tournament.organizer?(user)
+  end
 end

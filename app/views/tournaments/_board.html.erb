@@ -27,7 +27,22 @@
     </section>
   <% end %>
 
-  <%# Tableau final à élimination directe. %>
+  <%# Championnat : round-robin intégral, une section par journée. %>
+  <% if tournament.league_rounds.any? %>
+    <section class="tournament-phase">
+      <h2 class="tournament-phase__title">Championnat</h2>
+      <% tournament.league_rounds.each do |round| %>
+        <%= render "tournaments/swiss_round", round: round, can_manage: can_manage, title: "Journée #{round.number}" %>
+      <% end %>
+    </section>
+  <% end %>
+
+  <%# Poules : round-robin par poule, matchs groupés par poule dans chaque journée. %>
+  <% if tournament.pool_rounds.any? %>
+    <%= render "tournaments/pool_phase", tournament: tournament, can_manage: can_manage %>
+  <% end %>
+
+  <%# Tableau final / playoffs à élimination directe (commun à tous les formats). %>
   <% if tournament.bracket_started? %>
     <%= render "tournaments/bracket", tournament: tournament, can_manage: can_manage %>
   <% end %>

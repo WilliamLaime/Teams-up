@@ -102,9 +102,34 @@ c'est de l'élimination directe d'emblée).
       `bracket_viewer_controller.js` + helper `TournamentsHelper` (`display_rounds`, `round_label`).
       Note : la Vue d'ensemble n'est pas rafraîchie en Turbo Stream → reflète l'état au chargement.
 
-### 🔜 Lot 5 — Poules / championnat
-- [ ] Moteur de phase de poules (format `poules`) et classement de championnat (`championnat`).
-- [ ] Gestion des **abandons** (victoire par abandon) et correction d'un score **après verrouillage**.
+### ✅ Lot 5 — Poules / championnat + abandon + correction `[FAIT]`
+- [x] **Façade d'aiguillage** `TournamentEngine.for(tournament)` → renvoie le moteur du format
+      (interface commune `#next_round!`). Seul endroit où le format aiguille le moteur ; les 2
+      controllers (`start`, `tournament_matches#update`) ne connaissent plus que la façade.
+- [x] **Championnat** (`championnat`) : `LeagueBuilder` — round-robin intégral (méthode du cercle,
+      `.schedule` pur), généré **journée par journée** (calendrier déterministe, persistance lazy),
+      puis top-N (`final_size`) en playoffs via `BracketBuilder`.
+- [x] **Poules** (`poules`) : `PoolBuilder` — répartition en serpentin (colonne `tournament_users.pool`),
+      round-robin par poule (réutilise `LeagueBuilder.schedule`), journées fusionnées par index dans
+      une ronde `pool`, **qualifiés dynamiques** (`final_size / pool_count`, filet « meilleurs restants »).
+- [x] **Recompute partagé** : module `RoundRobinStats` (`recompute_stats_for(phase, apply_state:)`)
+      + `build_match!` (bye/forfait) mutualisés entre les 3 moteurs. `BracketBuilder.new(t, finalists:)`
+      rendu injectable (non-régression suisse : `finalists` nil = comportement d'origine).
+- [x] **Abandon / forfait** : état `withdrawn` (terminal, jamais recalculé), colonnes
+      `tournament_matches.forfeit` + `retired_player_id`, service `WithdrawPlayer` (forfait des matchs
+      en cours + exclusion des journées futures via `build_match!`), action `tournament_users#withdraw`
+      (organisateur, bouton onglet Participants).
+- [x] **Correction de score verrouillé** : policy `TournamentMatchPolicy#correct?` (organisateur,
+      contourne le verrou), action `tournament_matches#correct` avec **régénération déterministe de
+      l'aval** (swiss → rondes postérieures + bracket ; league/pool → bracket ; bracket → tours
+      postérieurs). Bouton « Corriger » (ambré) dans `_tmatch` sur un tour verrouillé.
+- [x] Vues : sections board Championnat/Poules (`_pool_phase`), `_swiss_round` titre paramétrable,
+      classement par poule (`ranked_pools` + `_ranking_table`), helpers `display_rounds`/`round_label`.
+      Tests : `league_builder_test`, `pool_builder_test`, `withdraw_player_test`, + correction dans
+      `tournament_matches_controller_test`, rendus dans `tournaments_controller_test` (835 verts).
+
+### 🔜 (ex-Lot 5, reporté) — affinements
+- [ ] Winner / Loser Bracket (format e-sport) — voir « Formats envisagés » #4.
 
 ### 💡 Futurs
 - [ ] **Gamification** : badges, trophées, achievements (1er tournoi gagné, 500 pts, 10e set…).
@@ -117,6 +142,14 @@ c'est de l'élimination directe d'emblée).
 
 ## 📌 État courant
 
+**Lots 1 à 5 livrés.** Les 3 formats (`ronde_suisse`, `championnat`, `poules`) sont jouables de
+bout en bout via la façade `TournamentEngine`. Un organisateur peut déclarer un **forfait**
+(exclusion du joueur, victoires par forfait) et **corriger un score verrouillé** (avec
+régénération cohérente de l'aval). Prochain chantier envisagé : Winner/Loser Bracket, puis les
+« Futurs » ci-dessous (gamification, calendrier, Slack…).
+
+<details><summary>Historique Lots 1 à 4</summary>
+
 **Lots 1 à 4 livrés.** La page `/tournois` affiche 3 sections ; le **formulaire de
 création** (`/tournois/new`) est fonctionnel. Le **moteur de jeu** est complet :
 un tournoi Ronde Suisse se lance (`start`), tire au sort la ronde 1 (animation), on saisit
@@ -127,15 +160,19 @@ peut être transformée en **rencontre standard** rattachée au tournoi. La page
 est organisée en **4 onglets** (Vue d'ensemble · Matchs · Participants · Classement) ; la Vue
 d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre par ronde).
 
-### Modèle de données Lot 3 + 4
-- `tournament_rounds` : number, phase (`swiss`/`bracket`), status ; index unique
-  `[tournament_id, phase, number]`.
+### Modèle de données Lot 3 + 4 (+ Lot 5)
+- `tournament_rounds` : number, phase (`swiss`/**`league`**/**`pool`**/`bracket`), status ; index
+  unique `[tournament_id, phase, number]`.
 - `tournament_matches` : player_a/player_b/winner (→ `tournament_users`), is_bye, position,
-  status, **`sets` (jsonb, `[[a, b], …]`)** ; index unique `[tournament_round_id, position]`.
-- `tournament_users` (+ colonnes) : wins, losses, seed, state (`active`/`qualified`/`eliminated`),
-  **`sets_won/sets_lost`, `points_won/points_lost`** (départage / seeding réel).
+  status, **`sets` (jsonb, `[[a, b], …]`)**, **`forfeit` + `retired_player_id`** (Lot 5) ;
+  index unique `[tournament_round_id, position]`.
+- `tournament_users` (+ colonnes) : wins, losses, seed, state
+  (`active`/`qualified`/`eliminated`/**`withdrawn`**), `sets_won/sets_lost`, `points_won/points_lost`,
+  **`pool`** (Lot 5, index `[tournament_id, pool]`).
 - `matches` (couplage) : **`tournament_id`** (rattachement lâche) + **`tournament_match_id`**
   (lien 1↔1, index unique).
+
+</details>
 
 ### Décisions actées
 - **Statuts** (`tournaments.status`) : `open` / `in_progress` / `completed`.
@@ -170,8 +207,10 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
 
 ## ▶️ Prochaine étape proposée
 
-**Lot 5 — Poules / championnat.** Câbler les deux formats restants (`poules`, `championnat`)
-sur le moteur : phase de poules (mini round-robin + classement) et championnat (round-robin
-intégral avec table de classement). Réutiliser le score set-par-set et l'agrégation
-set/point average déjà en place. Trancher au passage la **gestion des abandons** (victoire
-par abandon) et la **correction d'un score après verrouillage** du tour.
+**Lots 1 à 5 terminés.** Pistes suivantes, par ordre de valeur :
+1. **Affiner les configs** de Ronde Suisse par effectif (16/32 ; 24 problématique) et les
+   propositions du mode « Libre » (`STRUCTURE_PRESETS` + `_buildProposals` dans
+   `tournament_form_controller.js`) — reste **provisoire** depuis le Lot 2.
+2. **Winner / Loser Bracket** (format e-sport) — le format complexe reporté (barrages,
+   descente en loser bracket, grande finale).
+3. Les **Futurs** (gamification, calendrier, Slack, dashboard perso, export agenda).

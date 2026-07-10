@@ -113,9 +113,20 @@ class Tournament < ApplicationRecord
   # puis point average (mêmes critères que le seeding — cf. SwissPairing#build_pairs),
   # défaites croissantes en secours, nom en dernier ressort pour un ordre stable.
   def ranked_players
-    approved_players.sort_by do |tu|
-      [-tu.wins, tu.losses, -tu.set_average, -tu.point_average, tu.display_name]
-    end
+    approved_players.sort_by { |tu| rank_key(tu) }
+  end
+
+  # Classement PAR poule (format "poules") : hash ordonné { index_poule => joueurs
+  # triés }. Mêmes critères de tri que ranked_players.
+  def ranked_pools
+    pools.transform_values { |members| members.sort_by { |tu| rank_key(tu) } }
+         .sort.to_h
+  end
+
+  # Critère de tri du classement (victoires desc, défaites asc, puis set average,
+  # point average, nom) — partagé par ranked_players / ranked_pools et le seeding.
+  def rank_key(tu)
+    [-tu.wins, tu.losses, -tu.set_average, -tu.point_average, tu.display_name]
   end
 
   # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.
@@ -136,14 +147,27 @@ class Tournament < ApplicationRecord
 
   # Rondes de la phase suisse, dans l'ordre.
   def swiss_rounds   = tournament_rounds.swiss.ordered
+  # Journées de championnat (round-robin intégral), dans l'ordre.
+  def league_rounds  = tournament_rounds.league.ordered
+  # Journées de poules (round-robin par poule), dans l'ordre.
+  def pool_rounds    = tournament_rounds.pool.ordered
   # Tours du tableau final, dans l'ordre.
   def bracket_rounds = tournament_rounds.bracket.ordered
   # Le tableau final a-t-il déjà commencé ?
   def bracket_started? = tournament_rounds.bracket.exists?
 
-  # Ronde en cours : la dernière ronde générée (bracket prioritaire sur swiss).
+  # Ronde en cours : la dernière ronde générée. Le tableau final (bracket) est
+  # prioritaire ; sinon la dernière ronde de la phase round-robin du format
+  # (un tournoi n'emploie qu'UNE phase round-robin : swiss OU league OU pool).
   def current_round
-    bracket_rounds.last || swiss_rounds.last
+    bracket_rounds.last ||
+      tournament_rounds.where(phase: %w[swiss league pool]).ordered.last
+  end
+
+  # Regroupement des joueurs par poule (Lot 5, format "poules").
+  # Clé = index de poule (0-based) ; valeur = joueurs de la poule.
+  def pools
+    approved_players.select { |tu| tu.pool.present? }.group_by(&:pool)
   end
 
   # Taille du tableau final selon l'effectif inscrit : Final 4 pour un petit

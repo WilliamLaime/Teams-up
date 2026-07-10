@@ -62,7 +62,8 @@ class TournamentsController < ApplicationController
 
     ActiveRecord::Base.transaction do
       @tournament.update!(status: "in_progress")
-      SwissPairing.new(@tournament).next_round!
+      # Aiguillage selon le format (ronde suisse / championnat / poules).
+      TournamentEngine.for(@tournament).next_round!
     end
 
     respond_to do |format|
