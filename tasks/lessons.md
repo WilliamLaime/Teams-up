@@ -10,6 +10,12 @@
 - **Correctif** : ce qui a été changé, et fichier(s) concerné(s)
 -->
 
+## 2026-07-10 — Abandon (withdrawn) « annulé » à la ronde suivante (Lot 5 tournoi)
+- **Symptôme** : en ronde suisse, un joueur déclaré forfait était **ré-apparié** à la ronde suivante alors qu'il devait être exclu (test `withdraw_player_test` : l'id du retiré réapparaissait dans les matchs de la ronde 2).
+- **Cause racine** : le moteur suisse appelle `recompute_stats_for("swiss", apply_state: true)` à chaque `next_round!`, qui **réécrasait `state`** via `state_for(wins, losses)` → l'état terminal `withdrawn` repassait en `active`/`eliminated`. Or `SwissPairing#create_swiss_round!` apparie `player_scope.active` : le joueur, redevenu `active`, rentrait dans le tirage.
+- **Correctif** : dans `RoundRobinStats#recompute_stats_for`, ne jamais recalculer un état terminal — `attrs[:state] = state_for(...) if apply_state && !tu.withdrawn?`. (`app/services/round_robin_stats.rb`)
+- **Leçon** : un recompute déterministe qui régénère un champ d'état doit **préserver les états terminaux** (withdrawn, disqualifié…). Toujours exclure ces états du recalcul, sinon une action « one-shot » (abandon) est silencieusement défaite par le prochain passage du moteur.
+
 ## 2026-07-02 — Conversation qui disparaît parfois de la sidebar de chat
 - **Symptôme** : une conversation (match/équipe/privée) disparaissait « parfois » de la sidebar du chat sticky et ne revenait qu'après un rechargement complet (F5).
 - **Cause racine** : `Message#broadcast_unread_notifications` remontait la conv en tête via DEUX broadcasts ActionCable séparés (`broadcast_remove_to` puis `broadcast_prepend_to`). Si le rendu du partial du prepend échouait entre les deux, le `remove` était déjà parti → item supprimé. Comme `#sticky-chat-global` est `data-turbo-permanent`, la sidebar n'est jamais régénérée en navigation Turbo, d'où la persistance jusqu'au F5. Bug annexe : le broadcast match itérait TOUS les `match_users` (y compris pending/waiting/rejected), divergeant du filtre d'affichage `status='approved' OR role='organisateur'` → items fantômes.

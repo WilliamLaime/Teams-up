@@ -58,13 +58,13 @@
           Trouver un match
         <% end %>
       </li>
-      <%# Blog — lien SEO stratégique, visible sur desktop pour tous les profils %>
+      <%# Tournoi — accès à l'environnement tournois (remplace l'ancien lien Blog, déplacé au footer) %>
       <li class="nav-item">
-        <% blog_active = request.path.start_with?('/blog') %>
-        <%= link_to articles_path,
-            class: "nav-link #{blog_active ? 'active' : ''}",
-            "aria-current": (blog_active ? "page" : nil) do %>
-          Blog
+        <% tournaments_active = request.path.start_with?('/tournois') %>
+        <%= link_to coming_soon_tournaments_path,
+            class: "nav-link #{tournaments_active ? 'active' : ''}",
+            "aria-current": (tournaments_active ? "page" : nil) do %>
+          Tournoi
         <% end %>
       </li>
       <% if user_signed_in? %>
@@ -384,12 +384,12 @@
           <span id="navbar-teams-dot-mobile" class="ms-1"><%= render "shared/navbar_teams_dot", user: current_user %></span>
         <% end %>
 
-        <% blog_active = request.path.start_with?('/blog') %>
-        <%= link_to articles_path,
-            class: "drawer-nav-link #{'active' if blog_active}",
-            "aria-current": (blog_active ? "page" : nil) do %>
-          <i data-lucide="book-open" style="width:17px;height:17px;" aria-hidden="true"></i>
-          Blog
+        <% tournaments_active = request.path.start_with?('/tournois') %>
+        <%= link_to coming_soon_tournaments_path,
+            class: "drawer-nav-link #{'active' if tournaments_active}",
+            "aria-current": (tournaments_active ? "page" : nil) do %>
+          <i data-lucide="trophy" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Tournoi
         <% end %>
 
         <% about_active = current_page?(about_path) %>
@@ -451,11 +451,11 @@
           Trouver un match
         <% end %>
 
-        <% blog_active = request.path.start_with?('/blog') %>
-        <%= link_to articles_path,
-            class: "drawer-nav-link #{'active' if blog_active}" do %>
-          <i data-lucide="book-open" style="width:17px;height:17px;" aria-hidden="true"></i>
-          Blog
+        <% tournaments_active = request.path.start_with?('/tournois') %>
+        <%= link_to coming_soon_tournaments_path,
+            class: "drawer-nav-link #{'active' if tournaments_active}" do %>
+          <i data-lucide="trophy" style="width:17px;height:17px;" aria-hidden="true"></i>
+          Tournoi
         <% end %>
 
         <% about_active = current_page?(about_path) %>

@@ -139,6 +139,15 @@
         <%# Titre %>
         <h1 class="match-banner-title"><%= @match.title %></h1>
 
+        <%# Bandeau : rencontre rattachée à un tournoi (Lot 4). %>
+        <% if @match.tournament %>
+          <p class="match-banner-desc" style="margin-bottom:0.6rem;">
+            <i data-lucide="trophy" style="width:15px;height:15px;vertical-align:-2px;"></i>
+            Rencontre du tournoi
+            <%= link_to @match.tournament.name, tournament_path(@match.tournament), style: "text-decoration:underline;" %>
+          </p>
+        <% end %>
+
         <%# Description %>
         <% if @match.description.present? %>
           <p class="match-banner-desc"><%= @match.description %></p>

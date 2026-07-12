@@ -1,0 +1,29 @@
+<%# ── Panneau de lancement (tournoi encore "open") ──────────────────────────── %>
+<div class="tournament-start-panel">
+  <div class="tournament-start-panel__info">
+    <i data-lucide="users" aria-hidden="true"></i>
+    <span>
+      <strong><%= tournament.approved_players_count %></strong>
+      joueur<%= "s" if tournament.approved_players_count > 1 %> inscrit<%= "s" if tournament.approved_players_count > 1 %>
+      <% if tournament.max_players %>/ <%= tournament.max_players %><% end %>
+    </span>
+  </div>
+
+  <% if can_manage %>
+    <% if tournament.startable? %>
+      <%# Le bouton porte les appariements de la 1re ronde pour l'animation de tirage. %>
+      <%= button_to start_tournament_path(tournament),
+                    class: "btn-cta-primary tournament-start-panel__btn",
+                    data: { turbo: true } do %>
+        <i data-lucide="shuffle" aria-hidden="true"></i>
+        Lancer le tournoi & tirer au sort
+      <% end %>
+    <% else %>
+      <p class="tournament-start-panel__hint">
+        Il faut au moins <%= Tournament::MIN_PLAYERS_TO_START %> joueurs inscrits pour lancer le tournoi.
+      </p>
+    <% end %>
+  <% else %>
+    <p class="tournament-start-panel__hint">Le tournoi n'a pas encore été lancé par l'organisateur.</p>
+  <% end %>
+</div>

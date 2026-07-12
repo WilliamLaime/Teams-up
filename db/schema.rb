@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_120724) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -180,6 +180,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
     t.bigint "team_id"
     t.time "time"
     t.string "title"
+    t.bigint "tournament_id"
+    t.bigint "tournament_match_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.string "validation_mode", default: "automatic"
@@ -190,6 +192,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
     t.index ["slug"], name: "index_matches_on_slug", unique: true
     t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["team_id"], name: "index_matches_on_team_id"
+    t.index ["tournament_id"], name: "index_matches_on_tournament_id"
+    t.index ["tournament_match_id"], name: "index_matches_on_tournament_match_id", unique: true
     t.index ["user_id", "created_at"], name: "index_matches_on_user_id_created_at"
     t.index ["user_id"], name: "index_matches_on_user_id"
     t.index ["venue_id"], name: "index_matches_on_venue_id"
@@ -516,6 +520,84 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
     t.index ["visibility"], name: "index_teams_on_visibility"
   end
 
+  create_table "tournament_matches", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "forfeit", default: false, null: false
+    t.boolean "is_bye", default: false, null: false
+    t.bigint "player_a_id"
+    t.bigint "player_b_id"
+    t.integer "position", null: false
+    t.bigint "retired_player_id"
+    t.jsonb "sets", default: [], null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "tournament_round_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "winner_id"
+    t.index ["player_a_id"], name: "index_tournament_matches_on_player_a_id"
+    t.index ["player_b_id"], name: "index_tournament_matches_on_player_b_id"
+    t.index ["retired_player_id"], name: "index_tournament_matches_on_retired_player_id"
+    t.index ["tournament_round_id", "position"], name: "index_tournament_matches_on_tournament_round_id_and_position", unique: true
+    t.index ["tournament_round_id"], name: "index_tournament_matches_on_tournament_round_id"
+    t.index ["winner_id"], name: "index_tournament_matches_on_winner_id"
+  end
+
+  create_table "tournament_rounds", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "number", null: false
+    t.string "phase", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tournament_id", "phase", "number"], name: "index_tournament_rounds_on_tournament_id_and_phase_and_number", unique: true
+    t.index ["tournament_id"], name: "index_tournament_rounds_on_tournament_id"
+  end
+
+  create_table "tournament_users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "losses", default: 0, null: false
+    t.integer "points_lost", default: 0, null: false
+    t.integer "points_won", default: 0, null: false
+    t.integer "pool"
+    t.string "role"
+    t.integer "seed"
+    t.integer "sets_lost", default: 0, null: false
+    t.integer "sets_won", default: 0, null: false
+    t.string "state", default: "active", null: false
+    t.string "status", default: "approved"
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "wins", default: 0, null: false
+    t.index ["tournament_id", "pool"], name: "index_tournament_users_on_tournament_id_and_pool"
+    t.index ["tournament_id", "user_id"], name: "index_tournament_users_on_tournament_id_and_user_id", unique: true
+    t.index ["tournament_id"], name: "index_tournament_users_on_tournament_id"
+    t.index ["user_id"], name: "index_tournament_users_on_user_id"
+  end
+
+  create_table "tournaments", force: :cascade do |t|
+    t.string "banner_image"
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.text "description"
+    t.string "format"
+    t.integer "max_players"
+    t.string "name", null: false
+    t.string "place"
+    t.datetime "registration_deadline"
+    t.string "slug", null: false
+    t.bigint "sport_id"
+    t.string "status", default: "open", null: false
+    t.time "time"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.bigint "venue_id"
+    t.index ["slug"], name: "index_tournaments_on_slug", unique: true
+    t.index ["sport_id"], name: "index_tournaments_on_sport_id"
+    t.index ["status"], name: "index_tournaments_on_status"
+    t.index ["user_id"], name: "index_tournaments_on_user_id"
+    t.index ["venue_id"], name: "index_tournaments_on_venue_id"
+  end
+
   create_table "user_achievements", force: :cascade do |t|
     t.bigint "achievement_id", null: false
     t.datetime "created_at", null: false
@@ -597,6 +679,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
   add_foreign_key "match_votes", "users", column: "voter_id"
   add_foreign_key "matches", "sports"
   add_foreign_key "matches", "teams"
+  add_foreign_key "matches", "tournament_matches"
+  add_foreign_key "matches", "tournaments"
   add_foreign_key "matches", "users", column: "homme_du_match_id", on_delete: :nullify
   add_foreign_key "matches", "users", on_delete: :nullify
   add_foreign_key "matches", "venues"
@@ -627,6 +711,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_08_092331) do
   add_foreign_key "team_members", "teams"
   add_foreign_key "team_members", "users"
   add_foreign_key "teams", "users", column: "captain_id"
+  add_foreign_key "tournament_matches", "tournament_rounds", on_delete: :cascade
+  add_foreign_key "tournament_matches", "tournament_users", column: "player_a_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "player_b_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "retired_player_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "winner_id"
+  add_foreign_key "tournament_rounds", "tournaments", on_delete: :cascade
+  add_foreign_key "tournament_users", "tournaments"
+  add_foreign_key "tournament_users", "users"
+  add_foreign_key "tournaments", "sports"
+  add_foreign_key "tournaments", "users", on_delete: :nullify
+  add_foreign_key "tournaments", "venues"
   add_foreign_key "user_achievements", "achievements"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_sports", "sports"

@@ -32,6 +32,13 @@ class Match < ApplicationRecord
 
   # L'équipe organisatrice de ce match (optionnel — nil pour les matchs publics individuels)
   belongs_to :team, optional: true
+
+  # ── Rattachement à un tournoi (Lot 4) ────────────────────────────────────────
+  # tournament       : association lâche (le match "fait partie" du tournoi).
+  # tournament_match : lien précis avec une carte du tableau (rencontre planifiée).
+  belongs_to :tournament,       optional: true
+  belongs_to :tournament_match, optional: true
+
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 

@@ -1,0 +1,21 @@
+<%# ── Tableau final à élimination directe ─────────────────────────────────────
+    Une colonne par tour ; le dernier tour est la finale. %>
+<section class="tournament-phase">
+  <h2 class="tournament-phase__title">Tableau final</h2>
+
+  <div class="bracket">
+    <% rounds = tournament.bracket_rounds.to_a %>
+    <% rounds.each do |round| %>
+      <div class="bracket__round">
+        <div class="bracket__round-title">
+          <%= round == rounds.last ? "Finale" : "Tour #{round.number}" %>
+        </div>
+        <div class="bracket__matches">
+          <% round.tournament_matches.order(:position).each do |match| %>
+            <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>
