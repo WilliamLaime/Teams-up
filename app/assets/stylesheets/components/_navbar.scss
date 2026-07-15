@@ -523,7 +523,10 @@
   &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
 }
 
-// Empêche Bootstrap d'ajouter un padding-right au body quand une modal s'ouvre
+// Empêche Bootstrap d'ajouter un padding-right au body quand une modale s'ouvre.
+// Correct UNIQUEMENT parce que `html { scrollbar-gutter: stable }` (application.scss)
+// réserve déjà la gouttière : le padding Bootstrap ferait alors double compensation
+// et provoquerait un saut. Ne pas retirer l'un sans l'autre.
 body.modal-open {
   padding-right: 0 !important;
 }
