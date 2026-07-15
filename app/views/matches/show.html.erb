@@ -1435,10 +1435,10 @@
           <div class="pending-modal-divider" style="margin-top:20px;"></div>
 
           <%= form_with url: share_on_slack_match_path(@match), method: :post do %>
-            <div style="padding: 16px 0 4px; text-align:left;">
+            <div style="padding: 16px 0 8px; text-align:left;">
               <%= render "shared/slack_share_field", workspaces: @slack_destinations, standalone: true %>
             </div>
-            <div class="d-flex gap-3" style="padding: 4px 0;">
+            <div class="d-flex gap-3" style="margin-top: 20px;">
               <button type="submit"
                       class="btn btn-sm flex-fill"
                       style="background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);">
