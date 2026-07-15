@@ -72,6 +72,37 @@
           </div>
         <% end %>
 
+        <%# ── Intégration Slack — visible uniquement sur son propre profil ── %>
+        <%# Point d'entrée clair vers la page de gestion des intégrations : afficher/partager
+            ses matchs dans Slack, créer un match via /match. L'état (lié ou non) est reflété. %>
+        <% if user_signed_in? && current_user == @profil_user %>
+          <div class="match-block" style="margin-top:1rem; padding:1rem 1.25rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+              <div>
+                <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
+                            text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.25rem;">
+                  <%= render "shared/slack_logo", size: 15 %>
+                  Slack
+                </div>
+                <p style="font-size:0.75rem; color:var(--theme-text-muted); margin:0;">
+                  <% if current_user.slack_linked? %>
+                    Compte connecté — partage tes matchs et crée-les avec <code>/match</code>.
+                  <% else %>
+                    Connecte Slack pour partager tes matchs et les créer depuis <code>/match</code>.
+                  <% end %>
+                </p>
+              </div>
+              <%= link_to profil_integrations_path,
+                          class: "btn btn-sm #{current_user.slack_linked? ? 'btn-outline-light' : 'btn-cta-primary'}",
+                          style: "white-space:nowrap; flex-shrink:0;" do %>
+                <i data-lucide="<%= current_user.slack_linked? ? 'settings' : 'plug' %>"
+                   style="width:15px; height:15px; vertical-align:-3px;"></i>
+                <%= current_user.slack_linked? ? "Gérer" : "Connecter Slack" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
       </div>
       <%# / col-lg-4 %>
 
