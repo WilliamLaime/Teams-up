@@ -40,7 +40,9 @@
       <div data-slack-share-target="wrapper" style="<%= "display:none;" unless standalone %>">
         <% if workspaces.size > 1 %>
           <div class="mb-2">
-            <%= label_tag :slack_workspace_id, "Espace Slack", class: "form-label small text-muted" %>
+            <%# Couleur theme-aware (pas le .text-muted fixe de Bootstrap, illisible sur fond sombre) %>
+            <%= label_tag :slack_workspace_id, "Espace Slack",
+                  class: "form-label small", style: "color: var(--theme-text-muted);" %>
             <%= select_tag :slack_workspace_id,
                   options_for_select(workspaces.map { |w| [w[:name], w[:id]] }),
                   class: "form-select",
@@ -52,7 +54,8 @@
                 data: { slack_share_target: "workspace" } %>
         <% end %>
 
-        <%= label_tag :slack_channel_id, "Destination (channel ou message direct)", class: "form-label small text-muted" %>
+        <%= label_tag :slack_channel_id, "Destination (channel ou message direct)",
+              class: "form-label small", style: "color: var(--theme-text-muted);" %>
         <%= select_tag :slack_channel_id, "",
               include_blank: "Ma destination par défaut",
               class: "form-select",
