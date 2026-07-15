@@ -1564,7 +1564,7 @@
 
 <%# ══════════════════════════════════════════════════
     MODAL "DEMANDE ACCEPTÉE" — affiché automatiquement après avoir rejoint
-    Déclenché par flash[:show_calendar_modal] (posé par join_automatically)
+    Déclenché par flash[:show_calendar_modal] (posé dans MatchUsersController#create, cas :approved)
     Contient un bouton pour ajouter le match à un calendrier externe
     ══════════════════════════════════════════════════ %>
 <% if flash[:show_calendar_modal] && @match.date.present? && @match.time.present? %>

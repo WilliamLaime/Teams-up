@@ -6,39 +6,45 @@ class MatchUsersController < ApplicationController
 
   # POST /matches/:match_id/match_users
   # Rejoindre un match (ou rejoindre la file d'attente si le match est complet)
+  #
+  # La logique métier (dup-check, restriction de genre, décision waiting/pending/
+  # approved sous verrou, notifications) vit dans MatchEnrollmentService pour être
+  # réutilisable hors web (Slack). Le controller garde ce qui est spécifique au web :
+  # l'autorisation Pundit, les broadcasts Turbo temps réel, le flash et le redirect.
   def create
-    # On crée l'inscription avec le message optionnel du joueur
-    @match_user = @match.match_users.new(user: current_user, role: "joueur", message: params[:message].presence)
-    authorize @match_user
+    # Pundit a besoin d'un enregistrement pour résoudre la policy (create? => true).
+    authorize @match.match_users.new(user: current_user, role: "joueur")
 
-    # Vérifie si l'utilisateur est déjà inscrit (peu importe le statut)
-    if @match.match_users.exists?(user: current_user)
+    result = MatchEnrollmentService.new(
+      match: @match, user: current_user, message: params[:message].presence
+    ).call
+
+    # @match_user sert aux broadcasts (auto-join) ci-dessous.
+    @match_user = result.match_user
+
+    case result.status
+    when :already_registered
       redirect_to @match, alert: "Tu es déjà inscrit à ce match."
-      return
-    end
-
-    # ── Vérification de la restriction de genre ───────────────────────────────
-    # Si le match est réservé aux femmes ET que l'utilisateur n'est pas une femme,
-    # on bloque l'inscription avec un message explicatif.
-    # current_user.genre != "femme" inclut aussi les utilisateurs sans genre déclaré (nil).
-    if @match.genre_restriction == "feminin" && current_user.genre != "femme"
+    when :gender_restricted
       redirect_to match_path(@match, **match_redirect_options),
                   alert: "Ce match est réservé aux joueuses. Seules les femmes peuvent s'inscrire."
-      return
-    end
-    # ── Fin vérification genre ────────────────────────────────────────────────
-
-    # On récupère l'organisateur une seule fois pour les notifications
-    organizer = @match.organizer_match_user&.user
-
-    # Redirige vers le bon cas selon l'état du match
-    if @match.full?
-      join_waiting_list(organizer)
-    elsif @match.manual_validation?
-      join_with_manual_validation(organizer)
+    when :waiting
+      redirect_to match_path(@match, **match_redirect_options),
+                  notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
+    when :pending
+      # Broadcast temps réel vers l'organisateur (met à jour #pending_modal_inner
+      # et affiche la notification de nouvelle demande, peu importe sa page).
+      broadcast_pending_modal_to_organizer
+      redirect_to match_path(@match, **match_redirect_options), notice: "Ta demande a été envoyée à l'organisateur !"
+    when :approved
+      # Notifie l'organisateur en temps réel s'il est sur la page du match
+      # (injecte et ouvre #autoJoinModal). AVANT le redirect, qui stoppe le client.
+      broadcast_auto_join_to_organizer
+      # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" (show.html.erb)
+      flash[:show_calendar_modal] = true
+      redirect_to match_path(@match, **match_redirect_options), notice: "Tu as rejoint le match !"
     else
-      # Mode automatique : accepté immédiatement
-      join_automatically(organizer)
+      redirect_to match_path(@match, **match_redirect_options), alert: "Impossible de rejoindre le match."
     end
   end
 
@@ -282,7 +288,7 @@ class MatchUsersController < ApplicationController
   end
 
   # Notifie l'organisateur en temps réel qu'un joueur a rejoint automatiquement.
-  # Appelé depuis join_automatically après le save et le decrement.
+  # Appelé depuis #create (cas :approved) après l'inscription automatique.
   def broadcast_auto_join_to_organizer
     orga = organizer_user
     return unless orga
@@ -346,77 +352,5 @@ class MatchUsersController < ApplicationController
   # Retourne les options de redirect pour le match — inclut le token si match privé
   def match_redirect_options
     @match.private? ? { token: @match.private_token } : {}
-  end
-
-  # Cas 1 : Le match est complet → mise en file d'attente
-  def join_waiting_list(organizer)
-    @match_user.status = "waiting"
-    if @match_user.save
-      notify(organizer, "#{current_user.display_name} s'est inscrit en file d'attente pour \"#{@match.title}\"")
-      # Email transactionnel : informe l'organisateur qu'un joueur est en file d'attente
-      UserMailer.match_joined(@match, current_user, status: "waiting").deliver_later
-      redirect_to match_path(@match, **match_redirect_options),
-                  notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
-    else
-      redirect_to match_path(@match, **match_redirect_options), alert: "Impossible de rejoindre la file d'attente."
-    end
-  end
-
-  # Cas 2 : Validation manuelle → en attente de l'organisateur
-  def join_with_manual_validation(organizer)
-    @match_user.status = "pending"
-    @match_user.save
-    notify(organizer, "#{current_user.display_name} veut rejoindre votre match \"#{@match.title}\"")
-    # Email transactionnel : informe l'organisateur d'une nouvelle demande à traiter
-    UserMailer.match_joined(@match, current_user, status: "pending").deliver_later
-
-    # Broadcast en temps réel vers l'organisateur s'il est sur la page du match.
-    # Met à jour le contenu de #pending_modal_inner et ouvre la modal automatiquement.
-    broadcast_pending_modal_to_organizer
-
-    redirect_to match_path(@match, **match_redirect_options), notice: "Ta demande a été envoyée à l'organisateur !"
-  end
-
-  # Cas 3 : Validation automatique → accepté immédiatement
-  def join_automatically(organizer)
-    status_assigned = nil
-
-    # with_lock ouvre une transaction et pose un SELECT FOR UPDATE sur la ligne du match.
-    # Un seul process à la fois évalue le nombre de confirmés puis inscrit — plus de
-    # race condition. player_left est recalculé par le callback de MatchUser au save.
-    @match.with_lock do
-      if @match.confirmed_players_count >= @match.players_needed.to_i
-        # La place a été prise par un autre joueur entre le check initial (create) et maintenant
-        @match_user.status = "waiting"
-        @match_user.save
-        status_assigned = :waiting
-      else
-        @match_user.status = "approved"
-        status_assigned = @match_user.save ? :approved : :error
-      end
-    end
-
-    case status_assigned
-    when :waiting
-      notify(organizer, "#{current_user.display_name} s'est inscrit en file d'attente pour \"#{@match.title}\"")
-      UserMailer.match_joined(@match, current_user, status: "waiting").deliver_later
-      redirect_to match_path(@match, **match_redirect_options),
-                  notice: "Le match est complet. Tu as été ajouté à la file d'attente !"
-    when :approved
-      notify(organizer, "#{current_user.display_name} a rejoint votre match \"#{@match.title}\"")
-      # Email transactionnel : informe l'organisateur qu'un joueur a rejoint automatiquement
-      UserMailer.match_joined(@match, current_user, status: "approved").deliver_later
-
-      # Notifie l'organisateur en temps réel s'il est sur la page du match.
-      # Injecte la modal #autoJoinModal dans son navigateur et l'ouvre automatiquement.
-      # Doit être appelé AVANT redirect_to (le redirect stoppe l'exécution côté client).
-      broadcast_auto_join_to_organizer
-
-      # flash[:show_calendar_modal] déclenche la modale "Demande acceptée" dans show.html.erb
-      flash[:show_calendar_modal] = true
-      redirect_to match_path(@match, **match_redirect_options), notice: "Tu as rejoint le match !"
-    else
-      redirect_to match_path(@match, **match_redirect_options), alert: "Impossible de rejoindre le match."
-    end
   end
 end
