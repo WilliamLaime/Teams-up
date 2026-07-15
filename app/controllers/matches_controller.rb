@@ -228,10 +228,9 @@ class MatchesController < ApplicationController
 
     authorize @match
 
-    if @match.save
-      # Ajoute automatiquement le créateur comme organisateur approuvé du match
-      @match.match_users.create(user: current_user, role: "organisateur", status: "approved")
-
+    # Sauvegarde + organisateur + rappel : logique commune mutualisée avec la
+    # création via slash Slack (voir Slack::CommandsController / view_submission).
+    if MatchCreationService.new(match: @match).call.success?
       # Rencontre issue d'une carte de tournoi → inscrire ses deux joueurs.
       enroll_tournament_players if @match.tournament_match
 
@@ -244,13 +243,6 @@ class MatchesController < ApplicationController
 
       # Email de confirmation avec récapitulatif du match pour l'organisateur
       UserMailer.match_created(@match).deliver_later
-
-      # Planifie le rappel ~24h avant le match pour tous les participants approuvés.
-      # On anticipe de 30 min (-24.5.hours) pour absorber un éventuel retard de la queue :
-      # si le worker est lent, le rappel part quand même avant le coup d'envoi.
-      # Le job lui-même vérifie en plus que le match n'a pas encore commencé avant d'envoyer.
-      reminder_time = @match.build_datetime - 24.5.hours
-      MatchReminderJob.set(wait_until: reminder_time).perform_later(@match.id) if reminder_time > Time.current
 
       # Notifie en Web Push les utilisateurs dont le profil correspond à ce match
       # (sport + niveau + localisation). Exécuté en arrière-plan via SolidQueue.
