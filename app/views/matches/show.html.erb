@@ -289,6 +289,20 @@
               <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
               Modifier
             <% end %>
+
+            <%# Partage Slack — visible seulement si l'organisateur a lié son compte.
+                Ouvre la modale de choix de destination (#slackShareModal). %>
+            <% if current_user&.slack_linked? %>
+              <button type="button"
+                      class="match-banner-action-btn"
+                      data-bs-toggle="modal"
+                      data-bs-target="#slackShareModal"
+                      title="Partager ce match sur Slack">
+                <%= render "shared/slack_logo", size: 14 %>
+                Partager sur Slack
+              </button>
+            <% end %>
+
             <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
             <button type="button"
                     class="match-banner-action-btn match-banner-action-btn--danger"
@@ -1390,6 +1404,59 @@
       </div>
     </div>
   </div>
+  <% end %>
+
+  <%# ── Modale de partage Slack — pour l'organisateur ayant lié son compte ──
+      Réutilise le partial + le contrôleur Stimulus du formulaire de création
+      (sélection workspace → destination), en mode standalone (pas de case). %>
+  <% if current_user&.slack_linked? %>
+    <div class="modal fade" id="slackShareModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pending-modal-content">
+
+          <%# Croix de fermeture %>
+          <button type="button" class="pending-modal-close" data-bs-dismiss="modal" aria-label="Fermer">
+            <i data-lucide="x" style="width:16px;height:16px;"></i>
+          </button>
+
+          <%# Icône + titre %>
+          <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+            <div class="pending-modal-icon" style="background:var(--theme-hover-bg);">
+              <%= render "shared/slack_logo", size: 22 %>
+            </div>
+          </div>
+          <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px; text-align:center;">
+            Partager ce match sur Slack
+          </div>
+          <div class="pending-modal-subtitle" style="text-align:center;">
+            Choisis l'espace et la destination (channel ou message direct).
+          </div>
+
+          <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+          <%= form_with url: share_on_slack_match_path(@match), method: :post do %>
+            <div style="padding: 16px 0 4px; text-align:left;">
+              <%= render "shared/slack_share_field", workspaces: @slack_destinations, standalone: true %>
+            </div>
+            <div class="d-flex gap-3" style="padding: 4px 0;">
+              <button type="submit"
+                      class="btn btn-sm flex-fill"
+                      style="background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);">
+                <i data-lucide="send" style="width:14px;height:14px; vertical-align:-2px;"></i>
+                Partager
+              </button>
+              <button type="button"
+                      class="btn btn-sm flex-fill"
+                      style="background:var(--theme-hover-bg); color:var(--theme-text-muted); border:1px solid var(--theme-border);"
+                      data-bs-dismiss="modal">
+                Annuler
+              </button>
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+    </div>
   <% end %>
 
 <% end %>

@@ -110,6 +110,9 @@ Rails.application.routes.draw do
       get :calendar
       # Passe un match privé en public (organisateur uniquement)
       patch :make_public
+      # Partage manuel du match sur Slack (organisateur uniquement) — rattrapage
+      # si la case n'a pas été cochée à la création
+      post :share_on_slack
     end
 
     # Routes imbriquées pour gérer les inscriptions à un match
