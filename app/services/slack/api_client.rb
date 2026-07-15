@@ -42,6 +42,23 @@ module Slack
       execute(uri, request)
     end
 
+    # POST JSON vers une `response_url` Slack (fournie dans un payload interactif).
+    # Ces URLs sont à usage unique et DÉJÀ authentifiées par un jeton intégré à l'URL :
+    # ni Bearer, ni vérification de `ok` (Slack répond par un simple 200). On renvoie
+    # la réponse brute Net::HTTP sans la parser.
+    def self.post_response_url(url, payload)
+      uri = URI(url)
+      request = Net::HTTP::Post.new(uri)
+      request["Content-Type"] = "application/json; charset=utf-8"
+      request.body = payload.to_json
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.open_timeout = OPEN_TIMEOUT
+      http.read_timeout = READ_TIMEOUT
+      http.request(request)
+    end
+
     # Exécute la requête, parse le JSON et lève Error si `ok` est faux.
     def self.execute(uri, request)
       http = Net::HTTP.new(uri.host, uri.port)
