@@ -171,6 +171,8 @@ Rails.application.routes.draw do
   # show_simple. Le resource génère ensuite profil_path pour PATCH (update) et
   # edit_profil_path pour l'édition — les helpers restent fonctionnels.
   get "profil", to: "profils#show_simple"
+  # GET /profil/integrations => page de gestion des intégrations (Slack)
+  get "profil/integrations", to: "profils#integrations", as: :profil_integrations
 
   resource :profil, only: [:edit, :update] do
     # PATCH /profil/spend_stat?attribute=attr_attack => dépenser un point de stat
@@ -184,6 +186,19 @@ Rails.application.routes.draw do
     # PATCH /profil/update_theme => basculer entre mode clair et mode sombre
     # Appelé en AJAX par le Stimulus controller theme-toggle
     patch :update_theme, on: :member
+  end
+
+  # ── Intégration Slack ───────────────────────────────────────────────────────
+  # Tous les endpoints Slack sont regroupés sous /slack et le module Slack::.
+  #   install / oauth/callback   → installation de l'app dans un workspace (bot token)
+  #   connect / connect/callback → "Se connecter avec Slack" (liaison d'identité)
+  #   disconnect                 → délier une identité
+  scope :slack, module: :slack, as: :slack do
+    get "install",         to: "oauth#install"
+    get "oauth/callback",  to: "oauth#callback"
+    get "connect",         to: "connections#connect"
+    get "connect/callback", to: "connections#callback"
+    delete "disconnect/:id", to: "connections#destroy", as: :disconnect
   end
 
   # Profil public d'un autre utilisateur
