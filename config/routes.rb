@@ -206,6 +206,8 @@ Rails.application.routes.draw do
     post "interactivity",  to: "interactivity#create"
     # Slash commands (/match) — ouvre la modale de création de match.
     post "commands",       to: "commands#create"
+    # Events API — répond au handshake url_verification (aucun event écouté en v1).
+    post "events",         to: "events#create"
   end
 
   # Profil public d'un autre utilisateur
