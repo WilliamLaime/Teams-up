@@ -189,6 +189,9 @@ class MatchesController < ApplicationController
     # d'une carte, et liste des tournois qu'on organise (select du formulaire).
     prefill_from_tournament_match
     @organized_tournaments = organized_tournaments_for_select
+
+    # Destinations Slack pour le partage optionnel (vide si le compte n'est pas lié)
+    @slack_destinations = slack_destinations_for(current_user)
   end
 
   # POST /matches
@@ -245,6 +248,14 @@ class MatchesController < ApplicationController
       # Notifie en Web Push les utilisateurs dont le profil correspond à ce match
       # (sport + niveau + localisation). Exécuté en arrière-plan via SolidQueue.
       MatchWebPushJob.perform_later(@match.id)
+
+      # Partage Slack : uniquement si l'organisateur a coché la case dans le formulaire.
+      # Le job ne fait rien si le compte n'est pas lié ou si aucun channel n'est résoluble.
+      if params[:post_to_slack].present? && current_user.slack_linked?
+        SlackNotifyJob.perform_later("Match", @match.id, current_user.id,
+                                     params[:slack_channel_id].presence,
+                                     params[:slack_workspace_id].presence)
+      end
 
       redirect_to @match, notice: "Match créé avec succès !"
     else

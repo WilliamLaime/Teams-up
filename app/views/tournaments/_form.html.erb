@@ -492,6 +492,11 @@
             <span class="recap-value" data-tournament-form-target="recapCoOrg">—</span>
           </div>
 
+          <%# ── Partage Slack (création uniquement) ── %>
+          <% if @tournament.new_record? %>
+            <%= render "shared/slack_share_field", workspaces: @slack_destinations %>
+          <% end %>
+
           <%= f.submit "Créer le tournoi", class: "match-publish-btn" %>
 
           <div class="d-none d-lg-block text-center mt-2">
