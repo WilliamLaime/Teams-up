@@ -1,6 +1,6 @@
 <%# Modal de notification "un joueur a rejoint automatiquement" pour l'organisateur.
     Injectée dans #global_notification_container en temps réel via Turbo Stream
-    (broadcast depuis MatchUsersController#join_automatically).
+    (broadcast depuis MatchUsersController#create, cas :approved).
     Variables attendues : joining_user (User), match, match_user (MatchUser) %>
 
 <%# data-auto-open / data-redirect-url : ouverture et redirection gérées par application.html.erb %>
