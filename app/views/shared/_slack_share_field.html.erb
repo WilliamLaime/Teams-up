@@ -1,0 +1,58 @@
+<%# ── Champ de partage Slack (formulaires de création match / tournoi) ────────── %>
+<%#
+  Locals attendus :
+    workspaces : tableau [{ id:, name:, destinations: { "Channels" => [[nom,id]...],
+                 "Messages directs" => [[nom,id]...] } }] (peut être vide)
+  N'affiche rien si l'utilisateur n'a pas lié Slack.
+
+  Sélection en DEUX temps :
+    1. le workspace Slack (masqué s'il n'y en a qu'un → champ caché)
+    2. la destination (channel ou message direct) DANS ce workspace
+  Le contrôleur Stimulus slack-share repeuple le 2e <select> quand le 1er change,
+  à partir des données embarquées (data-slack-share-data-value).
+
+  Ce ne sont PAS des attributs du modèle → check_box_tag / select_tag ; les params
+  post_to_slack / slack_workspace_id / slack_channel_id sont lus dans le controller.
+%>
+<% if current_user.slack_linked? %>
+  <div class="mb-4"
+       data-controller="slack-share"
+       data-slack-share-data-value="<%= workspaces.to_json %>">
+    <div class="form-check mb-2">
+      <%= check_box_tag :post_to_slack, "1", false,
+            class: "form-check-input",
+            data: { action: "slack-share#toggle", slack_share_target: "checkbox" } %>
+      <%= label_tag :post_to_slack, class: "form-check-label" do %>
+        <i data-lucide="slack" style="width:16px; height:16px; vertical-align:-3px;"></i>
+        Partager sur Slack à la création
+      <% end %>
+    </div>
+
+    <% if workspaces.present? %>
+      <%# Masqué tant que la case n'est pas cochée (géré par le Stimulus controller). %>
+      <div data-slack-share-target="wrapper" style="display:none;">
+        <% if workspaces.size > 1 %>
+          <div class="mb-2">
+            <%= label_tag :slack_workspace_id, "Espace Slack", class: "form-label small text-muted" %>
+            <%= select_tag :slack_workspace_id,
+                  options_for_select(workspaces.map { |w| [w[:name], w[:id]] }),
+                  class: "form-select",
+                  data: { slack_share_target: "workspace", action: "slack-share#workspaceChanged" } %>
+          </div>
+        <% else %>
+          <%# Un seul workspace → pas de choix, on le transmet en champ caché. %>
+          <%= hidden_field_tag :slack_workspace_id, workspaces.first[:id],
+                data: { slack_share_target: "workspace" } %>
+        <% end %>
+
+        <%= label_tag :slack_channel_id, "Destination (channel ou message direct)", class: "form-label small text-muted" %>
+        <%= select_tag :slack_channel_id, "",
+              include_blank: "Ma destination par défaut",
+              class: "form-select",
+              data: { slack_share_target: "channel" } %>
+      </div>
+    <% else %>
+      <p class="text-muted small mb-0">Le match sera posté dans ta destination Slack par défaut.</p>
+    <% end %>
+  </div>
+<% end %>

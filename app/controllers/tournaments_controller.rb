@@ -94,6 +94,9 @@ class TournamentsController < ApplicationController
       sport: current_sport || Sport.order(:name).first
     )
     authorize @tournament
+
+    # Destinations Slack pour le partage optionnel (vide si le compte n'est pas lié)
+    @slack_destinations = slack_destinations_for(current_user)
   end
 
   # POST /tournois
@@ -110,6 +113,14 @@ class TournamentsController < ApplicationController
     if @tournament.save
       add_co_organizer
       register_creator_if_requested
+
+      # Partage Slack : uniquement si l'organisateur a coché la case dans le formulaire.
+      if params[:post_to_slack].present? && current_user.slack_linked?
+        SlackNotifyJob.perform_later("Tournament", @tournament.id, current_user.id,
+                                     params[:slack_channel_id].presence,
+                                     params[:slack_workspace_id].presence)
+      end
+
       redirect_to tournament_path(@tournament), notice: "Tournoi créé."
     else
       render :new, status: :unprocessable_entity

@@ -70,6 +70,15 @@ class User < ApplicationRecord
   has_many :notifications, dependent: :destroy
   # Subscriptions Web Push : un user peut avoir plusieurs appareils/navigateurs enregistrés
   has_many :push_subscriptions, dependent: :destroy
+  # Identités Slack liées (une par workspace) — permet de poster/s'inscrire depuis Slack
+  has_many :slack_identities, dependent: :destroy
+
+  # Vrai si l'utilisateur a lié au moins un compte Slack.
+  # Sert à afficher/masquer les contrôles Slack (case dans le formulaire de match,
+  # bouton "Partager sur Slack") et à autoriser l'inscription depuis Slack.
+  def slack_linked?
+    slack_identities.any?
+  end
   # Relation vers les achievements débloqués par cet utilisateur
   has_many :user_achievements, dependent: :destroy
   has_many :achievements, through: :user_achievements

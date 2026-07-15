@@ -17,6 +17,11 @@
       <p class="profil-page-subtitle" style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
         Mets à jour tes informations personnelles
       </p>
+      <%# Accès à la page de gestion des intégrations (Slack) %>
+      <%= link_to profil_integrations_path, class: "btn btn-sm btn-outline-light mt-3" do %>
+        <i data-lucide="plug" style="width:15px; height:15px; vertical-align:-3px;"></i>
+        Intégrations (Slack)
+      <% end %>
     </div>
 
     <%# ── Formulaire ─────────────────────────────────────────────────────── %>
