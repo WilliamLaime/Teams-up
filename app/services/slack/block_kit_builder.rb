@@ -108,13 +108,14 @@ module Slack
       match.place.presence || "Lieu à définir"
     end
 
-    # Libellé "inscrits / total" (ex "9/18 personnes"), même source de vérité
-    # que la vue web : joueurs sécurisés (inscrits + sur place) sur la capacité.
+    # Libellé "inscrits / total" (ex "9/18 personnes"). MÊME calcul que la vue web
+    # (matches/_spots) : total = présents + places libres (organisateur inclus),
+    # et non `players_needed` qui exclut l'organisateur (d'où un écart d'1).
     def players_label(match)
-      total = match.players_needed
-      return "—" if total.blank?
+      present = match.secured_players_count
+      total   = present + match.player_left.to_i
 
-      "#{match.secured_players_count}/#{total} personnes"
+      "#{present}/#{total} personnes"
     end
   end
 end
