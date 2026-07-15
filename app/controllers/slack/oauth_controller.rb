@@ -44,6 +44,9 @@ module Slack
     private
 
     # Construit l'URL d'autorisation OAuth du bot avec les scopes et le state signé.
+    # `team` (optionnel) force le workspace ciblé : sans lui, Slack sélectionne
+    # d'office le workspace "le plus actif" de la session, qui n'est pas forcément
+    # celui qu'on veut installer. On le passe via /slack/install?team=T0123ABC.
     def authorize_url
       query = {
         client_id: Slack.client_id,
@@ -51,6 +54,7 @@ module Slack
         redirect_uri: slack_oauth_callback_url,
         state: signed_state
       }
+      query[:team] = params[:team] if params[:team].present?
       "#{Slack::OAUTH_AUTHORIZE_URL}?#{query.to_query}"
     end
 
