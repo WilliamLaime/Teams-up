@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_10_120724) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_15_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -310,6 +310,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_120724) do
     t.index ["event_type"], name: "index_security_logs_on_event_type"
     t.index ["ip_address"], name: "index_security_logs_on_ip_address"
     t.index ["user_id"], name: "index_security_logs_on_user_id"
+  end
+
+  create_table "slack_identities", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "preferred_channel_id"
+    t.string "preferred_channel_name"
+    t.string "slack_team_id", null: false
+    t.string "slack_user_id", null: false
+    t.bigint "slack_workspace_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["slack_team_id", "slack_user_id"], name: "index_slack_identities_on_slack_team_id_and_slack_user_id"
+    t.index ["slack_workspace_id", "slack_user_id"], name: "index_slack_identities_on_slack_workspace_id_and_slack_user_id", unique: true
+    t.index ["slack_workspace_id"], name: "index_slack_identities_on_slack_workspace_id"
+    t.index ["user_id"], name: "index_slack_identities_on_user_id"
+  end
+
+  create_table "slack_workspaces", force: :cascade do |t|
+    t.text "bot_token"
+    t.string "bot_user_id"
+    t.datetime "created_at", null: false
+    t.string "default_channel_id"
+    t.string "default_channel_name"
+    t.bigint "installer_user_id"
+    t.string "scope"
+    t.string "team_id", null: false
+    t.string "team_name"
+    t.datetime "updated_at", null: false
+    t.index ["installer_user_id"], name: "index_slack_workspaces_on_installer_user_id"
+    t.index ["team_id"], name: "index_slack_workspaces_on_team_id", unique: true
   end
 
   create_table "solid_cable_messages", force: :cascade do |t|
@@ -696,6 +726,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_120724) do
   add_foreign_key "profils", "users"
   add_foreign_key "push_subscriptions", "users"
   add_foreign_key "security_logs", "users", on_delete: :nullify
+  add_foreign_key "slack_identities", "slack_workspaces"
+  add_foreign_key "slack_identities", "users"
+  add_foreign_key "slack_workspaces", "users", column: "installer_user_id"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
