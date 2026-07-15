@@ -8,5 +8,8 @@ Rails.application.config.filter_parameters += [
   # Code d'autorisation OAuth renvoyé par Google dans l'URL de callback (peut être échangé contre un access_token)
   :code,
   # Tokens hCaptcha/reCaptcha soumis dans les formulaires auth — noms exacts utilisés par les widgets
-  "h-captcha-response", "g-recaptcha-response"
+  "h-captcha-response", "g-recaptcha-response",
+  # Payload brut des interactions Slack (form param `payload` = JSON) — contient des
+  # données utilisateur ; on ne le laisse pas apparaître en clair dans les logs.
+  :payload
 ]
