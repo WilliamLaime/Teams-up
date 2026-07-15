@@ -202,6 +202,8 @@ Rails.application.routes.draw do
     get "connect",         to: "connections#connect"
     get "connect/callback", to: "connections#callback"
     delete "disconnect/:id", to: "connections#destroy", as: :disconnect
+    # Interactions Block Kit (clic « S'inscrire ») — signature HMAC vérifiée, pas de CSRF.
+    post "interactivity",  to: "interactivity#create"
   end
 
   # Profil public d'un autre utilisateur
