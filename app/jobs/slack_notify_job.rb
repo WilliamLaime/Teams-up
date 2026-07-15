@@ -22,6 +22,10 @@ class SlackNotifyJob < ApplicationJob
     return unless resolution
 
     record   = record_type.constantize.find(record_id)
+
+    # Match déjà passé → aucune notification (personne ne peut plus s'inscrire).
+    return if record.respond_to?(:past?) && record.past?
+
     builder  = Slack::BlockKitBuilder.new
     notifier = SlackNotifierService.new(resolution.workspace)
 

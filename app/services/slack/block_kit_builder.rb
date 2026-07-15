@@ -11,19 +11,22 @@ module Slack
     # Header + détails + bouton "S'inscrire" (interactivity) + lien "Voir sur Teams-up".
     def match_created_blocks(match)
       sport = match.sport&.name || "Sport"
-      city  = match.venue&.city || match.place.presence || "Lieu à définir"
+
+      # Le champ "Format" n'apparaît que si l'organisateur en a choisi un à la
+      # création ; sinon on n'affiche que le nombre de joueurs.
+      fields = [
+        { type: "mrkdwn", text: "*Sport*\n#{sport}" },
+        { type: "mrkdwn", text: "*Quand*\n#{match_when_label(match)}" },
+        { type: "mrkdwn", text: "*Où*\n#{location_label(match)}" },
+        { type: "mrkdwn", text: "*Niveau*\n#{match.level.presence || 'Tout niveau'}" }
+      ]
+      fields << { type: "mrkdwn", text: "*Format*\n#{match.format}" } if match.format.present?
+      fields << { type: "mrkdwn", text: "*Joueurs*\n#{players_label(match)}" }
 
       [
         { type: "header",
           text: { type: "plain_text", text: "🏆 Nouveau match : #{match.title}", emoji: true } },
-        { type: "section",
-          fields: [
-            { type: "mrkdwn", text: "*Sport*\n#{sport}" },
-            { type: "mrkdwn", text: "*Quand*\n#{formatted_datetime(match)}" },
-            { type: "mrkdwn", text: "*Où*\n#{city}" },
-            { type: "mrkdwn", text: "*Niveau*\n#{match.level.presence || 'Tout niveau'}" },
-            { type: "mrkdwn", text: "*Places restantes*\n#{spots_label(match)}" }
-          ] },
+        { type: "section", fields: fields },
         { type: "actions",
           elements: [
             { type: "button",
@@ -83,12 +86,35 @@ module Slack
       [date, time].compact.join(" à ").presence || "Date à définir"
     end
 
-    # Libellé des places restantes, robuste si player_left n'est pas calculé.
-    def spots_label(match)
-      left = match.player_left
-      return "#{left} place#{'s' if left.to_i > 1}" if left.present?
+    # "Quand" pour un match : date + heure de début, suivie de l'heure de fin
+    # si l'organisateur l'a saisie (ex "16/07/2026 à 12:00 → 13:30"). On ne
+    # fabrique pas de fin "+1h" par défaut pour ne rien annoncer d'inexact.
+    def match_when_label(match)
+      base = formatted_datetime(match)
+      return base if match.end_time.blank?
 
-      match.players_needed.present? ? "#{match.players_needed} joueurs" : "—"
+      "#{base} → #{match.end_time.strftime('%H:%M')}"
+    end
+
+    # Lieu affiché : on combine le nom du terrain et la ville quand ils sont
+    # distincts (ex "Stade Charléty · Paris"), sinon on retombe sur ce qu'on a.
+    def location_label(match)
+      name = match.venue&.name.presence
+      city = match.venue&.city.presence
+
+      parts = [name, city].compact.uniq
+      return parts.join(" · ") if parts.any?
+
+      match.place.presence || "Lieu à définir"
+    end
+
+    # Libellé "inscrits / total" (ex "9/18 personnes"), même source de vérité
+    # que la vue web : joueurs sécurisés (inscrits + sur place) sur la capacité.
+    def players_label(match)
+      total = match.players_needed
+      return "—" if total.blank?
+
+      "#{match.secured_players_count}/#{total} personnes"
     end
   end
 end
