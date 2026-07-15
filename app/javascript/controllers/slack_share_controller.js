@@ -19,8 +19,10 @@ export default class extends Controller {
   }
 
   // Affiche/masque le bloc de destination selon l'état de la case.
+  // En mode standalone (modale de partage), il n'y a pas de case → le bloc reste
+  // toujours visible, on ne touche donc pas à son affichage.
   toggle() {
-    if (!this.hasWrapperTarget) return
+    if (!this.hasWrapperTarget || !this.hasCheckboxTarget) return
     this.wrapperTarget.style.display = this.checkboxTarget.checked ? "block" : "none"
   }
 

@@ -25,6 +25,11 @@ class MatchPolicy < ApplicationPolicy
     owner?
   end
 
+  # Seul l'organisateur peut partager son match sur Slack
+  def share_on_slack?
+    owner?
+  end
+
   private
 
   # Vérifie que l'utilisateur connecté est le créateur du match

@@ -8,7 +8,7 @@ class MatchesController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[index show]
 
   # Retrouver le match avant les actions qui en ont besoin
-  before_action :set_match, only: %i[show edit update destroy calendar make_public]
+  before_action :set_match, only: %i[show edit update destroy calendar make_public share_on_slack]
 
   # GET /matches
   # Deux modes :
@@ -117,6 +117,13 @@ class MatchesController < ApplicationController
 
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match
     @current_match_user = @match.match_users.find_by(user: current_user)
+
+    # Destinations Slack pour la modale de partage — chargées uniquement pour
+    # l'organisateur lié (chaque entrée déclenche des appels API Slack, inutile
+    # pour un simple visiteur).
+    if @current_match_user&.role == "organisateur" && current_user&.slack_linked?
+      @slack_destinations = slack_destinations_for(current_user)
+    end
 
     # Vérifie si current_user est ami avec l'organisateur (pour afficher l'icône ami)
     if user_signed_in?
@@ -352,6 +359,25 @@ class MatchesController < ApplicationController
     authorize @match
     @match.update!(visibility: "public")
     redirect_to @match, notice: "Le match est maintenant ouvert au public !"
+  end
+
+  # POST /matches/:id/share_on_slack
+  # Partage manuel du match dans une destination Slack — réservé à l'organisateur.
+  # Rattrapage si la case « Partager sur Slack » n'a pas été cochée à la création.
+  # Réutilise le même job que #create ; la destination (channel/DM) et le workspace
+  # sont facultatifs → fallback sur la destination par défaut via ChannelResolver.
+  def share_on_slack
+    authorize @match
+
+    unless current_user.slack_linked?
+      return redirect_to @match, alert: "Ton compte n'est lié à aucun espace Slack."
+    end
+
+    SlackNotifyJob.perform_later("Match", @match.id, current_user.id,
+                                 params[:slack_channel_id].presence,
+                                 params[:slack_workspace_id].presence)
+
+    redirect_to @match, notice: "Match partagé sur Slack 🎉"
   end
 
   # GET /matches/:id/calendar

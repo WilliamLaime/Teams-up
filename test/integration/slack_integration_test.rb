@@ -6,6 +6,7 @@ require "webmock/minitest"
 
 class SlackIntegrationTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
+  include ActiveJob::TestHelper
 
   setup do
     @user  = create_test_user(email: "owner@example.com", first_name: "Alice", last_name: "Test")
@@ -98,6 +99,29 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     dest = Slack::ChannelLister.destinations(ws)
     assert_equal [["#general", "C1"]], dest["Channels"]
     assert_equal [["Bob", "U9"]], dest["Messages directs"] # le bot est exclu
+  end
+
+  # ── Partage manuel depuis la page match : organisateur lié → job enqueue ───────
+  test "POST share_on_slack par l'organisateur lié enqueue SlackNotifyJob avec la destination" do
+    ws = link_slack!
+    sign_in @user
+    assert_enqueued_with(job: SlackNotifyJob,
+                         args: ["Match", @match.id, @user.id, "C1", ws.id.to_s]) do
+      post share_on_slack_match_path(@match),
+           params: { slack_channel_id: "C1", slack_workspace_id: ws.id }
+    end
+    assert_redirected_to match_path(@match)
+  end
+
+  # ── Partage manuel : un non-organisateur est refusé et rien n'est enqueue ───────
+  test "POST share_on_slack par un non-organisateur est refusé" do
+    link_slack!
+    intruder = create_test_user(email: "intruder@example.com", first_name: "Eve", last_name: "Test")
+    sign_in intruder
+    assert_no_enqueued_jobs(only: SlackNotifyJob) do
+      post share_on_slack_match_path(@match), params: { slack_channel_id: "C1" }
+    end
+    assert_response :redirect # Pundit → redirect_back avec alerte
   end
 
   # ── Envoi : SlackNotifyJob poste avec le bon token et la bonne destination ─────
