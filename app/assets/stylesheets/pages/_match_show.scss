@@ -982,6 +982,33 @@
   margin-bottom: 1rem;
 }
 
+// ── Select de destination (modale de partage Slack) ──────────────────────────
+// Le .form-select de Bootstrap n'est stylé QUE pour [data-theme="light"] (fond
+// blanc). En thème sombre il reste donc blanc — incohérent sur la modale sombre,
+// avec en prime un caret dessiné en foncé (invisible). On l'aligne ici sur les
+// variables d'input theme-aware. Scopé au thème sombre : en clair, le fond blanc
+// de Bootstrap convient déjà (la modale y est claire).
+[data-theme="dark"] .pending-modal-content .form-select {
+  background-color: var(--theme-input-bg);
+  color: var(--theme-input-color);
+  border-color: var(--theme-border-strong);
+  // Indique au navigateur de rendre le popup natif d'options en sombre.
+  color-scheme: dark;
+  // Caret clair (le SVG Bootstrap par défaut est dessiné en #343a40, invisible ici).
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f0f0f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+
+  &:focus {
+    border-color: $green;
+    box-shadow: 0 0 0 0.2rem rgba($green, 0.15);
+    background-color: var(--theme-input-focus-bg);
+    color: var(--theme-input-color);
+  }
+
+  // Options du popup (pris en charge par Chrome/Firefox ; ignoré sinon).
+  option { background-color: var(--theme-bg-surface); color: var(--theme-text-primary); }
+  optgroup { color: var(--theme-text-muted); background-color: var(--theme-bg-surface); }
+}
+
 // Conteneur scrollable si beaucoup de joueurs
 .pending-modal-list {
   display: flex;
