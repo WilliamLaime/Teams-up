@@ -111,6 +111,23 @@ body {
   }
 }
 
+// ── Réserve la gouttière de scrollbar verticale ─────────────────────────────
+// Empêche le "saut" de la page à l'ouverture d'une modale Bootstrap : quand la
+// modale pose overflow:hidden sur le body, la scrollbar verticale disparaît et,
+// sans réservation, la largeur du contenu s'élargit brusquement (~15px).
+// `scrollbar-gutter: stable` réserve cet espace en PERMANENCE côté navigateur :
+//   - scrollbars classiques (Windows, Firefox, macOS « toujours afficher ») →
+//     gouttière toujours présente, donc aucun reflow quand la scrollbar est masquée ;
+//   - scrollbars overlay (macOS par défaut) → aucune gouttière et aucun saut
+//     (l'overlay ne prend jamais de place dans le layout) : la règle est neutre.
+// C'est ce qui rend correct l'override `body.modal-open { padding-right: 0 }`
+// (voir components/_navbar.scss) : la gouttière compense déjà, il ne faut donc
+// PAS laisser Bootstrap ajouter en plus un padding-right (double compensation).
+// N'affecte ni sticky ni fixed (ne crée aucun clip/containing block).
+html {
+  scrollbar-gutter: stable;
+}
+
 // ── Empêche le scroll horizontal ────────────────────
 // Certains éléments dépassent légèrement du viewport (gradients avec left: -120px,
 // Bootstrap rows avec marges négatives, etc.) et créent une barre de scroll inutile.
