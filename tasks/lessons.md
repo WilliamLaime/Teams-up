@@ -10,6 +10,12 @@
 - **Correctif** : ce qui a été changé, et fichier(s) concerné(s)
 -->
 
+## 2026-07-16 — Inscription : mot de passe + captcha perdus quand un sport manque
+- **Symptôme** : à l'inscription classique, un utilisateur remplit mdp + captcha mais oublie le sport ; à la soumission, erreur serveur sur le sport ET perte du mot de passe et du captcha (widget vierge) → l'utilisateur doit tout ressaisir.
+- **Cause racine** : la validation client du sport (`data-action="submit->sport-select#validate"`) était posée sur le `<form>`, mais le `data-controller="sport-select"` était sur le `<div id="sport-field">`, un **descendant** du form. Une action Stimulus ne résout son controller que sur l'élément lui-même ou un **ancêtre**, jamais un descendant → `validate` ne se déclenchait jamais, le form partait au serveur, qui fait `clean_up_passwords` + régénère un hCaptcha vierge (token à usage unique, non restaurable).
+- **Correctif** : déplacer `data-controller="sport-select"` du `<div id="sport-field">` vers le `<form>` (`app/views/devise/registrations/new.html.erb`). L'action `submit->sport-select#validate` trouve alors son controller, bloque la soumission côté client, la page ne recharge pas → mdp + captcha préservés. (La validation du genre marchait déjà car posée en `addEventListener('submit')` directement sur le form.)
+- **Leçon** : en Stimulus, `data-action` et `data-controller` doivent être sur le même élément **ou** le controller sur un ancêtre de l'élément portant l'action — un controller sur un descendant est invisible. Pour un `submit`, mettre le controller sur le `<form>`. Corollaire UX : ce qui est vérifiable côté client (sport, genre) doit l'être, car un aller-retour serveur détruit toujours le mdp (jamais renvoyé en HTML) et le captcha (token usage unique).
+
 ## 2026-07-10 — Abandon (withdrawn) « annulé » à la ronde suivante (Lot 5 tournoi)
 - **Symptôme** : en ronde suisse, un joueur déclaré forfait était **ré-apparié** à la ronde suivante alors qu'il devait être exclu (test `withdraw_player_test` : l'id du retiré réapparaissait dans les matchs de la ronde 2).
 - **Cause racine** : le moteur suisse appelle `recompute_stats_for("swiss", apply_state: true)` à chaque `next_round!`, qui **réécrasait `state`** via `state_for(wins, losses)` → l'état terminal `withdrawn` repassait en `active`/`eliminated`. Or `SwissPairing#create_swiss_round!` apparie `player_scope.active` : le joueur, redevenu `active`, rentrait dans le tirage.
