@@ -106,4 +106,6 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
 - Skip « match passé » du `SlackNotifyJob` **retiré** : on poste désormais avec le bon tag.
 - `SlackMatchStatusJob` idempotent (reconstruit les blocs au statut du moment) → un déclenchement en retard reste correct. Purge la trace sur `message_not_found`/`cant_update_message`.
 
-**Limite v1 (à connaître)** : si l'organisateur modifie la date/heure APRÈS création, les MAJ planifiées gardent les anciens horaires (pas de reprogrammation sur update du match). À traiter si besoin via un callback `after_update_commit` qui replanifie.
+**Édition d'horaire gérée** : `Match#after_update_commit :resync_slack_messages` (si `date`/`time`/`end_time` change ET cartes suivies) → rafraîchit les cartes immédiatement (nouveau « Quand ») + `SlackMatchStatusJob.schedule_transitions` rebranche les bascules aux nouveaux horaires. Les anciens jobs planifiés restent inoffensifs (statut recalculé à T par un job idempotent).
+
+**Piège CSS** : `.btn-cta-primary` ne fournit QUE `border-radius` + `:hover` ; le fond vert vient de Bootstrap `.btn-primary`. Un bouton `btn btn-sm btn-cta-primary` (sans `btn-primary`) est donc transparent → invisible sur fond sombre. Toujours coupler `btn-primary btn-cta-primary` (cf bouton « Connecter Slack » du profil).

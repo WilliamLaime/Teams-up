@@ -179,6 +179,13 @@ class Match < ApplicationRecord
   after_update_commit :broadcast_spots,
                       if: -> { saved_change_to_players_needed? || saved_change_to_format? || saved_change_to_players_present? }
 
+  # Si l'organisateur change la date ou les horaires APRÈS avoir partagé le match
+  # sur Slack, on resynchronise les cartes postées : rafraîchissement immédiat
+  # (le "Quand" affiché change) + reprogrammation des bascules de statut aux
+  # nouveaux horaires. Sans ça, les cartes garderaient l'ancienne heure.
+  after_update_commit :resync_slack_messages,
+                      if: -> { saved_change_to_date? || saved_change_to_time? || saved_change_to_end_time? }
+
   # Validation : joueurs présents obligatoire uniquement pour le format Libre
   validates :players_present,
             numericality: { only_integer: true, greater_than: 0, message: "doit être au moins 1" },
@@ -359,6 +366,16 @@ class Match < ApplicationRecord
   end
 
   private
+
+  # Resynchronise les cartes Slack après un changement d'horaire (cf callback).
+  # No-op si le match n'a jamais été partagé (aucune carte suivie) → on évite
+  # d'enfiler des jobs inutiles. Sinon : MAJ immédiate + reprogrammation.
+  def resync_slack_messages
+    return unless slack_match_messages.exists?
+
+    SlackMatchStatusJob.perform_later(id)     # rafraîchit le "Quand" affiché maintenant
+    SlackMatchStatusJob.schedule_transitions(self) # rebranche les bascules En cours/Terminé
+  end
 
   def cache_participant_ids
     # Inclut les joueurs (match_users) + le créateur du match (user_id)

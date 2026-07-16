@@ -13,6 +13,19 @@ class SlackMatchStatusJob < ApplicationJob
 
   PERMANENT_SLACK_ERRORS = SlackNotifyJob::PERMANENT_SLACK_ERRORS
 
+  # Planifie les rafraîchissements de statut d'un match : à l'heure de début
+  # (→ En cours) et à l'heure de fin (→ Terminé), transitions futures uniquement.
+  # Appelé à la création (SlackNotifyJob) et à chaque changement d'horaire (Match).
+  # Le job étant idempotent (statut recalculé au moment T), d'anciens déclenchements
+  # devenus caducs après un décalage d'horaire restent sans effet néfaste.
+  def self.schedule_transitions(match)
+    [match.build_datetime, match.end_datetime].each do |at|
+      next if at.blank? || at <= Time.current
+
+      set(wait_until: at).perform_later(match.id)
+    end
+  end
+
   def perform(match_id)
     match = Match.find(match_id)
     messages = match.slack_match_messages.includes(:slack_workspace)

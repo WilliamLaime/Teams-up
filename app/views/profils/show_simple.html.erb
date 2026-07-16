@@ -93,7 +93,7 @@
                 </p>
               </div>
               <%= link_to profil_integrations_path,
-                          class: "btn btn-sm #{current_user.slack_linked? ? 'btn-outline-light' : 'btn-cta-primary'}",
+                          class: "btn btn-sm #{current_user.slack_linked? ? 'btn-outline-light' : 'btn-primary btn-cta-primary'}",
                           style: "white-space:nowrap; flex-shrink:0;" do %>
                 <i data-lucide="<%= current_user.slack_linked? ? 'settings' : 'plug' %>"
                    style="width:15px; height:15px; vertical-align:-3px;"></i>

@@ -66,15 +66,7 @@ class SlackNotifyJob < ApplicationJob
       message_ts:      message_ts
     )
 
-    schedule_status_update(match, match.build_datetime)
-    schedule_status_update(match, match.end_datetime)
-  end
-
-  # Programme une ré-édition de la carte à l'instant `at` s'il est dans le futur.
-  def schedule_status_update(match, at)
-    return if at.blank? || at <= Time.current
-
-    SlackMatchStatusJob.set(wait_until: at).perform_later(match.id)
+    SlackMatchStatusJob.schedule_transitions(match)
   end
 
   # Réessais avec backoff pour les erreurs transitoires relayées ci-dessus.
