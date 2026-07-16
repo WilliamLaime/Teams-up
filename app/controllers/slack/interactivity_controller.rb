@@ -24,12 +24,20 @@ module Slack
 
     private
 
-    # ── block_actions : clic « S'inscrire » ──────────────────────────────────────
+    # ── block_actions : boutons de la carte match ───────────────────────────────
+    # Chaque bouton porte un action_id, mappé vers son job dédié (tous partagent
+    # la même signature : match_id, team_id, slack_user_id, response_url).
+    ACTION_JOBS = {
+      "match_join"   => SlackEnrollJob,
+      "match_leave"  => SlackUnenrollJob,
+      "match_cancel" => SlackCancelJob
+    }.freeze
+
     def handle_block_actions(payload)
-      action = Array(payload["actions"]).find { |a| a["action_id"] == "match_join" }
+      action = Array(payload["actions"]).find { |a| ACTION_JOBS.key?(a["action_id"]) }
       return head :ok unless action
 
-      SlackEnrollJob.perform_later(
+      ACTION_JOBS.fetch(action["action_id"]).perform_later(
         match_id:      action["value"],
         team_id:       payload.dig("team", "id"),
         slack_user_id: payload.dig("user", "id"),

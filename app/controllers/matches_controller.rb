@@ -300,47 +300,13 @@ class MatchesController < ApplicationController
   end
 
   # DELETE /matches/:id
-  # Supprime un match et notifie tous les participants en temps réel
+  # Supprime un match et notifie tous les participants (temps réel + email).
+  # Logique déléguée au service partagé avec l'annulation depuis Slack, qui
+  # édite aussi les cartes Slack en « Annulé » avant la suppression.
   def destroy
     authorize @match
 
-    # Récupère tous les participants inscrits (hors organisateur) avant destruction.
-    # On exclut les "rejected" car ils n'ont plus de place et ne sont plus actifs.
-    # IMPORTANT : on broadcast AVANT @match.destroy → le canal ActionCable doit encore exister.
-    participants = @match.match_users
-                         .where.not(role: "organisateur")
-                         .where(status: ["approved", "pending", "waiting"])
-                         .includes(:user)
-
-    # ── Extraction des données AVANT destruction ──────────────────────────────
-    # On sérialise uniquement des scalaires pour éviter le DeserializationError
-    # de SolidQueue lors du deliver_later (GlobalID ne peut pas recharger un
-    # enregistrement détruit).
-    match_title    = @match.title
-    match_date     = @match.date
-    match_time_str = @match.time&.strftime("%Hh%M")
-    venue_name     = @match.venue&.name
-    venue_city     = @match.venue&.city
-    organizer_name = @match.user.display_name
-
-    # Liste des destinataires : participants + organisateur
-    recipient_emails = participants.map { |mu| mu.user.email }
-    recipient_emails << @match.user.email
-
-    # Broadcasts Turbo AVANT destroy → le canal ActionCable doit encore exister
-    participants.each do |mu|
-      broadcast_match_cancelled_to_participant(mu.user)
-    end
-
-    @match.destroy
-
-    # Enqueue des emails asynchrones avec données scalaires uniquement
-    recipient_emails.each do |email|
-      MatchCancelledMailerJob.perform_later(
-        email, match_title, match_date, match_time_str,
-        venue_name, venue_city, organizer_name
-      )
-    end
+    MatchCancellationService.new(match: @match).call
 
     redirect_to matches_path, notice: "Match supprimé."
   end
@@ -416,18 +382,6 @@ class MatchesController < ApplicationController
   end
 
   private
-
-  # Envoie la notification d'annulation du match à un participant spécifique.
-  # Appelé depuis destroy pour chaque participant avant la suppression du match.
-  # La modal s'ouvre automatiquement peu importe la page où se trouve le joueur.
-  def broadcast_match_cancelled_to_participant(participant_user)
-    Turbo::StreamsChannel.broadcast_update_to(
-      "user_#{participant_user.id}_notifications", # canal personnel du joueur
-      target: "global_notification_container", # conteneur dans application.html.erb
-      partial: "matches/match_cancelled_notification",
-      locals: { match: @match }
-    )
-  end
 
   # Applique tous les filtres optionnels sur @matches selon les params reçus
   def apply_filters

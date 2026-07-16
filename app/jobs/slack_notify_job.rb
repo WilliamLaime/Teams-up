@@ -67,6 +67,7 @@ class SlackNotifyJob < ApplicationJob
     )
 
     SlackMatchStatusJob.schedule_transitions(match)
+    SlackMatchPrepJob.schedule(match) # rappel "préparez-vous" à -15 min
   end
 
   # Réessais avec backoff pour les erreurs transitoires relayées ci-dessus.
