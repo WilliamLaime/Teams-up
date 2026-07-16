@@ -26,19 +26,11 @@ module Slack
       [
         { type: "header",
           text: { type: "plain_text", text: "🏆 Nouveau match : #{match.title}", emoji: true } },
+        # Tag de statut (À venir / En cours / Terminé), ré-édité par SlackMatchStatusJob.
+        { type: "context",
+          elements: [{ type: "mrkdwn", text: status_tag(match) }] },
         { type: "section", fields: fields },
-        { type: "actions",
-          elements: [
-            { type: "button",
-              style: "primary",
-              text: { type: "plain_text", text: "S'inscrire au match", emoji: true },
-              # action_id + value : lus par Slack::InteractivityController pour inscrire.
-              action_id: "match_join",
-              value: match.id.to_s },
-            { type: "button",
-              text: { type: "plain_text", text: "Voir sur Teams-up", emoji: true },
-              url: match_url(match) }
-          ] }
+        { type: "actions", elements: action_elements(match) }
       ]
     end
 
@@ -84,6 +76,50 @@ module Slack
       date = record.date&.strftime("%d/%m/%Y")
       time = record.time&.strftime("%H:%M")
       [date, time].compact.join(" à ").presence || "Date à définir"
+    end
+
+    # Boutons de la carte match. Le bouton d'inscription n'a de sens que si le match
+    # est encore à venir ; une fois commencé/terminé, on ne garde que le lien web.
+    def action_elements(match)
+      view_button = {
+        type: "button",
+        text: { type: "plain_text", text: "Voir sur Teams-up", emoji: true },
+        url: match_url(match)
+      }
+      return [view_button] unless match_status(match) == :upcoming
+
+      join_button = {
+        type: "button",
+        style: "primary",
+        text: { type: "plain_text", text: "S'inscrire au match", emoji: true },
+        # action_id + value : lus par Slack::InteractivityController pour inscrire.
+        action_id: "match_join",
+        value: match.id.to_s
+      }
+      [join_button, view_button]
+    end
+
+    # Statut du match d'après ses horaires réels :
+    #   :upcoming     → n'a pas encore commencé
+    #   :in_progress  → entre l'heure de début et l'heure de fin
+    #   :completed    → l'heure de fin est passée
+    # (basé sur build_datetime / end_datetime, pas sur l'heuristique "+1h" du modèle.)
+    def match_status(match)
+      start_at = match.build_datetime
+      end_at   = match.end_datetime
+      return :upcoming if start_at.blank? || start_at > Time.current
+      return :in_progress if end_at.blank? || end_at > Time.current
+
+      :completed
+    end
+
+    # Libellé mrkdwn du tag de statut affiché en tête de carte.
+    def status_tag(match)
+      case match_status(match)
+      when :in_progress then "🟢 *En cours*"
+      when :completed   then "🏁 *Terminé*"
+      else                   "🗓️ *À venir*"
+      end
     end
 
     # "Quand" pour un match : date + heure de début, suivie de l'heure de fin

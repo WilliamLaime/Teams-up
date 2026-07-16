@@ -12,5 +12,8 @@ class SlackWorkspace < ApplicationRecord
   # Toutes les identités Slack rattachées à ce workspace.
   has_many :slack_identities, dependent: :destroy
 
+  # Cartes de match postées via ce workspace (pour les MAJ de statut).
+  has_many :slack_match_messages, dependent: :destroy
+
   validates :team_id, presence: true, uniqueness: true
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_15_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_073744) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -325,6 +325,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_120001) do
     t.index ["slack_workspace_id", "slack_user_id"], name: "index_slack_identities_on_slack_workspace_id_and_slack_user_id", unique: true
     t.index ["slack_workspace_id"], name: "index_slack_identities_on_slack_workspace_id"
     t.index ["user_id"], name: "index_slack_identities_on_user_id"
+  end
+
+  create_table "slack_match_messages", force: :cascade do |t|
+    t.string "channel_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "match_id", null: false
+    t.string "message_ts", null: false
+    t.bigint "slack_workspace_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["match_id", "channel_id"], name: "index_slack_match_messages_on_match_id_and_channel_id", unique: true
+    t.index ["match_id"], name: "index_slack_match_messages_on_match_id"
+    t.index ["slack_workspace_id"], name: "index_slack_match_messages_on_slack_workspace_id"
   end
 
   create_table "slack_workspaces", force: :cascade do |t|
@@ -728,6 +740,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_120001) do
   add_foreign_key "security_logs", "users", on_delete: :nullify
   add_foreign_key "slack_identities", "slack_workspaces"
   add_foreign_key "slack_identities", "users"
+  add_foreign_key "slack_match_messages", "matches"
+  add_foreign_key "slack_match_messages", "slack_workspaces"
   add_foreign_key "slack_workspaces", "users", column: "installer_user_id"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

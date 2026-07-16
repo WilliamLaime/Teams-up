@@ -42,6 +42,9 @@ class Match < ApplicationRecord
   has_many :match_users, dependent: :destroy
   has_many :users, through: :match_users
 
+  # Cartes Slack postées pour ce match (suivi du ts pour les MAJ de statut).
+  has_many :slack_match_messages, dependent: :destroy
+
   # Accès direct au profil du créateur (via user) — utilisé par pg_search
   has_one :profil, through: :user
   # Un match a plusieurs messages dans son chat de groupe
