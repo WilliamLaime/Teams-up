@@ -31,7 +31,7 @@ module Slack
           elements: [
             { type: "button",
               style: "primary",
-              text: { type: "plain_text", text: "S'inscrire", emoji: true },
+              text: { type: "plain_text", text: "S'inscrire au match", emoji: true },
               # action_id + value : lus par Slack::InteractivityController pour inscrire.
               action_id: "match_join",
               value: match.id.to_s },
