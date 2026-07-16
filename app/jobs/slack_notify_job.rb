@@ -22,10 +22,6 @@ class SlackNotifyJob < ApplicationJob
     return unless resolution
 
     record   = record_type.constantize.find(record_id)
-
-    # Match déjà passé → aucune notification (personne ne peut plus s'inscrire).
-    return if record.respond_to?(:past?) && record.past?
-
     builder  = Slack::BlockKitBuilder.new
     notifier = SlackNotifierService.new(resolution.workspace)
 
@@ -39,13 +35,38 @@ class SlackNotifyJob < ApplicationJob
         return
       end
 
-    notifier.post_message(channel: resolution.channel_id, text: text, blocks: blocks)
+    response = notifier.post_message(channel: resolution.channel_id, text: text, blocks: blocks)
+
+    # Pour un match : on mémorise la carte postée puis on planifie sa mise à jour
+    # de statut (À venir → En cours → Terminé) via chat.update.
+    track_and_schedule_match(record, resolution, response) if record_type == "Match"
   rescue Slack::ApiClient::Error => e
     # Erreur définitive → on log et on abandonne. Erreur transitoire (réseau, rate limit
     # côté Slack) → on relaie pour laisser retry_on réessayer avec backoff.
     raise unless PERMANENT_SLACK_ERRORS.include?(e.slack_error)
 
     Rails.logger.warn("[SlackNotifyJob] abandon (#{e.slack_error}) pour #{record_type} ##{record_id}")
+  end
+
+  private
+
+  # Mémorise la carte Slack (channel + ts) et planifie deux rafraîchissements de
+  # statut : au coup d'envoi (→ En cours) et à l'heure de fin (→ Terminé). On ne
+  # planifie que les transitions encore à venir (un match déjà commencé/fini est
+  # posté directement avec le bon tag par le builder).
+  def track_and_schedule_match(match, resolution, response)
+    channel_id = response["channel"].presence || resolution.channel_id
+    message_ts = response["ts"]
+    return if message_ts.blank?
+
+    SlackMatchMessage.track!(
+      match:           match,
+      slack_workspace: resolution.workspace,
+      channel_id:      channel_id,
+      message_ts:      message_ts
+    )
+
+    SlackMatchStatusJob.schedule_transitions(match)
   end
 
   # Réessais avec backoff pour les erreurs transitoires relayées ci-dessus.

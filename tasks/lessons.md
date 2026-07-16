@@ -91,3 +91,21 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
 - Un step CI qui enchaîne 2 commandes masque la 2ᵉ tant que la 1ʳᵉ échoue — regarder le **log réel** (`gh run view --job <id> --log`), pas juste le nom du job.
 - `bundle update` était bloqué par `gem "simple_form", github:` (hérité du template le wagon) : re-résolution KO sur `activemodel`. Repointer sur la gem publiée (`~> 5.4`, version identique) débloque.
 - Vérifier `bundler-audit` en local exige une base d'avis à jour : `bundle exec bundler-audit update`.
+
+---
+
+## Statut live de la carte match Slack (chat.update)
+
+**Besoin** : la carte Slack d'un match doit afficher un tag « À venir / En cours / Terminé » et se mettre à jour en direct.
+
+**Contrainte clé** : un message Slack posté est **figé**. Pour le faire évoluer il faut mémoriser son `channel` + `ts` (table `slack_match_messages`) et le ré-éditer via `chat.update`. On planifie 2 rafraîchissements à la création (`SlackMatchStatusJob.set(wait_until:)`) : à l'heure de début (→ En cours) et à l'heure de fin (→ Terminé), transitions futures uniquement.
+
+**Choix** :
+- Statut basé sur `build_datetime` / `end_datetime` (horaires réels), PAS sur l'heuristique `+1h` de `in_progress?`/`completed?`.
+- Bouton « S'inscrire au match » retiré dès que le match n'est plus `:upcoming`.
+- Skip « match passé » du `SlackNotifyJob` **retiré** : on poste désormais avec le bon tag.
+- `SlackMatchStatusJob` idempotent (reconstruit les blocs au statut du moment) → un déclenchement en retard reste correct. Purge la trace sur `message_not_found`/`cant_update_message`.
+
+**Édition d'horaire gérée** : `Match#after_update_commit :resync_slack_messages` (si `date`/`time`/`end_time` change ET cartes suivies) → rafraîchit les cartes immédiatement (nouveau « Quand ») + `SlackMatchStatusJob.schedule_transitions` rebranche les bascules aux nouveaux horaires. Les anciens jobs planifiés restent inoffensifs (statut recalculé à T par un job idempotent).
+
+**Piège CSS** : `.btn-cta-primary` ne fournit QUE `border-radius` + `:hover` ; le fond vert vient de Bootstrap `.btn-primary`. Un bouton `btn btn-sm btn-cta-primary` (sans `btn-primary`) est donc transparent → invisible sur fond sombre. Toujours coupler `btn-primary btn-cta-primary` (cf bouton « Connecter Slack » du profil).

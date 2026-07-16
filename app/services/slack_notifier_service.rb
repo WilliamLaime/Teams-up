@@ -3,7 +3,8 @@
 # S'appuie sur Slack::ApiClient (Net::HTTP + gestion du `ok:false`). Le jeton utilisé
 # est le bot_token du workspace (déchiffré à la volée par SlackWorkspace).
 class SlackNotifierService
-  CHAT_POST_MESSAGE_URL = "#{Slack::API_BASE_URL}/chat.postMessage".freeze
+  CHAT_POST_MESSAGE_URL   = "#{Slack::API_BASE_URL}/chat.postMessage".freeze
+  CHAT_UPDATE_MESSAGE_URL = "#{Slack::API_BASE_URL}/chat.update".freeze
 
   def initialize(workspace)
     @workspace = workspace
@@ -20,6 +21,20 @@ class SlackNotifierService
       CHAT_POST_MESSAGE_URL,
       @workspace.bot_token,
       channel: channel,
+      text: text,
+      blocks: blocks
+    )
+  end
+
+  # Ré-édite un message déjà posté (chat.update), identifié par channel + ts.
+  # Sert à rafraîchir la carte d'un match quand son statut change (En cours, Terminé).
+  # Même gestion d'erreur que post_message : Slack::ApiClient::Error remonte à l'appelant.
+  def update_message(channel:, ts:, text:, blocks:)
+    Slack::ApiClient.post_json(
+      CHAT_UPDATE_MESSAGE_URL,
+      @workspace.bot_token,
+      channel: channel,
+      ts: ts,
       text: text,
       blocks: blocks
     )

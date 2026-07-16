@@ -17,7 +17,10 @@ class SlackEnrollJob < ApplicationJob
     return if response_url.blank?
 
     identity = SlackIdentity.for_slack(team_id: team_id, user_id: slack_user_id)
-    return respond(response_url, link_account_message) unless identity
+    unless identity
+      respond(response_url, link_account_text, blocks: link_account_blocks)
+      return
+    end
 
     match = Match.find_by(id: match_id)
     return respond(response_url, "Ce match n'existe plus. 🙁") unless match
@@ -29,14 +32,40 @@ class SlackEnrollJob < ApplicationJob
   private
 
   # Poste un message éphémère (visible du seul cliqueur) via la response_url.
-  def respond(response_url, text)
-    Slack::ApiClient.post_response_url(response_url, response_type: "ephemeral", text: text)
+  # `text` reste le repli obligatoire (notif mobile / accessibilité) même quand
+  # on fournit des `blocks` plus riches (ici le bouton « Lier mon compte »).
+  def respond(response_url, text, blocks: nil)
+    payload = { response_type: "ephemeral", text: text }
+    payload[:blocks] = blocks if blocks
+    Slack::ApiClient.post_response_url(response_url, payload)
   end
 
-  # Invitation à lier son compte (URL absolue : le job n'a pas de `request`).
-  def link_account_message
-    url = Rails.application.routes.url_helpers.slack_connect_url
-    "Pour t'inscrire depuis Slack, lie d'abord ton compte Teams-up : #{url}"
+  # Repli texte pour l'invitation à lier son compte.
+  def link_account_text
+    "Pour t'inscrire depuis Slack, lie d'abord ton compte Teams-up : #{slack_connect_url}"
+  end
+
+  # Bloc éphémère : explication + bouton « Lier mon compte à Teams-up » (URL
+  # absolue, le job n'a pas de `request`) qui ouvre la page de liaison.
+  def link_account_blocks
+    [
+      { type: "section",
+        text: { type: "mrkdwn",
+                text: "Pour t'inscrire depuis Slack, lie d'abord ton compte Teams-up. " \
+                      "Si tu n'as pas encore de compte, tu pourras en créer un." } },
+      { type: "actions",
+        elements: [
+          { type: "button",
+            style: "primary",
+            text: { type: "plain_text", text: "Lier mon compte à Teams-up", emoji: true },
+            url: slack_connect_url }
+        ] }
+    ]
+  end
+
+  # URL absolue de la page de liaison Slack ↔ Teams-up.
+  def slack_connect_url
+    Rails.application.routes.url_helpers.slack_connect_url
   end
 
   # Message de confirmation adapté au résultat de l'inscription.
