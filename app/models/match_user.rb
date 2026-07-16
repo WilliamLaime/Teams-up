@@ -42,6 +42,15 @@ class MatchUser < ApplicationRecord
   # idempotent (Turbo remplace la même cible), donc sans effet de bord.
   after_commit :broadcast_match_spots
 
+  # ── Rafraîchissement des cartes Slack ───────────────────────────────────────
+  # La carte Slack d'un match affiche la liste des inscrits (voir
+  # Slack::BlockKitBuilder#enrolled_players_label). Toute inscription qui ENTRE
+  # ou SORT de cette liste (approbation, refus, départ) doit ré-éditer les cartes
+  # suivies pour rester à jour — que l'inscription vienne du web ou de Slack.
+  # SlackMatchStatusJob reconstruit la carte ENTIÈRE (statut + détails + inscrits)
+  # et est idempotent : on le réutilise ici comme rafraîchisseur générique.
+  after_commit :refresh_slack_cards
+
   # Helpers pour vérifier le statut facilement
   def approved?
     status == "approved"
@@ -85,6 +94,37 @@ class MatchUser < ApplicationRecord
   # Ajoute la nouvelle conversation en haut de la sidebar sticky chat de l'utilisateur.
   # Déclenché quand il devient organisateur ou joueur approuvé.
   # Supprime aussi le message "Rejoins un match !" s'il était affiché.
+  # Ré-édite les cartes Slack du match quand la liste des inscrits a pu changer.
+  # On n'enfile le job que si :
+  #   - le match n'est pas en cours de suppression (sinon plus de cartes) ;
+  #   - la liste "approuvés + organisateur" a réellement bougé (départ, ou
+  #     franchissement de la limite "approved") — un pending créé/refusé
+  #     n'apparaît pas sur la carte Slack, donc pas de rafraîchissement inutile ;
+  #   - le match possède au moins une carte Slack suivie (évite un job à vide).
+  def refresh_slack_cards
+    return if destroyed_by_association
+    return unless slack_list_changed?
+    return unless match.slack_match_messages.exists?
+
+    SlackMatchStatusJob.perform_later(match_id)
+  end
+
+  # Statuts qui apparaissent sur la carte Slack (groupes "Inscrits" + "En attente").
+  # rejected/waiting n'y figurent pas → un passage vers/depuis ces statuts ne
+  # concerne la carte que s'il quitte/rejoint l'un des statuts listés.
+  SLACK_LISTED_STATUSES = %w[pending approved].freeze
+
+  # Vrai si l'ensemble affiché sur la carte Slack a pu changer lors de cette
+  # opération : départ d'un joueur (destroy), ou changement de statut dont
+  # l'ancien OU le nouveau figure parmi les statuts listés sur la carte.
+  def slack_list_changed?
+    return true if destroyed?
+    return false unless saved_change_to_status?
+
+    SLACK_LISTED_STATUSES.include?(status) ||
+      SLACK_LISTED_STATUSES.include?(status_before_last_save)
+  end
+
   def broadcast_new_convo_to_sidebar
     # On n'ajoute pas les matchs déjà terminés dans la sidebar
     return if match.past?

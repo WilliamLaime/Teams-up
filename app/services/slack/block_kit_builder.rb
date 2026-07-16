@@ -30,6 +30,8 @@ module Slack
         { type: "context",
           elements: [{ type: "mrkdwn", text: status_tag(match) }] },
         { type: "section", fields: fields },
+        # Liste des joueurs déjà inscrits ("Prénom N."), web ET Slack confondus.
+        { type: "section", text: { type: "mrkdwn", text: enrolled_players_label(match) } },
         { type: "actions", elements: action_elements(match) }
       ]
     end
@@ -69,6 +71,88 @@ module Slack
       "Nouveau tournoi : #{tournament.name}"
     end
 
+    # ── Rappel "préparez-vous" (~15 min avant le coup d'envoi) ──────────────────
+    # Nouveau message (pas une ré-édition de la carte) posté dans le(s) même(s)
+    # channel(s) que la carte du match. `mentions` (optionnel) = chaîne "<@U…> <@U…>"
+    # des joueurs dont le compte Slack est lié, pour les notifier nommément.
+    def match_prep_blocks(match, mentions = nil)
+      lines = ["*#{match.title}* démarre dans ~15 min. À vous de jouer ! 💪"]
+      lines << "📍 #{location_label(match)}"
+      lines << mentions if mentions.present?
+
+      [
+        { type: "header",
+          text: { type: "plain_text", text: "⏰ Ça commence bientôt !", emoji: true } },
+        { type: "section", text: { type: "mrkdwn", text: lines.join("\n") } },
+        { type: "actions",
+          elements: [
+            { type: "button",
+              text: { type: "plain_text", text: "Voir sur Teams-up", emoji: true },
+              url: match_url(match) }
+          ] }
+      ]
+    end
+
+    def match_prep_text(match)
+      "Ton match \"#{match.title}\" commence dans un quart d'heure — prépare-toi !"
+    end
+
+    # ── Carte "match annulé" ────────────────────────────────────────────────────
+    # Le match est supprimé lors de l'annulation → la carte devient un simple
+    # avis figé (ni ratio, ni boutons), construit à partir du seul titre capturé
+    # avant destruction.
+    def match_cancelled_blocks(title)
+      [
+        { type: "header",
+          text: { type: "plain_text", text: "🚫 Match annulé", emoji: true } },
+        { type: "section",
+          text: { type: "mrkdwn",
+                  text: "*#{title}*\n_Ce match a été annulé par l'organisateur._" } }
+      ]
+    end
+
+    def match_cancelled_text(title)
+      "Le match \"#{title}\" a été annulé."
+    end
+
+    # ── Liste "annuler un match" (réponse éphémère de /match-cancel) ────────────
+    # Liste des matchs à venir de l'organisateur, chacun avec un bouton
+    # « Annuler » (action_id match_cancel, organisateur vérifié côté
+    # SlackCancelJob). N'étant renvoyée qu'en éphémère, elle n'est visible que de
+    # l'auteur de la commande → le bouton reste privé à l'organisateur.
+    def cancel_list_blocks(matches)
+      if matches.empty?
+        return [{ type: "section",
+                  text: { type: "mrkdwn", text: "Tu n'as aucun match à venir à annuler." } }]
+      end
+
+      blocks = [{ type: "section",
+                  text: { type: "mrkdwn", text: "*Tes matchs à venir* — choisis celui à annuler :" } }]
+
+      matches.each do |match|
+        blocks << {
+          type: "section",
+          text: { type: "mrkdwn",
+                  text: "*#{match.title}*\n#{match_when_label(match)} · #{location_label(match)}" },
+          accessory: {
+            type: "button",
+            style: "danger",
+            text: { type: "plain_text", text: "Annuler", emoji: true },
+            action_id: "match_cancel",
+            value: match.id.to_s,
+            confirm: {
+              title:   { type: "plain_text", text: "Annuler ce match ?" },
+              text:    { type: "mrkdwn", text: "Les joueurs inscrits seront prévenus. Action irréversible." },
+              confirm: { type: "plain_text", text: "Annuler le match" },
+              deny:    { type: "plain_text", text: "Retour" }
+            }
+          }
+        }
+      end
+
+      blocks
+    end
+
     private
 
     # Formate date + heure de façon lisible ("15/07/2026 à 18:30").
@@ -96,7 +180,21 @@ module Slack
         action_id: "match_join",
         value: match.id.to_s
       }
-      [join_button, view_button]
+      # La carte est partagée (pas par-utilisateur) : on affiche les deux boutons.
+      # Un clic incohérent (déjà inscrit / pas inscrit) est géré côté job par un
+      # message éphémère explicite, sans effet de bord.
+      leave_button = {
+        type: "button",
+        style: "danger",
+        text: { type: "plain_text", text: "Se désinscrire", emoji: true },
+        action_id: "match_leave",
+        value: match.id.to_s
+      }
+      # NB : pas de bouton « Annuler » ici. Une carte de channel est partagée
+      # (mêmes blocs pour tous) → impossible de le réserver visuellement à
+      # l'organisateur. L'annulation depuis Slack passe par la slash command
+      # `/match-cancel`, dont la réponse éphémère n'est visible que de son auteur.
+      [join_button, leave_button, view_button]
     end
 
     # Statut du match d'après ses horaires réels :
@@ -152,6 +250,40 @@ module Slack
       total   = present + match.player_left.to_i
 
       "#{present}/#{total} personnes"
+    end
+
+    # Liste des joueurs affichée sur la carte, au format "Prénom N." — MÊME
+    # périmètre que la grille "Joueurs inscrits" du site : deux groupes,
+    # les "Inscrits" (approuvés + organisateur, organisateur en tête) et les
+    # "En attente" (pending). Peu importe le canal : une inscription via Slack
+    # crée un vrai match_user (compte lié obligatoire), donc web et Slack sont
+    # couverts à l'identique. `includes(user: :profil)` évite le N+1 (short_name
+    # lit le profil). Un bloc section Slack est plafonné à 3000 caractères → on
+    # tronque l'ensemble par sécurité si la liste est très longue.
+    def enrolled_players_label(match)
+      players = match.match_users
+                     .where("status IN (:shown) OR role = :organizer",
+                            shown: %w[pending approved], organizer: "organisateur")
+                     .includes(user: :profil)
+
+      approved = players.select { |mu| mu.approved? || mu.role == "organisateur" }
+                        .sort_by { |mu| mu.role == "organisateur" ? 0 : 1 }
+      pending  = players.reject { |mu| mu.approved? || mu.role == "organisateur" }
+
+      sections = [players_section("Inscrits", approved, empty: "Personne pour l'instant")]
+      sections << players_section("En attente", pending) if pending.any?
+
+      text = sections.join("\n\n")
+      text.length > 2900 ? "#{text[0, 2900]}…" : text
+    end
+
+    # Une ligne "*Label (N)*\nPrénom N. · Prénom N.". Si vide et qu'un libellé de
+    # repli est fourni, affiche "*Label*\n_repli_" ; sinon (groupe optionnel) rien.
+    def players_section(label, match_users, empty: nil)
+      names = match_users.map { |mu| mu.user.short_name }
+      return "*#{label}*\n_#{empty}_" if names.empty?
+
+      "*#{label} (#{names.size})*\n#{names.join(' · ')}"
     end
   end
 end

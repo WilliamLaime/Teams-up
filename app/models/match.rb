@@ -375,6 +375,11 @@ class Match < ApplicationRecord
 
     SlackMatchStatusJob.perform_later(id)     # rafraîchit le "Quand" affiché maintenant
     SlackMatchStatusJob.schedule_transitions(self) # rebranche les bascules En cours/Terminé
+
+    # Nouvel horaire → on autorise un nouveau rappel "préparez-vous" et on le
+    # replanifie (le flag évite les doublons si un ancien job traîne encore).
+    update_column(:slack_prep_sent_at, nil) if slack_prep_sent_at.present?
+    SlackMatchPrepJob.schedule(self)
   end
 
   def cache_participant_ids

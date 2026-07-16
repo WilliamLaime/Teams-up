@@ -14,20 +14,42 @@ module Slack
     VIEWS_OPEN_URL = "https://slack.com/api/views.open".freeze
 
     def create
-      return render_ephemeral("Commande inconnue.") unless params[:command] == "/match"
+      case params[:command]
+      when "/match"        then handle_create
+      when "/match-cancel" then handle_cancel
+      else render_ephemeral("Commande inconnue.")
+      end
+    rescue Slack::ApiClient::Error => e
+      # trigger_id expiré, scope manquant… on prévient l'utilisateur sans planter.
+      Rails.logger.warn("[Slack::Commands] appel Slack échoué (#{e.slack_error})")
+      render_ephemeral("Une erreur Slack est survenue. Réessaie.")
+    end
 
+    private
+
+    # `/match` : ouvre la modale de création (views.open, synchrone).
+    def handle_create
       identity = SlackIdentity.for_slack(team_id: params[:team_id], user_id: params[:user_id])
       return render_ephemeral(link_account_message) unless identity
 
       open_modal(identity.slack_workspace)
       head :ok
-    rescue Slack::ApiClient::Error => e
-      # trigger_id expiré, scope manquant… on prévient l'utilisateur sans planter.
-      Rails.logger.warn("[Slack::Commands] views.open a échoué (#{e.slack_error})")
-      render_ephemeral("Impossible d'ouvrir la fenêtre de création. Réessaie.")
     end
 
-    private
+    # `/match-cancel` : réponse éphémère listant les matchs à venir de l'auteur,
+    # chacun avec un bouton « Annuler » (traité par SlackCancelJob). Comme la
+    # réponse est éphémère, elle n'est visible que de lui → bouton privé.
+    def handle_cancel
+      identity = SlackIdentity.for_slack(team_id: params[:team_id], user_id: params[:user_id])
+      return render_ephemeral(link_account_message) unless identity
+
+      matches = Match.where(user: identity.user).upcoming.order(:date, :time)
+      render json: {
+        response_type: "ephemeral",
+        text:          "Tes matchs à venir",
+        blocks:        Slack::BlockKitBuilder.new.cancel_list_blocks(matches)
+      }
+    end
 
     # Ouvre la modale de création dans le workspace de l'utilisateur.
     def open_modal(workspace)
@@ -48,7 +70,7 @@ module Slack
 
     def link_account_message
       url = Rails.application.routes.url_helpers.slack_connect_url
-      "Pour créer un match depuis Slack, lie d'abord ton compte Teams-up : #{url}"
+      "Pour gérer tes matchs depuis Slack, lie d'abord ton compte Teams-up : #{url}"
     end
   end
 end

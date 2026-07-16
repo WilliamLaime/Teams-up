@@ -111,6 +111,42 @@ class SlackCommandsTest < ActionDispatch::IntegrationTest
     assert_not_requested :post, VIEWS_OPEN
   end
 
+  # ── Slash command /match-cancel ────────────────────────────────────────────
+  test "/match-cancel sans compte lié → éphémère invitant à lier" do
+    signed_post slack_commands_path, command_body(command: "/match-cancel")
+    assert_response :ok
+    body = JSON.parse(@response.body)
+    assert_equal "ephemeral", body["response_type"]
+    assert_includes body["text"], "lie"
+  end
+
+  test "/match-cancel lié avec un match à venir → liste éphémère + bouton match_cancel" do
+    link_creator!
+    match = Match.create!(
+      title: "À annuler", date: Date.tomorrow, time: Time.current.change(hour: 18, min: 0),
+      players_needed: 4, level: "Débutant", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous",
+      user: @creator, sport: @sport
+    )
+
+    signed_post slack_commands_path, command_body(command: "/match-cancel")
+    assert_response :ok
+    body = JSON.parse(@response.body)
+    assert_equal "ephemeral", body["response_type"]
+    action_ids = body["blocks"].filter_map { |b| b.dig("accessory", "action_id") }
+    values     = body["blocks"].filter_map { |b| b.dig("accessory", "value") }
+    assert_includes action_ids, "match_cancel"
+    assert_includes values, match.id.to_s
+  end
+
+  test "/match-cancel lié sans match à venir → éphémère 'aucun match'" do
+    link_creator!
+    signed_post slack_commands_path, command_body(command: "/match-cancel")
+    assert_response :ok
+    body = JSON.parse(@response.body)
+    assert_includes body["blocks"].to_s, "aucun match"
+  end
+
   test "signature invalide sur /match → 401" do
     post slack_commands_path, params: command_body,
          headers: {

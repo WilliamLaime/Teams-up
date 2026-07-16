@@ -53,23 +53,13 @@ class MatchUsersController < ApplicationController
   def destroy
     authorize @match_user
 
-    # Sauvegarde l'utilisateur et son statut avant destruction
-    # (après @match_user.destroy, ces infos ne sont plus accessibles)
-    leaving_user = @match_user.user
-    was_approved = @match_user.approved?
-
-    # Si le joueur avait une place approuvée, on gère la file d'attente
-    promote_next_in_line if was_approved
-
-    @match_user.destroy
+    # Logique métier (promotion de la file d'attente, destroy, email de départ)
+    # déléguée au service partagé avec la désinscription Slack.
+    result = MatchUnenrollmentService.new(match: @match, user: @match_user.user).call
 
     # Notifie l'organisateur en temps réel si un joueur approuvé a quitté
-    # (pas de notif si pending/waiting/rejected — ces cas ne libèrent pas de place)
-    if was_approved
-      broadcast_player_left_to_organizer(leaving_user)
-      # Email transactionnel : informe l'organisateur du départ et de la place libérée
-      UserMailer.match_player_left(@match, leaving_user).deliver_later
-    end
+    # (pas de broadcast si pending/waiting/rejected — ces cas ne libèrent pas de place)
+    broadcast_player_left_to_organizer(result.leaving_user) if result.was_approved
 
     # Match privé → retour à l'index (le joueur n'a plus accès sans token)
     # Match public → retour à la show du match
@@ -318,35 +308,6 @@ class MatchUsersController < ApplicationController
   # Utilisé par plusieurs méthodes de broadcast pour cibler le canal personnel de l'orga
   def organizer_user
     @match.organizer_match_user&.user
-  end
-
-  # Gère la promotion du prochain joueur en file d'attente quand une place se libère
-  def promote_next_in_line
-    promoted_record = nil
-
-    # with_lock : SELECT FOR UPDATE — évite qu'une promotion concurrente
-    # (ex: deux joueurs quittent simultanément) promouvde deux personnes pour une seule place
-    @match.with_lock do
-      # Cherche le premier joueur en file d'attente (le plus ancien en premier)
-      next_in_line = @match.match_users.where(status: "waiting").order(created_at: :asc).first
-
-      if next_in_line
-        # Promeut automatiquement le joueur : son passage à "approved" déclenche
-        # le recalcul de player_left (la place reste occupée, reprise par le promu).
-        next_in_line.update(status: "approved")
-        promoted_record = next_in_line
-      end
-      # Si personne n'attend, aucune action ici : le départ du joueur (destroy)
-      # déclenche à son tour le recalcul de player_left → la place est rendue.
-    end
-
-    # Notifications en dehors du verrou (non critiques pour la cohérence des données)
-    return unless promoted_record
-
-    message = "🎉 Une place s'est libérée ! Tu as été automatiquement inscrit au match \"#{@match.title}\"."
-    notify(promoted_record.user, message)
-    # Email transactionnel : informe le joueur de sa promotion depuis la file d'attente
-    UserMailer.match_status_changed(promoted_record, accepted: true).deliver_later
   end
 
   # Retourne les options de redirect pour le match — inclut le token si match privé
