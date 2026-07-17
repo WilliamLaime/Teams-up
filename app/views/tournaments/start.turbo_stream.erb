@@ -1,0 +1,8 @@
+<%# Lancement du tournoi : on remplace le board et on greffe le contrôleur
+    `tournament-draw` (en plus de `bracket`) → il joue l'animation de tirage au
+    sort sur les cartes de la 1re ronde, puis se retire. %>
+<%= turbo_stream.replace "tournament_board" do %>
+  <div id="tournament_board" class="tournament-board" data-controller="bracket tournament-draw">
+    <%= render "tournaments/board", tournament: @tournament %>
+  </div>
+<% end %>

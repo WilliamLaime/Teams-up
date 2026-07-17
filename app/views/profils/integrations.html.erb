@@ -1,0 +1,89 @@
+<%# ── Page Intégrations (Slack) ─────────────────────────────────────────────── %>
+<%# Même direction artistique que la page profil : fond sombre, accents verts. %>
+
+<div class="profil-page" style="min-height:calc(100vh - 130px); padding:2.5rem 0 4rem; position:relative;">
+  <div class="container" style="position:relative; z-index:1; max-width:720px;">
+
+    <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-4" %>
+
+    <div class="mb-4">
+      <h1 class="profil-page-title" style="font-size:1.45rem; font-weight:800; color:#fff; margin:0; font-family:'Nunito', sans-serif;">
+        Intégrations
+      </h1>
+      <p class="profil-page-subtitle" style="font-size:0.85rem; color:rgba(255,255,255,0.4); margin:0.3rem 0 0;">
+        Connecte Teams-up à tes outils d'équipe
+      </p>
+    </div>
+
+    <%# ── Carte Slack ─────────────────────────────────────────────────────── %>
+    <%# .match-block : carte sombre theme-aware (fond, bordure, texte clair) réutilisée
+        depuis la page profil — cohérente en mode sombre ET clair. %>
+    <div class="match-block">
+
+      <%# En-tête : icône + titre de section vert (.match-block-title) %>
+      <div class="match-block-title">
+        <%= render "shared/slack_logo", size: 20 %>
+        Slack
+      </div>
+      <p style="font-size:0.85rem; color:var(--theme-text-muted); margin:-0.5rem 0 1.25rem;">
+        Partage tes matchs et inscris-toi depuis Slack
+      </p>
+
+      <% unless @slack_configured %>
+        <%# Garde-fou : sans les secrets SLACK_*, les flux OAuth ne marchent pas. %>
+        <div class="alert alert-warning small mb-3" role="alert">
+          <i data-lucide="alert-triangle" style="width:16px; height:16px; vertical-align:-3px;"></i>
+          L'intégration Slack n'est pas encore configurée sur cette instance
+          (variables <code>SLACK_*</code> manquantes).
+        </div>
+      <% end %>
+
+      <% if @slack_identities.any? %>
+        <%# ── Identités déjà liées ──────────────────────────────────────── %>
+        <div class="mb-3">
+          <% @slack_identities.each do |identity| %>
+            <div class="d-flex justify-content-between align-items-center py-2"
+                 style="border-bottom:1px solid var(--theme-border);">
+              <span style="color:var(--theme-text-primary);">
+                <i data-lucide="check-circle" style="width:16px; height:16px; vertical-align:-3px; color:#1EDD88;"></i>
+                Lié à l'espace
+                <strong><%= identity.slack_workspace.team_name.presence || identity.slack_team_id %></strong>
+              </span>
+              <%= button_to slack_disconnect_path(identity),
+                            method: :delete,
+                            class: "btn btn-sm btn-outline-danger",
+                            data: { turbo_confirm: "Délier ce compte Slack ?" } do %>
+                Délier
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p style="color:var(--theme-text-muted); font-size:0.85rem;" class="mb-3">
+          Ton compte n'est lié à aucun espace Slack.
+        </p>
+      <% end %>
+
+      <%# ── Actions ───────────────────────────────────────────────────────── %>
+      <div class="d-flex flex-wrap gap-2">
+        <%= link_to slack_connect_path, class: "btn btn-primary btn-cta-primary #{'disabled' unless @slack_configured}" do %>
+          <i data-lucide="link" class="btn-cta-icon" style="width:16px; height:16px; vertical-align:-3px;"></i>
+          Se connecter avec Slack
+        <% end %>
+
+        <%= link_to slack_install_path, class: "btn btn-cta-secondary #{'disabled' unless @slack_configured}" do %>
+          <i data-lucide="download" class="btn-cta-icon" style="width:16px; height:16px; vertical-align:-3px;"></i>
+          Installer sur un espace Slack
+        <% end %>
+      </div>
+
+      <p class="mt-3 mb-0" style="font-size:0.78rem; color:var(--theme-text-muted);">
+        « Installer » ajoute le bot Teams-up à ton espace Slack (réservé aux admins Slack).
+        « Se connecter » relie ensuite ton identité Slack à ce compte pour pouvoir t'inscrire
+        aux matchs directement depuis Slack.
+      </p>
+
+    </div>
+
+  </div>
+</div>

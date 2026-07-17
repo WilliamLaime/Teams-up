@@ -1,0 +1,56 @@
+<%# ── Bracket viewer interactif (Vue d'ensemble, lecture seule) ─────────────────
+    Toutes les rondes en colonnes dans un ruban à défilement horizontal, avec zoom
+    (boutons − / + ET curseur) et filtre par ronde (chips qui isolent une colonne).
+    Piloté par le contrôleur Stimulus bracket-viewer. Local : tournament. %>
+<% rounds        = display_rounds(tournament) %>
+<% bracket_rounds = tournament.bracket_rounds.to_a %>
+
+<div class="bracket-viewer" data-controller="bracket-viewer">
+
+  <div class="bracket-viewer__toolbar">
+    <%# Filtre par ronde : « Toutes » (défaut) + une pilule par colonne. %>
+    <div class="bracket-viewer__chips" role="tablist" aria-label="Filtrer par ronde">
+      <button type="button" class="bracket-viewer__chip is-active"
+              data-bracket-viewer-target="chip" data-action="bracket-viewer#filter"
+              data-bracket-viewer-round-param="-1">Toutes</button>
+      <% rounds.each_with_index do |round, index| %>
+        <button type="button" class="bracket-viewer__chip"
+                data-bracket-viewer-target="chip" data-action="bracket-viewer#filter"
+                data-bracket-viewer-round-param="<%= index %>">
+          <%= round_label(round, bracket_rounds) %>
+        </button>
+      <% end %>
+    </div>
+
+    <%# Zoom : boutons − / + + curseur, liés à la même valeur. %>
+    <div class="bracket-viewer__zoom">
+      <button type="button" class="bracket-viewer__zoom-btn" data-action="bracket-viewer#zoomOut"
+              aria-label="Dézoomer">−</button>
+      <input type="range" min="0.7" max="1.5" step="0.1" value="1"
+             class="bracket-viewer__slider" aria-label="Niveau de zoom"
+             data-bracket-viewer-target="slider" data-action="input->bracket-viewer#setZoom">
+      <button type="button" class="bracket-viewer__zoom-btn" data-action="bracket-viewer#zoomIn"
+              aria-label="Zoomer">+</button>
+    </div>
+  </div>
+
+  <%# Ruban : une colonne par ronde. Le zoom pilote --bracket-zoom (unités em). %>
+  <div class="bracket-viewer__scroll" data-bracket-viewer-target="scroll">
+    <% rounds.each_with_index do |round, index| %>
+      <div class="bracket-col" data-bracket-viewer-target="col" data-round="<%= index %>">
+        <div class="bracket-col__head">
+          <span class="bracket-col__label"><%= round_label(round, bracket_rounds) %></span>
+          <span class="bracket-col__status bracket-col__status--<%= round.status %>">
+            <%= round.complete? ? "Terminée" : "En cours" %>
+          </span>
+        </div>
+        <div class="bracket-col__cells">
+          <% round.tournament_matches.order(:position).each do |match| %>
+            <%= render "tournaments/bracket_cell", match: match %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+</div>

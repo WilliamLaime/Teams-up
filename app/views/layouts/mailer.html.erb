@@ -7,7 +7,20 @@
     </style>
   </head>
 
-  <body>
-    <%= yield %>
+  <body style="margin: 0; padding: 0;">
+    <%# Wrapper avec image de fond — englobe le logo et le contenu %>
+    <div style="background-color: #111111; background-image: url('<%= root_url.chomp('/') + '/fond_NL_teamsup_1.png' %>'); background-size: cover; background-position: center top; background-repeat: no-repeat;">
+
+      <%# En-tête logo — commun à tous les emails %>
+      <div style="text-align: center; padding: 60px 0 60px 0;">
+        <img src="<%= root_url.chomp('/') + '/logo_vf_1_blanc_tagline.png' %>"
+             width="220"
+             alt="Teams-Up"
+             style="display: block; margin: 0 auto;">
+      </div>
+
+      <%= yield %>
+
+    </div>
   </body>
 </html>

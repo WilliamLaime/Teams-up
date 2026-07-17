@@ -84,23 +84,32 @@ class PagesController < ApplicationController
     set_meta_tags(
       site: "Teams-up",
       title: false, # Désactive le titre de page → affiche uniquement le site name
-      description: "Crée ou rejoins un match de sport amateur près de chez toi en 30 secondes. Football, basket, tennis et bien plus — #{@available_matches_count} matchs disponibles.",
+      description: "Crée ou rejoins un match de sport amateur près de chez toi en 30 secondes. Football, basket, tennis et bien plus. Inscris-toi gratuitement.",
       og: { title: "Teams-up — Trouve un match de sport amateur" }
     )
   end
 
   private
 
-  # Compte total de tous les matchs disponibles (pas complets, dans le futur, publics)
-  # Utilisé pour le badge "X matchs disponibles" dans le hero
+  # Compte les matchs disponibles (pas complets, dans le futur, publics) pour le badge du hero.
+  # Filtré par sport actif si l'utilisateur en a sélectionné un ; en mode multisport
+  # (ou visiteur non connecté), current_sport est nil → on compte tous les sports.
   def load_available_matches_count
-    Match.upcoming.publicly_visible.where("player_left > 0").count
+    matches = Match.upcoming.publicly_visible
+                   .visible_for_genre(current_user) # cohérent avec les listes : cache les matchs "femme uniquement"
+                   .where("player_left > 0")
+    matches = matches.where(sport_id: current_sport.id) if current_sport.present?
+    matches.count
   end
 
   # Récupère les 3 prochains matchs à venir publics, filtrés par sport actif si connecté
   def load_upcoming_matches
     matches = Match.upcoming.publicly_visible
-                   .includes(:sport, :match_users, user: :profil) # évite les N+1 dans _match_card
+                   # évite les N+1 dans _match_card : sport, organisateur + profil + avatar,
+                   # et chaque participant (match_users > user > profil > blob avatar)
+                   .includes(:sport,
+                             { user: { profil: { avatar_attachment: :blob } } },
+                             { match_users: { user: { profil: { avatar_attachment: :blob } } } })
                    .visible_for_genre(current_user) # Cache les matchs "femme uniquement" aux non-femmes
                    .order(date: :asc, time: :asc)
     # Si l'utilisateur est connecté et a un sport actif, on filtre par ce sport

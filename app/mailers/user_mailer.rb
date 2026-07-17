@@ -4,7 +4,7 @@
 class UserMailer < ApplicationMailer
   # ── 1. Un joueur a rejoint ton match ──────────────────────────────────────
   # Destinataire : l'organisateur du match
-  # Déclenché    : join_automatically, join_with_manual_validation, join_waiting_list
+  # Déclenché    : MatchEnrollmentService (cas approved / pending / waiting)
   #
   # @param match        [Match] le match concerné
   # @param joining_user [User]  le joueur qui vient de s'inscrire

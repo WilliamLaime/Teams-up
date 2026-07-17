@@ -17,6 +17,12 @@ Rails.application.routes.draw do
   # Page d'accueil publique — accessible à tous, connectés ou non
   root to: "pages#home"
 
+  # ── Blog SEO ───────────────────────────────────────────────────────────────
+  # GET /blog             → liste des articles publiés
+  # GET /blog/:slug       → article individuel (slug unique)
+  # path: 'blog' donne des URLs propres (/blog/...) tout en gardant les helpers articles_path
+  resources :articles, only: [:index, :show], param: :slug, path: "blog"
+
   # Page post-inscription : invite l'utilisateur à confirmer son email
   get "confirmation-en-attente", to: "pages#email_confirmation", as: :email_confirmation_pending
 
@@ -60,6 +66,10 @@ Rails.application.routes.draw do
       patch :transfer_captain
       # DELETE /teams/:id/leave → quitter l'équipe (membres non-captain)
       delete :leave
+      # POST /teams/:id/join → demander à rejoindre l'équipe (validation par le capitaine)
+      post :join
+      # PATCH /teams/:id/mark_members_seen → le capitaine efface le point "nouveau membre"
+      patch :mark_members_seen
     end
 
     # Invitations imbriquées dans l'équipe
@@ -100,6 +110,9 @@ Rails.application.routes.draw do
       get :calendar
       # Passe un match privé en public (organisateur uniquement)
       patch :make_public
+      # Partage manuel du match sur Slack (organisateur uniquement) — rattrapage
+      # si la case n'a pas été cochée à la création
+      post :share_on_slack
     end
 
     # Routes imbriquées pour gérer les inscriptions à un match
@@ -115,12 +128,38 @@ Rails.application.routes.draw do
       member do
         patch :approve
         patch :reject
-        patch :confirm  # Membre d'équipe qui confirme sa propre place (team match)
+        patch :confirm        # Membre d'équipe qui confirme sa propre place (team match)
+        patch :toggle_payment # Bascule le statut de paiement (organisateur ou joueur lui-même)
       end
     end
 
     # Vote "homme du match" — POST /matches/:match_id/match_votes
     resources :match_votes, only: [:create]
+  end
+
+  # ── Tournois ────────────────────────────────────────────────────────────────
+  # URLs françaises (/tournois), nom de resource anglais (convention projet).
+  # Inscriptions imbriquées :
+  #   POST   /tournois/:tournament_id/tournament_users     => rejoindre
+  #   DELETE /tournois/:tournament_id/tournament_users/:id => quitter
+  resources :tournaments, path: "tournois" do
+    # GET /tournois/search => autocomplete JSON pour désigner un co-organisateur
+    # GET /tournois/bientot => page d'attente (feature tournoi en chantier)
+    collection do
+      get :search
+      get :coming_soon, path: "bientot"
+    end
+    # POST /tournois/:id/start => lancer le tournoi (génère la ronde suisse 1)
+    member { post :start }
+    resources :tournament_users, only: [:create, :destroy] do
+      # PATCH .../tournament_users/:id/withdraw => déclarer forfait (organisateur)
+      member { patch :withdraw }
+    end
+    # PATCH /tournois/:tournament_id/tournament_matches/:id => saisir le score
+    # PATCH .../tournament_matches/:id/correct => corriger un score verrouillé
+    resources :tournament_matches, only: [:update] do
+      member { patch :correct }
+    end
   end
 
   # Route pour le profil de l'utilisateur connecté (ressource singulière)
@@ -135,6 +174,8 @@ Rails.application.routes.draw do
   # show_simple. Le resource génère ensuite profil_path pour PATCH (update) et
   # edit_profil_path pour l'édition — les helpers restent fonctionnels.
   get "profil", to: "profils#show_simple"
+  # GET /profil/integrations => page de gestion des intégrations (Slack)
+  get "profil/integrations", to: "profils#integrations", as: :profil_integrations
 
   resource :profil, only: [:edit, :update] do
     # PATCH /profil/spend_stat?attribute=attr_attack => dépenser un point de stat
@@ -148,6 +189,25 @@ Rails.application.routes.draw do
     # PATCH /profil/update_theme => basculer entre mode clair et mode sombre
     # Appelé en AJAX par le Stimulus controller theme-toggle
     patch :update_theme, on: :member
+  end
+
+  # ── Intégration Slack ───────────────────────────────────────────────────────
+  # Tous les endpoints Slack sont regroupés sous /slack et le module Slack::.
+  #   install / oauth/callback   → installation de l'app dans un workspace (bot token)
+  #   connect / connect/callback → "Se connecter avec Slack" (liaison d'identité)
+  #   disconnect                 → délier une identité
+  scope :slack, module: :slack, as: :slack do
+    get "install",         to: "oauth#install"
+    get "oauth/callback",  to: "oauth#callback"
+    get "connect",         to: "connections#connect"
+    get "connect/callback", to: "connections#callback"
+    delete "disconnect/:id", to: "connections#destroy", as: :disconnect
+    # Interactions Block Kit (clic « S'inscrire », soumission de modale) — signature HMAC, pas de CSRF.
+    post "interactivity",  to: "interactivity#create"
+    # Slash commands (/match) — ouvre la modale de création de match.
+    post "commands",       to: "commands#create"
+    # Events API — répond au handshake url_verification (aucun event écouté en v1).
+    post "events",         to: "events#create"
   end
 
   # Profil public d'un autre utilisateur
@@ -245,6 +305,22 @@ Rails.application.routes.draw do
     resources :waitlist_entries, only: [:index, :create] do
       collection do
         post :send_launch_email
+      end
+    end
+
+    # Articles de blog — CRUD complet + publier/dépublier
+    # GET    /admin/articles            → liste tous les articles
+    # GET    /admin/articles/new        → formulaire création
+    # POST   /admin/articles            → créer
+    # GET    /admin/articles/:id/edit   → modifier
+    # PATCH  /admin/articles/:id        → mettre à jour
+    # DELETE /admin/articles/:id        → supprimer
+    # PATCH  /admin/articles/:id/publish   → publier
+    # PATCH  /admin/articles/:id/unpublish → dépublier
+    resources :articles do
+      member do
+        patch :publish
+        patch :unpublish
       end
     end
 

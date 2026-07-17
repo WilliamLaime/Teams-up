@@ -13,6 +13,39 @@ class SportTest < ActiveSupport::TestCase
   teardown { teardown_db }
 
   # ════════════════════════════════════════════════════════════════════════════
+  # RÈGLES DE SCORE (Lot 4 Tournoi)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  def test_scoring_rules_tennis_padel_best_of_3
+    %w[tennis padel].each do |slug|
+      rules = Sport.new(slug: slug).scoring_rules
+      assert_equal 3, rules[:best_of]
+      assert_equal 6, rules[:target]
+      assert rules[:win_by_two]
+    end
+  end
+
+  def test_scoring_rules_ping_pong_best_of_5_win_by_two
+    rules = Sport.new(slug: "ping-pong").scoring_rules
+    assert_equal 5, rules[:best_of]
+    assert_equal 11, rules[:target]
+    assert rules[:win_by_two]
+    assert_nil rules[:cap]
+  end
+
+  def test_scoring_rules_badminton_cap_30
+    rules = Sport.new(slug: "badminton").scoring_rules
+    assert_equal 21, rules[:target]
+    assert_equal 30, rules[:cap]
+  end
+
+  def test_scoring_rules_fallback_sans_win_by_two
+    rules = Sport.new(slug: "inconnu").scoring_rules
+    assert_equal 3, rules[:best_of]
+    refute rules[:win_by_two]
+  end
+
+  # ════════════════════════════════════════════════════════════════════════════
   # VALIDATIONS
   # ════════════════════════════════════════════════════════════════════════════
 

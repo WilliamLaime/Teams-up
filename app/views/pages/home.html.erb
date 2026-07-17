@@ -3,6 +3,31 @@
     4 sections : Hero / Matchs / Comment ça marche / CTA
     ===================================================== %>
 
+<%# Schema.org Organization + WebSite — signaux d'autorité lus par Google et les LLMs %>
+<% content_for :head do %>
+  <%# Organization : qui est Teams-Up, avec logo et réseaux sociaux %>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Teams-Up",
+    "url": "<%= root_url %>",
+    "logo": { "@type": "ImageObject", "url": "<%= asset_url('logo/logo_vf_1_noir.png') %>" },
+    "sameAs": ["https://www.instagram.com/teams.up.sport"],
+    "contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "url": "<%= contact_url %>" }
+  }
+  </script>
+  <%# WebSite : permet à Google d'afficher une barre de recherche dans les résultats (Sitelinks Searchbox) %>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Teams-Up",
+    "url": "<%= root_url %>"
+  }
+  </script>
+<% end %>
+
 <%# ══════════════════════════════════════════════════
     1. HERO — Section principale sombre
        Titre + description + CTA + image terrain
@@ -21,7 +46,7 @@
         <%# Badge avec point animé %>
         <div class="hero-badge">
           <span class="hero-badge-dot"></span>
-          <%= @available_matches_count %> match<%= @available_matches_count > 1 ? "s" : "" %> disponible<%= @available_matches_count > 1 ? "s" : "" %>
+          <%= @available_matches_count %> match<%= @available_matches_count > 1 ? "s" : "" %> disponible<%= @available_matches_count > 1 ? "s" : "" %><%= " en #{current_sport.name}" if current_sport.present? %>
         </div>
 
         <%# Titre principal sur 2 lignes %>
@@ -137,6 +162,9 @@
              when "Volleyball"
                hero_src = asset_path("img banner/banner_volley.jpeg")
                hero_alt = "Joueur de volley"
+             when "Ping-Pong"
+               hero_src = asset_path("img banner/banner_pingpong.jpeg")
+               hero_alt = "Table de ping-pong"
              when nil
                # Mode Multisport (aucun sport sélectionné) → image Cloudinary multisports
                hero_src = sport_misc_image(:multisports_img)
@@ -147,7 +175,10 @@
                hero_alt = "Joueur de tennis"
              end %>
           <%# RGESN 5.2 — dimensions HTML pour éviter les reflows (CLS) du LCP image %>
-          <%= image_tag hero_src, alt: hero_alt, class: "hero-img", width: 600, height: 400 %>
+          <%# fetchpriority="high" indique au navigateur de charger cette image en priorité (LCP) %>
+          <%# loading="eager" désactive le lazy loading sur l'image au-dessus de la ligne de flottaison %>
+          <%= image_tag hero_src, alt: hero_alt, class: "hero-img", width: 600, height: 400,
+                        fetchpriority: "high", loading: "eager" %>
 
           <%# Carte overlay : affiche le prochain match disponible (jamais complet)
               @hero_match est calculé dans le controller — exclut les matchs full? %>
@@ -157,9 +188,9 @@
 
               <%# Ligne haute : icône ronde + label + titre %>
               <div class="d-flex align-items-center gap-3">
-                <%# Icône orange avec éclair %>
+                <%# Rond orange avec l'icône du sport du match %>
                 <div class="hero-match-icon">
-                  <i data-lucide="zap" style="width:18px;height:18px;"></i>
+                  <%= sport_icon(@hero_match.sport, size: "1.4rem", px_size: 22) %>
                 </div>
                 <%# Infos principales %>
                 <div class="flex-grow-1 overflow-hidden">
@@ -173,7 +204,7 @@
               <%# Ligne basse : heure à gauche, places restantes à droite %>
               <div class="d-flex justify-content-between align-items-center hero-match-footer">
                 <span class="hero-match-time">
-                  <%= @hero_match.time&.strftime('%H:%M') %> · Ce soir
+                  <%= @hero_match.time&.strftime('%H:%M') %> · <%= match_day_label(@hero_match) %>
                 </span>
                 <%# Toujours des places dispo (jamais complet grâce au controller) %>
                 <span class="hero-match-spots">

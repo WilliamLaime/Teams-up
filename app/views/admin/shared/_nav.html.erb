@@ -49,6 +49,13 @@
       Waitlist
     <% end %>
 
+    <%# ── Onglet Blog (gestion des articles SEO) ── %>
+    <%= link_to admin_articles_path,
+                class: "admin-nav-tab #{active_tab == :blog ? "admin-nav-tab--active" : ""}" do %>
+      <i data-lucide="file-text" style="width:15px; height:15px;"></i>
+      Blog
+    <% end %>
+
     <%# ── Onglet Utilisateurs (confirmation manuelle, renvoi email) ── %>
     <%= link_to admin_users_path,
                 class: "admin-nav-tab #{active_tab == :users ? "admin-nav-tab--active" : ""}" do %>

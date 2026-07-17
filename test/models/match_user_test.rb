@@ -19,7 +19,7 @@ class MatchUserTest < ActiveSupport::TestCase
       place:       "Terrain",
       date:        Date.tomorrow,
       time:        1.hour.from_now, # doit être au moins 30min dans le futur
-      player_left: 10,
+      players_needed: 10,
       level:       "Tout niveau",   # champ obligatoire (validates :level, presence: true)
       user:        user,
       sport:       sport

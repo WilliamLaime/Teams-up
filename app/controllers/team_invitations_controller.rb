@@ -136,24 +136,18 @@ class TeamInvitationsController < ApplicationController
 
     case params[:decision]
     when "approve"
-      # Transforme la proposition en vraie invitation pending → l'invité reçoit la notif
-      @invitation.update!(status: "pending", proposed_by: @invitation.proposed_by)
-
-      # Notifie l'invité via notification in-app
-      Notification.create(
-        user: @invitation.invitee,
-        actor: current_user,
-        message: "#{current_user.profil&.first_name} t'a invité à rejoindre l'équipe \"#{@team.name}\".",
-        link: team_path(@team)
-      )
-
-      # Envoie un email à l'invité (proposition validée par le captain = invitation officielle)
-      UserMailer.team_invitation_received(@invitation).deliver_later
-
-      redirect_to @team, notice: "Invitation envoyée à #{@invitation.invitee.profil&.first_name} !"
+      if @invitation.requested?
+        # Demande spontanée du joueur : il veut déjà rejoindre, on l'ajoute
+        # directement comme membre (inutile de le ré-inviter).
+        approve_join_request
+      else
+        # Proposition d'un membre : on la transforme en invitation officielle
+        # pending → l'invité doit encore accepter.
+        approve_proposal
+      end
     when "decline"
       @invitation.destroy
-      redirect_to @team, notice: "Proposition refusée."
+      redirect_to @team, notice: @invitation.requested? ? "Demande refusée." : "Proposition refusée."
     else
       redirect_to @team, alert: "Action invalide."
     end
@@ -169,11 +163,26 @@ class TeamInvitationsController < ApplicationController
   private
 
   def set_team
-    @team = Team.find(params[:team_id])
+    @team = Team.from_param(params[:team_id])
   end
 
   def set_invitation
     @invitation = TeamInvitation.find(params[:id])
+  end
+
+  # Rafraîchit en temps réel le point "nouveau membre" dans la navbar du capitaine.
+  # Réutilise le canal personnel déjà écouté par la navbar (turbo_stream_from user, :notifications).
+  def broadcast_teams_dot_to(captain)
+    return unless captain
+
+    %w[navbar-teams-dot navbar-teams-dot-mobile].each do |target|
+      Turbo::StreamsChannel.broadcast_update_to(
+        [captain, :notifications],
+        target: target,
+        partial: "shared/navbar_teams_dot",
+        locals: { user: captain }
+      )
+    end
   end
 
   # Cherche un user par email ou par prénom (via son profil)
@@ -203,6 +212,9 @@ class TeamInvitationsController < ApplicationController
       link: team_path(@team)
     )
 
+    # Fait apparaître en temps réel le point "nouveau membre" dans la navbar du capitaine
+    broadcast_teams_dot_to(@team.captain)
+
     redirect_to @team, notice: "Tu as rejoint l'équipe \"#{@team.name}\" !"
   rescue ActiveRecord::RecordInvalid => e
     redirect_to teams_path, alert: "Erreur : #{e.message}"
@@ -212,5 +224,49 @@ class TeamInvitationsController < ApplicationController
   def refuse_invitation
     @invitation.update!(status: "refused")
     redirect_to teams_path, notice: "Invitation refusée."
+  end
+
+  # Le captain approuve une demande d'adhésion spontanée : on crée directement
+  # le TeamMember (le joueur veut déjà rejoindre) et on le notifie.
+  def approve_join_request
+    ActiveRecord::Base.transaction do
+      @invitation.update!(status: "accepted")
+      @team.team_members.create!(
+        user: @invitation.invitee,
+        role: "member",
+        joined_at: Time.current
+      )
+      # Le capitaine agit lui-même : on considère qu'il a "vu" ce nouveau membre,
+      # pour ne pas lui afficher un point de notification sur sa propre action.
+      @team.update_column(:captain_members_seen_at, Time.current)
+    end
+
+    Notification.create(
+      user: @invitation.invitee,
+      actor: current_user,
+      message: "Ta demande pour rejoindre l'équipe \"#{@team.name}\" a été acceptée !",
+      link: team_path(@team)
+    )
+
+    redirect_to @team, notice: "#{@invitation.invitee.profil&.first_name} a rejoint l'équipe !"
+  rescue ActiveRecord::RecordInvalid => e
+    redirect_to @team, alert: "Erreur : #{e.message}"
+  end
+
+  # Le captain valide une proposition d'un membre : on la transforme en
+  # invitation officielle pending → l'invité reçoit une notif et un email.
+  def approve_proposal
+    @invitation.update!(status: "pending", proposed_by: @invitation.proposed_by)
+
+    Notification.create(
+      user: @invitation.invitee,
+      actor: current_user,
+      message: "#{current_user.profil&.first_name} t'a invité à rejoindre l'équipe \"#{@team.name}\".",
+      link: team_path(@team)
+    )
+
+    UserMailer.team_invitation_received(@invitation).deliver_later
+
+    redirect_to @team, notice: "Invitation envoyée à #{@invitation.invitee.profil&.first_name} !"
   end
 end

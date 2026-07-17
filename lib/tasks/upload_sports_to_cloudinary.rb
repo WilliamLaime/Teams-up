@@ -14,14 +14,15 @@ BASE_DIR = Rails.root.join("app/assets/images/sports")
 # Liste des images à uploader, organisée par sport
 # (on ignore les sous-dossiers "originaux/" qui sont les fichiers source bruts)
 SPORT_FILES = {
-  "football"   => Dir[BASE_DIR.join("Football/*.webp")].sort,
-  "tennis"     => Dir[BASE_DIR.join("Tennis/*.webp")].sort,
-  "padel"      => Dir[BASE_DIR.join("Padel/*.webp")].sort,
-  "volleyball" => Dir[BASE_DIR.join("Volley/*.webp")].sort,
-  "basketball" => Dir[BASE_DIR.join("Basketball/*.webp")].sort,
-  "handball"   => Dir[BASE_DIR.join("Handball/*.webp")].sort,
-  "badminton"  => Dir[BASE_DIR.join("Badminton/*.webp")].sort,
-  "misc"       => [
+  "football" => Dir[BASE_DIR.join("Football/*.webp")],
+  "tennis" => Dir[BASE_DIR.join("Tennis/*.webp")],
+  "padel" => Dir[BASE_DIR.join("Padel/*.webp")],
+  "volleyball" => Dir[BASE_DIR.join("Volley/*.webp")],
+  "basketball" => Dir[BASE_DIR.join("Basketball/*.webp")],
+  "handball" => Dir[BASE_DIR.join("Handball/*.webp")],
+  "badminton" => Dir[BASE_DIR.join("Badminton/*.webp")],
+  "ping-pong" => Dir[BASE_DIR.join("PingPong/*.webp")],
+  "misc" => [
     BASE_DIR.join("multisports.png").to_s,
     BASE_DIR.join("multisports-img.png").to_s,
     BASE_DIR.join("padel.png").to_s
@@ -47,27 +48,27 @@ SPORT_FILES.each do |sport, files|
       response = Cloudinary::Uploader.upload(
         file_path,
         public_id: public_id,
-        overwrite: false,   # ne re-uploade pas si déjà présent
+        overwrite: false, # ne re-uploade pas si déjà présent
         resource_type: "image"
       )
 
       url = response["secure_url"]
       result[sport] << url
       puts "  ✅ #{filename} → #{url}"
-
-    rescue => e
+    rescue StandardError => e
       puts "  ❌ Erreur #{filename} : #{e.message}"
     end
   end
 end
 
 # Affichage du hash Ruby final à copier dans le helper
-puts "\n\n" + "="*60
+puts "\n\n#{'=' * 60}"
 puts "HASH RUBY À COPIER DANS app/helpers/sport_images_helper.rb :"
-puts "="*60
+puts "=" * 60
 puts "SPORT_IMAGES = {"
 result.each do |sport, urls|
   next if sport == "misc"
+
   puts "  \"#{sport}\" => %w["
   urls.each { |url| puts "    #{url}" }
   puts "  ],"

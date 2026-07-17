@@ -136,6 +136,23 @@ module ApplicationHelper
     end
   end
 
+  # ── Avatar cliquable → profil public de l'utilisateur ───────────────────────
+  # Identique à user_avatar_tag, mais enveloppe l'avatar dans un lien vers le
+  # profil public. À utiliser UNIQUEMENT là où l'avatar n'est pas déjà à
+  # l'intérieur d'un autre lien (les liens HTML imbriqués sont invalides).
+  # data-turbo-frame="_top" force la navigation pleine page même si l'avatar est
+  # rendu à l'intérieur d'un turbo-frame (ex: fenêtre de chat).
+  def user_avatar_link(user, **options)
+    return user_avatar_tag(user, **options) if user.blank?
+
+    link_to user_profil_path(user),
+            class: "user-avatar-link",
+            title: user.try(:display_name).presence || user.email,
+            data: { turbo_frame: "_top" } do
+      user_avatar_tag(user, **options)
+    end
+  end
+
   # ── Icônes de sport ───────────────────────────────────────────────────────
   # Affiche l'icône d'un sport : image si c'est un fichier, emoji sinon
   # Utilisé partout où on affiche l'icône d'un sport
@@ -214,6 +231,30 @@ module ApplicationHelper
       "<img src=\"#{src}\" alt=\"#{sport.name}\" style=\"#{img_style}\"> #{sport.name}"
     else
       "#{sport.icon} #{sport.name}"
+    end
+  end
+
+  # Libellé de date relatif et lisible pour un match (ex. carte "match à la une").
+  #   - Aujourd'hui       → "Ce soir" si le match est à 18h ou plus, sinon "Aujourd'hui"
+  #   - Demain            → "Demain"
+  #   - Dans la semaine   → jour en toutes lettres (ex. "Mardi")
+  #   - Au-delà           → date courte (ex. "14 juil.")
+  def match_day_label(match)
+    return "" unless match&.date
+
+    date  = match.date
+    today = Date.current
+
+    if date == today
+      match.time && match.time.hour >= 18 ? "Ce soir" : "Aujourd'hui"
+    elsif date == today + 1
+      "Demain"
+    elsif date <= today + 6
+      # Jour de la semaine en français, première lettre en majuscule
+      I18n.l(date, format: "%A").capitalize
+    else
+      # Date courte : jour + mois abrégé (ex. "14 juil.")
+      I18n.l(date, format: "%-d %b")
     end
   end
 

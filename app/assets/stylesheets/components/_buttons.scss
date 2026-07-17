@@ -35,6 +35,13 @@
   }
 }
 
+// Variante petite taille — utilisée dans des contextes compacts (ex: bandeau CTA blog)
+.btn-cta-primary--sm {
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 // État "actif" appliqué par JS (star_rating_controller) une fois les étoiles sélectionnées
 // Reprend exactement l'état hover pour signaler que le bouton est prêt à être cliqué
 .btn-cta-primary--rated {

@@ -47,13 +47,19 @@
       <meta name="sentry-dsn" content="<%= ENV["SENTRY_DSN"] %>">
     <% end %>
 
+    <%# Non-indexation : les pages en chantier (ex. tournois) posent @noindex = true
+        pour éviter que Google les référence tant que la feature n'est pas publiée. %>
+    <% if @noindex %>
+      <meta name="robots" content="noindex, nofollow">
+    <% end %>
+
     <%= yield :head %>
 
     <%# ── PWA : manifeste + couleur de thème ──────────────────────────────── %>
     <%# Le manifeste dit au navigateur que l'app est installable (icône, nom, couleurs) %>
     <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
     <%# theme-color : colore la barre de statut/navigateur sur mobile %>
-    <meta name="theme-color" content="#111111">
+    <meta name="theme-color" content="#FFFFFF">
 
     <%# ── Enregistrement du Service Worker ─────────────────────────────────
         Le service worker permet : cache offline, fond de préchargement.
@@ -114,6 +120,8 @@
         → pas de texte invisible pendant le chargement (évite le FOIT). %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <%# Préconnexion Cloudinary — réduit la latence de chargement des images CDN (LCP) %>
+    <link rel="preconnect" href="https://res.cloudinary.com">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700&family=Work+Sans:wght@400;700&display=swap" rel="stylesheet">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>

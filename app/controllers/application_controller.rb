@@ -103,24 +103,23 @@ class ApplicationController < ActionController::Base
         # :title et :description font référence aux valeurs définies ci-dessus
         title: :title,
         description: :description,
-        url: -> { request.original_url },
-        # Image affichée lors du partage sur Facebook, WhatsApp, LinkedIn, etc.
-        image: -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
+        # Appel direct (pas de lambda) — la gem meta-tags n'évalue pas les Proc/lambda
+        url: request.original_url,
+        # Image par défaut pour les partages réseaux sociaux
+        image: helpers.asset_url("logo/logo_vf_1_noir.png"),
+        # Indique la langue de la page à Facebook/LinkedIn
+        locale: "fr_FR"
       },
-      # ── Twitter Card (partage sur X/Twitter) ──
+      # Twitter Card — summary_large_image affiche une grande image dans X/Twitter
       twitter: {
-        card: "summary",
+        card: "summary_large_image",
         title: :title,
         description: :description,
-        # Image affichée dans les aperçus Twitter/X
-        image: -> { helpers.asset_url("logo/logo_vf_1_noir.png") }
+        image: helpers.asset_url("logo/logo_vf_1_noir.png")
       },
-      # ── Canonical URL ──────────────────────────────────────────────────────
-      # Pointe toujours vers l'URL propre sans query string.
-      # Exemple : /matches?sport=2&page=3 → canonical = https://www.teams-up.fr/matches
-      # Ça évite que Google considère chaque combinaison de filtres comme une page distincte
-      # (ce qui diluerait le score SEO de la vraie page /matches).
-      canonical: -> { request.base_url + request.path }
+      # Canonical URL : URL propre sans query string pour éviter le duplicate content.
+      # Exemple : /matches?sport=2&page=3 → canonical = https://www.teams-up-sport.fr/matches
+      canonical: "#{request.base_url}#{request.path}"
     )
   end
 
@@ -208,6 +207,23 @@ class ApplicationController < ActionController::Base
 
     flash.now[:alert] = "Trop de créations en peu de temps. Attendez quelques minutes avant de réessayer."
     cookies.delete(:throttle_alert)
+  end
+
+  # Destinations Slack de TOUS les workspaces liés de l'utilisateur, pour permettre une
+  # sélection en deux temps (workspace puis channel/DM). Renvoie un tableau :
+  #   [{ id:, name:, destinations: { "Channels" => [...], "Messages directs" => [...] } }]
+  # Vide si le compte n'est pas lié. Utilisé par matches#new, tournaments#new et le partage.
+  def slack_destinations_for(user)
+    return [] unless user.slack_linked?
+
+    user.slack_identities.includes(:slack_workspace).map do |identity|
+      ws = identity.slack_workspace
+      {
+        id: ws.id,
+        name: ws.team_name.presence || ws.team_id,
+        destinations: Slack::ChannelLister.destinations(ws)
+      }
+    end
   end
 
   # Retourne un tableau de { match:, users: [...] } pour la modal

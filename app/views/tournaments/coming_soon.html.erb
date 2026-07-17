@@ -1,0 +1,26 @@
+<%# ==============================================================================
+    Page d'attente — Tournois « Bientôt disponible »
+    Affichée depuis le lien "Tournoi" du header tant que la feature n'est pas
+    officiellement lancée. Les vraies pages (/tournois) restent accessibles par
+    URL directe pour permettre aux développeurs de continuer à travailler.
+    Non indexée (cf. @noindex posé dans le controller).
+    ============================================================================== %>
+<section class="tournament-soon">
+  <div class="tournament-soon__card">
+    <span class="tournament-soon__badge">En préparation</span>
+
+    <div class="tournament-soon__icon">
+      <i data-lucide="trophy"></i>
+    </div>
+
+    <h1 class="tournament-soon__title">Les tournois arrivent bientôt</h1>
+
+    <p class="tournament-soon__text">
+      Nous mettons la dernière main à l'espace tournois : rondes suisses,
+      poules, championnats et tableaux finaux. Encore un peu de patience,
+      ça se prépare en coulisses !
+    </p>
+
+    <%= link_to "Retour à l'accueil", root_path, class: "btn btn-primary btn-cta-primary" %>
+  </div>
+</section>

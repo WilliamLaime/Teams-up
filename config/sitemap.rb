@@ -43,6 +43,22 @@ SitemapGenerator::Sitemap.create do
       priority:   0.6,
       changefreq: "yearly"
 
+  # ── Articles de blog ─────────────────────────────────────────────────────
+  #
+  # On n'indexe que les articles publiés (pas les brouillons).
+  # lastmod : date de dernière modification → Google sait quand recrawler
+  # changefreq "weekly" : les articles peuvent être mis à jour (stats, liens)
+  add articles_path,
+      priority:   0.8,
+      changefreq: "weekly"
+
+  Article.published.find_each do |article|
+    add article_path(article.slug),
+        priority:    0.7,
+        changefreq:  "weekly",
+        lastmod:     article.updated_at
+  end
+
   # ── Pages dynamiques : matchs publics ────────────────────────────────────
   #
   # On n'indexe que les matchs PUBLICS et à venir (pas les matchs privés ni terminés).

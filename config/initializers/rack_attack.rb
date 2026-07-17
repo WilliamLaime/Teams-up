@@ -133,6 +133,21 @@ class Rack::Attack
 
 
   # -----------------------------------------------------------------------
+  # THROTTLE 8 : Endpoints Slack entrants (interactivity / commands / events)
+  #
+  # But : simple filet anti-flood sur les endpoints publics que Slack appelle.
+  # La VRAIE protection de ces routes est la signature HMAC vérifiée dans
+  # Slack::BaseController (SlackRequestVerification) — pas ce throttle.
+  # On plafonne donc TRÈS largement (60 req/min/IP) : Slack émet depuis un petit
+  # pool d'IP partagées, un seuil bas bloquerait du trafic légitime. Ces clients
+  # sont des machines → la réponse 429 par défaut suffit (pas de cookie/flash UI).
+  # -----------------------------------------------------------------------
+  throttle("slack/ip", limit: 60, period: 1.minute) do |req|
+    req.ip if req.path.start_with?("/slack/interactivity", "/slack/commands", "/slack/events")
+  end
+
+
+  # -----------------------------------------------------------------------
   # Notification Rack::Attack → SecurityLog
   #
   # Quand rack-attack bloque une requête (throttle déclenché), il publie

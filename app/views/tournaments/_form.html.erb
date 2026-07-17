@@ -1,0 +1,510 @@
+<%# ══════════════════════════════════════════════════════════════
+    Formulaire de création d'un tournoi
+    ══════════════════════════════════════════════════════════════
+    Cloné du formulaire de match (form_with standard, PAS simple_form) :
+    4 sections-cartes numérotées à gauche + récapitulatif sticky à droite.
+    Réutilise les classes .match-* et les contrôleurs Stimulus existants
+    (sport-picker, date-picker, time-picker, place-search, invite-search).
+    Le contrôleur "tournament-form" met à jour le récap en temps réel.
+    ══════════════════════════════════════════════════════════════ %>
+
+<%
+  # Maps JSON passées au contrôleur Stimulus :
+  #   - nom lisible du sport (emoji + nom) pour le récap
+  #   - formats de TOURNOI compatibles par sport (adapte les boutons de format)
+  sports_names   = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = "#{sport_icon_text(s)} #{s.name}".strip }
+  sports_formats = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_tournament_formats }
+
+  # Jours / mois FR pour l'affichage initial du date-picker (comme le match).
+  fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
+  fr_months = %w[jan. fév. mars avr. mai juin juil. août sept. oct. nov. déc.]
+%>
+
+<%= form_with model: @tournament,
+    data: {
+      controller: "tournament-form",
+      action: "sport-picker:sport-selected->tournament-form#updateSport"
+    } do |f| %>
+
+  <div class="container py-4">
+
+    <%# Erreurs de validation %>
+    <% if @tournament.errors.any? %>
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="alert alert-danger">
+            <ul class="mb-0">
+              <% @tournament.errors.full_messages.each do |msg| %>
+                <li><%= msg %></li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="row g-4">
+
+      <%# ══════════════════════════════════════════════════
+          COLONNE GAUCHE : les 4 sections
+          ══════════════════════════════════════════════════ %>
+      <div class="col-lg-7">
+
+        <p class="form-required-legend">
+          <span class="required-star">*</span> Champs obligatoires
+        </p>
+
+        <%# ────────────────────────────────────────────────
+            SECTION 1 : Sport & format
+            ──────────────────────────────────────────────── %>
+        <div class="match-form-section">
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">1</div>
+            <h2 class="match-form-section-title">Sport & format</h2>
+          </div>
+
+          <%# Sport — dropdown custom (sport-picker), valeur soumise via hidden field %>
+          <div class="mb-3">
+            <%= f.label :sport_id, class: "form-label" do %>Sport <span class="required-star">*</span><% end %>
+
+            <%# Le hidden porte les maps JSON lues par tournament-form :
+                - data-tournament-formats   : formats compatibles par sport
+                - data-tournament-structures: structures figées (format → nb → texte) %>
+            <%= f.hidden_field :sport_id,
+                data: {
+                  "tournament-form-target": "sportInput",
+                  "sport-names": sports_names.to_json,
+                  "formats":     sports_formats.to_json,
+                  "structures":  Tournament::STRUCTURE_PRESETS.to_json
+                } %>
+
+            <div style="position:relative;" data-controller="sport-picker">
+              <button type="button"
+                      class="form-select"
+                      data-sport-picker-target="trigger"
+                      data-action="click->sport-picker#toggle"
+                      style="cursor:pointer; text-align:left;">
+                <span class="d-flex align-items-center gap-2">
+                  <% if @tournament.sport %>
+                    <%= sport_icon(@tournament.sport, size: "1.1rem") %>
+                    <span><%= @tournament.sport.name %></span>
+                  <% else %>
+                    <span class="sport-picker-placeholder">Sélectionner un sport</span>
+                  <% end %>
+                </span>
+              </button>
+
+              <div data-sport-picker-target="dropdown" class="sport-picker-dropdown" style="display:none;">
+                <% Sport.order(:name).each do |sport| %>
+                  <button type="button"
+                          class="sport-picker-item w-100 d-flex align-items-center gap-2 text-start <%= 'sport-picker-item--active' if @tournament.sport_id == sport.id %>"
+                          data-action="click->sport-picker#select"
+                          data-sport-picker-target="item"
+                          data-sport-id="<%= sport.id %>"
+                          data-sport-name="<%= sport.name %>">
+                    <%= sport_icon(sport, size: "1.1rem") %>
+                    <span><%= sport.name %></span>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <%# Format — boutons générés dynamiquement selon le sport %>
+          <div class="mb-0" data-tournament-form-target="formatWrapper" style="display:none;">
+            <label class="form-label d-block">Format <span class="required-star">*</span></label>
+            <%= f.hidden_field :format, data: { "tournament-form-target": "formatInput" } %>
+            <div class="match-level-buttons" data-tournament-form-target="formatButtons"></div>
+          </div>
+        </div><%# fin section 1 %>
+
+        <%# ────────────────────────────────────────────────
+            SECTION 2 : Paramètres
+            ──────────────────────────────────────────────── %>
+        <div class="match-form-section">
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">2</div>
+            <h2 class="match-form-section-title">Paramètres</h2>
+          </div>
+
+          <%# Nom %>
+          <div class="mb-3">
+            <%= f.label :name, "Nom du tournoi", class: "form-label" do %>Nom du tournoi <span class="required-star">*</span><% end %>
+            <%= f.text_field :name,
+                class: "form-control",
+                placeholder: "Ex: Open Riviera Winter",
+                required: true,
+                data: { "tournament-form-target": "nameInput", "action": "input->tournament-form#updateName" } %>
+          </div>
+
+          <%# Description %>
+          <div class="mb-3">
+            <%= f.label :description, "Description", class: "form-label" %>
+            <%= f.text_area :description,
+                class: "form-control",
+                rows: 3,
+                placeholder: "Décris le tournoi, le niveau attendu, les règles...",
+                data: { "tournament-form-target": "descriptionInput", "action": "input->tournament-form#updateDescription" } %>
+          </div>
+
+          <%# Co-organisateur — autocomplete (réutilise invite-search) %>
+          <div class="mb-0" data-controller="invite-search"
+               data-invite-search-url-value="<%= search_tournaments_path %>">
+            <%= label_tag :co_organizer_email, "Co-organisateur (facultatif)", class: "form-label" %>
+            <div class="position-relative">
+              <input type="text"
+                     class="form-control"
+                     placeholder="Rechercher un utilisateur (nom ou email)…"
+                     autocomplete="off"
+                     data-invite-search-target="input"
+                     data-tournament-form-target="coOrgInput"
+                     data-action="input->invite-search#search input->tournament-form#updateCoOrg">
+              <%# Email réel soumis avec le formulaire, rempli à la sélection %>
+              <%= hidden_field_tag :co_organizer_email, "", data: { "invite-search-target": "hidden" } %>
+              <div class="invite-search-dropdown" data-invite-search-target="dropdown" style="display:none;"></div>
+            </div>
+            <small class="form-text text-muted">
+              Le co-organisateur pourra gérer le tournoi (hors suppression et édition des infos).
+            </small>
+          </div>
+        </div><%# fin section 2 %>
+
+        <%# ────────────────────────────────────────────────
+            SECTION 3 : Date / heure / lieu
+            ──────────────────────────────────────────────── %>
+        <div class="match-form-section" data-controller="place-search">
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">3</div>
+            <h2 class="match-form-section-title">Date, heure & lieu</h2>
+          </div>
+
+          <div class="row g-3">
+
+            <%# Date %>
+            <div class="col-md-6">
+              <%= f.label :date, "Date du tournoi", class: "form-label" %>
+              <div style="position:relative;" data-controller="date-picker">
+                <%= f.hidden_field :date, value: @tournament.date,
+                    data: {
+                      "date-picker-target": "input",
+                      "tournament-form-target": "dateInput",
+                      "action": "change->tournament-form#updateDate"
+                    } %>
+                <button type="button"
+                        class="form-select w-100 dp-trigger"
+                        data-date-picker-target="trigger"
+                        data-action="click->date-picker#toggle"
+                        style="cursor:pointer; display:flex; align-items:center; background-image:none; padding-right:0.75rem;">
+                  <span data-date-picker-target="triggerText"
+                        class="<%= @tournament.date.present? ? '' : 'sport-picker-placeholder' %>">
+                    <% if @tournament.date.present? %>
+                      <%= "#{fr_days[@tournament.date.wday]} #{@tournament.date.day} #{fr_months[@tournament.date.month - 1]} #{@tournament.date.year}" %>
+                    <% else %>
+                      Choisir une date
+                    <% end %>
+                  </span>
+                  <i data-lucide="calendar" style="width:14px;height:14px;color:var(--theme-text-muted);flex-shrink:0;margin-left:auto;"></i>
+                </button>
+                <div data-date-picker-target="dropdown" class="dp-dropdown"
+                     style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:400; min-width:280px;"></div>
+              </div>
+            </div>
+
+            <%# Heure %>
+            <div class="col-md-6">
+              <%= f.label :time, "Heure", class: "form-label" %>
+              <div class="d-flex gap-2" data-action="change->tournament-form#updateTime">
+                <%# Heures %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+                  <%= f.hidden_field "time(4i)", value: @tournament.time&.hour, data: { "time-picker-target": "input" } %>
+                  <button type="button"
+                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @tournament.time %>"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left;">
+                    <%= @tournament.time ? ("%02dh" % @tournament.time.hour) : "Heure" %>
+                  </button>
+                  <div class="time-picker-dropdown" data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
+                    <% (0..23).each do |h| %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @tournament.time&.hour == h %>"
+                              style="background:<%= @tournament.time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= h %>"
+                              data-label="<%= "%02dh" % h %>"><%= "%02dh" % h %></button>
+                    <% end %>
+                  </div>
+                </div>
+                <%# Minutes %>
+                <div style="position:relative; flex:1;" data-controller="time-picker">
+                  <%= f.hidden_field "time(5i)", value: @tournament.time&.min, data: { "time-picker-target": "input" } %>
+                  <button type="button"
+                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @tournament.time %>"
+                          data-time-picker-target="trigger"
+                          data-action="click->time-picker#toggle"
+                          style="cursor:pointer; text-align:left;">
+                    <%= @tournament.time ? ("%02d" % @tournament.time.min) : "Min" %>
+                  </button>
+                  <div class="time-picker-dropdown" data-time-picker-target="dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
+                    <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
+                      <button type="button"
+                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @tournament.time&.min == val %>"
+                              style="background:<%= @tournament.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              data-time-picker-item
+                              data-action="click->time-picker#select"
+                              data-value="<%= val %>"
+                              data-label="<%= lbl %>"><%= lbl %></button>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <%# Lieu — autocomplete place-search %>
+            <div class="col-12">
+              <%= f.label :place, "Lieu", class: "form-label" %>
+              <div class="position-relative" data-place-search-target="inputWrapper">
+                <%= f.text_field :place,
+                    class: "form-select",
+                    placeholder: "Ex: Club Padel Riviera, Nice...",
+                    autocomplete: "off",
+                    data: {
+                      "place-search-target": "input",
+                      "tournament-form-target": "placeInput",
+                      "action": "input->place-search#search focus->place-search#showDefault input->tournament-form#updatePlace"
+                    } %>
+                <%= f.hidden_field :venue_id, data: { "place-search-target": "venueId" } %>
+                <div data-place-search-target="dropdown" class="dropdown-menu w-100 shadow"
+                     style="display:none; position:absolute; top:100%; left:0; z-index:1050; max-height:250px; overflow-y:auto;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div><%# fin section 3 %>
+
+        <%# ────────────────────────────────────────────────
+            SECTION 4 : Joueurs & clôture
+            ──────────────────────────────────────────────── %>
+        <div class="match-form-section">
+          <div class="match-form-section-header">
+            <div class="match-form-step-badge">4</div>
+            <h2 class="match-form-section-title">Joueurs & clôture</h2>
+          </div>
+
+          <%# Nombre de joueurs : presets rapides + mode Libre %>
+          <div class="mb-3">
+            <label class="form-label d-block">Nombre de joueurs <span class="required-star">*</span></label>
+            <%= f.hidden_field :max_players, data: { "tournament-form-target": "maxPlayersInput" } %>
+
+            <div class="match-level-buttons">
+              <% Tournament::PLAYER_COUNTS.each do |count| %>
+                <button type="button"
+                        class="match-level-btn tournament-count-btn <%= 'active' if @tournament.max_players == count %>"
+                        data-tournament-form-target="countBtn"
+                        data-action="click->tournament-form#selectPlayerCount"
+                        data-players="<%= count %>"><%= count %></button>
+              <% end %>
+              <%# Bouton Libre : révèle un champ nombre + propositions %>
+              <button type="button"
+                      class="match-level-btn tournament-libre-btn"
+                      data-tournament-form-target="libreBtn"
+                      data-action="click->tournament-form#toggleLibre">Libre</button>
+            </div>
+          </div>
+
+          <%# Aperçu de la structure figée (lecture seule) %>
+          <div class="tournament-structure-preview" data-tournament-form-target="structurePreview" style="display:none;">
+            <i data-lucide="git-branch" style="width:14px;height:14px;" aria-hidden="true"></i>
+            <span data-tournament-form-target="structureText"></span>
+          </div>
+
+          <%# Mode Libre : saisie d'un nombre souhaité + propositions %>
+          <div class="mb-3" data-tournament-form-target="libreSection" style="display:none;">
+            <label class="form-label d-block">Nombre de joueurs souhaité</label>
+            <%= number_field_tag :players_wanted, nil,
+                min: 2, class: "form-control",
+                placeholder: "Ex: 20",
+                data: { "tournament-form-target": "libreInput", "action": "input->tournament-form#buildProposals" } %>
+            <div class="tournament-proposals" data-tournament-form-target="proposals"></div>
+          </div>
+
+          <%# Auto-inscription du créateur %>
+          <div class="mb-3 tournament-self-register">
+            <div class="form-check">
+              <%= check_box_tag :self_register, "1", false,
+                  class: "form-check-input",
+                  data: { "tournament-form-target": "selfRegister", "action": "change->tournament-form#toggleSelfRegister" } %>
+              <%= label_tag :self_register, "M'inscrire aussi comme joueur", class: "form-check-label" %>
+            </div>
+            <small class="form-text text-muted">
+              Par défaut tu es organisateur (admin) sans occuper de place de joueur.
+            </small>
+          </div>
+
+          <%# Clôture des inscriptions %>
+          <div class="mb-0">
+            <label class="form-label d-block">Clôture des inscriptions (facultatif)</label>
+            <div class="row g-3">
+              <%# Date de clôture %>
+              <div class="col-md-6">
+                <div style="position:relative;" data-controller="date-picker">
+                  <%= hidden_field_tag :deadline_date, "",
+                      data: {
+                        "date-picker-target": "input",
+                        "action": "change->tournament-form#updateDeadline"
+                      } %>
+                  <button type="button"
+                          class="form-select w-100 dp-trigger"
+                          data-date-picker-target="trigger"
+                          data-action="click->date-picker#toggle"
+                          style="cursor:pointer; display:flex; align-items:center; background-image:none; padding-right:0.75rem;">
+                    <span data-date-picker-target="triggerText" class="sport-picker-placeholder">Choisir une date</span>
+                    <i data-lucide="calendar" style="width:14px;height:14px;color:var(--theme-text-muted);flex-shrink:0;margin-left:auto;"></i>
+                  </button>
+                  <div data-date-picker-target="dropdown" class="dp-dropdown"
+                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:400; min-width:280px;"></div>
+                </div>
+              </div>
+              <%# Heure de clôture (heures + minutes) %>
+              <div class="col-md-6">
+                <div class="d-flex gap-2" data-action="change->tournament-form#updateDeadline">
+                  <div style="position:relative; flex:1;" data-controller="time-picker">
+                    <%= hidden_field_tag :deadline_hour, "", data: { "time-picker-target": "input" } %>
+                    <button type="button" class="form-select w-100 sport-picker-placeholder"
+                            data-time-picker-target="trigger" data-action="click->time-picker#toggle"
+                            style="cursor:pointer; text-align:left;">Heure</button>
+                    <div class="time-picker-dropdown" data-time-picker-target="dropdown"
+                         style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
+                      <% (0..23).each do |h| %>
+                        <button type="button" class="time-picker-item w-100"
+                                style="background:transparent !important;"
+                                data-time-picker-item data-action="click->time-picker#select"
+                                data-value="<%= h %>" data-label="<%= "%02dh" % h %>"><%= "%02dh" % h %></button>
+                      <% end %>
+                    </div>
+                  </div>
+                  <div style="position:relative; flex:1;" data-controller="time-picker">
+                    <%= hidden_field_tag :deadline_min, "", data: { "time-picker-target": "input" } %>
+                    <button type="button" class="form-select w-100 sport-picker-placeholder"
+                            data-time-picker-target="trigger" data-action="click->time-picker#toggle"
+                            style="cursor:pointer; text-align:left;">Min</button>
+                    <div class="time-picker-dropdown" data-time-picker-target="dropdown"
+                         style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
+                      <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
+                        <button type="button" class="time-picker-item w-100"
+                                style="background:transparent !important;"
+                                data-time-picker-item data-action="click->time-picker#select"
+                                data-value="<%= val %>" data-label="<%= lbl %>"><%= lbl %></button>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><%# fin section 4 %>
+
+        <%# Annuler (mobile) %>
+        <div class="d-lg-none text-center mt-3">
+          <%= link_to "Annuler", tournaments_path, class: "btn btn-link btn-sm text-success" %>
+        </div>
+      </div><%# fin colonne gauche %>
+
+      <%# ══════════════════════════════════════════════════
+          COLONNE DROITE : récapitulatif sticky
+          ══════════════════════════════════════════════════ %>
+      <div class="col-lg-5" style="position:sticky; top:-16px; align-self:flex-start;">
+        <div class="match-recap-card">
+
+          <div class="match-recap-header">
+            <i data-lucide="bar-chart-2" style="width:18px; height:18px;"></i>
+            <span>Récapitulatif</span>
+          </div>
+
+          <h3 class="match-recap-main-title" data-tournament-form-target="recapName">
+            <%= @tournament.name.presence || "Nom du tournoi" %>
+          </h3>
+
+          <p class="match-recap-description" data-tournament-form-target="recapDescription"
+             style="<%= 'display:none;' if @tournament.description.blank? %>">
+            <%= truncate(@tournament.description.to_s, length: 80) %>
+          </p>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Sport</span>
+            <span class="recap-value" data-tournament-form-target="recapSport">
+              <% if @tournament.sport %><%= sport_icon(@tournament.sport, size: "1rem") %> <%= @tournament.sport.name %><% else %>—<% end %>
+            </span>
+          </div>
+
+          <div class="match-recap-row" data-tournament-form-target="recapFormatRow" style="display:none;">
+            <span class="recap-label">Format</span>
+            <span class="recap-value" data-tournament-form-target="recapFormat">—</span>
+          </div>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Date</span>
+            <span class="recap-value" data-tournament-form-target="recapDate">
+              <%= @tournament.date.present? ? @tournament.date.strftime("%d %b %Y") : "—" %>
+            </span>
+          </div>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Heure</span>
+            <span class="recap-value" data-tournament-form-target="recapTime">
+              <%= @tournament.time.present? ? @tournament.time.strftime("%Hh%M") : "—" %>
+            </span>
+          </div>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Lieu</span>
+            <span class="recap-value" data-tournament-form-target="recapPlace"><%= @tournament.place.to_s %></span>
+          </div>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Joueurs</span>
+            <span class="recap-value" data-tournament-form-target="recapPlayers">
+              <%= @tournament.max_players || "—" %>
+            </span>
+          </div>
+
+          <div class="match-recap-row" data-tournament-form-target="recapStructureRow" style="display:none;">
+            <span class="recap-label">Structure</span>
+            <span class="recap-value" data-tournament-form-target="recapStructure">—</span>
+          </div>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Inscription créateur</span>
+            <span class="recap-value" data-tournament-form-target="recapSelfRegister">Non</span>
+          </div>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Clôture</span>
+            <span class="recap-value" data-tournament-form-target="recapDeadline">—</span>
+          </div>
+
+          <div class="match-recap-row" style="border-bottom:none;">
+            <span class="recap-label">Co-organisateur</span>
+            <span class="recap-value" data-tournament-form-target="recapCoOrg">—</span>
+          </div>
+
+          <%# ── Partage Slack (création uniquement) ── %>
+          <% if @tournament.new_record? %>
+            <%= render "shared/slack_share_field", workspaces: @slack_destinations %>
+          <% end %>
+
+          <%= f.submit "Créer le tournoi", class: "match-publish-btn" %>
+
+          <div class="d-none d-lg-block text-center mt-2">
+            <%= link_to "Annuler", tournaments_path, class: "btn btn-link btn-sm text-success" %>
+          </div>
+        </div>
+      </div><%# fin colonne droite %>
+
+    </div>
+  </div>
+<% end %>

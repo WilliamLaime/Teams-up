@@ -143,6 +143,16 @@ class ProfilsController < ApplicationController
     authorize @profil
   end
 
+  # GET /profil/integrations
+  # Page de gestion des intégrations tierces. Pour l'instant : Slack (lier/délier son
+  # compte, installer l'app sur un workspace). Page strictement personnelle → pas de
+  # record à autoriser via Pundit (set_profil la limite déjà à current_user).
+  def integrations
+    skip_authorization
+    @slack_identities = current_user.slack_identities.includes(:slack_workspace)
+    @slack_configured = Slack.configured?
+  end
+
   # POST /profil/dismiss_onboarding
   # Appelé quand l'utilisateur clique l'un des deux boutons de la modale d'onboarding.
   # Marque onboarding_shown_at pour ne plus jamais afficher la modale.

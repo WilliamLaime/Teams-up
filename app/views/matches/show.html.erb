@@ -29,6 +29,12 @@
   <% end %>
 <% end %>
 
+<%# Abonnement temps réel : place à jour (ratio inscrits/total + places libres)
+    poussée à TOUS les visiteurs de la page dès qu'un joueur rejoint, est
+    accepté/refusé, part, ou est promu depuis la file d'attente.
+    Cible : #match_spots_<id> (voir Match#broadcast_spots + partial matches/_spots). %>
+<%= turbo_stream_from @match %>
+
 <%# ── Données calculées une seule fois en haut ── %>
 <%
   # Image de couverture via le helper SportImagesHelper (URLs Cloudinary)
@@ -133,6 +139,15 @@
         <%# Titre %>
         <h1 class="match-banner-title"><%= @match.title %></h1>
 
+        <%# Bandeau : rencontre rattachée à un tournoi (Lot 4). %>
+        <% if @match.tournament %>
+          <p class="match-banner-desc" style="margin-bottom:0.6rem;">
+            <i data-lucide="trophy" style="width:15px;height:15px;vertical-align:-2px;"></i>
+            Rencontre du tournoi
+            <%= link_to @match.tournament.name, tournament_path(@match.tournament), style: "text-decoration:underline;" %>
+          </p>
+        <% end %>
+
         <%# Description %>
         <% if @match.description.present? %>
           <p class="match-banner-desc"><%= @match.description %></p>
@@ -155,8 +170,11 @@
         <%
           d = @match.date
           t = @match.time
+          et = @match.effective_end_time
           date_str = d ? "#{fr_days[d.wday]} #{d.day} #{fr_months[d.month - 1]}" : "Date à définir"
+          # Plage horaire : "14:00 – 15:00" (fin affichée dès qu'une heure de début existe)
           time_str = t ? t.strftime('%H:%M') : "—"
+          time_str += " – #{et.strftime('%H:%M')}" if t && et
         %>
         <%# Wrapper flex pour aligner la date à gauche et le bouton calendrier à droite %>
         <div class="match-banner-datetime-wrapper">
@@ -175,7 +193,7 @@
             <%
               # Construit les dates en UTC pour Google Calendar (format : YYYYMMDDTHHmmSSZ)
               start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
-              end_dt   = start_dt + 90.minutes
+              end_dt   = @match.end_datetime || start_dt + 1.hour
               gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
               gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
 
@@ -271,6 +289,20 @@
               <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
               Modifier
             <% end %>
+
+            <%# Partage Slack — visible seulement si l'organisateur a lié son compte.
+                Ouvre la modale de choix de destination (#slackShareModal). %>
+            <% if current_user&.slack_linked? %>
+              <button type="button"
+                      class="match-banner-action-btn"
+                      data-bs-toggle="modal"
+                      data-bs-target="#slackShareModal"
+                      title="Partager ce match sur Slack">
+                <%= render "shared/slack_logo", size: 14 %>
+                Partager sur Slack
+              </button>
+            <% end %>
+
             <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
             <button type="button"
                     class="match-banner-action-btn match-banner-action-btn--danger"
@@ -382,7 +414,7 @@
               </h5>
               <div class="d-flex align-items-center justify-content-between gap-3">
                 <div class="d-flex align-items-center gap-3">
-                  <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
+                  <%= user_avatar_link organizer, css_class: "match-organizer-avatar" if organizer %>
                   <div>
                     <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
                       <% if organizer&.profil %>
@@ -630,24 +662,37 @@
 
             <%# ── Joueurs approuvés (organisateur inclus) ── %>
             <% approved_users.each do |mu| %>
-              <%# Lien vers le profil du joueur — toute la card est cliquable %>
-              <%= link_to user_profil_path(mu.user),
-                  class: "match-player-item",
-                  style: "text-decoration:none;" do %>
+              <%# Wrapper non-cliquable pour pouvoir inclure le badge de paiement %>
+              <div class="match-player-item-wrapper">
 
-                <%# Avatar du joueur ou initiales colorées si pas de photo %>
-                <%= user_avatar_tag mu.user, css_class: "match-player-avatar" %>
+                <%# Lien vers le profil du joueur %>
+                <%= link_to user_profil_path(mu.user),
+                    class: "match-player-item",
+                    style: "text-decoration:none;" do %>
 
-                <%# Prénom + 1ère lettre du Nom suivi d'un point
-                    Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
-                <%
-                  first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
-                  last_letter = mu.user.profil&.last_name.presence&.first&.upcase
-                  display     = last_letter ? "#{first} #{last_letter}." : first
-                %>
-                <span class="match-player-name"><%= display %></span>
+                  <%# Avatar du joueur ou initiales colorées si pas de photo %>
+                  <%= user_avatar_tag mu.user, css_class: "match-player-avatar" %>
 
-              <% end %>
+                  <%# Prénom + 1ère lettre du Nom suivi d'un point
+                      Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
+                  <%
+                    first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                    last_letter = mu.user.profil&.last_name.presence&.first&.upcase
+                    display     = last_letter ? "#{first} #{last_letter}." : first
+                  %>
+                  <span class="match-player-name"><%= display %></span>
+
+                <% end %>
+
+                <%# Badge de paiement — affiché uniquement si un lien de réservation est défini %>
+                <% if @match.booking_link.present? %>
+                  <%= render "match_users/payment_badge",
+                      match_user: mu,
+                      match: @match,
+                      current_match_user: @current_match_user %>
+                <% end %>
+
+              </div>
             <% end %>
 
             <%# ── Joueurs en attente — avatar avec badge horloge ── %>
@@ -711,53 +756,12 @@
             ────────────────────────────────────── %>
         <div class="match-block match-block-join">
 
-          <%# Phrase accrocheuse selon le nombre de places restantes %>
-          <% if @match.player_left == 1 %>
-            <p class="match-spots-hook match-spots-hook--urgent">Dernière chance !</p>
-          <% elsif @match.player_left == 2 %>
-            <p class="match-spots-hook match-spots-hook--warning">Presque complet !</p>
-          <% elsif @match.player_left == 3 %>
-            <p class="match-spots-hook match-spots-hook--notice">Dépêchez-vous !</p>
-          <% end %>
-
-          <%# Bloc format + places libres
-              Affiche le format du match (ex : "6v6") comme élément principal
-              et le nombre de places libres en dessous
-              Format Libre : affiche présents / total (présents + manquants) %>
-          <div class="match-spots-display">
-
-            <%# Format affiché en grand ─────────────────────────────────────────
-                Libre : "présents / total" (ex : "3/8")
-                Autre format : label du format (ex : "5v5")
-                Pas de format : approuvés / total estimé (fallback) %>
-            <div class="match-spots-fraction">
-              <% if @match.libre? && @match.players_present.present? %>
-                <%# Format Libre : présents / (présents + manquants) %>
-                <% total_libre = @match.players_present + @match.player_left.to_i %>
-                <%= @match.players_present %><span class="match-spots-sep">/</span><%= total_libre %>
-              <% elsif @match.format.present? %>
-                <%= @match.format %>
-              <% else %>
-                <%# Fallback : approuvés / total estimé %>
-                <% total_est = approved_users.count + @match.player_left.to_i %>
-                <%= approved_users.count %><span class="match-spots-sep">/</span><%= total_est %>
-              <% end %>
-            </div>
-
-            <%# Nombre de places restantes — ou statut si match terminé %>
-            <div class="match-spots-label">
-              <% if @match.completed? %>
-                <span style="color:var(--theme-text-muted);">Match terminé</span>
-              <% elsif @match.full? %>
-                <span style="color:#ff6b6b;">Complet</span>
-              <% else %>
-                <%= @match.player_left %>
-                place<%= @match.player_left > 1 ? "s" : "" %>
-                libre<%= @match.player_left > 1 ? "s" : "" %>
-              <% end %>
-            </div>
-
-          </div>
+          <%# Bloc "places" (ratio inscrits/total + places libres).
+              Extrait dans un partial pour être diffusé en temps réel :
+              show s'abonne via `turbo_stream_from @match` (voir plus haut) et
+              Match#broadcast_spots remplace #match_spots_<id> à chaque
+              variation du nombre de joueurs. %>
+          <%= render "matches/spots", match: @match %>
 
           <%# Action selon le statut de l'utilisateur %>
           <% if user_signed_in? %>
@@ -869,6 +873,59 @@
             <%= link_to new_user_session_path, class: "btn btn-primary w-100 match-join-btn" do %>
               Rejoindre le match
             <% end %>
+          <% end %>
+
+          <%# ── Lien de réservation du terrain — visible pour les participants approuvés et l'organisateur ── %>
+          <% if @match.booking_link.present? && is_participant %>
+            <div class="match-booking-link-block mt-3">
+              <%# Bouton principal : ouvre le lien de paiement dans un nouvel onglet %>
+              <%= link_to @match.booking_link,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  class: "btn match-booking-btn w-100" do %>
+                <i data-lucide="external-link" style="width:14px;height:14px;"></i>
+                Réserver / Payer le terrain
+              <% end %>
+
+              <%# Bouton "J'ai payé" — uniquement pour le joueur lui-même (pas l'organisateur) %>
+              <% if @current_match_user && @current_match_user.role != "organisateur" %>
+                <% if @current_match_user.paid? %>
+                  <div class="match-booking-paid-status mt-2">
+                    <i data-lucide="check-circle" style="width:13px;height:13px;"></i>
+                    Tu as confirmé ton paiement
+                    <%# Possibilité d'annuler si erreur %>
+                    <%= button_to toggle_payment_match_match_user_path(@match, @current_match_user),
+                        method: :patch,
+                        class: "match-booking-undo-btn ms-2",
+                        title: "Annuler",
+                        data: { turbo_stream: true } do %>
+                      Annuler
+                    <% end %>
+                  </div>
+                <% else %>
+                  <%= button_to toggle_payment_match_match_user_path(@match, @current_match_user),
+                      method: :patch,
+                      class: "btn match-booking-confirm-btn w-100 mt-2",
+                      data: { turbo_stream: true } do %>
+                    <i data-lucide="check" style="width:13px;height:13px;"></i>
+                    J'ai payé
+                  <% end %>
+                <% end %>
+              <% end %>
+
+              <%# Récap paiements pour l'organisateur %>
+              <% if @current_match_user&.role == "organisateur" %>
+                <%
+                  approved_only = @match_users.select { |mu| mu.approved? }
+                  paid_count    = approved_only.count(&:paid?)
+                  total_count   = approved_only.count
+                %>
+                <div class="match-booking-organizer-recap mt-2">
+                  <i data-lucide="users" style="width:12px;height:12px;"></i>
+                  <strong><%= paid_count %>/<%= total_count %></strong> joueur<%= total_count > 1 ? "s" : "" %> ont payé
+                </div>
+              <% end %>
+            </div>
           <% end %>
 
           <%# Mode de validation choisi par l'organisateur %>
@@ -1349,6 +1406,59 @@
   </div>
   <% end %>
 
+  <%# ── Modale de partage Slack — pour l'organisateur ayant lié son compte ──
+      Réutilise le partial + le contrôleur Stimulus du formulaire de création
+      (sélection workspace → destination), en mode standalone (pas de case). %>
+  <% if current_user&.slack_linked? %>
+    <div class="modal fade" id="slackShareModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content pending-modal-content">
+
+          <%# Croix de fermeture %>
+          <button type="button" class="pending-modal-close" data-bs-dismiss="modal" aria-label="Fermer">
+            <i data-lucide="x" style="width:16px;height:16px;"></i>
+          </button>
+
+          <%# Icône + titre %>
+          <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
+            <div class="pending-modal-icon" style="background:var(--theme-hover-bg);">
+              <%= render "shared/slack_logo", size: 22 %>
+            </div>
+          </div>
+          <div class="pending-modal-title" style="font-size:1.05rem; margin-bottom:8px; text-align:center;">
+            Partager ce match sur Slack
+          </div>
+          <div class="pending-modal-subtitle" style="text-align:center;">
+            Choisis l'espace et la destination (channel ou message direct).
+          </div>
+
+          <div class="pending-modal-divider" style="margin-top:20px;"></div>
+
+          <%= form_with url: share_on_slack_match_path(@match), method: :post do %>
+            <div style="padding: 16px 0 8px; text-align:left;">
+              <%= render "shared/slack_share_field", workspaces: @slack_destinations, standalone: true %>
+            </div>
+            <div class="d-flex gap-3" style="margin-top: 20px;">
+              <button type="submit"
+                      class="btn btn-sm flex-fill"
+                      style="background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);">
+                <i data-lucide="send" style="width:14px;height:14px; vertical-align:-2px;"></i>
+                Partager
+              </button>
+              <button type="button"
+                      class="btn btn-sm flex-fill"
+                      style="background:var(--theme-hover-bg); color:var(--theme-text-muted); border:1px solid var(--theme-border);"
+                      data-bs-dismiss="modal">
+                Annuler
+              </button>
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+    </div>
+  <% end %>
+
 <% end %>
 
 <%# Les notifications aux participants (décision, annulation, etc.) sont désormais
@@ -1454,7 +1564,7 @@
 
 <%# ══════════════════════════════════════════════════
     MODAL "DEMANDE ACCEPTÉE" — affiché automatiquement après avoir rejoint
-    Déclenché par flash[:show_calendar_modal] (posé par join_automatically)
+    Déclenché par flash[:show_calendar_modal] (posé dans MatchUsersController#create, cas :approved)
     Contient un bouton pour ajouter le match à un calendrier externe
     ══════════════════════════════════════════════════ %>
 <% if flash[:show_calendar_modal] && @match.date.present? && @match.time.present? %>
@@ -1463,7 +1573,7 @@
     d = @match.date
     t = @match.time
     start_dt = Time.zone.local(d.year, d.month, d.day, t.hour, t.min, 0)
-    end_dt   = start_dt + 90.minutes
+    end_dt   = @match.end_datetime || start_dt + 1.hour
     gc_start = start_dt.utc.strftime('%Y%m%dT%H%M%SZ')
     gc_end   = end_dt.utc.strftime('%Y%m%dT%H%M%SZ')
     google_cal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE" \

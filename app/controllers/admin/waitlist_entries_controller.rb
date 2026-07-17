@@ -7,6 +7,9 @@ module Admin
     def index
       @waitlist_entries = WaitlistEntry.order(created_at: :desc)
       @total_count      = @waitlist_entries.count
+      # Compteurs pour les badges et le bouton d'envoi
+      @sent_count       = WaitlistEntry.where.not(launch_email_sent_at: nil).count
+      @pending_count    = WaitlistEntry.where(launch_email_sent_at: nil).count
       # Objet vide pour le formulaire d'ajout manuel sur la même page
       @new_entry        = WaitlistEntry.new
     end
@@ -26,32 +29,37 @@ module Admin
     end
 
     # POST /admin/waitlist_entries/send_launch_email
-    # Envoie l'email de lancement à tous les inscrits.
-    # Utilise deliver_now (synchrone) pour éviter la dépendance à Solid Queue.
-    # En cas d'erreur SMTP, affiche le message dans le flash pour débugger.
+    # Envoie l'email de lancement uniquement aux inscrits qui ne l'ont pas encore reçu
+    # (launch_email_sent_at IS NULL). Marque chaque entrée après envoi réussi.
+    # Respecte la limite Resend de 5 req/s avec une pause toutes les 4 requêtes.
     def send_launch_email
-      entries = WaitlistEntry.order(created_at: :desc)
+      # On ne cible que les inscrits sans email envoyé — évite les doublons
+      entries = WaitlistEntry.where(launch_email_sent_at: nil).order(created_at: :desc)
       sent    = 0
       errors  = []
 
-      entries.each do |entry|
-        # deliver_now envoie immédiatement via SMTP SendGrid
+      entries.each_with_index do |entry, index|
+        # Pause toutes les 4 requêtes pour respecter la limite Resend (5 req/s)
+        sleep(1.1) if index.positive? && (index % 4).zero?
+
+        # Envoi immédiat via l'API Resend
         WaitlistMailer.launch_announcement(entry.email).deliver_now
+
+        # Horodate l'envoi pour ne pas renvoyer à cette personne si on relance
+        entry.update_column(:launch_email_sent_at, Time.current)
         sent += 1
-      rescue => e
-        # On collecte l'erreur pour l'afficher dans le flash admin
+      rescue StandardError => e
         error_msg = "#{entry.email} : #{e.class} — #{e.message}"
         Rails.logger.error("[WaitlistMailer] Échec envoi — #{error_msg}")
         errors << error_msg
       end
 
       if errors.any?
-        # Affiche les erreurs directement dans le flash pour les voir sans accès aux logs
         redirect_to admin_waitlist_entries_path,
                     alert: "#{sent} envoyé(s), #{errors.count} échec(s) : #{errors.first}"
       else
         redirect_to admin_waitlist_entries_path,
-                    notice: "#{sent} email#{sent > 1 ? 's' : ''} envoyé#{sent > 1 ? 's' : ''} avec succès."
+                    notice: "#{sent} email#{'s' if sent > 1} envoyé#{'s' if sent > 1} avec succès."
       end
     end
   end

@@ -25,7 +25,7 @@ class AvisControllerTest < ActionDispatch::IntegrationTest
       place:       "Terrain",
       date:        2.hours.ago.to_date,
       time:        2.hours.ago,
-      player_left: 10,
+      players_needed: 10,
       level:       "Tout niveau", # champ obligatoire
       user:        @reviewer,
       sport:       @sport

@@ -1,0 +1,51 @@
+<%# Carte article blog — utilisée sur /blog (index) %>
+<%# Paramètre : article (Article) %>
+
+<article class="blog-card">
+  <%# Image de couverture cliquable %>
+  <% if article.cover_image_url.present? %>
+    <%= link_to article_path(article.slug) do %>
+      <div class="blog-card__cover"
+           style="background-image: url('<%= article.cover_image_url %>');">
+      </div>
+    <% end %>
+  <% else %>
+    <%# Placeholder coloré si pas d'image %>
+    <%= link_to article_path(article.slug) do %>
+      <div class="blog-card__cover blog-card__cover--placeholder">
+        <i data-lucide="dumbbell" style="width:32px; height:32px; color:rgba(255,255,255,0.3);"></i>
+      </div>
+    <% end %>
+  <% end %>
+
+  <div class="blog-card__body">
+    <%# Catégorie + temps de lecture %>
+    <div class="blog-card__meta">
+      <% if article.category.present? %>
+        <span class="blog-card__category"><%= article.category.capitalize %></span>
+      <% end %>
+      <span class="blog-card__reading-time">
+        <i data-lucide="clock" style="width:12px; height:12px;"></i>
+        <%= article.reading_time_minutes %> min
+      </span>
+    </div>
+
+    <%# Titre %>
+    <h2 class="blog-card__title">
+      <%= link_to article.title, article_path(article.slug) %>
+    </h2>
+
+    <%# Extrait du body %>
+    <p class="blog-card__excerpt">
+      <%= truncate(article.body.gsub(/\n+/, " "), length: 120) %>
+    </p>
+
+    <%# Date de publication %>
+    <div class="blog-card__footer">
+      <span class="blog-card__date">
+        <%= I18n.l(article.published_at.to_date, format: :long) %>
+      </span>
+      <%= link_to "Lire →", article_path(article.slug), class: "blog-card__link" %>
+    </div>
+  </div>
+</article>

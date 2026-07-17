@@ -49,6 +49,7 @@ export default class extends Controller {
     // ── Champs Libre : saisie directe ──────────────────────
     "playersPresentInput",    // Input number : joueurs présents (players_present soumis)
     "playersLibreInput",      // Input number visible : joueurs manquants (synchronise playersInput)
+    "libreTotal",             // Span : total joueurs attendus en mode Libre (présents + recherchés)
 
     // ── Éléments du récapitulatif (destinations) ──────────
     "recapTitle",        // Zone affichant le titre dans la sidebar
@@ -56,7 +57,8 @@ export default class extends Controller {
     "recapSport",        // Valeur du sport dans la ligne récap
     "recapPlace",        // Valeur du lieu dans la ligne
     "recapDate",         // Zone affichant la date formatée
-    "recapTime",         // Zone affichant l'heure (ex: 21h15)
+    "recapTime",         // Zone affichant l'heure de début (ex: 21h15)
+    "recapEndTime",      // Zone affichant l'heure de fin (ex: 22h15)
     "recapPlayers",      // Zone affichant le nombre de joueurs
     "recapLevel",        // Valeur du niveau dans la ligne
     "recapValidation",   // Zone affichant le mode de validation (Manuel / Automatique)
@@ -77,6 +79,10 @@ export default class extends Controller {
     // Par défaut 9 si aucun sport ou sport inconnu dans le mapping
     this.maxPlayers = this._maxForCurrentSport()
 
+    // Devient true dès que l'utilisateur choisit lui-même une heure de fin.
+    // Tant qu'il est false, la fin suit automatiquement « début + 1h ».
+    this.endTimeTouched = false
+
     this.updateTitle()
     this.updateDescription()
     // updateSport() appelle updateBanner() en interne
@@ -84,6 +90,11 @@ export default class extends Controller {
     this.updatePlace()
     this.updateDate()
     this.updateTime()
+    this.updateEndTime()
+    // Édition : si la fin enregistrée n'est pas exactement « début + 1h », elle a été
+    // personnalisée → on la considère comme touchée pour ne pas l'écraser si l'organisateur
+    // ajuste ensuite l'heure de début.
+    this.endTimeTouched = this._endDiffersFromDefault()
     this.updatePlayers()
     this.updateLevel()
     this.updateValidation()
@@ -283,6 +294,8 @@ export default class extends Controller {
       // Met à jour le récap
       this.recapPresentTarget.textContent  = presentVal
       this.recapPlayersTarget.textContent  = libreVal
+      // Affiche le total attendu (présents + recherchés)
+      this._updateLibreTotal()
 
     } else {
       // ── Mode standard : 1 compteur avec max défini par le format ──
@@ -374,6 +387,103 @@ export default class extends Controller {
     }
   }
 
+  // ── Changement de l'heure de début (déclenché par l'utilisateur) ──
+  // Met à jour le récap ET fait suivre l'heure de fin (début + 1h) tant que
+  // l'utilisateur n'a pas fixé lui-même une heure de fin.
+  startTimeChanged() {
+    this.updateTime()
+    this._syncEndFromStart()
+  }
+
+  // ── Récap de l'heure de fin (format : "22h15") ──────────────
+  // Lit les deux inputs cachés du time-picker de fin (end_time(4i)/(5i)).
+  updateEndTime() {
+    if (!this.hasRecapEndTimeTarget) return
+    const hourEl   = this.element.querySelector('[name="match[end_time(4i)]"]')
+    const minuteEl = this.element.querySelector('[name="match[end_time(5i)]"]')
+
+    if (hourEl && minuteEl && hourEl.value !== "" && minuteEl.value !== "") {
+      const h = String(hourEl.value).padStart(2, "0")
+      const m = String(minuteEl.value).padStart(2, "0")
+      this.recapEndTimeTarget.textContent = `${h}h${m}`
+    } else {
+      this.recapEndTimeTarget.textContent = "—"
+    }
+  }
+
+  // ── L'utilisateur a choisi lui-même une heure de fin ──
+  // On mémorise ce choix pour cesser de faire suivre la fin automatiquement,
+  // puis on met à jour le récap.
+  endTimeChanged() {
+    this.endTimeTouched = true
+    this.updateEndTime()
+  }
+
+  // ── Détecte si la fin actuelle diffère de « début + 1h » ──
+  // Sert à savoir, à l'ouverture d'un formulaire d'édition, si l'organisateur
+  // avait choisi une fin personnalisée (≠ valeur par défaut).
+  _endDiffersFromDefault() {
+    const startH = this.element.querySelector('[name="match[time(4i)]"]')
+    const startM = this.element.querySelector('[name="match[time(5i)]"]')
+    const endH   = this.element.querySelector('[name="match[end_time(4i)]"]')
+    const endM   = this.element.querySelector('[name="match[end_time(5i)]"]')
+    // Sans début ou sans fin renseignés : rien de personnalisé à préserver
+    if (!startH || !startM || !endH || !endM) return false
+    if ([startH, startM, endH, endM].some(el => el.value === "")) return false
+
+    const expectedH = (parseInt(startH.value) + 1) % 24
+    const expectedM = parseInt(startM.value)
+    return parseInt(endH.value) !== expectedH || parseInt(endM.value) !== expectedM
+  }
+
+  // ── Fait suivre la fin = début + 1h (si l'utilisateur ne l'a pas fixée) ──
+  _syncEndFromStart() {
+    if (this.endTimeTouched) return
+
+    const hourEl = this.element.querySelector('[name="match[time(4i)]"]')
+    const minEl  = this.element.querySelector('[name="match[time(5i)]"]')
+    if (!hourEl || !minEl || hourEl.value === "" || minEl.value === "") return
+
+    // Modulo 24 : 23h + 1h → 00h (fin le lendemain, gérée côté serveur)
+    const endHour = (parseInt(hourEl.value) + 1) % 24
+    this._setEndTime(endHour, parseInt(minEl.value))
+  }
+
+  // ── Pose une heure de fin dans les time-pickers de fin ──
+  // Met à jour l'input caché, le bouton trigger et l'item actif du dropdown,
+  // pour chacun des deux pickers (heures et minutes), puis rafraîchit le récap.
+  // N'émet volontairement aucun event "change" → ne marque pas la fin comme
+  // "touchée par l'utilisateur" (cf. endTimeTouched).
+  _setEndTime(hour, minute) {
+    const applyPicker = (name, value, label) => {
+      const input = this.element.querySelector(`[name="match[${name}]"]`)
+      if (!input) return
+      input.value = value
+
+      const picker = input.closest('[data-controller="time-picker"]')
+      if (!picker) return
+
+      const trigger = picker.querySelector('[data-time-picker-target="trigger"]')
+      if (trigger) {
+        trigger.textContent = label
+        trigger.classList.remove("sport-picker-placeholder")
+      }
+
+      // Reflète la sélection dans la liste déroulante (visible si l'utilisateur l'ouvre)
+      picker.querySelectorAll("[data-time-picker-item]").forEach(item => {
+        const isActive = item.dataset.value === String(value)
+        item.classList.toggle("time-picker-item--active", isActive)
+        item.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "transparent", "important")
+        item.style.color = isActive ? "#1EDD88" : ""
+        item.style.fontWeight = isActive ? "700" : "500"
+      })
+    }
+
+    applyPicker("end_time(4i)", hour,   String(hour).padStart(2, "0") + "h")
+    applyPicker("end_time(5i)", minute, String(minute).padStart(2, "0"))
+    this.updateEndTime()
+  }
+
   // ── Nombre de joueurs standard : décrémenter ("-") ────────────────
   decrement() {
     const input = this.playersInputTarget
@@ -439,19 +549,54 @@ export default class extends Controller {
   // Champs Libre : saisie directe (pas de boutons +/-)
   // ══════════════════════════════════════════════════════════
 
-  // Appelé à chaque frappe dans le champ "Présents" — met à jour le récap
+  // Appelé à chaque frappe dans le champ "Présents".
+  // On NE réécrit PAS la valeur du champ visible ici : sinon un champ vidé
+  // (backspace) est immédiatement réinjecté à 1 et l'utilisateur ne peut plus
+  // effacer pour saisir un autre nombre. La normalisation (min 1) se fait à la
+  // sortie du champ via normalizePresent (événement change/blur).
   changePresent() {
+    const raw = parseInt(this.playersPresentInputTarget.value)
+    const val = Number.isNaN(raw) ? "" : raw
+    this.recapPresentTarget.textContent = val === "" ? "—" : val
+    this._updateLibreTotal()
+  }
+
+  // Normalise "Présents" à minimum 1 quand l'utilisateur quitte le champ.
+  normalizePresent() {
     const val = Math.max(1, parseInt(this.playersPresentInputTarget.value) || 1)
     this.playersPresentInputTarget.value = val
     this.recapPresentTarget.textContent  = val
+    this._updateLibreTotal()
   }
 
-  // Appelé à chaque frappe dans le champ "Manquants" — met à jour playersInput (hidden) + récap
+  // Appelé à chaque frappe dans le champ "Joueurs recherchés".
+  // Idem : on ne réécrit pas le champ visible (voir changePresent). On
+  // synchronise le hidden field soumis + le récap avec la valeur en cours.
   changeLibre() {
+    const raw = parseInt(this.playersLibreInputTarget.value)
+    const val = Number.isNaN(raw) ? "" : raw
+    this.playersInputTarget.value       = val   // hidden field soumis avec le formulaire
+    this.recapPlayersTarget.textContent = val === "" ? "—" : val
+    this._updateLibreTotal()
+  }
+
+  // Normalise "Joueurs recherchés" à minimum 1 quand l'utilisateur quitte le champ.
+  normalizeLibre() {
     const val = Math.max(1, parseInt(this.playersLibreInputTarget.value) || 1)
     this.playersLibreInputTarget.value  = val
-    this.playersInputTarget.value       = val   // hidden field soumis avec le formulaire
+    this.playersInputTarget.value       = val
     this.recapPlayersTarget.textContent = val
+    this._updateLibreTotal()
+  }
+
+  // Recalcule le total de joueurs attendus en mode Libre = présents + recherchés.
+  // No-op si la target n'est pas présente (mode standard). Un champ vide compte
+  // pour 0 pendant la saisie (le total se recale à la normalisation).
+  _updateLibreTotal() {
+    if (!this.hasLibreTotalTarget) return
+    const present = parseInt(this.playersPresentInputTarget.value) || 0
+    const missing = parseInt(this.playersLibreInputTarget.value) || 0
+    this.libreTotalTarget.textContent = present + missing
   }
 
   // ── Niveau : génère les boutons de niveau pour le sport sélectionné ──
@@ -460,7 +605,13 @@ export default class extends Controller {
     const container = this.levelButtonsTarget
     container.innerHTML = ""
 
-    levels.forEach((lvl) => {
+    // "Tout niveau" : option ouverte à tous les niveaux, proposée en plus des
+    // niveaux propres au sport. La valeur "Tout niveau" est déjà tolérée par la
+    // validation Rails (match.rb) et stylée via la classe level-tout.
+    const hasTous  = levels.some((l) => l.label === "Tout niveau")
+    const options  = hasTous ? levels : levels.concat([{ label: "Tout niveau" }])
+
+    options.forEach((lvl) => {
       const btn = document.createElement("button")
       btn.type = "button"
       const isActive = lvl.label === savedLevel

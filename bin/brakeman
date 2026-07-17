@@ -2,6 +2,9 @@
 require "rubygems"
 require "bundler/setup"
 
-ARGV.unshift("--ensure-latest")
+# NB : --ensure-latest volontairement retiré. Ce flag faisait échouer la CI
+# dès qu'une version plus récente de Brakeman était publiée sur RubyGems,
+# indépendamment du code analysé (résultat non déterministe). La version de
+# Brakeman est déjà figée par Gemfile.lock ; on la met à jour via Dependabot/bundle.
 
 load Gem.bin_path("brakeman", "brakeman")

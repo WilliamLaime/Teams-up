@@ -25,7 +25,7 @@ class ConversationsControllerTest < ActionDispatch::IntegrationTest
       title: "Match Chat Test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 18, min: 0),
-      player_left: 4,
+      players_needed: 4,
       level: "Débutant",
       visibility: "public",
       validation_mode: "automatic",
@@ -61,12 +61,13 @@ class ConversationsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_user_session_path
   end
 
-  # Edge case : un utilisateur connecté mais NON inscrit au match reçoit 403.
-  # Le controller renvoie head :forbidden si match_user est nil ou non approuvé.
-  test "GET /conversations/:id retourne 403 si l'utilisateur n'est pas inscrit au match" do
+  # Edge case : un utilisateur connecté mais NON inscrit au match est redirigé.
+  # Pundit lève NotAuthorizedError → ApplicationController redirige avec flash alert.
+  test "GET /conversations/:id redirige si l'utilisateur n'est pas inscrit au match" do
     sign_in @other_user
     get conversation_path(@match)
-    assert_response :forbidden
+    assert_response :redirect
+    assert_equal "Vous n'êtes pas autorisé à effectuer cette action.", flash[:alert]
   end
 
   # Edge case : si le match n'existe pas (id inconnu), le controller rend un message

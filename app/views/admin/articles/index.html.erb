@@ -1,0 +1,125 @@
+<%# ── Admin : Gestion des articles de blog ───────────────────────────────── %>
+
+<div style="background-color:#111111; min-height:100vh;">
+<div class="container py-4">
+
+  <%# ── En-tête ── %>
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <i data-lucide="file-text" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
+      Espace <span style="color:#1EDD88;">Admin</span>
+    </h1>
+  </div>
+
+  <%# ── Navigation par onglets ── %>
+  <%= render "admin/shared/nav", active_tab: :blog %>
+
+  <%# ── Barre d'actions ── %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center gap-2">
+      <span style="font-size:2rem; font-weight:700; color:#1EDD88;"><%= @articles.count %></span>
+      <span style="color:rgba(255,255,255,0.6); font-size:0.95rem;">article<%= @articles.count > 1 ? "s" : "" %></span>
+    </div>
+    <%= link_to new_admin_article_path,
+          style: "background:#1EDD88; color:#111; border:none; font-weight:700; font-size:0.88rem;
+                  padding:0.55rem 1.2rem; border-radius:8px; display:inline-flex; align-items:center; gap:0.4rem;
+                  text-decoration:none;" do %>
+      <i data-lucide="plus" style="width:15px; height:15px;"></i>
+      Nouvel article
+    <% end %>
+  </div>
+
+  <% if @articles.any? %>
+    <div class="table-responsive">
+      <table class="table table-dark table-hover table-sm align-middle" style="border-color:rgba(255,255,255,0.1);">
+        <thead>
+          <tr style="color:rgba(255,255,255,0.5); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">
+            <th>Titre</th>
+            <th>Catégorie</th>
+            <th>Statut</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @articles.each do |article| %>
+            <tr>
+              <%# Titre avec lien vers l'article public si publié %>
+              <td style="color:#f0f0f0; font-size:0.9rem; max-width:280px;">
+                <%= article.title %>
+                <% if article.published? %>
+                  <%= link_to "↗", article_path(article.slug),
+                        target: "_blank",
+                        style: "color:#1EDD88; font-size:0.8rem; margin-left:6px;" %>
+                <% end %>
+              </td>
+
+              <td style="color:rgba(255,255,255,0.55); font-size:0.85rem;">
+                <%= article.category&.capitalize || "—" %>
+              </td>
+
+              <%# Badge statut : publié (vert) ou brouillon (jaune) %>
+              <td>
+                <% if article.published? %>
+                  <span style="background:rgba(30,221,136,0.15); color:#1EDD88; border:1px solid rgba(30,221,136,0.3);
+                               font-size:0.75rem; font-weight:600; padding:0.2rem 0.6rem; border-radius:20px;">
+                    Publié
+                  </span>
+                <% else %>
+                  <span style="background:rgba(255,198,90,0.1); color:#FFC65A; border:1px solid rgba(255,198,90,0.25);
+                               font-size:0.75rem; font-weight:600; padding:0.2rem 0.6rem; border-radius:20px;">
+                    Brouillon
+                  </span>
+                <% end %>
+              </td>
+
+              <td style="color:rgba(255,255,255,0.4); font-size:0.82rem;">
+                <%= article.published_at&.strftime("%d/%m/%Y") || article.created_at.strftime("%d/%m/%Y") %>
+              </td>
+
+              <%# Actions : modifier, publier/dépublier, supprimer %>
+              <td>
+                <div class="d-flex gap-2">
+                  <%# Modifier %>
+                  <%= link_to edit_admin_article_path(article),
+                        style: "color:rgba(255,255,255,0.5); font-size:0.82rem; text-decoration:none;" do %>
+                    <i data-lucide="pencil" style="width:14px; height:14px;"></i>
+                  <% end %>
+
+                  <%# Publier / Dépublier %>
+                  <% if article.published? %>
+                    <%= button_to unpublish_admin_article_path(article), method: :patch,
+                          data: { turbo: false },
+                          style: "background:none; border:none; padding:0; cursor:pointer; color:#FFC65A;" do %>
+                      <i data-lucide="eye-off" style="width:14px; height:14px;"></i>
+                    <% end %>
+                  <% else %>
+                    <%= button_to publish_admin_article_path(article), method: :patch,
+                          data: { turbo: false },
+                          style: "background:none; border:none; padding:0; cursor:pointer; color:#1EDD88;" do %>
+                      <i data-lucide="eye" style="width:14px; height:14px;"></i>
+                    <% end %>
+                  <% end %>
+
+                  <%# Supprimer %>
+                  <%= button_to admin_article_path(article), method: :delete,
+                        data: { turbo: false, confirm: "Supprimer \"#{article.title}\" ?" },
+                        style: "background:none; border:none; padding:0; cursor:pointer; color:rgba(253,16,21,0.6);" do %>
+                    <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="text-center py-5" style="color:rgba(255,255,255,0.4);">
+      <i data-lucide="file-text" style="width:40px; height:40px; margin-bottom:1rem;"></i>
+      <p style="margin:0;">Aucun article. <%= link_to "Créer le premier →", new_admin_article_path, style: "color:#1EDD88;" %></p>
+    </div>
+  <% end %>
+
+</div>
+</div>

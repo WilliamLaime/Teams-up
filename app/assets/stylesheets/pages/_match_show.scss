@@ -982,6 +982,33 @@
   margin-bottom: 1rem;
 }
 
+// ── Select de destination (modale de partage Slack) ──────────────────────────
+// Le .form-select de Bootstrap n'est stylé QUE pour [data-theme="light"] (fond
+// blanc). En thème sombre il reste donc blanc — incohérent sur la modale sombre,
+// avec en prime un caret dessiné en foncé (invisible). On l'aligne ici sur les
+// variables d'input theme-aware. Scopé au thème sombre : en clair, le fond blanc
+// de Bootstrap convient déjà (la modale y est claire).
+[data-theme="dark"] .pending-modal-content .form-select {
+  background-color: var(--theme-input-bg);
+  color: var(--theme-input-color);
+  border-color: var(--theme-border-strong);
+  // Indique au navigateur de rendre le popup natif d'options en sombre.
+  color-scheme: dark;
+  // Caret clair (le SVG Bootstrap par défaut est dessiné en #343a40, invisible ici).
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f0f0f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+
+  &:focus {
+    border-color: $green;
+    box-shadow: 0 0 0 0.2rem rgba($green, 0.15);
+    background-color: var(--theme-input-focus-bg);
+    color: var(--theme-input-color);
+  }
+
+  // Options du popup (pris en charge par Chrome/Firefox ; ignoré sinon).
+  option { background-color: var(--theme-bg-surface); color: var(--theme-text-primary); }
+  optgroup { color: var(--theme-text-muted); background-color: var(--theme-bg-surface); }
+}
+
 // Conteneur scrollable si beaucoup de joueurs
 .pending-modal-list {
   display: flex;
@@ -1486,4 +1513,150 @@
   transition: background 0.15s;
 
   &:hover { background: rgba(255,255,255,0.1); color: #fff; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIEN DE RÉSERVATION DU TERRAIN
+// ══════════════════════════════════════════════════════════════
+
+// Bloc contenant le bouton de réservation et les infos de paiement
+.match-booking-link-block {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 0.85rem;
+}
+
+// Bouton principal "Réserver / Payer le terrain"
+.match-booking-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: rgba($green, 0.12);
+  border: 1.5px solid rgba($green, 0.35);
+  color: $green;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.55rem 1rem;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba($green, 0.22);
+    border-color: rgba($green, 0.6);
+    color: $green;
+    text-decoration: none;
+  }
+}
+
+// Bouton "J'ai payé" — secondaire sous le bouton de réservation
+.match-booking-confirm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: $dark-muted;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.9rem;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($green, 0.1);
+    border-color: rgba($green, 0.3);
+    color: $green;
+  }
+}
+
+// Confirmation "Tu as payé" avec lien annuler
+.match-booking-paid-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $green;
+  background: rgba($green, 0.08);
+  border: 1px solid rgba($green, 0.2);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+}
+
+// Lien "Annuler" (undone) dans le statut payé
+.match-booking-undo-btn {
+  background: none;
+  border: none;
+  color: $dark-muted;
+  font-size: 0.72rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover { color: $red; }
+}
+
+// Récap paiements affiché à l'organisateur
+.match-booking-organizer-recap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: $dark-muted;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+}
+
+// ── Badges de paiement sur les cartes joueurs ──────────────────────────────
+
+// Wrapper incluant le lien profil + le badge de paiement
+.match-player-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+// Badge "Payé" (vert) / "Non payé" (gris)
+.match-payment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  line-height: 1;
+
+  &--paid {
+    background: rgba($green, 0.15);
+    color: $green;
+    border: 1px solid rgba($green, 0.25);
+  }
+
+  &--unpaid {
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.35);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+}
+
+// Bouton de bascule rapide (icône check/x) à côté du badge
+.match-payment-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: $dark-muted;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  font-size: 0;
+  transition: color 0.15s;
+
+  &:hover { color: $green; }
 }

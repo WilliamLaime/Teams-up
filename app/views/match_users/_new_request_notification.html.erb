@@ -1,6 +1,6 @@
 <%# Modal de notification "nouvelle demande manuelle" pour l'organisateur.
     Injectée dans #global_notification_container en temps réel via Turbo Stream
-    (broadcast depuis MatchUsersController#join_with_manual_validation).
+    (broadcast depuis MatchUsersController#create, cas :pending).
     Affiche directement la liste des joueurs en attente avec boutons accepter/refuser.
     Variables attendues : match (Match), pending_users (collection MatchUser avec user:profil) %>
 

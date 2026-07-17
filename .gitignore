@@ -39,6 +39,9 @@
 # Ignore .env file containing credentials.
 .env
 
+# Ignore Claude Code local machine settings.
+/.claude/settings.local.json
+
 # Ignore Mac and Linux file system files
 *.swp
 .DS_Store
@@ -57,3 +60,7 @@ generate_excel.js
 node_modules/
 package.json
 package-lock.json
+
+# Réglages Claude Code personnels (machine-spécifiques, non partagés).
+# settings.json (sans .local) reste versionnable pour d'éventuels réglages d'équipe.
+.claude/settings.local.json

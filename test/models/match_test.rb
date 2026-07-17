@@ -28,7 +28,7 @@ class MatchTest < ActiveSupport::TestCase
       title:           "Match test",
       date:            Date.tomorrow,
       time:            Time.zone.parse("18:00"),
-      player_left:     4,
+      players_needed:     4,
       level:           "Débutant",        # niveau valide pour football
       visibility:      "public",
       validation_mode: "automatic",
@@ -67,32 +67,32 @@ class MatchTest < ActiveSupport::TestCase
     assert match.valid?, "Attendu valide, erreurs : #{match.errors.full_messages}"
   end
 
-  # ─── Validations : player_left ──────────────────────────────────────────────
+  # ─── Validations : players_needed (capacité cible) ──────────────────────────
 
-  # Cas d'erreur : player_left absent est rejeté.
-  test "player_left absent est rejeté" do
-    match = Match.new(valid_match_attrs(player_left: nil))
+  # Cas d'erreur : players_needed absent est rejeté.
+  test "players_needed absent est rejeté" do
+    match = Match.new(valid_match_attrs(players_needed: nil))
     assert match.invalid?
-    assert match.errors[:player_left].any?
+    assert match.errors[:players_needed].any?
   end
 
-  # Cas d'erreur : player_left = 0 est rejeté (doit être >= 1).
-  test "player_left égal à 0 est rejeté" do
-    match = Match.new(valid_match_attrs(player_left: 0))
+  # Cas d'erreur : players_needed = 0 est rejeté (doit être >= 1).
+  test "players_needed égal à 0 est rejeté" do
+    match = Match.new(valid_match_attrs(players_needed: 0))
     assert match.invalid?
-    assert match.errors[:player_left].any?
+    assert match.errors[:players_needed].any?
   end
 
-  # Cas d'erreur : player_left négatif est rejeté.
-  test "player_left négatif est rejeté" do
-    match = Match.new(valid_match_attrs(player_left: -1))
+  # Cas d'erreur : players_needed négatif est rejeté.
+  test "players_needed négatif est rejeté" do
+    match = Match.new(valid_match_attrs(players_needed: -1))
     assert match.invalid?
-    assert match.errors[:player_left].any?
+    assert match.errors[:players_needed].any?
   end
 
-  # Cas nominal : player_left = 1 est accepté (minimum autorisé).
-  test "player_left de 1 est accepté" do
-    match = Match.new(valid_match_attrs(player_left: 1))
+  # Cas nominal : players_needed = 1 est accepté (minimum autorisé).
+  test "players_needed de 1 est accepté" do
+    match = Match.new(valid_match_attrs(players_needed: 1))
     assert match.valid?, "Attendu valide, erreurs : #{match.errors.full_messages}"
   end
 
@@ -340,6 +340,45 @@ class MatchTest < ActiveSupport::TestCase
   test "completed? retourne faux pour un match futur" do
     match = create_match
     assert_not match.completed?
+  end
+
+  # ─── Heure de fin (end_time / effective_end_time / end_datetime) ─────────────
+
+  # effective_end_time renvoie l'heure de fin saisie si elle existe.
+  test "effective_end_time retourne l'heure de fin saisie" do
+    match = create_match(time: Time.zone.parse("18:00"), end_time: Time.zone.parse("19:30"))
+    assert_equal "19:30", match.effective_end_time.strftime("%H:%M")
+  end
+
+  # effective_end_time retombe sur début + 1h si aucune heure de fin (matchs anciens).
+  test "effective_end_time retombe sur debut + 1h sans end_time" do
+    match = create_match(time: Time.zone.parse("18:00"), end_time: nil)
+    assert_equal "19:00", match.effective_end_time.strftime("%H:%M")
+  end
+
+  # end_datetime combine la date et l'heure de fin.
+  test "end_datetime combine date et heure de fin" do
+    match = create_match(date: Date.new(2030, 7, 15), time: Time.zone.parse("18:00"), end_time: Time.zone.parse("20:00"))
+    assert_equal "2030-07-15 20:00", match.end_datetime.strftime("%Y-%m-%d %H:%M")
+  end
+
+  # end_datetime reporte la fin au lendemain si elle est <= au début (passage minuit).
+  test "end_datetime reporte au lendemain si fin avant debut" do
+    match = create_match(date: Date.new(2030, 7, 15), time: Time.zone.parse("23:00"), end_time: Time.zone.parse("00:30"))
+    assert_equal "2030-07-16 00:30", match.end_datetime.strftime("%Y-%m-%d %H:%M")
+  end
+
+  # Validation : heure de fin identique au début rejetée (durée nulle).
+  test "heure de fin identique au debut est rejetee" do
+    match = Match.new(valid_match_attrs(time: Time.zone.parse("18:00"), end_time: Time.zone.parse("18:00")))
+    assert match.invalid?
+    assert match.errors[:end_time].any?
+  end
+
+  # Cas nominal : heure de fin différente du début acceptée.
+  test "heure de fin differente du debut est acceptee" do
+    match = Match.new(valid_match_attrs(time: Time.zone.parse("18:00"), end_time: Time.zone.parse("19:30")))
+    assert match.valid?, "Attendu valide, erreurs : #{match.errors.full_messages}"
   end
 
   # ─── Callback : generate_private_token ──────────────────────────────────────

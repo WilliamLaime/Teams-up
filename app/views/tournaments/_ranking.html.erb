@@ -1,0 +1,18 @@
+<%# ── Onglet « Classement » ─────────────────────────────────────────────────────
+    Table triée des joueurs (victoires puis set/point average — mêmes critères que
+    le seeding). Pour le format « poules », un classement PAR poule. N'a de sens
+    qu'une fois le tournoi lancé. Local : tournament. %>
+<div class="tournament-ranking">
+  <% if tournament.tournament_rounds.any? %>
+    <% if tournament.format == "poules" && tournament.pools.any? %>
+      <% tournament.ranked_pools.each do |pool_index, players| %>
+        <h3 class="tournament-ranking__pool-title">Poule <%= ("A".ord + pool_index.to_i).chr %></h3>
+        <%= render "tournaments/ranking_table", players: players %>
+      <% end %>
+    <% else %>
+      <%= render "tournaments/ranking_table", players: tournament.ranked_players %>
+    <% end %>
+  <% else %>
+    <p class="tournament-empty">Le classement apparaîtra une fois le tournoi lancé.</p>
+  <% end %>
+</div>

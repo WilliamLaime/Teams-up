@@ -16,14 +16,19 @@
   # Classe CSS du badge de niveau — tier dynamique selon la grille du sport
   level_css = level_badge_css(match.level, match.sport)
 
-  # Date courte en français (ex: "Lun 13, 18:30")
-  fr_days  = %w[Dim Lun Mar Mer Jeu Ven Sam]
-  date_str = if match.date
-    day       = fr_days[match.date.wday]
-    time_part = match.time ? ", #{match.time.strftime('%H:%M')}" : ""
-    "#{day} #{match.date.strftime('%d')}#{time_part}"
-  else
-    "—"
+  # Date courte en français (ex: "Lun 13 juil.") — sans l'heure, affichée sur sa
+  # propre ligne mise en avant dans le corps de la carte. Le mois est explicité
+  # via des tableaux fixes (indépendant de la locale strftime).
+  fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
+  fr_months = %w[janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.]
+  date_str  = if match.date
+    "#{fr_days[match.date.wday]} #{match.date.strftime('%d')} #{fr_months[match.date.month - 1]}"
+  end
+
+  # Plage horaire début – fin (ex: "18:30 – 19:30"). effective_end_time retombe
+  # sur "début + 1h" pour les anciens matchs sans end_time. nil si pas d'heure.
+  time_str = if match.time
+    "#{match.time.strftime('%H:%M')} – #{match.effective_end_time.strftime('%H:%M')}"
   end
 
   # Nom affiché de l'organisateur (Prénom I.)
@@ -121,18 +126,23 @@
         <% end %>
         <span class="match-badge-level <%= level_css %>"><%= match.level %></span>
       </div>
-      <%# Format + date côte à côte à droite %>
+      <%# Format à droite. Mode "Libre" : aucune taille n'est encodée dans le
+          format (contrairement à "5v5"), donc on affiche le nombre total de
+          joueurs défini par le créateur (présents + recherchés). On n'affiche
+          PAS "recherchés" ici : ce serait un doublon avec "X manquants" en bas. %>
       <div class="d-flex align-items-center gap-2">
-        <% if match.format.present? %>
-          <span class="match-card-date">
+        <% if match.libre? %>
+          <% libre_total = match.players_present.to_i + match.players_needed.to_i %>
+          <span class="match-card-format">
+            <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
+<%= libre_total %> joueur<%= libre_total > 1 ? "s" : "" %>
+          </span>
+        <% elsif match.format.present? %>
+          <span class="match-card-format">
             <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
             <%= match.format %>
           </span>
         <% end %>
-        <span class="match-card-date">
-          <i data-lucide="calendar" style="width:12px;height:12px;" aria-hidden="true"></i>
-          <%= date_str %>
-        </span>
       </div>
     </div>
 
@@ -146,6 +156,20 @@
       <%= match.description %>
     </div>
 
+    <%# Date + plage horaire mises en avant (deux lignes accent) %>
+    <% if date_str %>
+      <div class="match-datetime-line">
+        <i data-lucide="calendar" style="width:15px;height:15px;" aria-hidden="true"></i>
+        <span><%= date_str %></span>
+      </div>
+    <% end %>
+    <% if time_str %>
+      <div class="match-datetime-line">
+        <i data-lucide="clock" style="width:15px;height:15px;" aria-hidden="true"></i>
+        <span><%= time_str %></span>
+      </div>
+    <% end %>
+
     <%# Lieu %>
     <div class="match-info-line">
       <i data-lucide="map-pin" style="width:13px;height:13px;" aria-hidden="true"></i>
@@ -155,9 +179,12 @@
     <%# Avatars des joueurs inscrits + places manquantes %>
     <div class="match-players-row">
       <div class="match-avatars">
-        <% match.users.first(3).each do |player| %>
+        <%# On itère sur match_users (préchargé avec user > profil > avatar dans les
+            controllers) plutôt que sur match.users (association through NON préchargée
+            qui déclenchait un N+1 : 1 requête users + 1 profil + 1 blob avatar par carte). %>
+        <% match.match_users.first(3).each do |mu| %>
           <%# Avatar du joueur ou initiales colorées si pas de photo %>
-          <%= user_avatar_tag player, css_class: "match-avatar" %>
+          <%= user_avatar_tag mu.user, css_class: "match-avatar" %>
         <% end %>
       </div>
       <span class="match-players-text">

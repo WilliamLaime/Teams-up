@@ -61,7 +61,7 @@ class AchievementServiceTest < ActiveSupport::TestCase
       title:       "Match #{SecureRandom.hex(4)}",
       date:        future_date.to_date,
       time:        future_date.strftime("%H:%M"),
-      player_left: 5,
+      players_needed: 5,
       level:       "Tout niveau",
       place:       place,
       visibility:  "public"

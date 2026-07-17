@@ -80,12 +80,13 @@ class PrivateConversationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  # Cas d'erreur : un utilisateur étranger à la conversation reçoit un 403.
-  # Le controller vérifie que current_user est sender ou recipient.
-  test "GET /private_conversations/:id retourne 403 pour un utilisateur non participant" do
+  # Cas d'erreur : un utilisateur étranger à la conversation est redirigé.
+  # Pundit lève NotAuthorizedError → ApplicationController redirige avec flash alert.
+  test "GET /private_conversations/:id redirige un utilisateur non participant" do
     sign_in @stranger
     get private_conversation_path(@conversation)
-    assert_response :forbidden
+    assert_response :redirect
+    assert_equal "Vous n'êtes pas autorisé à effectuer cette action.", flash[:alert]
   end
 
   # Cas d'erreur : un visiteur non connecté est redirigé vers root_path.
@@ -110,11 +111,12 @@ class PrivateConversationsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil @conversation.sender_last_read_at
   end
 
-  # Cas d'erreur : un utilisateur étranger reçoit un 403
-  test "PATCH mark_read retourne 403 pour un non-participant" do
+  # Cas d'erreur : un utilisateur étranger est redirigé par Pundit
+  test "PATCH mark_read redirige un non-participant" do
     sign_in @stranger
     patch mark_read_private_conversation_path(@conversation)
-    assert_response :forbidden
+    assert_response :redirect
+    assert_equal "Vous n'êtes pas autorisé à effectuer cette action.", flash[:alert]
   end
 
   # Cas d'erreur : visiteur non connecté → redirection root_path
@@ -139,11 +141,12 @@ class PrivateConversationsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil @conversation.sender_dismissed_at
   end
 
-  # Cas d'erreur : un utilisateur étranger reçoit 403
-  test "DELETE dismiss retourne 403 pour un non-participant" do
+  # Cas d'erreur : un utilisateur étranger est redirigé par Pundit
+  test "DELETE dismiss redirige un non-participant" do
     sign_in @stranger
     delete dismiss_private_conversation_path(@conversation)
-    assert_response :forbidden
+    assert_response :redirect
+    assert_equal "Vous n'êtes pas autorisé à effectuer cette action.", flash[:alert]
   end
 
   # Cas d'erreur : visiteur non connecté → redirection root_path

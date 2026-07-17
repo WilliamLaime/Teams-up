@@ -27,7 +27,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match test",
       date: Date.tomorrow,
       time: Time.current.change(hour: 18, min: 0),
-      player_left: 4,
+      players_needed: 4,
       level: "Débutant",
       visibility: "public",
       validation_mode: "automatic",
@@ -107,7 +107,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match privé",
       date: Date.tomorrow,
       time: Time.current.change(hour: 19, min: 0),
-      player_left: 2,
+      players_needed: 2,
       level: "Débutant",
       visibility: "private",
       validation_mode: "automatic",
@@ -133,7 +133,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match privé avec token",
       date: Date.tomorrow,
       time: Time.current.change(hour: 20, min: 0),
-      player_left: 2,
+      players_needed: 2,
       level: "Débutant",
       visibility: "private",
       validation_mode: "automatic",
@@ -158,7 +158,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
       title: "Match privé organisateur",
       date: Date.tomorrow,
       time: Time.current.change(hour: 21, min: 0),
-      player_left: 2,
+      players_needed: 2,
       level: "Débutant",
       visibility: "private",
       validation_mode: "automatic",
@@ -193,6 +193,20 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  # Régression : sans sport actif (mode multisport « Tous les sports » où
+  # current_sport = nil), un sport doit tout de même être présélectionné.
+  # Sinon le JS (updateSport) ne génère aucun bouton de niveau ni format et
+  # le champ « Niveau requis » reste vide au chargement du formulaire.
+  test "GET /matches/new présélectionne un sport même sans sport actif" do
+    # @user n'a aucun sport ni current_sport_id → current_sport renvoie nil
+    sign_in @user
+    get new_match_path
+    assert_response :success
+    # Le placeholder ne doit PAS apparaître : un sport réel est présélectionné
+    assert_not_includes response.body, "Sélectionner un sport",
+                        "Aucun sport présélectionné → le champ Niveau resterait vide"
+  end
+
   # ════════════════════════════════════════════════════════════════════════════
   # POST /matches — création d'un match
   # ════════════════════════════════════════════════════════════════════════════
@@ -201,7 +215,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   test "POST /matches redirige vers login si non connecté" do
     post matches_path, params: {
       match: { title: "Test", date: Date.tomorrow, time: "18:00",
-               level: "Débutant", player_left: 4, sport_id: @sport.id,
+               level: "Débutant", players_needed: 4, sport_id: @sport.id,
                visibility: "public", validation_mode: "automatic",
                genre_restriction: "tous" }
     }
@@ -218,7 +232,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
           date: Date.tomorrow,
           time: "18:00",
           level: "Débutant",
-          player_left: 4,
+          players_needed: 4,
           sport_id: @sport.id,
           visibility: "public",
           validation_mode: "automatic",
@@ -240,7 +254,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
           date: Date.tomorrow,
           time: "18:00",
           level: "",         # level manquant → invalide
-          player_left: 0,    # 0 = invalide
+          players_needed: 0,    # 0 = invalide
           sport_id: @sport.id
         }
       }
@@ -259,7 +273,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
         date: Date.tomorrow,
         time: "18:00",
         level: "Débutant",
-        player_left: 4,
+        players_needed: 4,
         sport_id: @sport.id,
         visibility: "public",
         validation_mode: "automatic",
@@ -317,7 +331,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   test "PATCH /matches/:id réaffiche le formulaire (422) si params invalides" do
     sign_in @user
     patch match_path(@match), params: {
-      match: { player_left: -5 }  # valeur négative = invalide
+      match: { players_needed: -5 }  # valeur négative = invalide
     }
     assert_response :unprocessable_entity
   end
@@ -376,5 +390,68 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     patch make_public_match_path(@match)
     assert_redirected_to root_path
     assert_not_nil flash[:alert]
+  end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Couplage Match ↔ tournoi (Lot 4)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  # Crée un tournoi organisé par @user avec deux joueurs approuvés et une carte
+  # de match suisse prête à être « transformée » en rencontre standard.
+  def build_tournament_match(owner: @user)
+    tournament = Tournament.create!(name: "Tournoi test", sport: @sport, user: owner,
+                                    format: "ronde_suisse", status: "in_progress", max_players: 8)
+    player_b_user = create_test_user(email: "tplayer-#{SecureRandom.hex(3)}@example.com")
+    a = tournament.tournament_users.create!(user: owner, role: "joueur", status: "approved")
+    b = tournament.tournament_users.create!(user: player_b_user, role: "joueur", status: "approved")
+    round = tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
+    match = round.tournament_matches.create!(player_a: a, player_b: b, position: 0)
+    [tournament, match]
+  end
+
+  test "GET /matches/new depuis une carte de tournoi préremplit le formulaire" do
+    sign_in @user
+    _tournament, tmatch = build_tournament_match
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+  end
+
+  test "POST /matches depuis un tournoi inscrit les deux joueurs et lie la carte" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match
+
+    assert_difference "Match.count", 1 do
+      post matches_path, params: { match: {
+        title: "Rencontre tournoi", date: Date.tomorrow,
+        'time(4i)': "18", 'time(5i)': "00",
+        players_needed: 2, level: "Tout niveau", visibility: "public",
+        validation_mode: "automatic", genre_restriction: "tous",
+        sport_id: @sport.id, tournament_id: tournament.id, tournament_match_id: tmatch.id
+      } }
+    end
+
+    match = Match.last
+    assert_equal tournament.id, match.tournament_id
+    assert_equal tmatch.id, match.tournament_match_id
+    # Organisateur + les 2 joueurs de la carte (le créateur n'est compté qu'une fois).
+    assert_includes match.match_users.map(&:user_id), tmatch.player_b.user_id
+  end
+
+  test "POST /matches ignore le rattachement à un tournoi qu'on n'organise pas" do
+    tournament, tmatch = build_tournament_match(owner: @other_user)
+    sign_in @user # @user n'organise pas ce tournoi
+
+    post matches_path, params: { match: {
+      title: "Rencontre pirate", date: Date.tomorrow,
+      'time(4i)': "18", 'time(5i)': "00",
+      players_needed: 2, level: "Tout niveau", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous",
+      sport_id: @sport.id, tournament_id: tournament.id, tournament_match_id: tmatch.id
+    } }
+
+    match = Match.last
+    assert_nil match.tournament_id
+    assert_nil match.tournament_match_id
   end
 end

@@ -37,7 +37,7 @@ class SportImagesHelperTest < ActionView::TestCase
 
   # Crée un Match avec les champs requis par les validations.
   # - level: "Tout niveau" passe level_valid_for_sport (backward compat)
-  # - player_left: 5 passe validates :player_left, greater_than: 0
+  # - players_needed: 5 passe validates :player_left, greater_than: 0
   def make_match(user, sport, banner_image: nil)
     Match.create!(
       user:         user,
@@ -46,7 +46,7 @@ class SportImagesHelperTest < ActionView::TestCase
       time:         "14:00:00",
       place:        "Terrain de test",
       level:        "Tout niveau",
-      player_left:  5,
+      players_needed:  5,
       banner_image: banner_image
     )
   end

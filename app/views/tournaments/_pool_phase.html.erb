@@ -1,0 +1,27 @@
+<%# ── Phase de poules ───────────────────────────────────────────────────────────
+    Une section par journée ; dans chaque journée les matchs sont regroupés par
+    poule (Poule A, B…). La poule est dérivée de player_a.pool.
+    Locals : tournament, can_manage. %>
+<section class="tournament-phase">
+  <h2 class="tournament-phase__title">Poules</h2>
+
+  <% tournament.pool_rounds.each do |round| %>
+    <div class="swiss-round">
+      <div class="swiss-round__header">
+        <h3 class="swiss-round__title">Journée <%= round.number %></h3>
+        <span class="swiss-round__status swiss-round__status--<%= round.status %>">
+          <%= round.complete? ? "Terminée" : "En cours" %>
+        </span>
+      </div>
+
+      <% round.tournament_matches.order(:position).group_by { |m| m.player_a.pool }.sort_by { |pool, _| pool.to_i }.each do |pool_index, matches| %>
+        <h4 class="pool-label">Poule <%= ("A".ord + pool_index.to_i).chr %></h4>
+        <div class="swiss-round__matches">
+          <% matches.each do |match| %>
+            <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

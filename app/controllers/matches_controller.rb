@@ -1,10 +1,14 @@
 class MatchesController < ApplicationController
+  # Pagination serveur de la liste des matchs (évite de charger tous les matchs
+  # + leurs avatars préchargés d'un coup — indispensable à la montée en charge).
+  include Pagy::Backend
+
   # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
   # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
   skip_before_action :authenticate_user!, only: %i[index show]
 
   # Retrouver le match avant les actions qui en ont besoin
-  before_action :set_match, only: %i[show edit update destroy calendar make_public]
+  before_action :set_match, only: %i[show edit update destroy calendar make_public share_on_slack]
 
   # GET /matches
   # Deux modes :
@@ -31,7 +35,9 @@ class MatchesController < ApplicationController
       # includes évite les N+1 sur user/profil/sport chargés dans _match_card
       # match_users préchargé pour afficher le statut de participation dans la card
       @matches = policy_scope(Match)
-                 .includes(:sport, :match_users, user: :profil)
+                 .includes(:sport,
+                           { user: { profil: { avatar_attachment: :blob } } },
+                           { match_users: { user: { profil: { avatar_attachment: :blob } } } })
                  .upcoming
                  .publicly_visible
                  .visible_for_genre(current_user)
@@ -49,6 +55,12 @@ class MatchesController < ApplicationController
         apply_filters
       end
     end
+
+    # Pagination : 12 matchs par page (3 colonnes × 4 lignes sur desktop).
+    # Appliquée en dernier, après tous les filtres, pour ne charger et ne
+    # précharger (avatars, sport…) que les matchs réellement affichés.
+    # Pagy conserve automatiquement les paramètres de filtre dans les liens.
+    @pagy, @matches = pagy(@matches, items: 12)
 
     # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
     sport_name = current_sport&.name
@@ -106,6 +118,13 @@ class MatchesController < ApplicationController
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match
     @current_match_user = @match.match_users.find_by(user: current_user)
 
+    # Destinations Slack pour la modale de partage — chargées uniquement pour
+    # l'organisateur lié (chaque entrée déclenche des appels API Slack, inutile
+    # pour un simple visiteur).
+    if @current_match_user&.role == "organisateur" && current_user&.slack_linked?
+      @slack_destinations = slack_destinations_for(current_user)
+    end
+
     # Vérifie si current_user est ami avec l'organisateur (pour afficher l'icône ami)
     if user_signed_in?
       organizer_user = @match_users.find { |mu| mu.role == "organisateur" }&.user
@@ -153,10 +172,15 @@ class MatchesController < ApplicationController
 
     # Valeurs par défaut explicites
     @match.date            = Date.today        # Date : aujourd'hui
-    @match.player_left     = 4                 # Joueurs manquants : 4 par défaut
+    @match.players_needed  = 4                 # Joueurs recherchés : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
-    @match.sport           = current_sport # Sport : pré-rempli avec le sport actif
+    @match.end_time        = @match.time + 1.hour # Fin : 1h après le début par défaut (modifiable)
+    # Sport : pré-rempli avec le sport actif. En mode multisport (« Tous les sports »),
+    # current_sport vaut nil → on retombe sur le 1er sport pour qu'un sport soit toujours
+    # présélectionné. Sinon aucun sport n'est choisi au chargement et le JS (updateSport)
+    # ne génère ni boutons de niveau ni formats (le champ « Niveau requis » reste vide).
+    @match.sport           = current_sport || Sport.order(:name).first
 
     # Si on vient depuis une page équipe (?team_id=X), pré-associer l'équipe
     if params[:team_id].present?
@@ -167,6 +191,14 @@ class MatchesController < ApplicationController
 
     # Équipes dont l'user est capitaine (pour le select dans le formulaire)
     @my_captained_teams = current_user.captained_teams.order(:name)
+
+    # Couplage tournoi (Lot 4) : préremplissage depuis « Créer la rencontre »
+    # d'une carte, et liste des tournois qu'on organise (select du formulaire).
+    prefill_from_tournament_match
+    @organized_tournaments = organized_tournaments_for_select
+
+    # Destinations Slack pour le partage optionnel (vide si le compte n'est pas lié)
+    @slack_destinations = slack_destinations_for(current_user)
   end
 
   # POST /matches
@@ -178,22 +210,29 @@ class MatchesController < ApplicationController
     # Si un non-femme envoie cette valeur (ex: via requête HTTP directe), on la remet à "tous"
     @match.genre_restriction = "tous" unless current_user.genre == "femme"
 
-    # Si une équipe est associée, on force la visibilité à "private"
+    # Si une équipe est associée, on vérifie juste que l'user en est bien
+    # capitaine (sécurité). On NE force PLUS la visibilité : le choix
+    # public/privé envoyé par le formulaire fait foi (côté form, choisir une
+    # équipe met "privé" par défaut, mais l'user peut cliquer "Public").
     if @match.team_id.present?
-      # Vérifie que l'user est bien captain de cette équipe
       @match.team = Team.find_by(id: @match.team_id)
       unless @match.team&.captain?(current_user)
         @match.team = nil
         @match.team_id = nil
       end
-      @match.visibility = "private" if @match.team
     end
+
+    # Couplage tournoi (Lot 4) : ne conserver le rattachement que si l'utilisateur
+    # organise bien le tournoi visé (pattern défensif, comme pour team_id).
+    sanitize_tournament_link
 
     authorize @match
 
-    if @match.save
-      # Ajoute automatiquement le créateur comme organisateur approuvé du match
-      @match.match_users.create(user: current_user, role: "organisateur", status: "approved")
+    # Sauvegarde + organisateur + rappel : logique commune mutualisée avec la
+    # création via slash Slack (voir Slack::CommandsController / view_submission).
+    if MatchCreationService.new(match: @match).call.success?
+      # Rencontre issue d'une carte de tournoi → inscrire ses deux joueurs.
+      enroll_tournament_players if @match.tournament_match
 
       # Si c'est un match d'équipe, on pré-inscrit les autres membres en "pending"
       # Ils devront confirmer leur participation depuis la page du match
@@ -205,20 +244,22 @@ class MatchesController < ApplicationController
       # Email de confirmation avec récapitulatif du match pour l'organisateur
       UserMailer.match_created(@match).deliver_later
 
-      # Planifie le rappel ~24h avant le match pour tous les participants approuvés.
-      # On anticipe de 30 min (-24.5.hours) pour absorber un éventuel retard de la queue :
-      # si le worker est lent, le rappel part quand même avant le coup d'envoi.
-      # Le job lui-même vérifie en plus que le match n'a pas encore commencé avant d'envoyer.
-      reminder_time = @match.build_datetime - 24.5.hours
-      MatchReminderJob.set(wait_until: reminder_time).perform_later(@match.id) if reminder_time > Time.current
-
       # Notifie en Web Push les utilisateurs dont le profil correspond à ce match
       # (sport + niveau + localisation). Exécuté en arrière-plan via SolidQueue.
       MatchWebPushJob.perform_later(@match.id)
 
+      # Partage Slack : uniquement si l'organisateur a coché la case dans le formulaire.
+      # Le job ne fait rien si le compte n'est pas lié ou si aucun channel n'est résoluble.
+      if params[:post_to_slack].present? && current_user.slack_linked?
+        SlackNotifyJob.perform_later("Match", @match.id, current_user.id,
+                                     params[:slack_channel_id].presence,
+                                     params[:slack_workspace_id].presence)
+      end
+
       redirect_to @match, notice: "Match créé avec succès !"
     else
       @my_captained_teams = current_user.captained_teams.order(:name)
+      @organized_tournaments = organized_tournaments_for_select
       # En cas d'erreur, réaffiche le formulaire
       render :new, status: :unprocessable_entity
     end
@@ -243,6 +284,7 @@ class MatchesController < ApplicationController
     previous_values = {
       date: @match.date,
       time: @match.time,
+      end_time: @match.end_time,
       venue_id: @match.venue_id,
       title: @match.title
     }
@@ -258,47 +300,13 @@ class MatchesController < ApplicationController
   end
 
   # DELETE /matches/:id
-  # Supprime un match et notifie tous les participants en temps réel
+  # Supprime un match et notifie tous les participants (temps réel + email).
+  # Logique déléguée au service partagé avec l'annulation depuis Slack, qui
+  # édite aussi les cartes Slack en « Annulé » avant la suppression.
   def destroy
     authorize @match
 
-    # Récupère tous les participants inscrits (hors organisateur) avant destruction.
-    # On exclut les "rejected" car ils n'ont plus de place et ne sont plus actifs.
-    # IMPORTANT : on broadcast AVANT @match.destroy → le canal ActionCable doit encore exister.
-    participants = @match.match_users
-                         .where.not(role: "organisateur")
-                         .where(status: ["approved", "pending", "waiting"])
-                         .includes(:user)
-
-    # ── Extraction des données AVANT destruction ──────────────────────────────
-    # On sérialise uniquement des scalaires pour éviter le DeserializationError
-    # de SolidQueue lors du deliver_later (GlobalID ne peut pas recharger un
-    # enregistrement détruit).
-    match_title    = @match.title
-    match_date     = @match.date
-    match_time_str = @match.time&.strftime("%Hh%M")
-    venue_name     = @match.venue&.name
-    venue_city     = @match.venue&.city
-    organizer_name = @match.user.display_name
-
-    # Liste des destinataires : participants + organisateur
-    recipient_emails = participants.map { |mu| mu.user.email }
-    recipient_emails << @match.user.email
-
-    # Broadcasts Turbo AVANT destroy → le canal ActionCable doit encore exister
-    participants.each do |mu|
-      broadcast_match_cancelled_to_participant(mu.user)
-    end
-
-    @match.destroy
-
-    # Enqueue des emails asynchrones avec données scalaires uniquement
-    recipient_emails.each do |email|
-      MatchCancelledMailerJob.perform_later(
-        email, match_title, match_date, match_time_str,
-        venue_name, venue_city, organizer_name
-      )
-    end
+    MatchCancellationService.new(match: @match).call
 
     redirect_to matches_path, notice: "Match supprimé."
   end
@@ -309,6 +317,25 @@ class MatchesController < ApplicationController
     authorize @match
     @match.update!(visibility: "public")
     redirect_to @match, notice: "Le match est maintenant ouvert au public !"
+  end
+
+  # POST /matches/:id/share_on_slack
+  # Partage manuel du match dans une destination Slack — réservé à l'organisateur.
+  # Rattrapage si la case « Partager sur Slack » n'a pas été cochée à la création.
+  # Réutilise le même job que #create ; la destination (channel/DM) et le workspace
+  # sont facultatifs → fallback sur la destination par défaut via ChannelResolver.
+  def share_on_slack
+    authorize @match
+
+    unless current_user.slack_linked?
+      return redirect_to @match, alert: "Ton compte n'est lié à aucun espace Slack."
+    end
+
+    SlackNotifyJob.perform_later("Match", @match.id, current_user.id,
+                                 params[:slack_channel_id].presence,
+                                 params[:slack_workspace_id].presence)
+
+    redirect_to @match, notice: "Match partagé sur Slack 🎉"
   end
 
   # GET /matches/:id/calendar
@@ -322,8 +349,8 @@ class MatchesController < ApplicationController
       @match.date.year, @match.date.month, @match.date.day,
       @match.time.hour, @match.time.min, 0
     )
-    # Durée par défaut : 1h30
-    end_dt = start_dt + 90.minutes
+    # Fin réelle du match (heure de fin saisie, sinon +1h par défaut)
+    end_dt = @match.end_datetime || start_dt + 1.hour
 
     # Lieu : venue ou adresse libre
     location = @match.place.presence || ""
@@ -356,30 +383,19 @@ class MatchesController < ApplicationController
 
   private
 
-  # Envoie la notification d'annulation du match à un participant spécifique.
-  # Appelé depuis destroy pour chaque participant avant la suppression du match.
-  # La modal s'ouvre automatiquement peu importe la page où se trouve le joueur.
-  def broadcast_match_cancelled_to_participant(participant_user)
-    Turbo::StreamsChannel.broadcast_update_to(
-      "user_#{participant_user.id}_notifications", # canal personnel du joueur
-      target: "global_notification_container", # conteneur dans application.html.erb
-      partial: "matches/match_cancelled_notification",
-      locals: { match: @match }
-    )
-  end
-
   # Applique tous les filtres optionnels sur @matches selon les params reçus
   def apply_filters
     # Recherche full-text — titre, ville, description ou prénom/nom du créateur
     @matches = @matches.search_by_title_place_and_creator(params[:query]) if params[:query].present?
 
-    # Filtre par sport :
-    # - sport sélectionné dans l'URL → filtrer par ce sport
-    # - Aucun param sport dans l'URL → fallback sur le sport actif de l'utilisateur
+    # Filtre par sport (multi-sélection) :
+    # - sport(s) sélectionné(s) dans l'URL → filtrer par ces sports
+    # - Aucun param sport ET pas de no_prefilter → fallback sur le sport actif de l'utilisateur
+    # - no_prefilter=1 (bouton "Effacer les filtres") → aucun filtre sport = TOUS les sports
     sport_ids = params[:sport_ids]&.reject(&:blank?) || []
     if sport_ids.any?
       @matches = @matches.where(sport_id: sport_ids)
-    elsif current_sport.present?
+    elsif current_sport.present? && params[:no_prefilter].blank?
       @matches = @matches.where(sport_id: current_sport.id)
     end
 
@@ -511,18 +527,74 @@ class MatchesController < ApplicationController
 
   # Retrouve le match par son id dans les paramètres de l'URL
   def set_match
-    @match = Match.find(params[:id])
+    @match = Match.from_param(params[:id])
   end
 
   # Liste blanche des paramètres autorisés pour créer/modifier un match
   def match_params
     params.require(:match).permit(
-      :title, :description, :date, :time, :place, :venue_id,
-      :level, :player_left, :players_present, :validation_mode, :price_per_player,
+      :title, :description, :date, :time, :end_time, :place, :venue_id,
+      :level, :players_needed, :players_present, :validation_mode, :price_per_player,
       :sport_id, :format, :banner_image, :visibility,
       :genre_restriction, # Restriction de genre : "tous" ou "feminin"
-      :team_id            # Équipe organisatrice (optionnel)
+      :team_id,           # Équipe organisatrice (optionnel)
+      :booking_link,      # Lien de réservation/paiement du terrain (optionnel)
+      :tournament_id,        # Tournoi auquel rattacher la rencontre (Lot 4, optionnel)
+      :tournament_match_id   # Carte de tournoi précise reliée (Lot 4, optionnel)
     )
+  end
+
+  # Tournois que l'utilisateur organise et qui ne sont pas terminés — proposés
+  # dans le select du formulaire pour rattacher une rencontre à un tournoi.
+  def organized_tournaments_for_select
+    Tournament.where(user_id: current_user.id).where.not(status: "completed").order(:name)
+  end
+
+  # Préremplit @match depuis une carte de tournoi (?tournament_match_id=X).
+  # Sécurité : ignoré si la carte est absente, un bye, ou si l'utilisateur
+  # n'organise pas le tournoi.
+  def prefill_from_tournament_match
+    return if params[:tournament_match_id].blank?
+
+    tm = TournamentMatch.find_by(id: params[:tournament_match_id])
+    return if tm.nil? || tm.is_bye || !tm.tournament.organizer?(current_user)
+
+    @match.tournament_match = tm
+    @match.tournament       = tm.tournament
+    @match.sport            = tm.tournament.sport
+    @match.level            = "Tout niveau" # niveau neutre : bypass la grille du sport
+    @match.players_needed   = 2
+    @match.title            = "#{tm.tournament.sport&.name} — #{tm.player_a.display_name} vs #{tm.player_b.display_name}"
+  end
+
+  # Valide le rattachement tournoi envoyé par le formulaire : ne le persiste que
+  # si l'utilisateur organise le tournoi ciblé (sinon on annule les deux refs).
+  def sanitize_tournament_link
+    if @match.tournament_match_id.present?
+      tm = TournamentMatch.find_by(id: @match.tournament_match_id)
+      if tm && !tm.is_bye && tm.tournament.organizer?(current_user)
+        @match.tournament = tm.tournament
+      else
+        @match.tournament = nil
+        @match.tournament_match = nil
+      end
+    elsif @match.tournament_id.present?
+      tournament = Tournament.find_by(id: @match.tournament_id)
+      @match.tournament = nil unless tournament&.organizer?(current_user)
+    end
+  end
+
+  # Inscrit les deux joueurs de la carte de tournoi comme participants approuvés
+  # (en plus de l'organisateur déjà créé). Idempotent, saute le créateur.
+  def enroll_tournament_players
+    @match.tournament_match.players.each do |tu|
+      next if tu.user_id == current_user.id
+
+      @match.match_users.find_or_create_by(user_id: tu.user_id) do |mu|
+        mu.role = "joueur"
+        mu.status = "approved"
+      end
+    end
   end
 
   # Pré-inscrit tous les membres de l'équipe (sauf le captain/créateur) en "pending"
@@ -548,6 +620,7 @@ class MatchesController < ApplicationController
     changes = []
     changes << "la date" if previous_values[:date] != @match.date
     changes << "l'heure" if previous_values[:time] != @match.time
+    changes << "l'heure de fin" if previous_values[:end_time] != @match.end_time
     changes << "le lieu" if previous_values[:venue_id] != @match.venue_id
     changes << "le titre" if previous_values[:title] != @match.title
 

@@ -3,7 +3,7 @@ class User < ApplicationRecord
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
-         :confirmable,  # Envoie un email de confirmation à l'inscription — bloque la connexion tant que l'email n'est pas vérifié
+         :confirmable, # Envoie un email de confirmation à l'inscription — bloque la connexion tant que l'email n'est pas vérifié
          :omniauthable, omniauth_providers: [:google_oauth2] # Activation de la connexion via Google
   # dependent: :destroy supprime le profil automatiquement quand l'user est supprimé
   has_one :profil, dependent: :destroy
@@ -51,11 +51,34 @@ class User < ApplicationRecord
   has_many :team_invitations_received, class_name: "TeamInvitation", foreign_key: "invitee_id", dependent: :destroy
   has_many :team_invitations_sent,     class_name: "TeamInvitation", foreign_key: "inviter_id", dependent: :destroy
 
+  # Vrai si au moins une équipe dont je suis capitaine a un nouveau membre
+  # non encore "vu" (arrivé après captain_members_seen_at, ou created_at si null).
+  # Sert au point de notification global dans la navbar.
+  def has_new_captained_members?
+    Team.where(captain_id: id)
+        .joins(:team_members)
+        .where(team_members: { role: "member" })
+        .where("team_members.created_at > COALESCE(teams.captain_members_seen_at, teams.created_at)")
+        .exists?
+  end
+
   has_many :match_users, dependent: :destroy
   has_many :matchs, through: :match_users
+  # Inscriptions aux tournois (feature Tournoi)
+  has_many :tournament_users, dependent: :destroy
+  has_many :tournaments, through: :tournament_users
   has_many :notifications, dependent: :destroy
   # Subscriptions Web Push : un user peut avoir plusieurs appareils/navigateurs enregistrés
   has_many :push_subscriptions, dependent: :destroy
+  # Identités Slack liées (une par workspace) — permet de poster/s'inscrire depuis Slack
+  has_many :slack_identities, dependent: :destroy
+
+  # Vrai si l'utilisateur a lié au moins un compte Slack.
+  # Sert à afficher/masquer les contrôles Slack (case dans le formulaire de match,
+  # bouton "Partager sur Slack") et à autoriser l'inscription depuis Slack.
+  def slack_linked?
+    slack_identities.any?
+  end
   # Relation vers les achievements débloqués par cet utilisateur
   has_many :user_achievements, dependent: :destroy
   has_many :achievements, through: :user_achievements
@@ -134,6 +157,18 @@ class User < ApplicationRecord
     full.present? ? full : email
   end
 
+  # Retourne "Prénom N." (prénom + initiale du nom) pour les contextes compacts
+  # où l'on n'affiche que le prénom : l'initiale du nom permet de distinguer
+  # deux joueurs homonymes (ex. deux "Williame"). Si aucun prénom n'est
+  # renseigné, on retombe sur display_name (email en dernier recours).
+  def short_name
+    first   = profil&.first_name.to_s.strip
+    initial = profil&.last_name.to_s.strip.first
+    return display_name if first.blank?
+
+    initial.present? ? "#{first} #{initial.upcase}." : first
+  end
+
   # Méthode appelée lors du retour depuis Google OAuth
   # Elle cherche un user existant avec le même uid+provider, ou le crée
   def self.from_omniauth(auth)
@@ -166,13 +201,13 @@ class User < ApplicationRecord
       # create (sans !) pour récupérer un user invalide plutôt que lever une exception.
       # Le controller vérifie ensuite user.persisted? pour savoir si la création a réussi.
       user = new(
-        email:        auth.info.email,
-        provider:     auth.provider,
-        uid:          auth.uid,
-        password:     Devise.friendly_token[0, 20], # Token aléatoire — jamais utilisé par l'user
-        confirmed_at: Time.current,                 # Google a déjà vérifié l'email
-        first_name:   google_first_name,            # attr_accessor pour les validations on: :create
-        last_name:    google_last_name
+        email: auth.info.email,
+        provider: auth.provider,
+        uid: auth.uid,
+        password: Devise.friendly_token[0, 20], # Token aléatoire — jamais utilisé par l'user
+        confirmed_at: Time.current, # Google a déjà vérifié l'email
+        first_name: google_first_name, # attr_accessor pour les validations on: :create
+        last_name: google_last_name
       )
 
       # Si la sauvegarde échoue (validation inattendue), on retourne le user invalide

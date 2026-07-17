@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_094810) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,6 +54,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "articles", force: :cascade do |t|
+    t.text "body", null: false
+    t.string "category"
+    t.string "cover_image_url"
+    t.datetime "created_at", null: false
+    t.string "meta_description"
+    t.datetime "published_at"
+    t.integer "reading_time_minutes", default: 1
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_articles_on_category"
+    t.index ["published_at"], name: "index_articles_on_published_at"
+    t.index ["slug"], name: "index_articles_on_slug", unique: true
+  end
+
   create_table "avis", force: :cascade do |t|
     t.text "content"
     t.datetime "created_at", null: false
@@ -66,6 +82,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.index ["match_id"], name: "index_avis_on_match_id"
     t.index ["mutual"], name: "index_avis_on_mutual"
     t.index ["reviewed_user_id", "created_at"], name: "index_avis_on_reviewed_user_id_created_at"
+    t.index ["reviewed_user_id", "mutual"], name: "index_avis_on_reviewed_user_id_mutual"
     t.index ["reviewed_user_id"], name: "index_avis_on_reviewed_user_id"
     t.index ["reviewer_id", "reviewed_user_id", "match_id"], name: "index_avis_on_reviewer_id_and_reviewed_user_id_and_match_id", unique: true
     t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"
@@ -115,12 +132,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.datetime "last_read_at"
     t.bigint "match_id", null: false
     t.text "message"
+    t.boolean "payment_confirmed", default: false, null: false
     t.string "role"
     t.string "status", default: "pending"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["match_id", "status"], name: "index_match_users_on_match_id_status"
     t.index ["match_id"], name: "index_match_users_on_match_id"
+    t.index ["user_id", "status"], name: "index_match_users_on_user_id_status"
     t.index ["user_id"], name: "index_match_users_on_user_id"
   end
 
@@ -138,22 +157,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
 
   create_table "matches", force: :cascade do |t|
     t.string "banner_image"
+    t.string "booking_link"
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
+    t.time "end_time"
     t.string "format"
     t.string "genre_restriction", default: "tous"
     t.bigint "homme_du_match_id"
     t.string "level"
+    t.integer "max_supporters", default: 0
+    t.float "pin_latitude"
+    t.float "pin_longitude"
     t.string "place"
     t.integer "player_left"
+    t.integer "players_needed"
     t.integer "players_present"
     t.integer "price_per_player", default: 0
     t.string "private_token"
+    t.datetime "slack_prep_sent_at"
+    t.string "slug", null: false
     t.bigint "sport_id"
     t.bigint "team_id"
     t.time "time"
     t.string "title"
+    t.bigint "tournament_id"
+    t.bigint "tournament_match_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.string "validation_mode", default: "automatic"
@@ -161,8 +190,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.string "visibility", default: "public", null: false
     t.index ["homme_du_match_id"], name: "index_matches_on_homme_du_match_id"
     t.index ["private_token"], name: "index_matches_on_private_token", unique: true
+    t.index ["slug"], name: "index_matches_on_slug", unique: true
     t.index ["sport_id"], name: "index_matches_on_sport_id"
     t.index ["team_id"], name: "index_matches_on_team_id"
+    t.index ["tournament_id"], name: "index_matches_on_tournament_id"
+    t.index ["tournament_match_id"], name: "index_matches_on_tournament_match_id", unique: true
     t.index ["user_id", "created_at"], name: "index_matches_on_user_id_created_at"
     t.index ["user_id"], name: "index_matches_on_user_id"
     t.index ["venue_id"], name: "index_matches_on_venue_id"
@@ -176,8 +208,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.bigint "team_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["match_id", "created_at"], name: "index_messages_on_match_id_created_at"
     t.index ["match_id"], name: "index_messages_on_match_id"
+    t.index ["private_conversation_id", "created_at"], name: "index_messages_on_private_conversation_id_created_at"
     t.index ["private_conversation_id"], name: "index_messages_on_private_conversation_id"
+    t.index ["team_id", "created_at"], name: "index_messages_on_team_id_created_at"
     t.index ["team_id"], name: "index_messages_on_team_id"
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
@@ -191,6 +226,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.boolean "read", default: false, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["user_id", "read", "created_at"], name: "index_notifications_on_user_id_read_created_at"
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
@@ -276,6 +313,190 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.index ["user_id"], name: "index_security_logs_on_user_id"
   end
 
+  create_table "slack_identities", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "preferred_channel_id"
+    t.string "preferred_channel_name"
+    t.string "slack_team_id", null: false
+    t.string "slack_user_id", null: false
+    t.bigint "slack_workspace_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["slack_team_id", "slack_user_id"], name: "index_slack_identities_on_slack_team_id_and_slack_user_id"
+    t.index ["slack_workspace_id", "slack_user_id"], name: "index_slack_identities_on_slack_workspace_id_and_slack_user_id", unique: true
+    t.index ["slack_workspace_id"], name: "index_slack_identities_on_slack_workspace_id"
+    t.index ["user_id"], name: "index_slack_identities_on_user_id"
+  end
+
+  create_table "slack_match_messages", force: :cascade do |t|
+    t.string "channel_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "match_id", null: false
+    t.string "message_ts", null: false
+    t.bigint "slack_workspace_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["match_id", "channel_id"], name: "index_slack_match_messages_on_match_id_and_channel_id", unique: true
+    t.index ["match_id"], name: "index_slack_match_messages_on_match_id"
+    t.index ["slack_workspace_id"], name: "index_slack_match_messages_on_slack_workspace_id"
+  end
+
+  create_table "slack_workspaces", force: :cascade do |t|
+    t.text "bot_token"
+    t.string "bot_user_id"
+    t.datetime "created_at", null: false
+    t.string "default_channel_id"
+    t.string "default_channel_name"
+    t.bigint "installer_user_id"
+    t.string "scope"
+    t.string "team_id", null: false
+    t.string "team_name"
+    t.datetime "updated_at", null: false
+    t.index ["installer_user_id"], name: "index_slack_workspaces_on_installer_user_id"
+    t.index ["team_id"], name: "index_slack_workspaces_on_team_id", unique: true
+  end
+
+  create_table "solid_cable_messages", force: :cascade do |t|
+    t.binary "channel", null: false
+    t.bigint "channel_hash", null: false
+    t.datetime "created_at", null: false
+    t.binary "payload", null: false
+    t.index ["channel"], name: "index_solid_cable_messages_on_channel"
+    t.index ["channel_hash"], name: "index_solid_cable_messages_on_channel_hash"
+    t.index ["created_at"], name: "index_solid_cable_messages_on_created_at"
+  end
+
+  create_table "solid_cache_entries", force: :cascade do |t|
+    t.integer "byte_size", null: false
+    t.datetime "created_at", null: false
+    t.binary "key", null: false
+    t.bigint "key_hash", null: false
+    t.binary "value", null: false
+    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
+    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
+    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
+  end
+
+  create_table "solid_queue_blocked_executions", force: :cascade do |t|
+    t.string "concurrency_key", null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.bigint "job_id", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "queue_name", null: false
+    t.index ["concurrency_key", "priority", "job_id"], name: "index_solid_queue_blocked_executions_for_release"
+    t.index ["expires_at", "concurrency_key"], name: "index_solid_queue_blocked_executions_for_maintenance"
+    t.index ["job_id"], name: "index_solid_queue_blocked_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_claimed_executions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "job_id", null: false
+    t.bigint "process_id"
+    t.index ["job_id"], name: "index_solid_queue_claimed_executions_on_job_id", unique: true
+    t.index ["process_id", "job_id"], name: "index_solid_queue_claimed_executions_on_process_id_and_job_id"
+  end
+
+  create_table "solid_queue_failed_executions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "error"
+    t.bigint "job_id", null: false
+    t.index ["job_id"], name: "index_solid_queue_failed_executions_on_job_id", unique: true
+  end
+
+  create_table "solid_queue_jobs", force: :cascade do |t|
+    t.string "active_job_id"
+    t.text "arguments"
+    t.string "class_name", null: false
+    t.string "concurrency_key"
+    t.datetime "created_at", null: false
+    t.datetime "finished_at"
+    t.integer "priority", default: 0, null: false
+    t.string "queue_name", null: false
+    t.datetime "scheduled_at"
+    t.datetime "updated_at", null: false
+    t.index ["active_job_id"], name: "index_solid_queue_jobs_on_active_job_id"
+    t.index ["class_name"], name: "index_solid_queue_jobs_on_class_name"
+    t.index ["finished_at"], name: "index_solid_queue_jobs_on_finished_at"
+    t.index ["queue_name", "finished_at"], name: "index_solid_queue_jobs_for_filtering"
+    t.index ["scheduled_at", "finished_at"], name: "index_solid_queue_jobs_for_alerting"
+  end
+
+  create_table "solid_queue_pauses", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "queue_name", null: false
+    t.index ["queue_name"], name: "index_solid_queue_pauses_on_queue_name", unique: true
+  end
+
+  create_table "solid_queue_processes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "hostname"
+    t.string "kind", null: false
+    t.datetime "last_heartbeat_at", null: false
+    t.text "metadata"
+    t.string "name", null: false
+    t.integer "pid", null: false
+    t.bigint "supervisor_id"
+    t.index ["last_heartbeat_at"], name: "index_solid_queue_processes_on_last_heartbeat_at"
+    t.index ["name", "supervisor_id"], name: "index_solid_queue_processes_on_name_and_supervisor_id", unique: true
+    t.index ["supervisor_id"], name: "index_solid_queue_processes_on_supervisor_id"
+  end
+
+  create_table "solid_queue_ready_executions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "job_id", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "queue_name", null: false
+    t.index ["job_id"], name: "index_solid_queue_ready_executions_on_job_id", unique: true
+    t.index ["priority", "job_id"], name: "index_solid_queue_poll_all"
+    t.index ["queue_name", "priority", "job_id"], name: "index_solid_queue_poll_by_queue"
+  end
+
+  create_table "solid_queue_recurring_executions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "job_id", null: false
+    t.datetime "run_at", null: false
+    t.string "task_key", null: false
+    t.index ["job_id"], name: "index_solid_queue_recurring_executions_on_job_id", unique: true
+    t.index ["task_key", "run_at"], name: "index_solid_queue_recurring_executions_on_task_key_and_run_at", unique: true
+  end
+
+  create_table "solid_queue_recurring_tasks", force: :cascade do |t|
+    t.text "arguments"
+    t.string "class_name"
+    t.string "command", limit: 2048
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "key", null: false
+    t.integer "priority", default: 0
+    t.string "queue_name"
+    t.string "schedule", null: false
+    t.boolean "static", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.index ["key"], name: "index_solid_queue_recurring_tasks_on_key", unique: true
+    t.index ["static"], name: "index_solid_queue_recurring_tasks_on_static"
+  end
+
+  create_table "solid_queue_scheduled_executions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "job_id", null: false
+    t.integer "priority", default: 0, null: false
+    t.string "queue_name", null: false
+    t.datetime "scheduled_at", null: false
+    t.index ["job_id"], name: "index_solid_queue_scheduled_executions_on_job_id", unique: true
+    t.index ["scheduled_at", "priority", "job_id"], name: "index_solid_queue_dispatch_all"
+  end
+
+  create_table "solid_queue_semaphores", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "key", null: false
+    t.datetime "updated_at", null: false
+    t.integer "value", default: 1, null: false
+    t.index ["expires_at"], name: "index_solid_queue_semaphores_on_expires_at"
+    t.index ["key", "value"], name: "index_solid_queue_semaphores_on_key_and_value"
+    t.index ["key"], name: "index_solid_queue_semaphores_on_key", unique: true
+  end
+
   create_table "sport_profils", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "level"
@@ -327,14 +548,97 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
   create_table "teams", force: :cascade do |t|
     t.text "badge_svg"
     t.bigint "captain_id", null: false
+    t.datetime "captain_members_seen_at"
     t.string "cover_position", default: "50% 50%"
     t.float "cover_zoom", default: 1.0
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.string "visibility", default: "public", null: false
     t.index ["captain_id"], name: "index_teams_on_captain_id"
     t.index ["name", "captain_id"], name: "index_teams_on_name_and_captain_id", unique: true
+    t.index ["slug"], name: "index_teams_on_slug", unique: true
+    t.index ["visibility"], name: "index_teams_on_visibility"
+  end
+
+  create_table "tournament_matches", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "forfeit", default: false, null: false
+    t.boolean "is_bye", default: false, null: false
+    t.bigint "player_a_id"
+    t.bigint "player_b_id"
+    t.integer "position", null: false
+    t.bigint "retired_player_id"
+    t.jsonb "sets", default: [], null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "tournament_round_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "winner_id"
+    t.index ["player_a_id"], name: "index_tournament_matches_on_player_a_id"
+    t.index ["player_b_id"], name: "index_tournament_matches_on_player_b_id"
+    t.index ["retired_player_id"], name: "index_tournament_matches_on_retired_player_id"
+    t.index ["tournament_round_id", "position"], name: "index_tournament_matches_on_tournament_round_id_and_position", unique: true
+    t.index ["tournament_round_id"], name: "index_tournament_matches_on_tournament_round_id"
+    t.index ["winner_id"], name: "index_tournament_matches_on_winner_id"
+  end
+
+  create_table "tournament_rounds", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "number", null: false
+    t.string "phase", null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tournament_id", "phase", "number"], name: "index_tournament_rounds_on_tournament_id_and_phase_and_number", unique: true
+    t.index ["tournament_id"], name: "index_tournament_rounds_on_tournament_id"
+  end
+
+  create_table "tournament_users", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "losses", default: 0, null: false
+    t.integer "points_lost", default: 0, null: false
+    t.integer "points_won", default: 0, null: false
+    t.integer "pool"
+    t.string "role"
+    t.integer "seed"
+    t.integer "sets_lost", default: 0, null: false
+    t.integer "sets_won", default: 0, null: false
+    t.string "state", default: "active", null: false
+    t.string "status", default: "approved"
+    t.bigint "tournament_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.integer "wins", default: 0, null: false
+    t.index ["tournament_id", "pool"], name: "index_tournament_users_on_tournament_id_and_pool"
+    t.index ["tournament_id", "user_id"], name: "index_tournament_users_on_tournament_id_and_user_id", unique: true
+    t.index ["tournament_id"], name: "index_tournament_users_on_tournament_id"
+    t.index ["user_id"], name: "index_tournament_users_on_user_id"
+  end
+
+  create_table "tournaments", force: :cascade do |t|
+    t.string "banner_image"
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.text "description"
+    t.string "format"
+    t.integer "max_players"
+    t.string "name", null: false
+    t.string "place"
+    t.datetime "registration_deadline"
+    t.string "slug", null: false
+    t.bigint "sport_id"
+    t.string "status", default: "open", null: false
+    t.time "time"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.bigint "venue_id"
+    t.index ["slug"], name: "index_tournaments_on_slug", unique: true
+    t.index ["sport_id"], name: "index_tournaments_on_sport_id"
+    t.index ["status"], name: "index_tournaments_on_status"
+    t.index ["user_id"], name: "index_tournaments_on_user_id"
+    t.index ["venue_id"], name: "index_tournaments_on_venue_id"
   end
 
   create_table "user_achievements", force: :cascade do |t|
@@ -383,19 +687,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
     t.string "city"
     t.datetime "created_at", null: false
     t.boolean "from_nominatim", default: false, null: false
+    t.boolean "from_overpass", default: false, null: false
     t.float "latitude"
     t.float "longitude"
     t.string "name"
+    t.bigint "osm_id"
     t.string "postal_code"
     t.string "sport_type"
     t.datetime "updated_at", null: false
     t.index ["city"], name: "index_venues_on_city"
+    t.index ["osm_id"], name: "index_venues_on_osm_id"
     t.index ["sport_type"], name: "index_venues_on_sport_type"
   end
 
   create_table "waitlist_entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email", null: false
+    t.datetime "launch_email_sent_at"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_waitlist_entries_on_email", unique: true
   end
@@ -414,6 +722,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
   add_foreign_key "match_votes", "users", column: "voter_id"
   add_foreign_key "matches", "sports"
   add_foreign_key "matches", "teams"
+  add_foreign_key "matches", "tournament_matches"
+  add_foreign_key "matches", "tournaments"
   add_foreign_key "matches", "users", column: "homme_du_match_id", on_delete: :nullify
   add_foreign_key "matches", "users", on_delete: :nullify
   add_foreign_key "matches", "venues"
@@ -429,6 +739,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
   add_foreign_key "profils", "users"
   add_foreign_key "push_subscriptions", "users"
   add_foreign_key "security_logs", "users", on_delete: :nullify
+  add_foreign_key "slack_identities", "slack_workspaces"
+  add_foreign_key "slack_identities", "users"
+  add_foreign_key "slack_match_messages", "matches"
+  add_foreign_key "slack_match_messages", "slack_workspaces"
+  add_foreign_key "slack_workspaces", "users", column: "installer_user_id"
+  add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_failed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_ready_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
+  add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "sport_profils", "profils"
   add_foreign_key "sport_profils", "sports"
   add_foreign_key "team_invitations", "teams"
@@ -438,6 +759,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_17_120000) do
   add_foreign_key "team_members", "teams"
   add_foreign_key "team_members", "users"
   add_foreign_key "teams", "users", column: "captain_id"
+  add_foreign_key "tournament_matches", "tournament_rounds", on_delete: :cascade
+  add_foreign_key "tournament_matches", "tournament_users", column: "player_a_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "player_b_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "retired_player_id"
+  add_foreign_key "tournament_matches", "tournament_users", column: "winner_id"
+  add_foreign_key "tournament_rounds", "tournaments", on_delete: :cascade
+  add_foreign_key "tournament_users", "tournaments"
+  add_foreign_key "tournament_users", "users"
+  add_foreign_key "tournaments", "sports"
+  add_foreign_key "tournaments", "users", on_delete: :nullify
+  add_foreign_key "tournaments", "venues"
   add_foreign_key "user_achievements", "achievements"
   add_foreign_key "user_achievements", "users"
   add_foreign_key "user_sports", "sports"
