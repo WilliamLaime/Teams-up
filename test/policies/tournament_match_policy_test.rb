@@ -7,7 +7,8 @@ class TournamentMatchPolicyTest < ActiveSupport::TestCase
     @sport = Sport.create!(name: "Padel test", slug: "padel-test-#{SecureRandom.hex(4)}", icon: "🎾")
     @admin = create_test_user(email: "admin-#{SecureRandom.hex(3)}@t.fr")
     @tournament = Tournament.create!(name: "T", sport: @sport, format: "ronde_suisse",
-                                     status: "in_progress", user: @admin)
+                                     status: "in_progress", user: @admin,
+                                     max_players: 8, date: Date.tomorrow, place: "Terrain test")
     @round = @tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
 
     @player_a = enroll("pa")

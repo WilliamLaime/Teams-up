@@ -28,7 +28,7 @@ export default class extends Controller {
     // Sources
     "sportInput", "formatInput", "formatWrapper", "formatButtons",
     "nameInput", "descriptionInput", "placeInput", "dateInput",
-    "maxPlayersInput", "countBtn", "libreBtn", "libreSection", "libreInput",
+    "maxPlayersInput", "presetsGroup", "countBtn", "libreBtn", "libreSection", "libreInput",
     "proposals", "structurePreview", "structureText", "selfRegister", "coOrgInput",
     // Récapitulatif
     "recapName", "recapDescription", "recapSport", "recapFormat", "recapFormatRow",
@@ -41,6 +41,9 @@ export default class extends Controller {
     this.structures = JSON.parse(this.sportInputTarget.dataset.structures || "{}")
     // Vrai quand l'utilisateur est en saisie "Libre" (nombre arbitraire).
     this.libreMode = false
+    // Vrai quand le mode Libre a été forcé par le format championnat (pas un choix
+    // manuel) — permet de le désactiver proprement si on change de format ensuite.
+    this.forcedLibreByChampionnat = false
 
     // Initialise le récap avec les valeurs déjà présentes (sport par défaut, etc.).
     this.updateName()
@@ -118,13 +121,47 @@ export default class extends Controller {
         this._styleFormatBtn(b, isActive)
       })
     }
-    this._refreshStructure()
+    // _syncPlayerCountMode appelle déjà buildProposals() en entrant de force en
+    // mode Libre (championnat) : éviter de le rappeler ici, ça écraserait la
+    // sélection qu'elle vient de restaurer.
+    const enteredLibre = this._syncPlayerCountMode(value)
+    if (!enteredLibre) this._refreshStructure()
+  }
+
+  // ── Championnat : pas de nombre de joueurs prédéfini ─────────
+  // Le round-robin n'a aucune contrainte de puissance de 2 (contrairement à la
+  // ronde suisse / au tableau final) : le nombre de joueurs dépend uniquement
+  // de qui s'inscrit. On masque les presets 8/16/32 et le bouton "Libre" pour
+  // ne garder que la saisie libre, seul mode pertinent pour ce format.
+  // @return {boolean} true si on vient de forcer l'entrée en mode Libre.
+  _syncPlayerCountMode(format) {
+    const isChampionnat = format === "championnat"
+    this.presetsGroupTarget.style.display = isChampionnat ? "none" : ""
+    this.libreBtnTarget.style.display     = isChampionnat ? "none" : ""
+
+    if (isChampionnat) {
+      if (!this.libreMode) {
+        this._enterLibreMode(true) // préserve une valeur déjà saisie
+        return true
+      }
+    } else if (this.forcedLibreByChampionnat) {
+      this._exitForcedLibreMode()
+    }
+    return false
+  }
+
+  _exitForcedLibreMode() {
+    this.forcedLibreByChampionnat = false
+    this.libreMode = false
+    this.libreSectionTarget.style.display = "none"
+    this.libreBtnTarget.classList.remove("active")
   }
 
   // ── Nombre de joueurs : presets ──────────────────────────────
   selectPlayerCount(event) {
     const btn = event.currentTarget
     this.libreMode = false
+    this.forcedLibreByChampionnat = false
     this.libreSectionTarget.style.display = "none"
     this.libreBtnTarget.classList.remove("active")
 
@@ -136,12 +173,24 @@ export default class extends Controller {
 
   // ── Nombre de joueurs : mode Libre ───────────────────────────
   toggleLibre() {
+    this._enterLibreMode(false)
+  }
+
+  // `preserveExisting` : true quand le mode libre est forcé par le format
+  // championnat (ou restauré après un échec de validation) — garde la valeur
+  // déjà saisie dans maxPlayersInput au lieu de la vider.
+  _enterLibreMode(preserveExisting) {
     this.libreMode = true
+    this.forcedLibreByChampionnat = this.formatInputTarget.value === "championnat"
     this.libreSectionTarget.style.display = ""
     this.countBtnTargets.forEach(b => b.classList.remove("active"))
     this.libreBtnTarget.classList.add("active")
-    this.maxPlayersInputTarget.value = ""
-    this.recapPlayersTarget.textContent = "—"
+
+    const existing = preserveExisting ? this.maxPlayersInputTarget.value : ""
+    this.libreInputTarget.value = existing
+
+    // buildProposals() relit libreInputTarget et se charge lui-même de renseigner
+    // max_players + le récap (cf. plus bas) : pas besoin de le refaire ici.
     this.buildProposals()
   }
 
@@ -153,15 +202,35 @@ export default class extends Controller {
     container.innerHTML = ""
 
     if (!wanted || wanted < 2 || !format) {
+      this.maxPlayersInputTarget.value = ""
+      this.recapPlayersTarget.textContent = "—"
       this.structurePreviewTarget.style.display = "none"
+      this.recapStructureRowTarget.style.display = "none"
+      return
+    }
+
+    // Le nombre saisi est TOUJOURS la valeur réellement soumise, dès la frappe :
+    // avant ce fix, max_players (hidden field) restait vide tant qu'aucune carte
+    // de proposition n'était cliquée — bloquant silencieusement la création du
+    // tournoi malgré un nombre visiblement rempli à l'écran.
+    this.maxPlayersInputTarget.value = wanted
+    this.recapPlayersTarget.textContent = wanted
+
+    if (format === "championnat") {
+      // Round-robin : aucune contrainte de puissance de 2, donc aucun choix à
+      // faire — ni carte "Recommandé", ni aperçu de structure : juste le champ.
+      this.structurePreviewTarget.style.display = "none"
+      this.recapStructureRowTarget.style.display = "none"
       return
     }
 
     const proposals = this._buildProposals(format, wanted)
-    proposals.forEach((p, i) => {
+    proposals.forEach((p) => {
       const btn = document.createElement("button")
       btn.type = "button"
-      btn.className = "tournament-proposal" + (i === 0 ? " recommended" : "")
+      btn.className = "tournament-proposal"
+        + (p.recommended ? " recommended" : "")
+        + (p.players === wanted ? " selected" : "")
       btn.dataset.players = p.players
       btn.dataset.recap   = p.recap
       btn.dataset.action  = "click->tournament-form#selectProposal"
@@ -173,6 +242,7 @@ export default class extends Controller {
         <span class="tournament-proposal-recap">${p.recap}</span>`
       container.appendChild(btn)
     })
+    this._showStructure(proposals[0].recap)
   }
 
   selectProposal(event) {
@@ -186,6 +256,7 @@ export default class extends Controller {
   }
 
   // Génère les propositions (LOGIQUE PROVISOIRE — affinée au Lot 3).
+  // Championnat exclu : géré à part dans buildProposals() (pas de carte, aperçu direct).
   _buildProposals(format, wanted) {
     const out = []
     const push = (players, recap, recommended = false) => {
@@ -197,15 +268,10 @@ export default class extends Controller {
       push(nearest, `${nearest / 4} poules de 4 + tableau final`, true)
       push(16, "4 poules de 4 + quarts")
       push(32, "8 poules de 4 + huitièmes")
-    } else if (format === "ronde_suisse") {
-      // Final 4 jusqu'à 8 joueurs, Final 8 au-delà (cf. Tournament#final_size).
+    } else { // ronde_suisse — Final 4 jusqu'à 8 joueurs, Final 8 au-delà (cf. Tournament#final_size).
       push(wanted, `Ronde suisse (3 V) → ${wanted <= 8 ? "Final 4" : "Final 8"}`, true)
       push(16, "Ronde suisse (3 V) → Final 8")
       push(32, "Ronde suisse (3 V) → Final 8")
-    } else { // championnat
-      push(wanted, `${wanted} joueurs, round-robin, top ${wanted <= 10 ? 4 : 8} en playoffs`, true)
-      push(16, "16 joueurs, top 8 en playoffs")
-      push(32, "32 joueurs, top 8 en playoffs")
     }
     return out.slice(0, 4)
   }

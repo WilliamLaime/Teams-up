@@ -62,10 +62,25 @@ class Tournament < ApplicationRecord
                   using: { tsearch: { prefix: true } }
 
   # ── Validations ───────────────────────────────────────────────────────────────
+  # Champs marqués d'une étoile dans le formulaire de création : ils doivent être
+  # réellement obligatoires côté serveur, pas seulement visuellement dans la vue.
   validates :name, presence: true
+  validates :sport, presence: true
+  # allow_blank sur inclusion/numericality : évite un 2e message d'erreur
+  # redondant (voire une traduction manquante pour "inclusion" en fr.yml)
+  # quand le champ est simplement vide — la presence ci-dessus suffit déjà.
+  validates :format, presence: true, inclusion: { in: FORMATS, allow_blank: true }
+  validates :max_players, presence: true,
+                          numericality: { only_integer: true, greater_than: 0, allow_blank: true }
+  validates :date, presence: true
+  validates :place, presence: true
   validates :status, inclusion: { in: STATUSES }
-  validates :format, inclusion: { in: FORMATS }, allow_nil: true
-  validates :max_players, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+
+  # La date/heure d'un tournoi ne peut pas être dans le passé à la création.
+  # `on: :create` uniquement : TournamentsController#start et
+  # TournamentMatchesController mettent à jour un tournoi (status, scores) alors
+  # que sa date est justement arrivée ou dépassée — ne pas casser ces update!.
+  validate :date_cannot_be_in_the_past, on: :create
 
   # ── Scopes ────────────────────────────────────────────────────────────────────
   scope :open_for_registration, -> { where(status: "open") }
@@ -187,4 +202,22 @@ class Tournament < ApplicationRecord
 
   # Champ source du slug (utilisé par le concern Sluggable).
   def slug_source = name
+
+  private
+
+  # Rejette une date (et heure si saisie) déjà passée. L'heure reste facultative :
+  # sans heure, seule la date est comparée au jour courant.
+  def date_cannot_be_in_the_past
+    return if date.blank?
+
+    if time.present?
+      errors.add(:date, "et l'heure ne peuvent pas être dans le passé") if tournament_datetime < Time.current
+    elsif date < Time.zone.today
+      errors.add(:date, "ne peut pas être dans le passé")
+    end
+  end
+
+  def tournament_datetime
+    Time.zone.local(date.year, date.month, date.day, time.hour, time.min, 0)
+  end
 end

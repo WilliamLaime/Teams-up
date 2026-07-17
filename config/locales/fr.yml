@@ -40,6 +40,9 @@ fr:
         first_name: "Prénom"
         last_name: "Nom"
         avatar: "Avatar"
+      tournament:
+        max_players: "Nombre de joueurs"
+        place: "Lieu"
 
   # Formats de date utilisés avec I18n.l(date, format: :xxx)
   date:
