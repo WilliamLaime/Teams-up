@@ -87,3 +87,10 @@
   .form-check-input:checked { background-color: $green; border-color: $green; }
   .form-check-label { color: var(--theme-text-primary); font-weight: 600; }
 }
+
+// Texte d'aide sous un champ (co-organisateur, auto-inscription). Remplace
+// Bootstrap .text-muted : sa couleur est figée (gris quasi noir), illisible
+// sur le fond sombre de l'appli — on utilise le token de thème adaptatif.
+.tournament-form-hint {
+  color: var(--theme-text-muted);
+}

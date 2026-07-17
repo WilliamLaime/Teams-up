@@ -5,7 +5,8 @@ class TournamentMatchTest < ActiveSupport::TestCase
     # Sport "padel-test-*" → tombe dans le fallback des règles de score
     # (best_of 3, target 6, win_by_two false) : suffisant pour la dérivation.
     @sport = Sport.create!(name: "Padel test", slug: "padel-test-#{SecureRandom.hex(4)}", icon: "🎾")
-    @tournament = Tournament.create!(name: "T", sport: @sport, format: "ronde_suisse", status: "in_progress")
+    @tournament = Tournament.create!(name: "T", sport: @sport, format: "ronde_suisse", status: "in_progress",
+                                     max_players: 8, date: Date.tomorrow, place: "Terrain test")
     @round = @tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
     @a = tu("a")
     @b = tu("b")
@@ -113,7 +114,8 @@ class TournamentMatchTest < ActiveSupport::TestCase
 
   test "règle des 2 points d'écart (ping-pong)" do
     pp_sport = Sport.create!(name: "Ping Pong", slug: "ping-pong", icon: "🏓")
-    pp_tournament = Tournament.create!(name: "PP", sport: pp_sport, format: "ronde_suisse", status: "in_progress")
+    pp_tournament = Tournament.create!(name: "PP", sport: pp_sport, format: "ronde_suisse", status: "in_progress",
+                                       max_players: 8, date: Date.tomorrow, place: "Terrain test")
     round = pp_tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
     p1 = pp_tournament.tournament_users.create!(user: create_test_user(email: "pp1-#{SecureRandom.hex(3)}@t.fr"),
                                                 role: "joueur", status: "approved")
@@ -133,7 +135,8 @@ class TournamentMatchTest < ActiveSupport::TestCase
 
   test "ping-pong best_of 5 : il faut 3 sets pour gagner" do
     pp_sport = Sport.create!(name: "Ping Pong", slug: "ping-pong", icon: "🏓")
-    pp_tournament = Tournament.create!(name: "PP", sport: pp_sport, format: "ronde_suisse", status: "in_progress")
+    pp_tournament = Tournament.create!(name: "PP", sport: pp_sport, format: "ronde_suisse", status: "in_progress",
+                                       max_players: 8, date: Date.tomorrow, place: "Terrain test")
     round = pp_tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
     p1 = pp_tournament.tournament_users.create!(user: create_test_user(email: "q1-#{SecureRandom.hex(3)}@t.fr"),
                                                 role: "joueur", status: "approved")

@@ -163,7 +163,7 @@
               <%= hidden_field_tag :co_organizer_email, "", data: { "invite-search-target": "hidden" } %>
               <div class="invite-search-dropdown" data-invite-search-target="dropdown" style="display:none;"></div>
             </div>
-            <small class="form-text text-muted">
+            <small class="form-text tournament-form-hint">
               Le co-organisateur pourra gérer le tournoi (hors suppression et édition des infos).
             </small>
           </div>
@@ -182,7 +182,7 @@
 
             <%# Date %>
             <div class="col-md-6">
-              <%= f.label :date, "Date du tournoi", class: "form-label" %>
+              <%= f.label :date, class: "form-label" do %>Date du tournoi <span class="required-star">*</span><% end %>
               <div style="position:relative;" data-controller="date-picker">
                 <%= f.hidden_field :date, value: @tournament.date,
                     data: {
@@ -265,12 +265,13 @@
 
             <%# Lieu — autocomplete place-search %>
             <div class="col-12">
-              <%= f.label :place, "Lieu", class: "form-label" %>
+              <%= f.label :place, class: "form-label" do %>Lieu <span class="required-star">*</span><% end %>
               <div class="position-relative" data-place-search-target="inputWrapper">
                 <%= f.text_field :place,
                     class: "form-select",
                     placeholder: "Ex: Club Padel Riviera, Nice...",
                     autocomplete: "off",
+                    required: true,
                     data: {
                       "place-search-target": "input",
                       "tournament-form-target": "placeInput",
@@ -299,7 +300,7 @@
             <label class="form-label d-block">Nombre de joueurs <span class="required-star">*</span></label>
             <%= f.hidden_field :max_players, data: { "tournament-form-target": "maxPlayersInput" } %>
 
-            <div class="match-level-buttons">
+            <div class="match-level-buttons" data-tournament-form-target="presetsGroup">
               <% Tournament::PLAYER_COUNTS.each do |count| %>
                 <button type="button"
                         class="match-level-btn tournament-count-btn <%= 'active' if @tournament.max_players == count %>"
@@ -339,7 +340,7 @@
                   data: { "tournament-form-target": "selfRegister", "action": "change->tournament-form#toggleSelfRegister" } %>
               <%= label_tag :self_register, "M'inscrire aussi comme joueur", class: "form-check-label" %>
             </div>
-            <small class="form-text text-muted">
+            <small class="form-text tournament-form-hint">
               Par défaut tu es organisateur (admin) sans occuper de place de joueur.
             </small>
           </div>

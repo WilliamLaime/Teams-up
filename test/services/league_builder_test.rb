@@ -15,7 +15,8 @@ class LeagueBuilderTest < ActiveSupport::TestCase
 
   def build_tournament(count)
     tournament = Tournament.create!(name: "T#{SecureRandom.hex(3)}", sport: @sport, user: @admin,
-                                    format: "championnat", status: "open", max_players: count)
+                                    format: "championnat", status: "open", max_players: count,
+                                    date: Date.tomorrow, place: "Terrain test")
     count.times do |i|
       user = create_test_user(email: "p#{i}-#{SecureRandom.hex(3)}@test.fr")
       tournament.tournament_users.create!(user: user, role: "joueur", status: "approved")
