@@ -22,6 +22,57 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tournament-soon__title"
   end
 
+  # ─── GET /tournois : onglets + pagination (page liste) ──────────────────────
+  def open_tournament(name, max_players: 8)
+    Tournament.create!(name: name, sport: @sport, format: "poules", status: "open",
+                       max_players: max_players, date: Date.tomorrow, place: "Terrain test")
+  end
+
+  test "GET /tournois sélectionne l'onglet 'mine' par défaut pour un inscrit actif" do
+    sign_in @user
+    t = open_tournament("Mon tournoi")
+    t.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+
+    get tournaments_path
+    assert_response :success
+    assert_select ".tournaments-index-tabs__tab.is-active", text: /Mes tournois/
+  end
+
+  test "GET /tournois?tab=join exclut les tournois complets" do
+    sign_in @user
+    full = open_tournament("Complet", max_players: 1)
+    full.tournament_users.create!(user: @co_org, role: "joueur", status: "approved")
+    ouvert = open_tournament("Ouvert", max_players: 8)
+
+    get tournaments_path(tab: "join")
+    assert_response :success
+    assert_match ouvert.name, response.body
+    assert_no_match(/#{Regexp.escape(full.name)}/, response.body)
+  end
+
+  test "GET /tournois?tab=join pagine à 9 par page" do
+    10.times { |i| open_tournament("Pagination #{i}") }
+
+    get tournaments_path(tab: "join")
+    assert_response :success
+    assert_select ".row.row-cols-1 > .col", 9
+
+    get tournaments_path(tab: "join", page: 2)
+    assert_select ".row.row-cols-1 > .col", 1
+  end
+
+  test "GET /tournois masque l'onglet 'Mes tournois' pour un visiteur non connecté" do
+    get tournaments_path
+    assert_response :success
+    assert_select ".tournaments-index-tabs__tab", text: /Mes tournois/, count: 0
+  end
+
+  test "GET /tournois conserve query et sport dans les liens d'onglet" do
+    get tournaments_path(query: "Padel", tab: "completed")
+    assert_response :success
+    assert_select ".tournaments-index-tabs__tab[href*=?]", "query=Padel"
+  end
+
   # ─── GET /tournois/new : le formulaire se rend (ERB compile) ────────────────
   test "GET /tournois/new retourne 200 pour un utilisateur connecté" do
     sign_in @user

@@ -60,7 +60,7 @@ class MatchesController < ApplicationController
     # Appliquée en dernier, après tous les filtres, pour ne charger et ne
     # précharger (avatars, sport…) que les matchs réellement affichés.
     # Pagy conserve automatiquement les paramètres de filtre dans les liens.
-    @pagy, @matches = pagy(@matches, items: 12)
+    @pagy, @matches = pagy(@matches, limit: 12)
 
     # Meta tags pour la liste des matchs — description adaptée au sport actif si filtré
     sport_name = current_sport&.name

@@ -7,42 +7,38 @@ class TournamentsController < ApplicationController
 
   before_action :set_tournament, only: %i[show start]
 
+  # Associations préchargées pour les cards (sport, avatars des participants,
+  # organisateur) — appliquées uniquement à l'onglet actif (cf. #index), jamais
+  # aux requêtes de comptage.
+  CARD_INCLUDES = [
+    :sport,
+    { user: { profil: { avatar_attachment: :blob } } },
+    { tournament_users: { user: { profil: { avatar_attachment: :blob } } } }
+  ].freeze
+
+  # Onglets de la page liste (cf. docs/TOURNOI.md).
+  TABS = %i[mine join ongoing completed].freeze
+
   # Tant que la feature tournoi est en chantier, on empêche son indexation par les
   # moteurs de recherche (cf. layout application.html.erb + robots.txt). Les devs
   # accèdent aux pages via l'URL directe ; seul le header pointe vers coming_soon.
   before_action :mark_noindex
 
   # GET /tournois
-  # Trois sections (cf. docs/TOURNOI.md) :
-  #   1. Mes tournois en cours   → inscrit + non terminé
-  #   2. Tournois à rejoindre     → inscriptions ouvertes, non inscrit
-  #   3. Tournois en cours publics → lancés, non inscrit (lecture seule)
+  # Un seul onglet affiché à la fois (cf. TABS), paginé — cf. docs/TOURNOI.md :
+  #   mine      → inscrit + non terminé
+  #   join      → inscriptions ouvertes, non inscrit, non complet
+  #   ongoing   → lancés, non inscrit (lecture seule)
+  #   completed → clôturés, tous (lecture seule)
   def index
-    # Base : tournois visibles (policy_scope) + eager loading pour éviter les N+1
-    # sur les cartes (sport, avatars des participants, organisateur).
-    scope = policy_scope(Tournament)
-            .includes(:sport,
-                      { user: { profil: { avatar_attachment: :blob } } },
-                      { tournament_users: { user: { profil: { avatar_attachment: :blob } } } })
-
-    # Filtre par sport (slug) et recherche full-text (barre de recherche).
-    scope = scope.where(sport: Sport.find_by(slug: params[:sport])) if params[:sport].present?
-    scope = scope.search_by_name(params[:query]) if params[:query].present?
-
-    # IDs des tournois où l'utilisateur courant est inscrit (1 requête, réutilisée).
-    my_ids = user_signed_in? ? current_user.tournament_users.pluck(:tournament_id) : []
-
-    # 1. Mes tournois en cours (masqué si déconnecté)
-    @my_tournaments = user_signed_in? ? scope.not_completed.where(id: my_ids).order(date: :asc) : []
-
-    # 2. Tournois à rejoindre : inscriptions ouvertes, non inscrit
-    @tournaments_to_join = scope.open_for_registration
-                                .where.not(id: my_ids)
-                                .order(date: :asc)
-                                .reject(&:full?) # complet → plus "à rejoindre"
-
-    # 3. Tournois en cours publics (non inscrit) → visualisation seule
-    @ongoing_tournaments = scope.in_progress.where.not(id: my_ids).order(date: :asc)
+    filtered    = filtered_tournaments
+    my_ids      = my_tournament_ids
+    @tab_counts = tab_counts(filtered, my_ids)
+    @active_tab = resolve_active_tab(@tab_counts)
+    @pagy, @tournaments = pagy(
+      tab_scope(filtered, @active_tab, my_ids).includes(CARD_INCLUDES),
+      limit: 9
+    )
 
     # Liste des sports pour les filtres pill de la barre.
     @sports = Sport.order(:name)
@@ -151,6 +147,53 @@ class TournamentsController < ApplicationController
 
   def set_tournament
     @tournament = Tournament.from_param(params[:id])
+  end
+
+  # Base filtrée (policy_scope + sport + recherche), SANS eager loading : sert à
+  # la fois aux comptages légers (#tab_counts) et à la requête finale paginée.
+  def filtered_tournaments
+    scope = policy_scope(Tournament)
+    scope = scope.where(sport: Sport.find_by(slug: params[:sport])) if params[:sport].present?
+    scope = scope.search_by_name(params[:query]) if params[:query].present?
+    scope
+  end
+
+  # IDs des tournois où l'utilisateur courant est inscrit (1 requête, réutilisée).
+  def my_tournament_ids
+    return [] unless user_signed_in?
+
+    current_user.tournament_users.pluck(:tournament_id)
+  end
+
+  # Compteurs légers par onglet (COUNT seul, pas d'eager loading) — servent aux
+  # badges de la barre d'onglets et à déterminer l'onglet par défaut.
+  def tab_counts(scope, my_ids)
+    {
+      mine: user_signed_in? ? scope.not_completed.where(id: my_ids).count : 0,
+      join: scope.open_for_registration.where.not(id: my_ids).not_full.count,
+      ongoing: scope.in_progress.where.not(id: my_ids).count,
+      completed: scope.completed.count
+    }
+  end
+
+  # Un ?tab= explicite (même vide) est toujours honoré tel quel, pour qu'un lien
+  # direct/partagé vers un onglet vide affiche le bon état vide. Sans paramètre,
+  # on prend le premier onglet non vide (mine en priorité si connecté).
+  def resolve_active_tab(counts)
+    requested = params[:tab].to_s.to_sym
+    return requested if TABS.include?(requested) && (requested != :mine || user_signed_in?)
+
+    TABS.find { |t| (t != :mine || user_signed_in?) && counts[t].positive? } ||
+      (user_signed_in? ? :mine : :join)
+  end
+
+  def tab_scope(scope, tab, my_ids)
+    case tab
+    when :mine      then scope.not_completed.where(id: my_ids).order(date: :asc)
+    when :join      then scope.open_for_registration.where.not(id: my_ids).not_full.order(date: :asc)
+    when :ongoing   then scope.in_progress.where.not(id: my_ids).order(date: :asc)
+    when :completed then scope.completed.order(date: :desc)
+    end
   end
 
   # Marque la page comme non-indexable (voir <meta robots> dans le layout).
