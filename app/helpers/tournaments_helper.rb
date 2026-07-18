@@ -30,4 +30,15 @@ module TournamentsHelper
     else "Tour #{round.number}"
     end
   end
+
+  # Message affiché dans l'état vide de la page liste, selon l'onglet actif
+  # (TournamentsController::TABS).
+  def tab_empty_message(tab)
+    {
+      mine: "Tu n'es inscrit à aucun tournoi en cours pour l'instant.",
+      join: "Aucun tournoi à rejoindre pour le moment.",
+      ongoing: "Aucun tournoi en cours actuellement.",
+      completed: "Aucun tournoi terminé pour l'instant."
+    }.fetch(tab, "Aucun tournoi pour le moment.")
+  end
 end

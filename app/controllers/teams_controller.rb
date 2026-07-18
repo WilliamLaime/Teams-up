@@ -19,7 +19,7 @@ class TeamsController < ApplicationController
       Team.where.not(id: @my_teams.select(:id))
           .preload(:captain, :team_members)
           .order(created_at: :desc),
-      items: 9
+      limit: 9
     )
 
     # Ids des équipes où l'user a déjà une demande en attente → bouton "Demande envoyée"
