@@ -12,7 +12,8 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     @sport  = Sport.create!(name: "Tennis Test", slug: "tennis", icon: "🎾")
 
     @tournament = Tournament.create!(name: "T", sport: @sport, user: @admin,
-                                     format: "ronde_suisse", status: "open", max_players: 8)
+                                     format: "ronde_suisse", status: "open", max_players: 8,
+                                     date: Date.tomorrow, place: "Terrain test")
     8.times do |i|
       u = create_test_user(email: "j#{i}@example.com")
       @tournament.tournament_users.create!(user: u, role: "joueur", status: "approved")

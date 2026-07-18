@@ -400,7 +400,8 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   # de match suisse prête à être « transformée » en rencontre standard.
   def build_tournament_match(owner: @user)
     tournament = Tournament.create!(name: "Tournoi test", sport: @sport, user: owner,
-                                    format: "ronde_suisse", status: "in_progress", max_players: 8)
+                                    format: "ronde_suisse", status: "in_progress", max_players: 8,
+                                    date: Date.tomorrow, place: "Terrain test")
     player_b_user = create_test_user(email: "tplayer-#{SecureRandom.hex(3)}@example.com")
     a = tournament.tournament_users.create!(user: owner, role: "joueur", status: "approved")
     b = tournament.tournament_users.create!(user: player_b_user, role: "joueur", status: "approved")

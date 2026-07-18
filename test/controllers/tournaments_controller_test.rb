@@ -97,7 +97,8 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
   # ─── POST /tournois/:id/start : lancement (Lot 3) ───────────────────────────
   def open_tournament_with_players(count)
     t = Tournament.create!(name: "Start Test", sport: @sport, user: @user,
-                           format: "ronde_suisse", status: "open", max_players: count)
+                           format: "ronde_suisse", status: "open", max_players: count,
+                           date: Date.tomorrow, place: "Terrain test")
     count.times do |i|
       u = create_test_user(email: "sp#{i}@example.com")
       t.tournament_users.create!(user: u, role: "joueur", status: "approved")
@@ -169,7 +170,8 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
   # ─── Formats Lot 5 : rendu des nouvelles vues (les partials ERB compilent) ────
   def launched_tournament(format, count)
     t = Tournament.create!(name: "Fmt #{format}", sport: @sport, user: @user,
-                           format: format, status: "open", max_players: count)
+                           format: format, status: "open", max_players: count,
+                           date: Date.tomorrow, place: "Terrain test")
     count.times do |i|
       u = create_test_user(email: "f-#{format}-#{i}@example.com")
       t.tournament_users.create!(user: u, role: "joueur", status: "approved")
