@@ -86,6 +86,19 @@ class Tournament < ApplicationRecord
   scope :open_for_registration, -> { where(status: "open") }
   scope :in_progress,           -> { where(status: "in_progress") }
   scope :not_completed,         -> { where.not(status: "completed") }
+  scope :completed,             -> { where(status: "completed") }
+
+  # Contrepartie SQL de #full?, pour la page "à rejoindre" (paginée : on ne peut
+  # pas charger tous les enregistrements en Ruby avant de filtrer). Même seuil
+  # que #full? : max_players absent = jamais complet.
+  scope :not_full, lambda {
+    where(
+      "tournaments.max_players IS NULL OR tournaments.max_players > (" \
+      "SELECT COUNT(*) FROM tournament_users tu " \
+      "WHERE tu.tournament_id = tournaments.id " \
+      "AND tu.status = 'approved' AND tu.role = 'joueur')"
+    )
+  }
 
   # ── Prédicats d'état ────────────────────────────────────────────────────────
   def open?        = status == "open"
@@ -93,6 +106,7 @@ class Tournament < ApplicationRecord
   def completed?   = status == "completed"
 
   # Tournoi complet : autant (ou plus) d'inscrits approuvés que de places.
+  # (Contrepartie SQL pour les requêtes paginées : scope #not_full.)
   def full?
     return false if max_players.blank?
 

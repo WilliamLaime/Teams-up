@@ -4,7 +4,7 @@
 
   Variables locales :
     tournament (required) — l'objet Tournament à afficher
-    context    (optional) — :mine | :join | :ongoing → détermine le bouton du pied
+    context    (optional) — :mine | :join | :ongoing | :completed → détermine le bouton du pied
 %>
 <% context ||= :join %>
 
@@ -63,21 +63,14 @@
   <%# ── Corps ─────────────────────────────────────────────────────────────── %>
   <div class="match-card-body">
 
-    <%# Ligne badges : format (gauche) + capacité (droite) %>
+    <%# Ligne badges : format. La capacité (X/Y joueurs) est déjà affichée plus
+        bas (ligne des avatars) — pas besoin de la dupliquer ici. %>
     <div class="d-flex align-items-center justify-content-between mb-2">
       <div class="d-flex gap-1 flex-wrap">
         <% if format_label %>
           <span class="match-badge-level level-tier-1"><%= format_label %></span>
         <% end %>
       </div>
-      <% if tournament.max_players.present? %>
-        <%# Capacité totale du tournoi. On évite le "x/y" ici : la progression
-            des inscrits est déjà affichée plus bas (ligne des avatars). %>
-        <span class="match-card-format">
-          <i data-lucide="users" style="width:12px;height:12px;" aria-hidden="true"></i>
-          <%= tournament.max_players %> joueurs
-        </span>
-      <% end %>
     </div>
 
     <%# Titre %>
