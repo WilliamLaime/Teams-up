@@ -43,8 +43,23 @@ class TournamentUsersController < ApplicationController
     authorize tournament_user, :withdraw?
 
     WithdrawPlayer.new(@tournament, tournament_user).call!
-    redirect_to tournament_path(@tournament),
-                notice: "#{tournament_user.display_name} a déclaré forfait."
+    @tournament.reload
+
+    # Turbo Stream : on rafraîchit à la fois le tableau (scores forfait) et la
+    # liste des participants, SANS recharger la page — sinon l'utilisateur perd
+    # l'onglet « Participants » (le show recharge toujours sur l'onglet Matchs).
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.update("tournament_board", partial: "tournaments/board", locals: { tournament: @tournament }),
+          turbo_stream.update("tournament_participants", partial: "tournaments/participants", locals: { tournament: @tournament })
+        ]
+      end
+      format.html do
+        redirect_to tournament_path(@tournament),
+                    notice: "#{tournament_user.display_name} a déclaré forfait."
+      end
+    end
   end
 
   private

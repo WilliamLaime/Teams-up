@@ -95,7 +95,9 @@
 
         <section class="tournament-tabs__panel" role="tabpanel" hidden
                  data-tournament-tabs-target="panel" data-panel="participants">
-          <%= render "tournaments/participants", tournament: @tournament %>
+          <div id="tournament_participants">
+            <%= render "tournaments/participants", tournament: @tournament %>
+          </div>
         </section>
 
         <section class="tournament-tabs__panel" role="tabpanel" hidden

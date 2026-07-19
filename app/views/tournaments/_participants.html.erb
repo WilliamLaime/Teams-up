@@ -18,15 +18,19 @@
     <div class="tournament-participants__grid">
       <% if tournament.user %>
         <div class="participant-chip participant-chip--admin">
-          <%= user_avatar_tag tournament.user, css_class: "participant-chip__avatar" %>
-          <span class="participant-chip__name"><%= tournament.user.display_name %></span>
+          <%= link_to user_profil_path(tournament.user), class: "participant-chip__link" do %>
+            <%= user_avatar_tag tournament.user, css_class: "participant-chip__avatar" %>
+            <span class="participant-chip__name"><%= tournament.user.display_name %></span>
+          <% end %>
           <span class="participant-chip__role">Admin</span>
         </div>
       <% end %>
       <% co_organizers.each do |tu| %>
         <div class="participant-chip participant-chip--admin">
-          <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
-          <span class="participant-chip__name"><%= tu.display_name %></span>
+          <%= link_to user_profil_path(tu.user), class: "participant-chip__link" do %>
+            <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
+            <span class="participant-chip__name"><%= tu.display_name %></span>
+          <% end %>
           <span class="participant-chip__role">Co-organisateur</span>
         </div>
       <% end %>
@@ -45,8 +49,10 @@
       <div class="tournament-participants__grid">
         <% players.each do |tu| %>
           <div class="participant-chip">
-            <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
-            <span class="participant-chip__name"><%= tu.display_name %></span>
+            <%= link_to user_profil_path(tu.user), class: "participant-chip__link" do %>
+              <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
+              <span class="participant-chip__name"><%= tu.display_name %></span>
+            <% end %>
             <% if tu.withdrawn? %>
               <span class="participant-chip__state participant-chip__state--eliminated">Forfait</span>
             <% elsif tu.qualified? %>
