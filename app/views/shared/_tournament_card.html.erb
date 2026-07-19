@@ -49,13 +49,19 @@
       </div>
     <% end %>
 
-    <%# Overlay d'état — "En cours" pour un tournoi lancé, "Terminé" si clôturé %>
+    <%# Overlay d'état — "En cours" pour un tournoi lancé, "Terminé" une fois joué,
+        "Inscriptions closes" pour un tournoi complet/clôturé pas encore lancé %>
     <% if tournament.completed? %>
       <div class="match-completed-overlay">Terminé</div>
     <% elsif tournament.in_progress? %>
       <div class="match-status-overlay match-status-overlay--inscrit">
         <i data-lucide="zap" style="width:18px;height:18px;" aria-hidden="true"></i>
         En cours
+      </div>
+    <% elsif tournament.closed? %>
+      <div class="match-status-overlay match-status-overlay--waiting">
+        <i data-lucide="lock" style="width:18px;height:18px;" aria-hidden="true"></i>
+        Inscriptions closes
       </div>
     <% end %>
   </div>
@@ -114,7 +120,7 @@
       </div>
       <span class="match-players-text">
         <% if tournament.max_players.present? %>
-          <%= players_count %>/<%= tournament.max_players %> joueurs
+          <%= players_count %>/<%= tournament.max_players %> <%= tournament.preset_capacity? ? "joueurs" : "participants attendus" %>
         <% else %>
           <%= players_count %> inscrit<%= players_count > 1 ? "s" : "" %>
         <% end %>

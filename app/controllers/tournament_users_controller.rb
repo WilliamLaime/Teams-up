@@ -6,8 +6,18 @@ class TournamentUsersController < ApplicationController
 
   # POST /tournois/:tournament_id/tournament_users
   def create
-    tournament_user = @tournament.tournament_users.new(user: current_user, role: "joueur", status: "approved")
+    # Construit via TournamentUser.new (côté belongs_to), PAS via
+    # @tournament.tournament_users.new : ce dernier ajoute immédiatement le
+    # nouvel enregistrement (non sauvegardé) à la collection en mémoire, ce qui
+    # fausserait le comptage de #full? juste en dessous (le tournoi semblerait
+    # déjà complet à cause de CE joueur, avant même qu'il soit inscrit).
+    tournament_user = TournamentUser.new(tournament: @tournament, user: current_user, role: "joueur", status: "approved")
     authorize tournament_user
+
+    unless @tournament.registration_open? && !@tournament.full?
+      redirect_to tournaments_path, alert: "Les inscriptions sont closes ou le tournoi est complet."
+      return
+    end
 
     if tournament_user.save
       redirect_to tournaments_path, notice: "Tu es inscrit au tournoi « #{@tournament.name} »."

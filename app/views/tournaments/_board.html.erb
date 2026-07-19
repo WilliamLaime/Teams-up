@@ -1,12 +1,26 @@
 <%# ── Board du tournoi ────────────────────────────────────────────────────────
     Aiguillage selon l'état :
-      • open        → bouton « Lancer le tournoi » (organisateur) ou message d'attente
+      • open/closed → bouton « Lancer le tournoi » (organisateur) ou message d'attente
       • in_progress → rondes suisses + tableau final
       • completed   → idem, avec le vainqueur mis en avant
     `can_manage` = l'utilisateur peut saisir les résultats / lancer (admin ou co-org). %>
 <% can_manage = user_signed_in? && policy(tournament).manage? %>
 
-<% if tournament.open? %>
+<%# Terminer le tournoi : dispo tant qu'il n'est pas déjà terminé (abandon avant/
+    pendant le tournoi, en plus de la fin automatique posée par BracketBuilder). %>
+<% if can_manage && !tournament.completed? %>
+  <div class="tournament-finish-action">
+    <%= button_to finish_tournament_path(tournament),
+                  method: :patch,
+                  class: "btn-cta-secondary tournament-finish-action__btn",
+                  data: { turbo_confirm: "Terminer ce tournoi maintenant ?" } do %>
+      <i data-lucide="flag" aria-hidden="true"></i>
+      Terminer le tournoi
+    <% end %>
+  </div>
+<% end %>
+
+<% if tournament.open? || tournament.closed? %>
   <%= render "tournaments/start_panel", tournament: tournament, can_manage: can_manage %>
 <% else %>
   <% if tournament.completed? && (champion = tournament.bracket_rounds.last&.tournament_matches&.first&.winner) %>

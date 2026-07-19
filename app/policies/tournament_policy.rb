@@ -25,8 +25,10 @@ class TournamentPolicy < ApplicationPolicy
     create?
   end
 
+  # Édition des infos du tournoi : ouverte à l'admin ET aux co-organisateurs,
+  # comme le reste de la gestion du tableau (cf. Tournament#organizer?).
   def update?
-    owner?
+    manage?
   end
 
   def destroy?
@@ -36,6 +38,16 @@ class TournamentPolicy < ApplicationPolicy
   # Gestion du tableau (lancer le tournoi, saisir les résultats).
   # Ouverte à l'admin ET aux co-organisateurs (cf. Tournament#organizer?).
   def start?
+    manage?
+  end
+
+  # Clôturer/rouvrir les inscriptions avant le lancement.
+  def toggle_registrations?
+    manage?
+  end
+
+  # Terminer le tournoi manuellement (abandon, ou fin anticipée).
+  def finish?
     manage?
   end
 
