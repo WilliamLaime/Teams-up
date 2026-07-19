@@ -204,6 +204,24 @@
     &--tracked { background: var(--theme-hover-bg); }
   }
 
+  // Seuls l'avatar + le nom sont cliquables (lien vers le profil) — le score et
+  // l'icône de victoire restent hors du lien. On neutralise le style de lien
+  // par défaut et on ajoute un léger fond au survol pour signaler que c'est cliquable.
+  &__player-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    flex: 1 1 auto;
+    border-radius: 6px;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover { background: var(--theme-hover-bg); }
+  }
+
   &__avatar {
     width: 32px;
     height: 32px;
@@ -624,6 +642,19 @@
   border-radius: 12px;
   padding: 0.55rem 0.7rem;
 
+  // Avatar + nom cliquables → profil du joueur. On ne wrappe pas toute la
+  // pastille (le bouton forfait doit rester un élément indépendant du lien).
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    flex: 1 1 auto;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
   &__avatar {
     width: 34px;
     height: 34px;
@@ -670,29 +701,27 @@
     background-color: rgba(#c0392b, 0.12);
   }
 
-  // Bouton « Déclarer forfait » (organisateur). button_to génère un <form> ; on
-  // neutralise sa marge et on stylise le <button> interne en pastille discrète.
+  // Bouton « Déclarer forfait » (organisateur). button_to avec un bloc applique
+  // la classe directement au <button> généré (pas au <form> englobant) — on
+  // stylise donc ce sélecteur en pastille discrète, cohérente avec le reste du
+  // design system (pastille outline rouge, inversée au survol).
   &__forfeit {
     margin-left: auto;
-    margin-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid rgba(#c0392b, 0.5);
+    background: transparent;
+    color: #c0392b;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 
-    button {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      border: 1px solid rgba(#c0392b, 0.5);
-      background: transparent;
-      color: #c0392b;
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: background-color 0.15s ease, color 0.15s ease;
-
-      &:hover { background: #c0392b; color: #fff; }
-      i { width: 13px; height: 13px; }
-    }
+    &:hover { background: #c0392b; color: #fff; }
+    i { width: 13px; height: 13px; }
   }
 }
 
