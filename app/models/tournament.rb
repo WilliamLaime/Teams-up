@@ -27,7 +27,8 @@ class Tournament < ApplicationRecord
 
   # ── Constantes métier ────────────────────────────────────────────────────────
   # État du tournoi (voir la catégorisation de la page liste dans le controller).
-  STATUSES = %w[open in_progress completed].freeze
+  # "closed" = inscriptions fermées (complet ou clôture manuelle) mais pas encore lancé.
+  STATUSES = %w[open closed in_progress completed].freeze
   # Formats disponibles. La ronde suisse est le format prioritaire (cf. docs/TOURNOI.md).
   FORMATS  = %w[ronde_suisse poules championnat].freeze
 
@@ -102,15 +103,36 @@ class Tournament < ApplicationRecord
 
   # ── Prédicats d'état ────────────────────────────────────────────────────────
   def open?        = status == "open"
+  def closed?      = status == "closed"
   def in_progress? = status == "in_progress"
   def completed?   = status == "completed"
 
   # Tournoi complet : autant (ou plus) d'inscrits approuvés que de places.
   # (Contrepartie SQL pour les requêtes paginées : scope #not_full.)
+  #
+  # Requête SQL fraîche (`.count` SANS bloc), plutôt que #approved_players_count (qui
+  # compte en Ruby sur l'association potentiellement déjà chargée/mise en cache) :
+  # #full? sert de garde-fou juste après une inscription (contrôleur + callback de
+  # clôture auto), et une instance de Tournament qui a déjà accédé à
+  # `tournament_users` plus tôt dans la même requête renverrait un compte périmé
+  # (le joueur qui vient de s'inscrire n'y figurerait pas encore) — un tournoi
+  # complet resterait alors « pas plein » à ses propres yeux.
   def full?
     return false if max_players.blank?
 
-    approved_players_count >= max_players
+    tournament_users.approved.players.count >= max_players
+  end
+
+  # Clôture réactive : appelée après chaque inscription (cf. TournamentUser#after_save).
+  # Ne fait rien si déjà clôturé/lancé/terminé, ou si le tournoi n'est pas plein.
+  def close_registrations_if_full!
+    update!(status: "closed") if open? && full?
+  end
+
+  # Nombre de joueurs issu d'un preset (8/16/32) plutôt que d'une saisie en mode
+  # Libre — sert uniquement à l'affichage ("joueurs" vs "participants attendus").
+  def preset_capacity?
+    PLAYER_COUNTS.include?(max_players)
   end
 
   # Inscriptions réellement ouvertes : statut "open" ET deadline non dépassée.
@@ -209,9 +231,10 @@ class Tournament < ApplicationRecord
   # Nombre minimal de joueurs pour lancer un tournoi.
   MIN_PLAYERS_TO_START = 2
 
-  # Peut-on lancer le tournoi ? (inscriptions ouvertes + effectif suffisant)
+  # Peut-on lancer le tournoi ? (inscriptions ouvertes ou tout juste clôturées,
+  # + effectif suffisant)
   def startable?
-    open? && approved_players_count >= MIN_PLAYERS_TO_START
+    (open? || closed?) && approved_players_count >= MIN_PLAYERS_TO_START
   end
 
   # Champ source du slug (utilisé par le concern Sluggable).

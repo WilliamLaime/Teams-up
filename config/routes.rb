@@ -149,8 +149,14 @@ Rails.application.routes.draw do
       get :search
       get :coming_soon, path: "bientot"
     end
-    # POST /tournois/:id/start => lancer le tournoi (génère la ronde suisse 1)
-    member { post :start }
+    # POST  /tournois/:id/start                 => lancer le tournoi (génère la ronde suisse 1)
+    # PATCH /tournois/:id/toggle_registrations   => clôturer/rouvrir les inscriptions
+    # PATCH /tournois/:id/finish                 => terminer le tournoi manuellement
+    member do
+      post :start
+      patch :toggle_registrations
+      patch :finish
+    end
     resources :tournament_users, only: [:create, :destroy] do
       # PATCH .../tournament_users/:id/withdraw => déclarer forfait (organisateur)
       member { patch :withdraw }

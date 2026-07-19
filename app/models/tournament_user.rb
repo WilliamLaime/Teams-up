@@ -26,6 +26,11 @@ class TournamentUser < ApplicationRecord
   validates :role, inclusion: { in: ROLES }, allow_nil: true
   validates :state, inclusion: { in: STATES }
 
+  # Clôture réactive des inscriptions dès que le tournoi devient complet — même
+  # pattern que Match#recompute_player_left!. Pas de hook after_destroy : quitter
+  # un tournoi ne peut jamais le rendre plus complet.
+  after_save :close_tournament_if_full
+
   scope :approved, -> { where(status: "approved") }
   # Uniquement les inscrits qui occupent une place de joueur.
   scope :players,  -> { where(role: "joueur") }
@@ -49,4 +54,10 @@ class TournamentUser < ApplicationRecord
 
   # Nom affiché du joueur (délègue au profil de l'utilisateur).
   def display_name = user.display_name
+
+  private
+
+  def close_tournament_if_full
+    tournament.close_registrations_if_full!
+  end
 end

@@ -1,0 +1,27 @@
+<%# ══════════════════════════════════════════════════════════════
+    Page d'édition d'un tournoi (/tournois/:id/edit)
+    ══════════════════════════════════════════════════════════════
+    Même ossature que la création (cf. new.html.erb), rendue par le
+    même formulaire _form.html.erb (form_with model: @tournament
+    fonctionne déjà pour un enregistrement persisté).
+    ══════════════════════════════════════════════════════════════ %>
+<% content_for :title, "Modifier #{@tournament.name}" %>
+
+<div class="match-create-page">
+
+  <%# Bannière d'en-tête %>
+  <div class="match-new-banner">
+    <div class="container">
+      <%= render "shared/nav_button", url: tournament_path(@tournament), label: "Retour au tournoi", direction: "back", extra_class: "mb-3" %>
+
+      <h1 class="match-new-banner-title">Modifier le tournoi</h1>
+      <p class="match-new-banner-subtitle">
+        Ajuste la date, le lieu ou les paramètres de « <%= @tournament.name %> ».
+      </p>
+    </div>
+  </div>
+
+  <%# Formulaire 2 colonnes (sections + récapitulatif sticky) %>
+  <%= render "form" %>
+
+</div>

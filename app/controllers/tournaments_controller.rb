@@ -5,7 +5,7 @@ class TournamentsController < ApplicationController
   # coming_soon : page d'attente publique (la feature tournoi n'est pas encore lancée).
   skip_before_action :authenticate_user!, only: %i[index show coming_soon]
 
-  before_action :set_tournament, only: %i[show start]
+  before_action :set_tournament, only: %i[show start edit update toggle_registrations finish]
 
   # Associations préchargées pour les cards (sport, avatars des participants,
   # organisateur) — appliquées uniquement à l'onglet actif (cf. #index), jamais
@@ -123,6 +123,59 @@ class TournamentsController < ApplicationController
     end
   end
 
+  # GET /tournois/:id/edit
+  # Réutilise le même formulaire que la création (_form.html.erb). Ouvert à
+  # l'organisateur ET aux co-organisateurs (cf. TournamentPolicy#update?).
+  def edit
+    authorize @tournament
+  end
+
+  # PATCH /tournois/:id
+  # Les champs structurels (format, nb de joueurs, sport) sont verrouillés une
+  # fois le tournoi lancé, pour ne pas corrompre le tirage/tableau en cours.
+  def update
+    authorize @tournament
+
+    assign_registration_deadline
+
+    if @tournament.update(tournament_params)
+      redirect_to tournament_path(@tournament), notice: "Tournoi mis à jour."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  # PATCH /tournois/:id/toggle_registrations
+  # Clôture ou rouvre les inscriptions manuellement, avant le lancement.
+  def toggle_registrations
+    authorize @tournament, :toggle_registrations?
+
+    case @tournament.status
+    when "open"
+      @tournament.update!(status: "closed")
+      redirect_to tournament_path(@tournament), notice: "Inscriptions closes."
+    when "closed"
+      @tournament.update!(status: "open")
+      redirect_to tournament_path(@tournament), notice: "Inscriptions rouvertes."
+    else
+      redirect_to tournament_path(@tournament), alert: "Impossible de changer les inscriptions à ce stade."
+    end
+  end
+
+  # PATCH /tournois/:id/finish
+  # Termine le tournoi manuellement (abandon ou fin anticipée), en plus de la
+  # fin automatique posée par BracketBuilder en fin de tableau.
+  def finish
+    authorize @tournament, :finish?
+
+    if @tournament.completed?
+      redirect_to tournament_path(@tournament), alert: "Ce tournoi est déjà terminé."
+    else
+      @tournament.update!(status: "completed")
+      redirect_to tournament_path(@tournament), notice: "Tournoi terminé."
+    end
+  end
+
   # GET /tournois/search?q=...
   # Autocomplete JSON pour désigner un co-organisateur (même pattern que
   # TeamInvitationsController#search).
@@ -201,11 +254,16 @@ class TournamentsController < ApplicationController
     @noindex = true
   end
 
+  # Verrouille format/nb de joueurs/sport une fois le tournoi lancé : ces champs
+  # pilotent le moteur de jeu (TournamentEngine) et casseraient un tirage/tableau
+  # déjà en cours s'ils changeaient sous le pied de la mécanique.
+  STRUCTURAL_FIELDS = %i[sport_id format max_players].freeze
+
   def tournament_params
-    params.require(:tournament).permit(
-      :name, :description, :sport_id, :format, :max_players,
-      :date, :time, :place, :venue_id, :banner_image
-    )
+    permitted = %i[name description date time place venue_id banner_image] + STRUCTURAL_FIELDS
+    permitted -= STRUCTURAL_FIELDS if @tournament&.persisted? && (@tournament.in_progress? || @tournament.completed?)
+
+    params.require(:tournament).permit(*permitted)
   end
 
   # La deadline (datetime) est saisie via un date-picker + deux time-pickers

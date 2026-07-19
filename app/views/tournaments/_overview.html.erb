@@ -55,7 +55,11 @@
       <dt><i data-lucide="users" aria-hidden="true"></i> Inscrits</dt>
       <dd>
         <%= tournament.approved_players_count %><% if tournament.max_players %> / <%= tournament.max_players %><% end %>
-        joueur<%= "s" if tournament.approved_players_count > 1 %>
+        <% if tournament.preset_capacity? %>
+          joueur<%= "s" if tournament.approved_players_count > 1 %>
+        <% else %>
+          participant<%= "s" if tournament.approved_players_count > 1 %> attendu<%= "s" if tournament.approved_players_count > 1 %>
+        <% end %>
       </dd>
     </div>
 
