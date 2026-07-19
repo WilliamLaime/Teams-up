@@ -128,6 +128,27 @@ c'est de l'élimination directe d'emblée).
       Tests : `league_builder_test`, `pool_builder_test`, `withdraw_player_test`, + correction dans
       `tournament_matches_controller_test`, rendus dans `tournaments_controller_test` (835 verts).
 
+### ✅ Lot 6 — Édition, clôture des inscriptions & fin manuelle `[FAIT]`
+- [x] `TournamentsController#edit`/`#update` : réutilisent `_form.html.erb` (déjà `form_with
+      model: @tournament`). Champs structurels (`sport_id`/`format`/`max_players`) verrouillés
+      côté serveur (`tournament_params`) ET côté vue une fois le tournoi `in_progress`/`completed`,
+      pour ne pas corrompre le tirage/tableau en cours.
+- [x] `TournamentPolicy#update?` passe de `owner?` à `manage?` : le co-organisateur peut
+      désormais éditer les infos au même titre que l'admin (cohérent avec ses droits déjà
+      existants sur le tableau/scores/forfaits).
+- [x] Nouvel état `closed` (`Tournament::STATUSES`) : inscriptions fermées mais tournoi pas
+      encore lancé. Clôture **automatique** dès que le tournoi devient complet
+      (`TournamentUser#after_save` → `Tournament#close_registrations_if_full!`, même pattern
+      réactif que `Match#recompute_player_left!`) **et** clôture/réouverture **manuelle** par
+      l'organisateur (`PATCH #toggle_registrations`).
+- [x] Correctif : `TournamentUsersController#create` bloque désormais réellement l'inscription
+      si `!registration_open?` ou `full?` (auparavant non vérifié — un tournoi complet ou clos
+      restait rejoignable).
+- [x] Fin manuelle du tournoi (`PATCH #finish`, statut → `completed`) en plus de la fin
+      automatique posée par `BracketBuilder` — permet de clore un tournoi abandonné.
+- [x] Affichage : libellé "participants attendus" (au lieu de "joueurs") quand `max_players`
+      vient d'une saisie Libre plutôt qu'un preset 8/16/32 (`Tournament#preset_capacity?`).
+
 ### 🔜 (ex-Lot 5, reporté) — affinements
 - [ ] Winner / Loser Bracket (format e-sport) — voir « Formats envisagés » #4.
 
@@ -142,10 +163,12 @@ c'est de l'élimination directe d'emblée).
 
 ## 📌 État courant
 
-**Lots 1 à 5 livrés.** Les 3 formats (`ronde_suisse`, `championnat`, `poules`) sont jouables de
+**Lots 1 à 6 livrés.** Les 3 formats (`ronde_suisse`, `championnat`, `poules`) sont jouables de
 bout en bout via la façade `TournamentEngine`. Un organisateur peut déclarer un **forfait**
 (exclusion du joueur, victoires par forfait) et **corriger un score verrouillé** (avec
-régénération cohérente de l'aval). Prochain chantier envisagé : Winner/Loser Bracket, puis les
+régénération cohérente de l'aval). Depuis le Lot 6, l'organisateur **et le co-organisateur**
+peuvent aussi **éditer le tournoi**, **clôturer/rouvrir les inscriptions** et **terminer
+manuellement** un tournoi. Prochain chantier envisagé : Winner/Loser Bracket, puis les
 « Futurs » ci-dessous (gamification, calendrier, Slack…).
 
 <details><summary>Historique Lots 1 à 4</summary>
@@ -175,7 +198,8 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
 </details>
 
 ### Décisions actées
-- **Statuts** (`tournaments.status`) : `open` / `in_progress` / `completed`.
+- **Statuts** (`tournaments.status`) : `open` / `closed` / `in_progress` / `completed`
+  (`closed` ajouté au Lot 6 — inscriptions fermées, tournoi pas encore lancé).
 - **Formats** (`tournaments.format`) : `ronde_suisse` / `poules` / `championnat`.
 - **3 sections** de la page liste :
   1. *Mes tournois en cours* — inscrit + non terminé (masquée si déconnecté).
@@ -207,10 +231,12 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
 
 ## ▶️ Prochaine étape proposée
 
-**Lots 1 à 5 terminés.** Pistes suivantes, par ordre de valeur :
+**Lots 1 à 6 terminés.** Pistes suivantes, par ordre de valeur :
 1. **Affiner les configs** de Ronde Suisse par effectif (16/32 ; 24 problématique) et les
    propositions du mode « Libre » (`STRUCTURE_PRESETS` + `_buildProposals` dans
    `tournament_form_controller.js`) — reste **provisoire** depuis le Lot 2.
-2. **Winner / Loser Bracket** (format e-sport) — le format complexe reporté (barrages,
+2. **Gestion des co-organisateurs après création** (ajout/retrait depuis `#edit` — pour
+   l'instant seulement à la création) — suite naturelle du Lot 6.
+3. **Winner / Loser Bracket** (format e-sport) — le format complexe reporté (barrages,
    descente en loser bracket, grande finale).
-3. Les **Futurs** (gamification, calendrier, Slack, dashboard perso, export agenda).
+4. Les **Futurs** (gamification, calendrier, Slack, dashboard perso, export agenda).

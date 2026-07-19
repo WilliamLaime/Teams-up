@@ -9,10 +9,20 @@
 <%
   # Badge d'état (libellé + variante de couleur) — cohérent avec les overlays des cartes.
   status_badge = case @tournament.status
+                 when "closed"      then { label: "Inscriptions closes", variant: "closed" }
                  when "in_progress" then { label: "En cours",   variant: "live" }
                  when "completed"   then { label: "Terminé",     variant: "done" }
                  else                    { label: "Inscriptions ouvertes", variant: "open" }
                  end
+
+  # Libellé du compteur de joueurs : "participants attendus" pour un nombre saisi en
+  # mode Libre (pas un preset 8/16/32), sinon "joueurs" (plafond ferme).
+  plural_players = @tournament.approved_players_count > 1
+  players_word = if @tournament.preset_capacity?
+                    plural_players ? "joueurs" : "joueur"
+                  else
+                    plural_players ? "participants attendus" : "participant attendu"
+                  end
 %>
 
 <div class="tournaments-index-page">
@@ -27,11 +37,17 @@
         <span class="tournament-status-badge tournament-status-badge--<%= status_badge[:variant] %>">
           <%= status_badge[:label] %>
         </span>
+        <% if policy(@tournament).update? %>
+          <%= link_to edit_tournament_path(@tournament), class: "tournament-edit-link", title: "Modifier le tournoi" do %>
+            <i data-lucide="pencil" style="width:16px;height:16px;" aria-hidden="true"></i>
+          <% end %>
+        <% end %>
       </div>
       <p class="tournament-detail-header__subtitle">
         <% if @tournament.sport %><%= @tournament.sport.name %> · <% end %>
         <%= Tournament::FORMAT_LABELS[@tournament.format] %>
-        · <%= @tournament.approved_players_count %><% if @tournament.max_players %>/<%= @tournament.max_players %><% end %> participant<%= "s" if @tournament.approved_players_count > 1 %>
+        · <%= @tournament.approved_players_count %><% if @tournament.max_players %>/<%= @tournament.max_players %><% end %>
+        <%= players_word %>
       </p>
     </header>
 

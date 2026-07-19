@@ -1,4 +1,4 @@
-<%# ── Panneau de lancement (tournoi encore "open") ──────────────────────────── %>
+<%# ── Panneau de lancement (tournoi encore "open" ou "closed") ─────────────────── %>
 <div class="tournament-start-panel">
   <div class="tournament-start-panel__info">
     <i data-lucide="users" aria-hidden="true"></i>
@@ -10,19 +10,35 @@
   </div>
 
   <% if can_manage %>
-    <% if tournament.startable? %>
-      <%# Le bouton porte les appariements de la 1re ronde pour l'animation de tirage. %>
-      <%= button_to start_tournament_path(tournament),
-                    class: "btn-cta-primary tournament-start-panel__btn",
-                    data: { turbo: true } do %>
-        <i data-lucide="shuffle" aria-hidden="true"></i>
-        Lancer le tournoi & tirer au sort
+    <div class="tournament-start-panel__actions">
+      <%# Clôturer/rouvrir les inscriptions — indépendant du lancement, ne fait
+          que fermer la porte aux nouveaux inscrits. %>
+      <%= button_to toggle_registrations_tournament_path(tournament),
+                    method: :patch,
+                    class: "btn-cta-secondary tournament-start-panel__btn" do %>
+        <% if tournament.closed? %>
+          <i data-lucide="lock-open" aria-hidden="true"></i>
+          Rouvrir les inscriptions
+        <% else %>
+          <i data-lucide="lock" aria-hidden="true"></i>
+          Clôturer les inscriptions
+        <% end %>
       <% end %>
-    <% else %>
-      <p class="tournament-start-panel__hint">
-        Il faut au moins <%= Tournament::MIN_PLAYERS_TO_START %> joueurs inscrits pour lancer le tournoi.
-      </p>
-    <% end %>
+
+      <% if tournament.startable? %>
+        <%# Le bouton porte les appariements de la 1re ronde pour l'animation de tirage. %>
+        <%= button_to start_tournament_path(tournament),
+                      class: "btn-cta-primary tournament-start-panel__btn",
+                      data: { turbo: true } do %>
+          <i data-lucide="shuffle" aria-hidden="true"></i>
+          Lancer le tournoi & tirer au sort
+        <% end %>
+      <% else %>
+        <p class="tournament-start-panel__hint">
+          Il faut au moins <%= Tournament::MIN_PLAYERS_TO_START %> joueurs inscrits pour lancer le tournoi.
+        </p>
+      <% end %>
+    </div>
   <% else %>
     <p class="tournament-start-panel__hint">Le tournoi n'a pas encore été lancé par l'organisateur.</p>
   <% end %>

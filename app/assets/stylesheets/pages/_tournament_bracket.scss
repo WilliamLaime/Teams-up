@@ -7,6 +7,20 @@
   margin-top: 1.5rem;
 }
 
+// ── Terminer le tournoi (organisateur/co-orga, tant que non terminé) ─
+.tournament-finish-action {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    i { width: 16px; height: 16px; }
+  }
+}
+
 // ── Panneau de lancement (tournoi "open") ────────────
 .tournament-start-panel {
   display: flex;
@@ -35,6 +49,14 @@
     align-items: center;
     gap: 0.5rem;
     i { width: 18px; height: 18px; }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
   }
 
   &__hint {
@@ -442,6 +464,28 @@
   &--open {
     background-color: rgba($green, 0.12);
     color: $green;
+  }
+
+  &--closed {
+    background-color: rgba($orange, 0.15);
+    color: $orange;
+  }
+}
+
+// ── Lien "Modifier" (icône crayon) à côté du badge de statut ─
+.tournament-edit-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--theme-text-muted);
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background-color: var(--theme-hover-bg);
+    color: var(--theme-text-primary);
   }
 }
 

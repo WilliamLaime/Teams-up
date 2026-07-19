@@ -171,18 +171,21 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
   test "POST start refuse un non-organisateur" do
     sign_in @co_org # ni admin ni co-org de ce tournoi
     t = open_tournament_with_players(8)
+    status_before = t.reload.status # "closed" : complet dès le 8e inscrit (cf. auto-clôture)
 
     post start_tournament_path(t)
     assert_response :redirect
-    assert_equal "open", t.reload.status
+    assert_equal status_before, t.reload.status # inchangé : le tiers n'a pas pu lancer
   end
 
   test "POST start refuse un effectif insuffisant" do
     sign_in @user
+    # 1 seul joueur pour 1 place : le tournoi se clôture tout seul (complet, cf.
+    # Tournament#close_registrations_if_full!) mais reste sous le seuil de lancement.
     t = open_tournament_with_players(1)
 
     post start_tournament_path(t)
-    assert_equal "open", t.reload.status
+    assert_not_equal "in_progress", t.reload.status
     assert_redirected_to tournament_path(t)
   end
 
@@ -255,5 +258,121 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     t = launched_tournament("championnat", 8)
     get tournament_path(t)
     assert_select ".participant-chip__forfeit"
+  end
+
+  # ─── GET/PATCH édition : ouverte à l'admin ET au co-organisateur ────────────
+  def tournament_with_co_org
+    t = open_tournament("Éditable")
+    t.update!(user: @user)
+    t.tournament_users.create!(user: @co_org, role: "co_organisateur", status: "approved")
+    t
+  end
+
+  test "GET edit autorisé pour l'admin" do
+    sign_in @user
+    t = tournament_with_co_org
+    get edit_tournament_path(t)
+    assert_response :success
+    assert_select "form"
+  end
+
+  test "GET edit autorisé pour le co-organisateur" do
+    sign_in @co_org
+    t = tournament_with_co_org
+    get edit_tournament_path(t)
+    assert_response :success
+  end
+
+  test "GET edit refusé pour un tiers" do
+    sign_in create_test_user(email: "tiers@example.com")
+    t = tournament_with_co_org
+    get edit_tournament_path(t)
+    assert_response :redirect
+  end
+
+  test "PATCH update modifie la date par l'admin" do
+    sign_in @user
+    t = tournament_with_co_org
+    new_date = 3.days.from_now.to_date
+
+    patch tournament_path(t), params: { tournament: { date: new_date.to_s } }
+
+    assert_redirected_to tournament_path(t)
+    assert_equal new_date, t.reload.date
+  end
+
+  test "PATCH update modifie la date par le co-organisateur" do
+    sign_in @co_org
+    t = tournament_with_co_org
+    new_date = 3.days.from_now.to_date
+
+    patch tournament_path(t), params: { tournament: { date: new_date.to_s } }
+    assert_equal new_date, t.reload.date
+  end
+
+  test "PATCH update ignore format/max_players une fois le tournoi lancé" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+
+    patch tournament_path(t), params: { tournament: { format: "poules", max_players: 32, place: "Nouveau lieu" } }
+
+    t.reload
+    assert_equal "ronde_suisse", t.format # inchangé
+    assert_equal 8, t.max_players         # inchangé
+    assert_equal "Nouveau lieu", t.place  # champ non structurel, bien mis à jour
+  end
+
+  # ─── PATCH toggle_registrations : clôture/réouverture manuelle ──────────────
+  test "PATCH toggle_registrations clôture puis rouvre" do
+    sign_in @user
+    t = tournament_with_co_org
+    assert t.open?
+
+    patch toggle_registrations_tournament_path(t)
+    assert_equal "closed", t.reload.status
+
+    patch toggle_registrations_tournament_path(t)
+    assert_equal "open", t.reload.status
+  end
+
+  test "PATCH toggle_registrations refuse un non-organisateur" do
+    sign_in create_test_user(email: "tiers2@example.com")
+    t = tournament_with_co_org
+
+    patch toggle_registrations_tournament_path(t)
+    assert_equal "open", t.reload.status
+  end
+
+  # ─── PATCH finish : fin manuelle ─────────────────────────────────────────────
+  test "PATCH finish termine un tournoi en cours" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+
+    patch finish_tournament_path(t)
+    assert_equal "completed", t.reload.status
+  end
+
+  test "PATCH finish est sans effet si déjà terminé" do
+    sign_in @user
+    t = tournament_with_co_org
+    t.update!(status: "completed")
+
+    patch finish_tournament_path(t)
+    assert_equal "completed", t.reload.status
+  end
+
+  # ─── Rendu : badge "closed" + bouton Rouvrir + lien Modifier ────────────────
+  test "GET show rend le badge Inscriptions closes et le bouton Rouvrir pour l'organisateur" do
+    sign_in @user
+    t = tournament_with_co_org
+    t.update!(status: "closed")
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tournament-status-badge--closed", text: /Inscriptions closes/
+    assert_select ".tournament-start-panel form[action=?]", toggle_registrations_tournament_path(t)
+    assert_select ".tournament-edit-link"
   end
 end
