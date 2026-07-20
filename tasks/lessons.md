@@ -115,3 +115,15 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
 **Édition d'horaire gérée** : `Match#after_update_commit :resync_slack_messages` (si `date`/`time`/`end_time` change ET cartes suivies) → rafraîchit les cartes immédiatement (nouveau « Quand ») + `SlackMatchStatusJob.schedule_transitions` rebranche les bascules aux nouveaux horaires. Les anciens jobs planifiés restent inoffensifs (statut recalculé à T par un job idempotent).
 
 **Piège CSS** : `.btn-cta-primary` ne fournit QUE `border-radius` + `:hover` ; le fond vert vient de Bootstrap `.btn-primary`. Un bouton `btn btn-sm btn-cta-primary` (sans `btn-primary`) est donc transparent → invisible sur fond sombre. Toujours coupler `btn-primary btn-cta-primary` (cf bouton « Connecter Slack » du profil).
+
+## 2026-07-20 — Panne Slack transitoire masquée (dropdown de destinations vide)
+
+**Symptôme** : plus aucun channel dans le modal « Partager sur Slack » (seul « Ma destination par défaut » restait), un matin sans déploiement.
+
+**Cause racine** : incident réseau/Slack **transitoire** (`conversations.list`/`users.list` en échec quelques minutes). `Slack::ChannelLister.destinations` avait un `rescue StandardError` global qui renvoyait `{}` **en silence** → dropdown vide sans aucune explication. Le cache **Turbo Drive** figeait ensuite le HTML (destinations vides embarquées dans `data-slack-share-data-value`) → le vide persistait à la navigation même après rétablissement de Slack. Un **hard refresh** (Cmd+Shift+R) suffisait à récupérer les channels.
+
+**Diagnostic** : `railway run bin/rails runner` + un script bouclant sur `SlackWorkspace.find_each` (PAS `.first` : il y a 2 workspaces, Test + CACD2) → `auth.test` / `conversations.list` / `users.list` par workspace. Tout OK au moment du diagnostic = panne passagère confirmée.
+
+**Correctifs** : (1) `ChannelLister` isole chaque appel (`safe_fetch`) — une erreur sur `users.list` ne fait plus disparaître les channels ; (2) `resolve` renvoie `auth_failed` (erreurs FATALES `invalid_auth`/`token_revoked`/`account_inactive` + bot_token illisible) ; (3) bandeau « réinstalle l'app » dans le modal de partage + page Intégrations quand `auth_failed` → oriente vers `/slack/install` (réinstaller), PAS `/slack/connect` (relier une identité ne régénère aucun bot_token).
+
+**Leçon** : ne jamais avaler une erreur d'API externe en `{}` silencieux dans du contenu mis en cache par Turbo — soit dégrader avec un signal visible (bandeau), soit `turbo-cache-control no-cache` sur les vues dépendant d'un état externe volatil.

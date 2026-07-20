@@ -38,6 +38,17 @@
         </div>
       <% end %>
 
+      <% if @slack_needs_reinstall %>
+        <%# Token du bot mort : « Se connecter » (liaison d'identité) ne répare pas,
+            seule la réinstallation régénère le bot_token. On oriente vers la bonne action. %>
+        <div class="alert alert-warning small mb-3" role="alert">
+          <i data-lucide="alert-triangle" style="width:16px; height:16px; vertical-align:-3px;"></i>
+          La connexion à ton espace Slack a expiré : les matchs ne peuvent plus y être postés.
+          Clique <strong>« Installer sur un espace Slack »</strong> ci-dessous pour la rétablir
+          (réservé aux admins Slack). Inutile de simplement te reconnecter.
+        </div>
+      <% end %>
+
       <% if @slack_identities.any? %>
         <%# ── Identités déjà liées ──────────────────────────────────────── %>
         <div class="mb-3">
