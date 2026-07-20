@@ -4,6 +4,9 @@ class SlackIdentity < ApplicationRecord
   belongs_to :user
   belongs_to :slack_workspace
 
+  # Destinations épinglées par cet utilisateur (affichées en tête du sélecteur de partage).
+  has_many :slack_favorite_destinations, dependent: :destroy
+
   validates :slack_user_id, presence: true, uniqueness: { scope: :slack_workspace_id }
   validates :slack_team_id, presence: true
 
@@ -18,5 +21,11 @@ class SlackIdentity < ApplicationRecord
   # défini au niveau du workspace.
   def default_channel_id
     preferred_channel_id.presence || slack_workspace.default_channel_id
+  end
+
+  # Favoris au format [libellé, id] — même structure que les groupes Channels/DM du
+  # sélecteur, pour un rendu homogène côté JS.
+  def favorite_destinations_pairs
+    slack_favorite_destinations.order(:channel_name).pluck(:channel_name, :channel_id)
   end
 end
