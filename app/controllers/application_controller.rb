@@ -211,17 +211,22 @@ class ApplicationController < ActionController::Base
 
   # Destinations Slack de TOUS les workspaces liés de l'utilisateur, pour permettre une
   # sélection en deux temps (workspace puis channel/DM). Renvoie un tableau :
-  #   [{ id:, name:, destinations: { "Channels" => [...], "Messages directs" => [...] } }]
+  #   [{ id:, name:, destinations: { "Channels" => [...], "Messages directs" => [...] },
+  #      needs_reinstall: false }]
+  # `needs_reinstall` = le token du bot est mort → l'app doit être réinstallée (le
+  # dropdown vide n'est alors PAS un bug de config mais une connexion Slack expirée).
   # Vide si le compte n'est pas lié. Utilisé par matches#new, tournaments#new et le partage.
   def slack_destinations_for(user)
     return [] unless user.slack_linked?
 
     user.slack_identities.includes(:slack_workspace).map do |identity|
-      ws = identity.slack_workspace
+      ws     = identity.slack_workspace
+      result = Slack::ChannelLister.resolve(ws)
       {
         id: ws.id,
         name: ws.team_name.presence || ws.team_id,
-        destinations: Slack::ChannelLister.destinations(ws)
+        destinations: result[:groups],
+        needs_reinstall: result[:auth_failed]
       }
     end
   end

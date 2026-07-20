@@ -38,6 +38,16 @@
       <%# En mode formulaire : masqué tant que la case n'est pas cochée (Stimulus).
           En mode standalone (modale) : toujours visible. %>
       <div data-slack-share-target="wrapper" style="<%= "display:none;" unless standalone %>">
+        <% if workspaces.any? { |w| w[:needs_reinstall] } %>
+          <%# Connexion Slack expirée (token du bot révoqué/invalide) : relier l'identité
+              ne répare PAS — il faut réinstaller l'app pour obtenir un nouveau bot_token. %>
+          <div class="alert alert-warning small mb-3" role="alert">
+            <i data-lucide="alert-triangle" style="width:16px; height:16px; vertical-align:-3px;"></i>
+            La connexion à ton espace Slack a expiré. Les destinations ne peuvent plus être
+            chargées — <%= link_to "réinstalle l'app Teams-up", slack_install_path, class: "alert-link" %>
+            (réservé aux admins Slack) pour la rétablir.
+          </div>
+        <% end %>
         <% if workspaces.size > 1 %>
           <div class="mb-2">
             <%# Couleur theme-aware (pas le .text-muted fixe de Bootstrap, illisible sur fond sombre) %>

@@ -101,6 +101,38 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal [["Bob", "U9"]], dest["Messages directs"] # le bot est exclu
   end
 
+  # ── Robustesse : un appel qui échoue ne fait pas disparaître l'autre liste ─────
+  test "ChannelLister isole les appels : users.list en échec garde les channels" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, channels: [{ id: "C1", name: "general" }] }.to_json)
+    # Scope manquant sur users.list (erreur NON fatale) → les DM sont perdus, pas les channels.
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: false, error: "missing_scope" }.to_json)
+
+    result = Slack::ChannelLister.resolve(ws)
+    assert_equal [["#general", "C1"]], result[:groups]["Channels"]
+    assert_nil result[:groups]["Messages directs"]
+    assert_not result[:auth_failed] # missing_scope n'exige pas une réinstallation
+  end
+
+  # ── Robustesse : token mort → auth_failed pour piloter le bandeau « réinstalle » ─
+  test "ChannelLister signale auth_failed quand le token du bot est révoqué" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: false, error: "invalid_auth" }.to_json)
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: false, error: "invalid_auth" }.to_json)
+
+    result = Slack::ChannelLister.resolve(ws)
+    assert_empty result[:groups]
+    assert result[:auth_failed]
+  end
+
   # ── Partage manuel depuis la page match : organisateur lié → job enqueue ───────
   test "POST share_on_slack par l'organisateur lié enqueue SlackNotifyJob avec la destination" do
     ws = link_slack!
