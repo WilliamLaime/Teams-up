@@ -219,14 +219,15 @@ class ApplicationController < ActionController::Base
   def slack_destinations_for(user)
     return [] unless user.slack_linked?
 
-    user.slack_identities.includes(:slack_workspace).map do |identity|
+    user.slack_identities.includes(:slack_workspace, :slack_favorite_destinations).map do |identity|
       ws     = identity.slack_workspace
       result = Slack::ChannelLister.resolve(ws)
       {
         id: ws.id,
         name: ws.team_name.presence || ws.team_id,
         destinations: result[:groups],
-        needs_reinstall: result[:auth_failed]
+        needs_reinstall: result[:auth_failed],
+        favorites: identity.favorite_destinations_pairs
       }
     end
   end

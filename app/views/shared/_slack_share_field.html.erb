@@ -2,7 +2,8 @@
 <%#
   Locals attendus :
     workspaces : tableau [{ id:, name:, destinations: { "Channels" => [[nom,id]...],
-                 "Messages directs" => [[nom,id]...] } }] (peut être vide)
+                 "Messages directs" => [[nom,id]...] }, favorites: [[nom,id]...],
+                 needs_reinstall: bool }] (peut être vide)
     standalone : (optionnel, défaut false) mode modale de partage manuel — on omet
                  la case « Partager sur Slack » (le partage est l'intention explicite)
                  et la destination reste toujours visible.
@@ -10,18 +11,19 @@
 
   Sélection en DEUX temps :
     1. le workspace Slack (masqué s'il n'y en a qu'un → champ caché)
-    2. la destination (channel ou message direct) DANS ce workspace
-  Le contrôleur Stimulus slack-share repeuple le 2e <select> quand le 1er change,
-  à partir des données embarquées (data-slack-share-data-value).
+    2. la destination : COMBOBOX recherchable (slack-destination) avec favoris épinglés,
+       alimenté par les données embarquées. Un champ caché `slack_channel_id` porte l'id
+       choisi (vide = destination par défaut) — le controller lit ce param inchangé.
 
-  Ce ne sont PAS des attributs du modèle → check_box_tag / select_tag ; les params
-  post_to_slack / slack_workspace_id / slack_channel_id sont lus dans le controller.
+  Deux contrôleurs Stimulus sur la racine :
+    - slack-share       : case « Partager » + visibilité du bloc
+    - slack-destination : combobox recherchable + favoris
 %>
 <% standalone = local_assigns.fetch(:standalone, false) %>
 <% if current_user.slack_linked? %>
-  <div class="<%= "mb-4" unless standalone %>"
-       data-controller="slack-share"
-       data-slack-share-data-value="<%= workspaces.to_json %>">
+  <div class="slack-share-field <%= "mb-4" unless standalone %>"
+       data-controller="slack-share slack-destination"
+       data-slack-destination-workspaces-value="<%= workspaces.to_json %>">
     <% unless standalone %>
       <div class="form-check mb-2">
         <%= check_box_tag :post_to_slack, "1", false,
@@ -56,20 +58,42 @@
             <%= select_tag :slack_workspace_id,
                   options_for_select(workspaces.map { |w| [w[:name], w[:id]] }),
                   class: "form-select",
-                  data: { slack_share_target: "workspace", action: "slack-share#workspaceChanged" } %>
+                  data: { slack_destination_target: "workspace",
+                          action: "slack-destination#workspaceChanged" } %>
           </div>
         <% else %>
           <%# Un seul workspace → pas de choix, on le transmet en champ caché. %>
           <%= hidden_field_tag :slack_workspace_id, workspaces.first[:id],
-                data: { slack_share_target: "workspace" } %>
+                data: { slack_destination_target: "workspace" } %>
         <% end %>
 
         <%= label_tag :slack_channel_id, "Destination (channel ou message direct)",
               class: "form-label small", style: "color: var(--theme-text-muted);" %>
-        <%= select_tag :slack_channel_id, "",
-              include_blank: "Ma destination par défaut",
-              class: "form-select",
-              data: { slack_share_target: "channel" } %>
+
+        <%# Combobox recherchable. Le champ caché porte l'id soumis (vide = défaut). %>
+        <%= hidden_field_tag :slack_channel_id, "", data: { slack_destination_target: "hidden" } %>
+        <div class="slack-dest">
+          <div class="slack-dest-group">
+            <span class="slack-dest-search-icon" aria-hidden="true">
+              <i data-lucide="search" style="width:15px;height:15px;"></i>
+            </span>
+            <input type="text"
+                   class="slack-dest-input"
+                   placeholder="Ma destination par défaut"
+                   autocomplete="off"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-autocomplete="list"
+                   aria-controls="slack-dest-list"
+                   data-slack-destination-target="input"
+                   data-action="focus->slack-destination#open input->slack-destination#filter keydown->slack-destination#keydown">
+          </div>
+          <ul class="slack-dest-list"
+              id="slack-dest-list"
+              role="listbox"
+              data-slack-destination-target="list"
+              style="display:none;"></ul>
+        </div>
       </div>
     <% else %>
       <p class="text-muted small mb-0">Le match sera posté dans ta destination Slack par défaut.</p>
