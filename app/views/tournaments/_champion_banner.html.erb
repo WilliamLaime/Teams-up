@@ -1,0 +1,11 @@
+<%# ── Bandeau vainqueur (Lot 6) ────────────────────────────────────────────────
+    Partagé entre l'onglet Vue d'ensemble et l'onglet Classement. Local : tournament.
+    Source du vainqueur : Tournament#champion (bracket ou 1er du classement pour un
+    championnat sans playoffs). %>
+<% if (champion = tournament.champion) %>
+  <div class="tournament-champion">
+    <i data-lucide="trophy" aria-hidden="true"></i>
+    <span class="tournament-champion__label">Vainqueur</span>
+    <strong class="tournament-champion__name"><%= champion.display_name %></strong>
+  </div>
+<% end %>

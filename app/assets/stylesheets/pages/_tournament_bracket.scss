@@ -788,6 +788,7 @@
 
     .is-num { font-variant-numeric: tabular-nums; color: var(--theme-text-primary); }
     .is-win { font-weight: 700; color: $green; }
+    .is-pts { font-weight: 700; color: var(--theme-text-strong); }
   }
 
   &__avatar {

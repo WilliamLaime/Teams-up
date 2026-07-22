@@ -30,10 +30,12 @@ export default class extends Controller {
     "nameInput", "descriptionInput", "placeInput", "dateInput",
     "maxPlayersInput", "presetsGroup", "countBtn", "libreBtn", "libreSection", "libreInput",
     "proposals", "structurePreview", "structureText", "selfRegister", "coOrgInput",
+    "playoffsWrapper", "playoffsInput", "playoffsBtn",
     // Récapitulatif
     "recapName", "recapDescription", "recapSport", "recapFormat", "recapFormatRow",
     "recapDate", "recapTime", "recapPlace", "recapPlayers",
-    "recapStructure", "recapStructureRow", "recapSelfRegister", "recapDeadline", "recapCoOrg"
+    "recapStructure", "recapStructureRow", "recapSelfRegister", "recapDeadline", "recapCoOrg",
+    "recapPlayoffsRow", "recapPlayoffs"
   ]
 
   connect() {
@@ -126,6 +128,30 @@ export default class extends Controller {
     // sélection qu'elle vient de restaurer.
     const enteredLibre = this._syncPlayerCountMode(value)
     if (!enteredLibre) this._refreshStructure()
+    this._syncPlayoffsMode(value)
+  }
+
+  // ── Playoffs (Lot 6) : réglage propre au championnat ─────────
+  // Masqué pour les autres formats (ronde suisse / poules toujours en playoffs).
+  _syncPlayoffsMode(format) {
+    const isChampionnat = format === "championnat"
+    this.playoffsWrapperTarget.style.display  = isChampionnat ? "" : "none"
+    this.recapPlayoffsRowTarget.style.display = isChampionnat ? "" : "none"
+    if (isChampionnat) this._applyPlayoffsValue(this.playoffsInputTarget.value !== "false")
+  }
+
+  selectPlayoffs(event) {
+    this._applyPlayoffsValue(event.currentTarget.dataset.value === "true")
+  }
+
+  _applyPlayoffsValue(withPlayoffs) {
+    this.playoffsInputTarget.value = withPlayoffs
+    this.recapPlayoffsTarget.textContent = withPlayoffs ? "Oui" : "Non"
+    this.playoffsBtnTargets.forEach(btn => {
+      const active = (btn.dataset.value === "true") === withPlayoffs
+      btn.classList.toggle("active", active)
+      this._styleFormatBtn(btn, active)
+    })
   }
 
   // ── Championnat : pas de nombre de joueurs prédéfini ─────────

@@ -1,13 +1,17 @@
 <%# ── Table de classement ───────────────────────────────────────────────────────
-    Locals : players (déjà triés). Réutilisé pour le classement global (suisse /
-    championnat) et pour chaque poule. %>
+    Locals : players (déjà triés), tournament (sport → barème V/N/D, Lot 6).
+    Réutilisé pour le classement global (suisse / championnat) et pour chaque poule.
+    La colonne "N" (nuls) n'apparaît que pour les sports où le nul existe. %>
+<% show_draws = tournament.sport&.ranking_points_rules&.dig(:draw)&.positive? %>
 <div class="tournament-ranking__scroll">
   <table class="tournament-ranking__table">
     <thead>
       <tr>
         <th class="is-rank">#</th>
         <th class="is-player">Joueur</th>
+        <th title="Points de classement">Pts</th>
         <th title="Victoires">V</th>
+        <% if show_draws %><th title="Nuls">N</th><% end %>
         <th title="Défaites">D</th>
         <th title="Différentiel de sets">Sets</th>
         <th title="Différentiel de points">Points</th>
@@ -22,7 +26,9 @@
             <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar" %>
             <span><%= tu.display_name %></span>
           </td>
+          <td class="is-num is-pts"><%= tu.ranking_points %></td>
           <td class="is-num is-win"><%= tu.wins %></td>
+          <% if show_draws %><td class="is-num"><%= tu.draws %></td><% end %>
           <td class="is-num"><%= tu.losses %></td>
           <td class="is-num"><%= tu.set_average.positive? ? "+#{tu.set_average}" : tu.set_average %></td>
           <td class="is-num"><%= tu.point_average.positive? ? "+#{tu.point_average}" : tu.point_average %></td>
