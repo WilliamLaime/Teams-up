@@ -151,6 +151,10 @@ class ProfilsController < ApplicationController
     skip_authorization
     @slack_identities = current_user.slack_identities.includes(:slack_workspace)
     @slack_configured = Slack.configured?
+    # Au moins un espace lié dont le token du bot est mort → invite à réinstaller.
+    @slack_needs_reinstall = @slack_identities.any? do |identity|
+      Slack::ChannelLister.resolve(identity.slack_workspace)[:auth_failed]
+    end
   end
 
   # POST /profil/dismiss_onboarding

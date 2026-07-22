@@ -208,6 +208,9 @@ Rails.application.routes.draw do
     get "connect",         to: "connections#connect"
     get "connect/callback", to: "connections#callback"
     delete "disconnect/:id", to: "connections#destroy", as: :disconnect
+    # Épinglage d'une destination favorite (channel/DM) — appelé en fetch depuis le combobox.
+    post   "favorites", to: "favorites#create"
+    delete "favorites", to: "favorites#destroy"
     # Interactions Block Kit (clic « S'inscrire », soumission de modale) — signature HMAC, pas de CSRF.
     post "interactivity",  to: "interactivity#create"
     # Slash commands (/match) — ouvre la modale de création de match.
