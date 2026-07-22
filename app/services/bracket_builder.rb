@@ -77,10 +77,10 @@ class BracketBuilder
     (qualified + ranked(scope.active)).first(@tournament.final_size)
   end
 
-  # Classe une relation de joueurs par force (seeding réel, Lot 4) : victoires desc,
-  # défaites asc, puis set average et point average desc. Déterministe.
+  # Classe une relation de joueurs par force (seeding réel, Lot 4) — mêmes critères
+  # que le classement affiché (Tournament#rank_key, Lot 6), source unique de vérité.
   def ranked(relation)
-    relation.to_a.sort_by { |tu| [-tu.wins, tu.losses, -tu.set_average, -tu.point_average] }
+    relation.to_a.sort_by { |tu| @tournament.rank_key(tu) }
   end
 
   # Attribue les têtes de série 1..N dans l'ordre de force.

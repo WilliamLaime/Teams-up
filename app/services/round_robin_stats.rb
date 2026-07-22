@@ -1,13 +1,14 @@
 # ── Module RoundRobinStats ────────────────────────────────────────────────────
-# Recalcul du bilan V/D + sets/points d'un joueur depuis les matchs d'une phase.
+# Recalcul du bilan V/N/D + sets/points d'un joueur depuis les matchs d'une phase.
 # Partagé par les trois moteurs (SwissPairing, LeagueBuilder, PoolBuilder) : la
 # seule différence est la PHASE lue et l'application (ou non) de l'état suisse
-# (qualified à 3 V / eliminated à 3 D) — d'où le paramètre `apply_state`.
+# (qualified à 3 V / eliminated à 3 D) — d'où le paramètre `apply_state`. Les nuls
+# (Lot 6) ne concernent que les sports collectifs à barème V/N/D (foot, hand).
 #
 # Le module attend une variable d'instance `@tournament` chez l'hôte, et — quand
 # `apply_state: true` — une méthode `state_for(wins, losses)` (spécifique au suisse).
 module RoundRobinStats
-  # Recalcule wins/losses + sets_won/lost + points_won/lost de chaque joueur
+  # Recalcule wins/draws/losses + sets_won/lost + points_won/lost de chaque joueur
   # approuvé, à partir de TOUS les matchs de la phase donnée.
   #   • apply_state: true  → met aussi à jour `state` via `state_for` (suisse).
   #   • apply_state: false → laisse `state` inchangé (championnat / poules, où la
@@ -17,10 +18,11 @@ module RoundRobinStats
     player_scope.find_each do |tu|
       played = matches.select { |m| m.player_a_id == tu.id || m.player_b_id == tu.id }
       wins   = played.count { |m| m.winner_id == tu.id }
+      draws  = played.count(&:draw?)
       losses = played.count { |m| m.winner_id.present? && m.winner_id != tu.id }
 
       attrs = {
-        wins: wins, losses: losses,
+        wins: wins, draws: draws, losses: losses,
         sets_won: played.sum { |m| m.sets_won_by(tu) },
         sets_lost: played.sum { |m| m.sets_won_by(m.opponent_of(tu)) },
         points_won: played.sum { |m| m.points_won_by(tu) },

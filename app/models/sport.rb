@@ -123,18 +123,37 @@ class Sport < ApplicationRecord
     end
   end
 
-  # Règles de score d'un match de tournoi pour ce sport (Lot 4). Renvoie un Hash :
-  #   best_of    : nombre de sets « au meilleur de » (3 → il faut en gagner 2)
-  #   target     : score à atteindre pour remporter un set (jeux au tennis, points ailleurs)
-  #   win_by_two : faut-il 2 d'écart pour conclure un set (règle du ping-pong / badminton)
-  #   cap        : plafond au-delà duquel 1 point d'écart suffit (tie-break) ; nil = pas de plafond
+  # Règles de score d'un match de tournoi pour ce sport (Lot 4, étendu Lot 6). Renvoie
+  # un Hash dont la clé `mode` pilote la saisie :
+  #   :sets  (sports de raquette) — score set par set, jamais de nul :
+  #     best_of    : nombre de sets « au meilleur de » (3 → il faut en gagner 2)
+  #     target     : score à atteindre pour remporter un set (jeux au tennis, points ailleurs)
+  #     win_by_two : faut-il 2 d'écart pour conclure un set (règle du ping-pong / badminton)
+  #     cap        : plafond au-delà duquel 1 point d'écart suffit (tie-break) ; nil = pas de plafond
+  #   :score (sports collectifs) — un seul score final saisi :
+  #     allow_draw : le nul est-il un résultat possible pour ce sport
   # Le fallback (sports sans configuration) reste jouable au meilleur des 3 sets.
   def scoring_rules
     case slug
-    when "tennis", "padel" then { best_of: 3, target: 6,  win_by_two: true,  cap: 7 }
-    when "badminton"       then { best_of: 3, target: 21, win_by_two: true,  cap: 30 }
-    when "ping-pong"       then { best_of: 5, target: 11, win_by_two: true,  cap: nil }
-    else                        { best_of: 3, target: 6,  win_by_two: false, cap: nil }
+    when "tennis", "padel" then { mode: :sets, best_of: 3, target: 6,  win_by_two: true, cap: 7,   allow_draw: false }
+    when "badminton"       then { mode: :sets, best_of: 3, target: 21, win_by_two: true, cap: 30,  allow_draw: false }
+    when "ping-pong"       then { mode: :sets, best_of: 5, target: 11, win_by_two: true, cap: nil, allow_draw: false }
+    when "volleyball"      then { mode: :sets, best_of: 5, target: 25, win_by_two: true, cap: nil, allow_draw: false }
+    when "football", "handball" then { mode: :score, allow_draw: true }
+    when "basketball"           then { mode: :score, allow_draw: false }
+    else                         { mode: :sets, best_of: 3, target: 6, win_by_two: false, cap: nil, allow_draw: false }
+    end
+  end
+
+  # Barème de points de classement V/N/D pour le championnat/poules (Lot 6). nil pour
+  # les sports de raquette (ronde suisse / poules) : ils n'ont pas de barème dédié,
+  # cf. TournamentUser#ranking_points qui retombe alors sur 1 point par victoire.
+  def ranking_points_rules
+    case slug
+    when "football"   then { win: 3, draw: 1, loss: 0 } # barème FIFA en vigueur
+    when "handball"   then { win: 2, draw: 1, loss: 0 } # barème IHF historique
+    when "basketball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
+    when "volleyball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
     end
   end
 

@@ -21,8 +21,9 @@ class TournamentRound < ApplicationRecord
   scope :bracket, -> { where(phase: "bracket") }
   scope :ordered, -> { order(:number) }
 
-  # Ronde terminée : tous ses matchs ont un vainqueur (les byes sont décidés d'office).
+  # Ronde terminée : tous ses matchs ont un résultat définitif (victoire, nul ou bye —
+  # PAS `decided?`, qui exige un vainqueur : un match nul n'en a pas, cf. Lot 6).
   def complete?
-    tournament_matches.all?(&:decided?)
+    tournament_matches.all? { |m| m.status == "completed" }
   end
 end

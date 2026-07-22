@@ -43,6 +43,9 @@ class TournamentMatch < ApplicationRecord
   # Match décidé : un vainqueur est connu (inclut les byes).
   def decided? = winner_id.present?
 
+  # Match nul (Lot 6) : résultat définitif mais sans vainqueur (foot/hand uniquement).
+  def draw? = status == "completed" && winner_id.blank? && !is_bye
+
   # Un score set-par-set a-t-il été saisi ?
   def score_entered? = normalized_sets.any?
 
@@ -94,9 +97,12 @@ class TournamentMatch < ApplicationRecord
   private
 
   # ── Dérivation du vainqueur ───────────────────────────────────────────────────
-  # Le vainqueur est celui qui atteint le nombre de sets requis (best_of / 2 + 1).
-  # Score insuffisant → match remis en attente (winner nil). Les byes sont intacts.
-  # Forfait (Lot 5) : l'adversaire du joueur ayant abandonné gagne d'office.
+  # Deux modes selon le sport (cf. Sport#scoring_rules) :
+  #   :sets  (raquette) — le vainqueur est celui qui atteint le nombre de sets requis.
+  #   :score (collectif) — un seul score final, un nul est possible si le sport
+  #     l'autorise (match "completed" mais sans vainqueur).
+  # Score insuffisant → match remis en attente (winner nil, status pending). Les byes
+  # sont intacts. Forfait (Lot 5) : l'adversaire du joueur ayant abandonné gagne d'office.
   def derive_winner_from_sets
     return if is_bye
 
@@ -106,6 +112,35 @@ class TournamentMatch < ApplicationRecord
       return
     end
 
+    if scoring_rules[:mode] == :score
+      derive_winner_from_final_score
+    else
+      derive_winner_from_sets_count
+    end
+  end
+
+  # Mode :score — le score final unique (1 paire) décide directement.
+  def derive_winner_from_final_score
+    pair = normalized_sets.first
+    return set_pending! if pair.nil?
+
+    a, b = pair
+    if a == b
+      # Nul : résultat définitif, pas de vainqueur (cf. Sport#scoring_rules[:allow_draw],
+      # déjà garanti par la validation sets_valid_for_sport).
+      self.winner_id = nil
+      self.status = "completed"
+    elsif a > b
+      self.winner_id = player_a_id
+      self.status = "completed"
+    else
+      self.winner_id = player_b_id
+      self.status = "completed"
+    end
+  end
+
+  # Mode :sets — le vainqueur est celui qui atteint le nombre de sets requis (best_of / 2 + 1).
+  def derive_winner_from_sets_count
     needed = sets_to_win
     a = sets_won_by(player_a)
     b = sets_won_by(player_b)
@@ -117,9 +152,13 @@ class TournamentMatch < ApplicationRecord
       self.winner_id = player_b_id
       self.status = "completed"
     else
-      self.winner_id = nil
-      self.status = "pending"
+      set_pending!
     end
+  end
+
+  def set_pending!
+    self.winner_id = nil
+    self.status = "pending"
   end
 
   # Vainqueur d'un forfait : l'adversaire du joueur ayant abandonné. Si le joueur
@@ -147,12 +186,29 @@ class TournamentMatch < ApplicationRecord
     errors.add(:winner, "doit être l'un des deux joueurs du match")
   end
 
-  # Contrôle chaque set selon les règles du sport (dont la règle des 2 points d'écart).
-  # Tolérant (contexte amateur) mais bloque les scores aberrants ou nuls.
+  # Contrôle le score selon les règles du sport. Tolérant (contexte amateur) mais
+  # bloque les scores aberrants — et les nuls, sauf pour les sports qui les autorisent.
   def sets_valid_for_sport
     return if is_bye || normalized_sets.empty?
 
     rules = scoring_rules
+    rules[:mode] == :score ? validate_final_score(rules) : validate_sets(rules)
+  end
+
+  # Mode :score — un seul couple de scores attendu ; nul rejeté sauf allow_draw.
+  def validate_final_score(rules)
+    if normalized_sets.size > 1
+      errors.add(:sets, "un seul score final est attendu pour ce sport")
+      return
+    end
+
+    a, b = normalized_sets.first
+    errors.add(:sets, "le match nul n'est pas autorisé pour ce sport") if a == b && !rules[:allow_draw]
+  end
+
+  # Mode :sets — contrôle chaque set (dont la règle des 2 points d'écart). Un set
+  # ne peut jamais être nul (indépendant du sport, propre à la mécanique des sets).
+  def validate_sets(rules)
     if normalized_sets.size > rules[:best_of]
       errors.add(:sets, "comporte trop de sets (maximum #{rules[:best_of]})")
       return

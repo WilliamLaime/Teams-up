@@ -1,6 +1,8 @@
 # ── Service LeagueBuilder ─────────────────────────────────────────────────────
 # Moteur du format « Championnat » (Lot 5) : round-robin intégral (tout le monde
-# s'affronte une fois), puis les meilleurs entrent en playoffs (tableau final).
+# s'affronte une fois). Deux variantes selon Tournament#playoffs? (Lot 6) : AVEC
+# playoffs, les meilleurs entrent dans un tableau final ; SANS, le tournoi se termine
+# à la dernière journée et le vainqueur est le 1er du classement (Tournament#champion).
 #
 # Deux responsabilités, comme SwissPairing :
 #   • .schedule  : l'ALGORITHME PUR (méthode du cercle / Berger). Aucun accès base.
@@ -8,7 +10,8 @@
 #     une liste de paires [a, b] (a ou b peut être nil = bye si effectif impair).
 #   • #next_round! : la PERSISTANCE. Génère UNE journée à la fois (comme la ronde
 #     suisse) : la journée N+1 n'est créée que lorsque la N est terminée. Quand
-#     toutes les journées sont jouées, bascule sur le tableau final (top-N).
+#     toutes les journées sont jouées, bascule sur le tableau final (top-N) ou termine
+#     directement le tournoi, selon #playoffs?.
 #
 # Le calendrier étant déterministe, on le recalcule à chaque appel et on ne
 # persiste que la prochaine journée manquante — à condition que l'ordre des
@@ -60,8 +63,12 @@ class LeagueBuilder
 
       if next_index < full.size
         create_league_round!(number: next_index + 1, pairs: full[next_index])
-      else
+      elsif @tournament.playoffs?
         start_playoffs!
+      else
+        # Championnat SANS playoffs (Lot 6) : la dernière journée jouée termine le
+        # tournoi directement — le vainqueur est le 1er du classement (cf. Tournament#champion).
+        @tournament.update!(status: "completed")
       end
     end
   end

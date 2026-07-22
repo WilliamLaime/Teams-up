@@ -23,12 +23,8 @@
 <% if tournament.open? || tournament.closed? %>
   <%= render "tournaments/start_panel", tournament: tournament, can_manage: can_manage %>
 <% else %>
-  <% if tournament.completed? && (champion = tournament.bracket_rounds.last&.tournament_matches&.first&.winner) %>
-    <div class="tournament-champion">
-      <i data-lucide="trophy" aria-hidden="true"></i>
-      <span class="tournament-champion__label">Vainqueur</span>
-      <strong class="tournament-champion__name"><%= champion.display_name %></strong>
-    </div>
+  <% if tournament.completed? %>
+    <%= render "tournaments/champion_banner", tournament: tournament %>
   <% end %>
 
   <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>

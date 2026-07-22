@@ -52,6 +52,16 @@ class TournamentUser < ApplicationRecord
   def set_average   = sets_won - sets_lost
   def point_average = points_won - points_lost
 
+  # Points de classement (Lot 6) : barème V/N/D du sport (cf. Sport#ranking_points_rules).
+  # Sports de raquette (pas de barème dédié, ronde suisse/poules) → 1 pt par victoire,
+  # le système de points standard des tournois suisses.
+  def ranking_points
+    rules = tournament.sport&.ranking_points_rules
+    return wins if rules.nil?
+
+    (wins * rules[:win]) + (draws * rules[:draw]) + (losses * rules[:loss])
+  end
+
   # Nom affiché du joueur (délègue au profil de l'utilisateur).
   def display_name = user.display_name
 

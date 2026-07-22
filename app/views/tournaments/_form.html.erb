@@ -132,6 +132,23 @@
             <div class="match-level-buttons" data-tournament-form-target="formatButtons"></div>
           </div>
 
+          <%# Playoffs — uniquement pour le championnat (Lot 6) : round-robin complet
+              suivi d'un tableau final (par défaut) ou tournoi qui se termine à la
+              dernière journée, vainqueur = 1er du classement. %>
+          <div class="mb-0 mt-3" data-tournament-form-target="playoffsWrapper" style="display:none;">
+            <label class="form-label d-block">Playoffs</label>
+            <%= f.hidden_field :playoffs, value: @tournament.playoffs, data: { "tournament-form-target": "playoffsInput" } %>
+            <div class="match-level-buttons" data-tournament-form-target="playoffsButtons">
+              <button type="button" class="match-level-btn" data-tournament-form-target="playoffsBtn"
+                      data-value="true" data-action="click->tournament-form#selectPlayoffs">Avec playoffs</button>
+              <button type="button" class="match-level-btn" data-tournament-form-target="playoffsBtn"
+                      data-value="false" data-action="click->tournament-form#selectPlayoffs">Sans playoffs</button>
+            </div>
+            <small class="form-text tournament-form-hint">
+              Sans playoffs, le vainqueur est le 1er du classement à la fin de la dernière journée.
+            </small>
+          </div>
+
           </div><%# fin wrapper verrouillage %>
         </div><%# fin section 1 %>
 
@@ -490,6 +507,11 @@
           <div class="match-recap-row" data-tournament-form-target="recapFormatRow" style="display:none;">
             <span class="recap-label">Format</span>
             <span class="recap-value" data-tournament-form-target="recapFormat">—</span>
+          </div>
+
+          <div class="match-recap-row" data-tournament-form-target="recapPlayoffsRow" style="display:none;">
+            <span class="recap-label">Playoffs</span>
+            <span class="recap-value" data-tournament-form-target="recapPlayoffs">—</span>
           </div>
 
           <div class="match-recap-row">
