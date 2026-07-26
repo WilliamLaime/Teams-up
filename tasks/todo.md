@@ -1,4 +1,4 @@
-# Feature : refonte UI onglet Matchs des tournois — Phase A (ruban horizontal)
+# Feature : refonte UI onglet Matchs des tournois — Phase A (ruban horizontal) + Phase B (pastilles)
 
 Plan complet (5 phases) : `/home/axelb/.claude/plans/woolly-tinkering-nebula.md`
 Doc de suivi feature : `docs/TOURNOI.md`
@@ -35,3 +35,40 @@ tour), même esprit que `.bracket` (tableau final) mais avec des cartes `_tmatch
    groupes une seule fois (header + corps), SCSS `.round-col__pips`/`__pip` dans
    `_tournament_bracket.scss`. Tests contrôleur + swiss_pairing verts (51 runs).
    Vérif visuelle en attente, cf. étape 8.
+
+## Phase B — Sélecteur de phase (2 pastilles, onglets « stage » façon lolesports)
+Redéfinie en cours de route : 1er jet en pastille-par-ronde (façon "Ronde 1/2/3…")
+jugé peu lisible par l'utilisateur (retour visuel + lien lolesports.com/.../stage/…) —
+remplacé par un vrai bascule à 2 états (round-robin ↔ tableau final), qui montre/
+cache la section plutôt que de juste y faire défiler.
+1. [x] `tournaments_helper.rb#round_robin_phase_meta(tournament)` — libellé + icône
+   Lucide de la phase round-robin selon `tournament.format` (Ronde Suisse/
+   Championnat → swords, Poules → layout-grid) ; remplace l'ancien `phase_nav_icon`
+   par-tour (supprimé)
+2. [x] `_phase_nav.html.erb` — 2 pastilles (phase round-robin / Tableau final),
+   affichées uniquement si `tournament.bracket_started?` (avant ça une seule phase
+   existe, rien à basculer)
+3. [x] `tournament_phase_switch_controller.js` (remplace `tournament_phase_nav_controller.js`,
+   supprimé) — `show(phase)` bascule `hidden` sur les sections cibles + `is-active`
+   sur les pastilles ; `defaultValue` recalculée côté serveur à chaque rendu
+   (`tournament.bracket_started? ? "bracket" : "main"`) → pointe toujours vers la
+   phase "en cours", donc rien d'important n'est perdu au re-render Turbo Stream
+   (même compromis qu'A.8 pour le scroll horizontal)
+4. [x] `_board.html.erb` — nouveau wrapper `.tournament-board__phases` avec
+   `data-controller="tournament-phase-switch"` autour de `_phase_nav` + des
+   sections round-robin/tableau final (chacune taguée `data-phase="main"` ou
+   `"bracket"` + `data-tournament-phase-switch-target="section"`)
+5. [x] `_pool_phase.html.erb` / `_bracket.html.erb` — tags `data-phase`/`data-*-target`
+   ajoutés sur leur `<section class="tournament-phase">` respective (l'ancre
+   `id="round_<id>"` ajoutée puis retirée de `_bracket.html.erb` — plus nécessaire,
+   ce n'est plus un scroll par ronde)
+6. [x] SCSS `.phase-nav`/`.phase-nav__pill` réécrit : pastille active = accent
+   plein `$green` (bascule réelle de contenu, pas juste un filtre visuel comme
+   `.bracket-viewer__chip`)
+7. [x] Tests contrôleur : absence avant démarrage du tableau final, présence
+   (2 pastilles) une fois `bracket_started?` vrai (tournoi joué jusqu'au bout via
+   `SwissPairing#next_round!` + `win_tournament_match!`) ; suite tournois verte
+   (84 runs sur controllers/models/policies/services)
+8. [ ] Vérif visuelle navigateur — **non faite**, même limitation qu'étape A.8
+   (clic pastille → bascule instantanée round-robin/tableau final, mobile ~375px,
+   icônes Lucide bien résolues, accent vert visible en dark ET light mode)

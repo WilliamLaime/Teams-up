@@ -3,7 +3,7 @@
     l'intérieur de chaque colonne (Poule A, B… — cf. _round_column,
     group_by_pool: true, dérivé de player_a.pool).
     Locals : tournament, can_manage. %>
-<section class="tournament-phase">
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
   <h2 class="tournament-phase__title">Poules</h2>
 
   <%= render "tournaments/round_ribbon", rounds: tournament.pool_rounds, can_manage: can_manage,

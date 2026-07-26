@@ -210,6 +210,36 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card"
   end
 
+  test "GET show : pas de sélecteur de phase tant que le tableau final n'a pas démarré" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+    SwissPairing.new(t).next_round! # Ronde 1, une seule phase existe encore
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".phase-nav", 0
+  end
+
+  test "GET show : le sélecteur de phase (2 pastilles) apparaît une fois le tableau final démarré" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+
+    20.times do
+      break if t.reload.bracket_started?
+
+      SwissPairing.new(t).next_round!
+      t.current_round.tournament_matches.where(status: "pending", is_bye: false)
+       .find_each { |m| win_tournament_match!(m, m.player_a) }
+    end
+    assert t.reload.bracket_started?, "le tournoi devrait avoir atteint le tableau final"
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".phase-nav__pill", 2
+  end
+
   test "GET show affiche les pastilles de bracket de score à partir de la ronde 2" do
     sign_in @user
     t = open_tournament_with_players(8)

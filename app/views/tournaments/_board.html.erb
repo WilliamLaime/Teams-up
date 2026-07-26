@@ -27,31 +27,39 @@
     <%= render "tournaments/champion_banner", tournament: tournament %>
   <% end %>
 
-  <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>
-  <% if tournament.swiss_rounds.any? %>
-    <section class="tournament-phase">
-      <h2 class="tournament-phase__title">Ronde Suisse</h2>
-      <%= render "tournaments/round_ribbon", rounds: tournament.swiss_rounds, can_manage: can_manage,
-                  title_for: ->(round) { "Ronde #{round.number}" }, group_by_record: true %>
-    </section>
-  <% end %>
+  <%# data-phase="main" (ronde robin, un seul des 3 formats existe) vs "bracket" (tableau
+      final) : le sélecteur de phase (_phase_nav) bascule leur visibilité une fois le
+      tableau final démarré (avant ça, une seule des deux existe, rien à basculer). %>
+  <div class="tournament-board__phases" data-controller="tournament-phase-switch"
+       data-tournament-phase-switch-default-value="<%= tournament.bracket_started? ? "bracket" : "main" %>">
+    <%= render "tournaments/phase_nav", tournament: tournament %>
 
-  <%# Championnat : round-robin intégral, une section par journée. %>
-  <% if tournament.league_rounds.any? %>
-    <section class="tournament-phase">
-      <h2 class="tournament-phase__title">Championnat</h2>
-      <%= render "tournaments/round_ribbon", rounds: tournament.league_rounds, can_manage: can_manage,
-                  title_for: ->(round) { "Journée #{round.number}" } %>
-    </section>
-  <% end %>
+    <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>
+    <% if tournament.swiss_rounds.any? %>
+      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
+        <h2 class="tournament-phase__title">Ronde Suisse</h2>
+        <%= render "tournaments/round_ribbon", rounds: tournament.swiss_rounds, can_manage: can_manage,
+                    title_for: ->(round) { "Ronde #{round.number}" }, group_by_record: true %>
+      </section>
+    <% end %>
 
-  <%# Poules : round-robin par poule, matchs groupés par poule dans chaque journée. %>
-  <% if tournament.pool_rounds.any? %>
-    <%= render "tournaments/pool_phase", tournament: tournament, can_manage: can_manage %>
-  <% end %>
+    <%# Championnat : round-robin intégral, une section par journée. %>
+    <% if tournament.league_rounds.any? %>
+      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
+        <h2 class="tournament-phase__title">Championnat</h2>
+        <%= render "tournaments/round_ribbon", rounds: tournament.league_rounds, can_manage: can_manage,
+                    title_for: ->(round) { "Journée #{round.number}" } %>
+      </section>
+    <% end %>
 
-  <%# Tableau final / playoffs à élimination directe (commun à tous les formats). %>
-  <% if tournament.bracket_started? %>
-    <%= render "tournaments/bracket", tournament: tournament, can_manage: can_manage %>
-  <% end %>
+    <%# Poules : round-robin par poule, matchs groupés par poule dans chaque journée. %>
+    <% if tournament.pool_rounds.any? %>
+      <%= render "tournaments/pool_phase", tournament: tournament, can_manage: can_manage %>
+    <% end %>
+
+    <%# Tableau final / playoffs à élimination directe (commun à tous les formats). %>
+    <% if tournament.bracket_started? %>
+      <%= render "tournaments/bracket", tournament: tournament, can_manage: can_manage %>
+    <% end %>
+  </div>
 <% end %>
