@@ -206,8 +206,27 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
 
     get tournament_path(t)
     assert_response :success
-    assert_select ".swiss-round"
+    assert_select ".round-col"
     assert_select ".tmatch-card"
+  end
+
+  test "GET show affiche les pastilles de bracket de score à partir de la ronde 2" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+    SwissPairing.new(t).next_round! # Ronde 1
+
+    get tournament_path(t)
+    assert_response :success
+    # Ronde 1 : un seul groupe possible (0V-0D pour tout le monde) → pas de pastille.
+    assert_select ".score-bracket__pip", 0
+
+    t.swiss_rounds.first.tournament_matches.where(is_bye: false).find_each { |m| win_tournament_match!(m, m.player_a) }
+    SwissPairing.new(t).next_round! # Ronde 2 : 2 groupes (1V-0D / 0V-1D)
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".score-bracket__pip", minimum: 1
   end
 
   test "GET show : les boutons vainqueur n'apparaissent que pour l'organisateur" do
@@ -217,7 +236,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
 
     sign_in @co_org # non-organisateur
     get tournament_path(t)
-    assert_select ".swiss-round" # les rondes sont bien affichées
+    assert_select ".round-col" # les rondes sont bien affichées
     assert_select ".tmatch-card__win-btn", 0 # mais aucun bouton vainqueur
   end
 
@@ -241,7 +260,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     get tournament_path(t)
     assert_response :success
     assert_select ".tournament-phase__title", text: "Championnat"
-    assert_select ".swiss-round"
+    assert_select ".round-col"
   end
 
   test "GET show rend la phase poules (matchs groupés par poule)" do
