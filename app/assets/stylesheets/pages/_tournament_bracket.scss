@@ -98,6 +98,43 @@
   }
 }
 
+// ── Sélecteur de phase (2 pastilles, onglets « stage » façon lolesports) ──
+// Namespace propre (pas de collision avec .bracket-viewer__chip, lecture
+// seule). Contrairement à ce dernier, la pastille active est REMPLIE (accent
+// plein, pas juste un survol) : ici un clic bascule réellement le contenu
+// affiché (cf. tournament_phase_switch_controller.js), pas un simple filtre visuel.
+.phase-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+
+  &__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover { color: var(--theme-text-primary); }
+
+    &.is-active {
+      color: #fff;
+      background-color: $green;
+      border-color: $green;
+    }
+
+    i { width: 16px; height: 16px; }
+  }
+}
+
 // ── Ruban horizontal (une colonne par tour) ──────────
 // Réutilisé par la ronde suisse, le championnat et les poules dans l'onglet
 // Matchs éditable — cartes .tmatch-card cliquables, donc pas de zoom em-based

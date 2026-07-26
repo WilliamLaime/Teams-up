@@ -31,6 +31,17 @@ module TournamentsHelper
     end
   end
 
+  # Libellé + icône Lucide de la phase round-robin du tournoi (ronde suisse /
+  # championnat / poules — un seul de ces 3 formats existe par tournoi) pour
+  # le sélecteur de phase (_phase_nav, bascule round-robin vs tableau final).
+  def round_robin_phase_meta(tournament)
+    case tournament.format
+    when "poules" then ["Poules", "layout-grid"]
+    when "championnat" then ["Championnat", "swords"]
+    else ["Ronde Suisse", "swords"]
+    end
+  end
+
   # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde
   # suisse (façon Lolesports) — matérialise le bilan du groupe EN ENTRANT dans ce
   # tour (cf. Tournament#swiss_entering_records) : carrés verts = victoires, rouges
