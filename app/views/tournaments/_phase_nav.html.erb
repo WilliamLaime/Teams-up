@@ -1,0 +1,26 @@
+<%# ── Sélecteur de phase (2 pastilles, façon onglets « stage » lolesports) ────
+    Bascule entre la phase round-robin (ronde suisse / championnat / poules —
+    un seul de ces 3 formats existe par tournoi) et le tableau final, pilotée
+    par tournament_phase_switch_controller.js. Volontairement PAS une pastille
+    par ronde individuelle (1er jet jugé peu lisible dès qu'il y a beaucoup de
+    rondes) : seulement 2 états possibles ⇒ contrairement à un filtre fin, la
+    perte de la sélection après un re-render Turbo Stream (retour à la phase
+    "en cours" par défaut) reste un compromis acceptable, comme le scroll
+    horizontal du ruban (Phase A).
+    Ne s'affiche que si le tableau final a démarré : avant ça une seule phase
+    existe, rien à basculer. Local : tournament. %>
+<% if tournament.bracket_started? %>
+  <% main_label, main_icon = round_robin_phase_meta(tournament) %>
+  <nav class="phase-nav" aria-label="Basculer entre les phases du tournoi">
+    <button type="button" class="phase-nav__pill" data-phase="main"
+            data-tournament-phase-switch-target="pill" data-action="tournament-phase-switch#select">
+      <i data-lucide="<%= main_icon %>" aria-hidden="true"></i>
+      <%= main_label %>
+    </button>
+    <button type="button" class="phase-nav__pill" data-phase="bracket"
+            data-tournament-phase-switch-target="pill" data-action="tournament-phase-switch#select">
+      <i data-lucide="trophy" aria-hidden="true"></i>
+      Tableau final
+    </button>
+  </nav>
+<% end %>
