@@ -25,6 +25,7 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
   # éviter des lignes orphelines qui violeraient les FK au chargement des fixtures
   # du test suivant.
   teardown do
+    SlackFavoriteDestination.delete_all
     SlackIdentity.delete_all
     SlackWorkspace.delete_all
     teardown_db
@@ -75,9 +76,11 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     assert_select "input#post_to_slack", count: 1
     # Workspace unique → champ caché (pas de select workspace)
     assert_select "input[type=hidden][name=slack_workspace_id]", count: 1
-    assert_select "select#slack_channel_id", count: 1
+    # Destination = combobox recherchable : champ caché slack_channel_id + input combobox
+    assert_select "input[type=hidden][name=slack_channel_id]", count: 1
+    assert_select "input[role=combobox][data-slack-destination-target=input]", count: 1
     # Le JSON embarqué contient le channel et le membre pour le peuplement client-side
-    data = css_select("[data-slack-share-data-value]").first["data-slack-share-data-value"]
+    data = css_select("[data-slack-destination-workspaces-value]").first["data-slack-destination-workspaces-value"]
     assert_includes data, "C1"
     assert_includes data, "U9"
     assert_includes data, "Messages directs"
@@ -99,6 +102,102 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     dest = Slack::ChannelLister.destinations(ws)
     assert_equal [["#general", "C1"]], dest["Channels"]
     assert_equal [["Bob", "U9"]], dest["Messages directs"] # le bot est exclu
+  end
+
+  # ── Robustesse : un appel qui échoue ne fait pas disparaître l'autre liste ─────
+  test "ChannelLister isole les appels : users.list en échec garde les channels" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, channels: [{ id: "C1", name: "general" }] }.to_json)
+    # Scope manquant sur users.list (erreur NON fatale) → les DM sont perdus, pas les channels.
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: false, error: "missing_scope" }.to_json)
+
+    result = Slack::ChannelLister.resolve(ws)
+    assert_equal [["#general", "C1"]], result[:groups]["Channels"]
+    assert_nil result[:groups]["Messages directs"]
+    assert_not result[:auth_failed] # missing_scope n'exige pas une réinstallation
+  end
+
+  # ── Robustesse : token mort → auth_failed pour piloter le bandeau « réinstalle » ─
+  test "ChannelLister signale auth_failed quand le token du bot est révoqué" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: false, error: "invalid_auth" }.to_json)
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: false, error: "invalid_auth" }.to_json)
+
+    result = Slack::ChannelLister.resolve(ws)
+    assert_empty result[:groups]
+    assert result[:auth_failed]
+  end
+
+  # ── Favoris : épinglage / désépinglage via l'endpoint fetch ───────────────────
+  test "POST /slack/favorites épingle une destination pour l'identité du workspace" do
+    ws = link_slack!
+    sign_in @user
+    assert_difference "SlackFavoriteDestination.count", 1 do
+      post slack_favorites_path,
+           params: { slack_workspace_id: ws.id, channel_id: "C1", channel_name: "#general" }
+    end
+    assert_response :success
+    fav = SlackFavoriteDestination.last
+    assert_equal "C1", fav.channel_id
+    assert_equal "#general", fav.channel_name
+    assert_equal @user.slack_identities.first.id, fav.slack_identity_id
+  end
+
+  test "POST /slack/favorites est idempotent (find_or_initialize)" do
+    ws = link_slack!
+    sign_in @user
+    2.times do
+      post slack_favorites_path,
+           params: { slack_workspace_id: ws.id, channel_id: "C1", channel_name: "#general" }
+    end
+    assert_equal 1, SlackFavoriteDestination.where(channel_id: "C1").count
+  end
+
+  test "DELETE /slack/favorites désépingle la destination" do
+    ws = link_slack!
+    identity = @user.slack_identities.first
+    identity.slack_favorite_destinations.create!(channel_id: "C1", channel_name: "#general")
+    sign_in @user
+    assert_difference "SlackFavoriteDestination.count", -1 do
+      delete slack_favorites_path, params: { slack_workspace_id: ws.id, channel_id: "C1" }
+    end
+    assert_response :success
+  end
+
+  test "POST /slack/favorites sur un workspace non lié renvoie 404" do
+    link_slack!
+    sign_in @user
+    assert_no_difference "SlackFavoriteDestination.count" do
+      post slack_favorites_path,
+           params: { slack_workspace_id: 999_999, channel_id: "C1", channel_name: "#x" }
+    end
+    assert_response :not_found
+  end
+
+  test "slack_destinations_for embarque les favoris par workspace" do
+    ws = link_slack!
+    identity = @user.slack_identities.first
+    identity.slack_favorite_destinations.create!(channel_id: "C1", channel_name: "#general")
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, channels: [] }.to_json)
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, members: [] }.to_json)
+
+    sign_in @user
+    get new_match_path
+    assert_response :success
+    # Le JSON embarqué doit contenir la paire favorite.
+    assert_match(/#general/, response.body)
   end
 
   # ── Partage manuel depuis la page match : organisateur lié → job enqueue ───────

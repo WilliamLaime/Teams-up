@@ -1,0 +1,136 @@
+// ── Combobox de destination Slack (partage de match) ───────────────────────────
+// Sélecteur recherchable avec favoris épinglés. Calqué sur le pattern .invite-search-*
+// (100% theme-aware via --theme-*), plus un groupe de favoris et une étoile cliquable.
+
+.slack-dest {
+  position: relative;
+}
+
+// Champ de recherche (bordure sur le groupe, comme .invite-search-group).
+.slack-dest-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 10px;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-input-bg);
+  padding-left: 0.7rem;
+  transition: border-color 0.15s;
+
+  &:focus-within { border-color: rgba(30, 221, 136, 0.45); }
+}
+
+.slack-dest-search-icon {
+  display: inline-flex;
+  color: var(--theme-text-muted);
+  flex-shrink: 0;
+}
+
+.slack-dest-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--theme-input-color);
+  font-size: 0.9rem;
+  padding: 0.55rem 0.75rem 0.55rem 0.4rem;
+
+  &::placeholder { color: var(--theme-input-placeholder); }
+  &:focus-visible { outline: 2px solid $green; outline-offset: 2px; }
+}
+
+// Liste déroulante (positionnée au-dessus du reste du modal).
+.slack-dest-list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+// En-tête de groupe (★ Favoris / Channels / Messages directs).
+.slack-dest-group-label {
+  padding: 0.4rem 0.6rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--theme-text-muted);
+}
+
+.slack-dest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+
+  &:hover,
+  &.is-active {
+    background: rgba(30, 221, 136, 0.10);
+  }
+}
+
+.slack-dest-item-label {
+  font-size: 0.88rem;
+  color: var(--theme-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Étoile de favori : discrète par défaut, verte quand épinglée.
+.slack-dest-star {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--theme-text-muted);
+  opacity: 0.55;
+  transition: color 0.12s, opacity 0.12s, transform 0.12s;
+
+  &:hover { opacity: 1; transform: scale(1.15); }
+
+  &.is-fav {
+    color: $green;
+    opacity: 1;
+    // Remplit l'étoile Lucide (par défaut en trait seul).
+    :where(svg) { fill: $green; }
+  }
+}
+
+.slack-dest-empty {
+  padding: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--theme-text-muted);
+  text-align: center;
+}
+
+// Cohérence du <select> d'espace Slack en thème sombre (le .form-select natif reste
+// blanc par défaut — même correctif que .pending-modal-content .form-select).
+[data-theme="dark"] .slack-share-field .form-select {
+  background-color: var(--theme-input-bg);
+  color: var(--theme-input-color);
+  border-color: var(--theme-border);
+  color-scheme: dark;
+
+  option, optgroup {
+    background-color: var(--theme-bg-card);
+    color: var(--theme-text-primary);
+  }
+}

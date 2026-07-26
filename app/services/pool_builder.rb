@@ -120,8 +120,9 @@ class PoolBuilder
     picked.first(@tournament.final_size)
   end
 
-  # Classement d'un groupe de joueurs (mêmes critères que Tournament#ranked_players).
+  # Classement d'un groupe de joueurs — délègue à Tournament#rank_key (Lot 6),
+  # source unique de vérité partagée avec ranked_players et BracketBuilder.
   def ranked(players)
-    players.sort_by { |tu| [-tu.wins, tu.losses, -tu.set_average, -tu.point_average, tu.display_name] }
+    players.sort_by { |tu| @tournament.rank_key(tu) }
   end
 end

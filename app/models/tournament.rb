@@ -174,10 +174,12 @@ class Tournament < ApplicationRecord
          .sort.to_h
   end
 
-  # Critère de tri du classement (victoires desc, défaites asc, puis set average,
-  # point average, nom) — partagé par ranked_players / ranked_pools et le seeding.
+  # Critère de tri du classement (Lot 6 : points de classement décroissants — barème
+  # V/N/D du sport, ou 1 pt/victoire en ronde suisse — puis différentiels de points et
+  # de sets décroissants, défaites croissantes, nom en dernier ressort) — partagé par
+  # ranked_players / ranked_pools et le seeding (BracketBuilder, PoolBuilder).
   def rank_key(tu)
-    [-tu.wins, tu.losses, -tu.set_average, -tu.point_average, tu.display_name]
+    [-tu.ranking_points, -tu.point_average, -tu.set_average, tu.losses, tu.display_name]
   end
 
   # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.
@@ -190,8 +192,13 @@ class Tournament < ApplicationRecord
 
   # Aperçu de structure figée pour la combinaison (format + nombre de joueurs).
   # nil si la combinaison n'a pas de preset (ex. nombre "Libre" hors 8/16/32).
+  # Championnat SANS playoffs (Lot 6) : on réécrit la fin du texte plutôt que de
+  # dupliquer STRUCTURE_PRESETS pour une simple variante d'affichage.
   def structure_summary
-    STRUCTURE_PRESETS.dig(format, max_players)
+    preset = STRUCTURE_PRESETS.dig(format, max_players)
+    return preset if preset.nil? || format != "championnat" || playoffs?
+
+    preset.sub(/,\s*top \d+ en playoffs/, ", vainqueur = 1er du classement")
   end
 
   # ── Ronde Suisse + tableau final (Lot 3) ─────────────────────────────────────
@@ -206,6 +213,17 @@ class Tournament < ApplicationRecord
   def bracket_rounds = tournament_rounds.bracket.ordered
   # Le tableau final a-t-il déjà commencé ?
   def bracket_started? = tournament_rounds.bracket.exists?
+
+  # Vainqueur du tournoi (Lot 6) — source unique pour l'onglet Vue d'ensemble ET
+  # l'onglet Classement. Tableau final joué (ronde suisse / poules / championnat AVEC
+  # playoffs) → vainqueur du dernier match du bracket. Championnat SANS playoffs →
+  # le 1er du classement final, puisqu'il n'y a pas de tableau à l'issue de la saison.
+  def champion
+    return nil unless completed?
+    return bracket_rounds.last&.tournament_matches&.first&.winner if bracket_started?
+
+    ranked_players.first if format == "championnat"
+  end
 
   # Ronde en cours : la dernière ronde générée. Le tableau final (bracket) est
   # prioritaire ; sinon la dernière ronde de la phase round-robin du format

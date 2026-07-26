@@ -15,9 +15,16 @@ class TournamentMatchesController < ApplicationController
     @match.assign_score(sets_param)
 
     if @match.save
+      round = @match.tournament_round.reload
+      # Classement rafraîchi dès CE score saisi (Lot 6) — sans attendre que toute la
+      # ronde soit jouée. Idempotent, même appel que apply_correction! ci-dessous.
+      if %w[swiss league pool].include?(round.phase)
+        TournamentEngine.for(@tournament).recompute_stats_for(round.phase, apply_state: round.phase == "swiss")
+      end
+
       # Ronde terminée → générer automatiquement la suite (idempotent).
       # Aiguillage selon le format via la façade TournamentEngine.
-      TournamentEngine.for(@tournament).next_round! if @match.tournament_round.reload.complete?
+      TournamentEngine.for(@tournament).next_round! if round.complete?
 
       respond_to do |format|
         format.turbo_stream { render_board }

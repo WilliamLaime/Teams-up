@@ -33,9 +33,10 @@ export default class extends Controller {
 
   // Ouvre la modale à partir des données de la carte (data-tournament-score-*-param).
   open(event) {
-    const { url, bestOf, target, sets, nameA, nameB, editable } = event.params
+    const { url, mode, allowDraw, bestOf, target, sets, nameA, nameB, editable } = event.params
     const existing = Array.isArray(sets) ? sets : []
-    const rows = Math.max(bestOf || 3, existing.length)
+    const isScoreMode = mode === "score"
+    const rows = isScoreMode ? 1 : Math.max(bestOf || 3, existing.length)
 
     if (url) this.formTarget.action = url
     this.nameATarget.textContent = nameA || "Joueur A"
@@ -43,11 +44,17 @@ export default class extends Controller {
     this.titleTarget.textContent = editable ? "Saisir le score" : "Détail du score"
     this.submitTarget.style.display = editable ? "" : "none"
     this.hintTarget.textContent = editable
-      ? `Au meilleur des ${bestOf} sets · cible ${target} jeux/points par set.`
+      ? this.buildHint(isScoreMode, allowDraw, bestOf, target)
       : ""
 
-    this.buildRows(rows, existing, editable)
+    this.buildRows(rows, existing, editable, isScoreMode)
     this.modal.show()
+  }
+
+  buildHint(isScoreMode, allowDraw, bestOf, target) {
+    if (!isScoreMode) return `Au meilleur des ${bestOf} sets · cible ${target} jeux/points par set.`
+
+    return allowDraw ? "Score final du match (match nul autorisé)." : "Score final du match (pas de match nul)."
   }
 
   // Ferme la modale uniquement si l'enregistrement a réussi.
@@ -57,14 +64,16 @@ export default class extends Controller {
   }
 
   // (Re)génère `count` lignes de sets, préremplies avec `existing` ([[a, b], …]).
-  buildRows(count, existing, editable) {
+  // `isScoreMode` : sport collectif à score final unique → 1 seule ligne, libellée
+  // "Score final" plutôt que "Set 1".
+  buildRows(count, existing, editable, isScoreMode = false) {
     this.rowsTarget.innerHTML = ""
     for (let i = 0; i < count; i++) {
       const pair = existing[i] || ["", ""]
       const row = document.createElement("div")
       row.className = "score-modal__set"
       row.innerHTML = `
-        <span class="score-modal__set-label">Set ${i + 1}</span>
+        <span class="score-modal__set-label">${isScoreMode ? "Score final" : `Set ${i + 1}`}</span>
         <input type="number" min="0" inputmode="numeric" class="score-modal__input"
                name="tournament_match[games_a][]" value="${pair[0]}" ${editable ? "" : "readonly"}>
         <span class="score-modal__sep">–</span>

@@ -254,10 +254,10 @@ class TournamentsController < ApplicationController
     @noindex = true
   end
 
-  # Verrouille format/nb de joueurs/sport une fois le tournoi lancé : ces champs
-  # pilotent le moteur de jeu (TournamentEngine) et casseraient un tirage/tableau
-  # déjà en cours s'ils changeaient sous le pied de la mécanique.
-  STRUCTURAL_FIELDS = %i[sport_id format max_players].freeze
+  # Verrouille format/nb de joueurs/sport/playoffs une fois le tournoi lancé : ces
+  # champs pilotent le moteur de jeu (TournamentEngine) et casseraient un
+  # tirage/tableau déjà en cours s'ils changeaient sous le pied de la mécanique.
+  STRUCTURAL_FIELDS = %i[sport_id format max_players playoffs].freeze
 
   def tournament_params
     permitted = %i[name description date time place venue_id banner_image] + STRUCTURAL_FIELDS
