@@ -1,0 +1,50 @@
+<%# ── Une colonne du ruban horizontal (un tour) ───────────────────────────────
+    Réutilisée par la ronde suisse, le championnat et les poules (via
+    _round_ribbon) dans l'onglet Matchs ÉDITABLE — pendant du bracket-viewer
+    (Vue d'ensemble, lecture seule) mais avec des cartes _tmatch cliquables.
+    `id="round_<id>"` sert d'ancre de scroll pour le futur sélecteur de phase.
+    Locals : round, can_manage, title (optionnel, défaut "Ronde N"),
+    group_by_pool (optionnel, défaut false — regroupe les matchs par poule,
+    format "poules" uniquement), group_by_record (optionnel, défaut false —
+    regroupe les matchs par bilan V/D EN ENTRANT dans ce tour — ex. 2V-0D /
+    1V-1D / 0V-2D —, ronde suisse uniquement, cf. Tournament#swiss_entering_records). %>
+<% score_groups = if local_assigns.fetch(:group_by_record, false)
+                    entering = round.tournament.swiss_entering_records[round.number] || {}
+                    round.tournament_matches.order(:position)
+                         .group_by { |m| entering.fetch(m.player_a_id, [0, 0]) }
+                         .sort_by { |record, _| [-record[0], record[1]] }
+                  end %>
+<div id="round_<%= round.id %>" class="round-col">
+  <div class="round-col__header">
+    <h3 class="round-col__title"><%= local_assigns.fetch(:title, "Ronde #{round.number}") %></h3>
+    <span class="round-col__status round-col__status--<%= round.status %>">
+      <%= round.complete? ? "Terminée" : "En cours" %>
+    </span>
+  </div>
+
+  <div class="round-col__matches">
+    <% if local_assigns.fetch(:group_by_pool, false) %>
+      <% round.tournament_matches.order(:position).group_by { |m| m.player_a.pool }.sort_by { |pool, _| pool.to_i }.each do |pool_index, matches| %>
+        <h4 class="pool-label">Poule <%= ("A".ord + pool_index.to_i).chr %></h4>
+        <% matches.each do |match| %>
+          <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+        <% end %>
+      <% end %>
+    <% elsif score_groups %>
+      <% score_groups.each do |(wins, losses), matches| %>
+        <% if score_groups.size > 1 %>
+          <div class="score-bracket__header" title="<%= wins %> victoire(s) / <%= losses %> défaite(s) avant ce tour">
+            <%= score_bracket_pips(wins, losses) %>
+          </div>
+        <% end %>
+        <% matches.each do |match| %>
+          <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+        <% end %>
+      <% end %>
+    <% else %>
+      <% round.tournament_matches.order(:position).each do |match| %>
+        <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

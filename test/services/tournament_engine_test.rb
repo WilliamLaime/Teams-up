@@ -106,6 +106,37 @@ class TournamentEngineTest < ActiveSupport::TestCase
     assert_operator loser.set_average, :<, 0
   end
 
+  test "swiss_entering_records fige le bilan d'ENTRÉE d'un tour, distinct du bilan cumulé actuel" do
+    tournament = build_tournament(8) # pair → pas de bye, tout le monde joue chaque ronde
+    SwissPairing.new(tournament).next_round! # Ronde 1
+
+    # En entrant en ronde 1, tout le monde est à 0V-0D (aucune ronde jouée avant).
+    tournament.tournament_users.each do |tu|
+      assert_equal [0, 0], tournament.swiss_entering_records[1][tu.id]
+    end
+
+    resolve_current_round!(tournament)       # les player_a de la ronde 1 gagnent
+    SwissPairing.new(tournament).next_round! # Ronde 2 (recompute après la ronde 1)
+
+    records_before_r2 = tournament.swiss_entering_records[2]
+    # Une seule ronde jouée avant la ronde 2 → chacun a exactement 1 match à son actif.
+    records_before_r2.each_value { |(wins, losses)| assert_equal 1, wins + losses }
+
+    resolve_current_round!(tournament)       # ronde 2 jouée à son tour
+    SwissPairing.new(tournament).next_round! # Ronde 3 (recompute après les rondes 1+2)
+
+    # Le bilan d'ENTRÉE de la ronde 2 ne doit plus bouger : il reste basé sur la
+    # seule ronde 1, même après que d'autres rondes ont été jouées depuis.
+    assert_equal records_before_r2, tournament.swiss_entering_records[2]
+
+    # Alors que le bilan cumulé ACTUEL (TournamentUser#wins/#losses) reflète
+    # maintenant les 2 rondes jouées — la distinction avec le bilan d'entrée
+    # figé par tour est donc bien réelle (pas juste un alias de #wins/#losses).
+    tournament.tournament_users.approved.players.each do |tu|
+      assert_equal 2, tu.wins + tu.losses
+    end
+  end
+
   test "flux complet 16 joueurs → Final 8 → un vainqueur, tournoi completed" do
     tournament = build_tournament(16)
     SwissPairing.new(tournament).next_round!

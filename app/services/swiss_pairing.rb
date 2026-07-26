@@ -139,15 +139,7 @@ class SwissPairing
   # ── Persistance : helpers ─────────────────────────────────────────────────────
 
   # État suisse dérivé du bilan V/D (appelé par RoundRobinStats via apply_state).
-  def state_for(wins, losses)
-    if wins >= TournamentUser::WINS_TO_QUALIFY
-      "qualified"
-    elsif losses >= TournamentUser::LOSSES_TO_ELIMINATE
-      "eliminated"
-    else
-      "active"
-    end
-  end
+  def state_for(wins, losses) = TournamentUser.state_for(wins, losses)
 
   # Faut-il arrêter la ronde suisse et lancer le tableau final ?
   def ready_for_bracket?

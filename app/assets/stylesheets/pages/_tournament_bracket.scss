@@ -98,15 +98,31 @@
   }
 }
 
-// ── Une ronde suisse ─────────────────────────────────
-.swiss-round {
+// ── Ruban horizontal (une colonne par tour) ──────────
+// Réutilisé par la ronde suisse, le championnat et les poules dans l'onglet
+// Matchs éditable — cartes .tmatch-card cliquables, donc pas de zoom em-based
+// comme le bracket-viewer (Vue d'ensemble, lecture seule) : juste un scroll natif.
+.round-ribbon {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
   margin-bottom: 1.75rem;
+}
+
+.round-col {
+  flex: 0 0 auto;
+  min-width: 260px;
+  max-width: 300px;
 
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.5rem;
     margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid $green;
   }
 
   &__title {
@@ -121,16 +137,51 @@
     font-weight: 600;
     padding: 0.15rem 0.6rem;
     border-radius: 999px;
+    white-space: nowrap;
 
     &--completed { color: $green; background: rgba($green, 0.12); }
     &--in_progress { color: var(--theme-text-muted); background: var(--theme-hover-bg); }
   }
 
+  // flex-start + gap fixe (PAS space-around comme .bracket__matches, qui n'a
+  // de sens que pour un arbre à peu d'entrées par tour) : une ronde suisse a
+  // beaucoup de matchs par tour, les étaler sur toute la hauteur serait illisible.
   &__matches {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
   }
+}
+
+// En-tête d'un « bracket de score » (ronde suisse) : pastilles CARRÉES façon
+// Lolesports résumant le bilan V/D du groupe avant ce tour — vert = victoire,
+// rouge = défaite, gris = case restante avant qualification/élimination (cf.
+// score_bracket_pips, complété à un total fixe pour que toutes les rangées
+// d'une même ronde aient la même largeur, quel que soit le bilan du groupe).
+.score-bracket {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0.4rem 0 0.15rem;
+
+    // Le premier bracket de la colonne n'a pas besoin de cet espace (déjà
+    // séparé du titre par __header ci-dessus, gap __matches suffit).
+    .round-col__matches > &:first-child { margin-top: 0; }
+  }
+
+  &__pip {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 2px;
+  }
+
+  &__pip--win { background-color: $green; }
+  &__pip--loss { background-color: #c0392b; }
+  // theme-border-strong (rgba blanc 10% en sombre) est pensé pour une bordure
+  // fine, pas un aplat : en plein sur un carré il devient quasi invisible sur
+  // fond sombre. theme-text-muted (55% d'opacité) reste lisible dans les 2 thèmes.
+  &__pip--pending { background-color: var(--theme-text-muted); opacity: 0.4; }
 }
 
 // ── Tableau final (colonnes de tours) ────────────────
