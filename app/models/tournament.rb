@@ -214,6 +214,30 @@ class Tournament < ApplicationRecord
   # Le tableau final a-t-il déjà commencé ?
   def bracket_started? = tournament_rounds.bracket.exists?
 
+  # Bilan V/D de chaque joueur EN ENTRANT dans chaque ronde suisse (avant que
+  # cette ronde soit jouée) — sert à regrouper visuellement les matchs d'un
+  # tour par « bracket de score » (2V-0D / 1V-1D / 0V-2D…, cf. onglet Matchs).
+  # Différent de TournamentUser#wins/#losses (bilan cumulé ACTUEL) qui inclut
+  # aussi les rondes postérieures une fois qu'elles ont été jouées — on ne peut
+  # donc pas s'en servir tel quel pour étiqueter un tour déjà terminé depuis.
+  # Renvoie { numéro_de_ronde => { tournament_user_id => [victoires, défaites] } }.
+  def swiss_entering_records
+    tally = Hash.new { |h, k| h[k] = [0, 0] }
+    records = {}
+
+    swiss_rounds.each do |round|
+      records[round.number] = tally.dup
+
+      round.tournament_matches.reject(&:is_bye).select(&:decided?).each do |match|
+        loser_id = match.winner_id == match.player_a_id ? match.player_b_id : match.player_a_id
+        tally[match.winner_id] = [tally[match.winner_id][0] + 1, tally[match.winner_id][1]]
+        tally[loser_id]        = [tally[loser_id][0], tally[loser_id][1] + 1]
+      end
+    end
+
+    records
+  end
+
   # Vainqueur du tournoi (Lot 6) — source unique pour l'onglet Vue d'ensemble ET
   # l'onglet Classement. Tableau final joué (ronde suisse / poules / championnat AVEC
   # playoffs) → vainqueur du dernier match du bracket. Championnat SANS playoffs →

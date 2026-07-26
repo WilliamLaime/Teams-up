@@ -17,6 +17,17 @@ class TournamentUser < ApplicationRecord
   WINS_TO_QUALIFY = 3
   LOSSES_TO_ELIMINATE = 3
 
+  # État suisse dérivé d'un bilan V/D donné (mêmes seuils que ci-dessus). Utilisé
+  # par SwissPairing pour l'état réel du joueur ET par le ruban de rondes (onglet
+  # Matchs) pour colorer les pastilles de bilan par groupe en en-tête de colonne
+  # — d'où la version "pure" (sans lire l'état persisté d'un joueur en particulier).
+  def self.state_for(wins, losses)
+    return "qualified" if wins >= WINS_TO_QUALIFY
+    return "eliminated" if losses >= LOSSES_TO_ELIMINATE
+
+    "active"
+  end
+
   # Rôle dans le tournoi. "joueur" = participant qui occupe une place ;
   # "co_organisateur" = co-gestionnaire (mêmes droits que l'admin sauf suppression
   # / édition des métadonnées), sans occuper de place de joueur.

@@ -31,6 +31,21 @@ module TournamentsHelper
     end
   end
 
+  # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde
+  # suisse (façon Lolesports) — matérialise le bilan du groupe EN ENTRANT dans ce
+  # tour (cf. Tournament#swiss_entering_records) : carrés verts = victoires, rouges
+  # = défaites, gris = cases restantes avant qualification/élimination. Complétées
+  # à un total fixe (2 victoires max + 2 défaites max avant que le groupe soit
+  # qualifié/éliminé, cf. TournamentUser::WINS_TO_QUALIFY/LOSSES_TO_ELIMINATE)
+  # pour que toutes les pastilles d'une même ronde aient la même largeur.
+  SCORE_BRACKET_PIP_SLOTS = (TournamentUser::WINS_TO_QUALIFY - 1) + (TournamentUser::LOSSES_TO_ELIMINATE - 1)
+
+  def score_bracket_pips(wins, losses)
+    pips = (["win"] * wins) + (["loss"] * losses)
+    pips += ["pending"] * (SCORE_BRACKET_PIP_SLOTS - pips.size) if pips.size < SCORE_BRACKET_PIP_SLOTS
+    safe_join(pips.map { |kind| content_tag(:span, "", class: "score-bracket__pip score-bracket__pip--#{kind}") })
+  end
+
   # Message affiché dans l'état vide de la page liste, selon l'onglet actif
   # (TournamentsController::TABS).
   def tab_empty_message(tab)

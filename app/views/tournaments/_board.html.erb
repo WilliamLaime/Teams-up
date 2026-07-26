@@ -31,9 +31,8 @@
   <% if tournament.swiss_rounds.any? %>
     <section class="tournament-phase">
       <h2 class="tournament-phase__title">Ronde Suisse</h2>
-      <% tournament.swiss_rounds.each do |round| %>
-        <%= render "tournaments/swiss_round", round: round, can_manage: can_manage %>
-      <% end %>
+      <%= render "tournaments/round_ribbon", rounds: tournament.swiss_rounds, can_manage: can_manage,
+                  title_for: ->(round) { "Ronde #{round.number}" }, group_by_record: true %>
     </section>
   <% end %>
 
@@ -41,9 +40,8 @@
   <% if tournament.league_rounds.any? %>
     <section class="tournament-phase">
       <h2 class="tournament-phase__title">Championnat</h2>
-      <% tournament.league_rounds.each do |round| %>
-        <%= render "tournaments/swiss_round", round: round, can_manage: can_manage, title: "Journée #{round.number}" %>
-      <% end %>
+      <%= render "tournaments/round_ribbon", rounds: tournament.league_rounds, can_manage: can_manage,
+                  title_for: ->(round) { "Journée #{round.number}" } %>
     </section>
   <% end %>
 
