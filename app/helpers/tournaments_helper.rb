@@ -20,14 +20,23 @@ module TournamentsHelper
     return "Ronde #{round.number}" if round.phase == "swiss"
     return "Journée #{round.number}" if %w[league pool].include?(round.phase)
 
+    bracket_stage_label(bracket_rounds.index(round).to_i, bracket_rounds.size)
+  end
+
+  # Libellé d'un tour du tableau final à partir de sa position (0-based) et du
+  # nombre total de tours prévus — fonction pure, sans dépendance à un
+  # TournamentRound réel, pour pouvoir étiqueter aussi bien les tours déjà joués
+  # (round_label ci-dessus) que les colonnes "À déterminer" pas encore jouées
+  # (cf. _bracket.html.erb, Tournament#expected_bracket_round_count).
+  def bracket_stage_label(index, total)
     # Distance à la fin : 0 = finale, 1 = demies, 2 = quarts, 3 = 8es.
-    from_end = bracket_rounds.size - 1 - bracket_rounds.index(round).to_i
+    from_end = total - 1 - index
     case from_end
     when 0 then "Finale"
     when 1 then "Demi-finales"
     when 2 then "Quarts"
     when 3 then "8es"
-    else "Tour #{round.number}"
+    else "Tour #{index + 1}"
     end
   end
 

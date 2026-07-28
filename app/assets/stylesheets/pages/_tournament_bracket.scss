@@ -289,6 +289,22 @@
 
   &--done { border-color: var(--theme-border-strong); }
 
+  // Tour futur pas encore joué (Lot 7) : même gabarit que la carte d'un vrai
+  // match (place bien alignée dans la colonne) mais vide, en pointillés, pour
+  // signaler visuellement "pas encore déterminé" (cf. .tmatch-card--bye).
+  &--placeholder {
+    border-style: dashed;
+    align-items: center;
+    justify-content: center;
+    min-height: 68px;
+    color: var(--theme-text-muted);
+  }
+
+  &__placeholder-label {
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+
   &__player {
     display: flex;
     align-items: center;
