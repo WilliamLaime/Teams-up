@@ -2,7 +2,9 @@
     Réutilisé pour la ronde suisse, le championnat et les poules dans l'onglet
     Matchs éditable. Locals : rounds (array ordonné de TournamentRound),
     can_manage, title_for (proc round -> String), group_by_pool / group_by_record
-    (optionnels, défaut false, transmis tels quels à _round_column). %>
+    (optionnels, défaut false, transmis tels quels à _round_column), extra_columns
+    (optionnel, HTML déjà rendu ajouté APRÈS la dernière colonne — ex. la colonne
+    Qualifiés/Éliminés de la ronde suisse, en continuité horizontale du ruban). %>
 <div class="round-ribbon">
   <% rounds.each do |round| %>
     <%= render "tournaments/round_column", round: round, can_manage: can_manage,
@@ -10,4 +12,5 @@
                 group_by_pool: local_assigns.fetch(:group_by_pool, false),
                 group_by_record: local_assigns.fetch(:group_by_record, false) %>
   <% end %>
+  <%= local_assigns[:extra_columns] %>
 </div>
