@@ -1,7 +1,9 @@
 <%# ── Phase de poules ───────────────────────────────────────────────────────────
     Ruban horizontal : une colonne par journée, matchs regroupés par poule à
     l'intérieur de chaque colonne (Poule A, B… — cf. _round_column,
-    group_by_pool: true, dérivé de player_a.pool).
+    group_by_pool: true, dérivé de player_a.pool). Le classement par poule vit
+    dans l'onglet Classement (_ranking.html.erb) — pas ici, "Matchs" ne montre
+    que des matchs.
     Locals : tournament, can_manage. %>
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
   <h2 class="tournament-phase__title">Poules</h2>

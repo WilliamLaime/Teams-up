@@ -263,10 +263,24 @@ class Tournament < ApplicationRecord
     approved_players.select { |tu| tu.pool.present? }.group_by(&:pool)
   end
 
-  # Taille du tableau final selon l'effectif inscrit : Final 4 pour un petit
-  # tournoi (≤ 8 joueurs), Final 8 au-delà. Aligné sur le seuil du formulaire (< 12 → Final 4
-  # côté aperçu, mais on tranche sur l'effectif réel au lancement).
+  # Nombre de poules (~4 joueurs par poule, cf. STRUCTURE_PRESETS "poules") — seule
+  # source de vérité, réutilisée par PoolBuilder pour la répartition ET ici pour
+  # dimensionner le tableau final (2 qualifiés par poule, cf. #final_size).
+  def pool_count
+    [(approved_players_count / 4.0).ceil, 1].max
+  end
+
+  # Taille du tableau final selon le format :
+  #   - poules : le double du nombre de poules — les 2 premiers de chaque poule
+  #     (règle classique, ex. Coupe du monde) — reproduit exactement
+  #     STRUCTURE_PRESETS["poules"] : 2 poules de 4 → demi-finales (4), 4 poules →
+  #     quarts (8), 8 poules → huitièmes (16).
+  #   - ronde suisse / championnat : Final 4 pour un petit tournoi (≤ 8 joueurs),
+  #     Final 8 au-delà (aligné sur le seuil du formulaire, plafond volontaire —
+  #     contrairement aux poules, ne grandit pas avec l'effectif au-delà de 8).
   def final_size
+    return pool_count * 2 if format == "poules"
+
     approved_players_count <= 8 ? 4 : 8
   end
 

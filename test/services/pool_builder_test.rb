@@ -84,4 +84,27 @@ class PoolBuilderTest < ActiveSupport::TestCase
     final = tournament.bracket_rounds.last
     assert_equal 1, final.tournament_matches.count
   end
+
+  test "32 joueurs : 8 poules de 4, top 2 par poule qualifiés → huitièmes (16 places)" do
+    tournament = build_tournament(32)
+    TournamentEngine.for(tournament).next_round!
+
+    counts = tournament.tournament_users.players.group(:pool).count
+    assert_equal (0..7).to_a, counts.keys.sort
+    assert_equal [4] * 8, counts.values, "8 poules de 4 joueurs"
+
+    play_to_completion!(tournament)
+
+    assert tournament.reload.bracket_started?
+    assert_equal 16, tournament.final_size, "top 2 de chaque poule (8 poules) → huitièmes"
+    assert_equal 16, tournament.tournament_users.qualified.count
+
+    tournament.pools.each_value do |members|
+      qualified_in_pool = members.count(&:qualified?)
+      assert_equal 2, qualified_in_pool, "exactement 2 qualifiés par poule"
+    end
+
+    first_bracket_round = tournament.bracket_rounds.find_by(number: 1)
+    assert_equal 8, first_bracket_round.tournament_matches.count, "16 places → 8 matchs en huitièmes"
+  end
 end

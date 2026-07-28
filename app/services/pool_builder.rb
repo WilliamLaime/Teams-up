@@ -45,10 +45,9 @@ class PoolBuilder
   private
 
   # ── Répartition en poules ──────────────────────────────────────────────────────
-  # Nombre de poules : ~4 joueurs par poule (8→2, 16→4, 32→8, conforme aux presets).
-  def pool_count
-    [(player_scope.count / 4.0).ceil, 1].max
-  end
+  # Nombre de poules : délègue à Tournament#pool_count, seule source de vérité
+  # (aussi utilisée pour dimensionner le tableau final, cf. Tournament#final_size).
+  def pool_count = @tournament.pool_count
 
   def pools_unassigned? = player_scope.where(pool: nil).exists?
 
