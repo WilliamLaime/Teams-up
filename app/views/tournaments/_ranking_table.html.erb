@@ -1,8 +1,23 @@
 <%# ── Table de classement ───────────────────────────────────────────────────────
     Locals : players (déjà triés), tournament (sport → barème V/N/D, Lot 6).
     Réutilisé pour le classement global (suisse / championnat) et pour chaque poule.
-    La colonne "N" (nuls) n'apparaît que pour les sports où le nul existe. %>
+    La colonne "N" (nuls) n'apparaît que pour les sports où le nul existe.
+    La colonne "Sets" n'apparaît que pour les sports joués en sets (tennis, padel,
+    badminton, ping-pong, volley) — pour les sports à score simple (football,
+    handball, basketball), le différentiel de sets vaudrait toujours V-D, donc
+    aucune info en plus (le différentiel de points/buts, colonne "+/-", suffit).
+    "Pts" (points de classement, barème V/N/D du sport) et "+/-" (différentiel de
+    points/buts marqués-encaissés) sont deux notions distinctes qui n'ont aucun
+    rapport entre elles — nommées "+/-" (pas "Points") pour éviter toute confusion
+    avec "Pts", vu à tort comme "points pour la victoire" alors qu'il s'agit d'un
+    écart de score.
+    Qualification (format poules) : pas de colonne dédiée (retirée, cf. "État"
+    ci-dessus) mais une icône check-circle discrète à côté du nom, dès que
+    `tu.qualified?` (state posé par PoolBuilder#start_playoffs! sur les 2 premiers
+    de chaque poule une fois la phase de poules terminée) — répond au besoin de
+    voir qui est qualifié DANS chaque poule sans réintroduire un texte redondant. %>
 <% show_draws = tournament.sport&.ranking_points_rules&.dig(:draw)&.positive? %>
+<% show_sets  = tournament.sport&.scoring_rules&.dig(:mode) == :sets %>
 <div class="tournament-ranking__scroll">
   <table class="tournament-ranking__table">
     <thead>
@@ -13,9 +28,8 @@
         <th title="Victoires">V</th>
         <% if show_draws %><th title="Nuls">N</th><% end %>
         <th title="Défaites">D</th>
-        <th title="Différentiel de sets">Sets</th>
-        <th title="Différentiel de points">Points</th>
-        <th class="is-state">État</th>
+        <% if show_sets %><th title="Différentiel de sets">Sets</th><% end %>
+        <th title="Différentiel de points marqués/encaissés">+/-</th>
       </tr>
     </thead>
     <tbody>
@@ -25,24 +39,19 @@
           <td class="is-player">
             <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar" %>
             <span><%= tu.display_name %></span>
+            <% if tu.qualified? %>
+              <i data-lucide="check-circle" class="tournament-ranking__qualified-icon"
+                 title="Qualifié pour le tableau final" aria-label="Qualifié pour le tableau final"></i>
+            <% end %>
           </td>
           <td class="is-num is-pts"><%= tu.ranking_points %></td>
           <td class="is-num is-win"><%= tu.wins %></td>
           <% if show_draws %><td class="is-num"><%= tu.draws %></td><% end %>
           <td class="is-num"><%= tu.losses %></td>
-          <td class="is-num"><%= tu.set_average.positive? ? "+#{tu.set_average}" : tu.set_average %></td>
+          <% if show_sets %>
+            <td class="is-num"><%= tu.set_average.positive? ? "+#{tu.set_average}" : tu.set_average %></td>
+          <% end %>
           <td class="is-num"><%= tu.point_average.positive? ? "+#{tu.point_average}" : tu.point_average %></td>
-          <td class="is-state">
-            <% if tu.withdrawn? %>
-              <span class="ranking-badge ranking-badge--eliminated">Abandon</span>
-            <% elsif tu.qualified? %>
-              <span class="ranking-badge ranking-badge--qualified">Qualifié</span>
-            <% elsif tu.eliminated? %>
-              <span class="ranking-badge ranking-badge--eliminated">Éliminé</span>
-            <% else %>
-              <span class="ranking-badge ranking-badge--active">En lice</span>
-            <% end %>
-          </td>
         </tr>
       <% end %>
     </tbody>
