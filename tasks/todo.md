@@ -110,3 +110,64 @@ panneau restait visible même en vue Tableau final, qui montre déjà cette info
    (colonne bien alignée dans la continuité du ruban desktop + mobile ~375px,
    disparition propre en vue Tableau final, icônes Lucide check-circle/x-circle
    résolues, scrollbar discrète visible dark ET light mode)
+
+## Phase D — abandonnée (retour utilisateur)
+1ère version : condensé de classement par poule (une carte par poule, rang/V/D/Pts)
+injecté dans `_pool_phase.html.erb`, au-dessus du ruban de journées. Retour
+utilisateur : le classement n'a rien à faire dans l'onglet **Matchs** — cet onglet
+ne montre QUE des matchs, le classement (par poule ou global) vit déjà dans
+l'onglet **Classement** (`_ranking.html.erb`/`_ranking_table.html.erb`), pas de
+raison de le dupliquer. Entièrement retiré : `_pool_standings.html.erb` supprimé,
+`_pool_phase.html.erb` revenu à un simple appel `_round_ribbon`, SCSS
+`.pool-standings-row`/`.pool-standings` retiré, tests contrôleur associés retirés.
+
+## Nettoyage table de classement (`_ranking_table.html.erb`, retour utilisateur)
+Deux colonnes questionnées sur le tournoi de test (format poules, football) :
+1. [x] Colonne **État** (badge Qualifié/Éliminé/Abandon/En lice) retirée : aucune
+   valeur ajoutée par rapport au reste de la ligne (le panneau dédié de la Phase C
+   couvre déjà qualifiés/éliminés pour la ronde suisse ; pour poules/championnat
+   l'état est presque toujours "En lice" tant que le tableau final n'a pas
+   commencé). `.ranking-badge` (SCSS, devenu orphelin) supprimé avec.
+2. [x] Colonne **Sets** (différentiel de sets, `tu.set_average`) : n'a de sens que
+   pour les sports joués en sets (tennis, padel, badminton, ping-pong, volley —
+   `Sport#scoring_rules[:mode] == :sets`). Pour les sports à score simple
+   (football, handball, basketball), ce différentiel vaut toujours V-D — aucune
+   info en plus, cf. constat sur le tournoi "Test foot". Masquée conditionnellement
+   (`show_sets`, même pattern que `show_draws` déjà existant pour la colonne "N"),
+   pas supprimée : reste utile/correcte pour les sports à sets.
+3. [x] Suite tournois verte (53 runs), SCSS validé par
+   `bin/rails assets:precompile RAILS_ENV=test`.
+
+## Bug corrigé — poules à 32 joueurs sautait les huitièmes (retour utilisateur)
+Constaté en simulant le tournoi de test "Test foot" (32 joueurs) : la phase de
+poules basculait sur un tableau final à 4 matchs (quarts, 8 qualifiés) au lieu des
+8 attendus (huitièmes, 16 qualifiés — top 2 de chaque poule, règle standard type
+Coupe du monde). Cause racine : `Tournament#final_size` (tournament.rb) utilisait
+une formule à 2 paliers (≤ 8 joueurs → 4, au-delà → 8) pensée pour la ronde suisse/
+le championnat (plafond volontaire, cf. STRUCTURE_PRESETS) — mais jamais adaptée
+pour le format "poules", qui grandit avec le nombre de poules (2 poules → demies,
+4 poules → quarts, 8 poules → huitièmes, conforme à STRUCTURE_PRESETS["poules"]
+qui promettait déjà ce texte sans que le code ne le respecte).
+1. [x] `Tournament#pool_count` — nouvelle méthode publique (~4 joueurs/poule),
+   remplace la version dupliquée en `private` dans `PoolBuilder` (qui délègue
+   maintenant à `@tournament.pool_count` — une seule source de vérité)
+2. [x] `Tournament#final_size` — `return pool_count * 2 if format == "poules"`
+   avant la formule générique (ronde suisse/championnat inchangés)
+3. [x] Test `PoolBuilderTest` : 32 joueurs → 8 poules de 4, top 2/poule qualifiés
+   (16 au total), tableau final ouvre bien sur 8 matchs (huitièmes)
+4. [x] Suite tournois verte (68 runs), SCSS validé
+
+## Ajout — indicateur de qualification par poule dans l'onglet Classement
+Retour utilisateur : après la suppression de la colonne "État" (ci-dessus), plus
+aucun moyen de voir dans l'onglet Classement quels joueurs sont qualifiés au sein
+de chaque poule. Pas de réintroduction de la colonne texte (jugée sans valeur) :
+icône ciblée à la place.
+1. [x] `_ranking_table.html.erb` — icône Lucide `check-circle` (verte) à côté du
+   nom du joueur si `tu.qualified?` (posé par `PoolBuilder#start_playoffs!`/
+   `LeagueBuilder`/`SwissPairing` sur les qualifiés une fois leur phase terminée —
+   rien avant, on ne peut pas savoir qui est qualifié tant que ce n'est pas décidé)
+2. [x] SCSS `.tournament-ranking__qualified-icon` + léger liseré vert
+   (`box-shadow: inset` sur la 1ère cellule) sur `&__row--qualified`
+3. [x] Suite tournois verte, SCSS validé
+4. [ ] Vérif visuelle navigateur — non faite, même limitation que les phases
+   précédentes (icône bien résolue, liseré visible dark ET light mode)

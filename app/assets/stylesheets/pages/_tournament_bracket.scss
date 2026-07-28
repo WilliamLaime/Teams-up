@@ -905,20 +905,15 @@
     object-fit: cover;
   }
 
+  &__qualified-icon {
+    width: 15px;
+    height: 15px;
+    color: $green;
+    flex: 0 0 auto;
+  }
+
   &__row--eliminated td { opacity: 0.6; }
-}
-
-.ranking-badge {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-
-  &--qualified { color: $green; background-color: rgba($green, 0.14); }
-  &--eliminated { color: #c0392b; background-color: rgba(#c0392b, 0.12); }
-  &--active { color: var(--theme-text-muted); background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.06)); }
+  &__row--qualified td:first-child { box-shadow: inset 3px 0 0 $green; }
 }
 
 // ── Colonne Qualifiés / Éliminés (ronde suisse, cf. _qualification_panel.html.erb) ──
