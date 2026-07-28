@@ -72,3 +72,41 @@ cache la section plutôt que de juste y faire défiler.
 8. [ ] Vérif visuelle navigateur — **non faite**, même limitation qu'étape A.8
    (clic pastille → bascule instantanée round-robin/tableau final, mobile ~375px,
    icônes Lucide bien résolues, accent vert visible en dark ET light mode)
+
+## Phase C — Panneau « Qualifiés / Éliminés » (ronde suisse uniquement)
+Redéfinie en cours de route (2e retour utilisateur, lien lolesports.com/.../stage/…
+— vue Système suisse) : le panneau n'est plus un bloc à part sous le ruban, il est
+rendu EN CONTINUITÉ HORIZONTALE des colonnes de rondes, comme une colonne de plus
+dans le même ruban scrollable. Corrige au passage un doublon d'affichage (le
+panneau restait visible même en vue Tableau final, qui montre déjà cette info).
+1. [x] `_qualification_panel.html.erb` — devient UNE colonne (`.qualification-col`,
+   pas deux blocs côte à côte) avec 2 groupes empilés à l'intérieur (Qualifiés /
+   Éliminés), à partir de `tournament.ranked_players.select(&:qualified?)` /
+   `select(&:eliminated?)` (zéro requête supplémentaire, `ranked_players` déjà
+   trié et chargé) ; n'affiche rien si les deux listes sont vides ; chaque groupe
+   affiche quand même son titre + un état vide dédié si l'AUTRE groupe a des
+   entrées mais pas lui
+2. [x] `_round_ribbon.html.erb` — nouveau local optionnel `extra_columns` (HTML
+   déjà rendu, ajouté après la dernière colonne de tour dans le même `.round-ribbon`)
+3. [x] `_board.html.erb` — passe `render("tournaments/qualification_panel", …)`
+   comme `extra_columns:` du ruban de la ronde suisse (plus de render séparé après
+   la section). Conséquence directe : la colonne vit maintenant DANS la section
+   `data-phase="main"` → masquée par le bascule Phase B en vue Tableau final, qui
+   montre déjà cette info au fil des tours joués (fin du doublon signalé)
+4. [x] SCSS `.qualification-col` : mêmes proportions qu'une colonne de tour
+   (`.round-col`, `min-width`/`max-width` identiques) pour lire comme sa suite
+   naturelle plutôt qu'un bloc à part ; 2 groupes empilés (pas côte à côte, une
+   colonne de ruban est trop étroite) ; réutilise l'accent `$green`/`#c0392b`
+   déjà posé par `.ranking-badge`
+5. [x] Scrollbar horizontale « pimpée » (2e retour utilisateur) : mixin
+   `themed-scrollbar` (fin, couleur `--theme-border-strong`, se fond dans le
+   thème dark/light) appliqué à `.round-ribbon` et `.bracket` — remplace la barre
+   grise par défaut du navigateur
+6. [x] Tests contrôleur : sélecteur renommé `.qualification-panel` → `.qualification-col`
+   (absent tant qu'aucun joueur n'a 3V/3D, présent une fois un joueur qualifié,
+   absent pour un format championnat) ; suite tournois verte (73 runs) ; SCSS
+   validé par `bin/rails assets:precompile RAILS_ENV=test` (compile sans erreur)
+7. [ ] Vérif visuelle navigateur — **non faite**, même limitation qu'étapes A.8/B.8
+   (colonne bien alignée dans la continuité du ruban desktop + mobile ~375px,
+   disparition propre en vue Tableau final, icônes Lucide check-circle/x-circle
+   résolues, scrollbar discrète visible dark ET light mode)

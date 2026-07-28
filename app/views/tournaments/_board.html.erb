@@ -39,7 +39,8 @@
       <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
         <h2 class="tournament-phase__title">Ronde Suisse</h2>
         <%= render "tournaments/round_ribbon", rounds: tournament.swiss_rounds, can_manage: can_manage,
-                    title_for: ->(round) { "Ronde #{round.number}" }, group_by_record: true %>
+                    title_for: ->(round) { "Ronde #{round.number}" }, group_by_record: true,
+                    extra_columns: render("tournaments/qualification_panel", tournament: tournament) %>
       </section>
     <% end %>
 
