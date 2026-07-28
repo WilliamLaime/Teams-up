@@ -7,6 +7,23 @@
   margin-top: 1.5rem;
 }
 
+// Scrollbar discrète pour les rubans horizontaux (.round-ribbon/.bracket) : se
+// fond dans le thème plutôt que la barre grise par défaut du navigateur.
+@mixin themed-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-border-strong) transparent;
+
+  &::-webkit-scrollbar { height: 8px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--theme-border-strong);
+    border-radius: 999px;
+
+    &:hover { background-color: var(--theme-text-muted); }
+  }
+}
+
 // ── Terminer le tournoi (organisateur/co-orga, tant que non terminé) ─
 .tournament-finish-action {
   display: flex;
@@ -145,6 +162,7 @@
   overflow-x: auto;
   padding-bottom: 0.75rem;
   margin-bottom: 1.75rem;
+  @include themed-scrollbar;
 }
 
 .round-col {
@@ -227,6 +245,7 @@
   gap: 2rem;
   overflow-x: auto;
   padding-bottom: 0.5rem;
+  @include themed-scrollbar;
 
   &__round {
     flex: 0 0 auto;
@@ -900,6 +919,88 @@
   &--qualified { color: $green; background-color: rgba($green, 0.14); }
   &--eliminated { color: #c0392b; background-color: rgba(#c0392b, 0.12); }
   &--active { color: var(--theme-text-muted); background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.06)); }
+}
+
+// ── Colonne Qualifiés / Éliminés (ronde suisse, cf. _qualification_panel.html.erb) ──
+// Rendue comme extra_columns de .round-ribbon : mêmes proportions qu'une colonne
+// de tour (.round-col) pour lire comme sa continuité horizontale plutôt qu'un
+// bloc à part (façon lolesports) — les 2 groupes sont empilés à l'intérieur
+// (une seule colonne, pas deux) car la largeur d'une colonne de ruban est trop
+// étroite pour les mettre côte à côte.
+.qualification-col {
+  flex: 0 0 auto;
+  min-width: 260px;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  &__group {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+
+    i { width: 18px; height: 18px; }
+
+    &--qualified { color: $green; }
+    &--eliminated { color: #c0392b; }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__player {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex: 0 0 auto;
+  }
+
+  &__name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    color: var(--theme-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__record {
+    flex: 0 0 auto;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--theme-text-muted);
+  }
+
+  &__empty {
+    font-size: 0.85rem;
+    color: var(--theme-text-muted);
+    margin: 0;
+  }
 }
 
 // État vide partagé (participants / classement).

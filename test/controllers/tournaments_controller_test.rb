@@ -210,6 +210,46 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card"
   end
 
+  test "GET show : pas de panneau Qualifiés/Éliminés tant que personne n'a 3 victoires ou 3 défaites" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+    SwissPairing.new(t).next_round! # Ronde 1 : tout le monde à 0V-0D
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".qualification-col", 0
+  end
+
+  test "GET show : le panneau Qualifiés/Éliminés liste les joueurs à 3 victoires ou 3 défaites" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+
+    20.times do
+      break if t.reload.tournament_users.any?(&:qualified?)
+
+      SwissPairing.new(t).next_round!
+      t.current_round.tournament_matches.where(status: "pending", is_bye: false)
+       .find_each { |m| win_tournament_match!(m, m.player_a) }
+    end
+    assert t.reload.tournament_users.any?(&:qualified?), "au moins un joueur devrait être qualifié"
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".qualification-col"
+    assert_select ".qualification-col__title--qualified"
+    assert_select ".qualification-col__title--eliminated"
+  end
+
+  test "GET show : pas de panneau Qualifiés/Éliminés pour un format championnat" do
+    sign_in @user
+    t = launched_tournament("championnat", 8)
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".qualification-col", 0
+  end
+
   test "GET show : pas de sélecteur de phase tant que le tableau final n'a pas démarré" do
     sign_in @user
     t = open_tournament_with_players(8)

@@ -1,0 +1,56 @@
+<%# ── Colonne « Qualifiés / Éliminés » (ronde suisse uniquement) ───────────────
+    Rendue comme `extra_columns` de _round_ribbon.html.erb (cf. _board.html.erb) :
+    en continuité horizontale du ruban de rondes plutôt qu'un bloc à part, façon
+    lolesports — mêmes proportions qu'une colonne de tour (.round-col). Vit donc
+    DANS la section round-robin (data-phase="main") : masquée par le bascule de
+    Phase B quand on affiche le tableau final, qui montre déjà cette même info au
+    fil des tours joués (pas de doublon).
+    N'a de sens que pour ce format : c'est le seul qui produit un état
+    "eliminated", et le seul où "qualified" évolue en continu round par round
+    plutôt qu'une seule fois en fin de phase (cf. principe 5 du plan).
+    Local : tournament. %>
+<% qualified  = tournament.ranked_players.select(&:qualified?) %>
+<% eliminated = tournament.ranked_players.select(&:eliminated?) %>
+<% if qualified.any? || eliminated.any? %>
+  <div class="qualification-col">
+    <div class="qualification-col__group">
+      <h3 class="qualification-col__title qualification-col__title--qualified">
+        <i data-lucide="check-circle" aria-hidden="true"></i>
+        Qualifiés
+      </h3>
+      <% if qualified.any? %>
+        <ul class="qualification-col__list">
+          <% qualified.each do |tu| %>
+            <li class="qualification-col__player">
+              <%= user_avatar_tag tu.user, css_class: "qualification-col__avatar" %>
+              <span class="qualification-col__name"><%= tu.display_name %></span>
+              <span class="qualification-col__record"><%= tu.wins %>V-<%= tu.losses %>D</span>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="qualification-col__empty">Aucun qualifié pour l'instant.</p>
+      <% end %>
+    </div>
+
+    <div class="qualification-col__group">
+      <h3 class="qualification-col__title qualification-col__title--eliminated">
+        <i data-lucide="x-circle" aria-hidden="true"></i>
+        Éliminés
+      </h3>
+      <% if eliminated.any? %>
+        <ul class="qualification-col__list">
+          <% eliminated.each do |tu| %>
+            <li class="qualification-col__player">
+              <%= user_avatar_tag tu.user, css_class: "qualification-col__avatar" %>
+              <span class="qualification-col__name"><%= tu.display_name %></span>
+              <span class="qualification-col__record"><%= tu.wins %>V-<%= tu.losses %>D</span>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="qualification-col__empty">Aucun éliminé pour l'instant.</p>
+      <% end %>
+    </div>
+  </div>
+<% end %>
