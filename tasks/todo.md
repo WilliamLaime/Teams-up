@@ -171,3 +171,162 @@ icône ciblée à la place.
 3. [x] Suite tournois verte, SCSS validé
 4. [ ] Vérif visuelle navigateur — non faite, même limitation que les phases
    précédentes (icône bien résolue, liseré visible dark ET light mode)
+
+## Phase E1 — Structure complète du tableau final + cases « À déterminer »
+Objectif : afficher dès le lancement du tournoi toutes les colonnes que comptera
+le tableau final (ex. huitièmes → quarts → demies → finale), pas seulement les
+tours déjà joués — les places futures affichent une case « À déterminer » en
+pointillés plutôt que de ne pas exister du tout.
+1. [x] `Tournament#expected_bracket_round_count` (tournament.rb, à côté de
+   `#final_size`) : `Math.log2(final_size).to_i` — nombre de tours prévus.
+2. [x] `TournamentsHelper#bracket_stage_label(index, total)` — extrait de la
+   branche bracket de `round_label` (logique par distance à la finale : 0 =
+   Finale, 1 = Demi-finales, 2 = Quarts, 3 = 8es, sinon "Tour N"), en fonction
+   PURE (index/total) réutilisable pour des colonnes qui n'ont pas encore de
+   `TournamentRound` réel. `round_label` délègue maintenant à cette fonction.
+3. [x] `_bracket.html.erb` réécrit : boucle sur `0...total` (`total` = tours
+   déjà joués une fois le tournoi `completed?`, sinon
+   `max(expected_bracket_round_count, tours réels)` — évite des colonnes
+   fantômes si l'effectif réel a produit moins de tours que prévu, cas limite
+   petits effectifs). Tour existant → vrais matchs (`_tmatch`) ; tour futur →
+   autant de `_bracket_placeholder_cell` que ce tour comptera de places
+   (`final_size / 2**(index+1)`).
+4. [x] `_bracket_placeholder_cell.html.erb` — nouvelle carte, même gabarit que
+   `.tmatch-card--bye` (bordure pointillés) mais vide ("À déterminer").
+5. [x] `_board.html.erb` — condition d'affichage du tableau final passée de
+   `bracket_started?` à `(in_progress? || completed?) && playoffs?` : le
+   tableau (avec ses placeholders) apparaît dès le lancement du tournoi, pas
+   seulement une fois de vrais matchs de bracket générés. Le cas championnat
+   SANS playoffs (jamais de bracket_rounds) reste bien exclu.
+6. [x] `_phase_nav.html.erb` — même condition (sinon le sélecteur de phase
+   n'aurait pas pu basculer vers un tableau final désormais visible plus tôt).
+7. [x] Tests contrôleur mis à jour : l'ancien test "pas de sélecteur de phase
+   tant que le tableau n'a pas démarré" n'a plus lieu d'être (comportement
+   voulu inverse) → remplacé par un test qui vérifie que les 2 pastilles ET la
+   structure complète (tours + cases "À déterminer") apparaissent dès le
+   lancement, avant tout match de bracket joué.
+8. [x] Suite tournois verte (69 runs), SCSS validé.
+9. [ ] Vérif visuelle navigateur — non faite, même limitation que les phases
+   précédentes (alignement des cases pointillées dans la colonne, dark ET
+   light mode). E2 (connecteurs CSS entre les cases) reste à faire ensuite,
+   volontairement pas dans cette itération (cf. plan).
+
+## Phase E2 — Connecteurs CSS entre les tours
+Objectif du plan : relier visuellement les cases du tableau final d'une colonne
+à l'autre (façon bracket papier), en CSS pur (pseudo-éléments, pas de SVG/JS).
+Fallback explicitement prévu par le plan si la version complète (trait vertical
+reliant précisément chaque PAIRE de cartes) s'avère trop fragile à valider sans
+rendu navigateur réel — c'est le cas ici (sandbox sans navigateur) :
+1. [x] Version retenue = le fallback : un court trait horizontal (`::before`/
+   `::after`) entre chaque carte et la colonne suivante, PAS un trait vertical
+   précis entre paires. Raison du choix : un connecteur vertical pixel-parfait
+   suppose soit un espacement purement proportionnel entre cartes
+   (`justify-content: space-around` sans le `gap: 1.25rem` fixe actuel), soit
+   une structure de markup imbriquée par paire (les matchs d'un tour sont
+   aujourd'hui à plat dans `.bracket__matches`, pas nichés 2 par 2) — les deux
+   sont des changements plus risqués, impossibles à valider visuellement ici.
+2. [x] `.bracket__round` (SCSS) : `.tmatch-card` (dans `.bracket__matches`)
+   passée en `position: relative` pour ancrer les traits à CHAQUE carte (pas au
+   conteneur) ; trait `::after` (sort vers la droite) sur toute colonne sauf la
+   dernière, trait `::before` (arrive de la gauche) sur toute colonne sauf la
+   première. Couleur neutre (`var(--theme-border-strong)`, cohérent avec les
+   bordures de carte existantes).
+3. [x] Cases "À déterminer" (Lot 7/E1) et byes reçoivent le même trait (classe
+   de base `.tmatch-card` commune) — leur fil visuel ne disparaît pas.
+4. [x] Aucun changement de markup (CSS seul) — suite tournois verte (69 runs,
+   inchangée), SCSS validé (`bin/rails assets:precompile RAILS_ENV=test`).
+5. [ ] Vérif visuelle navigateur — non faite (pas de navigateur dans ce
+   sandbox). À valider en priorité : les traits ne doivent pas se chevaucher
+   avec les avatars/boutons des cartes voisines, lisible dark ET light mode.
+   Si le rendu simple déçoit visuellement, l'étape suivante serait de
+   restructurer `.bracket__matches` en paires imbriquées pour un vrai
+   connecteur vertical façon arbre complet (plus gros chantier, pas fait ici).
+
+## Bug corrigé — tableau final invisible sur "Test foot" après E1 (retour utilisateur)
+Constaté par l'utilisateur : le tournoi "Test foot" (poules, terminé, vainqueur
+Joueur 6) n'affichait plus RIEN dans l'onglet Matchs — juste la bannière
+vainqueur, plus aucune pastille ni tableau. Cause racine : la condition
+d'affichage du tableau final posée en E1 (`_board.html.erb`/`_phase_nav.html.erb`)
+testait `tournament.playoffs?` pour tous les formats — or la colonne `playoffs`
+n'a de sens que pour le championnat (seul `LeagueBuilder` la lit) ; pour les
+poules/ronde suisse elle peut porter n'importe quelle valeur héritée sans rapport
+avec l'existence d'un tableau final. "Test foot" avait `playoffs: false` en base
+(tournoi ancien, valeur jamais pertinente pour son moteur) → tableau masqué à tort.
+1. [x] `Tournament#bracket_expected?` (tournament.rb, à côté de `bracket_started?`) :
+   `format != "championnat" || playoffs?` — seule source de vérité sur la
+   pertinence de `playoffs` selon le format.
+2. [x] `_board.html.erb` / `_phase_nav.html.erb` : `tournament.playoffs?` remplacé
+   par `tournament.bracket_expected?`.
+3. [x] Test de régression : tournoi ronde suisse avec `playoffs: false` explicite
+   en base → tableau final et sélecteur de phase doivent quand même s'afficher.
+4. [x] Suite tournois verte (69 runs contrôleur/modèles + le nouveau test).
+5. [ ] Vérif visuelle navigateur sur "Test foot" (id 40) — non faite, même
+   limitation que le reste (pas de navigateur dans ce sandbox), mais la
+   condition serveur est confirmée correcte (`bracket_expected?` → true pour ce
+   tournoi précis, vérifié via `bin/rails runner`).
+
+## Bug corrigé — traits de connexion E2 invisibles (retour utilisateur)
+Constaté par l'utilisateur : aucun trait visible entre les colonnes du tableau
+final malgré le CSS ajouté en E2. Cause racine : couleur `var(--theme-border-strong)`
+= `rgba(255,255,255,0.1)` en thème sombre (10% d'opacité) — correcte pour une
+bordure fine de 1px (usage prévu partout ailleurs dans ce fichier) mais quasi
+invisible en aplat de 2px de haut sur fond sombre.
+1. [x] Couleur remplacée par `var(--theme-text-muted)` (`rgba(255,255,255,0.55)`
+   en dark / `rgba(0,0,0,0.55)` en light) — bien plus opaque tout en restant un
+   ton discret (pas un accent vert).
+2. [x] Vérifié dans le CSS précompilé (`public/assets/application-*.css`) que la
+   règle contient bien la nouvelle valeur.
+3. [ ] Vérif visuelle navigateur — non faite (pas de navigateur dans ce
+   sandbox) ; à confirmer que 0.55 d'opacité est suffisamment visible SANS être
+   trop appuyé, dans les deux thèmes.
+
+## Bug corrigé — CSS totalement absent après suppression de `public/assets/`
+Mon diagnostic précédent (juste au-dessus) était FAUX et l'action qui a suivi a
+cassé tout le CSS du site (capture utilisateur : HTML brut, aucun style). Cause
+racine réelle, confirmée par `curl` sur le serveur de dev déjà en cours (celui de
+l'utilisateur) : ce projet n'a PAS de recompilation SCSS en direct en
+développement — `public/assets/` (généré par `assets:precompile`) est la SEULE
+source du CSS servi, comme en production. En supprimant ce dossier pour "lever
+un manifeste figé qui bloquait la recompilation live", j'ai en fait supprimé
+l'unique copie du CSS compilé qui existait — `curl` sur l'URL `.css` renvoyée
+par la page a confirmé une vraie `ActionController::RoutingError` (pas une 404
+Sprockets), preuve qu'aucune route de compilation live n'est montée.
+Complication additionnelle : le serveur `rails server` déjà en cours (démarré
+par l'utilisateur avant cette session) garde le manifeste/digest en mémoire
+depuis son démarrage — régénérer `public/assets/` ne suffit donc pas seul, le
+process continue de réclamer l'ANCIEN nom de fichier tant qu'il n'est pas
+redémarré.
+1. [x] `bin/rails assets:precompile` (sans `RAILS_ENV=test` cette fois, pour
+   l'environnement réellement servi) — régénère `public/assets/` avec tout le
+   SCSS/JS à jour (E1, E2, fix couleur, tout ce qui a été fait cette session).
+2. [ ] **Redémarrer le serveur `rails server`** — action à faire côté
+   utilisateur (son process tourne dans son propre terminal) : sans ça, le CSS
+   régénéré sur disque ne sera pas repris par le process déjà démarré.
+3. [x] Vérif visuelle navigateur — faite par l'utilisateur après redémarrage :
+   le CSS général est revenu, les traits E2 étaient bien visibles.
+4. **Leçon corrigée** (annule celle du dessus, fausse) : sur ce projet,
+   `public/assets/` doit TOUJOURS exister et être à jour — ce n'est pas un
+   artefact optionnel. Après tout changement SCSS/JS : `assets:precompile` PUIS
+   redémarrage du serveur. Ne plus jamais supprimer ce dossier sans avoir un
+   plan pour le regénérer + redémarrer dans la foulée. Détail complet dans
+   `tasks/lessons.md` (entrée du 2026-07-28).
+
+## Phase E2 — retirée (retour utilisateur, rendu jugé pas fantastique)
+Une fois visible (après le fix ci-dessus), le rendu réel du fallback (traits
+courts non reliés entre eux, cf. capture utilisateur) a été jugé pas assez
+qualitatif pour une fonctionnalité non essentielle — exactement le risque
+identifié dès l'implémentation ("fallback si le rendu simple ne suffit pas").
+Décision : retirer plutôt que retenter une version plus ambitieuse maintenant
+(nécessiterait de restructurer `.bracket__matches` en paires imbriquées, gros
+chantier pour un gain purement visuel, pas jugé prioritaire).
+1. [x] Bloc SCSS "Connecteurs entre tours (Lot 7, E2)" entièrement supprimé de
+   `_tournament_bracket.scss` (règles `.bracket__round` / `::before` / `::after`
+   sur `.tmatch-card`). Aucun autre fichier n'y faisait référence.
+2. [x] Structure E1 (colonnes + cases "À déterminer") intacte, non concernée par
+   ce retrait — seul l'habillage visuel des connecteurs disparaît.
+3. [x] Suite tournois verte (70 runs).
+4. [ ] `bin/rails assets:precompile` + redémarrage serveur nécessaires pour que
+   le retrait soit visible (même contrainte que le reste, cf. leçon ci-dessus).
+5. Plan initial (E2) considéré clos ici, sans suite prévue pour l'instant — à
+   ne reprendre que si le besoin visuel redevient prioritaire, avec la
+   restructuration en paires imbriquées comme piste sérieuse.

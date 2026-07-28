@@ -1,18 +1,33 @@
 <%# ── Tableau final à élimination directe ─────────────────────────────────────
-    Une colonne par tour ; le dernier tour est la finale. %>
+    Une colonne par tour PRÉVU (pas seulement joué) : cf. Tournament#expected_
+    bracket_round_count. Les tours déjà joués affichent leurs vrais matchs ; les
+    tours futurs affichent des cases "À déterminer" (autant que ce tour comptera
+    de places, cf. #final_size) — on voit donc la structure complète (ex.
+    huitièmes → quarts → demies → finale) dès le lancement du tableau.
+    Une fois le tournoi terminé, on se limite aux tours réellement joués (évite
+    des colonnes fantômes si l'effectif réel a produit moins de tours que prévu,
+    cf. BracketBuilder#select_finalists). %>
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="bracket">
   <h2 class="tournament-phase__title">Tableau final</h2>
 
   <div class="bracket">
-    <% rounds = tournament.bracket_rounds.to_a %>
-    <% rounds.each do |round| %>
+    <% real_rounds = tournament.bracket_rounds.to_a %>
+    <% total = tournament.completed? ? real_rounds.size : [tournament.expected_bracket_round_count, real_rounds.size].max %>
+    <% total.times do |index| %>
+      <% round = real_rounds[index] %>
       <div class="bracket__round">
         <div class="bracket__round-title">
-          <%= round == rounds.last ? "Finale" : "Tour #{round.number}" %>
+          <%= bracket_stage_label(index, total) %>
         </div>
         <div class="bracket__matches">
-          <% round.tournament_matches.order(:position).each do |match| %>
-            <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+          <% if round %>
+            <% round.tournament_matches.order(:position).each do |match| %>
+              <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+            <% end %>
+          <% else %>
+            <% (tournament.final_size / (2**(index + 1))).times do %>
+              <%= render "tournaments/bracket_placeholder_cell" %>
+            <% end %>
           <% end %>
         </div>
       </div>

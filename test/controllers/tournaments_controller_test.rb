@@ -250,18 +250,48 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".qualification-col", 0
   end
 
-  test "GET show : pas de sélecteur de phase tant que le tableau final n'a pas démarré" do
+  test "GET show : le sélecteur de phase (2 pastilles) apparaît dès le lancement (Lot 7, structure complète)" do
     sign_in @user
     t = open_tournament_with_players(8)
     t.update!(status: "in_progress")
-    SwissPairing.new(t).next_round! # Ronde 1, une seule phase existe encore
+    SwissPairing.new(t).next_round! # Ronde 1, tableau final pas encore démarré
 
     get tournament_path(t)
     assert_response :success
-    assert_select ".phase-nav", 0
+    assert_select ".phase-nav__pill", 2
   end
 
-  test "GET show : le sélecteur de phase (2 pastilles) apparaît une fois le tableau final démarré" do
+  test "GET show : le tableau final affiche la structure complète avec des cases « À déterminer » avant d'être démarré" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress")
+    SwissPairing.new(t).next_round! # Ronde 1, tableau final pas encore démarré
+    assert_not t.reload.bracket_started?
+
+    get tournament_path(t)
+    assert_response :success
+    # final_size 4 (8 joueurs) → 2 tours prévus (demies, finale), aucun encore joué.
+    assert_select ".bracket__round", 2
+    assert_select ".tmatch-card--placeholder", 3 # 2 places en demies + 1 en finale
+  end
+
+  test "GET show : le tableau final reste affiché même si `playoffs` vaut false sur un tournoi non-championnat" do
+    # Régression : `playoffs` n'a de sens que pour le championnat (LeagueBuilder),
+    # mais la colonne existe pour tous les formats — une ronde suisse/poules avec
+    # playoffs: false en base (valeur non pertinente pour son moteur) doit quand
+    # même afficher son tableau final, cf. Tournament#bracket_expected?.
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(status: "in_progress", playoffs: false)
+    SwissPairing.new(t).next_round! # Ronde 1, tableau final pas encore démarré
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".phase-nav__pill", 2
+    assert_select ".bracket__round", 2
+  end
+
+  test "GET show : le sélecteur de phase (2 pastilles) reste présent une fois le tableau final démarré" do
     sign_in @user
     t = open_tournament_with_players(8)
     t.update!(status: "in_progress")

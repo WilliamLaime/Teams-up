@@ -58,8 +58,14 @@
       <%= render "tournaments/pool_phase", tournament: tournament, can_manage: can_manage %>
     <% end %>
 
-    <%# Tableau final / playoffs à élimination directe (commun à tous les formats). %>
-    <% if tournament.bracket_started? %>
+    <%# Tableau final / playoffs à élimination directe (commun à tous les formats).
+        Affiché dès que le tournoi est lancé (structure complète avec cases "À
+        déterminer", cf. _bracket.html.erb), pas seulement une fois le tableau
+        réellement démarré — sauf championnat SANS playoffs, qui n'a jamais de
+        bracket_rounds (le tournoi se termine à la dernière journée), cf.
+        Tournament#bracket_expected? (PAS juste `playoffs?`, qui n'a de sens que
+        pour le championnat et peut valoir n'importe quoi pour les autres formats). %>
+    <% if (tournament.in_progress? || tournament.completed?) && tournament.bracket_expected? %>
       <%= render "tournaments/bracket", tournament: tournament, can_manage: can_manage %>
     <% end %>
   </div>
