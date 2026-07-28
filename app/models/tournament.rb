@@ -214,6 +214,20 @@ class Tournament < ApplicationRecord
   # Le tableau final a-t-il déjà commencé ?
   def bracket_started? = tournament_rounds.bracket.exists?
 
+  # Ce tournoi aura-t-il un tableau final (à un moment ou un autre) ? Ronde
+  # suisse et poules en ont TOUJOURS un (cf. SwissPairing/PoolBuilder, aucun
+  # test sur `playoffs`) ; seul le championnat peut s'en passer (Lot 6, réglage
+  # `playoffs`, cf. LeagueBuilder#next_round! qui ne bascule sur le tableau
+  # final QUE si `playoffs?`). Attention : la colonne `playoffs` existe pour
+  # TOUS les tournois (valeur par défaut true en base) mais n'a de sens que
+  # pour le championnat — un tournoi poules/suisse peut très bien porter
+  # `playoffs: false` en base (jamais lu par son moteur) sans que ça change
+  # quoi que ce soit : ne JAMAIS tester `playoffs?` seul hors championnat
+  # (cf. _board.html.erb / _phase_nav.html.erb, qui utilisent ce prédicat).
+  def bracket_expected?
+    format != "championnat" || playoffs?
+  end
+
   # Bilan V/D de chaque joueur EN ENTRANT dans chaque ronde suisse (avant que
   # cette ronde soit jouée) — sert à regrouper visuellement les matchs d'un
   # tour par « bracket de score » (2V-0D / 1V-1D / 0V-2D…, cf. onglet Matchs).
@@ -282,6 +296,14 @@ class Tournament < ApplicationRecord
     return pool_count * 2 if format == "poules"
 
     approved_players_count <= 8 ? 4 : 8
+  end
+
+  # Nombre de tours qu'aura le tableau final une fois complet (ex. final_size 16
+  # → 4 tours : 8es, quarts, demies, finale) — sert à afficher la structure
+  # complète du tableau dès son lancement, avec des cases "À déterminer" pour les
+  # tours pas encore joués (cf. _bracket.html.erb).
+  def expected_bracket_round_count
+    Math.log2(final_size).to_i
   end
 
   # Nombre minimal de joueurs pour lancer un tournoi.

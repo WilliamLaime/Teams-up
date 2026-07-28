@@ -7,9 +7,13 @@
     perte de la sélection après un re-render Turbo Stream (retour à la phase
     "en cours" par défaut) reste un compromis acceptable, comme le scroll
     horizontal du ruban (Phase A).
-    Ne s'affiche que si le tableau final a démarré : avant ça une seule phase
-    existe, rien à basculer. Local : tournament. %>
-<% if tournament.bracket_started? %>
+    Ne s'affiche que si les deux phases existent réellement dans le board (même
+    condition que _board.html.erb pour le rendu du tableau final, Lot 7) : avant
+    le lancement du tournoi une seule (ou aucune) phase existe, rien à basculer ;
+    le tableau final s'affiche dès le lancement (structure complète avec cases
+    "À déterminer", cf. _bracket.html.erb), pas seulement une fois réellement
+    démarré. Local : tournament. %>
+<% if (tournament.in_progress? || tournament.completed?) && tournament.bracket_expected? %>
   <% main_label, main_icon = round_robin_phase_meta(tournament) %>
   <nav class="phase-nav" aria-label="Basculer entre les phases du tournoi">
     <button type="button" class="phase-nav__pill" data-phase="main"
