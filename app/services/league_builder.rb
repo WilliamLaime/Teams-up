@@ -15,7 +15,8 @@
 #
 # Le calendrier étant déterministe, on le recalcule à chaque appel et on ne
 # persiste que la prochaine journée manquante — à condition que l'ordre des
-# joueurs soit STABLE (indépendant des résultats), d'où #ordered_players trié par id.
+# joueurs soit STABLE (indépendant des résultats), d'où #ordered_players trié par
+# draw_order (le tirage au sort figé une fois pour toutes au lancement du tournoi).
 class LeagueBuilder
   # Recalcul du bilan V/D + sets/points (sans état suisse : apply_state: false).
   include RoundRobinStats
@@ -75,9 +76,11 @@ class LeagueBuilder
 
   private
 
-  # Ordre STABLE des joueurs (par id) : garantit un calendrier reproductible d'un
-  # appel à l'autre, indépendamment des scores déjà saisis.
-  def ordered_players = player_scope.order(:id).to_a
+  # Ordre STABLE des joueurs (par draw_order, le tirage au sort figé au lancement —
+  # cf. TournamentsController#assign_draw_order!) : garantit un calendrier
+  # reproductible d'un appel à l'autre, indépendamment des scores déjà saisis, sans
+  # pour autant reproduire l'ordre d'inscription (id).
+  def ordered_players = player_scope.order(:draw_order).to_a
 
   # Crée une journée (phase "league") et ses matchs (bye et forfait gérés par
   # build_match!).

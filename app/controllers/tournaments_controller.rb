@@ -72,6 +72,11 @@ class TournamentsController < ApplicationController
 
     ActiveRecord::Base.transaction do
       @tournament.update!(status: "in_progress")
+      # Vrai tirage au sort : mélange l'ordre des joueurs une fois pour toutes, AVANT
+      # de générer la première ronde/journée — sinon SwissPairing/LeagueBuilder/
+      # PoolBuilder retombent sur l'ordre d'inscription (id) et le premier tour est
+      # toujours "J1 vs J2, J3 vs J4…".
+      assign_draw_order!
       # Aiguillage selon le format (ronde suisse / championnat / poules).
       TournamentEngine.for(@tournament).next_round!
     end
@@ -200,6 +205,16 @@ class TournamentsController < ApplicationController
 
   def set_tournament
     @tournament = Tournament.from_param(params[:id])
+  end
+
+  # Tirage au sort : fige un ordre aléatoire (draw_order) sur les joueurs inscrits,
+  # une seule fois, au moment du lancement. Cet ordre remplace ensuite l'id
+  # (ordre d'inscription) partout où SwissPairing/LeagueBuilder/PoolBuilder/
+  # Tournament#rank_key avaient besoin d'un départage neutre.
+  def assign_draw_order!
+    @tournament.tournament_users.players.approved.to_a.shuffle.each_with_index do |tu, index|
+      tu.update_column(:draw_order, index)
+    end
   end
 
   # Base filtrée (policy_scope + sport + recherche), SANS eager loading : sert à

@@ -163,6 +163,105 @@
   padding-bottom: 0.75rem;
   margin-bottom: 1.75rem;
   @include themed-scrollbar;
+
+  // Championnat / poules (jusqu'à 31 journées) : un menu déroulant remplace le
+  // scroll horizontal, une seule journée affichée à la fois (cf. journee-selector
+  // controller + local `paginated` de _round_ribbon). Le conteneur passe en
+  // colonne : le sélecteur au-dessus, la journée active occupe toute la largeur.
+  &--paginated {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+
+  // Journée active : plein largeur (lisibilité), plus de contrainte de colonne.
+  &--paginated &__page {
+    width: 100%;
+
+    .round-col {
+      max-width: none;
+      min-width: 0;
+    }
+  }
+}
+
+// ── Sélecteur de journée custom (championnat/poules, cf. local `paginated` de
+// _round_ribbon + journee_selector_controller.js) ────
+// Menu déroulant maison plutôt qu'un <select> natif : une fois ouvert, un
+// <select> est habillé par l'OS/le navigateur, impossible à intégrer au code
+// couleur du reste de la page — ici tout est sous contrôle (même vocabulaire
+// visuel que .phase-nav__pill : pilule + accent vert).
+.journee-picker {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--theme-text-primary);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover { border-color: $green; }
+
+    &[aria-expanded="true"] {
+      border-color: $green;
+      box-shadow: 0 0 0 3px rgba($green, 0.15);
+    }
+
+    i { width: 16px; height: 16px; transition: transform 0.15s ease; }
+    &[aria-expanded="true"] i { transform: rotate(180deg); }
+  }
+
+  &__menu {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    z-index: 20;
+    min-width: 12rem;
+    max-height: 280px;
+    overflow-y: auto;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    padding: 0.35rem;
+    margin: 0;
+    list-style: none;
+    @include themed-scrollbar;
+
+    li { margin: 0; }
+  }
+
+  &__option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--theme-text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover { background-color: var(--theme-hover-bg); }
+
+    &.is-active {
+      color: #fff;
+      background-color: $green;
+    }
+  }
 }
 
 .round-col {
@@ -313,6 +412,11 @@
     border-radius: 8px;
     transition: background-color 0.15s ease;
 
+    // Halo vert du vainqueur : cette classe n'est posée que par _tmatch (carte
+    // empilée du tableau final) et le badge « Exempt », jamais par
+    // _tmatch_scoreline (poules/championnat/ronde suisse, qui ne pose pas ce
+    // modificateur) — pas de risque de reproduire l'aplat plein cadre qui
+    // posait problème sur les cartes pleine largeur.
     &--winner {
       background: rgba($green, 0.12);
       .tmatch-card__name { color: var(--theme-text-strong); font-weight: 700; }
@@ -329,7 +433,10 @@
 
   // Seuls l'avatar + le nom sont cliquables (lien vers le profil) — le score et
   // l'icône de victoire restent hors du lien. On neutralise le style de lien
-  // par défaut et on ajoute un léger fond au survol pour signaler que c'est cliquable.
+  // par défaut ; PAS de fond au survol ici (contrairement à .bracket-cell__player-link
+  // plus bas) : le contrôleur bracket ajoute déjà --tracked au survol sur le
+  // .tmatch-card__player englobant (cf. ligne 431) — un 2e fond ici, plus petit
+  // et aux coins différents, donnait un effet de double halo superposé.
   &__player-link {
     display: flex;
     align-items: center;
@@ -340,9 +447,6 @@
     color: inherit;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color 0.15s ease;
-
-    &:hover { background: var(--theme-hover-bg); }
   }
 
   &__avatar {
@@ -402,8 +506,8 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-// ── Score set-par-set (Lot 4) ────────────────────────
-// Nombre de sets gagnés, affiché à droite du nom de chaque joueur.
+// ── Score du tableau final (carte empilée _tmatch) ────
+// Nombre affiché à droite du nom de chaque joueur (via display_score_for).
 .tmatch-card__sets {
   flex: 0 0 auto;
   min-width: 1.25rem;
@@ -411,6 +515,76 @@
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--theme-text-strong);
+}
+
+// ── Scoreline centrée (journées/rondes, carte _tmatch_scoreline) ──────
+// Remplace l'ancien empilement "nom + score" en 2 lignes pleine largeur : les 2
+// .tmatch-card__player deviennent des colonnes de largeur égale de part et
+// d'autre d'un score central, façon tableau de scores sportif (nom — score —
+// statut — score — nom). Plus compact, et le vainqueur est surligné en vert au
+// niveau du score plutôt que par une icône séparée.
+.tmatch-card__scoreline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  .tmatch-card__player {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  // .tmatch-card__player-link a `flex: 1 1 auto` en règle générale (carte
+  // empilée) : il s'étire alors sur toute la largeur de la colonne et le nom
+  // (lui-même flex: 1 1 auto) se retrouve poussé loin de son avatar. Ici on
+  // annule l'étirement : avatar + nom restent un seul bloc compact, qu'on
+  // peut ensuite coller à une extrémité via justify-content sans les séparer.
+  .tmatch-card__player-link {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .tmatch-card__player-link .tmatch-card__name {
+    flex: 0 1 auto;
+  }
+
+  // Joueur de gauche : bloc avatar+nom collé au bord gauche de la carte
+  // (flex-start, la valeur par défaut). Joueur de droite : symétrique, collé
+  // au bord droit — les deux blocs restent homogènes (même ordre interne
+  // avatar → nom), seule leur position dans la carte change.
+  .tmatch-card__player:last-of-type {
+    justify-content: flex-end;
+  }
+}
+
+.tmatch-card__center {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0 0.15rem;
+}
+
+.tmatch-card__center-score {
+  min-width: 1.4rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--theme-text-strong);
+
+  &.is-winner {
+    color: $green;
+    border-bottom: 2px solid $green;
+  }
+}
+
+.tmatch-card__center-status {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--theme-text-muted);
+  white-space: nowrap;
 }
 
 // Pied de carte : score global + bouton d'accès à la modale.
@@ -422,6 +596,19 @@
   margin-top: 0.15rem;
   padding-top: 0.35rem;
   border-top: 1px solid var(--theme-border);
+}
+
+// Carte scoreline (journées/rondes, pleine largeur) : les boutons restent
+// groupés à gauche, à la suite, au lieu d'être éparpillés sur toute la ligne
+// (space-between + margin-left: auto n'a de sens que sur une carte étroite
+// en colonne, pas sur une ligne pleine largeur).
+.tmatch-card__footer--inline {
+  justify-content: flex-start;
+
+  .tmatch-card__score-btn,
+  .tmatch-card__detail-btn {
+    margin-left: 0;
+  }
 }
 
 .tmatch-card__score {
@@ -914,11 +1101,30 @@
     .is-pts { font-weight: 700; color: var(--theme-text-strong); }
   }
 
+  // Avatar + nom cliquables vers le profil, même principe que
+  // .tmatch-card__player-link / .bracket-cell__player-link.
+  &__player-link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    border-radius: 6px;
+    padding: 0.15rem 0.3rem;
+    margin: -0.15rem -0.3rem;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover { background: var(--theme-hover-bg); }
+  }
+
   &__avatar {
     width: 28px;
     height: 28px;
     border-radius: 50%;
     object-fit: cover;
+    flex: 0 0 auto;
   }
 
   &__qualified-icon {
@@ -1178,6 +1384,23 @@
     &--winner { .bracket-cell__name { color: var(--theme-text-strong); font-weight: 700; } }
     &--winner .bracket-cell__score { color: $green; }
     &--loser { opacity: 0.6; }
+  }
+
+  // Seuls l'avatar + le nom sont cliquables (lien vers le profil), même principe
+  // que .tmatch-card__player-link : le score/badge restent hors du lien.
+  &__player-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    min-width: 0;
+    flex: 1 1 auto;
+    border-radius: 6px;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover { background: var(--theme-hover-bg); }
   }
 
   &__avatar {

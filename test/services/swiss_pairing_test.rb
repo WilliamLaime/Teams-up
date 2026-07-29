@@ -1,15 +1,18 @@
 require "test_helper"
 
 # Tests de l'ALGORITHME PUR d'appariement (SwissPairing#build_pairs), sans base.
-# Un joueur = un simple Struct répondant à #id, #wins, #set_average, #point_average.
-# On simule plusieurs rondes en accumulant les paires jouées, et on vérifie les
-# invariants critiques : pas de rematch, byes, groupes impairs, effectifs bâtards,
-# départage par set/point average (Lot 4).
+# Un joueur = un simple Struct répondant à #id, #wins, #set_average, #point_average,
+# #draw_order. On simule plusieurs rondes en accumulant les paires jouées, et on
+# vérifie les invariants critiques : pas de rematch, byes, groupes impairs,
+# effectifs bâtards, départage par set/point average puis draw_order (Lot 4).
 class SwissPairingTest < ActiveSupport::TestCase
-  # set_average / point_average tombent à 0 s'ils ne sont pas fournis (Lot 4).
-  Player = Struct.new(:id, :wins, :set_average, :point_average) do
+  # set_average / point_average tombent à 0 si non fournis (Lot 4) ; draw_order
+  # retombe sur l'id (ordre neutre stable) si non fourni, comme pour un vrai
+  # tirage au sort déjà figé — sans affecter les tests qui ne portent pas dessus.
+  Player = Struct.new(:id, :wins, :set_average, :point_average, :draw_order) do
     def set_average   = self[:set_average] || 0
     def point_average = self[:point_average] || 0
+    def draw_order    = self[:draw_order] || id
   end
 
   # Fabrique n joueurs (wins = 0 par défaut).
@@ -121,6 +124,23 @@ class SwissPairingTest < ActiveSupport::TestCase
     result = SwissPairing.new.build_pairs(pool)
     got = result[:pairs].map { |a, b| [a.id, b.id].sort }
     assert_equal [[1, 2], [3, 4]], got.sort
+  end
+
+  test "ronde 1 (tout à égalité) : le tri suit draw_order, pas l'id d'inscription" do
+    # Même wins/set_average/point_average pour tout le monde (cas réel de la ronde 1)
+    # → seul draw_order départage. draw_order choisi pour donner une partition en
+    # paires DIFFÉRENTE de l'appariement par id adjacents ([1,2] et [3,4]), preuve
+    # qu'on ne retombe pas sur l'ordre d'inscription.
+    pool = [
+      Player.new(1, 0, 0, 0, 2),
+      Player.new(2, 0, 0, 0, 4),
+      Player.new(3, 0, 0, 0, 1),
+      Player.new(4, 0, 0, 0, 3)
+    ]
+    result = SwissPairing.new.build_pairs(pool)
+    got = result[:pairs].map { |a, b| [a.id, b.id].sort }
+    # draw_order croissant : 3(do=1), 1(do=2), 4(do=3), 2(do=4) → paires (3,1) et (4,2).
+    assert_equal [[1, 3], [2, 4]], got.sort
   end
 
   test "tous les joueurs sont couverts exactement une fois à chaque ronde" do

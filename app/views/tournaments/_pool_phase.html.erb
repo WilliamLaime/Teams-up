@@ -9,5 +9,5 @@
   <h2 class="tournament-phase__title">Poules</h2>
 
   <%= render "tournaments/round_ribbon", rounds: tournament.pool_rounds, can_manage: can_manage,
-              title_for: ->(round) { "Journée #{round.number}" }, group_by_pool: true %>
+              title_for: ->(round) { "Journée #{round.number}" }, group_by_pool: true, paginated: true %>
 </section>

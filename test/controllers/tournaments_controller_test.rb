@@ -168,6 +168,28 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert t.swiss_rounds.first.tournament_matches.any?
   end
 
+  test "POST start fige un vrai tirage au sort (draw_order mélangé, pas l'ordre d'inscription)" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    ids_by_registration_order = t.tournament_users.players.approved.order(:id).pluck(:id)
+
+    # Shuffle déterministe pour un test reproductible : on fixe la graine, on la
+    # restaure après (ne doit pas fuiter sur les autres tests de la suite).
+    seed_before = srand(42)
+    post start_tournament_path(t)
+    srand(seed_before)
+
+    approved = t.tournament_users.players.approved.reload
+    # draw_order forme bien une permutation complète de 0..7 (chacun assigné une fois).
+    assert_equal (0..7).to_a, approved.pluck(:draw_order).sort
+
+    # Avec la graine fixée, l'ordre résultant (trié par draw_order) diffère de
+    # l'ordre d'inscription (id) — preuve que ce n'est pas juste id repeint en
+    # draw_order, mais un vrai mélange.
+    ids_by_draw_order = approved.order(:draw_order).pluck(:id)
+    assert_not_equal ids_by_registration_order, ids_by_draw_order
+  end
+
   test "POST start refuse un non-organisateur" do
     sign_in @co_org # ni admin ni co-org de ce tournoi
     t = open_tournament_with_players(8)
@@ -187,6 +209,21 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     post start_tournament_path(t)
     assert_not_equal "in_progress", t.reload.status
     assert_redirected_to tournament_path(t)
+  end
+
+  test "GET show : la Vue d'ensemble affiche des noms cliquables vers le profil (bracket viewer)" do
+    sign_in @user
+    # 4 joueurs, final_size = 4 → SwissPairing saute direct au tableau final (cf.
+    # SwissPairing#ready_for_bracket?), donc bracket_rounds existe dès le lancement
+    # et le bracket viewer (Vue d'ensemble) rend bien des _bracket_cell.
+    t = open_tournament_with_players(4)
+
+    post start_tournament_path(t)
+    assert t.reload.bracket_started?
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select "a.bracket-cell__player-link[href=?]", user_profil_path(t.tournament_users.players.first.user)
   end
 
   # ─── GET /tournois/:id : rendu du board (le partiel ERB compile) ────────────
@@ -361,6 +398,46 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".tournament-phase__title", text: "Championnat"
     assert_select ".round-col"
+  end
+
+  test "GET show : le championnat propose un sélecteur de journée (menu déroulant)" do
+    sign_in @user
+    t = launched_tournament("championnat", 8) # crée la journée 1 (in_progress)
+
+    # Termine la journée 1 → la journée 2 est créée, pour avoir 2 options à tester.
+    t.league_rounds.first.tournament_matches.each { |m| win_tournament_match!(m, m.player_a) }
+    LeagueBuilder.new(t).next_round!
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".journee-picker__toggle span", text: "Journée 2" # présélection sur la journée en cours
+    assert_select ".journee-picker__option", 2
+    assert_select ".journee-picker__option.is-active[data-round-number=?]", "2"
+    # Seule la journée en cours (2) est visible au chargement, la 1ère est masquée.
+    assert_select ".round-ribbon__page[data-round-number=?][hidden]", "1"
+    assert_select ".round-ribbon__page[data-round-number=?]:not([hidden])", "2"
+  end
+
+  test "GET show : la scoreline affiche le vrai score pour un sport à score simple (pas 1-0/0-0)" do
+    sign_in @user
+    football = Sport.find_or_create_by!(slug: "football") { |s| s.name = "Football"; s.icon = "⚽" }
+    t = Tournament.create!(name: "Foot Test", sport: football, user: @user, format: "championnat",
+                           status: "open", max_players: 8, date: Date.tomorrow, place: "Terrain test")
+    8.times do |i|
+      u = create_test_user(email: "foot-#{i}@example.com")
+      t.tournament_users.create!(user: u, role: "joueur", status: "approved")
+    end
+    t.update!(status: "in_progress")
+    TournamentEngine.for(t).next_round!
+
+    match = t.league_rounds.first.tournament_matches.first
+    match.assign_score([[3, 2]]) # score réel, PAS un "set" à 1-0
+    match.save!
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tmatch-card__center-score", text: "3"
+    assert_select ".tmatch-card__center-score", text: "2"
   end
 
   test "GET show rend la phase poules (matchs groupés par poule)" do

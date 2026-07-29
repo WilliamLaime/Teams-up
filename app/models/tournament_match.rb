@@ -73,6 +73,23 @@ class TournamentMatch < ApplicationRecord
     "#{sets_won_by(player_a)}-#{sets_won_by(player_b)}"
   end
 
+  # Score à AFFICHER pour `player` : en mode :sets (raquette), nombre de sets
+  # remportés (ex. 2 sets à 0) ; en mode :score (collectif), le score réel marqué
+  # (ex. 3 buts) — PAS sets_won_by, qui vaudrait toujours 0 ou 1 en mode :score
+  # (une seule "paire" stockée = le score final) et afficherait donc "1-0"/"0-0"
+  # au lieu du vrai score.
+  def display_score_for(player)
+    scoring_rules[:mode] == :score ? points_won_by(player) : sets_won_by(player)
+  end
+
+  # Score global affiché, côté A d'abord (ex. "2-1" en sets, "3-2" en buts pour un
+  # sport à score simple). nil si rien de saisi.
+  def score_summary
+    return nil unless score_entered?
+
+    "#{display_score_for(player_a)}-#{display_score_for(player_b)}"
+  end
+
   # Nombre de sets remportés par l'inscription `player` (0 si elle ne joue pas ici).
   def sets_won_by(player)
     side = side_of(player)
