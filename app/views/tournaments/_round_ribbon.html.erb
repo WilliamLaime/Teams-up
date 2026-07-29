@@ -4,13 +4,57 @@
     can_manage, title_for (proc round -> String), group_by_pool / group_by_record
     (optionnels, défaut false, transmis tels quels à _round_column), extra_columns
     (optionnel, HTML déjà rendu ajouté APRÈS la dernière colonne — ex. la colonne
-    Qualifiés/Éliminés de la ronde suisse, en continuité horizontale du ruban). %>
-<div class="round-ribbon">
+    Qualifiés/Éliminés de la ronde suisse, en continuité horizontale du ruban).
+    paginated (optionnel, défaut false — championnat/poules uniquement, jamais la
+    ronde suisse qui a peu de tours ET un extra_columns non rattaché à un tour
+    précis) : remplace le scroll horizontal par un menu déroulant CUSTOM "Aller à
+    la journée" qui n'affiche qu'UNE colonne à la fois (cf.
+    journee_selector_controller.js) — un championnat 32 joueurs a jusqu'à 31
+    journées, illisible en ruban complet. Menu custom plutôt qu'un <select> natif :
+    une fois ouvert, le rendu d'un <select> est imposé par l'OS/le navigateur et ne
+    peut pas être habillé avec le code couleur du reste de la page. Présélectionne
+    la journée en cours (1ère non terminée), ou la dernière si tout est déjà joué —
+    posé côté serveur (attribut `hidden` direct sur les autres colonnes), le JS ne
+    fait que basculer au clic. %>
+<% paginated = local_assigns.fetch(:paginated, false) %>
+<% current_round = paginated ? (rounds.find { |r| !r.complete? } || rounds.last) : nil %>
+<div class="round-ribbon <%= "round-ribbon--paginated" if paginated %>"
+     <% if paginated %>data-controller="journee-selector"<% end %>>
+  <% if paginated %>
+    <div class="journee-picker" data-journee-selector-target="picker">
+      <button type="button" class="journee-picker__toggle" data-action="click->journee-selector#toggle"
+              data-journee-selector-target="toggle" aria-haspopup="listbox" aria-expanded="false">
+        <span data-journee-selector-target="label"><%= title_for.call(current_round) %></span>
+        <i data-lucide="chevron-down" class="journee-picker__chevron" aria-hidden="true"></i>
+      </button>
+      <ul class="journee-picker__menu" data-journee-selector-target="menu" role="listbox" hidden>
+        <% rounds.each do |round| %>
+          <li>
+            <button type="button" class="journee-picker__option <%= "is-active" if round == current_round %>"
+                    role="option" aria-selected="<%= round == current_round %>"
+                    data-round-number="<%= round.number %>"
+                    data-action="click->journee-selector#choose"><%= title_for.call(round) %></button>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <% rounds.each do |round| %>
-    <%= render "tournaments/round_column", round: round, can_manage: can_manage,
-                title: title_for.call(round),
-                group_by_pool: local_assigns.fetch(:group_by_pool, false),
-                group_by_record: local_assigns.fetch(:group_by_record, false) %>
+    <% if paginated %>
+      <div class="round-ribbon__page" data-journee-selector-target="column" data-round-number="<%= round.number %>"
+           <%= "hidden" unless round == current_round %>>
+        <%= render "tournaments/round_column", round: round, can_manage: can_manage,
+                    title: title_for.call(round),
+                    group_by_pool: local_assigns.fetch(:group_by_pool, false),
+                    group_by_record: local_assigns.fetch(:group_by_record, false) %>
+      </div>
+    <% else %>
+      <%= render "tournaments/round_column", round: round, can_manage: can_manage,
+                  title: title_for.call(round),
+                  group_by_pool: local_assigns.fetch(:group_by_pool, false),
+                  group_by_record: local_assigns.fetch(:group_by_record, false) %>
+    <% end %>
   <% end %>
   <%= local_assigns[:extra_columns] %>
 </div>

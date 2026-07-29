@@ -51,11 +51,13 @@ class PoolBuilder
 
   def pools_unassigned? = player_scope.where(pool: nil).exists?
 
-  # Distribution en serpentin sur un ordre stable (par id) → poules équilibrées et
-  # calendrier reproductible. Persiste `pool` (0-based) sur chaque inscription.
+  # Distribution en serpentin sur un ordre stable (par draw_order, le tirage au
+  # sort figé au lancement) → poules équilibrées et calendrier reproductible, sans
+  # reproduire l'ordre d'inscription (id). Persiste `pool` (0-based) sur chaque
+  # inscription.
   def assign_pools!
     count = pool_count
-    player_scope.order(:id).to_a.each_with_index do |tu, i|
+    player_scope.order(:draw_order).to_a.each_with_index do |tu, i|
       row = i / count
       col = i % count
       # Serpentin : on inverse le sens une ligne sur deux.
@@ -65,10 +67,10 @@ class PoolBuilder
   end
 
   # ── Calendrier ──────────────────────────────────────────────────────────────────
-  # Calendrier round-robin de chaque poule (ordre stable par id).
+  # Calendrier round-robin de chaque poule (ordre stable par draw_order).
   # => { pool_index => [journée = [[a, b], …], …] }
   def pool_schedules
-    player_scope.order(:id).to_a.group_by(&:pool).transform_values do |members|
+    player_scope.order(:draw_order).to_a.group_by(&:pool).transform_values do |members|
       LeagueBuilder.schedule(members)
     end
   end

@@ -49,7 +49,7 @@
       <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
         <h2 class="tournament-phase__title">Championnat</h2>
         <%= render "tournaments/round_ribbon", rounds: tournament.league_rounds, can_manage: can_manage,
-                    title_for: ->(round) { "Journée #{round.number}" } %>
+                    title_for: ->(round) { "Journée #{round.number}" }, paginated: true %>
       </section>
     <% end %>
 

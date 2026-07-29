@@ -37,8 +37,10 @@
         <tr class="tournament-ranking__row tournament-ranking__row--<%= tu.state %>">
           <td class="is-rank"><%= index + 1 %></td>
           <td class="is-player">
-            <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar" %>
-            <span><%= tu.display_name %></span>
+            <%= link_to user_profil_path(tu.user), class: "tournament-ranking__player-link" do %>
+              <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar" %>
+              <span><%= tu.display_name %></span>
+            <% end %>
             <% if tu.qualified? %>
               <i data-lucide="check-circle" class="tournament-ranking__qualified-icon"
                  title="Qualifié pour le tableau final" aria-label="Qualifié pour le tableau final"></i>
