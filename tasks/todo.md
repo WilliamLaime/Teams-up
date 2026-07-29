@@ -330,3 +330,135 @@ chantier pour un gain purement visuel, pas jugé prioritaire).
 5. Plan initial (E2) considéré clos ici, sans suite prévue pour l'instant — à
    ne reprendre que si le besoin visuel redevient prioritaire, avec la
    restructuration en paires imbriquées comme piste sérieuse.
+
+---
+
+# Feature : vrai tirage au sort, liens profils (Vue d'ensemble), sélecteur de journée
+
+Plan complet : `/home/axelb/.claude/plans/tidy-spinning-codd.md` (branche `matchsmodifstournoi`)
+
+Demande initiale (4 points) — exploration a montré que 2 étaient déjà faits :
+liens profils dans `_tmatch.html.erb` (onglet Matchs) et score adapté au sport
+(`Sport#scoring_rules`, déjà branché de bout en bout). Restait donc : le vrai
+tirage au sort, le lien profil manquant dans la Vue d'ensemble, et le sélecteur
+de journée du championnat/poules.
+
+## 1. Vrai tirage au sort
+Root cause : `SwissPairing#build_pairs` (ronde 1, tout à égalité), `LeagueBuilder
+#ordered_players`, `PoolBuilder#assign_pools!/#pool_schedules` triaient tous par
+`id` (ordre d'inscription) → toujours "J1 vs J2, J3 vs J4…". `Tournament#rank_key`
+retombait sur `display_name` (alphabétique) pour le seeding direct-au-bracket.
+1. [x] Migration `draw_order:integer` sur `tournament_users`.
+2. [x] `TournamentsController#start` : `assign_draw_order!` (shuffle + persist)
+   AVANT `TournamentEngine.for(@tournament).next_round!`, dans la transaction.
+3. [x] `SwissPairing#build_pairs` : départage `p.id` → `p.draw_order`.
+4. [x] `LeagueBuilder#ordered_players` / `PoolBuilder#assign_pools!`/
+   `#pool_schedules` : `order(:id)` → `order(:draw_order)`.
+5. [x] `Tournament#rank_key` : dernier départage `display_name` → `draw_order`.
+6. [x] `test/services/swiss_pairing_test.rb` : `Player` Struct + champ
+   `draw_order` (défaut sur `id`, ne casse aucun test existant), + nouveau test
+   prouvant que le tri suit bien draw_order et PAS l'id.
+7. [x] Nouveau test contrôleur : `POST start` fige un draw_order (permutation
+   complète 0..n-1) différent de l'ordre d'inscription (seed fixée pour
+   reproductibilité).
+
+## 2. Liens profils dans la Vue d'ensemble (`_bracket_cell.html.erb`)
+1. [x] `link_to user_profil_path(player.user)` autour avatar+nom (même pattern
+   que `_tmatch.html.erb`), branche bye et branche normale.
+2. [x] SCSS `.bracket-cell__player-link` (mirror de `.tmatch-card__player-link`).
+3. [x] Test contrôleur : lien présent avec le bon href sur un tournoi qui saute
+   direct au tableau final (4 joueurs, `final_size` 4).
+
+## 3. Sélecteur de journée (menu déroulant)
+Championnat/poules seulement (jusqu'à 31 journées) — pas la ronde suisse (peu de
+tours + `extra_columns` non rattaché à un tour précis).
+1. [x] `_round_ribbon.html.erb` : local `paginated:` optionnel → `<select>`
+   "Aller à la journée" au-dessus du ruban, présélectionné sur la journée en
+   cours (1ère non terminée, sinon la dernière). Chaque colonne wrappée dans
+   `.round-ribbon__page` avec `data-round-number`.
+2. [x] `journee_selector_controller.js` (nouveau, calqué sur
+   `tournament_tabs_controller.js`) : affiche une seule colonne à la fois, pilotée
+   par le `<select>` (`change` event).
+3. [x] `paginated: true` passé depuis `_board.html.erb` (championnat) et
+   `_pool_phase.html.erb` (poules).
+4. [x] SCSS `.round-ribbon--paginated`/`__picker`/`__select`/`__page` — code
+   couleur du fichier existant (`--theme-bg-card`, `--theme-border`, accent
+   `$green` au focus/hover), pas de `form-select` Bootstrap brut.
+5. [x] Test contrôleur : select présent avec le bon nombre d'options et la bonne
+   option `selected` après avoir fait avancer une journée.
+
+## 4. Score adapté au sport — vérifié, rien à coder
+`Sport#scoring_rules` (`mode: :score` sans sets pour football/handball/
+basketball, `mode: :sets` pour tennis/padel/badminton/ping-pong/volleyball) déjà
+branché sur `TournamentMatch` + `_score_modal.html.erb` + `tournament_score_
+controller.js`, testé dans `sport_test.rb`. Confirmé à l'utilisateur, pas de
+changement.
+
+## Vérification
+- [x] `bin/rails test` complet : 942 runs, 0 failures (44 erreurs Slack
+  pré-existantes, sans rapport — credentials chiffrement manquants en local,
+  hors périmètre de cette feature).
+- [x] `bin/rails assets:precompile` (SCSS + nouveau contrôleur JS compilent).
+- [ ] Vérif visuelle navigateur (thème clair + sombre) — à faire par
+  l'utilisateur ; lui rappeler de redémarrer `rails server` après précompile
+  (cf. leçon Phase E1/E2 ci-dessus : pas de live-reload SCSS en dev sur ce projet).
+
+---
+
+# Itération 2 : retours utilisateur post-review (classement, sélecteur, scores)
+
+Suite au retour visuel de l'utilisateur sur l'itération 1 : lien profil manquant
+dans "Classement", sélecteur de journée pas assez habillé une fois ouvert, et
+scores affichés en 2 lignes empilées + score FAUX pour les sports à score simple
+(toujours 1-0/0-0 au lieu du vrai score marqué).
+
+## 1. Lien profil manquant dans "Classement"
+1. [x] `_ranking_table.html.erb` : avatar+nom de `.is-player` enveloppés dans
+   `link_to user_profil_path(tu.user)` (même principe que `_tmatch`/`_bracket_cell`).
+2. [x] SCSS `.tournament-ranking__player-link`.
+
+## 2. Sélecteur de journée : `<select>` natif → menu déroulant CUSTOM
+Root cause du "pas terrible une fois ouvert" : un `<select>` natif est habillé
+par l'OS/le navigateur une fois ouvert, aucun moyen de le styler pour matcher le
+code couleur de la page.
+1. [x] `_round_ribbon.html.erb` : remplace le `<select>` par un bouton
+   (`.journee-picker__toggle`, façon `.phase-nav__pill`) + une liste custom
+   (`.journee-picker__menu`/`__option`, role listbox/option). L'état initial
+   (journée en cours visible, reste `hidden`) est posé CÔTÉ SERVEUR (pas de flash
+   JS au chargement).
+2. [x] `journee_selector_controller.js` réécrit : `toggle`/`open`/`close` (+ fermeture
+   au clic extérieur) et `choose` (bascule la colonne visible + met à jour le
+   libellé + l'état actif de l'option cliquée).
+3. [x] SCSS `.journee-picker` (remplace `.round-ribbon__select`/`__picker`) :
+   pilule + menu flottant, mêmes variables de thème que le reste du fichier.
+4. [x] Test contrôleur mis à jour pour la nouvelle structure (bouton + options,
+   colonnes `hidden`/visible posées côté serveur).
+
+## 3. Scores : vrai score + affichage centré compact
+Root cause du "toujours 1-0/0-0" : `sets_won_by` compte des SETS gagnés (0 ou 1
+en mode :score, puisqu'une seule "paire" = le score final) — jamais le score réel.
+1. [x] `TournamentMatch#display_score_for(player)` (nouveau) : `points_won_by`
+   (vrai score) en mode `:score`, `sets_won_by` (inchangé) en mode `:sets`.
+   `#score_summary` (nouveau) : équivalent de `sets_summary` mais basé dessus.
+2. [x] `_bracket_cell.html.erb` : `sets_won_by` → `display_score_for` (correction
+   seule, layout inchangé — pas la demande explicite de l'utilisateur ici).
+3. [x] `_tmatch.html.erb` : restructuré en scoreline centrée façon tableau de
+   scores sportif (2 `.tmatch-card__player` flex de part et d'autre d'un
+   `.tmatch-card__center` — score/statut "VS"/"En cours"/"Fin" — vainqueur
+   surligné en vert sur son score) au lieu de 2 lignes empilées nom+score.
+   Score du footer (redondant avec la scoreline) retiré. Icône de victoire
+   séparée retirée (remplacée par le surlignage vert du score).
+4. [x] SCSS : `.tmatch-card__scoreline`/`__center`/`__center-score`/
+   `__center-status` (nouveau), `.tmatch-card__sets`/`__win-icon` (retirés,
+   plus utilisés).
+5. [x] Tests : `tournament_match_test.rb` (display_score_for/score_summary en
+   mode :sets ET :score, avec assertion explicite que sets_won_by donnerait
+   0/1 pour prouver le bug évité) + `tournaments_controller_test.rb` (le score
+   réel "3-2" s'affiche bien dans la scoreline pour un match de football).
+
+## Vérification itération 2
+- [x] `bin/rails test` complet : 945 runs, 0 failures (mêmes 44 erreurs Slack
+  pré-existantes, hors périmètre).
+- [x] `bin/rails assets:precompile` (SCSS + JS compilent).
+- [ ] Vérif visuelle navigateur (thème clair + sombre) — même rappel que
+  l'itération 1 : redémarrer `rails server` après précompile.

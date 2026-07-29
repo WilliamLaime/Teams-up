@@ -162,7 +162,7 @@ class Tournament < ApplicationRecord
 
   # Classement des joueurs : victoires décroissantes, puis départage set average
   # puis point average (mêmes critères que le seeding — cf. SwissPairing#build_pairs),
-  # défaites croissantes en secours, nom en dernier ressort pour un ordre stable.
+  # défaites croissantes en secours, draw_order en dernier ressort pour un ordre stable.
   def ranked_players
     approved_players.sort_by { |tu| rank_key(tu) }
   end
@@ -176,10 +176,13 @@ class Tournament < ApplicationRecord
 
   # Critère de tri du classement (Lot 6 : points de classement décroissants — barème
   # V/N/D du sport, ou 1 pt/victoire en ronde suisse — puis différentiels de points et
-  # de sets décroissants, défaites croissantes, nom en dernier ressort) — partagé par
-  # ranked_players / ranked_pools et le seeding (BracketBuilder, PoolBuilder).
+  # de sets décroissants, défaites croissantes, draw_order en dernier ressort — le
+  # tirage au sort figé au lancement, pas le nom : évite qu'un tournoi qui saute
+  # directement au tableau final sans aucun match joué ne seed toujours les mêmes
+  # joueurs en tête par ordre alphabétique) — partagé par ranked_players /
+  # ranked_pools et le seeding (BracketBuilder, PoolBuilder).
   def rank_key(tu)
-    [-tu.ranking_points, -tu.point_average, -tu.set_average, tu.losses, tu.display_name]
+    [-tu.ranking_points, -tu.point_average, -tu.set_average, tu.losses, tu.draw_order]
   end
 
   # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.

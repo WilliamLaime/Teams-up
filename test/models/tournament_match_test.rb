@@ -97,6 +97,27 @@ class TournamentMatchTest < ActiveSupport::TestCase
     assert_equal 12, match.points_lost_by(@a)
   end
 
+  test "display_score_for/score_summary : mode :sets → nombre de sets remportés (comme sets_won_by)" do
+    match = match_with([[6, 4], [3, 6], [6, 2]]) # sport padel-test-* → mode :sets
+    assert_equal match.sets_won_by(@a), match.display_score_for(@a)
+    assert_equal match.sets_won_by(@b), match.display_score_for(@b)
+    assert_equal "2-1", match.score_summary
+  end
+
+  test "display_score_for/score_summary : mode :score → le vrai score marqué, pas 0/1" do
+    football = Sport.find_or_create_by!(slug: "football") { |s| s.name = "Football"; s.icon = "⚽" }
+    @tournament.update!(sport: football)
+    # Une seule paire (le score final) : 3 buts à 2, PAS "1 set gagné" (sets_won_by
+    # vaudrait 1-0, cf. bug signalé : le score affiché était toujours 1-0/0-0).
+    match = match_with([[3, 2]])
+    assert_equal 3, match.display_score_for(@a)
+    assert_equal 2, match.display_score_for(@b)
+    assert_equal "3-2", match.score_summary
+    # sets_won_by, lui, ne vaudrait que 0 ou 1 (le "set" gagné) — preuve du bug évité.
+    assert_equal 1, match.sets_won_by(@a)
+    assert_equal 0, match.sets_won_by(@b)
+  end
+
   # ── Validation des sets / règle des 2 points ──────────────────────────────
   test "un set nul est refusé" do
     match = @round.tournament_matches.new(player_a: @a, player_b: @b, position: 0)

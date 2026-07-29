@@ -1,7 +1,8 @@
 <%# ── Une colonne du ruban horizontal (un tour) ───────────────────────────────
     Réutilisée par la ronde suisse, le championnat et les poules (via
     _round_ribbon) dans l'onglet Matchs ÉDITABLE — pendant du bracket-viewer
-    (Vue d'ensemble, lecture seule) mais avec des cartes _tmatch cliquables.
+    (Vue d'ensemble, lecture seule) mais avec des cartes _tmatch_scoreline
+    cliquables (le tableau final, lui, garde _tmatch — cf. _bracket.html.erb).
     `id="round_<id>"` : ancre stable pour un éventuel deep-link direct vers un tour.
     Locals : round, can_manage, title (optionnel, défaut "Ronde N"),
     group_by_pool (optionnel, défaut false — regroupe les matchs par poule,
@@ -27,7 +28,7 @@
       <% round.tournament_matches.order(:position).group_by { |m| m.player_a.pool }.sort_by { |pool, _| pool.to_i }.each do |pool_index, matches| %>
         <h4 class="pool-label">Poule <%= ("A".ord + pool_index.to_i).chr %></h4>
         <% matches.each do |match| %>
-          <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+          <%= render "tournaments/tmatch_scoreline", match: match, can_manage: can_manage %>
         <% end %>
       <% end %>
     <% elsif score_groups %>
@@ -38,12 +39,12 @@
           </div>
         <% end %>
         <% matches.each do |match| %>
-          <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+          <%= render "tournaments/tmatch_scoreline", match: match, can_manage: can_manage %>
         <% end %>
       <% end %>
     <% else %>
       <% round.tournament_matches.order(:position).each do |match| %>
-        <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+        <%= render "tournaments/tmatch_scoreline", match: match, can_manage: can_manage %>
       <% end %>
     <% end %>
   </div>

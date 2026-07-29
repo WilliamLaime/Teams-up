@@ -27,7 +27,7 @@ class SwissPairing
   end
 
   # ── Algorithme pur ────────────────────────────────────────────────────────────
-  # @param players [Array] joueurs actifs (répondent à #id, #wins, #set_average, #point_average)
+  # @param players [Array] joueurs actifs (répondent à #id, #wins, #set_average, #point_average, #draw_order)
   # @param played_pairs [Set] paires déjà jouées, chacune = [id_min, id_max]
   # @param byed_ids [Set] ids des joueurs ayant déjà été exemptés (bye)
   # @return [Hash] { pairs: [[a, b], …], bye: joueur_ou_nil }
@@ -45,7 +45,12 @@ class SwissPairing
     # 2. Trier par nombre de victoires décroissant : le backtracking essaiera
     #    d'apparier chaque joueur avec le suivant le mieux classé → il reste au
     #    plus près des « score groups » et ne fait flotter que si nécessaire.
-    ordered = players.sort_by { |p| [-p.wins, -p.set_average, -p.point_average, p.id] }
+    #    Départage final par draw_order (tirage au sort figé au lancement, cf.
+    #    TournamentsController#assign_draw_order!) plutôt que par id : sur la
+    #    ronde 1, tout le monde est à 0 partout, donc trier par id reproduirait
+    #    toujours l'ordre d'inscription (J1 vs J2, J3 vs J4…) au lieu d'un vrai
+    #    tirage au sort.
+    ordered = players.sort_by { |p| [-p.wins, -p.set_average, -p.point_average, p.draw_order] }
 
     # 3. Recherche globale d'un appariement SANS rematch (backtracking borné).
     #    Si aucune solution n'existe, on relâche la contrainte (force_pair).

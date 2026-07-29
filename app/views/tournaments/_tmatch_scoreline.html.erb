@@ -1,12 +1,13 @@
-<%# ── Carte d'un match du tableau final (élimination directe) ─────────────────
-    Affiche les deux joueurs (ou l'exempt pour un bye), le score de chacun et le
-    score global. Lot 4 : le résultat se saisit set-par-set via la modale partagée
-    (contrôleur Stimulus tournament-score) — le vainqueur en est dérivé. Le bouton
-    de saisie n'apparaît que si l'utilisateur peut éditer ce match (organisateur OU
-    joueur du match, tour non verrouillé — cf. TournamentMatchPolicy).
-    Réservé au tableau final (_bracket.html.erb) : les journées de championnat/
-    poules et les rondes suisses utilisent _tmatch_scoreline (scoreline centrée),
-    cf. _round_column.html.erb. %>
+<%# ── Carte d'un match de journée/ronde (championnat, poules, ronde suisse) ────
+    Affiche les deux joueurs (ou l'exempt pour un bye) et une scoreline centrale
+    façon tableau de scores sportif (noms de part et d'autre, score au centre,
+    vainqueur surligné en vert). Lot 4 : le résultat se saisit set-par-set via la
+    modale partagée (contrôleur Stimulus tournament-score) — le vainqueur en est
+    dérivé. Le bouton de saisie n'apparaît que si l'utilisateur peut éditer ce match
+    (organisateur OU joueur du match, tour non verrouillé — cf. TournamentMatchPolicy).
+    Réservé à _round_column.html.erb : le tableau final utilise _tmatch (carte
+    empilée classique), cf. _bracket.html.erb — la scoreline ne concerne que les
+    tours en ruban/paginés. %>
 <% rules = match.tournament.sport&.scoring_rules || Sport.new.scoring_rules %>
 <% can_edit = user_signed_in? && policy(match).update? %>
 <%# Correction après verrouillage : réservée à l'organisateur, seulement quand le
@@ -23,35 +24,49 @@
     </div>
     <span class="tmatch-card__bye-badge">Exempt (qualifié d'office)</span>
   <% else %>
-    <% match.players.each do |player| %>
-      <% is_winner = match.decided? && match.winner_id == player.id %>
-      <div class="tmatch-card__player <%= "tmatch-card__player--winner" if is_winner %> <%= "tmatch-card__player--loser" if match.decided? && !is_winner %>">
-        <%= link_to user_profil_path(player.user), class: "tmatch-card__player-link" do %>
-          <%= user_avatar_tag player.user, css_class: "tmatch-card__avatar" %>
-          <span class="tmatch-card__name"><%= player.display_name %></span>
-        <% end %>
-
-        <%# display_score_for (pas sets_won_by) : en mode :score (sports co), affiche
-            le vrai score marqué, pas juste 0/1 "set" gagné. %>
-        <% if match.score_entered? %>
-          <span class="tmatch-card__sets"><%= match.display_score_for(player) %></span>
-        <% end %>
-        <% if is_winner %>
-          <i data-lucide="check" class="tmatch-card__win-icon" aria-hidden="true"></i>
+    <%# Scoreline centrée façon tableau de scores sportif (2 noms encadrant les
+        scores + un statut au centre) plutôt que 2 lignes empilées : plus compact.
+        Le bloc __center DOIT être entre les deux __player dans le DOM (pas après
+        les deux) : sinon, en flexbox, il atterrit après le 2e joueur — donc collé
+        au bord droit de la carte au lieu d'être au milieu.
+        Pas de modificateur --winner/--loser sur le nom ici (contrairement à
+        _tmatch) : le vainqueur est déjà signalé par le vert sur SON SEUL score
+        (cf. .tmatch-card__center-score.is-winner) — ajouter en plus un fond vert
+        pleine largeur + un nom barré double le signal et écrase la carte. %>
+    <div class="tmatch-card__scoreline">
+      <div class="tmatch-card__player">
+        <%= link_to user_profil_path(match.player_a.user), class: "tmatch-card__player-link" do %>
+          <%= user_avatar_tag match.player_a.user, css_class: "tmatch-card__avatar" %>
+          <span class="tmatch-card__name"><%= match.player_a.display_name %></span>
         <% end %>
       </div>
-    <% end %>
 
-    <%# Score global + accès à la modale (saisie ou détail selon les droits) +
-        rattachement d'une rencontre standard (organisateur uniquement). %>
-    <% if match.score_entered? || can_edit || can_manage || can_correct %>
-      <div class="tmatch-card__footer">
+      <div class="tmatch-card__center">
         <% if match.score_entered? %>
-          <span class="tmatch-card__score" title="Score (<%= match.player_a.display_name %> – <%= match.player_b.display_name %>)">
-            <%= match.score_summary %>
-          </span>
+          <span class="tmatch-card__center-score <%= "is-winner" if match.winner_id == match.player_a_id %>"><%= match.display_score_for(match.player_a) %></span>
         <% end %>
+        <span class="tmatch-card__center-status"><%= match.status == "completed" ? "Fin" : (match.score_entered? ? "En cours" : "VS") %></span>
+        <% if match.score_entered? %>
+          <span class="tmatch-card__center-score <%= "is-winner" if match.winner_id == match.player_b_id %>"><%= match.display_score_for(match.player_b) %></span>
+        <% end %>
+      </div>
 
+      <div class="tmatch-card__player">
+        <%= link_to user_profil_path(match.player_b.user), class: "tmatch-card__player-link" do %>
+          <%= user_avatar_tag match.player_b.user, css_class: "tmatch-card__avatar" %>
+          <span class="tmatch-card__name"><%= match.player_b.display_name %></span>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Accès à la modale (saisie ou détail selon les droits) + rattachement d'une
+        rencontre standard (organisateur uniquement). Le score global est déjà
+        visible dans la scoreline centrale ci-dessus, pas besoin de le répéter ici. %>
+    <% if can_edit || can_manage || can_correct || match.score_entered? %>
+      <%# --inline : boutons groupés à gauche à la suite (pas de space-between)
+          — sur une carte pleine largeur (paginated), space-between les écartait
+          sur toute la largeur de la ligne. %>
+      <div class="tmatch-card__footer tmatch-card__footer--inline">
         <% if can_manage %>
           <% if match.match %>
             <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
