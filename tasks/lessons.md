@@ -63,79 +63,9 @@
 ## 2026-07-03 — Procédure : ajouter un nouveau sport (mémo réutilisable)
 Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) mais plusieurs comportements sont **hardcodés par `slug`/`name`** dans le code. Sans ces branches, le sport « marche » mais retombe sur des fallbacks (format Libre seul, niveaux génériques, images football, bannière tennis). Aucun i18n à toucher (les noms viennent de la colonne `name`). Aucun SCSS par sport. Exemple concret réalisé : **Ping-Pong** (slug `ping-pong`, icône 🏓, formats 1v1/2v2/Libre, 4 images).
 
-**Checklist (dans l'ordre) :**
-1. **Seed — `db/seeds.rb`** (tableau `sports_data`) : ajouter `{ name: "Ping-Pong", icon: "🏓", slug: "ping-pong" }`. L'`icon` peut être un emoji OU une URL d'image (Cloudinary) — le helper `sport_icon` détecte l'extension. Idempotent via `find_or_create_by!(slug:)`. Puis `bin/rails db:seed` (ou `Sport.find_or_create_by!` en runner).
-2. **Formats — `app/models/sport.rb` `available_formats`** : ajouter un `when "<slug>"`. `players` = joueurs MANQUANTS (l'organisateur est déjà compté ; 1v1 → `players: 1`, 2v2 → `players: 3`). `players: nil` = format Libre. Sans branche → `else` = « Libre » uniquement.
-3. **Niveaux — `app/models/sport.rb` `available_levels`** (optionnel) : sans branche → fallback 3 niveaux (Débutant/Intermédiaire/Avancé). Pour une grille officielle (comme tennis/padel/badminton), ajouter un `when` avec `{ label:, ref:, desc: }`, PUIS ajouter le slug aux deux listes `%w[padel tennis badminton]` de `app/views/matches/show.html.erb` (bouton « ? ») et `app/views/shared/_level_grid_modal.html.erb` (modale des grilles).
-4. **Images de couverture (cartes/pages match) — `app/helpers/sport_images_helper.rb` `SPORT_IMAGES`** : ajouter `"<slug>" => %w[ ...URLs Cloudinary... ]`. Sans clé → fallback football. La rotation est déterministe : `images[match.id % images.length]` (même match → même image), pas vraiment aléatoire.
-   - **Workflow images → Cloudinary** : déposer les sources dans `app/assets/images/sports/<Dossier>/` ; convertir en webp optimisé (`cwebp -q 80 -resize 1200 0 in.jpg -o out.webp`) ; ajouter la ligne `"<slug>" => Dir[BASE_DIR.join("<Dossier>/*.webp")].sort` dans `lib/tasks/upload_sports_to_cloudinary.rb` (`SPORT_FILES`) ; uploader via runner Cloudinary (`Cloudinary::Uploader.upload(f, public_id: "sports/<slug>/#{name}", overwrite: false)`) ; coller les `secure_url` retournées dans `SPORT_IMAGES`. Cloudinary est déjà configuré (cloud `dfw8rlluc`, via `CLOUDINARY_URL`).
-5. **Bannière hero de la home — `app/views/pages/home.html.erb`** (`case current_sport&.name`, sur le **name** pas le slug !) : ajouter `when "Ping-Pong"` pointant vers un asset LOCAL `app/assets/images/img banner/banner_<sport>.jpeg` (créé ex : `magick src.webp -resize 900x600^ -gravity center -extent 900x600 -quality 82 banner_x.jpeg`). Sans branche → bannière tennis par défaut.
-6. **Vérifs** : runner `Sport.find_by(slug:).available_formats` ; `curl -o /dev/null -w "%{http_code}"` sur chaque URL Cloudinary (doit être 200).
-
-**Pièges** : `home.html.erb` switche sur `name` (les autres endroits sur `slug`) ; le dossier `app/assets/images/sports/` est vide en local (images uniquement sur Cloudinary) ; le `cd` persiste entre appels Bash (utiliser des chemins absolus pour `bin/rails`).
-
-## Sports absents en prod (Railway) alors que présents en dev
-
-**Cause racine** : un nouveau sport n'est ajouté que dans `db/seeds.rb`, mais l'entrypoint Docker (`bin/docker-entrypoint`) ne joue **jamais** `db:seed` en déploiement — seulement `db:prepare` (migrations) + `db:seed_custom_venues`. Donc le sport n'existe pas dans la base Railway. Ce n'est **pas** un problème de migration (un ajout de sport n'en crée aucune).
-
-**Fix durable (en place)** : liste des sports extraite dans `db/sports.rb` (constante `SPORTS` + méthode idempotente `seed_sports`, même pattern que `db/custom_venues.rb`). Chargée par `db/seeds.rb` **et** par la tâche `rails db:seed_sports`, elle-même appelée dans `bin/docker-entrypoint`. Tout nouveau sport remonte désormais automatiquement à chaque déploiement.
-## CI `scan_ruby` rouge : `--ensure-latest` de Brakeman masquait `bundler-audit`
-
-**Symptôme** : `scan_ruby` échouait sur `master` depuis plusieurs merges (#348→#350), qu'on attribuait aux 2 warnings XSS `badge_svg`.
-
-**Cause racine réelle** (log CI, pas les warnings) : le binstub `bin/brakeman` (généré par Rails 8) contient `ARGV.unshift("--ensure-latest")`. Ce flag fait sortir Brakeman en **exit 5** dès qu'une version plus récente existe sur RubyGems (« Brakeman 8.0.4 is not the latest version 8.0.5 »), **avant** d'analyser. Résultat non déterministe : la CI casse à chaque release de Brakeman, sans rapport avec le code.
-
-**Effet masquant** : le step CI `scan_ruby` enchaîne `bin/brakeman` **puis** `bin/bundler-audit`. Comme Brakeman échouait en premier, `bundler-audit` **ne tournait jamais** — il masquait une longue liste de CVE réelles dans les gems verrouillées (puma, oauth2, jwt, faraday, addressable, nokogiri, net-imap…). Corriger Brakeman a démasqué cette 2ᵉ dette.
-
-**Corrections** :
-1. Retirer `--ensure-latest` de `bin/brakeman` (CI déterministe ; version figée par Gemfile.lock, bumpée via Dependabot/bundle).
-2. Warnings `badge_svg` = **vrais faux positifs** : le SVG est input utilisateur (champ caché mass-assigné) mais assaini serveur par `Team#sanitize_badge_svg` (before_save, `Rails::Html::SafeListSanitizer` + allow-list). Ajoutés à `config/brakeman.ignore` avec note exacte.
-3. Vulns gems = **PAS des faux positifs** → mise à jour des gems (jamais d'ignore dans `bundler-audit.yml`).
-
-**Pièges** :
-- `bin/brakeman` prend un `--ensure-latest` qui couple le CI au calendrier de release amont.
-- Un step CI qui enchaîne 2 commandes masque la 2ᵉ tant que la 1ʳᵉ échoue — regarder le **log réel** (`gh run view --job <id> --log`), pas juste le nom du job.
-- `bundle update` était bloqué par `gem "simple_form", github:` (hérité du template le wagon) : re-résolution KO sur `activemodel`. Repointer sur la gem publiée (`~> 5.4`, version identique) débloque.
-- Vérifier `bundler-audit` en local exige une base d'avis à jour : `bundle exec bundler-audit update`.
-
----
-
-## Statut live de la carte match Slack (chat.update)
-
-**Besoin** : la carte Slack d'un match doit afficher un tag « À venir / En cours / Terminé » et se mettre à jour en direct.
-
-**Contrainte clé** : un message Slack posté est **figé**. Pour le faire évoluer il faut mémoriser son `channel` + `ts` (table `slack_match_messages`) et le ré-éditer via `chat.update`. On planifie 2 rafraîchissements à la création (`SlackMatchStatusJob.set(wait_until:)`) : à l'heure de début (→ En cours) et à l'heure de fin (→ Terminé), transitions futures uniquement.
-
-**Choix** :
-- Statut basé sur `build_datetime` / `end_datetime` (horaires réels), PAS sur l'heuristique `+1h` de `in_progress?`/`completed?`.
-- Bouton « S'inscrire au match » retiré dès que le match n'est plus `:upcoming`.
-- Skip « match passé » du `SlackNotifyJob` **retiré** : on poste désormais avec le bon tag.
-- `SlackMatchStatusJob` idempotent (reconstruit les blocs au statut du moment) → un déclenchement en retard reste correct. Purge la trace sur `message_not_found`/`cant_update_message`.
-
-**Édition d'horaire gérée** : `Match#after_update_commit :resync_slack_messages` (si `date`/`time`/`end_time` change ET cartes suivies) → rafraîchit les cartes immédiatement (nouveau « Quand ») + `SlackMatchStatusJob.schedule_transitions` rebranche les bascules aux nouveaux horaires. Les anciens jobs planifiés restent inoffensifs (statut recalculé à T par un job idempotent).
-
-**Piège CSS** : `.btn-cta-primary` ne fournit QUE `border-radius` + `:hover` ; le fond vert vient de Bootstrap `.btn-primary`. Un bouton `btn btn-sm btn-cta-primary` (sans `btn-primary`) est donc transparent → invisible sur fond sombre. Toujours coupler `btn-primary btn-cta-primary` (cf bouton « Connecter Slack » du profil).
-
-## 2026-07-20 — Panne Slack transitoire masquée (dropdown de destinations vide)
-
-**Symptôme** : plus aucun channel dans le modal « Partager sur Slack » (seul « Ma destination par défaut » restait), un matin sans déploiement.
-
-**Cause racine** : incident réseau/Slack **transitoire** (`conversations.list`/`users.list` en échec quelques minutes). `Slack::ChannelLister.destinations` avait un `rescue StandardError` global qui renvoyait `{}` **en silence** → dropdown vide sans aucune explication. Le cache **Turbo Drive** figeait ensuite le HTML (destinations vides embarquées dans `data-slack-share-data-value`) → le vide persistait à la navigation même après rétablissement de Slack. Un **hard refresh** (Cmd+Shift+R) suffisait à récupérer les channels.
-
-**Diagnostic** : `railway run bin/rails runner` + un script bouclant sur `SlackWorkspace.find_each` (PAS `.first` : il y a 2 workspaces, Test + CACD2) → `auth.test` / `conversations.list` / `users.list` par workspace. Tout OK au moment du diagnostic = panne passagère confirmée.
-
-**Correctifs** : (1) `ChannelLister` isole chaque appel (`safe_fetch`) — une erreur sur `users.list` ne fait plus disparaître les channels ; (2) `resolve` renvoie `auth_failed` (erreurs FATALES `invalid_auth`/`token_revoked`/`account_inactive` + bot_token illisible) ; (3) bandeau « réinstalle l'app » dans le modal de partage + page Intégrations quand `auth_failed` → oriente vers `/slack/install` (réinstaller), PAS `/slack/connect` (relier une identité ne régénère aucun bot_token).
-
-**Leçon** : ne jamais avaler une erreur d'API externe en `{}` silencieux dans du contenu mis en cache par Turbo — soit dégrader avec un signal visible (bandeau), soit `turbo-cache-control no-cache` sur les vues dépendant d'un état externe volatil.
-
-## 2026-07-28 — CSS servi en dev : `public/assets/` fait AUTORITÉ, pas de live-reload SCSS
-
-**Symptôme (partie 1)** : les traits de connexion CSS du tableau final (Lot 7/E2) restaient invisibles pour l'utilisateur malgré un correctif de couleur vérifié dans le CSS précompilé. **Symptôme (partie 2, bien pire)** : après avoir supprimé `public/assets/` en pensant "nettoyer un manifeste figé qui shadow la recompilation live", le site entier s'est retrouvé SANS AUCUN CSS (HTML brut, cf. capture utilisateur) — `curl` sur l'URL `/assets/application-*.css` renvoyée par la page a confirmé une **Routing Error** (`No route matches [GET] "/assets/..."`), PAS une 404 Sprockets normale : la route de compilation live n'existe tout simplement pas dans ce process.
-
-**Cause racine (diagnostic complet)** : ce projet **n'a pas de recompilation SCSS en direct en développement**, contrairement à l'hypothèse initiale ("sprockets-rails recompile à chaque requête si `config.assets.compile = true`"). En pratique : `public/assets/` (régénéré par `bin/rails assets:precompile`) est la SEULE source du CSS servi, y compris en dev — exactement comme en production. Pire : le process `rails server` DÉJÀ EN COURS (celui de l'utilisateur, tourne depuis un moment) garde en mémoire le digest/manifeste lu à son démarrage — regénérer `public/assets/` en cours de route (nouveau hash de fichier) NE SUFFIT PAS, le process continue de réclamer l'ANCIEN nom de fichier dans le HTML qu'il rend, qui lui n'existe plus sur disque → 404/erreur de routing. Un **redémarrage du serveur** est nécessaire après toute régénération pour que le nouveau manifeste soit relu.
-
-**Diagnostic** : `ps aux` → pidfile `tmp/pids/server.pid` révèle qu'un serveur tournait déjà (empêche même d'en démarrer un second pour tester). `curl http://localhost:3000/` puis `curl` sur l'URL du `.css` qu'il contient → 404 avec une vraie page d'erreur Rails (`ActionController::RoutingError`), pas un simple "fichier absent" — preuve qu'aucune route de compilation live n'est montée.
-
-**Correctif** : `bin/rails assets:precompile` (SANS `RAILS_ENV=test`, pour l'env réellement servi) régénère `public/assets/` avec le SCSS/JS à jour ; puis **redémarrer le serveur** (`rails server` de l'utilisateur) pour qu'il relise le nouveau manifeste.
-
-**Leçon (corrige la précédente entrée de ce même jour, qui était fausse)** : sur CE projet, `public/assets/` DOIT toujours exister et être à jour — ce n'est PAS un artefact optionnel qui "shadow" une recompilation live inexistante. Après tout changement SCSS/JS visible en dev : (1) `bin/rails assets:precompile`, (2) **redémarrer le serveur rails** (le process en cours ne relit pas le manifeste tout seul). Ne JAMAIS supprimer `public/assets/` sans avoir un plan pour le regénérer ET redémarrer le serveur dans la foulée — sinon le site entier perd tout son CSS/JS, pas juste la fonctionnalité en cours de test.
+// ... 95 more lines (total: 160)## 2026-07-29 — `public/assets/` en local fige le CSS/JS servi en dev
+- **Symptôme** : page `/tournois/:slug` (onglet Matchs) apparemment non stylée — pilules de phase blanches, titres de ronde noirs sur fond noir, pas de ruban horizontal. Diagnostiqué à tort comme un design à reprendre. Même famille : un correctif SCSS « vérifié dans le fichier » qui reste invisible côté navigateur.
+- **Cause racine** : un `assets:precompile` lancé en local laisse `public/assets/` + son `.sprockets-manifest`, que Rails sert **en priorité** en dev. Le front est gelé à la date du precompile. Piège : les styles anciens marchent, seuls les récents manquent → ça ressemble à un bug de design.
+- **Diagnostic** : juger le CSS **servi**, pas la source. `curl -s <page> | grep -oE 'href="/assets/application-[^"]*\.css"'` puis `curl -s <cette-url> | grep -c '<selecteur-recent>'` → `0` = assets figés. Confirmer avec la mtime de `public/assets/application-*.css`.
+- **Correctif** : supprimer `public/assets/` (gitignoré, ses sous-dossiers ne sont que des copies digestées de `app/assets/images/*`) + `rm -rf tmp/cache/assets` + **redémarrer le serveur** (Sprockets lit le manifeste au boot). Le projet compile à la volée (`sprockets-rails` + `sassc-rails`, pas de watcher ni de `config.assets.compile = false`).
+- **Leçon** : ne jamais lancer `assets:precompile` en local. L'oubli du redémarrage fait réclamer au process un digest disparu → Routing Error, ce qui avait conduit une session précédente (entrée du 28/07, supprimée car fausse) à conclure l'inverse : que `public/assets/` serait obligatoire en dev.
