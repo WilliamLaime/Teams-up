@@ -565,6 +565,17 @@ class MatchesController < ApplicationController
     @match.level            = "Tout niveau" # niveau neutre : bypass la grille du sport
     @match.players_needed   = 2
     @match.title            = "#{tm.tournament.sport&.name} — #{tm.player_a.display_name} vs #{tm.player_b.display_name}"
+
+    # Reprend le lieu et la date/heure déjà connus du tournoi, pour éviter à
+    # l'organisateur de tout ressaisir à la main.
+    @match.venue_id = tm.tournament.venue_id if tm.tournament.venue_id.present?
+    @match.place    = tm.tournament.place    if tm.tournament.place.present?
+    @match.date     = tm.tournament.date     if tm.tournament.date.present?
+    if tm.tournament.time.present?
+      @match.time     = tm.tournament.time
+      @match.end_time = @match.time + 1.hour # le défaut posé dans `new` (basé sur l'heure courante) ne vaut plus une fois `time` écrasée
+    end
+    @match.banner_image = tm.tournament.banner_image if tm.tournament.banner_image.present?
   end
 
   # Valide le rattachement tournoi envoyé par le formulaire : ne le persiste que
