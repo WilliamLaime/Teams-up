@@ -401,7 +401,7 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
   def build_tournament_match(owner: @user)
     tournament = Tournament.create!(name: "Tournoi test", sport: @sport, user: owner,
                                     format: "ronde_suisse", status: "in_progress", max_players: 8,
-                                    date: Date.tomorrow, place: "Terrain test")
+                                    date: Date.tomorrow, place: "Terrain test", time: "18:00")
     player_b_user = create_test_user(email: "tplayer-#{SecureRandom.hex(3)}@example.com")
     a = tournament.tournament_users.create!(user: owner, role: "joueur", status: "approved")
     b = tournament.tournament_users.create!(user: player_b_user, role: "joueur", status: "approved")
@@ -412,10 +412,16 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
 
   test "GET /matches/new depuis une carte de tournoi préremplit le formulaire" do
     sign_in @user
-    _tournament, tmatch = build_tournament_match
+    tournament, tmatch = build_tournament_match
 
     get new_match_path(tournament_match_id: tmatch.id)
     assert_response :success
+
+    # Lieu, date et heure du tournoi repris dans le formulaire (préremplissage).
+    assert_match(/value="Terrain test"/, response.body)
+    assert_match(/value="#{tournament.date}"/, response.body)
+    assert_includes response.body[/<input[^>]*name="match\[time\(4i\)\]"[^>]*>/], 'value="18"'
+    assert_includes response.body[/<input[^>]*name="match\[time\(5i\)\]"[^>]*>/], 'value="0"'
   end
 
   test "POST /matches depuis un tournoi inscrit les deux joueurs et lie la carte" do
@@ -437,6 +443,28 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_equal tmatch.id, match.tournament_match_id
     # Organisateur + les 2 joueurs de la carte (le créateur n'est compté qu'une fois).
     assert_includes match.match_users.map(&:user_id), tmatch.player_b.user_id
+  end
+
+  test "GET /matches/:id affiche un rappel vers la saisie du score du tournoi" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match
+    match = Match.create!(
+      title: "Rencontre tournoi", date: Date.tomorrow, time: "18:00", end_time: "19:00",
+      players_needed: 2, level: "Tout niveau", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous", user: @user,
+      sport: @sport, tournament: tournament, tournament_match: tmatch
+    )
+
+    get match_path(match)
+    assert_response :success
+    assert_select "p", text: /Score du tournoi pas encore saisi/
+
+    tmatch.assign_score([[11, 5]])
+    tmatch.save!
+
+    get match_path(match)
+    assert_response :success
+    assert_select "p", text: /Score du tournoi : #{Regexp.escape(tmatch.score_summary)}/
   end
 
   test "POST /matches ignore le rattachement à un tournoi qu'on n'organise pas" do
