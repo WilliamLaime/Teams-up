@@ -146,6 +146,23 @@
             Rencontre du tournoi
             <%= link_to @match.tournament.name, tournament_path(@match.tournament), style: "text-decoration:underline;" %>
           </p>
+
+          <%# Le score de cette rencontre se saisit uniquement sur la carte du
+              tournoi (modale dédiée) : Match n'a pas de champ de score. Rappel
+              nécessaire, sinon rien n'indique qu'il faut y retourner pour faire
+              avancer le tournoi une fois la rencontre jouée. %>
+          <% if @match.tournament_match %>
+            <p class="match-banner-desc" style="margin-bottom:0.6rem;">
+              <i data-lucide="clipboard-list" style="width:15px;height:15px;vertical-align:-2px;"></i>
+              <% if @match.tournament_match.score_entered? %>
+                Score du tournoi : <strong><%= @match.tournament_match.score_summary %></strong>
+                — <%= link_to "voir le tournoi", tournament_path(@match.tournament), style: "text-decoration:underline;" %>
+              <% else %>
+                Score du tournoi pas encore saisi —
+                <%= link_to "à saisir sur la page du tournoi", tournament_path(@match.tournament), style: "text-decoration:underline;" %>
+              <% end %>
+            </p>
+          <% end %>
         <% end %>
 
         <%# Description %>
