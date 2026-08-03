@@ -116,7 +116,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
         name: "Open Test 2", sport_id: @sport.id, format: "poules",
         max_players: 8, date: Date.tomorrow.to_s, place: "Club Test"
       },
-      co_organizer_email: @co_org.email,
+      co_organizer_sgid: @co_org.invite_sgid,
       self_register: "1"
     }
 
@@ -135,8 +135,48 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     get search_tournaments_path(q: "Bob"), headers: { "Accept" => "application/json" }
     assert_response :success
     body = JSON.parse(response.body)
-    assert(body.any? { |u| u["email"] == @co_org.email })
-    refute(body.any? { |u| u["email"] == @user.email }) # s'exclut lui-même
+    # On identifie les résultats par leur sgid, jamais par leur email (voir plus bas)
+    assert(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @co_org })
+    refute(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @user }) # s'exclut lui-même
+  end
+
+  # ─── Sécurité : pas d'énumération d'emails via l'autocomplete ───────────────
+  # Un ILIKE sur users.email permettrait de lister les comptes en cherchant
+  # « @example.com ». Voir docs/SECURITE-RGPD.md.
+  test "GET /tournois/search ne permet pas d'énumérer les emails" do
+    sign_in @user
+    get search_tournaments_path(q: "@example.com"), headers: { "Accept" => "application/json" }
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)
+  end
+
+  test "GET /tournois/search trouve un joueur par son email exact" do
+    sign_in @user
+    get search_tournaments_path(q: @co_org.email), headers: { "Accept" => "application/json" }
+    body = JSON.parse(response.body)
+    assert(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @co_org })
+  end
+
+  test "GET /tournois/search ne renvoie jamais d'email" do
+    sign_in @user
+    get search_tournaments_path(q: "Bob"), headers: { "Accept" => "application/json" }
+    refute_includes response.body, "@example.com"
+    JSON.parse(response.body).each { |u| refute_includes u.keys, "email" }
+  end
+
+  test "POST /tournois ignore un co_organizer_sgid forgé" do
+    sign_in @user
+
+    post tournaments_path, params: {
+      tournament: {
+        name: "Open Test 3", sport_id: @sport.id, format: "poules",
+        max_players: 8, date: Date.tomorrow.to_s, place: "Club Test"
+      },
+      co_organizer_sgid: "sgid-bidon"
+    }
+
+    t = Tournament.last
+    assert_empty t.tournament_users.where(role: "co_organisateur")
   end
 
   test "GET /tournois/search retourne vide sous 3 caractères" do

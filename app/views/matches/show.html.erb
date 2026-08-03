@@ -417,12 +417,9 @@
                   <%= user_avatar_link organizer, css_class: "match-organizer-avatar" if organizer %>
                   <div>
                     <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
-                      <% if organizer&.profil %>
-                        <%= [organizer.profil.first_name, organizer.profil.last_name]
-                              .compact.join(" ").presence || organizer.email %>
-                      <% else %>
-                        <%= organizer&.email || "Organisateur" %>
-                      <% end %>
+                      <%# display_name retombe sur un libellé neutre, jamais sur l'email
+                          de l'organisateur (page visible par tous les joueurs). %>
+                      <%= organizer&.display_name || "Organisateur" %>
                       <%# Icône "Ami" si on est amis avec l'organisateur %>
                       <%= render "shared/friend_badge", already_friends: @organizer_friend_status %>
                     </div>
@@ -475,12 +472,8 @@
               <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
               <div>
                 <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
-                  <% if organizer&.profil %>
-                    <%= [organizer.profil.first_name, organizer.profil.last_name]
-                          .compact.join(" ").presence || organizer.email %>
-                  <% else %>
-                    <%= organizer&.email || "Organisateur" %>
-                  <% end %>
+                  <%# Idem version mobile : pas d'email d'autrui dans la page. %>
+                  <%= organizer&.display_name || "Organisateur" %>
                   <%# Icône "Ami" si on est amis avec l'organisateur (version mobile) %>
                   <%= render "shared/friend_badge", already_friends: @organizer_friend_status %>
                 </div>
@@ -676,7 +669,7 @@
                   <%# Prénom + 1ère lettre du Nom suivi d'un point
                       Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
                   <%
-                    first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                    first       = mu.user.profil&.first_name.presence || User::FALLBACK_DISPLAY_NAME
                     last_letter = mu.user.profil&.last_name.presence&.first&.upcase
                     display     = last_letter ? "#{first} #{last_letter}." : first
                   %>
@@ -715,7 +708,7 @@
 
                 <%# Nom en jaune pour signaler l'état en attente %>
                 <%
-                  first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                  first       = mu.user.profil&.first_name.presence || User::FALLBACK_DISPLAY_NAME
                   last_letter = mu.user.profil&.last_name.presence&.first&.upcase
                   display     = last_letter ? "#{first} #{last_letter}." : first
                 %>

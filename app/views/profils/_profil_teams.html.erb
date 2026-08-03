@@ -83,8 +83,10 @@
               action="<%= team_team_invitations_path(@invitable_teams.first) %>"
               data-profil-invite-target="form">
           <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-          <%# Email de l'invité — passé en hidden pour correspondre à find_invitee %>
-          <%= hidden_field_tag :invitee_query, @profil_user.email %>
+          <%# Identifiant SIGNÉ de l'invité (User#invite_sgid), et non son email : cette page
+              est un profil consultable par n'importe quel utilisateur connecté, on n'y écrit
+              pas l'adresse de la personne. Voir docs/SECURITE-RGPD.md. %>
+          <%= hidden_field_tag :invitee_sgid, @profil_user.invite_sgid %>
 
           <% if @invitable_teams.size > 1 %>
             <%# Plusieurs équipes : grille de boutons radio stylisés %>

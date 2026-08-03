@@ -49,7 +49,7 @@
         <%# Infos du joueur : nom, niveau, rôle, message optionnel %>
         <div class="pending-modal-info">
           <%
-            first     = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+            first     = mu.user.profil&.first_name.presence || User::FALLBACK_DISPLAY_NAME
             last_name = mu.user.profil&.last_name.presence
             full_name = last_name ? "#{first} #{last_name}" : first
             level     = mu.user.profil&.level.presence  || "Niveau non renseigné"

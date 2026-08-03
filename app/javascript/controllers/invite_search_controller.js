@@ -1,7 +1,15 @@
 // invite_search_controller.js
-// Autocomplete pour le formulaire d'invitation d'équipe.
-// Cherche les joueurs dès 3 caractères tapés, affiche un dropdown,
-// et remplit un champ caché avec l'email de la personne sélectionnée.
+// Autocomplete pour le formulaire d'invitation d'équipe (et de co-organisateur de tournoi).
+// Cherche les joueurs dès 3 caractères tapés, affiche un dropdown, et remplit un champ
+// caché avec l'identifiant signé (sgid) de la personne sélectionnée.
+//
+// SÉCURITÉ — deux règles à ne pas casser dans ce fichier :
+//   1. L'endpoint ne renvoie JAMAIS d'email : on transporte un `signed_id` Rails
+//      (signé, à usage et durée de vie limités) au lieu de l'adresse de la personne.
+//   2. Les noms des joueurs sont des données saisies par les utilisateurs : ils sont
+//      insérés via `textContent` / `dataset`, jamais par `innerHTML`. Une interpolation
+//      dans du HTML permettrait à quelqu'un qui met `"><img src=x onerror=…>` dans son
+//      prénom d'exécuter du JS chez tous les capitaines qui le voient (XSS stocké).
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
@@ -39,8 +47,8 @@ export default class extends Controller {
   // Appelé quand l'user clique sur un résultat dans le dropdown
   select(event) {
     const item = event.currentTarget
-    // On remplit le champ caché (soumis) avec l'email unique
-    this.hiddenTarget.value = item.dataset.email
+    // On remplit le champ caché (soumis) avec l'identifiant signé du joueur
+    this.hiddenTarget.value = item.dataset.sgid
     // On met le nom complet dans le champ visible
     this.inputTarget.value  = item.dataset.label
     // Notifie les autres contrôleurs (ex: tournament-form met à jour son récap).
@@ -58,30 +66,46 @@ export default class extends Controller {
       .catch(() => this._closeDropdown())
   }
 
-  // Génère le HTML du dropdown à partir des résultats
+  // Génère le dropdown à partir des résultats.
+  // Construction par nœuds DOM (pas d'innerHTML) : voir la note SÉCURITÉ en haut du fichier.
   _renderDropdown(users) {
+    this.dropdownTarget.replaceChildren()
+
     if (users.length === 0) {
-      this.dropdownTarget.innerHTML = `<div class="invite-search-empty">Aucun joueur trouvé</div>`
+      const empty = document.createElement("div")
+      empty.className   = "invite-search-empty"
+      empty.textContent = "Aucun joueur trouvé"
+      this.dropdownTarget.appendChild(empty)
     } else {
-      this.dropdownTarget.innerHTML = users.map(u => {
-        const label = `${u.first_name} ${u.last_name}`
-        return `
-          <button type="button"
-                  class="invite-search-item"
-                  data-action="click->invite-search#select"
-                  data-email="${u.email}"
-                  data-label="${label}">
-            <span class="invite-search-name">${u.first_name}</span>
-            <span class="invite-search-lastname">${u.last_name}</span>
-          </button>
-        `
-      }).join("")
+      users.forEach(u => {
+        const firstName = u.first_name || ""
+        const lastName  = u.last_name  || ""
+
+        const item = document.createElement("button")
+        item.type            = "button"
+        item.className       = "invite-search-item"
+        item.dataset.action  = "click->invite-search#select"
+        item.dataset.sgid    = u.sgid
+        item.dataset.label   = `${firstName} ${lastName}`.trim()
+
+        const first = document.createElement("span")
+        first.className   = "invite-search-name"
+        first.textContent = firstName
+
+        const last = document.createElement("span")
+        last.className   = "invite-search-lastname"
+        last.textContent = lastName
+
+        item.append(first, last)
+        this.dropdownTarget.appendChild(item)
+      })
     }
+
     this.dropdownTarget.style.display = "block"
   }
 
   _closeDropdown() {
-    this.dropdownTarget.innerHTML     = ""
+    this.dropdownTarget.replaceChildren()
     this.dropdownTarget.style.display = "none"
   }
 }

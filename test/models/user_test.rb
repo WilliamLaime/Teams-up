@@ -234,15 +234,18 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "Alice Dupont", user.display_name
   end
 
-  # Cas d'erreur : retourne l'email si le profil n'a pas de nom renseigné.
-  test "display_name retourne l'email si profil sans nom" do
+  # Cas dégénéré : profil sans nom → libellé neutre, JAMAIS l'email.
+  # display_name est affiché dans des vues et des mails vus par d'autres joueurs :
+  # y faire apparaître l'email exposerait l'adresse d'autrui (voir docs/SECURITE-RGPD.md).
+  test "display_name retourne un libellé neutre si profil sans nom" do
     user = create_user(email: "display2@example.com", first_name: "Alice", last_name: "Dupont")
     # On vide le profil directement en base pour forcer le cas dégénéré.
     # update_columns contourne les validations → on peut mettre nil.
     user.profil.update_columns(first_name: nil, last_name: nil)
     user.reload
 
-    assert_equal "display2@example.com", user.display_name
+    assert_equal User::FALLBACK_DISPLAY_NAME, user.display_name
+    refute_includes user.display_name, "@"
   end
 
   # ─── Méthode short_name ─────────────────────────────────────────────────────
@@ -261,12 +264,12 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "Williame", user.short_name
   end
 
-  # Sans prénom : on retombe sur display_name (email en dernier recours).
+  # Sans prénom : on retombe sur display_name, donc sur le libellé neutre.
   test "short_name retombe sur display_name si pas de prénom" do
     user = create_user(email: "short3@example.com", first_name: "Williame", last_name: "Laime")
     user.profil.update_columns(first_name: nil, last_name: nil)
     user.reload
-    assert_equal "short3@example.com", user.short_name
+    assert_equal User::FALLBACK_DISPLAY_NAME, user.short_name
   end
 
   # ─── Méthode rank ───────────────────────────────────────────────────────────
