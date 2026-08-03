@@ -37,7 +37,7 @@
       <%# Nom de l'autre utilisateur + badge non-lu %>
       <div class="sticky-chat-convo-title-row">
         <span class="sticky-chat-convo-title">
-          <%= truncate(other.display_name || other.email, length: 18) %>
+          <%= truncate(other.display_name, length: 18) %>
         </span>
         <%# Petit rond vert = message non lu %>
         <% if unread %>

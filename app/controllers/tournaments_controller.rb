@@ -190,14 +190,12 @@ class TournamentsController < ApplicationController
     q = params[:q].to_s.strip
     return render json: [] if q.length < 3
 
-    users = User.joins(:profil)
-                .where("profils.first_name ILIKE ? OR users.email ILIKE ?", "%#{q}%", "%#{q}%")
+    users = User.search_for_invite(q)
                 .where.not(id: current_user.id)
-                .includes(:profil)
                 .limit(8)
 
     render json: users.map { |u|
-      { email: u.email, first_name: u.profil&.first_name, last_name: u.profil&.last_name }
+      { sgid: u.invite_sgid, first_name: u.profil&.first_name, last_name: u.profil&.last_name }
     }
   end
 
@@ -296,12 +294,11 @@ class TournamentsController < ApplicationController
     @tournament.registration_deadline = nil
   end
 
-  # Désigne un co-organisateur si un email valide a été choisi dans l'autocomplete.
+  # Désigne un co-organisateur si un joueur a été choisi dans l'autocomplete.
+  # On reçoit un identifiant signé (voir User#invite_sgid) et non un email : aucune
+  # adresse ne circule dans le formulaire de création de tournoi.
   def add_co_organizer
-    email = params[:co_organizer_email].to_s.strip
-    return if email.blank?
-
-    co_org = User.find_by(email: email)
+    co_org = User.find_by_invite_sgid(params[:co_organizer_sgid])
     return if co_org.nil? || co_org == current_user
 
     @tournament.tournament_users.create(user: co_org, role: "co_organisateur", status: "approved")

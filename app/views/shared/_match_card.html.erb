@@ -33,7 +33,7 @@
 
   # Nom affiché de l'organisateur (Prénom I.)
   if match.user.present?
-    first        = match.user.profil&.first_name || match.user.email.split("@").first
+    first        = match.user.profil&.first_name.presence || User::FALLBACK_DISPLAY_NAME
     last_initial = match.user.profil&.last_name&.first
     organizer_display = last_initial ? "#{first} #{last_initial}." : first
   end

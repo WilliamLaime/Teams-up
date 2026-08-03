@@ -23,7 +23,10 @@ jobs:
       
       - name: Scan for known security vulnerabilities in gems used
         run: bin/bundler-audit
-      
+
+      - name: Check personal-data declarations and JSON leaks (RGPD)
+        run: bin/pii-guard
+
   scan_js:
     runs-on: ubuntu-latest
 

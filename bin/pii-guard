@@ -1,0 +1,145 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# bin/pii-guard — garde-fou « données personnelles » (RGPD)
+#
+# Deux contrôles, exécutés en CI à côté de Brakeman et bundler-audit :
+#
+#   1. DÉCLARATION — toute colonne de db/schema.rb qui ressemble à une donnée
+#      personnelle doit figurer dans le tableau §1 de docs/SECURITE-RGPD.md, sous
+#      la forme `table.colonne`. Objectif : impossible d'ajouter une colonne
+#      contenant de la PII sans décider de sa finalité et de sa durée de conservation.
+#
+#   2. FUITE — aucune réponse `render json:` d'un controller ne doit contenir un
+#      email. Les autocomplétions transportent un identifiant signé
+#      (User#invite_sgid), jamais l'adresse d'un utilisateur.
+#
+# Usage :
+#   bin/pii-guard          # échoue (exit 1) au premier manquement
+#   bin/pii-guard --list   # affiche simplement les colonnes PII détectées
+#
+# Ce script ne charge pas Rails : il lit les fichiers. Il est donc rapide et
+# n'a besoin ni de base de données ni de variables d'environnement.
+
+require "set"
+
+ROOT       = File.expand_path("..", __dir__)
+SCHEMA     = File.join(ROOT, "db/schema.rb")
+DOC        = File.join(ROOT, "docs/SECURITE-RGPD.md")
+CONTROLLERS = File.join(ROOT, "app/controllers")
+
+# Motifs de noms de colonnes considérés comme des données personnelles.
+# Correspondance partielle : `city` attrape aussi `preferred_city`.
+PII_PATTERNS = /(email|phone|first_name|last_name|nom|prenom|address|city|
+                 localisation|ip_address|user_agent|latitude|longitude|birth|
+                 endpoint|p256dh)/x
+
+# Noms de colonnes à déclarer, en correspondance EXACTE (trop courts ou trop
+# génériques pour un motif partiel).
+PII_EXACT_NAMES = %w[auth uid genre slack_user_id bot_token].freeze
+
+# Types de colonnes susceptibles de contenir de la PII (on ignore les booléens,
+# les compteurs, les dates…). `float`/`decimal` sont là pour les coordonnées GPS.
+COLUMN_TYPES = %w[string text float decimal jsonb].freeze
+
+errors = []
+
+# ── Contrôle 1 : toute colonne PII du schéma est déclarée dans la doc ─────────
+
+abort "❌ pii-guard : #{SCHEMA} introuvable." unless File.exist?(SCHEMA)
+abort "❌ pii-guard : #{DOC} introuvable — c'est le registre des traitements, il est obligatoire." unless File.exist?(DOC)
+
+schema_columns = [] # [["users", "email"], …]
+current_table  = nil
+
+File.foreach(SCHEMA) do |line|
+  if (m = line.match(/create_table "([^"]+)"/))
+    current_table = m[1]
+    next
+  end
+
+  next if current_table.nil?
+
+  if (m = line.match(/\A\s+t\.(#{COLUMN_TYPES.join('|')}) "([^"]+)"/))
+    column = m[2]
+    pii    = column.match?(PII_PATTERNS) || PII_EXACT_NAMES.include?(column)
+    schema_columns << [current_table, column] if pii
+  end
+end
+
+if ARGV.include?("--list")
+  puts "Colonnes considérées comme personnelles (#{schema_columns.size}) :"
+  schema_columns.each { |t, c| puts "  #{t}.#{c}" }
+  exit 0
+end
+
+doc_content  = File.read(DOC)
+# On cherche les entrées `table.colonne` entre backticks dans la doc.
+declared     = doc_content.scan(/`([a-z_]+)\.([a-z_0-9]+)`/).map { |t, c| "#{t}.#{c}" }.to_set
+undeclared   = schema_columns.reject { |t, c| declared.include?("#{t}.#{c}") }
+
+unless undeclared.empty?
+  errors << <<~MSG
+    #{undeclared.size} colonne(s) potentiellement personnelle(s) absente(s) de docs/SECURITE-RGPD.md :
+    #{undeclared.map { |t, c| "  • #{t}.#{c}" }.join("\n")}
+
+    → Ajoute chaque colonne au tableau §1 avec sa finalité, sa base légale et sa
+      durée de conservation. Si ce n'est PAS une donnée personnelle, déclare-la
+      quand même en le disant explicitement (voir les lignes `venues.*`).
+  MSG
+end
+
+# ── Contrôle 2 : aucun email dans une réponse JSON de controller ─────────────
+
+# Les vues d'administration affichent légitimement les emails ; le back-office est
+# derrière `require_admin!` et journalisé. On exclut donc ce répertoire.
+EXCLUDED_DIRS = %w[admin].freeze
+
+leaks = []
+
+Dir.glob(File.join(CONTROLLERS, "**/*.rb")).sort.each do |path|
+  relative = path.sub("#{ROOT}/", "")
+  next if EXCLUDED_DIRS.any? { |dir| relative.include?("/#{dir}/") }
+
+  lines = File.readlines(path)
+
+  lines.each_with_index do |line, index|
+    next unless line.include?("render json:")
+
+    # On inspecte l'expression rendue : la ligne du `render json:` et les
+    # suivantes, jusqu'à une ligne vide ou un `end` en début d'expression
+    # (suffisant pour les rendus multilignes construits à la main).
+    chunk = []
+    lines[index..(index + 14)].each do |candidate|
+      break if chunk.any? && candidate.strip.empty?
+
+      chunk << candidate
+      break if candidate.strip == "end"
+    end
+
+    joined = chunk.join
+    leaks << "#{relative}:#{index + 1}" if joined.match?(/\bemail\b/)
+  end
+end
+
+unless leaks.empty?
+  errors << <<~MSG
+    Email détecté dans une réponse JSON de controller :
+    #{leaks.map { |loc| "  • #{loc}" }.join("\n")}
+
+    → Ne renvoie jamais l'email d'un utilisateur dans du JSON : cela permet d'énumérer
+      les comptes. Utilise un identifiant signé (User#invite_sgid) et affiche un nom.
+  MSG
+end
+
+# ── Verdict ──────────────────────────────────────────────────────────────────
+
+if errors.empty?
+  puts "✅ pii-guard : #{schema_columns.size} colonne(s) personnelle(s) déclarée(s), aucune fuite d'email en JSON."
+  exit 0
+end
+
+warn "❌ pii-guard a détecté #{errors.size} problème(s) :\n"
+errors.each { |e| warn e }
+warn "Référence : docs/SECURITE-RGPD.md — audit approfondi : agent security-rgpd-expert"
+exit 1
