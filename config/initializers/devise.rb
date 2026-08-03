@@ -93,7 +93,15 @@ Devise.setup do |config|
   # It will change confirmation, password recovery and other workflows
   # to behave the same regardless if the e-mail provided was right or wrong.
   # Does not affect registerable.
-  # config.paranoid = true
+  #
+  # ACTIVÉ : sans cette option, le formulaire « mot de passe oublié » répond
+  # « cet email n'existe pas » et permet donc de savoir qui a un compte sur
+  # Teams-up (énumération de comptes). Avec `paranoid`, le message est identique
+  # que l'adresse existe ou non. Voir docs/SECURITE-RGPD.md.
+  #
+  # Attention : cela change aussi les messages de succès (« si votre compte
+  # existe, vous recevrez un email ») — c'est volontaire.
+  config.paranoid = true
 
   # By default Devise will store the user in session. You can skip storage for
   # particular strategies by setting this option.
