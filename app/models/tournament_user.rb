@@ -13,17 +13,21 @@ class TournamentUser < ApplicationRecord
   # (sorti par le score) ; "withdrawn" = a déclaré forfait / abandonné (Lot 5).
   STATES = %w[active qualified eliminated withdrawn].freeze
 
-  # Seuils de la ronde suisse : 3 victoires pour se qualifier, 3 défaites pour être éliminé.
+  # Seuils PAR DÉFAUT de la ronde suisse : 3 victoires pour se qualifier, 3 défaites
+  # pour être éliminé. Depuis le Lot 7 l'organisateur peut les personnaliser par
+  # tournoi (colonnes swiss_wins_to_qualify / swiss_losses_to_eliminate) : passer
+  # par Tournament#wins_to_qualify / #losses_to_eliminate, qui appliquent le réglage
+  # ou retombent sur ces constantes.
   WINS_TO_QUALIFY = 3
   LOSSES_TO_ELIMINATE = 3
 
-  # État suisse dérivé d'un bilan V/D donné (mêmes seuils que ci-dessus). Utilisé
+  # État suisse dérivé d'un bilan V/D donné, selon les seuils du tournoi. Utilisé
   # par SwissPairing pour l'état réel du joueur ET par le ruban de rondes (onglet
   # Matchs) pour colorer les pastilles de bilan par groupe en en-tête de colonne
   # — d'où la version "pure" (sans lire l'état persisté d'un joueur en particulier).
-  def self.state_for(wins, losses)
-    return "qualified" if wins >= WINS_TO_QUALIFY
-    return "eliminated" if losses >= LOSSES_TO_ELIMINATE
+  def self.state_for(wins, losses, wins_to_qualify: WINS_TO_QUALIFY, losses_to_eliminate: LOSSES_TO_ELIMINATE)
+    return "qualified" if wins >= wins_to_qualify
+    return "eliminated" if losses >= losses_to_eliminate
 
     "active"
   end

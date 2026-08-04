@@ -81,3 +81,15 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   2. Un `ILIKE '%…%'` sur une colonne identifiante (email, téléphone) est un endpoint d'énumération, même derrière une autorisation : le rôle « capitaine » est accessible à quiconque crée une équipe.
   3. Pour désigner un utilisateur depuis le front sans exposer son identité : `signed_id(purpose:, expires_in:)`. Signé ≠ révocable → durée de vie courte obligatoire.
   4. Autoriser en **tête** d'action, pas après les guard-clauses : sinon `verify_authorized` transforme chaque cas d'erreur métier en 500.
+
+## 2026-08-04 — `connect()` + tirage aléatoire = donnée écrasée en silence
+- **Symptôme** : aucun — trouvé en transposant la bannière « image selon le sport » du formulaire de match vers celui de tournoi.
+- **Cause racine** : `match_form_controller#updateBanner()` tirait une image **au hasard** parmi celles du sport et l'écrivait dans le champ caché `banner_image`. Or `connect()` appelle `updateSport()` → `updateBanner()`. En **édition**, ouvrir un match et l'enregistrer sans rien toucher changeait donc son image : le formulaire écrasait une donnée persistée que l'utilisateur n'avait pas modifiée.
+- **Correctif** : ne tirer une nouvelle image que si le champ est vide **ou** si l'image courante n'appartient plus au sport sélectionné (`images.includes(current)`). Même garde posée d'emblée dans `tournament_form_controller#updateBanner`.
+- **Leçon** : un contrôleur Stimulus qui **écrit** dans un champ depuis `connect()` doit distinguer « initialiser une valeur absente » de « recalculer après une action utilisateur ». Tout ce qui est non déterministe (aléatoire, `Time.now`) rend le piège invisible en création et destructeur en édition. Vérifier systématiquement le chemin `connect()` → écriture de champ.
+
+## 2026-08-04 — Une méthode de modèle ne doit pas porter le nom de sa colonne « brute »
+- **Contexte** : rendre la structure d'un tournoi personnalisable (taille des poules, seuils de ronde suisse, taille du tableau final) avec `nil` = « valeur recommandée », donc un fallback à appliquer à la lecture.
+- **Piège évité** : nommer la colonne `pool_size` **et** vouloir `def pool_size = self[:pool_size] || 4` fait masquer l'attribut ActiveRecord par la méthode. Plus aucun moyen de lire la valeur brute sans `self[:…]`, et le formulaire (`f.number_field :pool_size`) afficherait la valeur *calculée* — qu'un simple enregistrement transformerait alors en réglage explicite, faisant perdre l'auto-adaptation.
+- **Choix** : colonnes `players_per_pool` / `bracket_size` / `swiss_wins_to_qualify` / `swiss_losses_to_eliminate` (valeur brute, lue par le formulaire), méthodes `#pool_size` / `#final_size` / `#wins_to_qualify` / `#losses_to_eliminate` (valeur effective, lue par les moteurs). Aucun recouvrement de nom.
+- **Leçon** : pour un réglage « nullable = défaut », donner **deux noms distincts** — un pour la saisie, un pour l'usage. Les colonnes nullables évitent par ailleurs tout backfill : les enregistrements existants gardent exactement leur comportement.

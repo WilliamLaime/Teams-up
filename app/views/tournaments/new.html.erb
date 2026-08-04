@@ -9,8 +9,9 @@
 
 <div class="match-create-page">
 
-  <%# Bannière d'en-tête %>
-  <div class="match-new-banner">
+  <%# Bannière d'en-tête. L'id est la cible de tournament-form#updateBanner : son
+      fond suit le sport sélectionné (comme à la création d'un match). %>
+  <div class="match-new-banner" id="tournament-new-banner">
     <div class="container">
       <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-3" %>
 

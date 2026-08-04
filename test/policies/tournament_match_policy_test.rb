@@ -64,4 +64,40 @@ class TournamentMatchPolicyTest < ActiveSupport::TestCase
   def test_show_public
     assert TournamentMatchPolicy.new(nil, @match).show?
   end
+
+  # ── create_match? (Lot 7) : planifier la rencontre réelle ───────────────────
+  def test_joueurs_et_organisateurs_peuvent_creer_la_rencontre
+    assert TournamentMatchPolicy.new(@player_a.user, @match).create_match?
+    assert TournamentMatchPolicy.new(@player_b.user, @match).create_match?
+    assert TournamentMatchPolicy.new(@admin, @match).create_match?
+    assert TournamentMatchPolicy.new(@co_org, @match).create_match?
+  end
+
+  def test_tiers_et_visiteur_ne_peuvent_pas_creer_la_rencontre
+    refute TournamentMatchPolicy.new(@stranger, @match).create_match?
+    refute TournamentMatchPolicy.new(nil, @match).create_match?
+  end
+
+  def test_pas_de_rencontre_pour_un_bye
+    bye = @round.tournament_matches.create!(player_a: @player_a, is_bye: true, position: 1)
+    refute TournamentMatchPolicy.new(@player_a.user, bye).create_match?
+  end
+
+  # Index unique sur matches.tournament_match_id : une seule rencontre par
+  # confrontation. Le 2e joueur ne doit donc plus voir « Créer la rencontre ».
+  def test_confrontation_deja_rattachee
+    Match.create!(user: @player_a.user, sport: @sport, tournament: @tournament, tournament_match: @match,
+                  title: "Rencontre", date: Date.tomorrow, time: Time.current, end_time: 1.hour.from_now,
+                  place: "Terrain test", level: "Tout niveau", players_needed: 2, validation_mode: "automatic")
+
+    refute TournamentMatchPolicy.new(@player_b.user, @match.reload).create_match?
+    refute TournamentMatchPolicy.new(@admin, @match).create_match?
+  end
+
+  # Le verrou de tour ne concerne QUE la saisie de score : une rencontre peut
+  # toujours être planifiée (ex. match à rejouer, ou création tardive).
+  def test_tour_verrouille_n_empeche_pas_la_creation
+    @round.update!(status: "completed")
+    assert TournamentMatchPolicy.new(@player_a.user, @match).create_match?
+  end
 end

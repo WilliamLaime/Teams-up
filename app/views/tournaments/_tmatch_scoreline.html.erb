@@ -8,8 +8,11 @@
     Réservé à _round_column.html.erb : le tableau final utilise _tmatch (carte
     empilée classique), cf. _bracket.html.erb — la scoreline ne concerne que les
     tours en ruban/paginés. %>
-<% rules = match.tournament.sport&.scoring_rules || Sport.new.scoring_rules %>
 <% can_edit = user_signed_in? && policy(match).update? %>
+<%# Création/consultation de la rencontre réelle : ouverte aux 2 joueurs du match
+    ET aux organisateurs (cf. TournamentMatchPolicy#create_match?), pour que les
+    joueurs puissent convenir eux-mêmes de la date et de l'heure de leur rencontre. %>
+<% can_create_match = user_signed_in? && policy(match).create_match? %>
 <%# Correction après verrouillage : réservée à l'organisateur, seulement quand le
     tour est verrouillé (sinon la saisie normale can_edit suffit). %>
 <% round_locked = match.tournament_round.status == "completed" %>
@@ -60,66 +63,36 @@
     </div>
 
     <%# Accès à la modale (saisie ou détail selon les droits) + rattachement d'une
-        rencontre standard (organisateur uniquement). Le score global est déjà
-        visible dans la scoreline centrale ci-dessus, pas besoin de le répéter ici. %>
-    <% if can_edit || can_manage || can_correct || match.score_entered? %>
+        rencontre standard (joueurs du match ou organisateurs). Le score global est
+        déjà visible dans la scoreline centrale ci-dessus, pas besoin de le répéter ici. %>
+    <% if can_edit || can_create_match || match.match || can_correct || match.score_entered? %>
       <%# --inline : boutons groupés à gauche à la suite (pas de space-between)
           — sur une carte pleine largeur (paginated), space-between les écartait
           sur toute la largeur de la ligne. %>
       <div class="tmatch-card__footer tmatch-card__footer--inline">
-        <% if can_manage %>
-          <% if match.match %>
-            <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
-          <% else %>
-            <%= link_to "Créer la rencontre", new_match_path(tournament_match_id: match.id), class: "tmatch-card__link" %>
-          <% end %>
+        <% if match.match %>
+          <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
+        <% elsif can_create_match %>
+          <%= link_to "Créer la rencontre", new_match_path(tournament_match_id: match.id), class: "tmatch-card__link" %>
         <% end %>
 
         <% if can_edit %>
-          <button type="button" class="tmatch-card__score-btn"
-                  data-action="tournament-score#open"
-                  data-tournament-score-url-param="<%= tournament_tournament_match_path(match.tournament, match) %>"
-                  data-tournament-score-mode-param="<%= rules[:mode] %>"
-                  data-tournament-score-allow-draw-param="<%= rules[:allow_draw] %>"
-                  data-tournament-score-best-of-param="<%= rules[:best_of] %>"
-                  data-tournament-score-target-param="<%= rules[:target] %>"
-                  data-tournament-score-sets-param="<%= match.sets.to_json %>"
-                  data-tournament-score-name-a-param="<%= match.player_a.display_name %>"
-                  data-tournament-score-name-b-param="<%= match.player_b.display_name %>"
-                  data-tournament-score-editable-param="true">
-            <%= match.score_entered? ? "Modifier" : "Saisir le score" %>
-          </button>
+          <%= score_modal_button match,
+                label: match.score_entered? ? "Modifier" : "Saisir le score",
+                editable: true,
+                url: tournament_tournament_match_path(match.tournament, match) %>
         <% elsif match.score_entered? %>
-          <button type="button" class="tmatch-card__detail-btn"
-                  data-action="tournament-score#open"
-                  data-tournament-score-mode-param="<%= rules[:mode] %>"
-                  data-tournament-score-allow-draw-param="<%= rules[:allow_draw] %>"
-                  data-tournament-score-best-of-param="<%= rules[:best_of] %>"
-                  data-tournament-score-target-param="<%= rules[:target] %>"
-                  data-tournament-score-sets-param="<%= match.sets.to_json %>"
-                  data-tournament-score-name-a-param="<%= match.player_a.display_name %>"
-                  data-tournament-score-name-b-param="<%= match.player_b.display_name %>"
-                  data-tournament-score-editable-param="false">
-            Détail
-          </button>
+          <%= score_modal_button match, label: "Détail", editable: false, css_class: "tmatch-card__detail-btn" %>
         <% end %>
 
         <%# Correction organisateur d'un tour verrouillé : rouvre la modale en édition,
             mais poste sur l'action `correct` (régénère l'aval si le vainqueur change). %>
         <% if can_correct %>
-          <button type="button" class="tmatch-card__score-btn tmatch-card__score-btn--correct"
-                  data-action="tournament-score#open"
-                  data-tournament-score-url-param="<%= correct_tournament_tournament_match_path(match.tournament, match) %>"
-                  data-tournament-score-mode-param="<%= rules[:mode] %>"
-                  data-tournament-score-allow-draw-param="<%= rules[:allow_draw] %>"
-                  data-tournament-score-best-of-param="<%= rules[:best_of] %>"
-                  data-tournament-score-target-param="<%= rules[:target] %>"
-                  data-tournament-score-sets-param="<%= match.sets.to_json %>"
-                  data-tournament-score-name-a-param="<%= match.player_a.display_name %>"
-                  data-tournament-score-name-b-param="<%= match.player_b.display_name %>"
-                  data-tournament-score-editable-param="true">
-            Corriger
-          </button>
+          <%= score_modal_button match,
+                label: "Corriger",
+                editable: true,
+                url: correct_tournament_tournament_match_path(match.tournament, match),
+                css_class: "tmatch-card__score-btn tmatch-card__score-btn--correct" %>
         <% end %>
       </div>
     <% end %>

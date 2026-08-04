@@ -130,6 +130,10 @@ class Sport < ApplicationRecord
   #     target     : score à atteindre pour remporter un set (jeux au tennis, points ailleurs)
   #     win_by_two : faut-il 2 d'écart pour conclure un set (règle du ping-pong / badminton)
   #     cap        : plafond au-delà duquel 1 point d'écart suffit (tie-break) ; nil = pas de plafond
+  #     final_best_of : best_of RENFORCÉ en phase finale (tableau à élimination directe),
+  #       comme le veut le règlement du tennis de table : 3 sets gagnants en poule /
+  #       ronde suisse, 4 en phase finale. Absent = mêmes règles à toutes les phases.
+  #       Appliqué par TournamentMatch#scoring_rules, seul endroit qui connaît la phase.
   #   :score (sports collectifs) — un seul score final saisi :
   #     allow_draw : le nul est-il un résultat possible pour ce sport
   # Le fallback (sports sans configuration) reste jouable au meilleur des 3 sets.
@@ -137,7 +141,7 @@ class Sport < ApplicationRecord
     case slug
     when "tennis", "padel" then { mode: :sets, best_of: 3, target: 6,  win_by_two: true, cap: 7,   allow_draw: false }
     when "badminton"       then { mode: :sets, best_of: 3, target: 21, win_by_two: true, cap: 30,  allow_draw: false }
-    when "ping-pong"       then { mode: :sets, best_of: 5, target: 11, win_by_two: true, cap: nil, allow_draw: false }
+    when "ping-pong"       then { mode: :sets, best_of: 5, target: 11, win_by_two: true, cap: nil, allow_draw: false, final_best_of: 7 }
     when "volleyball"      then { mode: :sets, best_of: 5, target: 25, win_by_two: true, cap: nil, allow_draw: false }
     when "football", "handball" then { mode: :score, allow_draw: true }
     when "basketball"           then { mode: :score, allow_draw: false }

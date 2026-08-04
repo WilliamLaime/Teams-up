@@ -149,8 +149,57 @@ c'est de l'élimination directe d'emblée).
 - [x] Affichage : libellé "participants attendus" (au lieu de "joueurs") quand `max_players`
       vient d'une saisie Libre plutôt qu'un preset 8/16/32 (`Tournament#preset_capacity?`).
 
+### ✅ Refonte UI (post-Lot 6) — ruban de rondes, phases, tableau complet `[FAIT]`
+Détail par étape dans `tasks/todo.md` (phases A → E2). Livré : ruban horizontal de rondes
+(`_round_ribbon` / `_round_column`, qui **remplacent l'ancien `_swiss_round`**), sélecteur de
+phase round-robin ↔ tableau final (`tournament_phase_switch_controller.js`), panneau
+« Qualifiés / Éliminés » (`_qualification_panel`), structure complète du tableau final avec
+cases « À déterminer » (`_bracket_placeholder_cell`), vrai tirage au sort (`draw_order`),
+liens vers les profils, sélecteur de journée pour les longs championnats
+(`journee_selector_controller.js`). Phases D et E2 (connecteurs CSS) abandonnées après retour
+utilisateur. Reste ouvert : les vérifications visuelles navigateur (impossibles en CI).
+
+### ✅ Lot 7 — Rencontres planifiées par les joueurs, scoring par phase & structure réglable `[FAIT]`
+- [x] **Scoring dépendant de la phase** : `Sport#scoring_rules` accepte `final_best_of`
+      (ping-pong : 7 au lieu de 5). `TournamentMatch#scoring_rules` devient **public** et
+      applique ce durcissement quand `tournament_round.phase == "bracket"` → **3 sets gagnants
+      en poule / ronde suisse, 4 en phase finale**. `sets_to_win` et les validations en
+      héritent. Les vues passent par `match.scoring_rules` (jamais `sport.scoring_rules`).
+- [x] **Modale de score progressive** : les lignes de sets sont ajoutées **au fur et à mesure**
+      (`tournament_score_controller#refreshRows`) — 3 lignes au départ, une 4e apparaît à 2-1,
+      rien de plus dès qu'un joueur atteint le nombre de sets requis. Fini les 5 lignes vides.
+      Les 6 blocs de `data-*` recopiés dans `_tmatch`/`_tmatch_scoreline` sont remplacés par
+      le helper `score_modal_button`.
+- [x] **Rencontre planifiée par les JOUEURS** : `TournamentMatchPolicy#create_match?` (2 joueurs
+      + admin + co-organisateur, hors bye, une seule rencontre par confrontation). Le bouton
+      « Créer la rencontre » n'est plus réservé à l'organisateur ; les joueurs choisissent
+      **leur date et leur heure**. `Match` valide l'unicité de `tournament_match_id` (plus de
+      500 sur l'index unique quand les deux joueurs cliquent). Le local `can_manage` devenu
+      inutile a été retiré de la chaîne `_board` → `_round_ribbon` → `_round_column`.
+- [x] **Rattachement élargi** : le select « Tournoi » du formulaire de match liste les tournois
+      **où l'on est inscrit**, pas seulement ceux qu'on organise
+      (`MatchesController#linkable_tournaments_for_select`) + un select « Confrontation »
+      (`linkable_tournament_matches_map`). Le choisir recharge le formulaire prérempli par le
+      serveur (`?tournament_match_id=X`) : une seule règle de préremplissage, côté serveur.
+- [x] **Bannière du tournoi pilotée par le sport**, comme à la création d'un match
+      (`tournament-form#updateBanner`, persistée dans `banner_image`). Bug corrigé au passage
+      côté match : `updateBanner()` re-tirait une image au hasard à chaque `connect()`, donc
+      une simple édition changeait l'image — le tirage n'a plus lieu que si le sport change.
+- [x] **Plus d'heure de début sur un tournoi** : l'horaire se décide par rencontre. Le champ
+      a disparu du formulaire (la colonne `time` reste lue pour les tournois existants).
+- [x] **Structure personnalisable** (remplace l'aperçu figé et le `STRUCTURE_PRESETS`
+      provisoire du Lot 2) : 4 colonnes nullables `players_per_pool`, `bracket_size`,
+      `swiss_wins_to_qualify`, `swiss_losses_to_eliminate` — **vide = valeur recommandée**,
+      donc aucun changement pour les tournois existants. Lues par `Tournament#pool_size` /
+      `#final_size` / `#wins_to_qualify` / `#losses_to_eliminate`, seules sources de vérité des
+      moteurs. `#structure_summary` est désormais **calculé** (juste pour tout effectif, mode
+      Libre compris) et son miroir client vit dans `_structureText`. Réglages verrouillés une
+      fois le tournoi lancé (`STRUCTURAL_FIELDS`) ; `bracket_size` validé puissance de 2, et la
+      recommandation des poules est arrondie de même (3 poules → 6 qualifiés → tableau de 8).
+
 ### 🔜 (ex-Lot 5, reporté) — affinements
 - [ ] Winner / Loser Bracket (format e-sport) — voir « Formats envisagés » #4.
+- [ ] Gestion des co-organisateurs après création (ajout/retrait depuis `#edit`).
 
 ### 💡 Futurs
 - [ ] **Gamification** : badges, trophées, achievements (1er tournoi gagné, 500 pts, 10e set…).
@@ -163,13 +212,17 @@ c'est de l'élimination directe d'emblée).
 
 ## 📌 État courant
 
-**Lots 1 à 6 livrés.** Les 3 formats (`ronde_suisse`, `championnat`, `poules`) sont jouables de
+**Lots 1 à 7 livrés.** Les 3 formats (`ronde_suisse`, `championnat`, `poules`) sont jouables de
 bout en bout via la façade `TournamentEngine`. Un organisateur peut déclarer un **forfait**
 (exclusion du joueur, victoires par forfait) et **corriger un score verrouillé** (avec
 régénération cohérente de l'aval). Depuis le Lot 6, l'organisateur **et le co-organisateur**
 peuvent aussi **éditer le tournoi**, **clôturer/rouvrir les inscriptions** et **terminer
-manuellement** un tournoi. Prochain chantier envisagé : Winner/Loser Bracket, puis les
-« Futurs » ci-dessous (gamification, calendrier, Slack…).
+manuellement** un tournoi. Depuis le Lot 7, **les joueurs planifient eux-mêmes leur rencontre**
+(date et heure de leur choix) depuis leur carte de poule, le **scoring dépend de la phase**
+(ping-pong : 3 sets gagnants en poule, 4 en phase finale) et l'organisateur **personnalise la
+structure** de son tournoi (taille des poules, seuils de la ronde suisse, taille du tableau
+final) avec des valeurs recommandées par défaut. Prochain chantier envisagé : Winner/Loser
+Bracket, puis les « Futurs » ci-dessous (gamification, calendrier, Slack…).
 
 <details><summary>Historique Lots 1 à 4</summary>
 
@@ -189,13 +242,23 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
 - `tournament_matches` : player_a/player_b/winner (→ `tournament_users`), is_bye, position,
   status, **`sets` (jsonb, `[[a, b], …]`)**, **`forfeit` + `retired_player_id`** (Lot 5) ;
   index unique `[tournament_round_id, position]`.
-- `tournament_users` (+ colonnes) : wins, losses, seed, state
+- `tournament_users` (+ colonnes) : wins, **draws**, losses, seed, state
   (`active`/`qualified`/`eliminated`/**`withdrawn`**), `sets_won/sets_lost`, `points_won/points_lost`,
-  **`pool`** (Lot 5, index `[tournament_id, pool]`).
+  **`pool`** (Lot 5, index `[tournament_id, pool]`), **`draw_order`** (tirage au sort figé au lancement).
 - `matches` (couplage) : **`tournament_id`** (rattachement lâche) + **`tournament_match_id`**
   (lien 1↔1, index unique).
 
 </details>
+
+### Modèle de données — compléments (Lots 6 & 7)
+- `tournaments` : **`playoffs`** (Lot 6, booléen — n'a de sens que pour le championnat,
+  cf. `Tournament#bracket_expected?`), **`banner_image`** (image suivie du sport, Lot 7).
+- `tournaments` — réglages de structure (Lot 7, **tous nullables : `nil` = recommandé**) :
+  **`players_per_pool`**, **`bracket_size`**, **`swiss_wins_to_qualify`**,
+  **`swiss_losses_to_eliminate`**. Ne jamais les lire directement dans un moteur : passer par
+  `Tournament#pool_size` / `#final_size` / `#wins_to_qualify` / `#losses_to_eliminate`, qui
+  appliquent le fallback (les noms de colonnes diffèrent volontairement de ceux des méthodes
+  pour qu'aucune méthode ne masque un attribut ActiveRecord).
 
 ### Décisions actées
 - **Statuts** (`tournaments.status`) : `open` / `closed` / `in_progress` / `completed`
@@ -209,9 +272,10 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
 - **Co-organisateur** (tranché Lot 2) : **pas de nouvelle colonne** — rôle `co_organisateur`
   dans `tournament_users` (n'occupe pas de place de joueur). Droits fins sur la gestion du
   tableau : à câbler au Lot 3 via `Tournament#organizer?`.
-- **Nombre de joueurs** : presets 8/16/32 **+ mode Libre** (nombre arbitraire). Structures
-  figées (`Tournament::STRUCTURE_PRESETS`) et propositions du mode Libre **provisoires** —
-  affichées en aperçu lecture seule, à affiner au Lot 3.
+- **Nombre de joueurs** : presets 8/16/32 **+ mode Libre** (nombre arbitraire). Depuis le Lot 7,
+  la structure qui en découle n'est plus un aperçu figé en lecture seule : elle est **calculée**
+  (`Tournament#structure_summary`) et chacun de ses critères est **personnalisable** par
+  l'organisateur, avec la valeur recommandée en placeholder.
 - **Formats par sport** : `Sport#available_tournament_formats` (raquette → RS/Poules ;
   collectif → Championnat/Poules).
 

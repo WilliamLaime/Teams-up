@@ -22,7 +22,7 @@
         <div class="bracket__matches">
           <% if round %>
             <% round.tournament_matches.order(:position).each do |match| %>
-              <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+              <%= render "tournaments/tmatch", match: match %>
             <% end %>
           <% else %>
             <% (tournament.final_size / (2**(index + 1))).times do %>

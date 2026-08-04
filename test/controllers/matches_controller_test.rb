@@ -467,6 +467,81 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_select "p", text: /Score du tournoi : #{Regexp.escape(tmatch.score_summary)}/
   end
 
+  # ── Planification par les JOUEURS (Lot 7) ───────────────────────────────────
+  # Un tournoi organisé par @other_user, où @user n'est qu'un joueur inscrit.
+  def build_tournament_match_as_player
+    tournament = Tournament.create!(name: "Tournoi joueur", sport: @sport, user: @other_user,
+                                    format: "poules", status: "in_progress", max_players: 8,
+                                    date: Date.tomorrow, place: "Gymnase test")
+    opponent = create_test_user(email: "opp-#{SecureRandom.hex(3)}@example.com")
+    a = tournament.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+    b = tournament.tournament_users.create!(user: opponent, role: "joueur", status: "approved")
+    round = tournament.tournament_rounds.create!(phase: "pool", number: 1, status: "in_progress")
+    [tournament, round.tournament_matches.create!(player_a: a, player_b: b, position: 0)]
+  end
+
+  test "un JOUEUR (non organisateur) peut préremplir la rencontre de sa confrontation" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_as_player
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    # Lieu et date du tournoi repris ; le titre nomme les deux adversaires.
+    assert_match(/value="Gymnase test"/, response.body)
+    assert_match(/value="#{tournament.date}"/, response.body)
+    assert_match(/#{Regexp.escape(tmatch.player_b.display_name)}/, response.body)
+    # Le tournoi apparaît dans le select : on y est inscrit, sans l'organiser.
+    assert_match(/Tournoi joueur/, response.body)
+
+    # Select « Confrontation » alimenté et présélectionné sur la carte visée.
+    assert_select "select[name='match[tournament_match_id]']" do
+      assert_select "option[selected][value=?]", tmatch.id.to_s
+    end
+  end
+
+  test "un JOUEUR peut créer la rencontre de sa confrontation" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_as_player
+
+    assert_difference "Match.count", 1 do
+      post matches_path, params: { match: {
+        title: "Ma rencontre de poule", date: Date.tomorrow,
+        'time(4i)': "20", 'time(5i)': "30", # créneau choisi par les joueurs eux-mêmes
+        players_needed: 2, level: "Tout niveau", visibility: "public",
+        validation_mode: "automatic", genre_restriction: "tous",
+        sport_id: @sport.id, tournament_id: tournament.id, tournament_match_id: tmatch.id
+      } }
+    end
+
+    match = Match.last
+    assert_equal tmatch.id, match.tournament_match_id
+    assert_equal tournament.id, match.tournament_id
+    assert_equal 20, match.time.hour, "l'heure choisie par le joueur est conservée"
+    assert_includes match.match_users.map(&:user_id), tmatch.player_b.user_id
+  end
+
+  test "une confrontation déjà rattachée ne peut pas recevoir une 2e rencontre" do
+    _tournament, tmatch = build_tournament_match_as_player
+    Match.create!(title: "Déjà planifiée", date: Date.tomorrow, time: "18:00", end_time: "19:00",
+                  players_needed: 2, level: "Tout niveau", visibility: "public",
+                  validation_mode: "automatic", genre_restriction: "tous",
+                  user: tmatch.player_b.user, sport: @sport, tournament_match: tmatch)
+
+    sign_in @user
+    post matches_path, params: { match: {
+      title: "Doublon", date: Date.tomorrow,
+      'time(4i)': "18", 'time(5i)': "00",
+      players_needed: 2, level: "Tout niveau", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous",
+      sport_id: @sport.id, tournament_match_id: tmatch.id
+    } }
+
+    # Le lien est effacé par sanitize_tournament_link : la rencontre reste créée,
+    # mais indépendante (pas de 500 sur l'index unique).
+    assert_nil Match.last.tournament_match_id
+  end
+
   test "POST /matches ignore le rattachement à un tournoi qu'on n'organise pas" do
     tournament, tmatch = build_tournament_match(owner: @other_user)
     sign_in @user # @user n'organise pas ce tournoi

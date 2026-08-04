@@ -6,12 +6,10 @@
 //   • boutons de format générés dynamiquement selon le sport
 //   • nombre de joueurs : presets 8/16/32 OU mode "Libre" (saisie d'un
 //     nombre souhaité → 1 config recommandée + propositions alternatives)
-//   • aperçu en lecture seule de la structure figée (format + nb joueurs)
+//   • réglages de structure PERSONNALISABLES (Lot 7) : taille des poules, seuils
+//     de la ronde suisse, taille du tableau final — vides = valeurs recommandées
+//   • aperçu de la structure, recalculé en direct depuis ces réglages
 //   • toggle d'auto-inscription du créateur
-//
-// La logique de structure / propositions est PROVISOIRE : elle ne sert
-// ici qu'à guider l'organisateur. La génération réelle des tableaux
-// arrivera au Lot 3 (cf. docs/TOURNOI.md).
 // ══════════════════════════════════════════════════════════════
 
 import { Controller } from "@hotwired/stimulus"
@@ -23,6 +21,15 @@ const FORMAT_LABELS = {
   championnat:  "Championnat"
 }
 
+// Valeurs recommandées — MIROIR des défauts du modèle : Tournament::DEFAULT_POOL_SIZE
+// et TournamentUser::WINS_TO_QUALIFY / LOSSES_TO_ELIMINATE. Toute évolution doit être
+// répercutée ici (l'aperçu doit annoncer ce que le serveur appliquera réellement).
+const DEFAULTS = { poolSize: 4, wins: 3, losses: 3 }
+
+// Nom du tour d'entrée d'un tableau final selon sa taille (miroir de
+// Tournament::BRACKET_STAGE_NAMES).
+const BRACKET_STAGE_NAMES = { 2: "finale", 4: "demi-finales", 8: "quarts", 16: "huitièmes" }
+
 export default class extends Controller {
   static targets = [
     // Sources
@@ -30,17 +37,19 @@ export default class extends Controller {
     "nameInput", "descriptionInput", "placeInput", "dateInput",
     "maxPlayersInput", "presetsGroup", "countBtn", "libreBtn", "libreSection", "libreInput",
     "proposals", "structurePreview", "structureText", "selfRegister", "coOrgInput",
-    "playoffsWrapper", "playoffsInput", "playoffsBtn",
+    "playoffsWrapper", "playoffsInput", "playoffsBtn", "bannerImageInput",
+    // Réglages de structure personnalisables (Lot 7)
+    "advancedSection", "advancedToggle", "advancedFields",
+    "poolSizeField", "poolSizeInput", "winsField", "winsInput",
+    "lossesField", "lossesInput", "bracketSizeField", "bracketSizeInput",
     // Récapitulatif
     "recapName", "recapDescription", "recapSport", "recapFormat", "recapFormatRow",
-    "recapDate", "recapTime", "recapPlace", "recapPlayers",
+    "recapDate", "recapPlace", "recapPlayers",
     "recapStructure", "recapStructureRow", "recapSelfRegister", "recapDeadline", "recapCoOrg",
     "recapPlayoffsRow", "recapPlayoffs"
   ]
 
   connect() {
-    // Structures figées passées en data-attribute (JSON Tournament::STRUCTURE_PRESETS).
-    this.structures = JSON.parse(this.sportInputTarget.dataset.structures || "{}")
     // Vrai quand l'utilisateur est en saisie "Libre" (nombre arbitraire).
     this.libreMode = false
     // Vrai quand le mode Libre a été forcé par le format championnat (pas un choix
@@ -50,9 +59,8 @@ export default class extends Controller {
     // Initialise le récap avec les valeurs déjà présentes (sport par défaut, etc.).
     this.updateName()
     this.updateDescription()
-    this.updateSport()   // rend les boutons de format + applique le 1er format
+    this.updateSport()   // rend les boutons de format + applique le 1er format (+ bannière)
     this.updateDate()
-    this.updateTime()
     this.updatePlace()
   }
 
@@ -80,6 +88,38 @@ export default class extends Controller {
     } else {
       this.formatWrapperTarget.style.display  = "none"
       this.recapFormatRowTarget.style.display = "none"
+    }
+
+    this.updateBanner()
+  }
+
+  // ── Bannière : le fond de la page suit le sport sélectionné ──
+  // Même mécanique que match-form : une image tirée parmi celles du sport, écrite
+  // dans le hidden banner_image pour être persistée (la carte du tournoi et sa page
+  // afficheront ensuite exactement cette image, cf. sport_cover_image).
+  //
+  // ⚠️  Le tirage n'a lieu que si le sport a changé (ou si aucune image n'est encore
+  // retenue) : connect() appelle updateSport(), donc sans cette garde une simple
+  // édition du tournoi changerait son image à chaque enregistrement.
+  updateBanner() {
+    const select    = this.sportInputTarget
+    const imagesMap = JSON.parse(select.dataset.images || "{}")
+    const images    = imagesMap[select.value] || []
+    const current   = this.bannerImageInputTarget.value
+
+    if (!images.length) return
+
+    const image = current && images.includes(current)
+      ? current
+      : images[Math.floor(Math.random() * images.length)]
+
+    this.bannerImageInputTarget.value = image
+
+    // Bannière présente sur /tournois/new et /tournois/:id/edit — absente ailleurs.
+    const bannerEl = document.getElementById("tournament-new-banner")
+    if (bannerEl) {
+      // Gradient sombre par-dessus l'image : garde le titre lisible.
+      bannerEl.style.background = `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('${image}') center 25% / cover no-repeat`
     }
   }
 
@@ -152,6 +192,9 @@ export default class extends Controller {
       btn.classList.toggle("active", active)
       this._styleFormatBtn(btn, active)
     })
+    // Avec ou sans playoffs, la structure annoncée change (et le réglage de taille
+    // du tableau final n'a plus lieu d'être sans playoffs).
+    this._refreshStructure()
   }
 
   // ── Championnat : pas de nombre de joueurs prédéfini ─────────
@@ -243,10 +286,10 @@ export default class extends Controller {
     this.recapPlayersTarget.textContent = wanted
 
     if (format === "championnat") {
-      // Round-robin : aucune contrainte de puissance de 2, donc aucun choix à
-      // faire — ni carte "Recommandé", ni aperçu de structure : juste le champ.
-      this.structurePreviewTarget.style.display = "none"
-      this.recapStructureRowTarget.style.display = "none"
+      // Round-robin : aucune contrainte de puissance de 2, donc aucune carte de
+      // proposition à choisir — mais l'aperçu de structure reste utile (nombre de
+      // journées, playoffs ou pas, taille du tableau final si personnalisée).
+      this._showStructure(this._structureText(format, wanted))
       return
     }
 
@@ -281,37 +324,134 @@ export default class extends Controller {
     this._showStructure(btn.dataset.recap)
   }
 
-  // Génère les propositions (LOGIQUE PROVISOIRE — affinée au Lot 3).
+  // Génère les propositions d'effectif pour le mode Libre. Le récap de chaque carte
+  // est calculé par _structureText : il reflète donc les réglages personnalisés.
   // Championnat exclu : géré à part dans buildProposals() (pas de carte, aperçu direct).
   _buildProposals(format, wanted) {
     const out = []
-    const push = (players, recap, recommended = false) => {
-      if (players >= 2 && !out.some(p => p.players === players)) out.push({ players, recap, recommended })
+    const push = (players, recommended = false) => {
+      if (players >= 2 && !out.some(p => p.players === players)) {
+        out.push({ players, recap: this._structureText(format, players), recommended })
+      }
     }
 
     if (format === "poules") {
-      const nearest = Math.max(4, Math.round(wanted / 4) * 4)
-      push(nearest, `${nearest / 4} poules de 4 + tableau final`, true)
-      push(16, "4 poules de 4 + quarts")
-      push(32, "8 poules de 4 + huitièmes")
-    } else { // ronde_suisse — Final 4 jusqu'à 8 joueurs, Final 8 au-delà (cf. Tournament#final_size).
-      push(wanted, `Ronde suisse (3 V) → ${wanted <= 8 ? "Final 4" : "Final 8"}`, true)
-      push(16, "Ronde suisse (3 V) → Final 8")
-      push(32, "Ronde suisse (3 V) → Final 8")
+      // Effectif le plus proche qui remplit des poules entières.
+      const { poolSize } = this._settings()
+      push(Math.max(poolSize, Math.round(wanted / poolSize) * poolSize), true)
+    } else {
+      push(wanted, true)
     }
+    push(16)
+    push(32)
     return out.slice(0, 4)
   }
 
-  // ── Aperçu de structure figée (presets) ──────────────────────
+  // ══════════════════════════════════════════════════════════
+  // Réglages de structure personnalisables (Lot 7)
+  // ══════════════════════════════════════════════════════════
+  toggleAdvanced() {
+    const fields = this.advancedFieldsTarget
+    const open = fields.hidden
+    fields.hidden = !open
+    this.advancedToggleTarget.setAttribute("aria-expanded", String(open))
+  }
+
+  // Action des champs de réglage : l'aperçu de structure suit la saisie.
+  refreshStructure() {
+    this._refreshStructure()
+  }
+
+  // Réglages actuellement saisis, complétés par les valeurs recommandées.
+  // bracketSize reste null si vide : sa recommandation dépend du format/effectif.
+  _settings() {
+    const int = (target) => {
+      const value = parseInt(target.value)
+      return Number.isFinite(value) && value > 0 ? value : null
+    }
+
+    return {
+      poolSize:    int(this.poolSizeInputTarget) || DEFAULTS.poolSize,
+      wins:        int(this.winsInputTarget)     || DEFAULTS.wins,
+      losses:      int(this.lossesInputTarget)   || DEFAULTS.losses,
+      bracketSize: int(this.bracketSizeInputTarget)
+    }
+  }
+
+  // Miroirs de Tournament#planned_pool_count / #planned_final_size / #planned_bracket_stage.
+  _poolCount(players, poolSize) { return Math.max(Math.ceil(players / poolSize), 1) }
+
+  _finalSize(format, players, settings) {
+    if (settings.bracketSize) return settings.bracketSize
+    // Poules : 2 qualifiés par poule, arrondis à la puissance de 2 supérieure —
+    // un tableau à élimination directe n'a que 2, 4, 8, 16… places (miroir de
+    // Tournament#bracket_capacity_for).
+    if (format === "poules") {
+      const qualified = this._poolCount(players, settings.poolSize) * 2
+      let size = 2
+      while (size < qualified) size *= 2
+      return size
+    }
+
+    return players <= 8 ? 4 : 8
+  }
+
+  _stageName(size) { return BRACKET_STAGE_NAMES[size] || `tableau à ${size}` }
+
+  // Miroir de Tournament#structure_summary : ce que le serveur produira réellement.
+  _structureText(format, players) {
+    const settings = this._settings()
+    const stage = this._stageName(this._finalSize(format, players, settings))
+
+    if (format === "poules") {
+      return `${this._poolCount(players, settings.poolSize)} poules de ${settings.poolSize} + ${stage}`
+    }
+    if (format === "ronde_suisse") {
+      return `Ronde suisse (${settings.wins} V / ${settings.losses} D) + ${stage}`
+    }
+
+    const base = `${players} joueurs, ${players - 1} journées`
+    return this._withPlayoffs()
+      ? `${base}, top ${this._finalSize(format, players, settings)} en playoffs`
+      : `${base}, vainqueur = 1er du classement`
+  }
+
+  _withPlayoffs() { return this.playoffsInputTarget.value !== "false" }
+
+  // Affiche les seuls réglages pertinents pour le format, avec la valeur
+  // recommandée en placeholder. Le bloc n'apparaît qu'une fois l'effectif choisi :
+  // sans lui, aucune recommandation n'est calculable.
+  _syncAdvanced(format, players) {
+    const ready = Boolean(format) && Number.isFinite(players) && players >= 2
+    this.advancedSectionTarget.style.display = ready ? "" : "none"
+    if (!ready) return
+
+    const isPools = format === "poules"
+    const isSwiss = format === "ronde_suisse"
+    // Championnat sans playoffs : pas de tableau final, donc rien à dimensionner
+    // (cf. Tournament#bracket_expected?).
+    const hasBracket = format !== "championnat" || this._withPlayoffs()
+
+    this.poolSizeFieldTarget.style.display    = isPools ? "" : "none"
+    this.winsFieldTarget.style.display        = isSwiss ? "" : "none"
+    this.lossesFieldTarget.style.display      = isSwiss ? "" : "none"
+    this.bracketSizeFieldTarget.style.display = hasBracket ? "" : "none"
+
+    this.poolSizeInputTarget.placeholder = `Recommandé : ${DEFAULTS.poolSize}`
+    this.winsInputTarget.placeholder     = `Recommandé : ${DEFAULTS.wins}`
+    this.lossesInputTarget.placeholder   = `Recommandé : ${DEFAULTS.losses}`
+  }
+
+  // ── Aperçu de structure ──────────────────────────────────────
   _refreshStructure() {
+    const format  = this.formatInputTarget.value
+    const players = parseInt(this.maxPlayersInputTarget.value)
+    this._syncAdvanced(format, players)
+
     if (this.libreMode) { this.buildProposals(); return }
 
-    const fmt     = this.formatInputTarget.value
-    const players = parseInt(this.maxPlayersInputTarget.value)
-    const preset  = (this.structures[fmt] || {})[players]
-
-    if (preset) {
-      this._showStructure(preset)
+    if (format && Number.isFinite(players) && players >= 2) {
+      this._showStructure(this._structureText(format, players))
     } else {
       this.structurePreviewTarget.style.display = "none"
       this.recapStructureRowTarget.style.display = "none"
@@ -360,12 +500,6 @@ export default class extends Controller {
     const d = new Date(iso)
     this.recapDateTarget.textContent = isNaN(d) ? iso
       : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
-  }
-
-  updateTime() {
-    const h = this.element.querySelector("[name='tournament[time(4i)]']")?.value
-    const m = this.element.querySelector("[name='tournament[time(5i)]']")?.value
-    this.recapTimeTarget.textContent = (h ? `${String(h).padStart(2, "0")}h${String(m || 0).padStart(2, "0")}` : "—")
   }
 
   updateDeadline() {

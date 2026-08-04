@@ -9,8 +9,8 @@
 
 <div class="match-create-page">
 
-  <%# Bannière d'en-tête %>
-  <div class="match-new-banner">
+  <%# Bannière d'en-tête (fond piloté par le sport, cf. tournament-form#updateBanner) %>
+  <div class="match-new-banner" id="tournament-new-banner">
     <div class="container">
       <%= render "shared/nav_button", url: tournament_path(@tournament), label: "Retour au tournoi", direction: "back", extra_class: "mb-3" %>
 

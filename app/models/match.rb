@@ -197,6 +197,12 @@ class Match < ApplicationRecord
   # Validation : l'heure de fin ne peut pas être identique à l'heure de début
   validate :end_time_differs_from_start, on: %i[create update]
 
+  # Une confrontation de tournoi n'a qu'UNE rencontre (index unique en base).
+  # Depuis le Lot 7, les deux joueurs peuvent la créer : sans cette validation, le
+  # second à valider le formulaire déclencherait une RecordNotUnique (erreur 500)
+  # au lieu d'un message lisible.
+  validates :tournament_match_id, uniqueness: { message: "a déjà une rencontre planifiée" }, allow_nil: true
+
   # Validation : le lien de réservation doit être une URL valide si renseigné
   validates :booking_link, format: {
     with: URI::DEFAULT_PARSER.make_regexp(%w[http https]),

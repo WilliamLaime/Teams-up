@@ -55,15 +55,49 @@ module TournamentsHelper
   # suisse (façon Lolesports) — matérialise le bilan du groupe EN ENTRANT dans ce
   # tour (cf. Tournament#swiss_entering_records) : carrés verts = victoires, rouges
   # = défaites, gris = cases restantes avant qualification/élimination. Complétées
-  # à un total fixe (2 victoires max + 2 défaites max avant que le groupe soit
-  # qualifié/éliminé, cf. TournamentUser::WINS_TO_QUALIFY/LOSSES_TO_ELIMINATE)
-  # pour que toutes les pastilles d'une même ronde aient la même largeur.
-  SCORE_BRACKET_PIP_SLOTS = (TournamentUser::WINS_TO_QUALIFY - 1) + (TournamentUser::LOSSES_TO_ELIMINATE - 1)
-
-  def score_bracket_pips(wins, losses)
+  # à un total fixe pour que toutes les pastilles d'une même ronde aient la même
+  # largeur : le nombre de cases dépend des seuils DU TOURNOI (personnalisables
+  # depuis le Lot 7), un joueur ne pouvant entrer dans un tour qu'avec au plus
+  # (seuil - 1) victoires et (seuil - 1) défaites.
+  def score_bracket_pips(wins, losses, tournament)
+    slots = (tournament.wins_to_qualify - 1) + (tournament.losses_to_eliminate - 1)
     pips = (["win"] * wins) + (["loss"] * losses)
-    pips += ["pending"] * (SCORE_BRACKET_PIP_SLOTS - pips.size) if pips.size < SCORE_BRACKET_PIP_SLOTS
+    pips += ["pending"] * (slots - pips.size) if pips.size < slots
     safe_join(pips.map { |kind| content_tag(:span, "", class: "score-bracket__pip score-bracket__pip--#{kind}") })
+  end
+
+  # ── Modale de score ───────────────────────────────────────────────────────────
+  # Bouton d'ouverture de la modale de score partagée (contrôleur Stimulus
+  # tournament-score). Les 3 usages — « Saisir/Modifier », « Détail » (lecture
+  # seule) et « Corriger » (poste sur l'action correct) — ne diffèrent que par le
+  # libellé, la classe, l'URL de soumission et le flag `editable` : tout le reste
+  # (règles du sport, sets déjà saisis, noms des joueurs) est identique, d'où ce
+  # helper unique plutôt que 6 blocs de data-* recopiés dans _tmatch et
+  # _tmatch_scoreline.
+  #
+  # IMPORTANT : les règles viennent de `match.scoring_rules` (et NON de
+  # `match.tournament.sport.scoring_rules`), seule source qui tient compte de la
+  # phase — au ping-pong, 3 sets gagnants en poule mais 4 en phase finale.
+  def score_modal_button(match, label:, editable:, url: nil, css_class: "tmatch-card__score-btn")
+    rules = match.scoring_rules
+
+    button_tag type: "button", class: css_class, data: {
+      action: "tournament-score#open",
+      tournament_score_url_param: url,
+      tournament_score_mode_param: rules[:mode],
+      tournament_score_allow_draw_param: rules[:allow_draw],
+      tournament_score_best_of_param: rules[:best_of],
+      tournament_score_sets_to_win_param: match.sets_to_win,
+      tournament_score_target_param: rules[:target],
+      tournament_score_win_by_two_param: rules[:win_by_two],
+      tournament_score_cap_param: rules[:cap],
+      tournament_score_sets_param: match.sets.to_json,
+      tournament_score_name_a_param: match.player_a.display_name,
+      tournament_score_name_b_param: match.player_b.display_name,
+      tournament_score_editable_param: editable
+    }.compact do # compact : `cap: nil` (pas de plafond) ne doit pas devenir la chaîne ""
+      label
+    end
   end
 
   # Message affiché dans l'état vide de la page liste, selon l'onglet actif

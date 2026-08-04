@@ -80,6 +80,19 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form"
     assert_select ".match-form-section", 4 # 4 sections numérotées
+
+    # Bannière pilotée par le sport (Lot 7) : la cible du JS et le champ persisté.
+    assert_select "#tournament-new-banner"
+    assert_select "input[name='tournament[banner_image]']"
+    assert_select "input[data-tournament-form-target='sportInput'][data-images]"
+
+    # Réglages de structure personnalisables + plus aucun champ heure de début.
+    assert_select ".tournament-advanced"
+    assert_select "input[name='tournament[players_per_pool]']"
+    assert_select "select[name='tournament[bracket_size]']"
+    assert_select "input[name='tournament[swiss_wins_to_qualify]']"
+    assert_select "input[name='tournament[swiss_losses_to_eliminate]']"
+    assert_select "input[name='tournament[time(4i)]']", 0
   end
 
   test "GET /tournois/new redirige un visiteur non connecté" do
@@ -105,6 +118,58 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "open", t.status
     assert_equal 0, t.approved_players_count # pas inscrit comme joueur par défaut
     assert_redirected_to tournament_path(t)
+  end
+
+  # ─── Bannière + réglages de structure (Lot 7) ───────────────────────────────
+  test "POST /tournois persiste la bannière choisie et les réglages de structure" do
+    sign_in @user
+    banner = "https://res.cloudinary.com/test/image/upload/pingpong.png"
+
+    post tournaments_path, params: {
+      tournament: {
+        name: "Open réglé", sport_id: @sport.id, format: "poules",
+        max_players: 16, date: Date.tomorrow.to_s, place: "Club Test",
+        banner_image: banner, players_per_pool: 8, bracket_size: 4
+      }
+    }
+
+    t = Tournament.last
+    assert_equal banner, t.banner_image, "l'image suivie du sport est enregistrée"
+    assert_equal 8, t.pool_size
+    assert_equal 4, t.final_size
+    assert_equal "2 poules de 8 + demi-finales", t.structure_summary
+  end
+
+  test "POST /tournois : un réglage vide retombe sur la recommandation" do
+    sign_in @user
+
+    post tournaments_path, params: {
+      tournament: {
+        name: "Open auto", sport_id: @sport.id, format: "poules",
+        max_players: 16, date: Date.tomorrow.to_s, place: "Club Test",
+        players_per_pool: "", bracket_size: ""
+      }
+    }
+
+    t = Tournament.last
+    assert_nil t.players_per_pool
+    assert_equal Tournament::DEFAULT_POOL_SIZE, t.pool_size
+    assert_equal "4 poules de 4 + quarts", t.structure_summary
+  end
+
+  test "POST /tournois refuse un tableau final qui n'est pas une puissance de 2" do
+    sign_in @user
+
+    assert_no_difference "Tournament.count" do
+      post tournaments_path, params: {
+        tournament: {
+          name: "Open cassé", sport_id: @sport.id, format: "poules",
+          max_players: 16, date: Date.tomorrow.to_s, place: "Club Test",
+          bracket_size: 6
+        }
+      }
+    end
+    assert_response :unprocessable_entity
   end
 
   # ─── Co-organisateur + auto-inscription ─────────────────────────────────────
