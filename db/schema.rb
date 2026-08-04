@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_29_163829) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_04_112657) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -484,6 +484,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_29_163829) do
 
   create_table "tournaments", force: :cascade do |t|
     t.string "banner_image"
+    t.integer "bracket_size"
     t.datetime "created_at", null: false
     t.date "date"
     t.text "description"
@@ -491,11 +492,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_29_163829) do
     t.integer "max_players"
     t.string "name", null: false
     t.string "place"
+    t.integer "players_per_pool"
     t.boolean "playoffs", default: true, null: false
     t.datetime "registration_deadline"
     t.string "slug", null: false
     t.bigint "sport_id"
     t.string "status", default: "open", null: false
+    t.integer "swiss_losses_to_eliminate"
+    t.integer "swiss_wins_to_qualify"
     t.time "time"
     t.datetime "updated_at", null: false
     t.bigint "user_id"

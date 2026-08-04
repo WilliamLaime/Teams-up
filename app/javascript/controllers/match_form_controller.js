@@ -68,7 +68,12 @@ export default class extends Controller {
     "formCol",           // Colonne gauche (col-lg-7) — sert à mesurer son bas pour l'alignement
 
     // ── Boutons de niveau dynamiques (générés par JS selon le sport) ──
-    "levelButtons"       // Div recevant les boutons de niveau générés dynamiquement
+    "levelButtons",      // Div recevant les boutons de niveau générés dynamiquement
+
+    // ── Rattachement à un tournoi (Lot 7) ─────────────────
+    "tournamentInput",         // Select tournoi : porte la map JSON des confrontations
+    "tournamentMatchWrapper",  // Div du select Confrontation (masqué si aucune)
+    "tournamentMatchInput"     // Select Confrontation : son choix préremplit le formulaire
   ]
 
   // ── connect() : appelé automatiquement au chargement de la page ──
@@ -137,31 +142,83 @@ export default class extends Controller {
   // ── Banner : change le fond de .match-new-banner selon le sport ──
   // Choisit une image aléatoire dans le tableau du sport sélectionné.
   // Si aucun sport n'est sélectionné (ou sport inconnu), utilise l'image multisport.
-  // Met à jour l'élément #match-new-banner (dans new.html.erb) + le champ caché
+  // Met à jour l'élément #match-new-banner (dans new.html.erb) + le champ caché.
+  //
+  // ⚠️  Ne retire une image au hasard QUE si le sport a changé (ou si aucune image
+  // n'est encore choisie). connect() appelle updateSport() → updateBanner() : sans
+  // cette garde, ouvrir un match en édition et l'enregistrer sans rien toucher
+  // remplaçait silencieusement son image par une autre du même sport.
   updateBanner() {
     const select    = this.sportInputTarget
     const sportId   = select.value
+    const current   = this.bannerImageInputTarget.value
     // Récupère la map { sportId => [url1, url2, ...] } passée en data-images
     const imagesMap = JSON.parse(select.dataset.images || "{}")
     const images    = imagesMap[sportId] || []
+
+    // Image déjà choisie et toujours cohérente avec le sport sélectionné → on la garde.
+    const keepCurrent = current && images.includes(current)
 
     // Fallback multisport : utilisé quand aucun sport n'est sélectionné ou inconnu dans la map
     const MULTISPORT_IMG = "https://res.cloudinary.com/dfw8rlluc/image/upload/v1775061666/sports/misc/multisports-img.png"
 
     // Choisit une image au hasard dans le tableau du sport, ou l'image multisport par défaut
-    const randomImg = images.length > 0
-      ? images[Math.floor(Math.random() * images.length)]
-      : MULTISPORT_IMG
+    const image = keepCurrent
+      ? current
+      : (images.length > 0 ? images[Math.floor(Math.random() * images.length)] : MULTISPORT_IMG)
 
     // Met à jour le champ caché (sera sauvegardé en BDD à la soumission)
-    this.bannerImageInputTarget.value = randomImg
+    this.bannerImageInputTarget.value = image
 
     // Met à jour le fond de la banner dans new.html.erb (absent en edit → ok si null)
     const bannerEl = document.getElementById("match-new-banner")
     if (bannerEl) {
       // Garde le gradient sombre par-dessus l'image pour la lisibilité
-      bannerEl.style.background = `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('${randomImg}') center 25% / cover no-repeat`
+      bannerEl.style.background = `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url('${image}') center 25% / cover no-repeat`
     }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // Rattachement à un tournoi (Lot 7)
+  // ══════════════════════════════════════════════════════════
+  // Choisir un tournoi remplit le select « Confrontation » avec les rencontres
+  // que l'utilisateur peut planifier dans ce tournoi (les siennes, ou toutes s'il
+  // l'organise — la liste vient du serveur, cf. linkable_tournament_matches_map).
+  updateTournament() {
+    if (!this.hasTournamentMatchInputTarget) return
+
+    const map = JSON.parse(this.tournamentInputTarget.dataset.tournamentMatches || "{}")
+    const confrontations = map[this.tournamentInputTarget.value] || []
+    const select = this.tournamentMatchInputTarget
+
+    select.innerHTML = '<option value="">Aucune (rencontre libre)</option>'
+    confrontations.forEach((c) => {
+      const option = document.createElement("option")
+      option.value = c.id
+      option.textContent = c.label
+      select.appendChild(option)
+    })
+
+    this.tournamentMatchWrapperTarget.style.display = confrontations.length ? "" : "none"
+  }
+
+  // Choisir une confrontation recharge le formulaire prérempli PAR LE SERVEUR
+  // (?tournament_match_id=X → MatchesController#prefill_from_tournament_match).
+  // On ne duplique donc pas la dizaine de champs concernés en JS : sport (qui
+  // regénère niveaux et formats), titre avec l'adversaire, lieu + venue_id, date
+  // via le date-picker custom, bannière… une seule règle de préremplissage, côté
+  // serveur, qui reste par ailleurs l'autorité sur le droit de rattachement.
+  // Ce select est tout en haut du formulaire : on recharge avant que l'utilisateur
+  // n'ait saisi quoi que ce soit d'autre.
+  applyTournamentMatch() {
+    const id = this.tournamentMatchInputTarget.value
+    // Repart de new_match_path fourni par la vue, PAS de l'URL courante : après un
+    // échec de validation, le formulaire est ré-affiché sous l'URL POST /matches —
+    // y ajouter un paramètre enverrait vers la liste des matchs.
+    const url = new URL(this.tournamentInputTarget.dataset.newMatchPath, window.location.origin)
+
+    if (id) url.searchParams.set("tournament_match_id", id)
+    Turbo.visit(url.toString(), { action: "replace" })
   }
 
   // ── Sport : affiche les boutons de format + met à jour le récap ──

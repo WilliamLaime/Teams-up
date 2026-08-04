@@ -12,8 +12,12 @@
   # Maps JSON passées au contrôleur Stimulus :
   #   - nom lisible du sport (emoji + nom) pour le récap
   #   - formats de TOURNOI compatibles par sport (adapte les boutons de format)
+  #   - images de bannière par sport (comme à la création d'un match) : le fond de
+  #     la page suit le sport sélectionné, et l'URL retenue est persistée dans
+  #     banner_image pour que la carte du tournoi affiche la MÊME image ensuite.
   sports_names   = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = "#{sport_icon_text(s)} #{s.name}".strip }
   sports_formats = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = s.available_tournament_formats }
+  sports_images  = Sport.order(:name).each_with_object({}) { |s, h| h[s.id] = sport_images_for(s.slug) }
 
   # Jours / mois FR pour l'affichage initial du date-picker (comme le match).
   fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
@@ -83,15 +87,19 @@
             <%= f.label :sport_id, class: "form-label" do %>Sport <span class="required-star">*</span><% end %>
 
             <%# Le hidden porte les maps JSON lues par tournament-form :
-                - data-tournament-formats   : formats compatibles par sport
-                - data-tournament-structures: structures figées (format → nb → texte) %>
+                - data-formats : formats compatibles par sport
+                - data-images  : bannières disponibles par sport %>
             <%= f.hidden_field :sport_id,
                 data: {
                   "tournament-form-target": "sportInput",
                   "sport-names": sports_names.to_json,
                   "formats":     sports_formats.to_json,
-                  "structures":  Tournament::STRUCTURE_PRESETS.to_json
+                  "images":      sports_images.to_json
                 } %>
+
+            <%# Image de fond retenue (choisie par le JS parmi celles du sport, puis
+                figée : une image déjà enregistrée n'est jamais retirée au hasard). %>
+            <%= f.hidden_field :banner_image, data: { "tournament-form-target": "bannerImageInput" } %>
 
             <div style="position:relative;" data-controller="sport-picker">
               <button type="button"
@@ -209,17 +217,20 @@
         </div><%# fin section 2 %>
 
         <%# ────────────────────────────────────────────────
-            SECTION 3 : Date / heure / lieu
+            SECTION 3 : Date / lieu
             ──────────────────────────────────────────────── %>
         <div class="match-form-section" data-controller="place-search">
           <div class="match-form-section-header">
             <div class="match-form-step-badge">3</div>
-            <h2 class="match-form-section-title">Date, heure & lieu</h2>
+            <h2 class="match-form-section-title">Date & lieu</h2>
           </div>
 
           <div class="row g-3">
 
-            <%# Date %>
+            <%# Date. Volontairement PAS d'heure de début (Lot 7) : un tournoi
+                s'étale sur des rencontres planifiées une par une par les joueurs
+                (« Créer la rencontre » depuis leur carte de poule), chacune avec sa
+                propre date et son propre horaire. %>
             <div class="col-md-6">
               <%= f.label :date, class: "form-label" do %>Date du tournoi <span class="required-star">*</span><% end %>
               <div style="position:relative;" data-controller="date-picker">
@@ -246,59 +257,6 @@
                 </button>
                 <div data-date-picker-target="dropdown" class="dp-dropdown"
                      style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:400; min-width:280px;"></div>
-              </div>
-            </div>
-
-            <%# Heure %>
-            <div class="col-md-6">
-              <%= f.label :time, "Heure", class: "form-label" %>
-              <div class="d-flex gap-2" data-action="change->tournament-form#updateTime">
-                <%# Heures %>
-                <div style="position:relative; flex:1;" data-controller="time-picker">
-                  <%= f.hidden_field "time(4i)", value: @tournament.time&.hour, data: { "time-picker-target": "input" } %>
-                  <button type="button"
-                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @tournament.time %>"
-                          data-time-picker-target="trigger"
-                          data-action="click->time-picker#toggle"
-                          style="cursor:pointer; text-align:left;">
-                    <%= @tournament.time ? ("%02dh" % @tournament.time.hour) : "Heure" %>
-                  </button>
-                  <div class="time-picker-dropdown" data-time-picker-target="dropdown"
-                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
-                    <% (0..23).each do |h| %>
-                      <button type="button"
-                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @tournament.time&.hour == h %>"
-                              style="background:<%= @tournament.time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
-                              data-time-picker-item
-                              data-action="click->time-picker#select"
-                              data-value="<%= h %>"
-                              data-label="<%= "%02dh" % h %>"><%= "%02dh" % h %></button>
-                    <% end %>
-                  </div>
-                </div>
-                <%# Minutes %>
-                <div style="position:relative; flex:1;" data-controller="time-picker">
-                  <%= f.hidden_field "time(5i)", value: @tournament.time&.min, data: { "time-picker-target": "input" } %>
-                  <button type="button"
-                          class="form-select w-100 <%= 'sport-picker-placeholder' unless @tournament.time %>"
-                          data-time-picker-target="trigger"
-                          data-action="click->time-picker#toggle"
-                          style="cursor:pointer; text-align:left;">
-                    <%= @tournament.time ? ("%02d" % @tournament.time.min) : "Min" %>
-                  </button>
-                  <div class="time-picker-dropdown" data-time-picker-target="dropdown"
-                       style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:400; overflow-y:auto; max-height:200px;">
-                    <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
-                      <button type="button"
-                              class="time-picker-item w-100 <%= 'time-picker-item--active' if @tournament.time&.min == val %>"
-                              style="background:<%= @tournament.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
-                              data-time-picker-item
-                              data-action="click->time-picker#select"
-                              data-value="<%= val %>"
-                              data-label="<%= lbl %>"><%= lbl %></button>
-                    <% end %>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -378,6 +336,66 @@
                 placeholder: "Ex: 20",
                 data: { "tournament-form-target": "libreInput", "action": "input->tournament-form#buildProposals" } %>
             <div class="tournament-proposals" data-tournament-form-target="proposals"></div>
+          </div>
+
+          <%# ── Réglages de structure (Lot 7) ─────────────────────────────────
+              Révélés dès qu'un nombre de joueurs est choisi. Chaque champ est
+              FACULTATIF : laissé vide, il applique la valeur recommandée affichée
+              en placeholder (cf. Tournament#pool_size / #final_size /
+              #wins_to_qualify / #losses_to_eliminate). Seuls les champs pertinents
+              pour le format courant sont affichés. %>
+          <div class="tournament-advanced" data-tournament-form-target="advancedSection" style="display:none;">
+            <button type="button" class="tournament-advanced__toggle"
+                    data-tournament-form-target="advancedToggle"
+                    data-action="click->tournament-form#toggleAdvanced"
+                    aria-expanded="false">
+              <i data-lucide="sliders-horizontal" style="width:14px;height:14px;" aria-hidden="true"></i>
+              Personnaliser la structure
+            </button>
+
+            <div class="tournament-advanced__fields" data-tournament-form-target="advancedFields" hidden>
+              <p class="tournament-form-hint mb-3">
+                Laisse un champ vide pour garder la valeur recommandée.
+              </p>
+
+              <div class="row g-3">
+                <%# Poules : taille de poule %>
+                <div class="col-md-6" data-tournament-form-target="poolSizeField" style="display:none;">
+                  <%= f.label :players_per_pool, "Joueurs par poule", class: "form-label" %>
+                  <%= f.number_field :players_per_pool, min: 2, class: "form-control",
+                      data: { "tournament-form-target": "poolSizeInput",
+                              "action": "input->tournament-form#refreshStructure" } %>
+                </div>
+
+                <%# Ronde suisse : seuils de qualification / élimination %>
+                <div class="col-md-6" data-tournament-form-target="winsField" style="display:none;">
+                  <%= f.label :swiss_wins_to_qualify, "Victoires pour se qualifier", class: "form-label" %>
+                  <%= f.number_field :swiss_wins_to_qualify, min: 1, class: "form-control",
+                      data: { "tournament-form-target": "winsInput",
+                              "action": "input->tournament-form#refreshStructure" } %>
+                </div>
+
+                <div class="col-md-6" data-tournament-form-target="lossesField" style="display:none;">
+                  <%= f.label :swiss_losses_to_eliminate, "Défaites avant élimination", class: "form-label" %>
+                  <%= f.number_field :swiss_losses_to_eliminate, min: 1, class: "form-control",
+                      data: { "tournament-form-target": "lossesInput",
+                              "action": "input->tournament-form#refreshStructure" } %>
+                </div>
+
+                <%# Taille du tableau final — un select : seules les puissances de 2
+                    sont jouables en élimination directe (cf. validation du modèle). %>
+                <div class="col-md-6" data-tournament-form-target="bracketSizeField" style="display:none;">
+                  <%= f.label :bracket_size, "Taille du tableau final", class: "form-label" %>
+                  <%= f.select :bracket_size,
+                        [["Finale directe (2)", 2], ["Demi-finales (4)", 4], ["Quarts (8)", 8],
+                         ["Huitièmes (16)", 16], ["Seizièmes (32)", 32]],
+                        { include_blank: "Recommandé (auto)" },
+                        class: "form-select",
+                        data: { "tournament-form-target": "bracketSizeInput",
+                                "action": "change->tournament-form#refreshStructure" } %>
+                </div>
+              </div>
+            </div>
           </div>
 
           </div><%# fin wrapper verrouillage nb de joueurs %>
@@ -519,13 +537,6 @@
             <span class="recap-label">Date</span>
             <span class="recap-value" data-tournament-form-target="recapDate">
               <%= @tournament.date.present? ? @tournament.date.strftime("%d %b %Y") : "—" %>
-            </span>
-          </div>
-
-          <div class="match-recap-row">
-            <span class="recap-label">Heure</span>
-            <span class="recap-value" data-tournament-form-target="recapTime">
-              <%= @tournament.time.present? ? @tournament.time.strftime("%Hh%M") : "—" %>
             </span>
           </div>
 

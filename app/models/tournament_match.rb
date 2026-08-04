@@ -111,6 +111,34 @@ class TournamentMatch < ApplicationRecord
     points_won_by(opponent_of(player))
   end
 
+  # ── Règles de score applicables À CE MATCH ────────────────────────────────────
+  # Part des règles du sport (cf. Sport#scoring_rules) et les durcit en phase finale
+  # quand le sport le prévoit (`final_best_of`) : au ping-pong, un match de poule /
+  # ronde suisse se joue en 3 sets gagnants (best_of 5) mais un match du tableau
+  # final en 4 (best_of 7).
+  #
+  # C'est LE point d'entrée unique : `sets_to_win`, les validations et les vues
+  # (data-* de la modale de score) passent tous par ici — jamais par
+  # `tournament.sport.scoring_rules`, qui ignore la phase.
+  def scoring_rules
+    rules = tournament&.sport&.scoring_rules || Sport.new.scoring_rules
+    return rules unless final_phase? && rules[:final_best_of].present?
+
+    rules.merge(best_of: rules[:final_best_of])
+  end
+
+  # Sets nécessaires pour gagner le match (best_of 5 → 3, best_of 7 → 4).
+  # nil en mode :score (sports collectifs) : la notion de set n'existe pas.
+  def sets_to_win
+    best_of = scoring_rules[:best_of]
+    return nil if best_of.blank?
+
+    (best_of / 2) + 1
+  end
+
+  # Ce match appartient-il au tableau à élimination directe ?
+  def final_phase? = tournament_round&.phase == "bracket"
+
   private
 
   # ── Dérivation du vainqueur ───────────────────────────────────────────────────
@@ -184,14 +212,6 @@ class TournamentMatch < ApplicationRecord
     return nil if retired_player_id.blank?
 
     retired_player_id == player_a_id ? player_b_id : player_a_id
-  end
-
-  # Sets nécessaires pour gagner le match selon le sport (best_of 3 → 2, best_of 5 → 3).
-  def sets_to_win = (scoring_rules[:best_of] / 2) + 1
-
-  # Règles de score du sport du tournoi (fallback sûr si le sport est absent).
-  def scoring_rules
-    tournament&.sport&.scoring_rules || Sport.new.scoring_rules
   end
 
   # ── Validations ───────────────────────────────────────────────────────────────

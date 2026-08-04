@@ -175,4 +175,78 @@ class TournamentMatchTest < ActiveSupport::TestCase
     assert_equal p1.id, m.winner_id
     assert_equal "completed", m.status
   end
+
+  # ── Scoring dépendant de la phase (Lot 7) ─────────────────────────────────
+  # Règlement du tennis de table : 3 sets gagnants en poule / ronde suisse,
+  # 4 en phase finale. Seule la phase de la ronde change entre les deux cas.
+  class PingPongPhaseTest < ActiveSupport::TestCase
+    def setup
+      @sport = Sport.create!(name: "Ping Pong", slug: "ping-pong", icon: "🏓")
+      @tournament = Tournament.create!(name: "PP phases", sport: @sport, format: "poules",
+                                       status: "in_progress", max_players: 8,
+                                       date: Date.tomorrow, place: "Terrain test")
+      @p1 = player("f1")
+      @p2 = player("f2")
+    end
+
+    def teardown
+      teardown_db
+    end
+
+    def player(tag)
+      @tournament.tournament_users.create!(user: create_test_user(email: "#{tag}-#{SecureRandom.hex(3)}@t.fr"),
+                                          role: "joueur", status: "approved")
+    end
+
+    # Match A vs B dans une ronde de la phase donnée.
+    def match_in(phase, sets)
+      round = @tournament.tournament_rounds.find_by(phase: phase) ||
+              @tournament.tournament_rounds.create!(phase: phase, number: 1, status: "in_progress")
+      m = round.tournament_matches.new(player_a: @p1, player_b: @p2, position: rand(1_000_000))
+      m.assign_score(sets)
+      m
+    end
+
+    test "phase de poule : best_of 5, 3 sets gagnants" do
+      m = match_in("pool", [[11, 5], [11, 6], [11, 7]])
+      assert_equal 5, m.scoring_rules[:best_of]
+      assert_equal 3, m.sets_to_win
+      m.save!
+      assert_equal @p1.id, m.winner_id, "3 sets gagnés → match gagné en poule"
+    end
+
+    test "phase finale : best_of 7, 4 sets gagnants" do
+      m = match_in("bracket", [[11, 5], [11, 6], [11, 7]])
+      assert_equal 7, m.scoring_rules[:best_of]
+      assert_equal 4, m.sets_to_win
+      m.save!
+      assert_nil m.winner_id, "3 sets ne suffisent pas en phase finale"
+      assert_equal "pending", m.status
+
+      m.assign_score([[11, 5], [11, 6], [5, 11], [11, 7], [11, 9]])
+      m.save!
+      assert_equal @p1.id, m.winner_id, "4 sets gagnés → match gagné en phase finale"
+      assert_equal "completed", m.status
+    end
+
+    test "phase de poule : un 6e set est refusé" do
+      m = match_in("pool", [[11, 0]] * 6)
+      refute m.valid?
+      assert(m.errors[:sets].any? { |msg| msg.include?("trop de sets") })
+    end
+
+    test "phase finale : jusqu'à 7 sets, le 8e est refusé" do
+      assert match_in("bracket", [[11, 0], [0, 11], [11, 0], [0, 11], [11, 0], [0, 11], [11, 0]]).valid?,
+             "7 sets sont valides en phase finale"
+      refute match_in("bracket", [[11, 0]] * 8).valid?
+    end
+
+    test "les autres sports gardent les mêmes règles à toutes les phases" do
+      tennis = Sport.create!(name: "Tennis test", slug: "tennis", icon: "🎾")
+      @tournament.update!(sport: tennis)
+
+      assert_equal 3, match_in("pool", [[6, 4]]).scoring_rules[:best_of]
+      assert_equal 3, match_in("bracket", [[6, 4]]).scoring_rules[:best_of]
+    end
+  end
 end

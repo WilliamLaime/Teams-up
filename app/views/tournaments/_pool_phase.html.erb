@@ -4,10 +4,10 @@
     group_by_pool: true, dérivé de player_a.pool). Le classement par poule vit
     dans l'onglet Classement (_ranking.html.erb) — pas ici, "Matchs" ne montre
     que des matchs.
-    Locals : tournament, can_manage. %>
+    Locals : tournament. %>
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
   <h2 class="tournament-phase__title">Poules</h2>
 
-  <%= render "tournaments/round_ribbon", rounds: tournament.pool_rounds, can_manage: can_manage,
+  <%= render "tournaments/round_ribbon", rounds: tournament.pool_rounds,
               title_for: ->(round) { "Journée #{round.number}" }, group_by_pool: true, paginated: true %>
 </section>

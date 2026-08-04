@@ -2,12 +2,55 @@
 // TOURNAMENTS FORM — Écarts spécifiques à la création de tournoi
 // La structure (sections, récap, boutons) réutilise _match_form.scss.
 // On ne style ici que les éléments propres au tournoi :
-//   • aperçu de structure figée
+//   • aperçu de structure
 //   • propositions du mode "Libre"
+//   • réglages de structure personnalisables (bloc dépliant)
 // Tokens de thème var(--theme-*) + accent $green.
 // =====================================================
 
-// ── Aperçu de structure figée (lecture seule) ──
+// ── Réglages de structure personnalisables (Lot 7) ──
+// Bloc dépliant sous le nombre de joueurs : replié par défaut pour ne pas alourdir
+// le formulaire (les valeurs recommandées suffisent dans la majorité des cas).
+.tournament-advanced {
+  margin: 0.25rem 0 1rem;
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px dashed var(--theme-border-strong);
+    background: transparent;
+    color: var(--theme-text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+
+    &:hover {
+      border-color: $green;
+      color: var(--theme-text-primary);
+    }
+
+    i { flex-shrink: 0; }
+
+    &[aria-expanded="true"] {
+      border-style: solid;
+      border-color: rgba(30, 221, 136, 0.4);
+      color: var(--theme-text-primary);
+    }
+  }
+
+  &__fields {
+    margin-top: 0.75rem;
+    padding: 0.85rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--theme-border-strong);
+    background: var(--theme-hover-bg);
+  }
+}
+
+// ── Aperçu de structure ──
 .tournament-structure-preview {
   display: flex;
   align-items: center;

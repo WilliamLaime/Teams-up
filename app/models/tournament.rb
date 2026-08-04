@@ -44,18 +44,9 @@ class Tournament < ApplicationRecord
   # Ce n'est PAS une contrainte : le mode "Libre" autorise n'importe quel entier.
   PLAYER_COUNTS = [8, 16, 32].freeze
 
-  # Structures figées, dérivées de (format + nombre de joueurs) — rien n'est stocké
-  # en base, c'est un simple aperçu en lecture seule affiché à la création.
-  # Ronde suisse (Lot 3) : le nombre de rondes est dynamique (3 V pour se qualifier /
-  # 3 D pour être éliminé), la seule constante est la taille du tableau final :
-  # Final 4 jusqu'à 8 joueurs, Final 8 au-delà (cf. Tournament#final_size).
-  # Poules / championnat restent provisoires (formats des lots ultérieurs).
-  STRUCTURE_PRESETS = {
-    "ronde_suisse" => { 8 => "Ronde suisse (3 V) + Final 4", 16 => "Ronde suisse (3 V) + Final 8", 32 => "Ronde suisse (3 V) + Final 8" },
-    "poules" => { 8 => "2 poules de 4 + demi-finales", 16 => "4 poules de 4 + quarts", 32 => "8 poules de 4 + huitièmes" },
-    "championnat" => { 8 => "8 joueurs, 7 journées, top 4 en playoffs", 16 => "16 joueurs, top 8 en playoffs",
-                       32 => "32 joueurs, top 8 en playoffs" }
-  }.freeze
+  # Nom du tour d'entrée d'un tableau final selon sa taille (4 places → on entre en
+  # demi-finales). Sert aux résumés de structure ; au-delà de 16, on nomme la taille.
+  BRACKET_STAGE_NAMES = { 2 => "finale", 4 => "demi-finales", 8 => "quarts", 16 => "huitièmes" }.freeze
 
   # ── Recherche full-text (pg_search) ──────────────────────────────────────────
   pg_search_scope :search_by_name,
@@ -76,6 +67,18 @@ class Tournament < ApplicationRecord
   validates :date, presence: true
   validates :place, presence: true
   validates :status, inclusion: { in: STATUSES }
+
+  # Réglages de structure (Lot 7) — tous facultatifs : vide = valeur recommandée.
+  # Une poule se joue à 2 joueurs minimum ; il faut au moins 1 victoire pour se
+  # qualifier et 1 défaite pour être éliminé (sinon la ronde suisse ne finirait jamais).
+  validates :players_per_pool, numericality: { only_integer: true, greater_than_or_equal_to: 2 }, allow_nil: true
+  validates :swiss_wins_to_qualify, :swiss_losses_to_eliminate,
+            numericality: { only_integer: true, greater_than_or_equal_to: 1 }, allow_nil: true
+  # Le tableau final se joue par élimination directe : sa taille doit être une
+  # puissance de 2 (4 = demies, 8 = quarts, 16 = huitièmes…), sinon les tours ne
+  # s'enchaînent pas (cf. BracketBuilder + #expected_bracket_round_count).
+  validates :bracket_size, numericality: { only_integer: true, greater_than_or_equal_to: 2 }, allow_nil: true
+  validate  :bracket_size_is_power_of_two
 
   # La date/heure d'un tournoi ne peut pas être dans le passé à la création.
   # `on: :create` uniquement : TournamentsController#start et
@@ -193,15 +196,54 @@ class Tournament < ApplicationRecord
     user_id == user.id || tournament_users.any? { |tu| tu.user_id == user.id && tu.role == "co_organisateur" }
   end
 
-  # Aperçu de structure figée pour la combinaison (format + nombre de joueurs).
-  # nil si la combinaison n'a pas de preset (ex. nombre "Libre" hors 8/16/32).
-  # Championnat SANS playoffs (Lot 6) : on réécrit la fin du texte plutôt que de
-  # dupliquer STRUCTURE_PRESETS pour une simple variante d'affichage.
+  # Résumé lisible de la structure PRÉVUE, calculé depuis le format, l'effectif
+  # attendu (max_players) et les réglages de l'organisateur — donc juste même quand
+  # il personnalise la taille des poules ou du tableau final, et valable pour
+  # n'importe quel effectif (mode « Libre » compris).
+  # Le miroir côté client vit dans tournament_form_controller.js (_structureText).
   def structure_summary
-    preset = STRUCTURE_PRESETS.dig(format, max_players)
-    return preset if preset.nil? || format != "championnat" || playoffs?
+    return nil if format.blank? || max_players.blank?
 
-    preset.sub(/,\s*top \d+ en playoffs/, ", vainqueur = 1er du classement")
+    case format
+    when "poules"
+      "#{planned_pool_count} poules de #{pool_size} + #{planned_bracket_stage}"
+    when "ronde_suisse"
+      "Ronde suisse (#{wins_to_qualify} V / #{losses_to_eliminate} D) + #{planned_bracket_stage}"
+    else # championnat
+      base = "#{max_players} joueurs, #{max_players - 1} journées"
+      playoffs? ? "#{base}, top #{planned_final_size} en playoffs" : "#{base}, vainqueur = 1er du classement"
+    end
+  end
+
+  # Structure prévue AVANT le lancement : les mêmes règles que #pool_count /
+  # #final_size mais basées sur l'effectif ATTENDU (max_players) et non sur les
+  # inscrits du moment — un tournoi vide doit déjà annoncer sa structure.
+  def planned_pool_count
+    [(max_players.to_i / pool_size.to_f).ceil, 1].max
+  end
+
+  def planned_final_size
+    return bracket_size if bracket_size.present?
+    return bracket_capacity_for(planned_pool_count * 2) if format == "poules"
+
+    max_players.to_i <= 8 ? 4 : 8
+  end
+
+  # Arrondit un nombre de qualifiés à la puissance de 2 immédiatement supérieure :
+  # un tableau à élimination directe ne peut avoir que 2, 4, 8, 16… places (les
+  # places excédentaires sont des byes, cf. BracketBuilder). Ex. 3 poules → 6
+  # qualifiés → tableau de 8. Garantit que la valeur recommandée respecte la même
+  # contrainte que celle qu'on impose à un réglage manuel (bracket_size).
+  def bracket_capacity_for(qualified_count)
+    size = 2
+    size *= 2 while size < qualified_count
+    size
+  end
+
+  # Tour d'entrée du tableau final prévu ("quarts", "demi-finales"…).
+  def planned_bracket_stage
+    size = planned_final_size
+    BRACKET_STAGE_NAMES[size] || "tableau à #{size}"
   end
 
   # ── Ronde Suisse + tableau final (Lot 3) ─────────────────────────────────────
@@ -280,26 +322,50 @@ class Tournament < ApplicationRecord
     approved_players.select { |tu| tu.pool.present? }.group_by(&:pool)
   end
 
-  # Nombre de poules (~4 joueurs par poule, cf. STRUCTURE_PRESETS "poules") — seule
-  # source de vérité, réutilisée par PoolBuilder pour la répartition ET ici pour
-  # dimensionner le tableau final (2 qualifiés par poule, cf. #final_size).
+  # ── Structure : réglages recommandés, personnalisables (Lot 7) ───────────────
+  # Les 4 méthodes ci-dessous sont la SEULE source de vérité de la structure, lue
+  # par tous les moteurs (PoolBuilder, SwissPairing, BracketBuilder). Chacune
+  # renvoie le réglage choisi par l'organisateur s'il en a saisi un, sinon la
+  # valeur recommandée — historiquement la seule possible.
+  #
+  # Les colonnes portent un nom différent des méthodes (players_per_pool vs
+  # #pool_size…) précisément pour que ces méthodes ne masquent aucun attribut :
+  # `players_per_pool` reste la valeur brute (nil = « recommandé »), lisible telle
+  # quelle par le formulaire.
+
+  # Joueurs par poule (format "poules").
+  DEFAULT_POOL_SIZE = 4
+
+  def pool_size = players_per_pool.presence || DEFAULT_POOL_SIZE
+
+  # Nombre de poules, déduit de l'effectif et de la taille de poule voulue —
+  # réutilisé par PoolBuilder pour la répartition ET ici pour dimensionner le
+  # tableau final (cf. #final_size).
   def pool_count
-    [(approved_players_count / 4.0).ceil, 1].max
+    [(approved_players_count / pool_size.to_f).ceil, 1].max
   end
 
-  # Taille du tableau final selon le format :
+  # Taille du tableau final. Réglage explicite (bracket_size) sinon, selon le format :
   #   - poules : le double du nombre de poules — les 2 premiers de chaque poule
-  #     (règle classique, ex. Coupe du monde) — reproduit exactement
-  #     STRUCTURE_PRESETS["poules"] : 2 poules de 4 → demi-finales (4), 4 poules →
-  #     quarts (8), 8 poules → huitièmes (16).
+  #     (règle classique, ex. Coupe du monde) : 2 poules de 4 → demi-finales (4),
+  #     4 poules → quarts (8), 8 poules → huitièmes (16).
   #   - ronde suisse / championnat : Final 4 pour un petit tournoi (≤ 8 joueurs),
-  #     Final 8 au-delà (aligné sur le seuil du formulaire, plafond volontaire —
-  #     contrairement aux poules, ne grandit pas avec l'effectif au-delà de 8).
+  #     Final 8 au-delà (plafond volontaire — contrairement aux poules, ne grandit
+  #     pas avec l'effectif au-delà de 8).
   def final_size
-    return pool_count * 2 if format == "poules"
+    bracket_size.presence || recommended_final_size
+  end
+
+  def recommended_final_size
+    return bracket_capacity_for(pool_count * 2) if format == "poules"
 
     approved_players_count <= 8 ? 4 : 8
   end
+
+  # Ronde suisse : seuils de qualification / élimination (bilan V-D).
+  def wins_to_qualify = swiss_wins_to_qualify.presence || TournamentUser::WINS_TO_QUALIFY
+
+  def losses_to_eliminate = swiss_losses_to_eliminate.presence || TournamentUser::LOSSES_TO_ELIMINATE
 
   # Nombre de tours qu'aura le tableau final une fois complet (ex. final_size 16
   # → 4 tours : 8es, quarts, demies, finale) — sert à afficher la structure
@@ -337,5 +403,13 @@ class Tournament < ApplicationRecord
 
   def tournament_datetime
     Time.zone.local(date.year, date.month, date.day, time.hour, time.min, 0)
+  end
+
+  # Puissance de 2 : 4 & 3 == 0, 8 & 7 == 0… (un seul bit à 1 en binaire).
+  def bracket_size_is_power_of_two
+    return if bracket_size.blank? || bracket_size < 2
+    return if bracket_size.nobits?(bracket_size - 1)
+
+    errors.add(:bracket_size, "doit être une puissance de 2 (4, 8, 16, 32…)")
   end
 end

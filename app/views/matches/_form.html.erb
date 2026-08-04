@@ -72,17 +72,47 @@
         </p>
 
         <%# ────────────────────────────────────────────────
-            Rattachement à un tournoi (Lot 4) — optionnel.
-            Visible seulement si l'utilisateur organise au moins un tournoi.
-            Le lien précis à une carte (tournament_match_id) est posé quand on
-            arrive via « Créer la rencontre » ; on le transmet en champ caché.
+            Rattachement à un tournoi (Lot 4, élargi Lot 7) — optionnel.
+            Visible dès que l'utilisateur organise OU est inscrit à un tournoi non
+            terminé (cf. MatchesController#linkable_tournaments_for_select).
+            Choisir un tournoi révèle ses confrontations rattachables ; en choisir
+            une préremplit le reste du formulaire (sport, titre avec l'adversaire,
+            lieu, date) — tout reste modifiable, les deux joueurs conviennent de
+            leur créneau. Le lien est aussi posé côté serveur quand on arrive via
+            « Créer la rencontre » (?tournament_match_id=X).
             ──────────────────────────────────────────────── %>
-        <% if @organized_tournaments&.any? %>
+        <% if @linkable_tournaments&.any? %>
           <div class="mb-3">
             <%= f.label :tournament_id, "Tournoi (optionnel)", class: "form-label" %>
-            <%= f.collection_select :tournament_id, @organized_tournaments, :id, :name,
-                  { include_blank: "Aucun (match indépendant)" }, class: "form-select" %>
-            <%= f.hidden_field :tournament_match_id %>
+            <%= f.collection_select :tournament_id, @linkable_tournaments, :id, :name,
+                  { include_blank: "Aucun (match indépendant)" },
+                  class: "form-select",
+                  data: {
+                    "match-form-target": "tournamentInput",
+                    "action": "change->match-form#updateTournament",
+                    "tournament-matches": (@linkable_tournament_matches || {}).to_json,
+                    "new-match-path": new_match_path
+                  } %>
+          </div>
+
+          <%# Confrontation du tournoi. Les options du tournoi COURANT sont rendues
+              côté serveur (état initial, y compris à l'arrivée via « Créer la
+              rencontre ») ; le JS les remplace quand on change de tournoi. %>
+          <% current_confrontations = (@linkable_tournament_matches || {})[@match.tournament_id] || [] %>
+          <div class="mb-3" data-match-form-target="tournamentMatchWrapper"
+               style="<%= 'display:none;' if current_confrontations.empty? %>">
+            <%= f.label :tournament_match_id, "Confrontation (optionnel)", class: "form-label" %>
+            <%= f.select :tournament_match_id,
+                  options_for_select(current_confrontations.map { |c| [c[:label], c[:id]] }, @match.tournament_match_id),
+                  { include_blank: "Aucune (rencontre libre)" },
+                  class: "form-select",
+                  data: {
+                    "match-form-target": "tournamentMatchInput",
+                    "action": "change->match-form#applyTournamentMatch"
+                  } %>
+            <small class="form-text text-muted">
+              Rattacher la rencontre à ta confrontation préremplit le lieu, la date et l'adversaire.
+            </small>
           </div>
         <% end %>
 

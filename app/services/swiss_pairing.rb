@@ -143,8 +143,13 @@ class SwissPairing
 
   # ── Persistance : helpers ─────────────────────────────────────────────────────
 
-  # État suisse dérivé du bilan V/D (appelé par RoundRobinStats via apply_state).
-  def state_for(wins, losses) = TournamentUser.state_for(wins, losses)
+  # État suisse dérivé du bilan V/D (appelé par RoundRobinStats via apply_state),
+  # avec les seuils propres à CE tournoi (personnalisables depuis le Lot 7).
+  def state_for(wins, losses)
+    TournamentUser.state_for(wins, losses,
+                             wins_to_qualify: @tournament.wins_to_qualify,
+                             losses_to_eliminate: @tournament.losses_to_eliminate)
+  end
 
   # Faut-il arrêter la ronde suisse et lancer le tableau final ?
   def ready_for_bracket?

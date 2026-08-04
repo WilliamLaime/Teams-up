@@ -192,10 +192,11 @@ class MatchesController < ApplicationController
     # Équipes dont l'user est capitaine (pour le select dans le formulaire)
     @my_captained_teams = current_user.captained_teams.order(:name)
 
-    # Couplage tournoi (Lot 4) : préremplissage depuis « Créer la rencontre »
-    # d'une carte, et liste des tournois qu'on organise (select du formulaire).
+    # Couplage tournoi (Lot 4, élargi Lot 7) : préremplissage depuis « Créer la
+    # rencontre » d'une carte, et listes du formulaire (tournois rattachables +
+    # confrontations rattachables, pour le préremplissage côté client).
     prefill_from_tournament_match
-    @organized_tournaments = organized_tournaments_for_select
+    load_tournament_link_options
 
     # Destinations Slack pour le partage optionnel (vide si le compte n'est pas lié)
     @slack_destinations = slack_destinations_for(current_user)
@@ -222,8 +223,9 @@ class MatchesController < ApplicationController
       end
     end
 
-    # Couplage tournoi (Lot 4) : ne conserver le rattachement que si l'utilisateur
-    # organise bien le tournoi visé (pattern défensif, comme pour team_id).
+    # Couplage tournoi (Lot 4, élargi Lot 7) : ne conserver le rattachement que si
+    # l'utilisateur y a droit (joueur de la confrontation ou organisateur du
+    # tournoi) — pattern défensif, comme pour team_id.
     sanitize_tournament_link
 
     authorize @match
@@ -259,7 +261,7 @@ class MatchesController < ApplicationController
       redirect_to @match, notice: "Match créé avec succès !"
     else
       @my_captained_teams = current_user.captained_teams.order(:name)
-      @organized_tournaments = organized_tournaments_for_select
+      load_tournament_link_options
       # En cas d'erreur, réaffiche le formulaire
       render :new, status: :unprocessable_entity
     end
@@ -544,30 +546,99 @@ class MatchesController < ApplicationController
     )
   end
 
-  # Tournois que l'utilisateur organise et qui ne sont pas terminés — proposés
-  # dans le select du formulaire pour rattacher une rencontre à un tournoi.
-  def organized_tournaments_for_select
-    Tournament.where(user_id: current_user.id).where.not(status: "completed").order(:name)
+  # ── Couplage tournoi ────────────────────────────────────────────────────────
+  # Options du bloc « Tournoi » du formulaire : les tournois rattachables + la map
+  # de leurs confrontations rattachables (pour le select « Confrontation » et le
+  # préremplissage côté client, cf. match_form_controller#updateTournament).
+  def load_tournament_link_options
+    @linkable_tournaments = linkable_tournaments_for_select
+    @linkable_tournament_matches = linkable_tournament_matches_map(@linkable_tournaments)
+  end
+
+  # Tournois non terminés auxquels l'utilisateur peut rattacher une rencontre :
+  # ceux qu'il organise ET ceux où il est inscrit (un joueur planifie lui-même sa
+  # rencontre de poule, cf. TournamentMatchPolicy#create_match?).
+  def linkable_tournaments_for_select
+    Tournament.where.not(status: "completed")
+              .left_joins(:tournament_users)
+              .where(
+                "tournaments.user_id = :id OR (tournament_users.user_id = :id AND tournament_users.status = 'approved')",
+                id: current_user.id
+              )
+              .distinct.order(:name)
+  end
+
+  # Confrontations rattachables, groupées par tournoi :
+  #   { tournament_id => [{ id:, label:, sport_id:, title:, place:, … }, …] }
+  # Filtres : pas de bye, pas déjà rattachée à une rencontre, et l'utilisateur y
+  # joue ou organise le tournoi — mêmes règles que create_match?, mais évaluées
+  # une seule fois par tournoi (organizer? interroge les co-organisateurs).
+  def linkable_tournament_matches_map(tournaments)
+    return {} if tournaments.empty?
+
+    pending = TournamentMatch.where(is_bye: false).where.missing(:match)
+                             .joins(:tournament_round)
+                             .where(tournament_rounds: { tournament_id: tournaments.map(&:id) })
+                             .includes(:tournament_round, :player_a, :player_b)
+                             .order(:position)
+
+    pending.group_by { |tm| tm.tournament_round.tournament_id }.each_with_object({}) do |(tournament_id, tms), map|
+      tournament = tournaments.find { |t| t.id == tournament_id }
+      organizer  = tournament.organizer?(current_user)
+
+      rows = tms.filter_map do |tm|
+        next if tm.player_b.nil? # carte incomplète (ne devrait pas arriver hors bye)
+        next unless organizer || [tm.player_a.user_id, tm.player_b.user_id].include?(current_user.id)
+
+        tournament_match_option(tm, tournament)
+      end
+
+      map[tournament_id] = rows if rows.any?
+    end
+  end
+
+  # Une confrontation telle que la voit le formulaire (JSON consommé par Stimulus).
+  # Les champs de préremplissage reprennent exactement ceux de
+  # prefill_from_tournament_match : une seule règle, deux points d'application.
+  def tournament_match_option(tmatch, tournament)
+    {
+      id: tmatch.id,
+      label: "#{tmatch.player_a.display_name} vs #{tmatch.player_b.display_name}",
+      title: tournament_match_title(tmatch, tournament),
+      sport_id: tournament.sport_id,
+      place: tournament.place,
+      venue_id: tournament.venue_id,
+      date: tournament.date&.to_s,
+      time: tournament.time&.strftime("%H:%M"),
+      banner_image: tournament.banner_image
+    }
+  end
+
+  # Titre par défaut d'une rencontre issue d'une confrontation de tournoi.
+  def tournament_match_title(tmatch, tournament)
+    "#{tournament.sport&.name} — #{tmatch.player_a.display_name} vs #{tmatch.player_b.display_name}"
   end
 
   # Préremplit @match depuis une carte de tournoi (?tournament_match_id=X).
-  # Sécurité : ignoré si la carte est absente, un bye, ou si l'utilisateur
-  # n'organise pas le tournoi.
+  # Sécurité : ignoré si la carte est absente ou si l'utilisateur n'a pas le droit
+  # de planifier cette rencontre (bye, rencontre déjà créée, ni joueur ni
+  # organisateur — cf. TournamentMatchPolicy#create_match?).
   def prefill_from_tournament_match
     return if params[:tournament_match_id].blank?
 
     tm = TournamentMatch.find_by(id: params[:tournament_match_id])
-    return if tm.nil? || tm.is_bye || !tm.tournament.organizer?(current_user)
+    return if tm.nil? || !policy(tm).create_match?
 
     @match.tournament_match = tm
     @match.tournament       = tm.tournament
     @match.sport            = tm.tournament.sport
     @match.level            = "Tout niveau" # niveau neutre : bypass la grille du sport
     @match.players_needed   = 2
-    @match.title            = "#{tm.tournament.sport&.name} — #{tm.player_a.display_name} vs #{tm.player_b.display_name}"
+    @match.title            = tournament_match_title(tm, tm.tournament)
 
-    # Reprend le lieu et la date/heure déjà connus du tournoi, pour éviter à
-    # l'organisateur de tout ressaisir à la main.
+    # Reprend le lieu et la date/heure déjà connus du tournoi, pour éviter de tout
+    # ressaisir à la main. Tout reste modifiable : les deux joueurs conviennent de
+    # leur créneau (un tournoi n'a d'ailleurs plus d'heure de début, cf. Lot 7).
     @match.venue_id = tm.tournament.venue_id if tm.tournament.venue_id.present?
     @match.place    = tm.tournament.place    if tm.tournament.place.present?
     @match.date     = tm.tournament.date     if tm.tournament.date.present?
@@ -579,11 +650,12 @@ class MatchesController < ApplicationController
   end
 
   # Valide le rattachement tournoi envoyé par le formulaire : ne le persiste que
-  # si l'utilisateur organise le tournoi ciblé (sinon on annule les deux refs).
+  # si l'utilisateur y a droit (joueur de la confrontation ou organisateur du
+  # tournoi), sinon on annule les deux refs.
   def sanitize_tournament_link
     if @match.tournament_match_id.present?
       tm = TournamentMatch.find_by(id: @match.tournament_match_id)
-      if tm && !tm.is_bye && tm.tournament.organizer?(current_user)
+      if tm && policy(tm).create_match?
         @match.tournament = tm.tournament
       else
         @match.tournament = nil
@@ -591,8 +663,15 @@ class MatchesController < ApplicationController
       end
     elsif @match.tournament_id.present?
       tournament = Tournament.find_by(id: @match.tournament_id)
-      @match.tournament = nil unless tournament&.organizer?(current_user)
+      @match.tournament = nil unless tournament && linkable_tournament?(tournament)
     end
+  end
+
+  # L'utilisateur peut-il rattacher une rencontre à ce tournoi (sans viser une
+  # confrontation précise) ? Organisateur ou inscrit approuvé.
+  def linkable_tournament?(tournament)
+    tournament.organizer?(current_user) ||
+      tournament.tournament_users.approved.exists?(user_id: current_user.id)
   end
 
   # Inscrit les deux joueurs de la carte de tournoi comme participants approuvés
