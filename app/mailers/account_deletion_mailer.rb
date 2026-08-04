@@ -15,7 +15,7 @@ class AccountDeletionMailer < ApplicationMailer
 
     mail(
       to: user_email,
-      subject: "Confirmation — Ton compte Team-Up a été supprimé"
+      subject: "Confirmation — Ton compte Teams-up a été supprimé"
     )
   end
 end

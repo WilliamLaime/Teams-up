@@ -24,10 +24,10 @@
     "description": "<%= j description %>",
     "datePublished": "<%= @article.published_at.iso8601 %>",
     "dateModified": "<%= @article.updated_at.iso8601 %>",
-    "author": { "@type": "Organization", "name": "Teams-Up", "url": "<%= root_url %>" },
+    "author": { "@type": "Organization", "name": "Teams-up", "url": "<%= root_url %>" },
     "publisher": {
       "@type": "Organization",
-      "name": "Teams-Up",
+      "name": "Teams-up",
       "url": "<%= root_url %>",
       "logo": { "@type": "ImageObject", "url": "<%= asset_url('logo/logo_vf_1_noir.png') %>" }
     },
@@ -116,7 +116,7 @@
         <%= link_to "← Retour au blog", articles_path, class: "blog-show__back" %>
 
         <div class="blog-show__cta">
-          <p>Prêt à jouer ? Rejoins Teams-Up gratuitement.</p>
+          <p>Prêt à jouer ? Rejoins Teams-up gratuitement.</p>
           <%= link_to "Créer mon compte", new_user_registration_path, class: "btn btn-cta-primary" %>
         </div>
       </footer>

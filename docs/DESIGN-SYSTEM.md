@@ -1,4 +1,4 @@
-# Team Up — Design System
+# Teams-up — Design System
 
 > Référence consultée **à la demande** pour les tâches UI / SCSS.
 > Source : `app/assets/stylesheets/config/`.

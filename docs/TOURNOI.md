@@ -8,7 +8,7 @@
 
 ## 🎯 Vision
 
-Centraliser dans Team Up la gestion des tournois amateurs (aujourd'hui sous Excel).
+Centraliser dans Teams-up la gestion des tournois amateurs (aujourd'hui sous Excel).
 Le lien **Tournoi** a remplacé **Blog** dans la navbar (Blog conservé dans le footer).
 
 **Principe structurant :** on choisit d'abord le **sport**, puis on ne propose que les
