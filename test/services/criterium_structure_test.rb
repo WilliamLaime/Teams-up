@@ -156,7 +156,7 @@ class CriteriumStructureTest < ActiveSupport::TestCase
 
     assert_nil s.node("barrage")
     assert_nil s.node("ko")
-    assert_equal :pool_snake, s.node("ok").pairing
+    assert_equal :pool_rank, s.node("ok").pairing
     assert_equal 16, s.node("ok").entrants
   end
 

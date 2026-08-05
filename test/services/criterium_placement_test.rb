@@ -20,10 +20,14 @@ class CriteriumPlacementTest < ActiveSupport::TestCase
     teardown_db
   end
 
-  def build_tournament(count, players_per_pool: 4)
+  # `final_phase_mode: "standard"` explicite : les seuils d'effectif du Lot 6
+  # basculeraient sinon un tournoi de 16 joueurs en classement intégral, sans
+  # barrage ni consolante. Les places jouées ici sont celles de la variante standard.
+  def build_tournament(count, players_per_pool: 4, final_phase_mode: "standard")
     tournament = Tournament.create!(name: "T#{SecureRandom.hex(3)}", sport: @sport, user: @admin,
                                     format: "criterium_federal", status: "open", max_players: count,
                                     players_per_pool: players_per_pool,
+                                    final_phase_mode: final_phase_mode,
                                     date: Date.tomorrow, place: "Salle test")
     count.times do |i|
       user = create_test_user(email: "pl#{i}-#{SecureRandom.hex(3)}@test.fr")

@@ -126,3 +126,16 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   2. `reload` recharge les colonnes, pas les mémoïsations. Ne jamais compter sur lui pour rafraîchir un calcul dérivé.
   3. Une assertion de **bijection** (chaque joueur exactement une fois) attrape en une ligne ce qu'aucun test « le 1er est bien X » ne verrait. Sur toute structure qui redistribue une population, tester la conservation avant les valeurs.
   4. Byes : « écarter les byes » n'est jamais une règle globale. Se demander de quel CÔTÉ du match le bye est vide.
+
+## 2026-08-05 — Un seuil ajouté réinterprète les tests déjà verts
+- **Symptôme** : aucun. C'est justement le danger. En rendant `final_phase_mode` **automatique** (Lot 6 : ≤ 7 → poule seule, 8-16 → classement intégral, ≥ 17 → barrages + consolante), les tournois à 16 joueurs des Lots 4 et 5 basculaient en silence du format standard au classement intégral. Les tests continuaient de passer *en jouant un autre tournoi que celui qu'ils décrivent*.
+- **Cause racine** : leurs constructeurs ne fixaient pas la variante — elle n'existait pas encore. Un test qui laisse un réglage implicite documente le défaut du moment, pas l'intention.
+- **Correctif** : `final_phase_mode: "standard"` **explicite** dans les trois constructeurs (`criterium_flow_test`, `criterium_placement_test`, `criterium_board_test`), avec le commentaire disant pourquoi. Choix assumé : le règlement est la référence, donc c'est le test qui s'adapte au seuil, pas le seuil qui se plie au test.
+- **Deux trous latents que la nouvelle variante a révélés** :
+  - `ensure_barrage!` déduisait les barrages de la seule *existence* de 2es et 3es de poule → il en fabriquait en mode intégral et en poule unique. La structure doit trancher : `return nil if structure.node("barrage").blank?`.
+  - `ok_finished?` exigeait un dernier tour de tableau → un tournoi à poule unique restait « en cours » **pour toujours**. Sans tableau, la question est déjà répondue : `return true if structure.node("ok").blank?`.
+- **Leçons** :
+  1. Ajouter un comportement **automatique** invalide toute assertion qui reposait sur son absence. Avant de coder le seuil, chercher les tests dont l'effectif tombe du mauvais côté.
+  2. Un test doit épingler ce qu'il prétend tester. Tout réglage laissé au défaut est une dépendance cachée à une décision future.
+  3. Une garde déduite de l'**état** (« il y a des 2es de poule, donc barrages ») répond à la mauvaise question. La bonne source est la **déclaration** de structure : elle sait ce qui doit exister, l'état ne sait que ce qui existe.
+  4. Une condition de fin formulée en « la dernière étape est-elle finie ? » boucle indéfiniment quand cette étape n'existe pas. Traiter l'absence comme un cas explicite, jamais comme un « pas encore ».

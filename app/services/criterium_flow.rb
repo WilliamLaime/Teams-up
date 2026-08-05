@@ -79,8 +79,12 @@ class CriteriumFlow
     # en moitiés opposées du tableau parent, donc deux joueurs qui s'y sont déjà
     # rencontrés ne se retrouvent pas immédiatement.
     when :carry_over   then groups.flatten
-    # Mode intégral (Lot 6) : la répartition par position de poule sera affinée
-    # là-bas ; par force en attendant, ce qui reste déterministe et jouable.
+    # Classement intégral : les sources sont les rangs de poule dans l'ordre (les
+    # 1ers, puis les 2es…), donc `flatten` EST déjà l'ordre de tête de série voulu.
+    # On protège les 1ers de poule comme dans le tableau final : l'appariement
+    # miroir les place alors en moitiés opposées, et aucun ne rencontre un autre 1er
+    # au premier tour.
+    when :pool_rank    then avoid_own_pool_first_round(groups.flatten, protected_count: groups.first.size)
     else                    by_strength(groups.flatten)
     end
   end
@@ -94,6 +98,11 @@ class CriteriumFlow
   # montent au tableau final, les perdants descendent en consolante. C'est le seul
   # nœud dont les DEUX camps continuent, d'où son traitement à part.
   def ensure_barrage!
+    # Toutes les variantes n'ont pas de barrages : le classement intégral envoie
+    # tout le monde dans un tableau unique, et une poule unique n'a aucune phase
+    # finale. C'est la structure qui tranche — sans cette garde, un 2e et un 3e de
+    # poule existant suffiraient à en fabriquer (cf. Tournament#criterium_mode).
+    return nil if structure.node("barrage").blank?
     return nil if @tournament.barrage_rounds.exists?
     return nil unless pools_complete?
 
@@ -337,7 +346,13 @@ class CriteriumFlow
   end
 
   # Le tableau final est-il allé jusqu'à sa finale (dernier tour = 1 seul match) ?
+  #
+  # Une poule unique (≤ 7 joueurs) n'a AUCUN tableau : exiger une finale y
+  # laisserait le tournoi éternellement « en cours » alors que tout est joué et que
+  # le classement de la poule a déjà désigné le vainqueur.
   def ok_finished?
+    return true if structure.node("ok").blank?
+
     last = @tournament.bracket_rounds.last
     last.present? && last.complete? && last.tournament_matches.size == 1
   end

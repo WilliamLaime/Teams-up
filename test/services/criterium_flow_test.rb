@@ -17,10 +17,16 @@ class CriteriumFlowTest < ActiveSupport::TestCase
     teardown_db
   end
 
-  def build_tournament(count, players_per_pool: 4)
+  # `final_phase_mode: "standard"` est EXPLICITE : depuis le Lot 6, les seuils
+  # d'effectif du règlement basculent un tournoi de 16 joueurs ou moins en
+  # classement intégral (tableau unique, sans barrage ni consolante). Ce fichier
+  # teste la variante standard, il doit donc la demander — sinon il testerait, sans
+  # le dire, une structure entièrement différente.
+  def build_tournament(count, players_per_pool: 4, final_phase_mode: "standard")
     tournament = Tournament.create!(name: "T#{SecureRandom.hex(3)}", sport: @sport, user: @admin,
                                     format: "criterium_federal", status: "open", max_players: count,
                                     players_per_pool: players_per_pool,
+                                    final_phase_mode: final_phase_mode,
                                     date: Date.tomorrow, place: "Salle test")
     count.times do |i|
       user = create_test_user(email: "p#{i}-#{SecureRandom.hex(3)}@test.fr")

@@ -106,7 +106,9 @@ module TournamentsHelper
     phases = [["main", main_label, main_icon]]
 
     phases << ["barrage", "Barrages", "git-branch-plus"] if tournament.barrage_rounds.any?
-    phases << ["bracket", "Tableau final", "trophy"]
+    # Même condition que _board.html.erb : un Critérium à poule unique (≤ 7
+    # joueurs) n'a pas de tableau, la pastille ouvrirait une section vide.
+    phases << ["bracket", "Tableau final", "trophy"] if tournament.bracket_expected?
     phases << ["consolation", "Consolante", "life-buoy"] if tournament.tournament_rounds.consolation.exists?
     phases << ["classification", "Classement", "list-ordered"] if classification_tables(tournament).any?
 

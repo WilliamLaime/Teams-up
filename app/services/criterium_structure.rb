@@ -80,8 +80,10 @@ class CriteriumStructure
 
   # `pool_count`       : nombre de poules
   # `players_per_pool` : 3 ou 4 (le 4e de poule descend directement en consolante)
-  # `mode`             : :standard (barrages + OK + consolante) ou :integral
-  #                      (tableau unique, chaque place jouée — petits effectifs)
+  # `mode`             : :standard (barrages + OK + consolante), :integral (tableau
+  #                      unique, chaque place jouée — effectifs réduits) ou :none
+  #                      (poule unique : le classement de la poule EST le classement
+  #                      final, aucune phase finale — cf. Tournament#criterium_mode)
   # `player_count`     : effectif réel, utile en mode intégral quand les poules
   #                      sont inégales. Par défaut pool_count × players_per_pool.
   def initialize(pool_count:, players_per_pool: 4, mode: :standard, player_count: nil)
@@ -95,7 +97,11 @@ class CriteriumStructure
   # ses classements, puis consolante et les siens). Memoïsé : la structure est
   # une fonction pure de ses paramètres.
   def nodes
-    @nodes ||= integral? ? integral_nodes : standard_nodes
+    @nodes ||= case @mode
+               when :none     then []
+               when :integral then integral_nodes
+               else                standard_nodes
+               end
   end
 
   def node(key) = nodes.find { |n| n.key == key }
@@ -163,11 +169,14 @@ class CriteriumStructure
   def ko_entrants = @players_per_pool >= 4 ? @pool_count * 2 : @pool_count
 
   # ── Mode intégral : un seul tableau, aucun barrage, aucun ex æquo ────────────
-  # Tout le monde entre dans le même tableau, classé par position de poule.
+  # Tout le monde entre dans le même tableau, classé par POSITION DE POULE : les
+  # 1ers de poule prennent les têtes de série, puis les 2es, etc. (`:pool_rank`).
+  # Ni serpentin ni classement individuel — l'app n'a pas de classement officiel,
+  # et le rang de poule est le seul ordre que le tournoi ait réellement produit.
   def integral_nodes
     placement_tree(prefix: "ok", key: "ok", label: "Tableau final",
                    sources: (1..@players_per_pool).map { |rank| PoolQualifiers[rank] },
-                   pairing: :pool_snake,
+                   pairing: :pool_rank,
                    size: next_power_of_two(@player_count), offset: 1,
                    entrants: @player_count)
   end

@@ -57,6 +57,30 @@ class Tournament < ApplicationRecord
   # l'effectif — cf. #recommended_final_size / #planned_final_size.
   POOL_BASED_FORMATS = %w[poules criterium_federal].freeze
 
+  # ── Variantes de phase finale du Critérium (Lot 6) ──────────────────────────
+  # Le règlement FFTT ne joue pas le même tournoi selon l'effectif :
+  #
+  #   "standard" — barrages + tableau final + consolante. Le format de référence,
+  #                à partir de 17 joueurs (assez de poules pour que les barrages
+  #                aient un sens et que la consolante se remplisse).
+  #   "integral" — « classement intégral » : un SEUL tableau, tout le monde dedans,
+  #                aucun barrage, et aucun ex æquo — chaque place se joue. C'est la
+  #                variante des effectifs réduits (8 à 16), où découper en barrages
+  #                + consolante produirait des tableaux de 2 ou 4 joueurs.
+  #   "none"     — jusqu'à 7 joueurs, une poule unique suffit : le classement final
+  #                EST le classement de la poule, il n'y a aucune phase finale.
+  #
+  # La colonne `final_phase_mode` est une échappatoire (nil = déduit de l'effectif,
+  # cf. #criterium_mode) : c'est le seuil d'effectif qui est la règle, pas un choix.
+  CRITERIUM_MODES = %w[standard integral none].freeze
+
+  # Seuils d'effectif du règlement, lus par #criterium_mode et #pool_plan.
+  #   ≤ 7  → poule unique, pas de phase finale
+  #   ≤ 10 → 2 poules   ·  11 → 3 poules (4/4/3)  ·  ≤ 16 → 4 poules
+  # au-delà : la règle générique (effectif / taille de poule).
+  CRITERIUM_POOLS_ONLY_MAX = 7
+  CRITERIUM_INTEGRAL_MAX   = 16
+
   # Presets rapides du nombre de joueurs proposés dans le formulaire de création.
   # Ce n'est PAS une contrainte : le mode "Libre" autorise n'importe quel entier.
   PLAYER_COUNTS = [8, 16, 32].freeze
@@ -101,6 +125,8 @@ class Tournament < ApplicationRecord
   # en consolante). À 5 joueurs par poule, le règlement ne dit plus rien du 5e —
   # et CriteriumStructure ne saurait pas où le faire entrer.
   validate :criterium_pool_size_is_three_or_four
+  # Variante de phase finale : vide = déduite de l'effectif (cf. #criterium_mode).
+  validates :final_phase_mode, inclusion: { in: CRITERIUM_MODES }, allow_blank: true
 
   # La date/heure d'un tournoi ne peut pas être dans le passé à la création.
   # `on: :create` uniquement : TournamentsController#start et
@@ -243,7 +269,7 @@ class Tournament < ApplicationRecord
     when "poules"
       "#{planned_pool_count} poules de #{pool_size} + #{planned_bracket_stage}"
     when "criterium_federal"
-      "#{planned_pool_count} poules de #{pool_size}, barrages, #{planned_bracket_stage} + consolante"
+      criterium_structure_summary
     when "ronde_suisse"
       "Ronde suisse (#{wins_to_qualify} V / #{losses_to_eliminate} D) + #{planned_bracket_stage}"
     else # championnat
@@ -256,11 +282,13 @@ class Tournament < ApplicationRecord
   # #final_size mais basées sur l'effectif ATTENDU (max_players) et non sur les
   # inscrits du moment — un tournoi vide doit déjà annoncer sa structure.
   def planned_pool_count
-    [(max_players.to_i / pool_size.to_f).ceil, 1].max
+    [pool_plan(max_players).size, 1].max
   end
 
   def planned_final_size
     return bracket_size if bracket_size.present?
+    # Classement intégral : le tableau accueille tout l'effectif, pas 2 par poule.
+    return bracket_capacity_for(max_players.to_i) if criterium? && criterium_mode(max_players) == :integral
     return bracket_capacity_for(planned_pool_count * 2) if POOL_BASED_FORMATS.include?(format)
 
     max_players.to_i <= 8 ? 4 : 8
@@ -351,6 +379,7 @@ class Tournament < ApplicationRecord
     @criterium_structure ||= CriteriumStructure.new(
       pool_count: pools.presence&.size || pool_count,
       players_per_pool: pool_size,
+      mode: criterium_mode,
       player_count: approved_players_count
     )
   end
@@ -375,6 +404,10 @@ class Tournament < ApplicationRecord
   # quoi que ce soit : ne JAMAIS tester `playoffs?` seul hors championnat
   # (cf. _board.html.erb / _phase_nav.html.erb, qui utilisent ce prédicat).
   def bracket_expected?
+    # Critérium à poule unique (≤ 7 joueurs) : le classement de la poule tranche,
+    # il n'y a aucun tableau — pas même une structure à préfigurer.
+    return false if criterium_pools_only?
+
     format != "championnat" || playoffs?
   end
 
@@ -451,14 +484,61 @@ class Tournament < ApplicationRecord
   # Joueurs par poule (format "poules").
   DEFAULT_POOL_SIZE = 4
 
-  def pool_size = players_per_pool.presence || DEFAULT_POOL_SIZE
+  # Taille de poule. En Critérium sans réglage explicite, c'est le PLAN de poules
+  # qui décide (les seuils du règlement), donc la plus grande poule prévue : c'est
+  # elle qui détermine jusqu'à quel rang un joueur peut sortir de sa poule, donc
+  # combien de rangs CriteriumStructure doit savoir faire entrer en phase finale.
+  def pool_size
+    return players_per_pool if players_per_pool.present?
+    return pool_plan.max || DEFAULT_POOL_SIZE if criterium?
+
+    DEFAULT_POOL_SIZE
+  end
 
   # Nombre de poules, déduit de l'effectif et de la taille de poule voulue —
   # réutilisé par PoolBuilder pour la répartition ET ici pour dimensionner le
   # tableau final (cf. #final_size).
   def pool_count
+    return [pool_plan.size, 1].max if criterium?
+
     [(approved_players_count / pool_size.to_f).ceil, 1].max
   end
+
+  # ── Plan de poules (Lot 6) ──────────────────────────────────────────────────
+  # La taille de CHAQUE poule, décroissante : 11 joueurs → [4, 4, 3].
+  #
+  # C'est une DESCRIPTION, pas la répartition : c'est PoolBuilder#assign_pools! qui
+  # affecte les joueurs, en serpentin. Les deux concordent par construction — un
+  # serpentin sur n colonnes donne à chaque poule ⌈effectif/n⌉ ou ⌊effectif/n⌋
+  # joueurs, soit exactement le même multi-ensemble de tailles que #balanced_plan.
+  # Seul l'ordre des poules peut différer, et il n'a aucune signification.
+  #
+  # `count` est paramétrable pour pouvoir annoncer la structure PRÉVUE depuis
+  # `max_players`, avant que quiconque soit inscrit (cf. #structure_summary).
+  def pool_plan(count = approved_players_count)
+    count = count.to_i
+    return [] if count < 1
+
+    balanced_plan(count, planned_pool_count_for(count))
+  end
+
+  # Variante de phase finale effectivement appliquée (cf. CRITERIUM_MODES).
+  # Le réglage explicite gagne ; sinon, ce sont les seuils d'effectif du règlement.
+  def criterium_mode(count = approved_players_count)
+    return final_phase_mode.to_sym if final_phase_mode.present?
+
+    count = count.to_i
+    return :none if count <= CRITERIUM_POOLS_ONLY_MAX
+    return :integral if count <= CRITERIUM_INTEGRAL_MAX
+
+    :standard
+  end
+
+  # Tableau unique à classement intégral : chaque place est jouée, aucun ex æquo.
+  def criterium_integral? = criterium? && criterium_mode == :integral
+
+  # Poule unique sans phase finale : le classement final EST celui de la poule.
+  def criterium_pools_only? = criterium? && criterium_mode == :none
 
   # Taille du tableau final. Réglage explicite (bracket_size) sinon, selon le format :
   #   - poules : le double du nombre de poules — les 2 premiers de chaque poule
@@ -473,7 +553,12 @@ class Tournament < ApplicationRecord
 
   # Le Critérium suit la même règle que les poules — et pour cause : ses entrants
   # sont exactement les n 1ers de poule + les n vainqueurs de barrage, soit 2n.
+  #
+  # Sauf en classement intégral : là, il n'y a pas de sortants de poule, TOUT LE
+  # MONDE entre dans le tableau unique. Le dimensionner sur 2n y couperait le
+  # tournoi en deux (à 16 joueurs, un tableau de 8 pour 16 entrants).
   def recommended_final_size
+    return bracket_capacity_for(approved_players_count) if criterium_integral?
     return bracket_capacity_for(pool_count * 2) if POOL_BASED_FORMATS.include?(format)
 
     approved_players_count <= 8 ? 4 : 8
@@ -505,6 +590,62 @@ class Tournament < ApplicationRecord
   def slug_source = name
 
   private
+
+  # ── Plan de poules : les seuils d'effectif du règlement ─────────────────────
+  # Un réglage explicite de l'organisateur gagne toujours. Sinon, en Critérium,
+  # ce sont les seuils du règlement FFTT ; ailleurs, la règle générique.
+  def planned_pool_count_for(count)
+    size = players_per_pool.presence
+    return [(count / size.to_f).ceil, 1].max if size
+    return criterium_pool_count_for(count) if criterium?
+
+    [(count / DEFAULT_POOL_SIZE.to_f).ceil, 1].max
+  end
+
+  # Les seuils du document de référence. Volontairement écrits en clair plutôt que
+  # dérivés d'une formule : ce sont des paliers arbitraires du règlement, une
+  # formule les rendrait plus difficiles à confronter au texte.
+  def criterium_pool_count_for(count)
+    return 1 if count <= CRITERIUM_POOLS_ONLY_MAX
+    return 2 if count <= 10
+    return 3 if count == 11
+    return 4 if count <= CRITERIUM_INTEGRAL_MAX
+
+    [(count / DEFAULT_POOL_SIZE.to_f).ceil, 1].max
+  end
+
+  # Répartit `count` joueurs en `pools` poules aussi égales que possible, les plus
+  # grandes d'abord : 11 en 3 poules → [4, 4, 3].
+  def balanced_plan(count, pools)
+    base, extra = count.divmod(pools)
+    Array.new(pools) { |index| base + (index < extra ? 1 : 0) }
+  end
+
+  # Résumé de structure du Critérium, une phrase par variante (cf. CRITERIUM_MODES).
+  # Miroir client : tournament_form_controller.js#_criteriumText.
+  def criterium_structure_summary
+    plan = pool_plan(max_players)
+
+    case criterium_mode(max_players)
+    when :none
+      "Poule unique de #{plan.first}, classement final = classement de poule"
+    when :integral
+      # Pas de nom de tour d'entrée ici : « huitièmes » désignerait le tour où
+      # entrent les QUALIFIÉS, alors qu'en intégral le tableau accueille tout
+      # l'effectif et fait jouer chaque place jusqu'à la dernière.
+      "#{pool_plan_label(plan)} + tableau unique de #{planned_final_size}, chaque place jouée"
+    else
+      "#{pool_plan_label(plan)}, barrages, #{planned_bracket_stage} + consolante"
+    end
+  end
+
+  # « 4 poules de 4 » quand elles sont égales, « 3 poules (4-4-3) » sinon : à
+  # effectif non divisible, annoncer une taille unique serait faux.
+  def pool_plan_label(plan)
+    return "#{plan.size} poules de #{plan.first}" if plan.uniq.size == 1
+
+    "#{plan.size} poules (#{plan.join('-')})"
+  end
 
   # Rejette une date (et heure si saisie) déjà passée. L'heure reste facultative :
   # sans heure, seule la date est comparée au jour courant.

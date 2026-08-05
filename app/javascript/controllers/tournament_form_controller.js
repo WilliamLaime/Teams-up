@@ -16,10 +16,17 @@ import { Controller } from "@hotwired/stimulus"
 
 // Libellés lisibles des formats (miroir de Tournament::FORMAT_LABELS).
 const FORMAT_LABELS = {
-  ronde_suisse: "Ronde Suisse",
-  poules:       "Poules",
-  championnat:  "Championnat"
+  ronde_suisse:      "Ronde Suisse",
+  poules:            "Poules",
+  championnat:       "Championnat",
+  criterium_federal: "Critérium Fédéral"
 }
+
+// Seuils d'effectif du Critérium — miroir de Tournament::CRITERIUM_POOLS_ONLY_MAX
+// et CRITERIUM_INTEGRAL_MAX. Au-delà, la structure standard (barrages + tableau
+// final + consolante) ; en dessous, poule unique ou classement intégral.
+const CRITERIUM_POOLS_ONLY_MAX = 7
+const CRITERIUM_INTEGRAL_MAX   = 16
 
 // Valeurs recommandées — MIROIR des défauts du modèle : Tournament::DEFAULT_POOL_SIZE
 // et TournamentUser::WINS_TO_QUALIFY / LOSSES_TO_ELIMINATE. Toute évolution doit être
@@ -340,6 +347,8 @@ export default class extends Controller {
       const { poolSize } = this._settings()
       push(Math.max(poolSize, Math.round(wanted / poolSize) * poolSize), true)
     } else {
+      // Critérium compris : il équilibre lui-même ses poules (4/4/3 à 11 joueurs),
+      // aucun effectif n'est « mal rempli » — on propose le nombre demandé tel quel.
       push(wanted, true)
     }
     push(16)
@@ -372,6 +381,9 @@ export default class extends Controller {
 
     return {
       poolSize:    int(this.poolSizeInputTarget) || DEFAULTS.poolSize,
+      // Distinct de poolSize : en Critérium, « vide » ne veut pas dire 4 mais
+      // « laisse les seuils du règlement décider » (cf. _criteriumPoolCount).
+      explicitPoolSize: int(this.poolSizeInputTarget),
       wins:        int(this.winsInputTarget)     || DEFAULTS.wins,
       losses:      int(this.lossesInputTarget)   || DEFAULTS.losses,
       bracketSize: int(this.bracketSizeInputTarget)
@@ -381,16 +393,50 @@ export default class extends Controller {
   // Miroirs de Tournament#planned_pool_count / #planned_final_size / #planned_bracket_stage.
   _poolCount(players, poolSize) { return Math.max(Math.ceil(players / poolSize), 1) }
 
+  // Miroir de Tournament#bracket_capacity_for : un tableau à élimination directe
+  // n'a que 2, 4, 8, 16… places (les places en trop sont des byes).
+  _capacityFor(qualified) {
+    let size = 2
+    while (size < qualified) size *= 2
+    return size
+  }
+
+  // ── Critérium Fédéral : miroirs des seuils du règlement ─────────────────────
+  // Tournament#criterium_pool_count_for. Un réglage explicite de taille de poule
+  // gagne, comme côté serveur.
+  _criteriumPoolCount(players, explicitPoolSize) {
+    if (explicitPoolSize) return this._poolCount(players, explicitPoolSize)
+    if (players <= CRITERIUM_POOLS_ONLY_MAX) return 1
+    if (players <= 10) return 2
+    if (players === 11) return 3
+    if (players <= CRITERIUM_INTEGRAL_MAX) return 4
+    return this._poolCount(players, DEFAULTS.poolSize)
+  }
+
+  // Tournament#pool_plan : la taille de chaque poule, les plus grandes d'abord.
+  _criteriumPoolPlan(players, explicitPoolSize) {
+    const pools = this._criteriumPoolCount(players, explicitPoolSize)
+    const base  = Math.floor(players / pools)
+    const extra = players % pools
+    return Array.from({ length: pools }, (_, i) => base + (i < extra ? 1 : 0))
+  }
+
+  // Tournament#criterium_mode : la variante déduite de l'effectif.
+  _criteriumMode(players) {
+    if (players <= CRITERIUM_POOLS_ONLY_MAX) return "none"
+    return players <= CRITERIUM_INTEGRAL_MAX ? "integral" : "standard"
+  }
+
   _finalSize(format, players, settings) {
     if (settings.bracketSize) return settings.bracketSize
-    // Poules : 2 qualifiés par poule, arrondis à la puissance de 2 supérieure —
-    // un tableau à élimination directe n'a que 2, 4, 8, 16… places (miroir de
-    // Tournament#bracket_capacity_for).
-    if (format === "poules") {
-      const qualified = this._poolCount(players, settings.poolSize) * 2
-      let size = 2
-      while (size < qualified) size *= 2
-      return size
+    // Classement intégral : tout l'effectif entre dans le tableau unique.
+    if (format === "criterium_federal" && this._criteriumMode(players) === "integral") {
+      return this._capacityFor(players)
+    }
+    // Poules (et Critérium standard) : 2 qualifiés par poule.
+    if (format === "poules") return this._capacityFor(this._poolCount(players, settings.poolSize) * 2)
+    if (format === "criterium_federal") {
+      return this._capacityFor(this._criteriumPoolPlan(players, settings.explicitPoolSize).length * 2)
     }
 
     return players <= 8 ? 4 : 8
@@ -406,6 +452,9 @@ export default class extends Controller {
     if (format === "poules") {
       return `${this._poolCount(players, settings.poolSize)} poules de ${settings.poolSize} + ${stage}`
     }
+    if (format === "criterium_federal") {
+      return this._criteriumText(players, settings, stage)
+    }
     if (format === "ronde_suisse") {
       return `Ronde suisse (${settings.wins} V / ${settings.losses} D) + ${stage}`
     }
@@ -414,6 +463,29 @@ export default class extends Controller {
     return this._withPlayoffs()
       ? `${base}, top ${this._finalSize(format, players, settings)} en playoffs`
       : `${base}, vainqueur = 1er du classement`
+  }
+
+  // Miroir de Tournament#criterium_structure_summary — une phrase par variante.
+  _criteriumText(players, settings, stage) {
+    // La variante ne dépend QUE de l'effectif, même si l'organisateur a imposé une
+    // taille de poule : c'est le règlement qui fixe les seuils (miroir exact de
+    // Tournament#criterium_mode, qui ignore lui aussi players_per_pool).
+    const plan = this._criteriumPoolPlan(players, settings.explicitPoolSize)
+    const mode = this._criteriumMode(players)
+
+    if (mode === "none") return `Poule unique de ${plan[0]}, classement final = classement de poule`
+    if (mode === "integral") {
+      const size = this._finalSize("criterium_federal", players, settings)
+      return `${this._planLabel(plan)} + tableau unique de ${size}, chaque place jouée`
+    }
+    return `${this._planLabel(plan)}, barrages, ${stage} + consolante`
+  }
+
+  // Miroir de Tournament#pool_plan_label : « 4 poules de 4 », ou « 3 poules (4-4-3) »
+  // quand l'effectif ne se divise pas — annoncer une taille unique serait faux.
+  _planLabel(plan) {
+    const uniform = plan.every(size => size === plan[0])
+    return uniform ? `${plan.length} poules de ${plan[0]}` : `${plan.length} poules (${plan.join("-")})`
   }
 
   _withPlayoffs() { return this.playoffsInputTarget.value !== "false" }
@@ -426,18 +498,24 @@ export default class extends Controller {
     this.advancedSectionTarget.style.display = ready ? "" : "none"
     if (!ready) return
 
-    const isPools = format === "poules"
+    const isCriterium = format === "criterium_federal"
+    const isPools = format === "poules" || isCriterium
     const isSwiss = format === "ronde_suisse"
-    // Championnat sans playoffs : pas de tableau final, donc rien à dimensionner
-    // (cf. Tournament#bracket_expected?).
-    const hasBracket = format !== "championnat" || this._withPlayoffs()
+    // Pas de tableau final à dimensionner pour un championnat sans playoffs, ni
+    // pour un Critérium à poule unique (cf. Tournament#bracket_expected?).
+    const hasBracket = (format !== "championnat" || this._withPlayoffs()) &&
+                       !(isCriterium && this._criteriumMode(players) === "none")
 
     this.poolSizeFieldTarget.style.display    = isPools ? "" : "none"
     this.winsFieldTarget.style.display        = isSwiss ? "" : "none"
     this.lossesFieldTarget.style.display      = isSwiss ? "" : "none"
     this.bracketSizeFieldTarget.style.display = hasBracket ? "" : "none"
 
-    this.poolSizeInputTarget.placeholder = `Recommandé : ${DEFAULTS.poolSize}`
+    // Le Critérium ne connaît que les poules de 3 ou 4 (cf. la validation
+    // Tournament#criterium_pool_size_is_three_or_four) ; vide = seuils du règlement.
+    this.poolSizeInputTarget.placeholder = isCriterium
+      ? "Recommandé : selon l'effectif (3 ou 4)"
+      : `Recommandé : ${DEFAULTS.poolSize}`
     this.winsInputTarget.placeholder     = `Recommandé : ${DEFAULTS.wins}`
     this.lossesInputTarget.placeholder   = `Recommandé : ${DEFAULTS.losses}`
   }

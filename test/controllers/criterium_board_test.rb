@@ -13,7 +13,8 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     @sport = Sport.create!(name: "Ping board", slug: "ping-pong", icon: "🏓")
     @tournament = Tournament.create!(name: "Critérium test", sport: @sport, user: @owner,
                                      format: "criterium_federal", status: "open", max_players: 16,
-                                     players_per_pool: 4, date: Date.tomorrow, place: "Salle test")
+                                     players_per_pool: 4, final_phase_mode: "standard",
+                                     date: Date.tomorrow, place: "Salle test")
     16.times do |i|
       user = create_test_user(email: "cb#{i}@example.com")
       @tournament.tournament_users.create!(user: user, role: "joueur", status: "approved")
