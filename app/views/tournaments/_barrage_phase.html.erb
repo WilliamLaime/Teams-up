@@ -1,0 +1,17 @@
+<%# ── Barrages du Critérium Fédéral ───────────────────────────────────────────
+    Un tour unique, intercalé entre les poules et le tableau final : les 2es de
+    poule y affrontent les 3es d'une AUTRE poule (appariement croisé, cf.
+    CriteriumFlow#barrage_pairs). Ce n'est pas un tableau à élimination directe —
+    d'où le ruban de colonnes commun (_round_ribbon) plutôt que _bracket.
+
+    Les deux camps continuent : le vainqueur rejoint un 1er de poule dans le
+    tableau final, le perdant descend en consolante. C'est le seul tour du format
+    dont personne ne sort.
+
+    Local : tournament. %>
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="barrage">
+  <h2 class="tournament-phase__title">Barrages</h2>
+
+  <%= render "tournaments/round_ribbon", rounds: tournament.barrage_rounds,
+              title_for: ->(_round) { "Barrages" } %>
+</section>

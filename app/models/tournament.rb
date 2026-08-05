@@ -30,15 +30,32 @@ class Tournament < ApplicationRecord
   # "closed" = inscriptions fermées (complet ou clôture manuelle) mais pas encore lancé.
   STATUSES = %w[open closed in_progress completed].freeze
   # Formats disponibles. La ronde suisse est le format prioritaire (cf. docs/TOURNOI.md).
-  FORMATS  = %w[ronde_suisse poules championnat].freeze
+  #
+  # "criterium_federal" est un format À PART, et non une option de "poules" : les
+  # tournois « Poules » existants doivent garder exactement leur comportement, et
+  # l'organisateur doit choisir le règlement FFTT en connaissance de cause (matchs
+  # de classement, consolante, barème 2/1 — cf. CriteriumStructure).
+  FORMATS  = %w[ronde_suisse poules championnat criterium_federal].freeze
 
   # Libellés lisibles des formats — source unique de vérité (évite la duplication
   # du dictionnaire dans les vues carte/show).
   FORMAT_LABELS = {
     "ronde_suisse" => "Ronde Suisse",
     "poules" => "Poules",
-    "championnat" => "Championnat"
+    "championnat" => "Championnat",
+    "criterium_federal" => "Critérium Fédéral"
   }.freeze
+
+  # Phases postérieures aux poules du Critérium. Regroupées ici parce que plusieurs
+  # décisions en dépendent : les règles de score renforcées (best_of 7, cf.
+  # TournamentMatch#final_phase?), la détection « la phase finale a commencé », et
+  # l'invalidation de l'aval lors d'une correction de score.
+  FINAL_PHASES = %w[barrage bracket consolation classification].freeze
+
+  # Formats qui commencent par une phase de poules et dimensionnent donc leur
+  # tableau final sur le NOMBRE DE POULES (2 sortants par poule) et non sur
+  # l'effectif — cf. #recommended_final_size / #planned_final_size.
+  POOL_BASED_FORMATS = %w[poules criterium_federal].freeze
 
   # Presets rapides du nombre de joueurs proposés dans le formulaire de création.
   # Ce n'est PAS une contrainte : le mode "Libre" autorise n'importe quel entier.
@@ -79,6 +96,11 @@ class Tournament < ApplicationRecord
   # s'enchaînent pas (cf. BracketBuilder + #expected_bracket_round_count).
   validates :bracket_size, numericality: { only_integer: true, greater_than_or_equal_to: 2 }, allow_nil: true
   validate  :bracket_size_is_power_of_two
+  # Le Critérium Fédéral ne connaît que les poules de 3 ou de 4 : c'est la taille
+  # qui détermine les sortants (1er qualifié, 2e et 3e en barrage, 4e directement
+  # en consolante). À 5 joueurs par poule, le règlement ne dit plus rien du 5e —
+  # et CriteriumStructure ne saurait pas où le faire entrer.
+  validate :criterium_pool_size_is_three_or_four
 
   # La date/heure d'un tournoi ne peut pas être dans le passé à la création.
   # `on: :create` uniquement : TournamentsController#start et
@@ -172,7 +194,14 @@ class Tournament < ApplicationRecord
 
   # Classement PAR poule (format "poules") : hash ordonné { index_poule => joueurs
   # triés }. Mêmes critères de tri que ranked_players.
+  #
+  # En Critérium Fédéral, c'est le règlement FFTT qui départage (points-parties 2/1,
+  # confrontation directe puis quotients restreints au sous-groupe d'ex-æquo) — une
+  # logique que `rank_key`, clé de tri plate, ne peut pas exprimer. D'où la
+  # délégation à PoolStandings, qui est aussi ce qui décide des sortants de poule.
   def ranked_pools
+    return pool_standings.transform_values(&:ordered) if criterium?
+
     pools.transform_values { |members| members.sort_by { |tu| rank_key(tu) } }
          .sort.to_h
   end
@@ -184,8 +213,14 @@ class Tournament < ApplicationRecord
   # directement au tableau final sans aucun match joué ne seed toujours les mêmes
   # joueurs en tête par ordre alphabétique) — partagé par ranked_players /
   # ranked_pools et le seeding (BracketBuilder, PoolBuilder).
+  #
+  # `draw_order.to_i` et non `draw_order` : la colonne est nullable (aucun backfill
+  # sur les tournois lancés avant sa migration) et un effectif où certains joueurs
+  # l'ont et d'autres pas ferait lever `ArgumentError: comparison of Array with
+  # Array failed` à `sort_by` — `nil <=> 1` vaut nil. Un nil se comporte donc comme
+  # un 0, c'est-à-dire « tiré en premier », plutôt que de casser le classement.
   def rank_key(tu)
-    [-tu.ranking_points, -tu.point_average, -tu.set_average, tu.losses, tu.draw_order]
+    [-tu.ranking_points, -tu.point_average, -tu.set_average, tu.losses, tu.draw_order.to_i]
   end
 
   # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.
@@ -207,6 +242,8 @@ class Tournament < ApplicationRecord
     case format
     when "poules"
       "#{planned_pool_count} poules de #{pool_size} + #{planned_bracket_stage}"
+    when "criterium_federal"
+      "#{planned_pool_count} poules de #{pool_size}, barrages, #{planned_bracket_stage} + consolante"
     when "ronde_suisse"
       "Ronde suisse (#{wins_to_qualify} V / #{losses_to_eliminate} D) + #{planned_bracket_stage}"
     else # championnat
@@ -224,7 +261,7 @@ class Tournament < ApplicationRecord
 
   def planned_final_size
     return bracket_size if bracket_size.present?
-    return bracket_capacity_for(planned_pool_count * 2) if format == "poules"
+    return bracket_capacity_for(planned_pool_count * 2) if POOL_BASED_FORMATS.include?(format)
 
     max_players.to_i <= 8 ? 4 : 8
   end
@@ -254,10 +291,64 @@ class Tournament < ApplicationRecord
   def league_rounds  = tournament_rounds.league.ordered
   # Journées de poules (round-robin par poule), dans l'ordre.
   def pool_rounds    = tournament_rounds.pool.ordered
-  # Tours du tableau final, dans l'ordre.
-  def bracket_rounds = tournament_rounds.bracket.ordered
+
+  # Tours du tableau final (« OK »), dans l'ordre.
+  #
+  # `main_branch` est un GARDE-FOU, pas une précaution de style : #champion lit
+  # `bracket_rounds.last.tournament_matches.first.winner`. Si un mini-tableau de
+  # classement atterrissait ici, le champion du tournoi serait le vainqueur du
+  # match pour la 7e place. Les mini-tableaux vivent en phase "classification",
+  # donc hors de ce scope de deux façons — ceinture et bretelles.
+  def bracket_rounds = tournament_rounds.bracket.main_branch.ordered
   # Le tableau final a-t-il déjà commencé ?
   def bracket_started? = tournament_rounds.bracket.exists?
+
+  # ── Critérium Fédéral (FFTT) ────────────────────────────────────────────────
+  def criterium? = format == "criterium_federal"
+
+  # Classement de chaque poule au règlement FFTT : { index_poule => PoolStandings }.
+  #
+  # Memoïsé ET requête unique : les matchs de poule sont chargés une seule fois puis
+  # injectés dans chaque PoolStandings, sinon classer 8 poules coûterait 8 requêtes.
+  # Source unique partagée par les vues (onglet Classement) et par CriteriumFlow,
+  # qui décide des barrages et du tableau final — les deux doivent voir le MÊME
+  # classement, sans quoi l'affichage contredirait les appariements.
+  def pool_standings
+    @pool_standings ||= begin
+      matches = TournamentMatch.joins(:tournament_round)
+                               .where(tournament_rounds: { tournament_id: id, phase: "pool" })
+                               .to_a
+      pools.sort.to_h { |index, members| [index, PoolStandings.new(self, members, matches: matches)] }
+    end
+  end
+
+  # Position (1-based) d'un joueur dans sa poule, ou nil s'il n'est pas en poule.
+  def pool_position_of(tournament_user)
+    return nil if tournament_user.pool.blank?
+
+    pool_standings[tournament_user.pool]&.place_of(tournament_user)
+  end
+
+  # Topologie déclarée du Critérium (barrages, tableau final, consolante, matchs de
+  # classement) — cf. CriteriumStructure. On compte les poules RÉELLEMENT
+  # constituées quand elles le sont : un abandon ferait varier `pool_count` (dérivé
+  # de l'effectif) et donc la structure en cours de tournoi.
+  def criterium_structure
+    @criterium_structure ||= CriteriumStructure.new(
+      pool_count: pools.presence&.size || pool_count,
+      players_per_pool: pool_size,
+      player_count: approved_players_count
+    )
+  end
+
+  # Tours des barrages / de la consolante / des mini-tableaux de classement.
+  def barrage_rounds        = tournament_rounds.barrage.ordered
+  def consolation_rounds    = tournament_rounds.consolation.main_branch.ordered
+  def classification_rounds = tournament_rounds.classification.order(:branch, :number)
+
+  # La phase finale a-t-elle commencé ? Plus large que #bracket_started? : le
+  # Critérium démarre par les BARRAGES, avant que le tableau final n'existe.
+  def final_phase_started? = tournament_rounds.final_phase.exists?
 
   # Ce tournoi aura-t-il un tableau final (à un moment ou un autre) ? Ronde
   # suisse et poules en ont TOUJOURS un (cf. SwissPairing/PoolBuilder, aucun
@@ -356,8 +447,10 @@ class Tournament < ApplicationRecord
     bracket_size.presence || recommended_final_size
   end
 
+  # Le Critérium suit la même règle que les poules — et pour cause : ses entrants
+  # sont exactement les n 1ers de poule + les n vainqueurs de barrage, soit 2n.
   def recommended_final_size
-    return bracket_capacity_for(pool_count * 2) if format == "poules"
+    return bracket_capacity_for(pool_count * 2) if POOL_BASED_FORMATS.include?(format)
 
     approved_players_count <= 8 ? 4 : 8
   end
@@ -411,5 +504,14 @@ class Tournament < ApplicationRecord
     return if bracket_size.nobits?(bracket_size - 1)
 
     errors.add(:bracket_size, "doit être une puissance de 2 (4, 8, 16, 32…)")
+  end
+
+  # Poules de 3 ou 4 en Critérium Fédéral (cf. CriteriumStructure). Vide reste
+  # autorisé : c'est le mode « recommandé », où #pool_plan choisit la taille.
+  def criterium_pool_size_is_three_or_four
+    return unless criterium?
+    return if players_per_pool.blank? || [3, 4].include?(players_per_pool)
+
+    errors.add(:players_per_pool, "doit être 3 ou 4 pour un Critérium Fédéral")
   end
 end

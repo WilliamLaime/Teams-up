@@ -3,10 +3,13 @@ module TournamentsHelper
   # Tours à afficher en colonnes dans le bracket viewer : les rondes de la phase
   # round-robin du format (suisse / championnat / poules) dans l'ordre, PUIS les
   # tours du tableau final. Renvoie un tableau (les colonnes du ruban).
+  # Les barrages du Critérium s'intercalent entre les poules et le tableau final :
+  # sans eux, le bracket viewer sauterait la moitié de la phase finale.
   def display_rounds(tournament)
     tournament.swiss_rounds.to_a +
       tournament.league_rounds.to_a +
       tournament.pool_rounds.to_a +
+      tournament.barrage_rounds.to_a +
       tournament.bracket_rounds.to_a
   end
 
@@ -19,8 +22,16 @@ module TournamentsHelper
   def round_label(round, bracket_rounds)
     return "Ronde #{round.number}" if round.phase == "swiss"
     return "Journée #{round.number}" if %w[league pool].include?(round.phase)
+    return "Barrages" if round.phase == "barrage"
 
-    bracket_stage_label(bracket_rounds.index(round).to_i, bracket_rounds.size)
+    # Un tour de consolante ou de classement (Critérium) n'appartient PAS à
+    # `bracket_rounds` : `index` renverrait nil, et `nil.to_i` étiquetterait
+    # silencieusement le tour comme le PREMIER du tableau final — un libellé faux
+    # et indétectable. On préfère un libellé neutre mais juste.
+    index = bracket_rounds.index(round)
+    return "Tour #{round.number}" if index.nil?
+
+    bracket_stage_label(index, bracket_rounds.size)
   end
 
   # Libellé d'un tour du tableau final à partir de sa position (0-based) et du
@@ -45,10 +56,20 @@ module TournamentsHelper
   # le sélecteur de phase (_phase_nav, bascule round-robin vs tableau final).
   def round_robin_phase_meta(tournament)
     case tournament.format
-    when "poules" then ["Poules", "layout-grid"]
+    when "poules", "criterium_federal" then ["Poules", "layout-grid"]
     when "championnat" then ["Championnat", "swords"]
     else ["Ronde Suisse", "swords"]
     end
+  end
+
+  # Phase à afficher par défaut dans le board : la plus avancée qui existe. Le
+  # Critérium ajoute un palier entre les poules et le tableau final, et un tournoi
+  # peut y stationner longtemps (les barrages sont un tour complet à jouer).
+  def default_board_phase(tournament)
+    return "bracket" if tournament.bracket_started?
+    return "barrage" if tournament.barrage_rounds.any?
+
+    "main"
   end
 
   # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde

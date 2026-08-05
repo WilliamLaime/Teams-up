@@ -50,7 +50,9 @@ class SwissPairing
     #    ronde 1, tout le monde est à 0 partout, donc trier par id reproduirait
     #    toujours l'ordre d'inscription (J1 vs J2, J3 vs J4…) au lieu d'un vrai
     #    tirage au sort.
-    ordered = players.sort_by { |p| [-p.wins, -p.set_average, -p.point_average, p.draw_order] }
+    #    `.to_i` : draw_order est nullable, et un effectif mixte (certains l'ont,
+    #    d'autres pas) ferait lever ArgumentError à sort_by — cf. Tournament#rank_key.
+    ordered = players.sort_by { |p| [-p.wins, -p.set_average, -p.point_average, p.draw_order.to_i] }
 
     # 3. Recherche globale d'un appariement SANS rematch (backtracking borné).
     #    Si aucune solution n'existe, on relâche la contrainte (force_pair).

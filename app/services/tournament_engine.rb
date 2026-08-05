@@ -8,7 +8,11 @@ module TournamentEngine
   def self.for(tournament)
     case tournament.format
     when "championnat" then LeagueBuilder.new(tournament)
-    when "poules"      then PoolBuilder.new(tournament)
+    # Le Critérium Fédéral commence par une phase de poules identique au format
+    # "poules" : même répartition, même calendrier round-robin. C'est seulement à la
+    # bascule en phase finale que PoolBuilder délègue à CriteriumFlow (barrages,
+    # tableau final, consolante, matchs de classement).
+    when "poules", "criterium_federal" then PoolBuilder.new(tournament)
     else                    SwissPairing.new(tournament) # ronde_suisse + défaut sûr
     end
   end

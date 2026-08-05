@@ -31,7 +31,7 @@
       final) : le sélecteur de phase (_phase_nav) bascule leur visibilité une fois le
       tableau final démarré (avant ça, une seule des deux existe, rien à basculer). %>
   <div class="tournament-board__phases" data-controller="tournament-phase-switch"
-       data-tournament-phase-switch-default-value="<%= tournament.bracket_started? ? "bracket" : "main" %>">
+       data-tournament-phase-switch-default-value="<%= default_board_phase(tournament) %>">
     <%= render "tournaments/phase_nav", tournament: tournament %>
 
     <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>
@@ -56,6 +56,11 @@
     <%# Poules : round-robin par poule, matchs groupés par poule dans chaque journée. %>
     <% if tournament.pool_rounds.any? %>
       <%= render "tournaments/pool_phase", tournament: tournament %>
+    <% end %>
+
+    <%# Barrages (Critérium Fédéral) : palier entre les poules et le tableau final. %>
+    <% if tournament.barrage_rounds.any? %>
+      <%= render "tournaments/barrage_phase", tournament: tournament %>
     <% end %>
 
     <%# Tableau final / playoffs à élimination directe (commun à tous les formats).

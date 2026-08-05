@@ -136,8 +136,12 @@ class TournamentMatch < ApplicationRecord
     (best_of / 2) + 1
   end
 
-  # Ce match appartient-il au tableau à élimination directe ?
-  def final_phase? = tournament_round&.phase == "bracket"
+  # Ce match appartient-il à une phase à élimination directe ?
+  #
+  # Couvre le tableau final, mais aussi les barrages, la consolante et les matchs
+  # de classement du Critérium : le règlement FFTT les joue tous au meilleur des
+  # 7 manches, comme le tableau principal (cf. #scoring_rules et final_best_of).
+  def final_phase? = Tournament::FINAL_PHASES.include?(tournament_round&.phase)
 
   private
 

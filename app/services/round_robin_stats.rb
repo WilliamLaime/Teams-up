@@ -62,6 +62,26 @@ module RoundRobinStats
   # Inscriptions joueurs approuvées (relation, requêtée à frais à chaque appel).
   def player_scope = @tournament.tournament_users.players.approved
 
+  # ── Ordre STABLE des joueurs, base de tout calendrier round-robin ─────────────
+  # LeagueBuilder et PoolBuilder recalculent leur calendrier à CHAQUE appel de
+  # `next_round!` et ne persistent que la journée manquante. Ce design n'est
+  # correct que si cet ordre est TOTAL : deux lectures doivent rendre exactement la
+  # même séquence, sinon le calendrier se décale d'une journée à l'autre —
+  # certaines rencontres sont programmées deux fois, d'autres jamais, et la phase
+  # peut ne jamais se terminer.
+  #
+  # `draw_order` (le tirage au sort figé au lancement, cf.
+  # TournamentsController#assign_draw_order!) ne suffit PAS : il est nullable et
+  # n'a jamais été backfillé, donc tous les tournois lancés avant sa migration ont
+  # un draw_order nul de bout en bout. `ORDER BY draw_order` laisse alors Postgres
+  # libre de rendre les lignes dans n'importe quel ordre — et cet ordre change
+  # réellement en cours de tournoi, parce que `recompute_stats_for` réécrit le
+  # bilan de chaque joueur entre deux journées et déplace les tuples dans le heap.
+  #
+  # D'où `:id` en dernier critère : unique par construction, donc l'ordre est total
+  # même sans tirage au sort, tout en laissant `draw_order` décider quand il existe.
+  def ordered_player_scope = player_scope.order(:draw_order, :id)
+
   # Tous les matchs d'une phase de ce tournoi (requête fraîche).
   def matches_in_phase(phase)
     TournamentMatch.joins(:tournament_round)

@@ -112,9 +112,14 @@ class Sport < ApplicationRecord
   # les tailles d'équipe d'un match). Principe : les sports de raquette se jouent
   # en ronde suisse / poules ; les sports collectifs en championnat / poules.
   # Renvoie un array de valeurs de Tournament::FORMATS.
+  # Le Critérium Fédéral est réservé au tennis de table : c'est le règlement de la
+  # FFTT (barème points-parties 2/1, barrages, consolante, matchs de classement),
+  # il n'a pas de sens pour les autres sports.
   def available_tournament_formats
     case slug
-    when "tennis", "padel", "badminton", "ping-pong"
+    when "ping-pong"
+      %w[ronde_suisse poules criterium_federal]
+    when "tennis", "padel", "badminton"
       %w[ronde_suisse poules]
     when "football", "basketball", "handball", "volleyball"
       %w[championnat poules]
@@ -158,6 +163,25 @@ class Sport < ApplicationRecord
     when "handball"   then { win: 2, draw: 1, loss: 0 } # barème IHF historique
     when "basketball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
     when "volleyball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
+    end
+  end
+
+  # Barème « points-parties » d'une phase de POULES, lu UNIQUEMENT par PoolStandings.
+  #
+  # Le tennis de table compte 2 points par victoire et 1 par défaite jouée (règlement
+  # FFTT du Critérium Fédéral) — un forfait ne rapporte rien.
+  #
+  # Volontairement séparé de #ranking_points_rules, qui alimente
+  # TournamentUser#ranking_points → Tournament#rank_key → le seeding de TOUS les
+  # formats. Y injecter le 2/1 serait une régression silencieuse sur la ronde suisse :
+  # l'équivalence « 2 V / 1 D ≡ ordre par victoires » ne vaut qu'à nombre de matchs
+  # ÉGAL, ce que la ronde suisse ne garantit pas (bye, abandon, entrée tardive). Un
+  # joueur à 1 V - 0 D (2 pts) se retrouverait à égalité avec un 0 V - 2 D (2 pts),
+  # alors qu'aujourd'hui la victoire tranche.
+  def pool_points_rules
+    case slug
+    when "ping-pong" then { win: 2, draw: 0, loss: 1, forfeit: 0 }
+    else (ranking_points_rules || { win: 1, draw: 0, loss: 0 }).merge(forfeit: 0)
     end
   end
 
