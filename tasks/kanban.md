@@ -1,4 +1,4 @@
-# Kanban - Team Up
+# Kanban - Teams-up
 
 > Mis à jour le : 2026-03-11
 
@@ -8,7 +8,7 @@
 
 ### 🎨 Général
 - [ ] Faire des composants pour les boutons Primaires et Secondaires
-- [ ] Mettre le titre à côté de Favicon "Teams-Up"
+- [ ] Mettre le titre à côté de Favicon "Teams-up"
 
 ### 💬 Modal du Chat
 - [ ] Les icônes soient liées à notre photo de profil

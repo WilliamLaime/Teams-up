@@ -1525,7 +1525,7 @@
         <%# 2. WhatsApp — lien universel wa.me avec texte pré-rempli %>
         <%# RGAA 13.2 — mention "nouvelle fenêtre" pour target="_blank" %>
         <a class="share-option"
-           href="https://wa.me/?text=<%= CGI.escape("Rejoins ce match sur Team Up ! #{match_url(@match)}") %>"
+           href="https://wa.me/?text=<%= CGI.escape("Rejoins ce match sur Teams-up ! #{match_url(@match)}") %>"
            target="_blank"
            rel="noopener noreferrer">
           <div class="share-option-icon share-whatsapp-icon">
@@ -1559,7 +1559,7 @@
 
         <%# 4. SMS — lien sms: natif (fonctionne sur mobile iOS et Android) %>
         <a class="share-option"
-           href="sms:?body=<%= CGI.escape("Rejoins ce match sur Team Up ! #{match_url(@match)}") %>">
+           href="sms:?body=<%= CGI.escape("Rejoins ce match sur Teams-up ! #{match_url(@match)}") %>">
           <div class="share-option-icon share-sms-icon">
             <i data-lucide="message-circle" style="width:22px;height:22px;"></i>
           </div>

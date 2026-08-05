@@ -17,7 +17,7 @@ namespace :factory_reset do
 
     puts ""
     puts "=================================================="
-    puts "  FACTORY RESET — Team Up"
+    puts "  FACTORY RESET — Teams-up"
     puts "  Mode : #{dry_run ? 'DRY RUN (aucune suppression réelle)' : 'PRODUCTION — données effacées définitivement'}"
     puts "=================================================="
     puts ""

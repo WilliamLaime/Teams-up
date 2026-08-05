@@ -1,4 +1,4 @@
-# Team Up — Architecture
+# Teams-up — Architecture
 
 > Référence consultée **à la demande** pour comprendre les modèles, associations et flux.
 > Pour fouiller les fichiers volumineux cités plus bas, **déléguer la lecture à un sous-agent Explore**.

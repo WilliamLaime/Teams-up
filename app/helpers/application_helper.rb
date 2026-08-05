@@ -3,7 +3,7 @@ module ApplicationHelper
   # ex: pagy_bootstrap_nav(@pagy) dans les vues admin
   include Pagy::Frontend
 
-  # Génère un badge achievement avec le style exactement issu du Figma Teams-Up :
+  # Génère un badge achievement avec le style exactement issu du Figma Teams-up :
   # — cercle plein (border-radius 9999px), fond rgba(255,255,255,0.05)
   # — glow blanc quand déverrouillé, grayscale + opacité réduite quand verrouillé
   # — emoji centré à 28px (adapté à la taille du badge dans l'armoire)
