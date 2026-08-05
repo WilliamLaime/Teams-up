@@ -1,12 +1,12 @@
 # ── Service CriteriumFlow ─────────────────────────────────────────────────────
 # Moteur du format « Critérium Fédéral » (FFTT). MATÉRIALISE en TournamentRound la
-# topologie déclarée par CriteriumStructure : barrages, tableau final (« OK »), puis
-# (Lot 5) consolante et mini-tableaux de classement.
+# topologie déclarée par CriteriumStructure : barrages, tableau final (« OK »),
+# consolante (« KO ») et mini-tableaux de classement.
 #
 # ── Un réconciliateur, pas une machine à états ─────────────────────────────────
-# #advance! ne demande jamais « où en est-on ? ». Il recalcule à chaque appel les
-# tours qui DEVRAIENT exister d'après les tours déjà terminés, et ne crée que ceux
-# qui manquent. Deux propriétés en découlent, toutes deux indispensables :
+# #advance! ne demande jamais « où en est-on ? ». Il parcourt TOUS les nœuds
+# déclarés, recalcule ceux qui devraient exister d'après les tours déjà terminés,
+# et ne crée que ce qui manque. Deux propriétés en découlent, indispensables :
 #
 #   • idempotence — double-clic, rechargement Turbo, appels concurrents : le
 #     deuxième appel ne crée rien. L'index unique (tournoi, phase, branche, numéro)
@@ -15,6 +15,15 @@
 #     une fois au lancement, est la seule source d'aléa. C'est la condition pour
 #     qu'une correction de score (Lot 8) puisse détruire l'aval et le reconstruire
 #     à l'identique.
+#
+# ── Pourquoi une boucle sur les nœuds, et pas un enchaînement écrit à la main ──
+# Le format compte jusqu'à 11 tableaux (tableau final, consolante, et leurs
+# classements imbriqués). Les câbler un par un demanderait de réécrire dans ce
+# fichier les places, les sources et les appariements que CriteriumStructure
+# déclare déjà — deux descriptions du règlement à garder en phase. Ici, un nœud
+# n'a que deux états possibles : pas encore ouvert (ses sources sont-elles
+# résolues ?) ou en cours (son dernier tour est-il terminé ?). Ajouter un nœud à
+# la structure ne demande AUCUNE modification de ce service.
 #
 # Point d'entrée unique : #advance!. Il n'y a pas de #start! — le premier appel
 # (poules terminées, rien en phase finale) crée les barrages, les suivants font
@@ -30,20 +39,60 @@ class CriteriumFlow
   # s'il n'y avait rien à créer (contrat de PoolBuilder#next_round!).
   def advance!
     ActiveRecord::Base.transaction do
+      # Les classements de poule sont memoïsés sur le tournoi. Ce service peut être
+      # appelé APRÈS une correction de score sur la même instance (cf.
+      # TournamentMatchesController#apply_correction!) : sans cette purge, il
+      # apparierait le tableau final sur un classement périmé alors que les
+      # barrages, eux, viennent d'être reconstruits sur le classement neuf.
+      @tournament.reset_standings!
+      @standings = nil
+
       close_finished_rounds!
 
-      created = [ensure_barrage!, ensure_ok_bracket!, advance_ok!].compact
-      complete_if_finished!
+      created = [ensure_barrage!, *sync_nodes!].compact
+      complete_if_finished!(created)
 
       created.last || current_final_round
     end
   end
 
+  # ── Résolution des entrants d'un nœud ───────────────────────────────────────
+  # PUBLIC parce que TournamentStandings en a besoin : pour attribuer une place
+  # aux « 9es ex æquo », il faut savoir QUI est entré dans ce palier. Une seule
+  # implémentation de « qui entre ici », partagée par le moteur et le classement —
+  # sinon les deux pourraient diverger et le classement mentirait.
+  #
+  # Renvoie [] tant que les sources ne sont pas jouées : c'est ce qui fait qu'un
+  # mini-tableau ne s'ouvre pas avant l'heure, sans aucun test d'étape explicite.
+  def entrants_for(node)
+    groups = node.sources.map { |source| resolve(source) }
+
+    case node.pairing
+    # Tableau final : les 1ers de poule (1er groupe) gardent les têtes de série
+    # hautes, les vainqueurs de barrage prennent les basses.
+    when :exempt_first then avoid_own_pool_first_round(groups.flatten, protected_count: groups.first.size)
+    # Consolante : tout le monde classé par force, puis on écarte les joueurs de
+    # même poule du premier tour (ils viennent de s'affronter).
+    when :seeded       then avoid_own_pool_first_round(by_strength(groups.flatten), protected_count: 0)
+    # Mini-tableau de classement : on CONSERVE l'ordre dans lequel les joueurs ont
+    # perdu (position dans le tour parent). L'appariement miroir les reprend alors
+    # en moitiés opposées du tableau parent, donc deux joueurs qui s'y sont déjà
+    # rencontrés ne se retrouvent pas immédiatement.
+    when :carry_over   then groups.flatten
+    # Mode intégral (Lot 6) : la répartition par position de poule sera affinée
+    # là-bas ; par force en attendant, ce qui reste déterministe et jouable.
+    else                    by_strength(groups.flatten)
+    end
+  end
+
   private
+
+  def structure = @structure ||= @tournament.criterium_structure
 
   # ── Barrages ────────────────────────────────────────────────────────────────
   # Les 2es de poule contre les 3es, croisés. Nœud de TRANSIT : les vainqueurs
-  # montent au tableau final, les perdants descendront en consolante (Lot 5).
+  # montent au tableau final, les perdants descendent en consolante. C'est le seul
+  # nœud dont les DEUX camps continuent, d'où son traitement à part.
   def ensure_barrage!
     return nil if @tournament.barrage_rounds.exists?
     return nil unless pools_complete?
@@ -97,40 +146,134 @@ class CriteriumFlow
     player_a.present? && player_b.present? && player_a.pool == player_b.pool
   end
 
-  # ── Tableau final (« OK ») ──────────────────────────────────────────────────
-  def ensure_ok_bracket!
-    return nil if @tournament.bracket_rounds.exists?
-    return nil unless barrage_done?
+  # ── Les tableaux, pilotés par la structure ──────────────────────────────────
+  # Tous les nœuds jouables, dans l'ordre de dépendance (un tableau avant les
+  # mini-tableaux nés de ses perdants). Les paliers d'ex æquo ne se jouent pas —
+  # ils n'existent que pour attribuer une place (cf. TournamentStandings) — et les
+  # barrages ont leur propre chemin.
+  def playable_nodes = structure.nodes.reject { |node| node.transit? || node.tie? }
 
-    finalists = ok_finalists
-    return nil if finalists.size < 2
+  def sync_nodes! = playable_nodes.map { |node| sync_node!(node) }
+
+  # Deux seuls cas : le nœud n'est pas ouvert (ses sources sont-elles prêtes ?),
+  # ou il est en cours (son dernier tour est-il terminé ?).
+  def sync_node!(node)
+    existing = rounds_of(node).to_a
+    return open_node!(node) if existing.empty?
+    return nil unless existing.last.complete?
+
+    # #advance! renvoie nil quand le tableau a atteint sa finale : rien à créer.
+    builder_for(node).advance!
+  rescue ActiveRecord::RecordNotUnique
+    nil
+  end
+
+  # Premier tour d'un tableau.
+  #
+  # ⚠️ On exige que TOUTES les sources soient jouées, pas seulement qu'il y ait
+  # assez de monde pour apparier. La consolante se nourrit des 4es de poule ET des
+  # perdants de barrage : les 4es sont connus dès la fin des poules, donc sans cette
+  # garde le tableau s'ouvrirait à 4 joueurs au lieu de 8 et les perdants de barrage
+  # n'y entreraient JAMAIS. Même piège pour le tableau final (1ers de poule connus
+  # avant les vainqueurs de barrage).
+  #
+  # `entrants.size < 2` en revanche n'est pas une erreur : un tableau de 8 à 6
+  # entrants ne produit que 2 perdants au premier tour, donc son mini-tableau des
+  # 7e/8e n'aura jamais lieu. Le nœud reste simplement vide, et la compaction des
+  # places absorbe le trou (cf. TournamentStandings).
+  def open_node!(node)
+    return nil unless sources_ready?(node)
+
+    entrants = entrants_for(node)
+    return nil if entrants.size < 2
 
     # Les entrants du tableau final sont les qualifiés du tournoi. Les perdants de
-    # barrage ne sont PAS éliminés : ils rejoignent la consolante (Lot 5), donc on
-    # les laisse `active`.
-    finalists.each { |tu| tu.update!(state: "qualified") }
+    # barrage ne sont PAS éliminés : ils rejoignent la consolante, donc ils restent
+    # `active` — c'est le tableau final, et lui seul, qui qualifie.
+    entrants.each { |tu| tu.update!(state: "qualified") } if node.key == "ok"
 
-    ok_builder(finalists: finalists).build!
-  rescue ActiveRecord::RecordNotUnique
-    @tournament.bracket_rounds.first
+    builder_for(node, entrants).build!
   end
 
-  # Les 1ers de poule (exemptés de barrage) prennent les têtes de série hautes, les
-  # vainqueurs de barrage les basses. L'ordre miroir de BracketBuilder#seed_order
-  # (1 vs N, 2 vs N-1…) garantit alors qu'aucun 1er de poule n'en rencontre un autre
-  # au premier tour — c'est l'« ordre protégé » du règlement.
-  def ok_finalists
-    firsts   = qualifiers_at(1)
-    promoted = barrage_winners
-
-    avoid_own_pool_first_round(firsts + promoted, protected_count: firsts.size)
+  # `owns_completion: false` : la finale du tableau final est souvent jouée alors
+  # que la consolante et les matchs de classement tournent encore. C'est
+  # #complete_if_finished! qui décide de la fin du tournoi, pas un tableau isolé.
+  #
+  # `persist_seeds` UNIQUEMENT pour le tableau final : `tournament_users.seed` est
+  # une colonne unique par inscription, donc un second tableau écraserait les têtes
+  # de série du premier. Les autres apparient sur l'ordre reçu (cf. BracketBuilder).
+  #
+  # `finalists` n'est nécessaire qu'au premier tour (#build!) ; #advance! dérive ses
+  # entrants des vainqueurs du tour précédent.
+  def builder_for(node, entrants = nil)
+    BracketBuilder.new(@tournament, finalists: entrants, phase: node.phase, branch: node.branch,
+                                    persist_seeds: node.key == "ok", owns_completion: false)
   end
 
-  # Post-passe : un vainqueur de barrage ne doit pas retomber sur le 1er de SA
-  # PROPRE poule au premier tour (il vient de le côtoyer en poule). On n'échange
-  # que des vainqueurs de barrage entre eux, pour ne pas défaire le seeding des
-  # 1ers de poule. Si aucun échange ne résout la collision, on la laisse : le
-  # tableau doit exister, une affiche imparfaite valant mieux qu'un blocage.
+  def rounds_of(node)
+    @tournament.tournament_rounds.where(phase: node.phase, branch: node.branch).ordered
+  end
+
+  # ── Résolution des sources ──────────────────────────────────────────────────
+  # Toutes les sources d'un nœud ont-elles livré leur contenu DÉFINITIF ?
+  #
+  # Un tour source jamais créé (parce que son tableau n'a pas assez d'entrants)
+  # laisse le nœud fermé pour toujours, et c'est le comportement voulu : personne
+  # n'y jouera, donc ses places ne seront pas attribuées.
+  def sources_ready?(node)
+    node.sources.all? do |source|
+      case source
+      when CriteriumStructure::PoolQualifiers then pools_complete?
+      when CriteriumStructure::Winners, CriteriumStructure::Losers
+        round_complete?(source.key, source.round)
+      else false
+      end
+    end
+  end
+
+  def round_complete?(key, number)
+    node  = structure.node(key)
+    round = node && rounds_of(node).find { |r| r.number == number }
+
+    round.present? && round.complete?
+  end
+
+  def resolve(source)
+    case source
+    when CriteriumStructure::PoolQualifiers then qualifiers_at(source.rank)
+    when CriteriumStructure::Winners        then camp_of(source.key, source.round, :winner)
+    when CriteriumStructure::Losers         then camp_of(source.key, source.round, :loser)
+    else []
+    end
+  end
+
+  # Les vainqueurs (ou les perdants) du tour `number` d'un nœud, dans l'ordre des
+  # matchs. [] si le tour n'existe pas ou n'est pas fini : c'est ce qui empêche
+  # d'ouvrir un tableau avec des entrants incomplets.
+  #
+  # ⚠️ Les byes ne sont écartés que du côté PERDANTS : le « perdant » d'un bye
+  # n'existe pas, mais son vainqueur, oui — c'est le joueur exempté, et il doit
+  # continuer. Un barrage sans 3e de poule (poule incomplète) est un bye dont le 2e
+  # monte d'office au tableau final ; l'écarter le ferait disparaître du tournoi.
+  #
+  # C'est aussi ce qui rend juste la formule des places : un tableau de 8 à 6
+  # entrants n'envoie que 2 joueurs vers son mini-tableau 5e-8e, pas 4.
+  def camp_of(key, number, camp)
+    node  = structure.node(key)
+    round = node && rounds_of(node).find { |r| r.number == number }
+    return [] if round.blank? || !round.complete?
+
+    matches = round.tournament_matches.sort_by(&:position)
+    matches = matches.reject(&:is_bye) if camp == :loser
+
+    matches.filter_map(&camp)
+  end
+
+  # Post-passe : écarter du premier tour deux joueurs de la même poule (ils
+  # viennent de s'y affronter). `protected_count` = nombre d'entrants de tête qu'on
+  # ne déplace PAS, pour ne pas défaire le seeding des 1ers de poule. Si aucun
+  # échange ne résout la collision, on la laisse : le tableau doit exister, une
+  # affiche imparfaite valant mieux qu'un blocage.
   def avoid_own_pool_first_round(entrants, protected_count:)
     entrants = entrants.dup
     swappable = (protected_count...entrants.size).to_a
@@ -138,7 +281,7 @@ class CriteriumFlow
     first_round_pairs(entrants.size).each do |index_a, index_b|
       next unless same_pool?(entrants[index_a], entrants[index_b])
 
-      # On déplace celui des deux qui est un vainqueur de barrage.
+      # On déplace celui des deux qui n'est pas protégé.
       moving = swappable.include?(index_b) ? index_b : index_a
       other  = moving == index_b ? index_a : index_b
 
@@ -175,33 +318,19 @@ class CriteriumFlow
     pair && (pair.first == index ? pair.last : pair.first)
   end
 
-  # Tour suivant du tableau final. Ne fait rien tant que le tour courant n'est pas
-  # terminé — c'est ce qui rend un second appel inoffensif.
-  def advance_ok!
-    last = @tournament.bracket_rounds.last
-    return nil unless last&.complete?
-
-    ok_builder.advance!
-  rescue ActiveRecord::RecordNotUnique
-    nil
-  end
-
-  # `owns_completion: false` : la finale du tableau final est souvent jouée alors
-  # que la consolante et les matchs de classement tournent encore (Lot 5). C'est
-  # #complete_if_finished! qui décide de la fin du tournoi, pas le tableau.
-  # `finalists` n'est nécessaire qu'au premier tour (#build!) ; #advance! dérive
-  # ses entrants des vainqueurs du tour précédent.
-  def ok_builder(finalists: nil)
-    BracketBuilder.new(@tournament, finalists: finalists, phase: "bracket",
-                                   owns_completion: false)
-  end
-
   # ── Fin de tournoi ──────────────────────────────────────────────────────────
-  # Le tournoi n'est terminé que quand TOUS les tableaux le sont — pas seulement
-  # le tableau final.
-  def complete_if_finished!
+  # Le tournoi n'est terminé que quand il n'y a plus RIEN à créer ni à jouer.
+  #
+  # `created.any?` est le cœur de la règle, et ce n'est pas une optimisation : ce
+  # service étant une fonction pure de l'état, si un passage n'a rien créé et que
+  # tout est joué, alors aucun passage ultérieur ne créera quoi que ce soit sans
+  # nouveau score — c'est un point fixe. Sans cette garde, un tour intégralement
+  # composé de byes (donc « terminé » à la création) ferait conclure le tournoi
+  # alors que son tour suivant reste à générer.
+  def complete_if_finished!(created)
     return if @tournament.completed?
-    return unless ok_finished?
+    return if created.any?
+    return unless ok_finished? # le champion doit être connu
     return unless @tournament.tournament_rounds.final_phase.all?(&:complete?)
 
     @tournament.update!(status: "completed")
@@ -216,20 +345,6 @@ class CriteriumFlow
   # ── Lecture de l'état ───────────────────────────────────────────────────────
   def pools_complete?
     standings.any? && standings.values.all?(&:complete?)
-  end
-
-  def barrage_done?
-    round = @tournament.barrage_rounds.first
-    round.present? && round.complete?
-  end
-
-  # Les vainqueurs de barrage (byes inclus : un 2e sans 3e monte d'office),
-  # triés par force pour prendre les têtes de série basses du tableau final.
-  def barrage_winners
-    round = @tournament.barrage_rounds.first
-    return [] if round.blank?
-
-    by_strength(round.tournament_matches.map(&:winner).compact)
   end
 
   # Les Nes de chaque poule, toutes poules confondues, triés par force.

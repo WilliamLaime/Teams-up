@@ -115,3 +115,14 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   1. Quand une règle est *contextuelle*, le point d'entrée doit être l'objet qui porte le contexte (le match), jamais sa source générique (le sport). Le commentaire « jamais par `tournament.sport.scoring_rules` » existait déjà — un commentaire ne remplace pas un test.
   2. Une dérivation qui échoue sans lever (ici : pas de vainqueur → match laissé `pending`) transforme un bug en absence d'effet. Chercher ces chemins-là en priorité quand un symptôme est « rien ne se passe ».
   3. Un défaut qui n'est faux que pour **une** valeur de configuration (un seul sport) est invisible à une suite qui teste surtout les autres. Piloter le test par la **constante** plutôt que par des cas écrits à la main.
+
+## 2026-08-05 — Un memo de modèle survit à la mutation qu'il décrit
+- **Symptôme** : après correction d'un score de poule et régénération de la phase finale, le classement final comptait **17 rangs pour 16 joueurs**. Un joueur y figurait deux fois (1er ET 6e), donc occupait deux places du tableau final — et un autre joueur en était absent.
+- **Cause racine** : `Tournament#pool_standings` est memoïsé (`@pool_standings ||=`). Le scénario de correction enchaîne, **sur la même instance**, une mutation de résultat de poule puis une relecture du classement. Les barrages ont été reconstruits depuis le classement neuf, le tableau final depuis le memo d'avant : un joueur redescendu 2e était simultanément « 1er de poule » (memo) et « vainqueur de barrage » (état réel). `reload` ne purge pas les variables d'instance personnalisées, donc rien ne le signalait.
+- **Correctif** : `Tournament#reset_standings!`, appelé en tête de `CriteriumFlow#advance!` — un moteur qui écrit doit repartir de l'état, pas d'un cache constitué avant ses propres écritures.
+- **Second défaut trouvé par le même debug** : en généralisant la résolution des sources, j'écartais les byes des DEUX camps. Un bye n'a pas de perdant mais il a bien un vainqueur — le joueur exempté. Un barrage sans 3e de poule aurait fait **disparaître** du tournoi le 2e qui devait monter d'office.
+- **Leçons** :
+  1. Un memo est un contrat implicite « rien ne change entre deux lectures ». Tout code qui mute puis relit sur la même instance doit invalider explicitement — ou ne pas passer par le memo.
+  2. `reload` recharge les colonnes, pas les mémoïsations. Ne jamais compter sur lui pour rafraîchir un calcul dérivé.
+  3. Une assertion de **bijection** (chaque joueur exactement une fois) attrape en une ligne ce qu'aucun test « le 1er est bien X » ne verrait. Sur toute structure qui redistribue une population, tester la conservation avant les valeurs.
+  4. Byes : « écarter les byes » n'est jamais une règle globale. Se demander de quel CÔTÉ du match le bye est vide.

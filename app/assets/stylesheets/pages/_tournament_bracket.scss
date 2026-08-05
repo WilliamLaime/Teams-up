@@ -113,6 +113,17 @@
     padding-bottom: 0.5rem;
     border-bottom: 2px solid $green;
   }
+
+  // Titre d'un sous-tableau à l'intérieur d'une phase : les branches de classement
+  // du Critérium (« Match pour la 3e place », « Places 5 à 8 »), qui coexistent
+  // dans la même section. Volontairement discret — même vocabulaire que
+  // .bracket__round-title, un cran au-dessus dans la hiérarchie.
+  &__subtitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--theme-text-primary);
+    margin: 1.5rem 0 0.75rem;
+  }
 }
 
 // ── Sélecteur de phase (2 pastilles, onglets « stage » façon lolesports) ──
@@ -1053,6 +1064,19 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--theme-text-strong);
+  }
+
+  // Badge « ex æquo » du classement final d'un Critérium : plusieurs joueurs
+  // partagent la même place, le règlement ne les faisant pas rejouer (cf.
+  // TournamentStandings). Discret : c'est une précision sur la place, pas un état.
+  &__tie {
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--theme-text-muted);
+    white-space: nowrap;
   }
 
   &__scroll {

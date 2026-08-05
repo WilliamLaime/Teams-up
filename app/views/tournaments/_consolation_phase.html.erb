@@ -1,0 +1,17 @@
+<%# ── Consolante (« KO ») du Critérium Fédéral ────────────────────────────────
+    Second tableau complet, à élimination directe comme le principal : les 4es de
+    poule (poules de 4) et les perdants de barrage y jouent les places qui suivent
+    celles du tableau final (17e et suivantes à 32 joueurs).
+
+    Ce n'est pas une consolation symbolique : le règlement FFTT y fait jouer chaque
+    place, avec ses propres matchs de classement (cf. _classification_phase).
+
+    Local : tournament. %>
+<% node = tournament.criterium_structure.node("ko") %>
+<%= render "tournaments/bracket",
+           tournament: tournament,
+           rounds: tournament.tournament_rounds.consolation.main_branch.ordered.to_a,
+           size: node&.size || 0,
+           expected_rounds: node&.round_count || 0,
+           title: "Consolante — places #{node&.first_place} à #{node&.last_place}",
+           phase_key: "consolation" %>

@@ -313,6 +313,20 @@ class Tournament < ApplicationRecord
   # Source unique partagée par les vues (onglet Classement) et par CriteriumFlow,
   # qui décide des barrages et du tableau final — les deux doivent voir le MÊME
   # classement, sans quoi l'affichage contredirait les appariements.
+  # Invalide les classements memoïsés. À appeler par tout code qui MODIFIE des
+  # résultats de poule avant de relire un classement sur la même instance.
+  #
+  # Sans cela, une correction de score suivie d'une régénération de la phase finale
+  # peut mélanger deux états : les barrages reconstruits depuis le classement neuf,
+  # le tableau final depuis le memo périmé. Un joueur redescendu 2e y figurerait
+  # alors DEUX fois — comme 1er de poule (memo) et comme vainqueur de barrage
+  # (état réel). Le tableau compterait un joueur en double et un autre en moins.
+  def reset_standings!
+    @pool_standings = nil
+    @standings = nil
+    self
+  end
+
   def pool_standings
     @pool_standings ||= begin
       matches = TournamentMatch.joins(:tournament_round)
@@ -392,12 +406,22 @@ class Tournament < ApplicationRecord
   # l'onglet Classement. Tableau final joué (ronde suisse / poules / championnat AVEC
   # playoffs) → vainqueur du dernier match du bracket. Championnat SANS playoffs →
   # le 1er du classement final, puisqu'il n'y a pas de tableau à l'issue de la saison.
+  # En Critérium Fédéral, on passe par le classement final : le dernier tour du
+  # tableau final n'est pas forcément le dernier tour JOUÉ du tournoi (la
+  # consolante et les matchs de classement continuent après la finale), et un
+  # tournoi terminé à la main peut n'avoir aucune finale.
   def champion
     return nil unless completed?
+    return standings.champion if criterium?
     return bracket_rounds.last&.tournament_matches&.first&.winner if bracket_started?
 
     ranked_players.first if format == "championnat"
   end
+
+  # Classement final dérivé des matchs (places jouées, ex æquo, compaction) —
+  # cf. TournamentStandings. Memoïsé : lu par #champion, l'onglet Classement et
+  # la bannière du vainqueur, qui doivent tous afficher le même classement.
+  def standings = @standings ||= TournamentStandings.new(self)
 
   # Ronde en cours : la dernière ronde générée. Le tableau final (bracket) est
   # prioritaire ; sinon la dernière ronde de la phase round-robin du format

@@ -1,38 +1,28 @@
 <%# ── Sélecteur de phase (façon onglets « stage » lolesports) ─────────────────
-    Bascule entre la phase round-robin (ronde suisse / championnat / poules —
-    un seul de ces 3 formats existe par tournoi), les barrages du Critérium
-    Fédéral et le tableau final, pilotée par tournament_phase_switch_controller.js.
-    Volontairement PAS une pastille par ronde individuelle (1er jet jugé peu
-    lisible dès qu'il y a beaucoup de rondes) : peu d'états ⇒ contrairement à un
-    filtre fin, la perte de la sélection après un re-render Turbo Stream (retour
-    à la phase la plus avancée, cf. default_board_phase) reste un compromis
-    acceptable, comme le scroll horizontal du ruban (Phase A).
-    Ne s'affiche que si les deux phases existent réellement dans le board (même
-    condition que _board.html.erb pour le rendu du tableau final, Lot 7) : avant
-    le lancement du tournoi une seule (ou aucune) phase existe, rien à basculer ;
-    le tableau final s'affiche dès le lancement (structure complète avec cases
-    "À déterminer", cf. _bracket.html.erb), pas seulement une fois réellement
-    démarré. Local : tournament. %>
+    Bascule entre les phases du board : la phase round-robin (ronde suisse /
+    championnat / poules — un seul de ces 3 formats existe par tournoi), et pour
+    le Critérium Fédéral les barrages, le tableau final, la consolante et les
+    matchs de classement.
+
+    La liste vient de `board_phases` : une pastille par phase RÉELLEMENT présente,
+    donc rien à conditionner ici. Volontairement PAS une pastille par ronde
+    individuelle (1er jet jugé peu lisible dès qu'il y a beaucoup de rondes) : peu
+    d'états ⇒ contrairement à un filtre fin, la perte de la sélection après un
+    re-render Turbo Stream (retour à la phase la plus avancée, cf.
+    default_board_phase) reste un compromis acceptable, comme le scroll horizontal
+    du ruban.
+
+    Ne s'affiche que s'il y a réellement plusieurs phases à basculer : avant le
+    lancement, ou pour un championnat sans playoffs, une seule existe.
+    Local : tournament. %>
 <% if (tournament.in_progress? || tournament.completed?) && tournament.bracket_expected? %>
-  <% main_label, main_icon = round_robin_phase_meta(tournament) %>
   <nav class="phase-nav" aria-label="Basculer entre les phases du tournoi">
-    <button type="button" class="phase-nav__pill" data-phase="main"
-            data-tournament-phase-switch-target="pill" data-action="tournament-phase-switch#select">
-      <i data-lucide="<%= main_icon %>" aria-hidden="true"></i>
-      <%= main_label %>
-    </button>
-    <%# Barrages (Critérium Fédéral) : une pastille de plus, entre poules et tableau. %>
-    <% if tournament.barrage_rounds.any? %>
-      <button type="button" class="phase-nav__pill" data-phase="barrage"
+    <% board_phases(tournament).each do |key, label, icon| %>
+      <button type="button" class="phase-nav__pill" data-phase="<%= key %>"
               data-tournament-phase-switch-target="pill" data-action="tournament-phase-switch#select">
-        <i data-lucide="git-branch-plus" aria-hidden="true"></i>
-        Barrages
+        <i data-lucide="<%= icon %>" aria-hidden="true"></i>
+        <%= label %>
       </button>
     <% end %>
-    <button type="button" class="phase-nav__pill" data-phase="bracket"
-            data-tournament-phase-switch-target="pill" data-action="tournament-phase-switch#select">
-      <i data-lucide="trophy" aria-hidden="true"></i>
-      Tableau final
-    </button>
   </nav>
 <% end %>

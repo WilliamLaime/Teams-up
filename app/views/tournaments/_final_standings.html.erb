@@ -1,0 +1,43 @@
+<%# ── Classement final (Critérium Fédéral) ────────────────────────────────────
+    Les places RÉELLEMENT jouées, dérivées des matchs par TournamentStandings —
+    pas le classement « bilan » (victoires, set average) affiché en dessous par
+    poule. Les deux coexistent volontairement : le bilan dit comment un joueur a
+    joué, ce tableau dit à quelle place il finit, et en Critérium c'est la place
+    qui compte.
+
+    Un rang partagé (« 9es ex æquo ») porte le badge correspondant : le règlement
+    ne fait pas rejouer 8 joueurs éliminés au même tour, ils sont donc légitimement
+    à égalité. Local : tournament. %>
+<% tiers = tournament.standings.tiers %>
+<% if tiers.any? %>
+  <h3 class="tournament-ranking__pool-title">Classement final</h3>
+
+  <div class="tournament-ranking__scroll">
+    <table class="tournament-ranking__table">
+      <thead>
+        <tr>
+          <th class="is-rank">#</th>
+          <th class="is-player">Joueur</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% tiers.each do |tier| %>
+          <% tier.players.each do |player| %>
+            <tr class="tournament-ranking__row tournament-ranking__row--<%= player.state %>">
+              <td class="is-rank">
+                <%= tier.place %>
+                <% if tier.tied? %>
+                  <span class="tournament-ranking__tie" title="<%= tier.label %>">ex æquo</span>
+                <% end %>
+              </td>
+              <td class="is-player">
+                <%= link_to player.user.display_name, user_profil_path(player.user),
+                            class: "tournament-ranking__player-link" %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

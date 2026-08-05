@@ -73,5 +73,17 @@
     <% if (tournament.in_progress? || tournament.completed?) && tournament.bracket_expected? %>
       <%= render "tournaments/bracket", tournament: tournament %>
     <% end %>
+
+    <%# Critérium Fédéral : la consolante et les matchs de classement font jouer
+        les places au-delà du podium. Contrairement au tableau final, ils ne
+        s'affichent qu'une fois réellement ouverts — leur structure dépend des
+        perdants des tours amont, il n'y a donc rien à préfigurer avant. %>
+    <% if tournament.tournament_rounds.consolation.exists? %>
+      <%= render "tournaments/consolation_phase", tournament: tournament %>
+    <% end %>
+
+    <% if classification_tables(tournament).any? %>
+      <%= render "tournaments/classification_phase", tournament: tournament %>
+    <% end %>
   </div>
 <% end %>
