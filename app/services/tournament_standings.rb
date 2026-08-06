@@ -34,6 +34,19 @@ class TournamentStandings
   # Le classement complet, du 1er au dernier, places compactées.
   def tiers = @tiers ||= compact(ordered_groups)
 
+  # Les rangs RÉELLEMENT décidés par un match joué, à l'exclusion du repli par
+  # position de poule (cf. #tail_groups).
+  #
+  # C'est ce que l'onglet Classement doit afficher : tant qu'aucun tableau n'a
+  # livré de place, `tiers` ne contient que la queue, c'est-à-dire le classement
+  # des poules recopié — un doublon exact des tables de poules affichées juste en
+  # dessous, et un « Classement final » qui annonce des places que personne n'a
+  # gagnées (16 joueurs en 4 rangs d'ex æquo).
+  #
+  # `first(n)` suffit : #ordered_groups place toujours les groupes issus des
+  # tableaux AVANT la queue, et la compaction préserve cet ordre.
+  def decided_tiers = tiers.first(placed_groups.size)
+
   # La place d'un joueur, ou nil s'il n'en a pas encore (tournoi en cours).
   def place_of(tournament_user) = places_by_player[tournament_user.id]
 
@@ -66,7 +79,7 @@ class TournamentStandings
   # [[place brute, [joueurs]], …] tels que les tableaux les désignent. Les places
   # brutes peuvent comporter des trous (byes) : la compaction s'en charge.
   def placed_groups
-    structure.nodes.flat_map do |node|
+    @placed_groups ||= structure.nodes.flat_map do |node|
       if node.tie?
         tie_group(node)
       elsif node.elimination?

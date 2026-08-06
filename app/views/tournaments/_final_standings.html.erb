@@ -1,16 +1,32 @@
-<%# ── Classement final (Critérium Fédéral) ────────────────────────────────────
+<%# ── Classement par les places (Critérium Fédéral) ─────────────────────────────
     Les places RÉELLEMENT jouées, dérivées des matchs par TournamentStandings —
     pas le classement « bilan » (victoires, set average) affiché en dessous par
     poule. Les deux coexistent volontairement : le bilan dit comment un joueur a
     joué, ce tableau dit à quelle place il finit, et en Critérium c'est la place
     qui compte.
 
+    ⚠️ On lit `decided_tiers` et NON `tiers`. `tiers` complète le classement avec
+    les joueurs qu'aucun tableau n'a encore classés, rangés par position de poule :
+    tant que rien n'est joué en phase finale, ce tableau affichait donc le
+    classement des poules recopié — un doublon exact des tables ci-dessous, sous un
+    titre « Classement final » qui annonçait des places gagnées par personne.
+
     Un rang partagé (« 9es ex æquo ») porte le badge correspondant : le règlement
     ne fait pas rejouer 8 joueurs éliminés au même tour, ils sont donc légitimement
     à égalité. Local : tournament. %>
-<% tiers = tournament.standings.tiers %>
+<% tiers = tournament.standings.decided_tiers %>
 <% if tiers.any? %>
-  <h3 class="tournament-ranking__pool-title">Classement final</h3>
+  <%# Le tournoi n'est pas fini : les places du bas ne sont pas encore jouées, le
+      titre ne doit donc pas promettre un classement définitif. %>
+  <h3 class="tournament-ranking__pool-title">
+    <%= tournament.completed? ? "Classement final" : "Places déjà acquises" %>
+  </h3>
+
+  <% unless tournament.completed? %>
+    <p class="tournament-ranking__hint">
+      Les joueurs encore en course n'y figurent pas — voir leur bilan par poule ci-dessous.
+    </p>
+  <% end %>
 
   <div class="tournament-ranking__scroll">
     <table class="tournament-ranking__table">
@@ -23,7 +39,8 @@
       <tbody>
         <% tiers.each do |tier| %>
           <% tier.players.each do |player| %>
-            <tr class="tournament-ranking__row tournament-ranking__row--<%= player.state %>">
+            <% mine = my_player?(player) %>
+            <tr class="tournament-ranking__row tournament-ranking__row--<%= player.state %> <%= "is-me" if mine %>">
               <td class="is-rank">
                 <%= tier.place %>
                 <% if tier.tied? %>
@@ -31,8 +48,15 @@
                 <% end %>
               </td>
               <td class="is-player">
-                <%= link_to player.user.display_name, user_profil_path(player.user),
-                            class: "tournament-ranking__player-link" %>
+                <%# Avatar + nom dans un <span>, comme _ranking_table : le <span> est
+                    ce qui porte la couleur du texte (.is-player span). Sans lui, le
+                    nom héritait de la couleur du <body> et devenait illisible. %>
+                <%= link_to user_profil_path(player.user), class: "tournament-ranking__player-link" do %>
+                  <%= user_avatar_tag player.user, css_class: "tournament-ranking__avatar",
+                                                   width: 28, height: 28 %>
+                  <span><%= player.display_name %></span>
+                <% end %>
+                <%= me_badge if mine %>
               </td>
             </tr>
           <% end %>

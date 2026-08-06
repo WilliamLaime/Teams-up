@@ -118,6 +118,37 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
     assert_equal final.reload.winner_id, Tournament.find(@tournament.id).champion.id
   end
 
+  # ── Onglet Classement ───────────────────────────────────────────────────────
+  # Non-régression : la vue lisait le classement COMPLET, qui range par position de
+  # poule les joueurs qu'aucun tableau n'a encore classés. Dès la fin des poules,
+  # l'onglet affichait donc un « Classement final » de 16 joueurs en 4 rangs d'ex
+  # æquo — le classement des poules recopié juste au-dessus des tables de poules.
+  test "l'onglet Classement n'annonce aucune place tant qu'aucune n'est jouée" do
+    play_until_bracket_round!(1)
+
+    get tournament_path(@tournament)
+    assert_response :success
+    assert_select ".tournament-ranking__pool-title", text: /Classement final|Places déjà acquises/,
+                  count: 0, message: "aucune place n'est jouée : rien à annoncer"
+    # Les tables de poules, elles, restent bien là — c'est le seul classement qui
+    # ait un sens à ce stade.
+    assert_select ".tournament-ranking__pool-title", text: /Poule A/
+  end
+
+  test "l'onglet Classement affiche le classement final une fois le tournoi terminé" do
+    play_all!
+    assert @tournament.reload.completed?
+
+    get tournament_path(@tournament)
+    assert_select ".tournament-ranking__pool-title", text: /Classement final/
+    # 16 joueurs, 16 places jouées : une ligne par joueur, aucun badge « ex æquo ».
+    assert_select ".tournament-ranking__table" do |tables|
+      final = tables.first
+      assert_equal 16, final.css("tbody tr").size
+      assert_equal 0, final.css(".tournament-ranking__tie").size
+    end
+  end
+
   private
 
   # ── Manipulation du tournoi ─────────────────────────────────────────────────

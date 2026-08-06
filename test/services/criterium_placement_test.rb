@@ -193,6 +193,57 @@ class CriteriumPlacementTest < ActiveSupport::TestCase
                  tiers.flat_map(&:players).map(&:id).sort
   end
 
+  # ── Places acquises vs classement complet ───────────────────────────────────
+  # Non-régression : l'onglet Classement lisait `tiers`, qui complète le classement
+  # avec les joueurs qu'aucun tableau n'a encore classés, groupés par position de
+  # poule. Résultat, dès la fin des poules il affichait un « Classement final » de
+  # 16 joueurs en 4 rangs d'ex æquo — soit le classement des poules recopié
+  # au-dessus des tables de poules, et des places que personne n'avait gagnées.
+  test "aucune place n'est acquise tant qu'aucun tableau n'a livré de finale" do
+    tournament = build_tournament(16)
+    play_until_bracket!(tournament)
+
+    standings = standings_of(tournament)
+    assert_empty standings.decided_tiers,
+                 "poules et barrages joués ne décident d'aucune place : les barrages " \
+                 "sont un nœud de transit et aucune finale de tableau n'est jouée"
+    assert standings.tiers.any?,
+           "le classement complet garde bien sa queue par position de poule"
+  end
+
+  test "les places acquises n'apparaissent qu'au fil des finales jouées" do
+    tournament = build_tournament(16)
+    play_all!(tournament)
+
+    standings = standings_of(tournament)
+    assert_equal standings.tiers, standings.decided_tiers,
+                 "tournoi terminé : chaque place a été jouée, les deux listes coïncident"
+  end
+
+  test "une place acquise en cours de tournoi apparaît sans les joueurs encore en course" do
+    tournament = build_tournament(16)
+    play_until_bracket!(tournament)
+
+    # On joue tout SAUF le tableau final : la consolante et les branches de
+    # classement livrent leurs places, mais les places 1 et 2 restent à jouer, donc
+    # une partie des joueurs est encore en course.
+    10.times do
+      TournamentEngine.for(tournament).next_round!
+      matches = pending_matches(tournament)
+                .reject { |match| match.tournament_round.phase == "bracket" }
+      break if matches.empty?
+
+      matches.each { |match| win_tournament_match!(match, match.player_a) }
+    end
+
+    decided = standings_of(tournament.reload).decided_tiers
+    assert decided.any?, "la finale d'une branche de classement doit livrer ses deux places"
+    assert decided.all? { |tier| tier.players.size == 1 },
+           "des places jouées ne produisent pas d'ex æquo"
+    assert_operator decided.sum { |tier| tier.players.size }, :<, 16,
+                    "les joueurs encore en course ne doivent PAS être classés"
+  end
+
   test "le libellé d'un palier d'ex æquo l'annonce" do
     tournament = build_tournament(32)
     play_all!(tournament, limit: 80)

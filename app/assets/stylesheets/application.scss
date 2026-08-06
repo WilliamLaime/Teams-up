@@ -55,6 +55,14 @@ body {
   flex-direction: column;
 
   main { flex: 1; }
+
+  // ⚠️ Couleur de texte par défaut. Sans cette ligne, tout texte qui n'a pas de
+  // couleur explicite hérite de `--bs-body-color` (#212529, presque noir) : en
+  // thème sombre il devient invisible sur le fond #111111. Le reste de l'app ne
+  // s'en apercevait pas parce que chaque composant pose sa propre couleur — mais
+  // le moindre `color: inherit` (les liens de classement, par exemple) tombait
+  // dans le piège. On ancre donc l'héritage sur le thème.
+  color: var(--theme-text-primary);
 }
 
 // ── Respect de la préférence système prefers-reduced-motion ─────────────────
