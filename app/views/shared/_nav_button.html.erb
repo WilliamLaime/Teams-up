@@ -1,17 +1,28 @@
 <%#
   Bouton de navigation réutilisable
   Paramètres :
-    - url         : destination du lien (ex: matches_path) — ignoré si direction == "back"
     - label       : texte affiché (ex: "Tout voir", "Retour")
     - direction   : "forward" ou "back" (défaut: "forward")
-                    → "back" utilise history.back() pour revenir à la page précédente
+    - url         : destination FERME du lien. À réserver aux libellés qui
+                    promettent un endroit précis ("Retour à l'équipe") : le bouton
+                    y va toujours, quel que soit le chemin parcouru.
+    - fallback    : destination de SECOURS d'un bouton "Retour" générique. Le bouton
+                    revient à la page précédente ; `fallback` ne sert que si l'on est
+                    arrivé directement sur la page (lien partagé, nouvel onglet),
+                    auquel cas il n'y a pas de page précédente dans l'app.
+                    Défaut : l'accueil.
     - extra_class : classes CSS supplémentaires optionnelles (ex: "mt-1", "mb-4")
+
+  ⚠️ Historique : les boutons "Retour" génériques passaient `url: root_path`, donc
+  ramenaient TOUJOURS à l'accueil au lieu de revenir en arrière (bug constaté sur
+  les pages profil). C'est ce qu'`url` vs `fallback` distingue désormais.
 %>
 
 <%# Valeurs par défaut %>
 <% direction   ||= "forward" %>
 <% extra_class ||= nil %>
 <% url         ||= nil %>
+<% fallback      = local_assigns[:fallback] %>
 
 <%# Choix de l'icône selon la direction %>
 <% icon      = direction == "back" ? "arrow-left" : "arrow-right" %>
@@ -21,23 +32,26 @@
 <%# Construction des classes CSS du lien %>
 <% link_classes = ["nav-button", "nav-button--#{direction}", extra_class].compact.join(" ") %>
 
-<%# Pour les boutons "retour" : lien vers url si fournie, sinon history.back() %>
-<% if direction == "back" %>
-  <% if url.present? %>
-    <%# Si une URL est fournie, on l'utilise comme lien classique %>
-    <%= link_to url, class: link_classes do %>
-      <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
-      <%= label %>
-    <% end %>
-  <% else %>
-    <%# Sinon, on utilise history.back() du navigateur %>
-    <button type="button" class="<%= link_classes %>" onclick="history.back()" style="background:none; border:none; padding:0; cursor:pointer;">
-      <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
-      <%= label %>
-    </button>
+<% if direction == "back" && url.present? %>
+  <%# Destination ferme : lien classique, le libellé annonce où l'on va. %>
+  <%= link_to url, class: link_classes do %>
+    <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
+    <%= label %>
   <% end %>
-<%# Pour les boutons "forward" : lien classique vers l'url fournie %>
+<% elsif direction == "back" %>
+  <%# Vrai retour arrière. C'est un <a> et non un <button> : l'URL de secours reste
+      dans le href, donc le bouton fonctionne sans JS, en clic milieu et en
+      « ouvrir dans un nouvel onglet ». Le contrôleur Stimulus intercepte le clic
+      pour préférer l'historique quand il y en a. %>
+  <% target = fallback.presence || root_path %>
+  <%= link_to target, class: link_classes,
+              data: { controller: "back-link", action: "click->back-link#back",
+                      "back-link-fallback-value": url_for(target) } do %>
+    <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>
+    <%= label %>
+  <% end %>
 <% else %>
+  <%# Boutons "forward" : lien classique vers l'url fournie %>
   <%= link_to url, class: link_classes do %>
     <%= label %>
     <i data-lucide="<%= icon %>" style="width:<%= icon_size %>px;height:<%= icon_size %>px;"></i>

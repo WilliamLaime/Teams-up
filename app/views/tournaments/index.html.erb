@@ -6,7 +6,7 @@
 
     <%# ── En-tête ──────────────────────────────────────────────────────────── %>
     <div class="tournaments-index-header">
-      <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
+      <%= render "shared/nav_button", fallback: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
 
       <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
         <div>

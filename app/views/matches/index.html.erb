@@ -10,7 +10,7 @@
     <div class="matches-index-header">
 
       <%# Lien retour — utilise le composant partagé nav_button %>
-      <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
+      <%= render "shared/nav_button", fallback: root_path, label: "Retour", direction: "back", extra_class: "mb-2" %>
 
       <%# Titre et sous-titre différents selon le contexte (mes matchs vs liste générale) %>
       <% if params[:mine].present? %>

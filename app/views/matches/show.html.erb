@@ -84,7 +84,7 @@
 
     <%# ── Ligne haute : Retour (gauche) + Partager (droite) ── %>
     <div class="match-banner-topbar">
-      <%= render "shared/nav_button", url: matches_path, label: "Retour", direction: "back" %>
+      <%= render "shared/nav_button", fallback: matches_path, label: "Retour", direction: "back" %>
       <%# Bouton partage — ouvre la modale #shareModal %>
       <button class="match-banner-share-btn"
               title="Partager ce match"

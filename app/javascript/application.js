@@ -57,6 +57,24 @@ document.addEventListener("turbo:load", () => {
 //      expiré soit restauré depuis le snapshot (même si no-cache est activé)
 //   2. Après chaque navigation Turbo → forcer le re-render manuellement
 
+// ── Compteur de pages vues dans l'onglet ────────────────────────────────────
+//
+// Sert aux boutons « Retour » (cf. back_link_controller) à savoir s'il existe une
+// page précédente DANS l'app. On ne peut pas le déduire autrement : sous Turbo
+// Drive, document.referrer reste figé au chargement initial, et history.length
+// compte aussi les pages visitées avant d'arriver sur le site.
+//
+// turbo:load couvre les deux cas (chargement initial ET navigation Turbo) : au
+// premier affichage le compteur vaut 1, donc « pas de page précédente ».
+document.addEventListener("turbo:load", () => {
+  try {
+    const key = "teamsup:visit-count"
+    sessionStorage.setItem(key, String(Number(sessionStorage.getItem(key) || 0) + 1))
+  } catch {
+    // sessionStorage indisponible : les boutons Retour utiliseront leur URL de secours.
+  }
+})
+
 // ── Confirmation des actions destructrices ──────────────────────────────────
 //
 // Par défaut, tout `data-turbo-confirm` passe par window.confirm : un encadré
