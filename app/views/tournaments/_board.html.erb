@@ -30,8 +30,13 @@
   <%# data-phase="main" (ronde robin, un seul des 3 formats existe) vs "bracket" (tableau
       final) : le sélecteur de phase (_phase_nav) bascule leur visibilité une fois le
       tableau final démarré (avant ça, une seule des deux existe, rien à basculer). %>
+  <%# storage-key : la phase choisie survit au turbo_stream.update du board déclenché
+      par chaque saisie de score (sinon retour forcé à la phase la plus avancée).
+      Clé par tournoi — deux tournois ouverts dans le même onglet ne se marchent pas
+      sur les pieds. %>
   <div class="tournament-board__phases" data-controller="tournament-phase-switch"
-       data-tournament-phase-switch-default-value="<%= default_board_phase(tournament) %>">
+       data-tournament-phase-switch-default-value="<%= default_board_phase(tournament) %>"
+       data-tournament-phase-switch-storage-key-value="phase:<%= tournament.id %>">
     <%= render "tournaments/phase_nav", tournament: tournament %>
 
     <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>

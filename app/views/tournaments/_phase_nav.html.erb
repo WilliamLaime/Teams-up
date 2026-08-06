@@ -6,11 +6,13 @@
 
     La liste vient de `board_phases` : une pastille par phase RÉELLEMENT présente,
     donc rien à conditionner ici. Volontairement PAS une pastille par ronde
-    individuelle (1er jet jugé peu lisible dès qu'il y a beaucoup de rondes) : peu
-    d'états ⇒ contrairement à un filtre fin, la perte de la sélection après un
-    re-render Turbo Stream (retour à la phase la plus avancée, cf.
-    default_board_phase) reste un compromis acceptable, comme le scroll horizontal
-    du ruban.
+    individuelle (1er jet jugé peu lisible dès qu'il y a beaucoup de rondes) : le
+    ruban de journées joue déjà ce rôle à l'intérieur d'une phase.
+
+    La phase choisie est mémorisée en sessionStorage par le contrôleur Stimulus :
+    chaque saisie de score répond par un turbo_stream.update du board, et sans ça
+    on repartait à la phase la plus avancée (cf. default_board_phase) au lieu de
+    rester sur la consolante qu'on était en train de remplir.
 
     Ne s'affiche que s'il y a réellement plusieurs phases à basculer : avant le
     lancement, ou pour un championnat sans playoffs, une seule existe.
