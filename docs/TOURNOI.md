@@ -197,6 +197,47 @@ utilisateur. Reste ouvert : les vérifications visuelles navigateur (impossibles
       fois le tournoi lancé (`STRUCTURAL_FIELDS`) ; `bracket_size` validé puissance de 2, et la
       recommandation des poules est arrondie de même (3 poules → 6 qualifiés → tableau de 8).
 
+### ✅ Lot 8 — Critérium Fédéral (ping-pong, règlement FFTT) `[FAIT]`
+Nouveau format `criterium_federal`, **à côté** de `poules` : les tournois « Poules » existants
+gardent exactement leur comportement, aucun aiguillage silencieux sur le sport. Le principe du
+règlement est que **chaque place se joue** — pas seulement la première.
+
+- [x] **Départage de poule FFTT** (`PoolStandings`) : barème 2 pts par victoire / 1 par défaite
+      jouée / 0 par forfait (`Sport#pool_points_rules`, lu **uniquement** ici — surtout pas dans
+      `ranking_points_rules`, que la ronde suisse utilise à nombre de matchs inégal). Départage
+      **restreint au sous-groupe d'ex æquo** et récursif : confrontation directe → **quotient**
+      de manches → quotient de points → `draw_order`. Quotients, pas différences.
+- [x] **Déclaration de structure** (`CriteriumStructure`) : pur Ruby, aucune base. Une seule
+      récursion produit tous les chiffres du règlement — pour un tableau de `size` places dont
+      la première est `offset`, les perdants du tour `r` sont `size / 2**r` joueurs qui se
+      disputent les places à partir de `offset + size / 2**r`.
+- [x] **Moteur** (`CriteriumFlow`) : un **réconciliateur**, pas une machine à états. Chaque appel
+      recalcule ce qui devrait exister et ne crée que ce qui manque → idempotent par construction
+      et déterministe (aucun `shuffle` : `draw_order` reste la seule source d'aléa). Barrages
+      croisés 2es × 3es (jamais deux joueurs d'une même poule), tableau final « OK », consolante
+      « KO », et les mini-tableaux de classement (3e/4e, 5e-8e…) en **branches parallèles**
+      (colonne `tournament_rounds.branch`, sans laquelle l'index unique les interdirait).
+- [x] **Places finales dérivées** (`TournamentStandings`) : jamais stockées — une colonne devrait
+      être réécrite après chaque score, chaque correction, chaque forfait. Compaction obligatoire
+      des places jamais jouées (byes), sinon le classement saute des rangs.
+- [x] **Variantes par effectif** (`Tournament#criterium_mode`, colonne `final_phase_mode` = simple
+      échappatoire) : ≤ 7 → poule unique, le classement final **est** celui de la poule ;
+      8-16 → « classement intégral », un tableau unique, aucun barrage, **aucun ex æquo** ;
+      ≥ 17 → barrages + tableau + consolante. `pool_plan` décrit la taille de chaque poule
+      (11 joueurs → 4-4-3) et devient la source unique de `pool_count`, du dimensionnement du
+      tableau et de `structure_summary` (miroir JS compris).
+- [x] **Constitution des poules** (`PoolSeeding`) : `random` (le serpentin historique, déplacé
+      sans changement) ou `pots` — chaque chapeau numéroté fournit un joueur par poule, le
+      « chapeau général » complète. Ni serpent ni classement individuel : l'organisateur remplit
+      les chapeaux à la main depuis l'onglet Participants (`PATCH /tournois/:id/constitution`,
+      `TournamentPolicy#seeding?` : organisation seulement, et avant le lancement).
+- [x] **Correction & forfaits** : corriger en **poule** reprend toute la phase finale (le
+      classement de départ a changé) ; corriger **dans** la phase finale passe par
+      `CriteriumFlow#reconcile!`, qui cherche le premier tour dont les joueurs ne sont plus les
+      bons et ne détruit qu'à partir de lui — `id` croissant **est** l'ordre causal. Les scores
+      d'une branche voisine (consolante) survivent. Un abandon en phase finale pose un forfait et
+      les tours suivants naissent quand même (`build_match!`), sinon la branche resterait ouverte.
+
 ### 🔜 (ex-Lot 5, reporté) — affinements
 - [ ] Winner / Loser Bracket (format e-sport) — voir « Formats envisagés » #4.
 - [ ] Gestion des co-organisateurs après création (ajout/retrait depuis `#edit`).
@@ -212,8 +253,8 @@ utilisateur. Reste ouvert : les vérifications visuelles navigateur (impossibles
 
 ## 📌 État courant
 
-**Lots 1 à 7 livrés.** Les 3 formats (`ronde_suisse`, `championnat`, `poules`) sont jouables de
-bout en bout via la façade `TournamentEngine`. Un organisateur peut déclarer un **forfait**
+**Lots 1 à 8 livrés.** Les 4 formats (`ronde_suisse`, `championnat`, `poules`,
+`criterium_federal`) sont jouables de bout en bout via la façade `TournamentEngine`. Un organisateur peut déclarer un **forfait**
 (exclusion du joueur, victoires par forfait) et **corriger un score verrouillé** (avec
 régénération cohérente de l'aval). Depuis le Lot 6, l'organisateur **et le co-organisateur**
 peuvent aussi **éditer le tournoi**, **clôturer/rouvrir les inscriptions** et **terminer
@@ -221,7 +262,9 @@ manuellement** un tournoi. Depuis le Lot 7, **les joueurs planifient eux-mêmes 
 (date et heure de leur choix) depuis leur carte de poule, le **scoring dépend de la phase**
 (ping-pong : 3 sets gagnants en poule, 4 en phase finale) et l'organisateur **personnalise la
 structure** de son tournoi (taille des poules, seuils de la ronde suisse, taille du tableau
-final) avec des valeurs recommandées par défaut. Prochain chantier envisagé : Winner/Loser
+final) avec des valeurs recommandées par défaut. Le Lot 8 ajoute le **Critérium Fédéral**
+(ping-pong) : départage FFTT, barrages, consolante, matchs de classement — **chaque place se
+joue** — avec constitution des poules par chapeaux. Prochain chantier envisagé : Winner/Loser
 Bracket, puis les « Futurs » ci-dessous (gamification, calendrier, Slack…).
 
 <details><summary>Historique Lots 1 à 4</summary>
@@ -259,11 +302,20 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
   `Tournament#pool_size` / `#final_size` / `#wins_to_qualify` / `#losses_to_eliminate`, qui
   appliquent le fallback (les noms de colonnes diffèrent volontairement de ceux des méthodes
   pour qu'aucune méthode ne masque un attribut ActiveRecord).
+- `tournaments` — Critérium Fédéral (Lot 8, nullables) : **`final_phase_mode`** (`nil` = déduit
+  de l'effectif, cf. `#criterium_mode`), **`pool_seeding_mode`** (`nil`/`random` | `pots`),
+  **`seeded_pot_count`**. Côté inscription : **`tournament_users.pot`** (`nil` = chapeau
+  général). Même règle de lecture : passer par `#criterium_mode` / `#seeding_mode` / `#pot_count`.
+- `tournament_rounds` — **`branch`** (`null: false, default: "main"`) : la seconde dimension de
+  l'index unique `[tournament_id, phase, branch, number]`. Indispensable, et **non nullable** :
+  avec `NULL`, Postgres autoriserait des doublons (`NULL ≠ NULL`) et l'index perdrait sa garde
+  anti-double-clic. Convention : `"main"`, ou `"<table>:<première>-<dernière>"` (`ok:5-8`).
 
 ### Décisions actées
 - **Statuts** (`tournaments.status`) : `open` / `closed` / `in_progress` / `completed`
   (`closed` ajouté au Lot 6 — inscriptions fermées, tournoi pas encore lancé).
-- **Formats** (`tournaments.format`) : `ronde_suisse` / `poules` / `championnat`.
+- **Formats** (`tournaments.format`) : `ronde_suisse` / `poules` / `championnat` /
+  `criterium_federal` (Lot 8 — format à part entière, jamais déduit du sport).
 - **3 sections** de la page liste :
   1. *Mes tournois en cours* — inscrit + non terminé (masquée si déconnecté).
   2. *Tournois à rejoindre* — `open`, deadline future, non complet, non inscrit.

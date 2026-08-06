@@ -77,6 +77,17 @@ class TournamentMatchesController < ApplicationController
   #   • swiss   → rondes suisses postérieures + tableau final (appariements dépendants) ;
   #   • league/pool → tableau final seulement (calendrier indépendant des résultats) ;
   #   • bracket → tours postérieurs du tableau uniquement.
+  #
+  # ⚠️ Critérium Fédéral : `bracket_rounds` ne désigne QUE le tableau final (il est
+  # scopé sur la branche principale), donc détruire « le tableau final » y laisserait
+  # les barrages, la consolante et les matchs de classement en place, calculés depuis
+  # un classement de poule désormais faux. Deux cas s'y distinguent :
+  #   • correction en POULE → le classement de départ change, donc tout est caduc :
+  #     on détruit la phase finale entière et CriteriumFlow la rebâtit (déterministe,
+  #     il reconstruit à l'identique ce que la correction n'a pas invalidé) ;
+  #   • correction DANS la phase finale → les branches sont parallèles, un quart de
+  #     finale corrigé ne dit rien de la consolante. CriteriumFlow#reconcile! ne
+  #     détruit que l'aval réellement périmé, et les scores voisins survivent.
   def apply_correction!(match, previous_winner)
     round = match.tournament_round
 
@@ -91,14 +102,20 @@ class TournamentMatchesController < ApplicationController
 
       @tournament.update!(status: "in_progress") if @tournament.completed?
 
-      case round.phase
-      when "swiss"
-        @tournament.swiss_rounds.where("number > ?", round.number).destroy_all
-        @tournament.bracket_rounds.destroy_all
-      when "league", "pool"
-        @tournament.bracket_rounds.destroy_all
-      when "bracket"
-        @tournament.bracket_rounds.where("number > ?", round.number).destroy_all
+      if @tournament.criterium? && Tournament::FINAL_PHASES.include?(round.phase)
+        CriteriumFlow.new(@tournament).reconcile!(from: round)
+      elsif @tournament.criterium?
+        @tournament.tournament_rounds.final_phase.destroy_all
+      else
+        case round.phase
+        when "swiss"
+          @tournament.swiss_rounds.where("number > ?", round.number).destroy_all
+          @tournament.bracket_rounds.destroy_all
+        when "league", "pool"
+          @tournament.bracket_rounds.destroy_all
+        when "bracket"
+          @tournament.bracket_rounds.where("number > ?", round.number).destroy_all
+        end
       end
 
       round.update!(status: "in_progress") unless round.reload.complete?

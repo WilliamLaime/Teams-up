@@ -40,6 +40,9 @@ class TournamentUser < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validates :role, inclusion: { in: ROLES }, allow_nil: true
   validates :state, inclusion: { in: STATES }
+  # Chapeau de constitution des poules (Lot 7) : numéroté à partir de 1.
+  # nil = chapeau général, le cas de la grande majorité des inscrits.
+  validates :pot, numericality: { only_integer: true, greater_than_or_equal_to: 1 }, allow_nil: true
 
   # Clôture réactive des inscriptions dès que le tournoi devient complet — même
   # pattern que Match#recompute_player_left!. Pas de hook after_destroy : quitter
@@ -79,6 +82,11 @@ class TournamentUser < ApplicationRecord
 
   # Nom affiché du joueur (délègue au profil de l'utilisateur).
   def display_name = user.display_name
+
+  # Version compacte « Prénom N. » pour les contextes où le nom complet ne tient
+  # pas : libellés « X vs Y » d'un <select>, listes denses. Deux noms complets
+  # dans une même option dépassent la largeur du champ et sont tronqués.
+  def short_name = user.short_name
 
   private
 

@@ -169,4 +169,24 @@ class TournamentTest < ActiveSupport::TestCase
     t.update!(playoffs: false)
     assert_equal "8 joueurs, 7 journées, vainqueur = 1er du classement", t.structure_summary
   end
+
+  # ─── Suppression ────────────────────────────────────────────────────────────
+  # Non-régression : `dependent: :destroy` s'exécute dans l'ordre de déclaration des
+  # associations, donc les inscrits partaient AVANT les tours. Or tournament_matches
+  # porte trois FK vers tournament_users (player_a_id, player_b_id, winner_id) → la
+  # suppression levait PG::ForeignKeyViolation dès le premier match généré.
+  test "un tournoi ayant des matchs se supprime sans violer de clé étrangère" do
+    t = open_tournament(max_players: 4)
+    4.times { |i| join!(t, "del#{i}") }
+    t.tournament_users.players.approved.order(:id).each_with_index { |tu, i| tu.update_column(:draw_order, i) }
+    t.update!(status: "in_progress")
+    TournamentEngine.for(t).next_round!
+
+    assert t.tournament_matches.exists?, "il faut des matchs pour que ce test ait un sens"
+    round_ids = t.tournament_rounds.ids
+
+    assert_nothing_raised { t.destroy! }
+    assert_empty TournamentRound.where(id: round_ids)
+    assert_empty TournamentMatch.where(tournament_round_id: round_ids)
+  end
 end

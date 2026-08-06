@@ -1,7 +1,38 @@
 <%# ── Case "À déterminer" du tableau final ────────────────────────────────────
-    Place d'un tour futur dont les joueurs dépendent d'un résultat pas encore
-    connu (cf. _bracket.html.erb) — stylée comme .tmatch-card--bye (bordure en
-    pointillés) mais sans joueur à afficher. Aucun local. %>
-<div class="tmatch-card tmatch-card--placeholder">
-  <span class="tmatch-card__placeholder-label">À déterminer</span>
-</div>
+    Place d'un tour futur (cf. _bracket.html.erb), stylée comme .tmatch-card--bye
+    (bordure en pointillés) pour signaler « pas encore joué ».
+
+    Locals optionnels : player_a, player_b (TournamentUser ou nil) — les joueurs
+    DÉJÀ qualifiés pour cette place. Un vainqueur connu monte d'une case sans
+    attendre son adversaire : sinon le tableau affiche « À déterminer » alors que
+    la moitié de l'information est disponible, et on perd la lecture du parcours.
+    Les deux nil (aucun résultat en amont) → la case vide d'origine. %>
+<% player_a = local_assigns[:player_a] %>
+<% player_b = local_assigns[:player_b] %>
+
+<% if player_a.nil? && player_b.nil? %>
+  <div class="tmatch-card tmatch-card--placeholder">
+    <span class="tmatch-card__placeholder-label">À déterminer</span>
+  </div>
+<% else %>
+  <% mine = [player_a, player_b].compact.any? { |player| my_player?(player) } %>
+  <div class="tmatch-card tmatch-card--placeholder tmatch-card--placeholder-known <%= "tmatch-card--mine" if mine %>">
+    <% [player_a, player_b].each do |player| %>
+      <% if player %>
+        <div class="tmatch-card__player <%= "tmatch-card__player--me" if my_player?(player) %>">
+          <%= link_to user_profil_path(player.user), class: "tmatch-card__player-link" do %>
+            <%= user_avatar_tag player.user, css_class: "tmatch-card__avatar" %>
+            <span class="tmatch-card__name"><%= player.display_name %></span>
+          <% end %>
+          <%= me_badge if my_player?(player) %>
+        </div>
+      <% else %>
+        <%# Le camp encore inconnu garde la hauteur d'une ligne de joueur : les deux
+            cases d'une même colonne restent alignées avec les vraies cartes. %>
+        <div class="tmatch-card__player tmatch-card__player--pending">
+          <span class="tmatch-card__placeholder-label">À déterminer</span>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

@@ -1,0 +1,36 @@
+// ── Modale de confirmation globale ───────────────────────────────────────────
+// Remplace le window.confirm du navigateur pour tous les `data-turbo-confirm`
+// (cf. Turbo.setConfirmMethod dans application.js et shared/_confirm_modal).
+// Mêmes règles de thème que la modale de score : Bootstrap habille ses modales
+// en clair par défaut, il faut donc repasser les surfaces sur nos variables.
+.confirm-modal {
+  .modal-content {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    color: var(--theme-text-primary);
+  }
+
+  .modal-header,
+  .modal-footer { border-color: var(--theme-border); }
+
+  .modal-title { color: var(--theme-text-strong); }
+
+  // La croix de Bootstrap est un SVG NOIR en dur : invisible sur fond sombre.
+  // On l'inverse en dark et on la laisse telle quelle en light — plutôt que
+  // btn-close-white, qui fixerait le blanc et la rendrait invisible en clair.
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.7;
+
+    &:hover,
+    &:focus { opacity: 1; }
+  }
+
+  &__detail {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--theme-text-muted);
+  }
+}
+
+[data-theme="light"] .confirm-modal .btn-close { filter: none; }

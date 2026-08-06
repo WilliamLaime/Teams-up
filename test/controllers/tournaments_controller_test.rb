@@ -417,6 +417,48 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card--placeholder", 3 # 2 places en demies + 1 en finale
   end
 
+  test "GET show : la recherche de participants apparaît au-delà de 8 joueurs" do
+    sign_in @user
+    t = open_tournament_with_players(12)
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".participant-search__input"
+    # Chaque carte est filtrable et porte le nom sur lequel comparer.
+    assert_select ".participant-chip[data-participant-filter-target=card]", 12
+    assert_select ".participant-chip[data-name=?]", t.approved_players.first.display_name.downcase
+  end
+
+  test "GET show : pas de recherche de participants sur une petite grille" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".participant-search", 0
+    assert_select ".participant-chip[data-participant-filter-target=card]", 0
+  end
+
+  test "GET show : un qualifié monte d'une case sans attendre son adversaire" do
+    sign_in @user
+    t = launched_tournament("ronde_suisse", 8)
+    finalists = t.tournament_users.players.approved.order(:id).first(4)
+    semis = BracketBuilder.new(t, finalists: finalists).build!
+    won = semis.tournament_matches.order(:position).first
+    won.update!(sets: [[6, 0], [6, 0]]) # 1re demie jouée, la 2e non → finale à moitié connue
+
+    get tournament_path(t)
+    assert_response :success
+    # La finale n'existe pas encore en base : sa case affiche le vainqueur connu…
+    assert_select ".tmatch-card--placeholder-known", 1
+    assert_select ".tmatch-card--placeholder-known .tmatch-card__name",
+                  text: won.reload.winner.display_name
+    # …et laisse UN seul camp en attente.
+    assert_select ".tmatch-card--placeholder-known .tmatch-card__player--pending", 1
+    # La case entièrement inconnue reste, elle, sans joueur.
+    assert_select ".tmatch-card--placeholder:not(.tmatch-card--placeholder-known)", 0
+  end
+
   test "GET show : le tableau final reste affiché même si `playoffs` vaut false sur un tournoi non-championnat" do
     # Régression : `playoffs` n'a de sens que pour le championnat (LeagueBuilder),
     # mais la colonne existe pour tous les formats — une ronde suisse/poules avec
@@ -496,6 +538,30 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     t
   end
 
+  # Repère « moi » : sans lui, retrouver son match dans une grille de 8 poules
+  # demande de lire chaque nom. Le test vérifie surtout qu'il ne se déclenche QUE
+  # pour le joueur concerné — un repère qui s'allume pour tout le monde ne repère rien.
+  test "GET show met en avant les matchs et la ligne de classement du joueur connecté" do
+    t = launched_tournament("poules", 8)
+    me = t.tournament_users.players.approved.order(:id).first
+
+    sign_in me.user
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tmatch-card--mine", 1 # un seul match par journée
+    assert_select ".pool-grid__col--mine", 1
+    assert_select ".tmatch-card__me-badge"
+    assert_select ".tournament-ranking__row.is-me", 1
+
+    # L'organisateur, lui, ne joue pas : aucun repère ne doit s'allumer.
+    sign_in @user
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tmatch-card--mine", 0
+    assert_select ".pool-grid__col--mine", 0
+    assert_select ".tournament-ranking__row.is-me", 0
+  end
+
   test "GET show rend la phase championnat" do
     sign_in @user
     t = launched_tournament("championnat", 8)
@@ -517,7 +583,11 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".journee-picker__toggle span", text: "Journée 2" # présélection sur la journée en cours
     assert_select ".journee-picker__option", 2
-    assert_select ".journee-picker__option.is-active[data-round-number=?]", "2"
+    # Filtre multi-sélection : une case à cocher par journée, seule celle de la
+    # journée en cours est cochée au chargement.
+    assert_select ".journee-picker__option input[type=checkbox][data-round-number=?][checked]", "2"
+    assert_select ".journee-picker__option input[type=checkbox][data-round-number=?]:not([checked])", "1"
+    assert_select ".journee-picker__all input[type=checkbox]" # raccourci « toutes les journées »
     # Seule la journée en cours (2) est visible au chargement, la 1ère est masquée.
     assert_select ".round-ribbon__page[data-round-number=?][hidden]", "1"
     assert_select ".round-ribbon__page[data-round-number=?]:not([hidden])", "2"

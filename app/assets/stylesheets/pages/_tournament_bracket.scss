@@ -113,6 +113,17 @@
     padding-bottom: 0.5rem;
     border-bottom: 2px solid $green;
   }
+
+  // Titre d'un sous-tableau à l'intérieur d'une phase : les branches de classement
+  // du Critérium (« Match pour la 3e place », « Places 5 à 8 »), qui coexistent
+  // dans la même section. Volontairement discret — même vocabulaire que
+  // .bracket__round-title, un cran au-dessus dans la hiérarchie.
+  &__subtitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--theme-text-primary);
+    margin: 1.5rem 0 0.75rem;
+  }
 }
 
 // ── Sélecteur de phase (2 pastilles, onglets « stage » façon lolesports) ──
@@ -171,6 +182,20 @@
   &--paginated {
     flex-direction: column;
     overflow-x: visible;
+  }
+
+  // Phase à TOUR UNIQUE (barrages, cf. local `wide`) : il n'y a rien à faire
+  // défiler horizontalement, et la largeur de colonne fixe ne sert qu'à aligner
+  // plusieurs tours côte à côte. La colonne prend donc toute la place, ses matchs
+  // se rangeant en grille (cf. .round-col__matches--grid).
+  &--wide {
+    overflow-x: visible;
+
+    .round-col {
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: none;
+    }
   }
 
   // Journée active : plein largeur (lisibilité), plus de contrainte de colonne.
@@ -240,12 +265,23 @@
     li { margin: 0; }
   }
 
-  &__option {
-    display: block;
+  // Filet entre le raccourci « Toutes les journées » et la liste des journées :
+  // deux natures d'action différentes, on ne les empile pas sans marque.
+  &__separator {
+    height: 1px;
+    margin: 0.3rem 0.25rem;
+    background-color: var(--theme-border);
+  }
+
+  // Une ligne du menu = un <label> contenant sa case. Le label porte le fond au
+  // survol et rend TOUTE la ligne cliquable, pas seulement la case de 15 px.
+  &__option,
+  &__all {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
     width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
+    margin: 0;
     border-radius: 8px;
     padding: 0.45rem 0.75rem;
     font-size: 0.85rem;
@@ -253,14 +289,24 @@
     color: var(--theme-text-primary);
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease;
 
     &:hover { background-color: var(--theme-hover-bg); }
+  }
 
-    &.is-active {
-      color: #fff;
-      background-color: $green;
-    }
+  // Le raccourci « tout / rien » n'est pas une journée : ton plus discret.
+  &__all { color: var(--theme-text-muted); }
+
+  // Case native (pas de faux carré en CSS) : `accent-color` suffit à la mettre
+  // au vert de l'app, et on conserve gratuitement le focus clavier, l'état
+  // `indeterminate` de la case globale et l'annonce par les lecteurs d'écran.
+  &__checkbox {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: $green;
+    cursor: pointer;
   }
 }
 
@@ -304,6 +350,23 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  // Variante d'une phase à tour unique (barrages, cf. local `wide` de
+  // _round_ribbon) : deux matchs par ligne, chacun sur la moitié de la largeur.
+  // Empilés dans une colonne de 300 px, les noms se réduisaient à « G... » alors
+  // que les trois quarts de la page restaient vides.
+  &__matches--grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+
+    // Sous 900 px deux cartes se partageraient moins de 450 px : on retomberait
+    // sur le problème qu'on vient de corriger. Une seule colonne, pleine largeur.
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 }
 
@@ -388,6 +451,14 @@
 
   &--done { border-color: var(--theme-border-strong); }
 
+  // Mon match. Bordure verte + halo léger : dans une grille de 8 cartes
+  // identiques, c'est ce qu'on repère avant même de lire un nom. La bordure
+  // écrase délibérément celle de --done, qui n'est qu'une nuance de gris.
+  &--mine {
+    border-color: $green;
+    box-shadow: 0 0 0 1px rgba($green, 0.35);
+  }
+
   // Tour futur pas encore joué (Lot 7) : même gabarit que la carte d'un vrai
   // match (place bien alignée dans la colonne) mais vide, en pointillés, pour
   // signaler visuellement "pas encore déterminé" (cf. .tmatch-card--bye).
@@ -396,6 +467,21 @@
     align-items: center;
     justify-content: center;
     min-height: 68px;
+    color: var(--theme-text-muted);
+  }
+
+  // Case future dont UN camp est déjà connu (le vainqueur monte sans attendre son
+  // adversaire) : on annule le centrage de --placeholder pour retrouver la pile
+  // « joueur / joueur » d'une vraie carte, pointillés conservés — c'est encore un
+  // match à jouer.
+  &--placeholder-known {
+    align-items: stretch;
+    justify-content: flex-start;
+    color: var(--theme-text-primary);
+  }
+
+  &__player--pending {
+    justify-content: center;
     color: var(--theme-text-muted);
   }
 
@@ -508,6 +594,25 @@
 
 // ── Score du tableau final (carte empilée _tmatch) ────
 // Nombre affiché à droite du nom de chaque joueur (via display_score_for).
+// Pastille « Toi » à côté de mon nom : la bordure verte dit « ton match », cette
+// pastille dit LEQUEL des deux joueurs je suis. Les deux sont nécessaires.
+.tmatch-card__me-badge {
+  flex: 0 0 auto;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background-color: rgba($green, 0.18);
+  color: $green;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tmatch-card__player--me .tmatch-card__name {
+  color: var(--theme-text-strong);
+  font-weight: 800;
+}
+
 .tmatch-card__sets {
   flex: 0 0 auto;
   min-width: 1.25rem;
@@ -675,17 +780,52 @@
   .modal-header,
   .modal-footer { border-color: var(--theme-border); }
 
+  // La croix de Bootstrap est un SVG NOIR en dur : invisible sur la carte sombre.
+  // On l'inverse en dark et on la laisse telle quelle en light — plutôt que la
+  // classe btn-close-white, qui fixerait le blanc et la rendrait invisible en
+  // mode clair. Même traitement que l'offcanvas de la navbar.
+  .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.7;
+
+    &:hover,
+    &:focus { opacity: 1; }
+  }
+
+  [data-theme="light"] & .btn-close { filter: none; }
+
+  // Grille commune à l'en-tête (noms) et aux lignes de sets : chaque nom se place
+  // ainsi EXACTEMENT au-dessus de la colonne de scores qui lui appartient, et le
+  // « vs » au-dessus des « – ». La colonne du séparateur est de largeur FIXE (et
+  // non `auto`) : `auto` la dimensionnerait sur son propre contenu, donc « vs »
+  // pour l'en-tête et « – » pour les sets → deux grilles décalées de quelques px.
+  $score-columns: 3.5rem 1fr 1.5rem 1fr;
+
   &__players {
-    display: flex;
+    display: grid;
+    grid-template-columns: $score-columns;
     align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
     margin-bottom: 1rem;
     font-weight: 700;
     color: var(--theme-text-strong);
   }
 
+  // La 1re colonne (« Set 1 ») reste vide dans l'en-tête : le nom démarre en
+  // colonne 2, au-dessus du premier champ.
+  &__player {
+    grid-column: 2;
+    text-align: center;
+    overflow-wrap: anywhere; // un nom long ne doit pas élargir la modale
+
+    // Le second joueur est le DERNIER enfant (l'ordre du DOM est nom / vs / nom,
+    // donc `& + &` ne matcherait jamais : le « vs » sépare les deux noms).
+    &:last-child { grid-column: 4; }
+  }
+
   &__vs {
+    grid-column: 3;
+    text-align: center;
     font-size: 0.8rem;
     font-weight: 500;
     color: var(--theme-text-muted);
@@ -693,7 +833,7 @@
 
   &__set {
     display: grid;
-    grid-template-columns: 3.5rem 1fr auto 1fr;
+    grid-template-columns: $score-columns;
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
@@ -704,24 +844,82 @@
     color: var(--theme-text-muted);
   }
 
+  // Message d'erreur d'une ligne de set : occupe toute la largeur de la grille,
+  // sous les deux champs, pour ne pas décaler la colonne de scores.
+  &__error {
+    grid-column: 1 / -1;
+    margin: 0.1rem 0 0.2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e06a5c;
+  }
+
+  // Les DEUX champs de la ligne virent au rouge : un set invalide l'est par la
+  // combinaison des deux scores, pas par l'un d'eux en particulier.
+  &__set.is-invalid &__stepper { border-color: #e06a5c; }
+
   &__sep {
     text-align: center;
     color: var(--theme-text-muted);
   }
 
-  &__input {
-    width: 100%;
-    padding: 0.4rem 0.5rem;
+  // Champ de score encadré par ses boutons − / +. Le tout forme UN seul bloc
+  // bordé (la bordure est portée par le conteneur, pas par l'input) : trois
+  // bordures accolées feraient un empilement de traits.
+  &__stepper {
+    display: flex;
+    align-items: stretch;
     border-radius: 8px;
     border: 1px solid var(--theme-border);
     background: var(--theme-bg-input, var(--theme-bg-card));
+    overflow: hidden;
+
+    // Le focus se voit sur le bloc entier, pas seulement sur l'input intérieur.
+    &:focus-within { border-color: $green; }
+  }
+
+  &__step {
+    flex: 0 0 2rem;
+    border: none;
+    background: transparent;
+    color: var(--theme-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background-color: var(--theme-hover-bg);
+      color: $green;
+    }
+
+    // Pas d'`active` collant sur mobile : le retour visuel vient du survol/pression.
+    &:active { background-color: rgba($green, 0.18); }
+  }
+
+  &__input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.45rem 0.25rem;
+    border: none;
+    background: transparent;
     color: var(--theme-text-primary);
     text-align: center;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1rem;
 
-    &:focus {
-      outline: none;
-      border-color: $green;
+    &:focus { outline: none; }
+
+    // Flèches natives de <input type="number"> masquées : minuscules, dessinées
+    // par l'OS (donc claires sur fond sombre) et redondantes avec − / +.
+    appearance: textfield;
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     &[readonly] {
@@ -938,15 +1136,61 @@
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    // 220px : de quoi loger un « Camille Bernard » complet à côté de l'avatar.
+    // minmax(0, …) sur la borne haute n'est pas nécessaire ici (auto-fill), mais
+    // la borne basse doit rester généreuse — c'est elle qui décide de la troncature.
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 0.6rem;
+    align-items: start;
+  }
+}
+
+// ── Recherche dans la grille des participants ────────────────────────────────
+// Filtre client (cf. participant_filter_controller). Icône en overlay plutôt
+// qu'en flex : l'input garde ainsi sa croix d'effacement native.
+.participant-search {
+  position: relative;
+  max-width: 320px;
+  margin-bottom: 0.85rem;
+
+  &__icon {
+    position: absolute;
+    top: 50%;
+    left: 0.7rem;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--theme-text-muted);
+    pointer-events: none;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 0.45rem 0.7rem 0.45rem 2.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--theme-border);
+    background-color: var(--theme-bg-card);
+    color: var(--theme-text-primary);
+    font-size: 0.88rem;
+
+    &::placeholder { color: var(--theme-text-muted); }
+
+    &:focus {
+      outline: none;
+      border-color: $green;
+      box-shadow: 0 0 0 2px rgba($green, 0.18);
+    }
   }
 }
 
 .participant-chip {
+  // Colonne : le nom occupe toute la largeur de la carte, l'état et l'action
+  // passent sur une seconde ligne. En une seule ligne, les badges (nowrap, donc
+  // non compressibles) volaient la place du nom, réduit à « Em… ».
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
   background-color: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: 12px;
@@ -958,8 +1202,8 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    width: 100%;
     min-width: 0;
-    flex: 1 1 auto;
     color: inherit;
     text-decoration: none;
     cursor: pointer;
@@ -977,14 +1221,24 @@
     font-size: 0.88rem;
     font-weight: 600;
     color: var(--theme-text-strong);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
+    // Un nom long passe à la ligne au lieu d'être coupé : on préfère une carte
+    // un peu plus haute à un « Em… » illisible.
+    overflow-wrap: anywhere;
+  }
+
+  // Seconde ligne : état + action. Sans `margin-left: auto` (le parent est en
+  // colonne, l'alignement se joue sur align-items).
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding-left: calc(34px + 0.6rem); // aligné sous le nom, pas sous l'avatar
   }
 
   &__role,
   &__state {
-    margin-left: auto;
     font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -1016,7 +1270,6 @@
   // stylise donc ce sélecteur en pastille discrète, cohérente avec le reste du
   // design system (pastille outline rouge, inversée au survol).
   &__forfeit {
-    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -1035,6 +1288,92 @@
   }
 }
 
+// ── Constitution des poules (organisateur, avant lancement) ──────────────────
+// Même grammaire visuelle que la grille de participants : une carte par joueur,
+// le select de chapeau prenant la place du badge d'état.
+.seeding-panel {
+  border-top: 1px solid var(--theme-border);
+  padding-top: 1.25rem;
+
+  &__settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  // simple_form empile les radios ; on les remet en ligne, le choix étant binaire.
+  &__modes .radio_buttons,
+  &__modes .form-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-right: 1rem;
+  }
+
+  &__warning {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: #b06f00;
+    background-color: rgba(#f0ad4e, 0.12);
+    border: 1px solid rgba(#f0ad4e, 0.4);
+    border-radius: 10px;
+    padding: 0.5rem 0.7rem;
+    margin-bottom: 1rem;
+
+    i { width: 16px; height: 16px; flex-shrink: 0; }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.6rem;
+    margin-bottom: 1.1rem;
+  }
+
+  &__player {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    padding: 0.5rem 0.65rem;
+    cursor: pointer;
+  }
+
+  &__avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--theme-text-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__select {
+    margin-left: auto;
+    max-width: 9.5rem;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    background-color: var(--theme-bg);
+    color: var(--theme-text-strong);
+  }
+}
+
 // Sous-titre de poule dans le board (phase poules) : « Poule A », « Poule B »…
 .pool-label {
   margin: 0.6rem 0 0.35rem;
@@ -1043,6 +1382,69 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--theme-text-muted);
+
+  // « ta poule » : la carte est déjà bordée de vert, ce libellé dit pourquoi.
+  &__mine {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background-color: rgba($green, 0.18);
+    color: $green;
+    font-size: 0.65rem;
+    font-weight: 800;
+  }
+}
+
+// ── Poules d'une journée, côte à côte ────────────────
+// DEUX poules par ligne, pas « autant que la largeur en permet » : à 4 colonnes
+// les cartes tombent sous ~250 px et les noms des joueurs sont tronqués
+// (« Pongi… vs Pongi… »), ce qui rend la lecture impossible. Deux colonnes
+// laissent la place au nom complet tout en gardant les poules comparables d'un
+// coup d'œil. Une seule colonne en mobile.
+// `minmax(0, 1fr)` et non `1fr` : la taille mini par défaut d'une piste de
+// grille est `auto`, donc un long nom élargirait la colonne et ferait déborder
+// la rangée.
+.pool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__col {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 14px;
+    padding: 0.9rem;
+
+    // Ma poule. Teinte de fond plutôt qu'une bordure verte : les cartes de match
+    // qu'elle contient en portent déjà une, deux cadres verts imbriqués seraient
+    // illisibles.
+    &--mine {
+      border-color: rgba($green, 0.45);
+      background-color: rgba($green, 0.05);
+    }
+    // min-width: 0 : sans ça un long nom de joueur pousse la piste de grille
+    // au-delà du 1fr et la rangée déborde horizontalement.
+    min-width: 0;
+
+    .pool-label {
+      margin: 0 0 0.6rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--theme-border);
+      color: var(--theme-text-strong);
+      font-size: 0.85rem;
+    }
+  }
+
+  &__matches {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
 }
 
 // ── Onglet Classement ────────────────────────────────
@@ -1053,6 +1455,28 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--theme-text-strong);
+  }
+
+  // Badge « ex æquo » du classement final d'un Critérium : plusieurs joueurs
+  // partagent la même place, le règlement ne les faisant pas rejouer (cf.
+  // TournamentStandings). Discret : c'est une précision sur la place, pas un état.
+  &__tie {
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-style: italic;
+    color: var(--theme-text-muted);
+    white-space: nowrap;
+  }
+
+  // Précision sous le titre « Places déjà acquises » : dit pourquoi tous les
+  // joueurs n'y sont pas, ce qui évite de lire ce tableau comme un classement
+  // définitif tronqué.
+  &__hint {
+    margin: -0.25rem 0 0.6rem;
+    font-size: 0.8rem;
+    color: var(--theme-text-muted);
   }
 
   &__scroll {
@@ -1136,6 +1560,18 @@
 
   &__row--eliminated td { opacity: 0.6; }
   &__row--qualified td:first-child { box-shadow: inset 3px 0 0 $green; }
+
+  // Ma ligne : un fond vert très léger sur toute la largeur. Volontairement une
+  // TEINTE et non un liseré — le liseré de gauche est déjà pris par « qualifié »,
+  // et les deux états se cumulent (on peut être soi-même ET qualifié).
+  &__row.is-me td {
+    background-color: rgba($green, 0.1);
+    font-weight: 700;
+
+    // Un éliminé reste lisible s'il s'agit de moi : c'est justement la ligne
+    // qu'on cherche.
+    opacity: 1;
+  }
 }
 
 // ── Colonne Qualifiés / Éliminés (ronde suisse, cf. _qualification_panel.html.erb) ──

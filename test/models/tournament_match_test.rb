@@ -241,6 +241,24 @@ class TournamentMatchTest < ActiveSupport::TestCase
       refute match_in("bracket", [[11, 0]] * 8).valid?
     end
 
+    # ── Garde-fou : aucune phase ne doit hériter du best_of par défaut par oubli ──
+    # Le bug de fond n'est pas « telle phase se joue en 4 manches » mais « une phase
+    # nouvelle prend silencieusement les règles de poule ». Ce test est piloté par
+    # TournamentRound::PHASES : ajouter une phase sans la classer le fait échouer,
+    # au lieu de laisser un tableau se jouer au mauvais nombre de manches.
+    test "chaque phase existante est explicitement classée finale ou round-robin" do
+      round_robin = %w[swiss league pool]
+
+      TournamentRound::PHASES.each do |phase|
+        expected = Tournament::FINAL_PHASES.include?(phase) ? 4 : 3
+
+        assert_includes round_robin + Tournament::FINAL_PHASES, phase,
+                        "phase « #{phase} » non classée : elle prendrait les règles de poule par défaut"
+        assert_equal expected, match_in(phase, [[11, 5]]).sets_to_win,
+                     "phase « #{phase} » : mauvais nombre de manches gagnantes"
+      end
+    end
+
     test "les autres sports gardent les mêmes règles à toutes les phases" do
       tennis = Sport.create!(name: "Tennis test", slug: "tennis", icon: "🎾")
       @tournament.update!(sport: tennis)

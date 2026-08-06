@@ -19,6 +19,15 @@ class PoolBuilder
   # sur le tableau final. Idempotent (même garde-fou anti double-clic que le suisse).
   def next_round!
     ActiveRecord::Base.transaction do
+      # Critérium Fédéral : dès que la phase finale a commencé, c'est CriteriumFlow
+      # qui pilote — et le court-circuit doit venir AVANT toute lecture de
+      # `current_round`. Cette méthode suppose UN tour courant unique, alors que le
+      # Critérium fait tourner plusieurs branches en parallèle (le match pour la 3e
+      # place et le mini-tableau des places 5 à 8) : la garde
+      # `return current if current && !current.complete?` bloquerait la génération
+      # de l'une parce que l'autre n'est pas finie.
+      return CriteriumFlow.new(@tournament).advance! if criterium_final_phase?
+
       current = @tournament.current_round
       return current if current && !current.complete?
 
@@ -44,6 +53,8 @@ class PoolBuilder
 
   private
 
+  def criterium_final_phase? = @tournament.criterium? && @tournament.final_phase_started?
+
   # ── Répartition en poules ──────────────────────────────────────────────────────
   # Nombre de poules : délègue à Tournament#pool_count, seule source de vérité
   # (aussi utilisée pour dimensionner le tableau final, cf. Tournament#final_size).
@@ -51,26 +62,23 @@ class PoolBuilder
 
   def pools_unassigned? = player_scope.where(pool: nil).exists?
 
-  # Distribution en serpentin sur un ordre stable (par draw_order, le tirage au
-  # sort figé au lancement) → poules équilibrées et calendrier reproductible, sans
-  # reproduire l'ordre d'inscription (id). Persiste `pool` (0-based) sur chaque
-  # inscription.
-  def assign_pools!
-    count = pool_count
-    player_scope.order(:draw_order).to_a.each_with_index do |tu, i|
-      row = i / count
-      col = i % count
-      # Serpentin : on inverse le sens une ligne sur deux.
-      pool = row.even? ? col : (count - 1 - col)
-      tu.update!(pool: pool)
-    end
-  end
+  # Qui va dans quelle poule : délégué à PoolSeeding (Lot 7), qui applique le mode
+  # choisi par l'organisateur — tirage au sort intégral (le serpentin historique)
+  # ou chapeaux. Ce moteur-ci n'a pas à connaître la différence : il lui suffit que
+  # chaque joueur reparte avec un `pool`.
+  def assign_pools! = PoolSeeding.new(@tournament).assign!
 
   # ── Calendrier ──────────────────────────────────────────────────────────────────
-  # Calendrier round-robin de chaque poule (ordre stable par draw_order).
+  # Calendrier round-robin de chaque poule.
   # => { pool_index => [journée = [[a, b], …], …] }
+  #
+  # ⚠️ Cette méthode est rappelée à CHAQUE journée et doit donc renvoyer exactement
+  # le même calendrier à chaque fois : c'est l'index de journée qui sélectionne les
+  # rencontres à créer. L'ordre des joueurs doit donc être TOTAL — cf.
+  # RoundRobinStats#ordered_player_scope, qui documente pourquoi `draw_order` seul
+  # ne suffit pas et ce qui casse quand l'ordre bouge en cours de route.
   def pool_schedules
-    player_scope.order(:draw_order).to_a.group_by(&:pool).transform_values do |members|
+    ordered_player_scope.to_a.group_by(&:pool).transform_values do |members|
       LeagueBuilder.schedule(members)
     end
   end
@@ -97,6 +105,11 @@ class PoolBuilder
 
   # ── Bascule playoffs ─────────────────────────────────────────────────────────────
   def start_playoffs!
+    # Critérium Fédéral : ce n'est pas un top-N par poule qui entre en phase finale,
+    # mais les 1ers (d'office), les 2es et 3es (en barrage) et les 4es (en
+    # consolante) — tout le monde continue. CriteriumFlow s'en charge.
+    return CriteriumFlow.new(@tournament).advance! if @tournament.criterium?
+
     finalists = pool_finalists
     finalists.each { |tu| tu.update!(state: "qualified") }
     BracketBuilder.new(@tournament, finalists: finalists).build!

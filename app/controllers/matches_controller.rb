@@ -603,7 +603,9 @@ class MatchesController < ApplicationController
   def tournament_match_option(tmatch, tournament)
     {
       id: tmatch.id,
-      label: "#{tmatch.player_a.display_name} vs #{tmatch.player_b.display_name}",
+      # short_name (« Prénom N. ») et non display_name : deux noms complets dans
+      # une même option dépassent la largeur du <select> et sont tronqués.
+      label: "#{tmatch.player_a.short_name} vs #{tmatch.player_b.short_name}",
       title: tournament_match_title(tmatch, tournament),
       sport_id: tournament.sport_id,
       place: tournament.place,

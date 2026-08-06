@@ -23,7 +23,7 @@
     <%# ── Lien retour ──────────────────────────────────────────────────────── %>
     <%# position:relative + z-index:10 pour passer au-dessus de profil-card-wrapper (margin-top:-2.5rem) %>
     <div style="position:relative; z-index:10;">
-      <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
+      <%= render "shared/nav_button", fallback: root_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
     </div>
 
     <%# ══════════════════════════════════════════════════════════════════════ %>

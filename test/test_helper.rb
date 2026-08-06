@@ -34,9 +34,14 @@ module ActiveSupport
     # Depuis le Lot 4, le vainqueur est DÉRIVÉ du score set-par-set (plus de
     # winner_id posé à la main). Construit un score « sec » (best_of sets gagnés
     # d'affilée) pour `winner`, conforme aux règles du sport, puis sauvegarde.
+    # Lit les règles SUR LE MATCH et non sur le sport : TournamentMatch#scoring_rules
+    # durcit le best_of en phase finale quand le sport le prévoit (ping-pong : 3
+    # manches gagnantes en poule, 4 en phase finale). Passer par le sport
+    # produirait un score de 3 manches sur un match qui en exige 4 — le vainqueur
+    # ne serait pas dérivé et le match resterait `pending`, silencieusement.
     def win_tournament_match!(match, winner)
-      rules  = match.tournament.sport.scoring_rules
-      needed = (rules[:best_of] / 2) + 1
+      rules  = match.scoring_rules
+      needed = match.sets_to_win
       set    = winner.id == match.player_a_id ? [rules[:target], 0] : [0, rules[:target]]
       match.assign_score(Array.new(needed) { set.dup })
       match.save!

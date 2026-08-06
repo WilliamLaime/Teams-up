@@ -1,0 +1,63 @@
+<%# ── Barrages du Critérium Fédéral ───────────────────────────────────────────
+    Un tour unique, intercalé entre les poules et le tableau final : les 2es de
+    poule y affrontent les 3es d'une AUTRE poule (appariement croisé, cf.
+    CriteriumFlow#barrage_pairs). Ce n'est pas un tableau à élimination directe —
+    d'où le ruban de colonnes commun (_round_ribbon) plutôt que _bracket.
+
+    Les deux camps continuent : le vainqueur rejoint un 1er de poule dans le
+    tableau final, le perdant descend en consolante. C'est le seul tour du format
+    dont personne ne sort.
+
+    Affichée dès le lancement du tournoi, comme le tableau final : tant que les
+    poules ne sont pas jouées, les cases annoncent qui les remplira (« 2e de
+    poule » / « 3e d'une autre poule ») et se peuplent quand CriteriumFlow crée le
+    tour. Sinon la phase — et sa pastille de navigation — surgissait en cours de
+    route, sans qu'on ait jamais vu ce qui attendait.
+
+    ⚠️ On ne préfigure PAS un appariement provisoire à partir du classement de
+    poule en cours : l'appariement croisé trie les 2es par force décroissante et
+    les 3es par force croissante (cf. CriteriumFlow#barrage_pairs), donc il
+    changerait à chaque score saisi. Une case « à déterminer » est honnête ; un
+    adversaire qui valse ne l'est pas.
+
+    Local : tournament. %>
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="barrage">
+  <h2 class="tournament-phase__title">Barrages</h2>
+
+  <% if tournament.barrage_rounds.any? %>
+    <%# wide : un seul tour, donc une seule colonne — inutile de la brider à la
+        largeur d'une colonne de ruban, ce qui tronquait les noms en « G... » sur les
+        trois quarts d'une page vide. Deux barrages par ligne, pleine largeur. %>
+    <%= render "tournaments/round_ribbon", rounds: tournament.barrage_rounds,
+                title_for: ->(_round) { "Barrages" }, wide: true %>
+  <% else %>
+    <%# Même ossature que le ruban réel (.round-ribbon--wide > .round-col) pour que
+        la phase ne change pas de gabarit le jour où le tour est créé. %>
+    <div class="round-ribbon round-ribbon--wide">
+      <div class="round-col">
+        <div class="round-col__header">
+          <h3 class="round-col__title">Barrages</h3>
+          <span class="round-col__status round-col__status--in_progress">À venir</span>
+        </div>
+
+        <div class="round-col__matches round-col__matches--grid">
+          <% tournament.expected_barrage_count.times do %>
+            <div class="tmatch-card tmatch-card--placeholder tmatch-card--placeholder-known">
+              <div class="tmatch-card__player tmatch-card__player--pending">
+                <span class="tmatch-card__placeholder-label">2e de poule</span>
+              </div>
+              <div class="tmatch-card__player tmatch-card__player--pending">
+                <span class="tmatch-card__placeholder-label">3e d'une autre poule</span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <p class="tournament-empty">
+          Les barrages se rempliront à la fin des poules : chaque 2e de poule y
+          affrontera le 3e d'une autre poule.
+        </p>
+      </div>
+    </div>
+  <% end %>
+</section>

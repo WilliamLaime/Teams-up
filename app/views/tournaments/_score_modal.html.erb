@@ -19,7 +19,8 @@
 
       <%= form_with url: "#", method: :patch,
                     data: { tournament_score_target: "form",
-                            action: "turbo:submit-end->tournament-score#close" } do %>
+                            action: "submit->tournament-score#validateForm " \
+                                    "turbo:submit-end->tournament-score#close" } do %>
         <div class="modal-body">
           <div class="score-modal__players">
             <span class="score-modal__player" data-tournament-score-target="nameA"></span>
@@ -34,8 +35,12 @@
         </div>
 
         <div class="modal-footer">
+          <%# `btn-primary` EN PLUS de `btn-cta-primary` : c'est Bootstrap qui porte
+              les couleurs ($primary mappé sur $green), btn-cta-primary ne fait
+              qu'arrondir et régler le survol. Sans lui, le bouton s'affichait sans
+              fond — c'est la convention suivie partout ailleurs dans l'app. %>
           <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Fermer</button>
-          <button type="submit" class="btn btn-cta-primary" data-tournament-score-target="submit">
+          <button type="submit" class="btn btn-primary btn-cta-primary" data-tournament-score-target="submit">
             Enregistrer le score
           </button>
         </div>

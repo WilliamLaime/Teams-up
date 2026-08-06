@@ -406,3 +406,9 @@ else
 
   puts "✅ #{Tournament.count} tournois en base."
 end
+
+# ── Démo du Critérium Fédéral (ping-pong) ─────────────────────────────────────
+# Dans son propre fichier : c'est le format le plus riche (poules, barrages,
+# tableau final, consolante, matchs de classement) et on veut pouvoir le rejouer
+# seul, sans repasser tout le reste — `bin/rails runner db/seeds/criterium_demo.rb`.
+load Rails.root.join("db/seeds/criterium_demo.rb")

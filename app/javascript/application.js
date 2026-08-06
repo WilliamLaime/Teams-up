@@ -1,8 +1,14 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
-import "@hotwired/turbo-rails"
+import { Turbo } from "@hotwired/turbo-rails"
 import "controllers"
 import "@popperjs/core"
-import * as bootstrap from "bootstrap"
+// ⚠️ `import "bootstrap"` et NON `import * as bootstrap` : le fichier épinglé
+// (bootstrap.min.js du gem bootstrap) est le build **UMD**, qui n'a aucun export
+// ESM — le namespace importé serait un objet VIDE, et `bootstrap.Modal` valait
+// donc `undefined`. Le UMD peuple `window.bootstrap` : c'est ce global qu'il faut
+// lire (comme le font déjà les contrôleurs Stimulus). Cette erreur silencieuse
+// cassait les trois handlers ci-dessous depuis leur écriture.
+import "bootstrap"
 
 // ── Sentry Browser SDK — monitoring des erreurs JavaScript ───────────────────
 //
@@ -40,7 +46,11 @@ document.addEventListener("turbo:render", () => {
 document.addEventListener("turbo:load", () => {
   // Sélectionne tous les éléments avec l'attribut data-bs-toggle="tooltip"
   const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-  tooltipElements.forEach(el => new bootstrap.Tooltip(el))
+  // window.bootstrap explicite : le namespace importé masquait le global et
+  // valait {} (build UMD), donc ce constructeur levait une exception silencieuse.
+  if (window.bootstrap?.Tooltip) {
+    tooltipElements.forEach(el => new window.bootstrap.Tooltip(el))
+  }
 
   // RGAA 4.8 — masquer les SVG Lucide au chargement initial
   if (window.lucide) window.lucide.createIcons({ attrs: { "aria-hidden": "true" } })
@@ -56,6 +66,87 @@ document.addEventListener("turbo:load", () => {
 //   1. Avant la mise en cache Turbo → vider le widget pour éviter qu'un token
 //      expiré soit restauré depuis le snapshot (même si no-cache est activé)
 //   2. Après chaque navigation Turbo → forcer le re-render manuellement
+
+// ── Compteur de pages vues dans l'onglet ────────────────────────────────────
+//
+// Sert aux boutons « Retour » (cf. back_link_controller) à savoir s'il existe une
+// page précédente DANS l'app. On ne peut pas le déduire autrement : sous Turbo
+// Drive, document.referrer reste figé au chargement initial, et history.length
+// compte aussi les pages visitées avant d'arriver sur le site.
+//
+// turbo:load couvre les deux cas (chargement initial ET navigation Turbo) : au
+// premier affichage le compteur vaut 1, donc « pas de page précédente ».
+document.addEventListener("turbo:load", () => {
+  try {
+    const key = "teamsup:visit-count"
+    sessionStorage.setItem(key, String(Number(sessionStorage.getItem(key) || 0) + 1))
+  } catch {
+    // sessionStorage indisponible : les boutons Retour utiliseront leur URL de secours.
+  }
+})
+
+// ── Confirmation des actions destructrices ──────────────────────────────────
+//
+// Par défaut, tout `data-turbo-confirm` passe par window.confirm : un encadré
+// dessiné par le navigateur (« localhost:3000 indique »), impossible à styler.
+// setConfirmMethod redirige TOUS ces appels vers notre modale Bootstrap
+// (shared/_confirm_modal, rendue dans le layout) — aucune vue à modifier.
+//
+// Le contrat Turbo attend une Promise<boolean> : true = on poursuit l'action.
+// Options facultatives portées par le bouton (ou le formulaire) :
+//   data-turbo-confirm-accept="Déclarer forfait"  → libellé du bouton
+//   data-turbo-confirm-danger                     → bouton rouge
+Turbo.setConfirmMethod((message, element, submitter) => {
+  const modalElement = document.getElementById("turboConfirmModal")
+
+  // Repli sur le confirm natif si la modale n'est pas là (page servie sans le
+  // layout, Bootstrap pas encore chargé) : mieux vaut un encadré laid qu'une
+  // action destructrice exécutée sans confirmation.
+  // On teste `window.bootstrap?.Modal` et non `typeof bootstrap` : le namespace
+  // importé existe toujours (objet vide côté UMD), donc tester sa seule présence
+  // ne prouve rien — c'est exactement ce qui faisait échouer la confirmation.
+  if (!modalElement || !window.bootstrap?.Modal) {
+    return Promise.resolve(window.confirm(message))
+  }
+
+  // « Déclarer X forfait ? Ses matchs seront perdus. » → la question devient le
+  // titre, l'explication le corps. Les messages sans explication (« Terminer ce
+  // tournoi maintenant ? ») n'affichent tout simplement pas de corps.
+  const [question, ...rest] = String(message).split(/(?<=\?)\s+/)
+  const detail = rest.join(" ").trim()
+
+  modalElement.querySelector("[data-confirm-title]").textContent = question
+  const detailSlot = modalElement.querySelector("[data-confirm-detail]")
+  detailSlot.textContent = detail
+  detailSlot.hidden = detail === ""
+
+  const source = submitter || element
+  const accept = modalElement.querySelector("[data-confirm-accept]")
+  accept.textContent = source?.dataset?.turboConfirmAccept || "Confirmer"
+  const danger = source?.dataset?.turboConfirmDanger !== undefined
+  accept.classList.toggle("btn-danger", danger)
+  accept.classList.toggle("btn-primary", !danger)
+
+  const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement)
+
+  return new Promise((resolve) => {
+    let confirmed = false
+
+    const onAccept = () => { confirmed = true; modal.hide() }
+    // On résout sur `hidden` et non sur le clic : l'utilisateur peut fermer par
+    // Échap, par le backdrop ou par « Annuler » — un seul point de sortie évite
+    // de laisser une Promise pendante (Turbo attendrait indéfiniment).
+    const onHidden = () => {
+      accept.removeEventListener("click", onAccept)
+      modalElement.removeEventListener("hidden.bs.modal", onHidden)
+      resolve(confirmed)
+    }
+
+    accept.addEventListener("click", onAccept)
+    modalElement.addEventListener("hidden.bs.modal", onHidden)
+    modal.show()
+  })
+})
 
 document.addEventListener("turbo:before-cache", () => {
   // Vide les widgets hcaptcha avant que Turbo prenne un snapshot de la page.
@@ -95,7 +186,7 @@ document.addEventListener("turbo:render", rerenderHcaptchaWidgets)
 // Solution : Dispose toutes les modales actives avant turbo:before-render
 document.addEventListener("turbo:before-render", () => {
   document.querySelectorAll(".modal").forEach(el => {
-    const instance = bootstrap.Modal.getInstance(el)
+    const instance = window.bootstrap?.Modal?.getInstance(el)
     if (instance) instance.dispose()
   })
 })
@@ -108,7 +199,7 @@ document.addEventListener("turbo:before-render", () => {
 document.addEventListener("turbo:before-render", () => {
   const offcanvasEl = document.getElementById("mobileNavDrawer")
   if (offcanvasEl) {
-    const instance = bootstrap.Offcanvas.getInstance(offcanvasEl)
+    const instance = window.bootstrap?.Offcanvas?.getInstance(offcanvasEl)
     if (instance) instance.hide()
   }
 })

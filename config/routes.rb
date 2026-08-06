@@ -152,10 +152,12 @@ Rails.application.routes.draw do
     # POST  /tournois/:id/start                 => lancer le tournoi (génère la ronde suisse 1)
     # PATCH /tournois/:id/toggle_registrations   => clôturer/rouvrir les inscriptions
     # PATCH /tournois/:id/finish                 => terminer le tournoi manuellement
+    # PATCH /tournois/:id/constitution           => mode de constitution + chapeaux
     member do
       post :start
       patch :toggle_registrations
       patch :finish
+      patch :seeding, path: "constitution"
     end
     resources :tournament_users, only: [:create, :destroy] do
       # PATCH .../tournament_users/:id/withdraw => déclarer forfait (organisateur)

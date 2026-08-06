@@ -1,13 +1,53 @@
 # Helpers d'affichage des tournois (vue détail à onglets).
 module TournamentsHelper
+  # Ce TournamentUser, est-ce l'utilisateur connecté ? Sert à surligner « moi »
+  # partout : ma poule, mes matchs, ma ligne de classement. Un tournoi à 32
+  # joueurs affiche des dizaines de cartes identiques — sans repère, retrouver la
+  # sienne demande de lire chaque nom.
+  # La comparaison porte sur user_id, jamais sur le nom : deux joueurs peuvent
+  # parfaitement s'appeler pareil.
+  def my_player?(tournament_user)
+    user_signed_in? && tournament_user.present? && tournament_user.user_id == current_user.id
+  end
+
+  # Pastille « Toi » posée à côté de mon nom. Un `aria-label` explicite : hors
+  # contexte, « Toi » seul ne dit pas de qui il s'agit.
+  def me_badge
+    tag.span "Toi", class: "tmatch-card__me-badge", aria: { label: "C'est toi" }
+  end
   # Tours à afficher en colonnes dans le bracket viewer : les rondes de la phase
   # round-robin du format (suisse / championnat / poules) dans l'ordre, PUIS les
   # tours du tableau final. Renvoie un tableau (les colonnes du ruban).
+  # Les barrages du Critérium s'intercalent entre les poules et le tableau final :
+  # sans eux, le bracket viewer sauterait la moitié de la phase finale.
+  # Les phases du Critérium s'intercalent entre les poules et le tableau final, ou
+  # le suivent : sans elles, le bracket viewer s'arrêterait au tableau principal et
+  # la moitié des matchs du format seraient invisibles en Vue d'ensemble.
   def display_rounds(tournament)
     tournament.swiss_rounds.to_a +
       tournament.league_rounds.to_a +
       tournament.pool_rounds.to_a +
-      tournament.bracket_rounds.to_a
+      tournament.barrage_rounds.to_a +
+      tournament.bracket_rounds.to_a +
+      tournament.tournament_rounds.consolation.main_branch.ordered.to_a +
+      classification_tables(tournament).flat_map(&:last)
+  end
+
+  # Les mini-tableaux de classement RÉELLEMENT créés, triés par la première place
+  # qu'ils attribuent (le 3e/4e avant le 5e-8e). Chaque entrée = [nœud, ses tours].
+  #
+  # On part de la structure et non de la base pour l'ORDRE : les branches sont
+  # créées dans l'ordre où leurs sources se terminent, qui n'est pas l'ordre du
+  # classement. Les paliers d'ex æquo sont naturellement exclus — ils n'ont aucun
+  # tour, donc aucune clé dans `rounds`.
+  def classification_tables(tournament)
+    return [] unless tournament.criterium?
+
+    rounds = tournament.tournament_rounds.classification.ordered.group_by(&:branch)
+    tournament.criterium_structure.nodes
+              .select { |node| node.phase == "classification" && rounds.key?(node.branch) }
+              .sort_by(&:first_place)
+              .map { |node| [node, rounds[node.branch]] }
   end
 
   # Libellé lisible d'un tour, centralise la logique jusqu'ici inline dans les vues.
@@ -19,8 +59,16 @@ module TournamentsHelper
   def round_label(round, bracket_rounds)
     return "Ronde #{round.number}" if round.phase == "swiss"
     return "Journée #{round.number}" if %w[league pool].include?(round.phase)
+    return "Barrages" if round.phase == "barrage"
 
-    bracket_stage_label(bracket_rounds.index(round).to_i, bracket_rounds.size)
+    # Un tour de consolante ou de classement (Critérium) n'appartient PAS à
+    # `bracket_rounds` : `index` renverrait nil, et `nil.to_i` étiquetterait
+    # silencieusement le tour comme le PREMIER du tableau final — un libellé faux
+    # et indétectable. On préfère un libellé neutre mais juste.
+    index = bracket_rounds.index(round)
+    return "Tour #{round.number}" if index.nil?
+
+    bracket_stage_label(index, bracket_rounds.size)
   end
 
   # Libellé d'un tour du tableau final à partir de sa position (0-based) et du
@@ -45,10 +93,46 @@ module TournamentsHelper
   # le sélecteur de phase (_phase_nav, bascule round-robin vs tableau final).
   def round_robin_phase_meta(tournament)
     case tournament.format
-    when "poules" then ["Poules", "layout-grid"]
+    when "poules", "criterium_federal" then ["Poules", "layout-grid"]
     when "championnat" then ["Championnat", "swords"]
     else ["Ronde Suisse", "swords"]
     end
+  end
+
+  # Phase à afficher par défaut dans le board : la plus avancée qui existe. Le
+  # Critérium ajoute un palier entre les poules et le tableau final, et un tournoi
+  # peut y stationner longtemps (les barrages sont un tour complet à jouer).
+  # Le tableau final reste la phase par défaut même quand la consolante et les
+  # matchs de classement existent : c'est là que se joue le titre, donc ce que
+  # l'utilisateur vient voir. Les autres phases sont à un clic.
+  def default_board_phase(tournament)
+    return "bracket" if tournament.bracket_started?
+    # `barrage_rounds.any?` et NON `barrage_expected?` (cf. board_phases) : la
+    # phase est certes préfigurée dès le lancement, mais y ATTERRIR d'emblée
+    # ouvrirait une section de cases vides alors que les poules se jouent.
+    return "barrage" if tournament.barrage_rounds.any?
+
+    "main"
+  end
+
+  # Les phases réellement présentes dans le board, dans l'ordre de déroulement :
+  # [clé data-phase, libellé, icône Lucide]. Source unique du sélecteur (_phase_nav)
+  # — une phase ajoutée ici apparaît sans toucher au JS, qui apparie sur
+  # `dataset.phase` (cf. tournament_phase_switch_controller.js).
+  def board_phases(tournament)
+    main_label, main_icon = round_robin_phase_meta(tournament)
+    phases = [["main", main_label, main_icon]]
+
+    # Même condition que _board.html.erb : la pastille apparaît dès le lancement,
+    # la section étant préfigurée avec des cases « À déterminer ».
+    phases << ["barrage", "Barrages", "git-branch-plus"] if tournament.barrage_expected?
+    # Même condition que _board.html.erb : un Critérium à poule unique (≤ 7
+    # joueurs) n'a pas de tableau, la pastille ouvrirait une section vide.
+    phases << ["bracket", "Tableau final", "trophy"] if tournament.bracket_expected?
+    phases << ["consolation", "Consolante", "life-buoy"] if tournament.tournament_rounds.consolation.exists?
+    phases << ["classification", "Classement", "list-ordered"] if classification_tables(tournament).any?
+
+    phases
   end
 
   # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde

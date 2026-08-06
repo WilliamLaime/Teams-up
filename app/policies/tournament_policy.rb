@@ -51,6 +51,13 @@ class TournamentPolicy < ApplicationPolicy
     manage?
   end
 
+  # Constitution des poules (mode + chapeaux) : réservée à l'organisation, et
+  # seulement tant que rien n'est joué — une fois lancé, changer la répartition
+  # rebattrait des poules déjà en cours.
+  def seeding?
+    manage? && (record.open? || record.closed?)
+  end
+
   def manage?
     record.organizer?(user)
   end
