@@ -741,19 +741,63 @@
     color: var(--theme-text-muted);
   }
 
-  &__input {
-    width: 100%;
-    padding: 0.4rem 0.5rem;
+  // Champ de score encadré par ses boutons − / +. Le tout forme UN seul bloc
+  // bordé (la bordure est portée par le conteneur, pas par l'input) : trois
+  // bordures accolées feraient un empilement de traits.
+  &__stepper {
+    display: flex;
+    align-items: stretch;
     border-radius: 8px;
     border: 1px solid var(--theme-border);
     background: var(--theme-bg-input, var(--theme-bg-card));
+    overflow: hidden;
+
+    // Le focus se voit sur le bloc entier, pas seulement sur l'input intérieur.
+    &:focus-within { border-color: $green; }
+  }
+
+  &__step {
+    flex: 0 0 2rem;
+    border: none;
+    background: transparent;
+    color: var(--theme-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+      background-color: var(--theme-hover-bg);
+      color: $green;
+    }
+
+    // Pas d'`active` collant sur mobile : le retour visuel vient du survol/pression.
+    &:active { background-color: rgba($green, 0.18); }
+  }
+
+  &__input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.45rem 0.25rem;
+    border: none;
+    background: transparent;
     color: var(--theme-text-primary);
     text-align: center;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 1rem;
 
-    &:focus {
-      outline: none;
-      border-color: $green;
+    &:focus { outline: none; }
+
+    // Flèches natives de <input type="number"> masquées : minuscules, dessinées
+    // par l'OS (donc claires sur fond sombre) et redondantes avec − / +.
+    appearance: textfield;
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
 
     &[readonly] {

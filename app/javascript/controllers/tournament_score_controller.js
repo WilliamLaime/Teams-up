@@ -155,11 +155,9 @@ export default class extends Controller {
       // "Score final" plutôt que "Set 1".
       row.innerHTML = `
         <span class="score-modal__set-label">${this.isScoreMode ? "Score final" : `Set ${i + 1}`}</span>
-        <input type="number" min="0" inputmode="numeric" class="score-modal__input"
-               name="tournament_match[games_a][]" value="${pair[0] ?? ""}" ${attrs}>
+        ${this.stepperHtml("games_a", pair[0], attrs)}
         <span class="score-modal__sep">–</span>
-        <input type="number" min="0" inputmode="numeric" class="score-modal__input"
-               name="tournament_match[games_b][]" value="${pair[1] ?? ""}" ${attrs}>
+        ${this.stepperHtml("games_b", pair[1], attrs)}
       `
       this.rowsTarget.appendChild(row)
     }
@@ -167,6 +165,42 @@ export default class extends Controller {
     // Les lignes ont été recréées : on rend le focus à l'input qui l'avait (son index
     // est stable, on n'ajoute/retire qu'en fin de liste).
     if (activeIndex >= 0) this.rowsTarget.querySelectorAll("input")[activeIndex]?.focus()
+  }
+
+  // Un champ de score avec ses boutons − / +. Les flèches natives de
+  // <input type="number"> sont minuscules, dessinées par l'OS et invisibles sur
+  // fond sombre : on les masque en CSS et on les remplace par deux vrais boutons,
+  // utilisables au doigt. En lecture seule (Détail) il n'y a rien à incrémenter.
+  stepperHtml(field, value, attrs) {
+    const buttons = this.editable
+      ? {
+          minus: '<button type="button" class="score-modal__step" tabindex="-1" aria-label="Retirer un point" data-step="-1" data-action="click->tournament-score#step">−</button>',
+          plus: '<button type="button" class="score-modal__step" tabindex="-1" aria-label="Ajouter un point" data-step="1" data-action="click->tournament-score#step">+</button>'
+        }
+      : { minus: "", plus: "" }
+
+    return `
+      <div class="score-modal__stepper">
+        ${buttons.minus}
+        <input type="number" min="0" inputmode="numeric" class="score-modal__input"
+               name="tournament_match[${field}][]" value="${value ?? ""}" ${attrs}>
+        ${buttons.plus}
+      </div>
+    `
+  }
+
+  // − / + sur un champ de score. Un champ vide vaut 0 : « + » y écrit 1, « − » ne
+  // fait rien (descendre sous zéro n'existe pas, et repasser un champ vide à 0
+  // le ferait compter comme un set joué).
+  step(event) {
+    const button = event.currentTarget
+    const input = button.parentElement.querySelector("input")
+    const delta = Number(button.dataset.step)
+
+    if (delta < 0 && (input.value === "" || Number(input.value) <= 0)) return
+
+    input.value = Math.max(0, (Number(input.value) || 0) + delta)
+    this.refreshRows() // une ligne de set peut apparaître ou disparaître
   }
 
   get modal() {
