@@ -5,7 +5,7 @@ class TournamentsController < ApplicationController
   # coming_soon : page d'attente publique (la feature tournoi n'est pas encore lancée).
   skip_before_action :authenticate_user!, only: %i[index show coming_soon]
 
-  before_action :set_tournament, only: %i[show start edit update toggle_registrations finish]
+  before_action :set_tournament, only: %i[show start edit update toggle_registrations finish seeding]
 
   # Associations préchargées pour les cards (sport, avatars des participants,
   # organisateur) — appliquées uniquement à l'onglet actif (cf. #index), jamais
@@ -181,6 +181,25 @@ class TournamentsController < ApplicationController
     end
   end
 
+  # PATCH /tournois/:id/constitution
+  # Constitution des poules (Lot 7) : mode (tirage intégral / chapeaux), nombre de
+  # chapeaux, et affectation d'un chapeau à chaque inscrit. Ces réglages ne sont
+  # pas dans #update : ils ne vivent que dans la fenêtre où ils veulent dire
+  # quelque chose (inscriptions ouvertes ou closes, aucune poule encore tirée) —
+  # c'est TournamentPolicy#seeding? qui porte cette règle, pas le formulaire.
+  def seeding
+    authorize @tournament, :seeding?
+
+    if @tournament.update(seeding_params)
+      respond_to do |format|
+        format.turbo_stream # seeding.turbo_stream.erb : rafraîchit l'onglet Participants
+        format.html { redirect_to tournament_path(@tournament), notice: "Constitution des poules enregistrée." }
+      end
+    else
+      redirect_to tournament_path(@tournament), alert: @tournament.errors.full_messages.to_sentence
+    end
+  end
+
   # GET /tournois/search?q=...
   # Autocomplete JSON pour désigner un co-organisateur (même pattern que
   # TeamInvitationsController#search).
@@ -281,6 +300,17 @@ class TournamentsController < ApplicationController
     permitted -= STRUCTURAL_FIELDS if @tournament&.persisted? && (@tournament.in_progress? || @tournament.completed?)
 
     params.require(:tournament).permit(*permitted)
+  end
+
+  # Le `pot` de chaque inscrit passe par les attributs imbriqués : l'association
+  # elle-même fait office de contrôle d'accès (un id qui n'appartient pas à ce
+  # tournoi lève RecordNotFound), et seul `pot` est autorisé — pas question qu'un
+  # champ d'inscription (role, status, state) transite par ce formulaire.
+  def seeding_params
+    params.require(:tournament).permit(
+      :pool_seeding_mode, :seeded_pot_count,
+      tournament_users_attributes: %i[id pot]
+    )
   end
 
   # La deadline (datetime) est saisie via un date-picker + deux time-pickers

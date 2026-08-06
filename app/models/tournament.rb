@@ -17,6 +17,13 @@ class Tournament < ApplicationRecord
   has_many :tournament_users, dependent: :destroy
   has_many :users, through: :tournament_users
 
+  # Affectation des chapeaux (Lot 7) : le panneau de constitution des poules
+  # enregistre les `pot` de tous les inscrits en une seule requête. Le `reject_if`
+  # borne le mécanisme à la MISE À JOUR : sans lui, un bloc d'attributs sans `id`
+  # tenterait de créer une inscription. Et un `id` étranger au tournoi lève
+  # RecordNotFound, l'association servant elle-même de contrôle d'accès.
+  accepts_nested_attributes_for :tournament_users, reject_if: ->(attrs) { attrs[:id].blank? }
+
   # Rondes & matchs (Lot 3 — Ronde Suisse + tableau final).
   has_many :tournament_rounds, dependent: :destroy
   has_many :tournament_matches, through: :tournament_rounds
@@ -81,6 +88,15 @@ class Tournament < ApplicationRecord
   CRITERIUM_POOLS_ONLY_MAX = 7
   CRITERIUM_INTEGRAL_MAX   = 16
 
+  # ── Constitution des poules (Lot 7) ─────────────────────────────────────────
+  #   "random" — tirage au sort intégral : serpentin sur `draw_order` (défaut).
+  #   "pots"   — chapeaux : chaque chapeau numéroté fournit un joueur par poule,
+  #              le reste (« chapeau général ») complète. C'est l'organisateur qui
+  #              affecte les joueurs aux chapeaux, à la main.
+  # Cf. PoolSeeding, qui applique l'un ou l'autre.
+  POOL_SEEDING_MODES = %w[random pots].freeze
+  DEFAULT_POT_COUNT  = 2
+
   # Presets rapides du nombre de joueurs proposés dans le formulaire de création.
   # Ce n'est PAS une contrainte : le mode "Libre" autorise n'importe quel entier.
   PLAYER_COUNTS = [8, 16, 32].freeze
@@ -127,6 +143,10 @@ class Tournament < ApplicationRecord
   validate :criterium_pool_size_is_three_or_four
   # Variante de phase finale : vide = déduite de l'effectif (cf. #criterium_mode).
   validates :final_phase_mode, inclusion: { in: CRITERIUM_MODES }, allow_blank: true
+  # Constitution des poules : vide = "random". Il faut au moins un chapeau pour
+  # que le mode "pots" veuille dire quelque chose.
+  validates :pool_seeding_mode, inclusion: { in: POOL_SEEDING_MODES }, allow_blank: true
+  validates :seeded_pot_count, numericality: { only_integer: true, greater_than_or_equal_to: 1 }, allow_nil: true
 
   # La date/heure d'un tournoi ne peut pas être dans le passé à la création.
   # `on: :create` uniquement : TournamentsController#start et
@@ -533,6 +553,18 @@ class Tournament < ApplicationRecord
 
     :standard
   end
+
+  # ── Constitution des poules (Lot 7) ─────────────────────────────────────────
+  # Mêmes conventions que les autres réglages : la colonne garde la valeur brute
+  # (nil = défaut), la méthode donne la valeur effective. Les noms diffèrent
+  # exprès de ceux des colonnes pour ne masquer aucun attribut.
+  def seeding_mode = pool_seeding_mode.presence || POOL_SEEDING_MODES.first
+  def seeded_pots? = seeding_mode == "pots"
+  def pot_count    = seeded_pot_count.presence || DEFAULT_POT_COUNT
+
+  # Inscrits regroupés par chapeau — clé `nil` = chapeau général. Lu par le
+  # panneau de constitution pour afficher le remplissage réel.
+  def pots = approved_players.group_by(&:pot)
 
   # Tableau unique à classement intégral : chaque place est jouée, aucun ex æquo.
   def criterium_integral? = criterium? && criterium_mode == :integral

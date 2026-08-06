@@ -6,6 +6,10 @@
   co_organizers = tournament.co_organizers
   # L'organisateur peut déclarer un forfait tant que le tournoi est en cours.
   can_manage   = user_signed_in? && policy(tournament).manage? && tournament.in_progress?
+  # La constitution des poules ne concerne que les formats qui en ont, et
+  # seulement avant le lancement (cf. TournamentPolicy#seeding?).
+  can_seed     = user_signed_in? && policy(tournament).seeding? &&
+                 Tournament::POOL_BASED_FORMATS.include?(tournament.format)
 %>
 
 <div class="tournament-participants">
@@ -76,5 +80,9 @@
       <p class="tournament-empty">Aucun joueur inscrit pour le moment.</p>
     <% end %>
   </section>
+
+  <% if can_seed %>
+    <%= render "tournaments/seeding_panel", tournament: tournament %>
+  <% end %>
 
 </div>

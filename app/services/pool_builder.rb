@@ -62,19 +62,11 @@ class PoolBuilder
 
   def pools_unassigned? = player_scope.where(pool: nil).exists?
 
-  # Distribution en serpentin sur un ordre stable (cf.
-  # RoundRobinStats#ordered_player_scope) → poules équilibrées et répartition
-  # reproductible. Persiste `pool` (0-based) sur chaque inscription.
-  def assign_pools!
-    count = pool_count
-    ordered_player_scope.to_a.each_with_index do |tu, i|
-      row = i / count
-      col = i % count
-      # Serpentin : on inverse le sens une ligne sur deux.
-      pool = row.even? ? col : (count - 1 - col)
-      tu.update!(pool: pool)
-    end
-  end
+  # Qui va dans quelle poule : délégué à PoolSeeding (Lot 7), qui applique le mode
+  # choisi par l'organisateur — tirage au sort intégral (le serpentin historique)
+  # ou chapeaux. Ce moteur-ci n'a pas à connaître la différence : il lui suffit que
+  # chaque joueur reparte avec un `pool`.
+  def assign_pools! = PoolSeeding.new(@tournament).assign!
 
   # ── Calendrier ──────────────────────────────────────────────────────────────────
   # Calendrier round-robin de chaque poule.
