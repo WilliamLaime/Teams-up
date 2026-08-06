@@ -63,13 +63,25 @@ demo = lambda do
   )
 
   # ── Joueurs de démo ─────────────────────────────────────────────────────────
+  # De vrais prénoms/noms plutôt que « Pongiste 1..16 » : l'app affiche partout
+  # « Prénom N. » (User#short_name), et une liste de « Pongiste 1 vs Pongiste 9 »
+  # ne permet pas de vérifier ce rendu. Deux Martin volontaires (Léa et Hugo)
+  # pour voir l'initiale faire son travail de désambiguïsation.
+  names = [
+    %w[Léa Martin],    %w[Hugo Martin],    %w[Camille Bernard], %w[Nathan Dubois],
+    %w[Chloé Thomas],  %w[Enzo Robert],    %w[Manon Richard],   %w[Lucas Petit],
+    %w[Jade Durand],   %w[Louis Leroy],    %w[Emma Moreau],     %w[Gabriel Simon],
+    %w[Alice Laurent], %w[Raphaël Michel], %w[Inès Garcia],     %w[Tom Roux]
+  ]
+
   players = (1..player_count).map do |i|
+    first_name, last_name = names[i - 1]
     user = User.find_or_initialize_by(email: "pongiste#{i}@teamup-demo.fr")
     if user.new_record?
       user.assign_attributes(password: "Demo1234!", confirmed_at: Time.current,
-                             first_name: "Pongiste", last_name: i.to_s)
+                             first_name: first_name, last_name: last_name)
       user.save!
-      user.create_profil!(first_name: "Pongiste", last_name: i.to_s)
+      user.create_profil!(first_name: first_name, last_name: last_name)
     end
     user
   end

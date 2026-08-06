@@ -83,6 +83,11 @@ class TournamentUser < ApplicationRecord
   # Nom affiché du joueur (délègue au profil de l'utilisateur).
   def display_name = user.display_name
 
+  # Version compacte « Prénom N. » pour les contextes où le nom complet ne tient
+  # pas : libellés « X vs Y » d'un <select>, listes denses. Deux noms complets
+  # dans une même option dépassent la largeur du champ et sont tronqués.
+  def short_name = user.short_name
+
   private
 
   def close_tournament_if_full

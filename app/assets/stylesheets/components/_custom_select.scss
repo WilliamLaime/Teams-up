@@ -1,0 +1,113 @@
+// ── Select habillé (cf. custom_select_controller.js) ──────────────────────────
+// Un <select> ouvert est dessiné par l'OS (fond gris système, police système) et
+// n'accepte aucun style : on le double d'un menu HTML au vocabulaire visuel de
+// l'app (pilule + accent vert, comme .journee-picker). Le <select> natif reste
+// dans le DOM — il porte la valeur soumise — mais devient invisible.
+.custom-select {
+  position: relative;
+
+  // Masqué SANS display:none ni visibility:hidden : le champ doit rester
+  // focalisable et lisible par les outils qui inspectent le formulaire, et
+  // certains navigateurs refusent de soumettre un contrôle réellement retiré du
+  // rendu. Taille nulle + opacité 0 le fait disparaître sans le neutraliser.
+  &__native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 10px;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: left;
+    color: var(--theme-text-primary);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover { border-color: $green; }
+
+    &[aria-expanded="true"] {
+      border-color: $green;
+      box-shadow: 0 0 0 3px rgba($green, 0.15);
+    }
+
+    // Option vide sélectionnée (« Aucun… ») : c'est un texte d'invite, pas une valeur.
+    &.is-placeholder { color: var(--theme-text-muted); font-weight: 500; }
+
+    i, svg { width: 16px; height: 16px; flex: 0 0 16px; transition: transform 0.15s ease; }
+    &[aria-expanded="true"] i,
+    &[aria-expanded="true"] svg { transform: rotate(180deg); }
+  }
+
+  // Le libellé peut être long (« Prénom N. vs Prénom N. ») : il s'élide plutôt
+  // que de faire grandir le bouton au-delà de la largeur du formulaire.
+  &__value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__menu {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    max-height: 320px;
+    overflow-y: auto;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    padding: 0.35rem;
+    margin: 0;
+    list-style: none;
+
+    // Scrollbar discrète, comme les rubans de tournoi. Écrite en clair plutôt
+    // qu'avec le mixin themed-scrollbar : celui-ci vit dans pages/, importé
+    // APRÈS components/ — il n'existe pas encore ici.
+    scrollbar-width: thin;
+    scrollbar-color: var(--theme-border-strong) transparent;
+    &::-webkit-scrollbar { width: 8px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--theme-border-strong);
+      border-radius: 999px;
+    }
+
+    li { margin: 0; }
+  }
+
+  &__option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--theme-text-primary);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover { background-color: var(--theme-hover-bg); }
+
+    &.is-active {
+      color: #fff;
+      background-color: $green;
+    }
+  }
+}

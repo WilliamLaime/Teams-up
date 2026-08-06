@@ -84,15 +84,23 @@
         <% if @linkable_tournaments&.any? %>
           <div class="mb-3">
             <%= f.label :tournament_id, "Tournoi (optionnel)", class: "form-label" %>
-            <%= f.collection_select :tournament_id, @linkable_tournaments, :id, :name,
-                  { include_blank: "Aucun (match indépendant)" },
-                  class: "form-select",
-                  data: {
-                    "match-form-target": "tournamentInput",
-                    "action": "change->match-form#updateTournament",
-                    "tournament-matches": (@linkable_tournament_matches || {}).to_json,
-                    "new-match-path": new_match_path
-                  } %>
+            <%# Le <select> reste la source de vérité (soumission, data-attributes,
+                évènement `change`) ; custom-select ne fait que l'habiller, le menu
+                natif étant dessiné par l'OS et impossible à mettre au code couleur
+                de l'app. Cf. custom_select_controller.js. %>
+            <div class="custom-select" data-controller="custom-select"
+                 data-action="keydown->custom-select#keydown">
+              <%= f.collection_select :tournament_id, @linkable_tournaments, :id, :name,
+                    { include_blank: "Aucun (match indépendant)" },
+                    class: "form-select custom-select__native",
+                    data: {
+                      "custom-select-target": "native",
+                      "match-form-target": "tournamentInput",
+                      "action": "change->match-form#updateTournament",
+                      "tournament-matches": (@linkable_tournament_matches || {}).to_json,
+                      "new-match-path": new_match_path
+                    } %>
+            </div>
           </div>
 
           <%# Confrontation du tournoi. Les options du tournoi COURANT sont rendues
@@ -102,14 +110,18 @@
           <div class="mb-3" data-match-form-target="tournamentMatchWrapper"
                style="<%= 'display:none;' if current_confrontations.empty? %>">
             <%= f.label :tournament_match_id, "Confrontation (optionnel)", class: "form-label" %>
-            <%= f.select :tournament_match_id,
-                  options_for_select(current_confrontations.map { |c| [c[:label], c[:id]] }, @match.tournament_match_id),
-                  { include_blank: "Aucune (rencontre libre)" },
-                  class: "form-select",
-                  data: {
-                    "match-form-target": "tournamentMatchInput",
-                    "action": "change->match-form#applyTournamentMatch"
-                  } %>
+            <div class="custom-select" data-controller="custom-select"
+                 data-action="keydown->custom-select#keydown">
+              <%= f.select :tournament_match_id,
+                    options_for_select(current_confrontations.map { |c| [c[:label], c[:id]] }, @match.tournament_match_id),
+                    { include_blank: "Aucune (rencontre libre)" },
+                    class: "form-select custom-select__native",
+                    data: {
+                      "custom-select-target": "native",
+                      "match-form-target": "tournamentMatchInput",
+                      "action": "change->match-form#applyTournamentMatch"
+                    } %>
+            </div>
             <small class="form-text text-muted">
               Rattacher la rencontre à ta confrontation préremplit le lieu, la date et l'adversaire.
             </small>
