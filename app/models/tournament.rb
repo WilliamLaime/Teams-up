@@ -32,6 +32,19 @@ class Tournament < ApplicationRecord
   # les rencontres (et leur chat) si le tournoi est supprimé.
   has_many :matches, dependent: :nullify
 
+  # ── Ordre de suppression ────────────────────────────────────────────────────
+  # `dependent: :destroy` est implémenté par un before_destroy posé À LA
+  # DÉCLARATION de l'association : les inscrits (ligne 17) partaient donc avant les
+  # tours (ligne 28). Or tournament_matches porte trois clés étrangères vers
+  # tournament_users (player_a_id, player_b_id, winner_id) → PG::ForeignKeyViolation
+  # dès qu'un tournoi avait le moindre match.
+  #
+  # `prepend: true` place ce hook AVANT ceux des has_many, ce qui vide les tours (et
+  # leurs matchs) en premier. Un hook explicite plutôt qu'une réorganisation des
+  # `has_many` : l'ordre de déclaration comme garantie de fonctionnement est un
+  # piège qu'un simple déplacement de ligne rouvrirait sans bruit.
+  before_destroy :destroy_rounds_before_players, prepend: true
+
   # ── Constantes métier ────────────────────────────────────────────────────────
   # État du tournoi (voir la catégorisation de la page liste dans le controller).
   # "closed" = inscriptions fermées (complet ou clôture manuelle) mais pas encore lancé.
@@ -640,6 +653,12 @@ class Tournament < ApplicationRecord
   def slug_source = name
 
   private
+
+  # Cf. le before_destroy en tête de classe : les matchs référencent les inscrits,
+  # ils doivent donc disparaître avant eux.
+  def destroy_rounds_before_players
+    tournament_rounds.destroy_all
+  end
 
   # ── Plan de poules : les seuils d'effectif du règlement ─────────────────────
   # Un réglage explicite de l'organisateur gagne toujours. Sinon, en Critérium,
