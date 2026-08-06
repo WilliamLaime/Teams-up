@@ -24,4 +24,12 @@
   <%# Formulaire 2 colonnes (sections + récapitulatif sticky) %>
   <%= render "form" %>
 
+  <%# Équipe organisatrice : panneau SÉPARÉ du formulaire ci-dessus (formulaires
+      distincts vers d'autres routes — un <form> imbriqué serait invalide).
+      Visible uniquement pour l'admin, alors que la page d'édition elle-même est
+      ouverte aux co-organisateurs (cf. TournamentPolicy). %>
+  <% if policy(@tournament).manage_organizers? %>
+    <%= render "organizers_manager", tournament: @tournament %>
+  <% end %>
+
 </div>

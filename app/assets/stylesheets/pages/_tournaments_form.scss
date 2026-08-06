@@ -131,6 +131,124 @@
   .form-check-label { color: var(--theme-text-primary); font-weight: 600; }
 }
 
+// ── Équipe organisatrice (page d'édition) ──
+// Panneau de composition de l'équipe : liste des organisateurs + champs de
+// nomination / transfert. Réutilise .match-form-section pour l'enveloppe.
+.tournament-organizers {
+  &__list {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--theme-border-strong);
+    background: var(--theme-hover-bg);
+  }
+
+  &__avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  // Prend la place restante et pousse le rôle + la croix à droite.
+  &__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 600;
+    color: var(--theme-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__role {
+    flex-shrink: 0;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--theme-border-strong);
+    color: var(--theme-text-muted);
+
+    &--admin {
+      background: $green;
+      color: #111;
+    }
+  }
+
+  // Croix de révocation : discrète au repos, rouge au survol — l'action est
+  // destructive, on ne la met pas en avant dans une liste qu'on parcourt.
+  &__remove {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: rgba(220, 53, 69, 0.15);
+      color: #dc3545;
+    }
+
+    i { width: 16px; height: 16px; }
+  }
+
+  // Champ + bouton sur une ligne, empilés sous 576px (le bouton passerait
+  // sinon à ~60px de large et son libellé serait tronqué).
+  &__field {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+
+    @media (max-width: 575px) {
+      flex-direction: column;
+
+      .position-relative { width: 100%; }
+    }
+  }
+
+  &__submit {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+
+    @media (max-width: 575px) {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  &__separator {
+    margin: 1.5rem 0;
+    border-color: var(--theme-border-strong);
+    opacity: 1;
+  }
+}
+
 // Texte d'aide sous un champ (co-organisateur, auto-inscription). Remplace
 // Bootstrap .text-muted : sa couleur est figée (gris quasi noir), illisible
 // sur le fond sombre de l'appli — on utilise le token de thème adaptatif.

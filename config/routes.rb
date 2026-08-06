@@ -153,11 +153,17 @@ Rails.application.routes.draw do
     # PATCH /tournois/:id/toggle_registrations   => clôturer/rouvrir les inscriptions
     # PATCH /tournois/:id/finish                 => terminer le tournoi manuellement
     # PATCH /tournois/:id/constitution           => mode de constitution + chapeaux
+    # POST   /tournois/:id/co-organisateurs         => nommer un co-organisateur
+    # DELETE /tournois/:id/co-organisateurs/retrait => le révoquer
+    # PATCH  /tournois/:id/transfert-admin          => transmettre l'administration
     member do
       post :start
       patch :toggle_registrations
       patch :finish
       patch :seeding, path: "constitution"
+      post :add_co_organizer, path: "co-organisateurs"
+      delete :remove_co_organizer, path: "co-organisateurs/retrait"
+      patch :transfer_ownership, path: "transfert-admin"
     end
     resources :tournament_users, only: [:create, :destroy] do
       # PATCH .../tournament_users/:id/withdraw => déclarer forfait (organisateur)
