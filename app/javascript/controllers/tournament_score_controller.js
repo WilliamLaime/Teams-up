@@ -50,6 +50,11 @@ export default class extends Controller {
     this.bestOf = bestOf || 3
     this.setsToWin = setsToWin || Math.floor(this.bestOf / 2) + 1
     this.editable = editable
+    // Règles du sport, telles que le serveur les appliquera (Sport#scoring_rules) :
+    // on les garde pour valider côté client AVANT l'envoi. Le serveur reste la
+    // source de vérité — TournamentMatch#valid_set? refuse de toute façon un set
+    // invalide ; ce contrôle-ci ne fait que le dire tout de suite.
+    this.rules = { target, winByTwo, cap, allowDraw }
 
     if (url) this.formTarget.action = url
     this.nameATarget.textContent = nameA || "Joueur A"
@@ -144,7 +149,14 @@ export default class extends Controller {
     // tout seul, y compris injectés (inutile d'ajouter des listeners à la main).
     // Uniquement en saisie de sets : en lecture seule ou en mode :score, rien à
     // recalculer.
-    const attrs = [this.editable ? "" : "readonly", this.editable && !this.isScoreMode ? 'data-action="input->tournament-score#refreshRows"' : ""].join(" ")
+    // `blur->…#validateSet` : le message d'erreur n'apparaît qu'une fois le champ
+    // quitté. Valider à la frappe accuserait « 1 » d'être un score invalide alors
+    // que l'utilisateur est en train de taper « 11 ».
+    const actions = [
+      this.editable && !this.isScoreMode ? "input->tournament-score#refreshRows" : "",
+      this.editable ? "blur->tournament-score#validateSet" : ""
+    ].filter(Boolean).join(" ")
+    const attrs = [this.editable ? "" : "readonly", actions ? `data-action="${actions}"` : ""].join(" ")
 
     this.rowsTarget.innerHTML = ""
     for (let i = 0; i < count; i++) {
@@ -158,6 +170,7 @@ export default class extends Controller {
         ${this.stepperHtml("games_a", pair[0], attrs)}
         <span class="score-modal__sep">–</span>
         ${this.stepperHtml("games_b", pair[1], attrs)}
+        <p class="score-modal__error" hidden></p>
       `
       this.rowsTarget.appendChild(row)
     }
@@ -165,6 +178,66 @@ export default class extends Controller {
     // Les lignes ont été recréées : on rend le focus à l'input qui l'avait (son index
     // est stable, on n'ajoute/retire qu'en fin de liste).
     if (activeIndex >= 0) this.rowsTarget.querySelectorAll("input")[activeIndex]?.focus()
+    this.refreshErrors()
+  }
+
+  // ── Validation d'un set ─────────────────────────────────────────────────────
+  // Miroir EXACT de TournamentMatch#valid_set? (+ le refus du set nul). Le serveur
+  // reste l'autorité ; ce contrôle évite juste l'aller-retour et dit précisément
+  // ce qui cloche, au moment où le champ est quitté.
+
+  // Message d'erreur d'une paire de scores, ou null si elle est valide.
+  // Une paire incomplète n'est pas « invalide » : elle est en cours de saisie.
+  setError(a, b) {
+    if (a === "" || b === "") return null
+
+    const hi = Math.max(Number(a), Number(b))
+    const lo = Math.min(Number(a), Number(b))
+    const { target, winByTwo, cap } = this.rules
+
+    if (hi === lo) return "Un set ne peut pas se terminer sur une égalité."
+    if (target && hi < target) return `Le gagnant du set doit atteindre ${target} points.`
+    if (cap && hi >= cap) return null // au plafond (tie-break), 1 point d'écart suffit
+    if (winByTwo && hi - lo < 2) {
+      return cap
+        ? `À ${hi}-${lo}, il faut 2 points d'écart (ou atteindre ${cap}).`
+        : `À ${hi}-${lo}, il faut 2 points d'écart : le set continue.`
+    }
+
+    return null
+  }
+
+  validateSet(event) {
+    this.showError(event.currentTarget.closest(".score-modal__set"))
+  }
+
+  // Réaffiche les erreurs de toutes les lignes — appelé après une reconstruction
+  // des lignes, qui efface les messages déjà posés.
+  refreshErrors() {
+    this.rowsTarget.querySelectorAll(".score-modal__set").forEach((row) => this.showError(row))
+  }
+
+  showError(row) {
+    if (!row) return false
+
+    const [a, b] = row.querySelectorAll("input")
+    const message = this.setError(a.value, b.value)
+    const slot = row.querySelector(".score-modal__error")
+
+    row.classList.toggle("is-invalid", Boolean(message))
+    if (slot) {
+      slot.textContent = message || ""
+      slot.hidden = !message
+    }
+    return Boolean(message)
+  }
+
+  // Dernier filet avant l'envoi : un set peut être invalide sans avoir jamais été
+  // quitté (validation au blur), typiquement si on clique droit sur « Enregistrer ».
+  validateForm(event) {
+    const rows = Array.from(this.rowsTarget.querySelectorAll(".score-modal__set"))
+    const invalid = rows.map((row) => this.showError(row)).some(Boolean)
+    if (invalid) event.preventDefault()
   }
 
   // Un champ de score avec ses boutons − / +. Les flèches natives de

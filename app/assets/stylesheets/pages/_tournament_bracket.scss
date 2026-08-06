@@ -736,6 +736,20 @@
     color: var(--theme-text-muted);
   }
 
+  // Message d'erreur d'une ligne de set : occupe toute la largeur de la grille,
+  // sous les deux champs, pour ne pas décaler la colonne de scores.
+  &__error {
+    grid-column: 1 / -1;
+    margin: 0.1rem 0 0.2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e06a5c;
+  }
+
+  // Les DEUX champs de la ligne virent au rouge : un set invalide l'est par la
+  // combinaison des deux scores, pas par l'un d'eux en particulier.
+  &__set.is-invalid &__stepper { border-color: #e06a5c; }
+
   &__sep {
     text-align: center;
     color: var(--theme-text-muted);

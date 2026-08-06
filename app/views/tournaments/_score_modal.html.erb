@@ -19,7 +19,8 @@
 
       <%= form_with url: "#", method: :patch,
                     data: { tournament_score_target: "form",
-                            action: "turbo:submit-end->tournament-score#close" } do %>
+                            action: "submit->tournament-score#validateForm " \
+                                    "turbo:submit-end->tournament-score#close" } do %>
         <div class="modal-body">
           <div class="score-modal__players">
             <span class="score-modal__player" data-tournament-score-target="nameA"></span>
