@@ -12,6 +12,9 @@
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="barrage">
   <h2 class="tournament-phase__title">Barrages</h2>
 
+  <%# wide : un seul tour, donc une seule colonne — inutile de la brider à la
+      largeur d'une colonne de ruban, ce qui tronquait les noms en « G... » sur les
+      trois quarts d'une page vide. Deux barrages par ligne, pleine largeur. %>
   <%= render "tournaments/round_ribbon", rounds: tournament.barrage_rounds,
-              title_for: ->(_round) { "Barrages" } %>
+              title_for: ->(_round) { "Barrages" }, wide: true %>
 </section>

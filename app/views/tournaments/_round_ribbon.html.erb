@@ -18,12 +18,19 @@
     cours (1ère non terminée), ou la dernière si tout est joué — posée directement
     via l'attribut `hidden` sur les autres colonnes, le JS ne fait que basculer. %>
 <% paginated = local_assigns.fetch(:paginated, false) %>
+<%# wide (optionnel, défaut false — phase à TOUR UNIQUE, ex. les barrages) : il n'y
+    a qu'une colonne, donc rien à faire défiler et aucune raison de la brider à
+    300 px. Elle occupe toute la largeur et ses matchs se rangent deux par ligne. %>
+<%# Exclusif de `paginated`, qui élargit déjà la journée active : les deux
+    ensemble n'appliqueraient la grille qu'à moitié (classe sur le ruban, pas sur
+    la colonne), donc autant le trancher ici. %>
+<% wide = local_assigns.fetch(:wide, false) && !paginated %>
 <% current_round = paginated ? (rounds.find { |r| !r.complete? } || rounds.last) : nil %>
 <%# Clé de mémorisation du choix de journée (sessionStorage, cf. le contrôleur) :
     propre au tournoi ET à la phase, pour que deux rubans de la même page (poules
     puis championnat) ne se marchent pas dessus. %>
 <% storage_key = paginated ? "journee:#{rounds.first.tournament_id}:#{rounds.first.phase}" : nil %>
-<div class="round-ribbon <%= "round-ribbon--paginated" if paginated %>"
+<div class="round-ribbon <%= "round-ribbon--paginated" if paginated %> <%= "round-ribbon--wide" if wide %>"
      <% if paginated %>data-controller="journee-selector"
         data-journee-selector-storage-key-value="<%= storage_key %>"<% end %>>
   <% if paginated %>
@@ -82,6 +89,7 @@
     <% else %>
       <%= render "tournaments/round_column", round: round,
                   title: title_for.call(round),
+                  wide: wide,
                   group_by_pool: local_assigns.fetch(:group_by_pool, false),
                   group_by_record: local_assigns.fetch(:group_by_record, false) %>
     <% end %>

@@ -135,6 +135,21 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
     assert_select ".tournament-ranking__pool-title", text: /Poule A/
   end
 
+  # Les barrages n'ont qu'un tour : la colonne de ruban de 300 px tronquait les
+  # noms (« G... ») en laissant les trois quarts de la page vides.
+  test "la phase Barrages étale ses matchs en grille sur toute la largeur" do
+    play_until_bracket_round!(1)
+
+    get tournament_path(@tournament)
+    assert_response :success
+    assert_select ".round-ribbon--wide" do
+      assert_select ".round-col__matches--grid .tmatch-card", 4,
+                    "4 poules → 4 barrages, rangés en grille"
+    end
+    # Les poules gardent leur ruban paginé : la grille ne doit pas déborder dessus.
+    assert_select ".round-ribbon--paginated .round-col__matches--grid", 0
+  end
+
   test "l'onglet Classement affiche le classement final une fois le tournoi terminé" do
     play_all!
     assert @tournament.reload.completed?

@@ -23,7 +23,10 @@
     </span>
   </div>
 
-  <div class="round-col__matches">
+  <%# wide : phase à tour unique (barrages) — les matchs se rangent deux par ligne
+      au lieu de s'empiler dans une colonne étroite. Sans effet avec group_by_pool
+      (les poules ont déjà leur propre grille) ni group_by_record. %>
+  <div class="round-col__matches <%= "round-col__matches--grid" if local_assigns.fetch(:wide, false) %>">
     <% if local_assigns.fetch(:group_by_pool, false) %>
       <%# Ma poule est mise en avant : sur une grille de 8 cartes, c'est le premier
           repère qu'on cherche. Lu depuis l'INSCRIPTION et non depuis les matchs

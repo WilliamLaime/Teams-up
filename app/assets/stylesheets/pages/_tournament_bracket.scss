@@ -184,6 +184,20 @@
     overflow-x: visible;
   }
 
+  // Phase à TOUR UNIQUE (barrages, cf. local `wide`) : il n'y a rien à faire
+  // défiler horizontalement, et la largeur de colonne fixe ne sert qu'à aligner
+  // plusieurs tours côte à côte. La colonne prend donc toute la place, ses matchs
+  // se rangeant en grille (cf. .round-col__matches--grid).
+  &--wide {
+    overflow-x: visible;
+
+    .round-col {
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: none;
+    }
+  }
+
   // Journée active : plein largeur (lisibilité), plus de contrainte de colonne.
   &--paginated &__page {
     width: 100%;
@@ -336,6 +350,23 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  // Variante d'une phase à tour unique (barrages, cf. local `wide` de
+  // _round_ribbon) : deux matchs par ligne, chacun sur la moitié de la largeur.
+  // Empilés dans une colonne de 300 px, les noms se réduisaient à « G... » alors
+  // que les trois quarts de la page restaient vides.
+  &__matches--grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+
+    // Sous 900 px deux cartes se partageraient moins de 450 px : on retomberait
+    // sur le problème qu'on vient de corriger. Une seule colonne, pleine largeur.
+    @media (max-width: 900px) {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 }
 
