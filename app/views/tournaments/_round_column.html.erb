@@ -25,12 +25,22 @@
 
   <div class="round-col__matches">
     <% if local_assigns.fetch(:group_by_pool, false) %>
-      <% round.tournament_matches.order(:position).group_by { |m| m.player_a.pool }.sort_by { |pool, _| pool.to_i }.each do |pool_index, matches| %>
-        <h4 class="pool-label">Poule <%= ("A".ord + pool_index.to_i).chr %></h4>
-        <% matches.each do |match| %>
-          <%= render "tournaments/tmatch_scoreline", match: match %>
+      <%# Les poules d'une journée sont INDÉPENDANTES : les empiler dans une seule
+          colonne obligeait à scroller pour comparer, alors qu'elles se lisent en
+          parallèle. Une carte par poule, côte à côte (grille auto-fit), et à
+          l'intérieur les confrontations restent empilées à la verticale. %>
+      <div class="pool-grid">
+        <% round.tournament_matches.order(:position).group_by { |m| m.player_a.pool }.sort_by { |pool, _| pool.to_i }.each do |pool_index, matches| %>
+          <div class="pool-grid__col">
+            <h4 class="pool-label">Poule <%= ("A".ord + pool_index.to_i).chr %></h4>
+            <div class="pool-grid__matches">
+              <% matches.each do |match| %>
+                <%= render "tournaments/tmatch_scoreline", match: match %>
+              <% end %>
+            </div>
+          </div>
         <% end %>
-      <% end %>
+      </div>
     <% elsif score_groups %>
       <% score_groups.each do |(wins, losses), matches| %>
         <% if score_groups.size > 1 %>

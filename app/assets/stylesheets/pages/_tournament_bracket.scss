@@ -251,12 +251,23 @@
     li { margin: 0; }
   }
 
-  &__option {
-    display: block;
+  // Filet entre le raccourci « Toutes les journées » et la liste des journées :
+  // deux natures d'action différentes, on ne les empile pas sans marque.
+  &__separator {
+    height: 1px;
+    margin: 0.3rem 0.25rem;
+    background-color: var(--theme-border);
+  }
+
+  // Une ligne du menu = un <label> contenant sa case. Le label porte le fond au
+  // survol et rend TOUTE la ligne cliquable, pas seulement la case de 15 px.
+  &__option,
+  &__all {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
     width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
+    margin: 0;
     border-radius: 8px;
     padding: 0.45rem 0.75rem;
     font-size: 0.85rem;
@@ -264,14 +275,24 @@
     color: var(--theme-text-primary);
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease;
 
     &:hover { background-color: var(--theme-hover-bg); }
+  }
 
-    &.is-active {
-      color: #fff;
-      background-color: $green;
-    }
+  // Le raccourci « tout / rien » n'est pas une journée : ton plus discret.
+  &__all { color: var(--theme-text-muted); }
+
+  // Case native (pas de faux carré en CSS) : `accent-color` suffit à la mettre
+  // au vert de l'app, et on conserve gratuitement le focus clavier, l'état
+  // `indeterminate` de la case globale et l'annonce par les lecteurs d'écran.
+  &__checkbox {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: $green;
+    cursor: pointer;
   }
 }
 
@@ -1140,6 +1161,50 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--theme-text-muted);
+}
+
+// ── Poules d'une journée, côte à côte ────────────────
+// DEUX poules par ligne, pas « autant que la largeur en permet » : à 4 colonnes
+// les cartes tombent sous ~250 px et les noms des joueurs sont tronqués
+// (« Pongi… vs Pongi… »), ce qui rend la lecture impossible. Deux colonnes
+// laissent la place au nom complet tout en gardant les poules comparables d'un
+// coup d'œil. Une seule colonne en mobile.
+// `minmax(0, 1fr)` et non `1fr` : la taille mini par défaut d'une piste de
+// grille est `auto`, donc un long nom élargirait la colonne et ferait déborder
+// la rangée.
+.pool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__col {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 14px;
+    padding: 0.9rem;
+    // min-width: 0 : sans ça un long nom de joueur pousse la piste de grille
+    // au-delà du 1fr et la rangée déborde horizontalement.
+    min-width: 0;
+
+    .pool-label {
+      margin: 0 0 0.6rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--theme-border);
+      color: var(--theme-text-strong);
+      font-size: 0.85rem;
+    }
+  }
+
+  &__matches {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
 }
 
 // ── Onglet Classement ────────────────────────────────

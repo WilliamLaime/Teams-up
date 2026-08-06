@@ -517,7 +517,11 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".journee-picker__toggle span", text: "Journée 2" # présélection sur la journée en cours
     assert_select ".journee-picker__option", 2
-    assert_select ".journee-picker__option.is-active[data-round-number=?]", "2"
+    # Filtre multi-sélection : une case à cocher par journée, seule celle de la
+    # journée en cours est cochée au chargement.
+    assert_select ".journee-picker__option input[type=checkbox][data-round-number=?][checked]", "2"
+    assert_select ".journee-picker__option input[type=checkbox][data-round-number=?]:not([checked])", "1"
+    assert_select ".journee-picker__all input[type=checkbox]" # raccourci « toutes les journées »
     # Seule la journée en cours (2) est visible au chargement, la 1ère est masquée.
     assert_select ".round-ribbon__page[data-round-number=?][hidden]", "1"
     assert_select ".round-ribbon__page[data-round-number=?]:not([hidden])", "2"

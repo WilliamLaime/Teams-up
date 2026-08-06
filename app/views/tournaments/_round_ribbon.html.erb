@@ -7,33 +7,63 @@
     Qualifiés/Éliminés de la ronde suisse, en continuité horizontale du ruban).
     paginated (optionnel, défaut false — championnat/poules uniquement, jamais la
     ronde suisse qui a peu de tours ET un extra_columns non rattaché à un tour
-    précis) : remplace le scroll horizontal par un menu déroulant CUSTOM "Aller à
-    la journée" qui n'affiche qu'UNE colonne à la fois (cf.
+    précis) : remplace le scroll horizontal par un FILTRE de journées custom (cf.
     journee_selector_controller.js) — un championnat 32 joueurs a jusqu'à 31
     journées, illisible en ruban complet. Menu custom plutôt qu'un <select> natif :
     une fois ouvert, le rendu d'un <select> est imposé par l'OS/le navigateur et ne
-    peut pas être habillé avec le code couleur du reste de la page. Présélectionne
-    la journée en cours (1ère non terminée), ou la dernière si tout est déjà joué —
-    posé côté serveur (attribut `hidden` direct sur les autres colonnes), le JS ne
-    fait que basculer au clic. %>
+    peut pas être habillé avec le code couleur du reste de la page.
+    Le filtre est MULTI-SÉLECTION : on affiche une journée, plusieurs (clic sur
+    chacune) ou toutes (« Toutes les journées »). Au moins une reste toujours
+    cochée — un ruban vide ne veut rien dire. Présélection serveur : la journée en
+    cours (1ère non terminée), ou la dernière si tout est joué — posée directement
+    via l'attribut `hidden` sur les autres colonnes, le JS ne fait que basculer. %>
 <% paginated = local_assigns.fetch(:paginated, false) %>
 <% current_round = paginated ? (rounds.find { |r| !r.complete? } || rounds.last) : nil %>
+<%# Clé de mémorisation du choix de journée (sessionStorage, cf. le contrôleur) :
+    propre au tournoi ET à la phase, pour que deux rubans de la même page (poules
+    puis championnat) ne se marchent pas dessus. %>
+<% storage_key = paginated ? "journee:#{rounds.first.tournament_id}:#{rounds.first.phase}" : nil %>
 <div class="round-ribbon <%= "round-ribbon--paginated" if paginated %>"
-     <% if paginated %>data-controller="journee-selector"<% end %>>
+     <% if paginated %>data-controller="journee-selector"
+        data-journee-selector-storage-key-value="<%= storage_key %>"<% end %>>
   <% if paginated %>
     <div class="journee-picker" data-journee-selector-target="picker">
       <button type="button" class="journee-picker__toggle" data-action="click->journee-selector#toggle"
-              data-journee-selector-target="toggle" aria-haspopup="listbox" aria-expanded="false">
+              data-journee-selector-target="toggle" aria-haspopup="true" aria-expanded="false">
         <span data-journee-selector-target="label"><%= title_for.call(current_round) %></span>
         <i data-lucide="chevron-down" class="journee-picker__chevron" aria-hidden="true"></i>
       </button>
-      <ul class="journee-picker__menu" data-journee-selector-target="menu" role="listbox" hidden>
+      <%# De VRAIES cases à cocher (<input type="checkbox"> dans un <label>) plutôt
+          que des boutons stylés : la sélection est multiple, et une case à cocher
+          native le dit sans ambiguïté — en plus d'être navigable au clavier et
+          annoncée correctement par les lecteurs d'écran, gratuitement. %>
+      <ul class="journee-picker__menu" data-journee-selector-target="menu" hidden>
+        <li>
+          <%# Raccourci « tout / rien » : bascule entre la sélection complète et la
+              seule journée en cours, pour ne pas obliger à 31 clics dans un championnat.
+              Classe distincte de __option : ce n'est pas une journée, et les tests
+              comme le JS comptent les journées via .journee-picker__option. %>
+          <label class="journee-picker__all">
+            <input type="checkbox" class="journee-picker__checkbox"
+                   data-journee-selector-target="allOption"
+                   data-action="change->journee-selector#toggleAll">
+            <span>Toutes les journées</span>
+          </label>
+        </li>
+        <li class="journee-picker__separator" role="presentation"></li>
         <% rounds.each do |round| %>
           <li>
-            <button type="button" class="journee-picker__option <%= "is-active" if round == current_round %>"
-                    role="option" aria-selected="<%= round == current_round %>"
-                    data-round-number="<%= round.number %>"
-                    data-action="click->journee-selector#choose"><%= title_for.call(round) %></button>
+            <label class="journee-picker__option">
+              <%# data-...-target="option" est INDISPENSABLE : sans lui optionTargets
+                  est vide côté Stimulus et plus rien ne réagit au clic. %>
+              <input type="checkbox" class="journee-picker__checkbox"
+                     data-journee-selector-target="option"
+                     data-round-number="<%= round.number %>"
+                     data-round-title="<%= title_for.call(round) %>"
+                     data-action="change->journee-selector#choose"
+                     <%= "checked" if round == current_round %>>
+              <span><%= title_for.call(round) %></span>
+            </label>
           </li>
         <% end %>
       </ul>
