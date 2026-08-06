@@ -1,5 +1,20 @@
 # Helpers d'affichage des tournois (vue détail à onglets).
 module TournamentsHelper
+  # Ce TournamentUser, est-ce l'utilisateur connecté ? Sert à surligner « moi »
+  # partout : ma poule, mes matchs, ma ligne de classement. Un tournoi à 32
+  # joueurs affiche des dizaines de cartes identiques — sans repère, retrouver la
+  # sienne demande de lire chaque nom.
+  # La comparaison porte sur user_id, jamais sur le nom : deux joueurs peuvent
+  # parfaitement s'appeler pareil.
+  def my_player?(tournament_user)
+    user_signed_in? && tournament_user.present? && tournament_user.user_id == current_user.id
+  end
+
+  # Pastille « Toi » posée à côté de mon nom. Un `aria-label` explicite : hors
+  # contexte, « Toi » seul ne dit pas de qui il s'agit.
+  def me_badge
+    tag.span "Toi", class: "tmatch-card__me-badge", aria: { label: "C'est toi" }
+  end
   # Tours à afficher en colonnes dans le bracket viewer : les rondes de la phase
   # round-robin du format (suisse / championnat / poules) dans l'ordre, PUIS les
   # tours du tableau final. Renvoie un tableau (les colonnes du ruban).

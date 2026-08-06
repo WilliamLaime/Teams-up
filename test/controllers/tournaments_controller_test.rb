@@ -496,6 +496,30 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     t
   end
 
+  # Repère « moi » : sans lui, retrouver son match dans une grille de 8 poules
+  # demande de lire chaque nom. Le test vérifie surtout qu'il ne se déclenche QUE
+  # pour le joueur concerné — un repère qui s'allume pour tout le monde ne repère rien.
+  test "GET show met en avant les matchs et la ligne de classement du joueur connecté" do
+    t = launched_tournament("poules", 8)
+    me = t.tournament_users.players.approved.order(:id).first
+
+    sign_in me.user
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tmatch-card--mine", 1 # un seul match par journée
+    assert_select ".pool-grid__col--mine", 1
+    assert_select ".tmatch-card__me-badge"
+    assert_select ".tournament-ranking__row.is-me", 1
+
+    # L'organisateur, lui, ne joue pas : aucun repère ne doit s'allumer.
+    sign_in @user
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tmatch-card--mine", 0
+    assert_select ".pool-grid__col--mine", 0
+    assert_select ".tournament-ranking__row.is-me", 0
+  end
+
   test "GET show rend la phase championnat" do
     sign_in @user
     t = launched_tournament("championnat", 8)

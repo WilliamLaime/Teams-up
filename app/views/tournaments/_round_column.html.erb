@@ -25,14 +25,24 @@
 
   <div class="round-col__matches">
     <% if local_assigns.fetch(:group_by_pool, false) %>
+      <%# Ma poule est mise en avant : sur une grille de 8 cartes, c'est le premier
+          repère qu'on cherche. Lu depuis l'INSCRIPTION et non depuis les matchs
+          affichés : dans une poule de 3, un joueur se repose chaque journée — sa
+          poule doit rester repérable le jour où il n'y joue pas. %>
+      <% my_pool_index = round.tournament.tournament_users.players.approved
+                              .find { |tu| my_player?(tu) }&.pool %>
       <%# Les poules d'une journée sont INDÉPENDANTES : les empiler dans une seule
           colonne obligeait à scroller pour comparer, alors qu'elles se lisent en
           parallèle. Une carte par poule, côte à côte (grille auto-fit), et à
           l'intérieur les confrontations restent empilées à la verticale. %>
       <div class="pool-grid">
         <% round.tournament_matches.order(:position).group_by { |m| m.player_a.pool }.sort_by { |pool, _| pool.to_i }.each do |pool_index, matches| %>
-          <div class="pool-grid__col">
-            <h4 class="pool-label">Poule <%= ("A".ord + pool_index.to_i).chr %></h4>
+          <% my_pool = my_pool_index.present? && my_pool_index == pool_index %>
+          <div class="pool-grid__col <%= "pool-grid__col--mine" if my_pool %>">
+            <h4 class="pool-label">
+              Poule <%= ("A".ord + pool_index.to_i).chr %>
+              <% if my_pool %><span class="pool-label__mine">ta poule</span><% end %>
+            </h4>
             <div class="pool-grid__matches">
               <% matches.each do |match| %>
                 <%= render "tournaments/tmatch_scoreline", match: match %>

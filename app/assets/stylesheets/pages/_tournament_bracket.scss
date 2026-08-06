@@ -420,6 +420,14 @@
 
   &--done { border-color: var(--theme-border-strong); }
 
+  // Mon match. Bordure verte + halo léger : dans une grille de 8 cartes
+  // identiques, c'est ce qu'on repère avant même de lire un nom. La bordure
+  // écrase délibérément celle de --done, qui n'est qu'une nuance de gris.
+  &--mine {
+    border-color: $green;
+    box-shadow: 0 0 0 1px rgba($green, 0.35);
+  }
+
   // Tour futur pas encore joué (Lot 7) : même gabarit que la carte d'un vrai
   // match (place bien alignée dans la colonne) mais vide, en pointillés, pour
   // signaler visuellement "pas encore déterminé" (cf. .tmatch-card--bye).
@@ -540,6 +548,25 @@
 
 // ── Score du tableau final (carte empilée _tmatch) ────
 // Nombre affiché à droite du nom de chaque joueur (via display_score_for).
+// Pastille « Toi » à côté de mon nom : la bordure verte dit « ton match », cette
+// pastille dit LEQUEL des deux joueurs je suis. Les deux sont nécessaires.
+.tmatch-card__me-badge {
+  flex: 0 0 auto;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background-color: rgba($green, 0.18);
+  color: $green;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tmatch-card__player--me .tmatch-card__name {
+  color: var(--theme-text-strong);
+  font-weight: 800;
+}
+
 .tmatch-card__sets {
   flex: 0 0 auto;
   min-width: 1.25rem;
@@ -1233,6 +1260,17 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--theme-text-muted);
+
+  // « ta poule » : la carte est déjà bordée de vert, ce libellé dit pourquoi.
+  &__mine {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background-color: rgba($green, 0.18);
+    color: $green;
+    font-size: 0.65rem;
+    font-weight: 800;
+  }
 }
 
 // ── Poules d'une journée, côte à côte ────────────────
@@ -1259,6 +1297,14 @@
     border: 1px solid var(--theme-border);
     border-radius: 14px;
     padding: 0.9rem;
+
+    // Ma poule. Teinte de fond plutôt qu'une bordure verte : les cartes de match
+    // qu'elle contient en portent déjà une, deux cadres verts imbriqués seraient
+    // illisibles.
+    &--mine {
+      border-color: rgba($green, 0.45);
+      background-color: rgba($green, 0.05);
+    }
     // min-width: 0 : sans ça un long nom de joueur pousse la piste de grille
     // au-delà du 1fr et la rangée déborde horizontalement.
     min-width: 0;
@@ -1383,6 +1429,18 @@
 
   &__row--eliminated td { opacity: 0.6; }
   &__row--qualified td:first-child { box-shadow: inset 3px 0 0 $green; }
+
+  // Ma ligne : un fond vert très léger sur toute la largeur. Volontairement une
+  // TEINTE et non un liseré — le liseré de gauche est déjà pris par « qualifié »,
+  // et les deux états se cumulent (on peut être soi-même ET qualifié).
+  &__row.is-me td {
+    background-color: rgba($green, 0.1);
+    font-weight: 700;
+
+    // Un éliminé reste lisible s'il s'agit de moi : c'est justement la ligne
+    // qu'on cherche.
+    opacity: 1;
+  }
 }
 
 // ── Colonne Qualifiés / Éliminés (ronde suisse, cf. _qualification_panel.html.erb) ──

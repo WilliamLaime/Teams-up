@@ -34,13 +34,17 @@
     </thead>
     <tbody>
       <% players.each_with_index do |tu, index| %>
-        <tr class="tournament-ranking__row tournament-ranking__row--<%= tu.state %>">
+        <% mine = my_player?(tu) %>
+        <tr class="tournament-ranking__row tournament-ranking__row--<%= tu.state %> <%= "is-me" if mine %>">
           <td class="is-rank"><%= index + 1 %></td>
           <td class="is-player">
             <%= link_to user_profil_path(tu.user), class: "tournament-ranking__player-link" do %>
               <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar" %>
               <span><%= tu.display_name %></span>
             <% end %>
+            <%# Repère « moi » : dans un classement à 32 lignes, retrouver sa place
+                demande sinon de lire chaque nom. %>
+            <%= me_badge if mine %>
             <% if tu.qualified? %>
               <i data-lucide="check-circle" class="tournament-ranking__qualified-icon"
                  title="Qualifié pour le tableau final" aria-label="Qualifié pour le tableau final"></i>
