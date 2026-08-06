@@ -107,6 +107,9 @@ module TournamentsHelper
   # l'utilisateur vient voir. Les autres phases sont à un clic.
   def default_board_phase(tournament)
     return "bracket" if tournament.bracket_started?
+    # `barrage_rounds.any?` et NON `barrage_expected?` (cf. board_phases) : la
+    # phase est certes préfigurée dès le lancement, mais y ATTERRIR d'emblée
+    # ouvrirait une section de cases vides alors que les poules se jouent.
     return "barrage" if tournament.barrage_rounds.any?
 
     "main"
@@ -120,7 +123,9 @@ module TournamentsHelper
     main_label, main_icon = round_robin_phase_meta(tournament)
     phases = [["main", main_label, main_icon]]
 
-    phases << ["barrage", "Barrages", "git-branch-plus"] if tournament.barrage_rounds.any?
+    # Même condition que _board.html.erb : la pastille apparaît dès le lancement,
+    # la section étant préfigurée avec des cases « À déterminer ».
+    phases << ["barrage", "Barrages", "git-branch-plus"] if tournament.barrage_expected?
     # Même condition que _board.html.erb : un Critérium à poule unique (≤ 7
     # joueurs) n'a pas de tableau, la pastille ouvrirait une section vide.
     phases << ["bracket", "Tableau final", "trophy"] if tournament.bracket_expected?

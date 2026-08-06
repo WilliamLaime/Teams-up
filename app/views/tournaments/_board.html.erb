@@ -65,8 +65,11 @@
       <%= render "tournaments/pool_phase", tournament: tournament %>
     <% end %>
 
-    <%# Barrages (Critérium Fédéral) : palier entre les poules et le tableau final. %>
-    <% if tournament.barrage_rounds.any? %>
+    <%# Barrages (Critérium Fédéral) : palier entre les poules et le tableau final.
+        Affichés dès le lancement, comme le tableau final juste en dessous : la
+        structure est connue d'avance (une rencontre par poule), seuls les noms
+        manquent — cf. les cases « À déterminer » de _barrage_phase. %>
+    <% if (tournament.in_progress? || tournament.completed?) && tournament.barrage_expected? %>
       <%= render "tournaments/barrage_phase", tournament: tournament %>
     <% end %>
 

@@ -64,7 +64,14 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-phase=?]", "main"
-    assert_select "[data-phase=?]", "barrage", count: 0, message: "pas de barrages avant la fin des poules"
+    # Les barrages sont PRÉFIGURÉS dès le lancement (cases « À déterminer »), comme
+    # le tableau final : la structure est connue d'avance, une rencontre par poule.
+    # Ce test exigeait l'inverse — la section et sa pastille surgissaient à la fin
+    # des poules, sans qu'on ait jamais vu ce qui attendait.
+    assert_select "section[data-phase=?] .tmatch-card--placeholder", "barrage", 4,
+                  "4 poules → 4 barrages préfigurés"
+    assert_select "section[data-phase='barrage'] .tmatch-card:not(.tmatch-card--placeholder)", 0,
+                  "aucun barrage réel avant la fin des poules"
   end
 
   test "le board affiche une section et une pastille Barrages une fois les poules terminées" do

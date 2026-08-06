@@ -431,6 +431,24 @@ class Tournament < ApplicationRecord
     format != "championnat" || playoffs?
   end
 
+  # Ce tournoi aura-t-il des barrages ? Même intention que #bracket_expected? : la
+  # phase s'affiche dès le lancement, avec des cases « À déterminer », plutôt
+  # qu'après la dernière journée de poule — l'organisateur voit d'emblée ce qui
+  # l'attend, et la pastille de navigation ne surgit pas en cours de route.
+  #
+  # La question se pose à la STRUCTURE, seule à savoir si le format en prévoit :
+  # le mode intégral (effectif réduit) envoie tout le monde dans un tableau unique
+  # sans barrage, et un Critérium à poule unique n'a aucune phase finale.
+  def barrage_expected? = criterium? && criterium_structure.node("barrage").present?
+
+  # Nombre de barrages à jouer : les 2es contre les 3es de poule, donc une
+  # rencontre par poule. Lu sur la structure et non recalculé ici, pour que la
+  # préfiguration ne puisse pas diverger de ce que CriteriumFlow créera.
+  def expected_barrage_count
+    node = criterium_structure.node("barrage")
+    node ? node.entrants / 2 : 0
+  end
+
   # Bilan V/D de chaque joueur EN ENTRANT dans chaque ronde suisse (avant que
   # cette ronde soit jouée) — sert à regrouper visuellement les matchs d'un
   # tour par « bracket de score » (2V-0D / 1V-1D / 0V-2D…, cf. onglet Matchs).

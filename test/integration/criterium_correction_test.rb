@@ -135,6 +135,34 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
     assert_select ".tournament-ranking__pool-title", text: /Poule A/
   end
 
+  # La phase Barrages est préfigurée dès le lancement, comme le tableau final :
+  # avant, elle — et sa pastille — surgissaient à la fin des poules, sans qu'on ait
+  # jamais vu ce qui attendait.
+  test "les barrages s'affichent dès le lancement avec des cases à déterminer" do
+    TournamentEngine.for(@tournament).next_round! # 1re journée de poules
+
+    get tournament_path(@tournament)
+    assert_response :success
+    assert_select ".phase-nav__pill[data-phase=barrage]", 1
+    assert_select "section[data-phase=barrage]" do
+      assert_select ".tmatch-card--placeholder", 4, "4 poules → 4 barrages préfigurés"
+      assert_select ".tmatch-card:not(.tmatch-card--placeholder)", 0,
+                    "aucun barrage réel tant que les poules ne sont pas jouées"
+    end
+    # On ne doit pas ATTERRIR sur cette section : les poules se jouent encore.
+    assert_select ".tournament-board__phases[data-tournament-phase-switch-default-value=?]", "main"
+  end
+
+  test "la préfiguration des barrages cède la place aux vrais matchs" do
+    play_until_bracket_round!(1)
+
+    get tournament_path(@tournament)
+    assert_select "section[data-phase=barrage]" do
+      assert_select ".tmatch-card--placeholder", 0, "les barrages sont créés : plus rien à préfigurer"
+      assert_select ".tmatch-card", 4
+    end
+  end
+
   # Les barrages n'ont qu'un tour : la colonne de ruban de 300 px tronquait les
   # noms (« G... ») en laissant les trois quarts de la page vides.
   test "la phase Barrages étale ses matchs en grille sur toute la largeur" do
