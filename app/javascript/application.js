@@ -2,7 +2,13 @@
 import { Turbo } from "@hotwired/turbo-rails"
 import "controllers"
 import "@popperjs/core"
-import * as bootstrap from "bootstrap"
+// ⚠️ `import "bootstrap"` et NON `import * as bootstrap` : le fichier épinglé
+// (bootstrap.min.js du gem bootstrap) est le build **UMD**, qui n'a aucun export
+// ESM — le namespace importé serait un objet VIDE, et `bootstrap.Modal` valait
+// donc `undefined`. Le UMD peuple `window.bootstrap` : c'est ce global qu'il faut
+// lire (comme le font déjà les contrôleurs Stimulus). Cette erreur silencieuse
+// cassait les trois handlers ci-dessous depuis leur écriture.
+import "bootstrap"
 
 // ── Sentry Browser SDK — monitoring des erreurs JavaScript ───────────────────
 //
@@ -40,7 +46,11 @@ document.addEventListener("turbo:render", () => {
 document.addEventListener("turbo:load", () => {
   // Sélectionne tous les éléments avec l'attribut data-bs-toggle="tooltip"
   const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-  tooltipElements.forEach(el => new bootstrap.Tooltip(el))
+  // window.bootstrap explicite : le namespace importé masquait le global et
+  // valait {} (build UMD), donc ce constructeur levait une exception silencieuse.
+  if (window.bootstrap?.Tooltip) {
+    tooltipElements.forEach(el => new window.bootstrap.Tooltip(el))
+  }
 
   // RGAA 4.8 — masquer les SVG Lucide au chargement initial
   if (window.lucide) window.lucide.createIcons({ attrs: { "aria-hidden": "true" } })
@@ -92,7 +102,10 @@ Turbo.setConfirmMethod((message, element, submitter) => {
   // Repli sur le confirm natif si la modale n'est pas là (page servie sans le
   // layout, Bootstrap pas encore chargé) : mieux vaut un encadré laid qu'une
   // action destructrice exécutée sans confirmation.
-  if (!modalElement || typeof bootstrap === "undefined") {
+  // On teste `window.bootstrap?.Modal` et non `typeof bootstrap` : le namespace
+  // importé existe toujours (objet vide côté UMD), donc tester sa seule présence
+  // ne prouve rien — c'est exactement ce qui faisait échouer la confirmation.
+  if (!modalElement || !window.bootstrap?.Modal) {
     return Promise.resolve(window.confirm(message))
   }
 
@@ -114,7 +127,7 @@ Turbo.setConfirmMethod((message, element, submitter) => {
   accept.classList.toggle("btn-danger", danger)
   accept.classList.toggle("btn-primary", !danger)
 
-  const modal = bootstrap.Modal.getOrCreateInstance(modalElement)
+  const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement)
 
   return new Promise((resolve) => {
     let confirmed = false
@@ -133,16 +146,6 @@ Turbo.setConfirmMethod((message, element, submitter) => {
     modalElement.addEventListener("hidden.bs.modal", onHidden)
     modal.show()
   })
-})
-
-// Fix Bootstrap backdrop + Turbo Drive : Bootstrap garde _isAppended = true après
-// la 1re ouverture ; quand Turbo remplace le <body>, le backdrop disparaît du DOM
-// mais Bootstrap le croit toujours présent. dispose() avant le remplacement
-// réinitialise le flag (même correctif que review_modal / tournament_score).
-document.addEventListener("turbo:before-render", () => {
-  if (typeof bootstrap === "undefined") return
-  const modalElement = document.getElementById("turboConfirmModal")
-  if (modalElement) bootstrap.Modal.getInstance(modalElement)?.dispose()
 })
 
 document.addEventListener("turbo:before-cache", () => {
@@ -183,7 +186,7 @@ document.addEventListener("turbo:render", rerenderHcaptchaWidgets)
 // Solution : Dispose toutes les modales actives avant turbo:before-render
 document.addEventListener("turbo:before-render", () => {
   document.querySelectorAll(".modal").forEach(el => {
-    const instance = bootstrap.Modal.getInstance(el)
+    const instance = window.bootstrap?.Modal?.getInstance(el)
     if (instance) instance.dispose()
   })
 })
@@ -196,7 +199,7 @@ document.addEventListener("turbo:before-render", () => {
 document.addEventListener("turbo:before-render", () => {
   const offcanvasEl = document.getElementById("mobileNavDrawer")
   if (offcanvasEl) {
-    const instance = bootstrap.Offcanvas.getInstance(offcanvasEl)
+    const instance = window.bootstrap?.Offcanvas?.getInstance(offcanvasEl)
     if (instance) instance.hide()
   }
 })
