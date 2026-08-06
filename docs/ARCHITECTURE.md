@@ -64,6 +64,23 @@ Ces fichiers sont volumineux — lire des plages ciblées ou passer par un sous-
 | **Formulaire match** | `app/views/matches/_form.html.erb` (~1045 l.) + `match_form_controller.js` (~565 l.) | Synchronisation temps réel formulaire ↔ récap sidebar, boutons de niveau par sport, calcul du prix |
 | **Profil** | `ProfilesController` (~535 l.), `Profil` | Upload d'images + modération via `app/services/image_moderation/` (concern `Moderatable`) |
 | **Recherche de lieux** | `place_search_controller.js` (~550 l.) | Autocomplétion géolocalisée (Mapbox / OSM) |
+| **Moteurs de tournoi** | `app/services/` (voir ci-dessous) + `Tournament` (~700 l.) | Un moteur par format derrière la façade `TournamentEngine.for`. Déterminisme obligatoire : `draw_order` est la SEULE source d'aléa |
+| **Formulaire tournoi** | `app/views/tournaments/_form.html.erb` (~600 l.) + `tournament_form_controller.js` (~600 l.) | Le JS **miroite** `Tournament#structure_summary` : toute règle de structure changée côté serveur doit l'être des deux côtés, sinon l'aperçu de création ment |
+
+### Moteurs de tournoi
+
+Détail complet dans `docs/TOURNOI.md`. Carte rapide :
+
+| Service | Rôle |
+|---|---|
+| `TournamentEngine.for(t)` | Façade : le SEUL endroit où le format aiguille vers un moteur |
+| `SwissPairing` / `LeagueBuilder` / `PoolBuilder` | Phases round-robin (ronde suisse, championnat, poules) |
+| `BracketBuilder` | Un tableau à élimination directe, paramétré par `phase:` / `branch:` |
+| `CriteriumFlow` | Critérium Fédéral : matérialise la structure en tours. **Réconciliateur** — recalcule ce qui devrait exister, ne crée que ce qui manque |
+| `CriteriumStructure` | La topologie du format, en pur Ruby (aucune base) — c'est elle qui déclare places et sources |
+| `PoolStandings` / `TournamentStandings` | Classement d'une poule (règlement FFTT) / places finales **dérivées**, jamais stockées |
+| `PoolSeeding` | Qui va dans quelle poule : serpentin ou chapeaux |
+| `RoundRobinStats` | Module partagé : recompute des bilans, `build_match!` (bye / forfait), **ordre stable** des joueurs |
 
 ## Temps réel (ActionCable + Turbo Streams)
 

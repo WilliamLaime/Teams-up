@@ -56,6 +56,34 @@ class CriteriumFlow
     end
   end
 
+  # ── Correction d'un score DANS la phase finale (Lot 8) ──────────────────────
+  # Corriger un quart de finale n'invalide pas la consolante : elle se joue en
+  # parallèle, avec d'autres joueurs. Détruire toute la phase finale (ce que fait
+  # une correction en POULE, où le classement de départ change et où tout est donc
+  # caduc) y effacerait des scores encore parfaitement valides.
+  #
+  # On cherche donc le premier tour DEVENU FAUX — celui dont les joueurs réels ne
+  # sont plus ceux que la structure produirait aujourd'hui — et on ne détruit qu'à
+  # partir de lui. `id` croissant EST l'ordre causal : un tour n'est jamais créé
+  # avant ses sources, donc « après le tour périmé » est exactement « en aval ».
+  # #advance! reconstruit ensuite : il est déterministe, il retombe à l'identique
+  # sur tout ce que la correction n'a pas touché.
+  #
+  # `from` = le tour corrigé lui-même : lui n'est jamais périmé (ses joueurs n'ont
+  # pas changé, seul le vainqueur a changé), et l'exclure garantit qu'on ne détruit
+  # jamais le tour qu'on vient d'éditer.
+  def reconcile!(from: nil)
+    ActiveRecord::Base.transaction do
+      @tournament.reset_standings!
+      @standings = nil
+
+      stale = first_stale_round(after: from)
+      @tournament.tournament_rounds.final_phase.where(id: stale.id..).destroy_all if stale
+
+      advance!
+    end
+  end
+
   # ── Résolution des entrants d'un nœud ───────────────────────────────────────
   # PUBLIC parce que TournamentStandings en a besoin : pour attribuer une place
   # aux « 9es ex æquo », il faut savoir QUI est entré dans ce palier. Une seule
@@ -221,6 +249,53 @@ class CriteriumFlow
 
   def rounds_of(node)
     @tournament.tournament_rounds.where(phase: node.phase, branch: node.branch).ordered
+  end
+
+  # ── Détection de l'aval périmé (cf. #reconcile!) ────────────────────────────
+  # Le premier tour, dans l'ordre causal, dont les joueurs ne sont plus les bons.
+  def first_stale_round(after: nil)
+    rounds = final_rounds
+    rounds = rounds.select { |_node, round| round.id > after.id } if after
+
+    rounds.find { |node, round| stale?(node, round) }&.last
+  end
+
+  # Tous les tours jouables de la phase finale, ordre causal (= ordre des `id`).
+  # Les barrages n'y figurent pas : ils naissent du classement des poules, qui ne
+  # bouge pas quand on corrige un match de phase finale.
+  def final_rounds
+    playable_nodes.flat_map { |node| rounds_of(node).map { |round| [node, round] } }
+                  .sort_by { |_node, round| round.id }
+  end
+
+  # Ce tour oppose-t-il encore les bons joueurs ?
+  #
+  # On compare des ENSEMBLES d'inscriptions, pas des appariements. C'est suffisant
+  # ici, et seulement ici : à l'intérieur de la phase finale, l'ordre des entrants
+  # ne dépend que du classement des poules (inchangé par cette correction) et de la
+  # position des matchs sources. Un vainqueur qui change change donc forcément
+  # QUI entre en aval, jamais seulement dans quel ordre.
+  #
+  # Entrants attendus vides = sources non résolues (le tour source a été détruit,
+  # ou n'est plus complet) : on ne conclut rien plutôt que de détruire à l'aveugle.
+  # Ce tour-là sera de toute façon repris par le tour source, forcément plus ancien.
+  def stale?(node, round)
+    expected = expected_entrants(node, round.number).map(&:id).to_set
+    return false if expected.empty?
+
+    expected != participants_of(round)
+  end
+
+  # Round 1 : les entrants du nœud. Tours suivants : les vainqueurs du précédent —
+  # la même lecture que celle qui a servi à les créer.
+  def expected_entrants(node, number)
+    return entrants_for(node) if number == 1
+
+    camp_of(node.key, number - 1, :winner)
+  end
+
+  def participants_of(round)
+    round.tournament_matches.flat_map { |match| [match.player_a_id, match.player_b_id] }.compact.to_set
   end
 
   # ── Résolution des sources ──────────────────────────────────────────────────
