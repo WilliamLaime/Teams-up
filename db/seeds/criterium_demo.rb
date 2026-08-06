@@ -74,7 +74,15 @@ demo = lambda do
     %w[Alice Laurent], %w[Raphaël Michel], %w[Inès Garcia],     %w[Tom Roux]
   ]
 
+  # L'organisateur occupe une place de joueur (la 15e, arbitrairement) au lieu de
+  # regarder de l'extérieur : c'est le compte avec lequel on ouvre la démo, et un
+  # organisateur qui joue permet de vérifier d'un coup les deux jeux de droits —
+  # « Saisir le score » partout, et « Créer la rencontre » sur ses propres matchs.
+  organizer_slot = 15
+
   players = (1..player_count).map do |i|
+    next organizer if i == organizer_slot
+
     first_name, last_name = names[i - 1]
     user = User.find_or_initialize_by(email: "pongiste#{i}@teamup-demo.fr")
     if user.new_record?
@@ -138,8 +146,8 @@ demo = lambda do
   puts "   #{player_count} joueurs · #{tournament.pool_count} poules de #{tournament.pool_size} · variante standard"
   puts "   Poules jouées : #{matchdays_to_play}/#{tournament.pool_rounds.count} journées"
   puts "   #{pending} match(s) à saisir pour terminer les poules et déclencher les barrages"
-  puts "   Organisateur : #{organizer.email}"
-  puts "   Joueurs : pongiste1..#{player_count}@teamup-demo.fr (mot de passe Demo1234!)"
+  puts "   Organisateur : #{organizer.email} — inscrit aussi comme joueur"
+  puts "   Autres joueurs : pongiste1..#{player_count}@teamup-demo.fr sauf #{organizer_slot} (mot de passe Demo1234!)"
   puts "   → #{Rails.application.routes.url_helpers.tournament_path(tournament)}"
 end
 
