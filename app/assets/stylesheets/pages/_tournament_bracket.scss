@@ -439,6 +439,21 @@
     color: var(--theme-text-muted);
   }
 
+  // Case future dont UN camp est déjà connu (le vainqueur monte sans attendre son
+  // adversaire) : on annule le centrage de --placeholder pour retrouver la pile
+  // « joueur / joueur » d'une vraie carte, pointillés conservés — c'est encore un
+  // match à jouer.
+  &--placeholder-known {
+    align-items: stretch;
+    justify-content: flex-start;
+    color: var(--theme-text-primary);
+  }
+
+  &__player--pending {
+    justify-content: center;
+    color: var(--theme-text-muted);
+  }
+
   &__placeholder-label {
     font-size: 0.8rem;
     font-style: italic;

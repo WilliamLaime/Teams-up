@@ -417,6 +417,26 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card--placeholder", 3 # 2 places en demies + 1 en finale
   end
 
+  test "GET show : un qualifié monte d'une case sans attendre son adversaire" do
+    sign_in @user
+    t = launched_tournament("ronde_suisse", 8)
+    finalists = t.tournament_users.players.approved.order(:id).first(4)
+    semis = BracketBuilder.new(t, finalists: finalists).build!
+    won = semis.tournament_matches.order(:position).first
+    won.update!(sets: [[6, 0], [6, 0]]) # 1re demie jouée, la 2e non → finale à moitié connue
+
+    get tournament_path(t)
+    assert_response :success
+    # La finale n'existe pas encore en base : sa case affiche le vainqueur connu…
+    assert_select ".tmatch-card--placeholder-known", 1
+    assert_select ".tmatch-card--placeholder-known .tmatch-card__name",
+                  text: won.reload.winner.display_name
+    # …et laisse UN seul camp en attente.
+    assert_select ".tmatch-card--placeholder-known .tmatch-card__player--pending", 1
+    # La case entièrement inconnue reste, elle, sans joueur.
+    assert_select ".tmatch-card--placeholder:not(.tmatch-card--placeholder-known)", 0
+  end
+
   test "GET show : le tableau final reste affiché même si `playoffs` vaut false sur un tournoi non-championnat" do
     # Régression : `playoffs` n'a de sens que pour le championnat (LeagueBuilder),
     # mais la colonne existe pour tous les formats — une ronde suisse/poules avec

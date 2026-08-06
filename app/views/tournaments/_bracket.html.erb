@@ -47,8 +47,16 @@
               <%= render "tournaments/tmatch", match: match %>
             <% end %>
           <% else %>
-            <% (size / (2**(index + 1))).times do %>
-              <%= render "tournaments/bracket_placeholder_cell" %>
+            <%# Un joueur déjà qualifié monte d'une case sans attendre son adversaire.
+                Le tour N+1, position p, oppose les vainqueurs des matchs 2p et 2p+1
+                du tour N (cf. BracketBuilder#advance!) : c'est la seule règle à
+                connaître pour préremplir. Seule la PREMIÈRE colonne vide a un tour
+                nourricier — au-delà, il n'y a rien à lire, d'où le tableau vide. %>
+            <% feeders = index.positive? && rounds[index - 1] ? rounds[index - 1].tournament_matches.order(:position).to_a : [] %>
+            <% (size / (2**(index + 1))).times do |position| %>
+              <%= render "tournaments/bracket_placeholder_cell",
+                         player_a: feeders[position * 2]&.winner,
+                         player_b: feeders[(position * 2) + 1]&.winner %>
             <% end %>
           <% end %>
         </div>
