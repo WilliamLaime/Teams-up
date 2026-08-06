@@ -43,6 +43,8 @@ Format des lignes : `` | `table.colonne` | finalité | base légale | durée | c
 | `push_subscriptions.auth` | Secret d'authentification du push | Consentement | Jusqu'au désabonnement ou suppression du compte | Non |
 | `slack_identities.slack_user_id` | Lien entre un compte Teams-up et un compte Slack | Consentement (installation de l'app) | Jusqu'à la désinstallation | Non |
 | `slack_workspaces.bot_token` | Jeton d'API du bot Slack (secret, pas une donnée personnelle) | Exécution du contrat | Jusqu'à la désinstallation | **Oui** (`encrypts`) |
+| `matches.pin_latitude` | Point de rendez-vous précis d'un match, posé par l'organisateur sur la carte. Peut désigner une adresse privée (match chez un particulier) → traitée comme **donnée personnelle indirecte**, au contraire de `venues.latitude` qui décrit un équipement public | Consentement (saisie volontaire de l'organisateur) | Durée de vie du match | Non |
+| `matches.pin_longitude` | Idem `matches.pin_latitude` (l'autre moitié de la coordonnée) | Consentement (saisie volontaire de l'organisateur) | Durée de vie du match | Non |
 | `venues.address` | Adresse d'un équipement sportif — **donnée de lieu public, pas de PII** | Intérêt légitime | Illimitée | Non |
 | `venues.city` | Ville d'un équipement sportif — **pas de PII** | Intérêt légitime | Illimitée | Non |
 | `venues.latitude` | Position d'un équipement sportif — **pas de PII** | Intérêt légitime | Illimitée | Non |

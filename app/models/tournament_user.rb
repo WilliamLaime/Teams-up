@@ -58,6 +58,13 @@ class TournamentUser < ApplicationRecord
   scope :eliminated, -> { where(state: "eliminated") }
   scope :withdrawn,  -> { where(state: "withdrawn") }
 
+  # ── Prédicats de rôle ────────────────────────────────────────────────────────
+  # L'index unique [tournament_id, user_id] impose qu'une inscription porte UN
+  # seul rôle : promouvoir un joueur en co-organisateur lui fait donc perdre sa
+  # place de joueur (cf. TournamentsController#add_co_organizer).
+  def player?         = role == "joueur"
+  def co_organizer?   = role == "co_organisateur"
+
   # ── Prédicats de parcours (Lot 3, étendu Lot 5) ──────────────────────────────
   def active?     = state == "active"
   def qualified?  = state == "qualified"

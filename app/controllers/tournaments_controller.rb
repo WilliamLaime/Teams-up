@@ -5,7 +5,8 @@ class TournamentsController < ApplicationController
   # coming_soon : page d'attente publique (la feature tournoi n'est pas encore lancée).
   skip_before_action :authenticate_user!, only: %i[index show coming_soon]
 
-  before_action :set_tournament, only: %i[show start edit update toggle_registrations finish seeding]
+  before_action :set_tournament, only: %i[show start edit update toggle_registrations finish seeding
+                                          add_co_organizer remove_co_organizer transfer_ownership]
 
   # Associations préchargées pour les cards (sport, avatars des participants,
   # organisateur) — appliquées uniquement à l'onglet actif (cf. #index), jamais
@@ -112,7 +113,7 @@ class TournamentsController < ApplicationController
     assign_registration_deadline
 
     if @tournament.save
-      add_co_organizer
+      add_initial_co_organizer
       register_creator_if_requested
 
       # Partage Slack : uniquement si l'organisateur a coché la case dans le formulaire.
@@ -200,9 +201,102 @@ class TournamentsController < ApplicationController
     end
   end
 
-  # GET /tournois/search?q=...
+  # POST /tournois/:id/co-organisateurs
+  # Nomme un co-organisateur après la création (le champ du formulaire de création
+  # ne sert qu'au premier). Réservé à l'admin : cf. TournamentPolicy#manage_organizers?.
+  def add_co_organizer
+    authorize @tournament, :manage_organizers?
+
+    user = User.find_by_invite_sgid(params[:co_organizer_sgid])
+    return redirect_back_to_edit(alert: "Choisis un joueur dans la liste de suggestions.") if user.nil?
+    return redirect_back_to_edit(alert: "Tu es déjà l'admin de ce tournoi.") if user == @tournament.user
+
+    # Une seule ligne d'inscription par personne (index unique) : selon qu'elle est
+    # déjà inscrite ou pas, on promeut sa ligne existante ou on en crée une.
+    existing = @tournament.tournament_users.find_by(user: user)
+
+    if existing.nil?
+      @tournament.tournament_users.create!(user: user, role: "co_organisateur", status: "approved")
+      notify_new_co_organizer(user)
+      redirect_back_to_edit(notice: "#{user.display_name} est maintenant co-organisateur.")
+    elsif existing.co_organizer?
+      redirect_back_to_edit(alert: "#{user.display_name} est déjà co-organisateur.")
+    elsif @tournament.open? || @tournament.closed?
+      # Promotion d'un joueur inscrit : il libère sa place (les co-organisateurs
+      # n'occupent pas de place, cf. Tournament#approved_players_count).
+      existing.update!(role: "co_organisateur")
+      notify_new_co_organizer(user)
+      redirect_back_to_edit(notice: "#{user.display_name} passe de joueur à co-organisateur : sa place de joueur est libérée.")
+    else
+      # Tournoi lancé : ce joueur a des matchs et une ligne de classement. Changer
+      # son rôle le retirerait des appariements et des poules en cours de route.
+      redirect_back_to_edit(alert: "#{user.display_name} joue ce tournoi : impossible de le passer co-organisateur maintenant qu'il est lancé.")
+    end
+  end
+
+  # DELETE /tournois/:id/co-organisateurs/retrait?tournament_user_id=...
+  # Révoque un co-organisateur. On détruit la ligne d'inscription entière plutôt
+  # que de la repasser en "joueur" : un co-organisateur n'a jamais occupé de place
+  # de joueur, le remettre joueur l'inscrirait à un tournoi qu'il n'a pas rejoint.
+  def remove_co_organizer
+    authorize @tournament, :manage_organizers?
+
+    co_org = @tournament.tournament_users.find_by(id: params[:tournament_user_id], role: "co_organisateur")
+    return redirect_back_to_edit(alert: "Ce co-organisateur n'existe plus.") if co_org.nil?
+
+    name = co_org.display_name
+    co_org.destroy
+    redirect_back_to_edit(notice: "#{name} n'est plus co-organisateur.")
+  end
+
+  # PATCH /tournois/:id/transfert-admin
+  # Transmet l'administration : le nouvel admin prend `tournaments.user_id`,
+  # l'ancien devient co-organisateur pour garder la main sur la gestion courante.
+  def transfer_ownership
+    authorize @tournament, :transfer_ownership?
+
+    new_admin = User.find_by_invite_sgid(params[:new_admin_sgid])
+    return redirect_back_to_edit(alert: "Choisis un joueur dans la liste de suggestions.") if new_admin.nil?
+    return redirect_back_to_edit(alert: "Tu es déjà l'admin de ce tournoi.") if new_admin == @tournament.user
+
+    previous_admin = @tournament.user
+    # Si l'ancien admin est aussi inscrit comme JOUEUR, on ne peut pas lui donner
+    # une ligne co-organisateur (index unique) sans lui prendre sa place dans le
+    # tableau : on préserve la place, il perd donc les droits de gestion.
+    previous_stays_player = previous_admin.present? &&
+                            @tournament.tournament_users.find_by(user: previous_admin)&.player?
+
+    ActiveRecord::Base.transaction do
+      # Le nouvel admin n'a plus besoin de sa ligne co-organisateur (le rôle admin
+      # est porté par tournaments.user_id). Une ligne "joueur" est en revanche
+      # conservée : rien n'interdit à l'admin de jouer son tournoi.
+      @tournament.tournament_users.find_by(user: new_admin, role: "co_organisateur")&.destroy!
+      @tournament.update!(user: new_admin)
+
+      if previous_admin.present? && !previous_stays_player
+        @tournament.tournament_users.create!(user: previous_admin, role: "co_organisateur", status: "approved")
+      end
+    end
+
+    Notification.create(
+      user: new_admin,
+      actor: current_user,
+      message: "Tu es maintenant l'admin du tournoi « #{@tournament.name} ».",
+      link: tournament_path(@tournament)
+    )
+
+    notice = if previous_stays_player
+               "#{new_admin.display_name} est le nouvel admin. Tu gardes ta place de joueur, mais tu n'as plus les droits de gestion."
+             else
+               "#{new_admin.display_name} est le nouvel admin. Tu restes co-organisateur."
+             end
+    redirect_to tournament_path(@tournament), notice: notice
+  end
+
+  # GET /tournois/search?q=...[&tournament_id=...]
   # Autocomplete JSON pour désigner un co-organisateur (même pattern que
-  # TeamInvitationsController#search).
+  # TeamInvitationsController#search). Avec `tournament_id`, on masque les
+  # personnes déjà à la manœuvre — inutile de les proposer.
   def search
     authorize Tournament, :search?
 
@@ -210,7 +304,7 @@ class TournamentsController < ApplicationController
     return render json: [] if q.length < 3
 
     users = User.search_for_invite(q)
-                .where.not(id: current_user.id)
+                .where.not(id: excluded_search_ids)
                 .limit(8)
 
     render json: users.map { |u|
@@ -328,14 +422,46 @@ class TournamentsController < ApplicationController
     @tournament.registration_deadline = nil
   end
 
-  # Désigne un co-organisateur si un joueur a été choisi dans l'autocomplete.
+  # Désigne le premier co-organisateur si un joueur a été choisi dans l'autocomplete
+  # du formulaire de CRÉATION. Ensuite, tout passe par #add_co_organizer (page d'édition).
   # On reçoit un identifiant signé (voir User#invite_sgid) et non un email : aucune
   # adresse ne circule dans le formulaire de création de tournoi.
-  def add_co_organizer
+  def add_initial_co_organizer
     co_org = User.find_by_invite_sgid(params[:co_organizer_sgid])
     return if co_org.nil? || co_org == current_user
 
     @tournament.tournament_users.create(user: co_org, role: "co_organisateur", status: "approved")
+  end
+
+  # Retour au panneau d'organisation après une action de nomination/révocation :
+  # l'admin y enchaîne souvent plusieurs gestes (ajouter deux personnes, en retirer
+  # une), le renvoyer sur le tournoi lui ferait refaire le chemin à chaque fois.
+  def redirect_back_to_edit(flash_options)
+    redirect_to edit_tournament_path(@tournament), **flash_options
+  end
+
+  def notify_new_co_organizer(user)
+    Notification.create(
+      user: user,
+      actor: current_user,
+      message: "Tu es co-organisateur du tournoi « #{@tournament.name} ».",
+      link: tournament_path(@tournament)
+    )
+  end
+
+  # Personnes à masquer dans l'autocomplete : toujours soi-même, et — si un tournoi
+  # est passé en paramètre — celles qui l'organisent déjà. Le paramètre est optionnel
+  # à dessein : le champ de transfert d'administration, lui, DOIT pouvoir proposer un
+  # co-organisateur en place.
+  def excluded_search_ids
+    ids = [current_user.id]
+    return ids if params[:tournament_id].blank?
+
+    tournament = Tournament.find_by_param(params[:tournament_id])
+    return ids if tournament.nil?
+
+    ids + [tournament.user_id] +
+      tournament.tournament_users.where(role: "co_organisateur").pluck(:user_id)
   end
 
   # Inscrit le créateur comme joueur uniquement s'il a coché le toggle dédié.

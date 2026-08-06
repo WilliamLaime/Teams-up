@@ -189,9 +189,12 @@
                 data: { "tournament-form-target": "descriptionInput", "action": "input->tournament-form#updateDescription" } %>
           </div>
 
-          <%# Co-organisateur — autocomplete (réutilise invite-search), création uniquement.
-              (La désignation/retrait d'un co-organisateur après coup n'est pas encore géré
-              par #update — hors périmètre pour l'instant.) %>
+          <%# Co-organisateur — autocomplete (réutilise invite-search), création uniquement :
+              ce champ ne sert qu'à en désigner un tout de suite, pour ne pas obliger
+              l'organisateur à repasser par l'édition. Ensuite, toute la composition de
+              l'équipe (ajout, retrait, transfert d'admin) se fait dans le panneau
+              « Équipe organisatrice » de la page d'édition (_organizers_manager.html.erb),
+              qui doit rester HORS de ce formulaire. %>
           <% if @tournament.new_record? %>
             <div class="mb-0" data-controller="invite-search"
                  data-invite-search-url-value="<%= search_tournaments_path %>">

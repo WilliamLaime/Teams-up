@@ -240,7 +240,8 @@ règlement est que **chaque place se joue** — pas seulement la première.
 
 ### 🔜 (ex-Lot 5, reporté) — affinements
 - [ ] Winner / Loser Bracket (format e-sport) — voir « Formats envisagés » #4.
-- [ ] Gestion des co-organisateurs après création (ajout/retrait depuis `#edit`).
+- [x] Gestion des co-organisateurs après création (ajout/retrait + transfert d'administration
+      depuis `#edit`, panneau « Équipe organisatrice » — `_organizers_manager.html.erb`).
 
 ### 💡 Futurs
 - [ ] **Gamification** : badges, trophées, achievements (1er tournoi gagné, 500 pts, 10e set…).
@@ -323,7 +324,13 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
 - **Droits** : tout utilisateur connecté peut créer un tournoi (en devient l'admin).
 - **Co-organisateur** (tranché Lot 2) : **pas de nouvelle colonne** — rôle `co_organisateur`
   dans `tournament_users` (n'occupe pas de place de joueur). Droits fins sur la gestion du
-  tableau : à câbler au Lot 3 via `Tournament#organizer?`.
+  tableau : câblés via `Tournament#organizer?`. Nombre **illimité**, composés depuis `#edit`
+  par le **seul admin** (`TournamentPolicy#manage_organizers?` → `owner?`, et non `manage?` :
+  sinon un co-organisateur pourrait coopter ou révoquer celui qui l'a nommé). L'admin peut
+  **transmettre l'administration** (`#transfer_ownership`) : il redevient co-organisateur.
+  L'index unique `[tournament_id, user_id]` impose un seul rôle par personne → promouvoir un
+  joueur inscrit **met à jour sa ligne** (il libère sa place), et c'est refusé une fois le
+  tournoi lancé (il a déjà des matchs et une ligne de classement).
 - **Nombre de joueurs** : presets 8/16/32 **+ mode Libre** (nombre arbitraire). Depuis le Lot 7,
   la structure qui en découle n'est plus un aperçu figé en lecture seule : elle est **calculée**
   (`Tournament#structure_summary`) et chacun de ses critères est **personnalisable** par
@@ -341,7 +348,8 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
   → remplacer les valeurs **provisoires** de `Tournament::STRUCTURE_PRESETS` + la logique
   de `_buildProposals` (mode Libre) dans `tournament_form_controller.js`.
 - Gestion des **abandons** (victoire par abandon) et **correction d'un score après verrouillage**.
-- Droits exacts du co-organisateur sur la gestion du tableau (Pundit + `Tournament#organizer?`).
+- ~~Droits exacts du co-organisateur sur la gestion du tableau~~ → tranché : `manage?` pour
+  tout ce qui touche au tableau, `owner?` pour la suppression et la composition de l'équipe.
 
 ---
 
@@ -351,8 +359,6 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
 1. **Affiner les configs** de Ronde Suisse par effectif (16/32 ; 24 problématique) et les
    propositions du mode « Libre » (`STRUCTURE_PRESETS` + `_buildProposals` dans
    `tournament_form_controller.js`) — reste **provisoire** depuis le Lot 2.
-2. **Gestion des co-organisateurs après création** (ajout/retrait depuis `#edit` — pour
-   l'instant seulement à la création) — suite naturelle du Lot 6.
-3. **Winner / Loser Bracket** (format e-sport) — le format complexe reporté (barrages,
+2. **Winner / Loser Bracket** (format e-sport) — le format complexe reporté (barrages,
    descente en loser bracket, grande finale).
-4. Les **Futurs** (gamification, calendrier, Slack, dashboard perso, export agenda).
+3. Les **Futurs** (gamification, calendrier, Slack, dashboard perso, export agenda).
