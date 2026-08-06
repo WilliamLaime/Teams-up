@@ -1,5 +1,5 @@
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
-import "@hotwired/turbo-rails"
+import { Turbo } from "@hotwired/turbo-rails"
 import "controllers"
 import "@popperjs/core"
 import * as bootstrap from "bootstrap"
@@ -56,6 +56,76 @@ document.addEventListener("turbo:load", () => {
 //   1. Avant la mise en cache Turbo → vider le widget pour éviter qu'un token
 //      expiré soit restauré depuis le snapshot (même si no-cache est activé)
 //   2. Après chaque navigation Turbo → forcer le re-render manuellement
+
+// ── Confirmation des actions destructrices ──────────────────────────────────
+//
+// Par défaut, tout `data-turbo-confirm` passe par window.confirm : un encadré
+// dessiné par le navigateur (« localhost:3000 indique »), impossible à styler.
+// setConfirmMethod redirige TOUS ces appels vers notre modale Bootstrap
+// (shared/_confirm_modal, rendue dans le layout) — aucune vue à modifier.
+//
+// Le contrat Turbo attend une Promise<boolean> : true = on poursuit l'action.
+// Options facultatives portées par le bouton (ou le formulaire) :
+//   data-turbo-confirm-accept="Déclarer forfait"  → libellé du bouton
+//   data-turbo-confirm-danger                     → bouton rouge
+Turbo.setConfirmMethod((message, element, submitter) => {
+  const modalElement = document.getElementById("turboConfirmModal")
+
+  // Repli sur le confirm natif si la modale n'est pas là (page servie sans le
+  // layout, Bootstrap pas encore chargé) : mieux vaut un encadré laid qu'une
+  // action destructrice exécutée sans confirmation.
+  if (!modalElement || typeof bootstrap === "undefined") {
+    return Promise.resolve(window.confirm(message))
+  }
+
+  // « Déclarer X forfait ? Ses matchs seront perdus. » → la question devient le
+  // titre, l'explication le corps. Les messages sans explication (« Terminer ce
+  // tournoi maintenant ? ») n'affichent tout simplement pas de corps.
+  const [question, ...rest] = String(message).split(/(?<=\?)\s+/)
+  const detail = rest.join(" ").trim()
+
+  modalElement.querySelector("[data-confirm-title]").textContent = question
+  const detailSlot = modalElement.querySelector("[data-confirm-detail]")
+  detailSlot.textContent = detail
+  detailSlot.hidden = detail === ""
+
+  const source = submitter || element
+  const accept = modalElement.querySelector("[data-confirm-accept]")
+  accept.textContent = source?.dataset?.turboConfirmAccept || "Confirmer"
+  const danger = source?.dataset?.turboConfirmDanger !== undefined
+  accept.classList.toggle("btn-danger", danger)
+  accept.classList.toggle("btn-primary", !danger)
+
+  const modal = bootstrap.Modal.getOrCreateInstance(modalElement)
+
+  return new Promise((resolve) => {
+    let confirmed = false
+
+    const onAccept = () => { confirmed = true; modal.hide() }
+    // On résout sur `hidden` et non sur le clic : l'utilisateur peut fermer par
+    // Échap, par le backdrop ou par « Annuler » — un seul point de sortie évite
+    // de laisser une Promise pendante (Turbo attendrait indéfiniment).
+    const onHidden = () => {
+      accept.removeEventListener("click", onAccept)
+      modalElement.removeEventListener("hidden.bs.modal", onHidden)
+      resolve(confirmed)
+    }
+
+    accept.addEventListener("click", onAccept)
+    modalElement.addEventListener("hidden.bs.modal", onHidden)
+    modal.show()
+  })
+})
+
+// Fix Bootstrap backdrop + Turbo Drive : Bootstrap garde _isAppended = true après
+// la 1re ouverture ; quand Turbo remplace le <body>, le backdrop disparaît du DOM
+// mais Bootstrap le croit toujours présent. dispose() avant le remplacement
+// réinitialise le flag (même correctif que review_modal / tournament_score).
+document.addEventListener("turbo:before-render", () => {
+  if (typeof bootstrap === "undefined") return
+  const modalElement = document.getElementById("turboConfirmModal")
+  if (modalElement) bootstrap.Modal.getInstance(modalElement)?.dispose()
+})
 
 document.addEventListener("turbo:before-cache", () => {
   // Vide les widgets hcaptcha avant que Turbo prenne un snapshot de la page.

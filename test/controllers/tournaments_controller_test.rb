@@ -417,6 +417,28 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card--placeholder", 3 # 2 places en demies + 1 en finale
   end
 
+  test "GET show : la recherche de participants apparaît au-delà de 8 joueurs" do
+    sign_in @user
+    t = open_tournament_with_players(12)
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".participant-search__input"
+    # Chaque carte est filtrable et porte le nom sur lequel comparer.
+    assert_select ".participant-chip[data-participant-filter-target=card]", 12
+    assert_select ".participant-chip[data-name=?]", t.approved_players.first.display_name.downcase
+  end
+
+  test "GET show : pas de recherche de participants sur une petite grille" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".participant-search", 0
+    assert_select ".participant-chip[data-participant-filter-target=card]", 0
+  end
+
   test "GET show : un qualifié monte d'une case sans attendre son adversaire" do
     sign_in @user
     t = launched_tournament("ronde_suisse", 8)

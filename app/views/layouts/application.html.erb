@@ -202,6 +202,8 @@
     <%= yield :modals %>
     <%# Modale grille des niveaux — disponible sur toutes les pages via le bouton "?" %>
     <%= render "shared/level_grid_modal" %>
+    <%# Confirmation des actions `data-turbo-confirm` (remplace window.confirm) %>
+    <%= render "shared/confirm_modal" %>
 
     <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
     <%# RGESN 3.4 — fichier auto-hébergé (vendor/javascript/lucide.min.js) pour éviter

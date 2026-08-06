@@ -13,7 +13,9 @@
     <%= button_to finish_tournament_path(tournament),
                   method: :patch,
                   class: "btn-cta-secondary tournament-finish-action__btn",
-                  data: { turbo_confirm: "Terminer ce tournoi maintenant ?" } do %>
+                  data: { turbo_confirm: "Terminer ce tournoi maintenant ? " \
+                                         "Les matchs non joués resteront sans résultat.",
+                          turbo_confirm_accept: "Terminer le tournoi" } do %>
       <i data-lucide="flag" aria-hidden="true"></i>
       Terminer le tournoi
     <% end %>

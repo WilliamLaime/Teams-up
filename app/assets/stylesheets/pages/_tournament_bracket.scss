@@ -1105,15 +1105,61 @@
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    // 220px : de quoi loger un « Camille Bernard » complet à côté de l'avatar.
+    // minmax(0, …) sur la borne haute n'est pas nécessaire ici (auto-fill), mais
+    // la borne basse doit rester généreuse — c'est elle qui décide de la troncature.
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 0.6rem;
+    align-items: start;
+  }
+}
+
+// ── Recherche dans la grille des participants ────────────────────────────────
+// Filtre client (cf. participant_filter_controller). Icône en overlay plutôt
+// qu'en flex : l'input garde ainsi sa croix d'effacement native.
+.participant-search {
+  position: relative;
+  max-width: 320px;
+  margin-bottom: 0.85rem;
+
+  &__icon {
+    position: absolute;
+    top: 50%;
+    left: 0.7rem;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--theme-text-muted);
+    pointer-events: none;
+  }
+
+  &__input {
+    width: 100%;
+    padding: 0.45rem 0.7rem 0.45rem 2.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--theme-border);
+    background-color: var(--theme-bg-card);
+    color: var(--theme-text-primary);
+    font-size: 0.88rem;
+
+    &::placeholder { color: var(--theme-text-muted); }
+
+    &:focus {
+      outline: none;
+      border-color: $green;
+      box-shadow: 0 0 0 2px rgba($green, 0.18);
+    }
   }
 }
 
 .participant-chip {
+  // Colonne : le nom occupe toute la largeur de la carte, l'état et l'action
+  // passent sur une seconde ligne. En une seule ligne, les badges (nowrap, donc
+  // non compressibles) volaient la place du nom, réduit à « Em… ».
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
   background-color: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: 12px;
@@ -1125,8 +1171,8 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    width: 100%;
     min-width: 0;
-    flex: 1 1 auto;
     color: inherit;
     text-decoration: none;
     cursor: pointer;
@@ -1144,14 +1190,24 @@
     font-size: 0.88rem;
     font-weight: 600;
     color: var(--theme-text-strong);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
+    // Un nom long passe à la ligne au lieu d'être coupé : on préfère une carte
+    // un peu plus haute à un « Em… » illisible.
+    overflow-wrap: anywhere;
+  }
+
+  // Seconde ligne : état + action. Sans `margin-left: auto` (le parent est en
+  // colonne, l'alignement se joue sur align-items).
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding-left: calc(34px + 0.6rem); // aligné sous le nom, pas sous l'avatar
   }
 
   &__role,
   &__state {
-    margin-left: auto;
     font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -1183,7 +1239,6 @@
   // stylise donc ce sélecteur en pastille discrète, cohérente avec le reste du
   // design system (pastille outline rouge, inversée au survol).
   &__forfeit {
-    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
