@@ -109,29 +109,38 @@ export default class extends Controller {
   // une ligne d'appoint tant que personne n'a atteint setsToWin — plafonné à bestOf.
   // Ex. ping-pong en poule (3 sets gagnants, best_of 5) : 3 lignes au départ ; à 1-1
   // toujours 3 ; à 2-1 une 4e apparaît ; à 3-1 on s'arrête (les lignes en trop, vides,
-  // sont retirées). Un set incomplet compte comme « en cours » : sa ligne reste.
+  // sont retirées).
+  //
+  // Un set À MOITIÉ rempli (« 11 – vide ») est en cours de saisie : il ne vaut pas
+  // encore une victoire, et surtout il ne justifie PAS de ligne d'appoint — c'est lui
+  // l'appoint. Sinon, taper 11 au 3e set d'un 2-0 ferait apparaître un 4e set qui
+  // disparaîtrait dès le score adverse saisi (le match étant alors gagné 3-0).
   rowCount(sets) {
     if (this.isScoreMode) return 1
 
     let wins = [0, 0]
-    let playedRows = 0
+    let complete = 0 // sets aux deux scores saisis
+    let pending = 0  // sets à un seul score saisi (en cours de frappe)
 
     sets.forEach(([a, b]) => {
       if (a === "" && b === "") return
 
-      playedRows += 1
-      if (a !== "" && b !== "") {
-        const scoreA = Number(a)
-        const scoreB = Number(b)
-        if (scoreA > scoreB) wins[0] += 1
-        else if (scoreB > scoreA) wins[1] += 1
+      if (a === "" || b === "") {
+        pending += 1
+        return
       }
+
+      complete += 1
+      if (Number(a) > Number(b)) wins[0] += 1
+      else if (Number(b) > Number(a)) wins[1] += 1
     })
 
     // Match décidé : on n'affiche que les sets réellement joués (au moins setsToWin).
-    if (Math.max(...wins) >= this.setsToWin) return Math.max(playedRows, this.setsToWin)
+    if (Math.max(...wins) >= this.setsToWin) return Math.max(complete + pending, this.setsToWin)
 
-    return Math.min(Math.max(this.setsToWin, playedRows + 1), this.bestOf)
+    // Une ligne d'appoint seulement si aucun set n'est en cours de saisie.
+    const needed = complete + (pending > 0 ? pending : 1)
+    return Math.min(Math.max(this.setsToWin, needed), this.bestOf)
   }
 
   // (Re)construit les lignes de sets, préremplies avec `sets` ([[a, b], …]).
