@@ -280,7 +280,7 @@ class CriteriumFlow
   # ou n'est plus complet) : on ne conclut rien plutôt que de détruire à l'aveugle.
   # Ce tour-là sera de toute façon repris par le tour source, forcément plus ancien.
   def stale?(node, round)
-    expected = expected_entrants(node, round.number).map(&:id).to_set
+    expected = expected_entrants(node, round.number).to_set(&:id)
     return false if expected.empty?
 
     expected != participants_of(round)
@@ -371,6 +371,7 @@ class CriteriumFlow
 
       target = swappable.find do |j|
         next false if j == moving
+
         # L'adversaire de la place visée peut être un bye (nil) : personne à heurter.
         partner = partner_of(j, entrants.size)
 
@@ -463,7 +464,7 @@ class CriteriumFlow
 
   def create_round!(phase:, number:, branch: TournamentRound::MAIN_BRANCH)
     @tournament.tournament_rounds.create!(phase: phase, branch: branch, number: number,
-                                         status: "in_progress")
+                                          status: "in_progress")
   end
 
   # Le tour de phase finale le plus récent — valeur de retour par défaut d'#advance!

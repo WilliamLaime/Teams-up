@@ -108,7 +108,7 @@ class BracketBuilder
 
   def create_round!(number:)
     @tournament.tournament_rounds.create!(phase: @phase, branch: @branch,
-                                        number: number, status: "in_progress")
+                                          number: number, status: "in_progress")
   end
 
   # Finalistes : qualifiés d'abord, complétés au besoin par les meilleurs actifs.

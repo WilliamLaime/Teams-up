@@ -23,7 +23,7 @@ class MatchUnenrollmentService
   # routes pour construire le lien des notifications (promotion depuis la file).
   include Rails.application.routes.url_helpers
 
-  Result = Struct.new(:status, :leaving_user, :was_approved, keyword_init: true)
+  Result = Struct.new(:status, :leaving_user, :was_approved)
 
   def initialize(match:, user:)
     @match = match

@@ -13,7 +13,7 @@ module TournamentEngine
     # bascule en phase finale que PoolBuilder délègue à CriteriumFlow (barrages,
     # tableau final, consolante, matchs de classement).
     when "poules", "criterium_federal" then PoolBuilder.new(tournament)
-    else                    SwissPairing.new(tournament) # ronde_suisse + défaut sûr
+    else SwissPairing.new(tournament) # ronde_suisse + défaut sûr
     end
   end
 end

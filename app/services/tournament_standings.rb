@@ -23,7 +23,7 @@
 # joueurs 9es ex æquo restent tous deux 9es, et le suivant est 11e).
 class TournamentStandings
   # Un rang du classement : une place, et les joueurs qui la partagent.
-  Tier = Struct.new(:place, :players, :label, keyword_init: true) do
+  Tier = Struct.new(:place, :players, :label) do
     def tied? = players.size > 1
   end
 
@@ -125,7 +125,7 @@ class TournamentStandings
   # barrages. Groupés par position de poule, après la dernière place attribuée —
   # cas que le règlement ne couvre pas, on reste donc factuel et stable.
   def tail_groups(already_placed)
-    placed_ids = already_placed.map(&:id).to_set
+    placed_ids = already_placed.to_set(&:id)
     rest = @tournament.approved_players.reject { |player| placed_ids.include?(player.id) }
     return [] if rest.empty?
 

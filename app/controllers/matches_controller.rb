@@ -352,7 +352,7 @@ class MatchesController < ApplicationController
       @match.time.hour, @match.time.min, 0
     )
     # Fin réelle du match (heure de fin saisie, sinon +1h par défaut)
-    end_dt = @match.end_datetime || start_dt + 1.hour
+    end_dt = @match.end_datetime || (start_dt + 1.hour)
 
     # Lieu : venue ou adresse libre
     location = @match.place.presence || ""

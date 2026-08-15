@@ -28,8 +28,8 @@ module Slack
     # Chaque bouton porte un action_id, mappé vers son job dédié (tous partagent
     # la même signature : match_id, team_id, slack_user_id, response_url).
     ACTION_JOBS = {
-      "match_join"   => SlackEnrollJob,
-      "match_leave"  => SlackUnenrollJob,
+      "match_join" => SlackEnrollJob,
+      "match_leave" => SlackUnenrollJob,
       "match_cancel" => SlackCancelJob
     }.freeze
 
@@ -38,10 +38,10 @@ module Slack
       return head :ok unless action
 
       ACTION_JOBS.fetch(action["action_id"]).perform_later(
-        match_id:      action["value"],
-        team_id:       payload.dig("team", "id"),
+        match_id: action["value"],
+        team_id: payload.dig("team", "id"),
         slack_user_id: payload.dig("user", "id"),
-        response_url:  payload["response_url"]
+        response_url: payload["response_url"]
       )
 
       head :ok
@@ -75,16 +75,16 @@ module Slack
       mb = Slack::MatchModalBuilder
 
       Match.new(
-        user:              user,
-        sport_id:          selected(v, mb::BLOCK_SPORT),
-        title:             plain(v, mb::BLOCK_TITLE),
-        date:              picked(v, mb::BLOCK_DATE, "selected_date"),
-        time:              picked(v, mb::BLOCK_TIME, "selected_time"),
-        place:             plain(v, mb::BLOCK_PLACE),
-        players_needed:    plain(v, mb::BLOCK_PLAYERS),
-        level:             selected(v, mb::BLOCK_LEVEL),
-        visibility:        "public",
-        validation_mode:   "automatic",
+        user: user,
+        sport_id: selected(v, mb::BLOCK_SPORT),
+        title: plain(v, mb::BLOCK_TITLE),
+        date: picked(v, mb::BLOCK_DATE, "selected_date"),
+        time: picked(v, mb::BLOCK_TIME, "selected_time"),
+        place: plain(v, mb::BLOCK_PLACE),
+        players_needed: plain(v, mb::BLOCK_PLAYERS),
+        level: selected(v, mb::BLOCK_LEVEL),
+        visibility: "public",
+        validation_mode: "automatic",
         genre_restriction: "tous"
       )
     end
@@ -110,13 +110,13 @@ module Slack
     def error_blocks(match)
       mb = Slack::MatchModalBuilder
       field_to_block = {
-        sport:          mb::BLOCK_SPORT,
-        title:          mb::BLOCK_TITLE,
-        level:          mb::BLOCK_LEVEL,
+        sport: mb::BLOCK_SPORT,
+        title: mb::BLOCK_TITLE,
+        level: mb::BLOCK_LEVEL,
         players_needed: mb::BLOCK_PLAYERS,
-        date:           mb::BLOCK_DATE,
-        time:           mb::BLOCK_TIME,
-        base:           mb::BLOCK_DATE
+        date: mb::BLOCK_DATE,
+        time: mb::BLOCK_TIME,
+        base: mb::BLOCK_DATE
       }
 
       errors = {}

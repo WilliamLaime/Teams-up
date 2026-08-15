@@ -379,7 +379,7 @@ class Match < ApplicationRecord
   def resync_slack_messages
     return unless slack_match_messages.exists?
 
-    SlackMatchStatusJob.perform_later(id)     # rafraîchit le "Quand" affiché maintenant
+    SlackMatchStatusJob.perform_later(id) # rafraîchit le "Quand" affiché maintenant
     SlackMatchStatusJob.schedule_transitions(self) # rebranche les bascules En cours/Terminé
 
     # Nouvel horaire → on autorise un nouveau rappel "préparez-vous" et on le

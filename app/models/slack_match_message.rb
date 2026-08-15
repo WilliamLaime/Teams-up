@@ -14,7 +14,7 @@ class SlackMatchMessage < ApplicationRecord
   def self.track!(match:, slack_workspace:, channel_id:, message_ts:)
     find_or_initialize_by(match_id: match.id, channel_id: channel_id).update!(
       slack_workspace: slack_workspace,
-      message_ts:      message_ts
+      message_ts: message_ts
     )
   end
 end

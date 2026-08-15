@@ -15,6 +15,7 @@ module TournamentsHelper
   def me_badge
     tag.span "Toi", class: "tmatch-card__me-badge", aria: { label: "C'est toi" }
   end
+
   # Tours à afficher en colonnes dans le bracket viewer : les rondes de la phase
   # round-robin du format (suisse / championnat / poules) dans l'ordre, PUIS les
   # tours du tableau final. Renvoie un tableau (les colonnes du ruban).
@@ -156,7 +157,7 @@ module TournamentsHelper
   # Source unique du libellé, partagée par le sélecteur de poules (_pool_phase) et
   # l'onglet Classement (_ranking) — les deux doivent nommer la même poule pareil.
   def pool_label(pool_index)
-    "Poule #{("A".ord + pool_index.to_i).chr}"
+    "Poule #{('A'.ord + pool_index.to_i).chr}"
   end
 
   # Index de MA poule dans ce tournoi, ou nil si je n'y suis pas inscrit.

@@ -10,7 +10,7 @@
 # aucune destination n'est déterminable → l'appelant n'envoie alors rien.
 module Slack
   class ChannelResolver
-    Resolution = Struct.new(:workspace, :channel_id, keyword_init: true)
+    Resolution = Struct.new(:workspace, :channel_id)
 
     def self.for(user:, workspace_id: nil, override: nil)
       identity =

@@ -76,8 +76,8 @@ class SlackMatchPrepJob < ApplicationJob
   def post_one(msg, match, text)
     SlackNotifierService.new(msg.slack_workspace).post_message(
       channel: msg.channel_id,
-      text:    text,
-      blocks:  builder.match_prep_blocks(match, slack_mentions(match, msg.slack_workspace))
+      text: text,
+      blocks: builder.match_prep_blocks(match, slack_mentions(match, msg.slack_workspace))
     )
   rescue Slack::ApiClient::Error => e
     # Notif éphémère par nature (utile ~15 min avant) : inutile de retenter plus
