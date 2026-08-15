@@ -56,8 +56,17 @@ rails test        # tests
 
 ## Frugalité tokens (économise le contexte à chaque requête)
 
-- Pour fouiller de **gros fichiers** (`matches/show.html.erb` ~1570 l., `matches/_form.html.erb` ~1045 l., `_match_form.scss` / `_match_show.scss` ~36 Ko), **déléguer à un sous-agent Explore** plutôt que tout lire dans la fenêtre principale
-- Lire des **plages de lignes ciblées** dans les méga-fichiers, pas l'intégralité
+**Ordre de recherche** — du moins cher au plus cher :
+
+1. **Graphe de connaissance** (`graphify-out/`, si présent) : `graphify query "<question>"` pour se repérer, `graphify path "<A>" "<B>"` pour une relation entre deux entités, `graphify explain "<concept>"` pour un nœud et son voisinage, `graphify affected "<X>"` pour l'impact d'un changement. Réponse bornée (~2000 tokens) là où un grep large en coûte 10 à 30×
+2. **Sous-agent Explore** quand le graphe ne suffit pas, notamment pour fouiller de **gros fichiers** (`matches/show.html.erb` ~1570 l., `matches/_form.html.erb` ~1045 l., `_match_form.scss` / `_match_show.scss` ~36 Ko)
+3. **Lecture directe** de plages de lignes ciblées — jamais un méga-fichier en entier
+
+Autres règles :
+
+- Ne PAS lire `graphify-out/GRAPH_REPORT.md` en entier (33 Ko) : réservé à une revue d'architecture d'ensemble, quand `query`/`path`/`explain` n'ont pas suffi
+- Le graphe se reconstruit **sans aucun appel LLM** (extraction AST locale, coût 0 token) : un hook post-commit le rafraîchit à chaque commit. Après un gros refactor hors commit, `graphify update .`
+- ⚠️ Un graphe périmé est pire que pas de graphe (il décrit du code disparu) : vérifier `built_at_commit` en tête de `GRAPH_REPORT.md` face à `git rev-parse HEAD` en cas de doute
 - Les commandes bash passent déjà par RTK (proxy économe) — ne rien changer
 
 ---

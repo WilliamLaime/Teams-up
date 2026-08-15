@@ -64,3 +64,7 @@ package-lock.json
 # Réglages Claude Code personnels (machine-spécifiques, non partagés).
 # settings.json (sans .local) reste versionnable pour d'éventuels réglages d'équipe.
 .claude/settings.local.json
+
+# Graphe de connaissance graphify : ~5 Mo d'artefacts regénérables en local
+# (`graphify update .`, extraction AST, sans appel LLM). Rien à versionner.
+graphify-out/
