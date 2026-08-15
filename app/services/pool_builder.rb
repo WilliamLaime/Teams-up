@@ -1,13 +1,35 @@
 # ── Service PoolBuilder ───────────────────────────────────────────────────────
 # Moteur du format « Poules » (Lot 5) : on répartit les joueurs en poules, on joue
-# un round-robin DANS chaque poule (journée par journée, toutes poules en parallèle),
-# puis les meilleurs de chaque poule entrent en tableau final.
+# un round-robin DANS chaque poule (toutes poules en parallèle), puis les meilleurs
+# de chaque poule entrent en tableau final.
 #
 # Réutilise l'algorithme de calendrier round-robin de LeagueBuilder (.schedule) et
 # le recompute partagé (RoundRobinStats). Une « journée » = une TournamentRound de
 # phase "pool" regroupant la journée de MÊME index de toutes les poules (respecte
 # l'index unique (tournament_id, phase, number)). La poule d'un match se dérive de
 # player_a.pool (pas de colonne dédiée sur le match).
+#
+# ── Le calendrier ENTIER est créé au lancement ─────────────────────────────────
+# Contrairement à la ronde suisse, dont chaque ronde dépend des résultats de la
+# précédente, un round-robin est intégralement connu d'avance : dans une poule de
+# 4, chacun affronte les 3 autres, point. Le générer journée par journée n'apportait
+# donc rien et coûtait beaucoup :
+#   • un joueur ne voyait qu'un seul de ses 3 adversaires, alors que depuis le Lot 7
+#     c'est LUI qui planifie ses rencontres — il lui faut les connaître toutes pour
+#     convenir des dates ;
+#   • les poules ne pouvaient avancer qu'au même rythme, la plus lente bloquant
+#     tout le monde ;
+#   • le calendrier était recalculé à chaque journée et devait retomber à
+#     l'identique (cf. RoundRobinStats#ordered_player_scope) — un ordre de joueurs
+#     qui bougeait en cours de route dédoublait ou perdait des rencontres. Créé
+#     d'un coup, il n'est calculé qu'une fois : le problème disparaît.
+#
+# Les journées restent des TournamentRound (l'ordre du calendrier, et un repère
+# pour l'organisateur), mais elles ne sont plus une porte : toutes les rencontres
+# d'une poule sont saisissables dès le lancement, dans l'ordre que les joueurs
+# veulent. D'où le verrouillage de la phase EN BLOC, quand la dernière rencontre
+# est jouée (cf. #close_pool_rounds!), et non journée par journée : « ta journée
+# est terminée » n'a plus de sens pour qui ne voit que sa poule.
 class PoolBuilder
   include RoundRobinStats
 
@@ -15,8 +37,9 @@ class PoolBuilder
     @tournament = tournament
   end
 
-  # Génère la journée suivante (ou répartit les poules + journée 1), ou bascule
-  # sur le tableau final. Idempotent (même garde-fou anti double-clic que le suisse).
+  # Répartit les poules et crée TOUT le calendrier au premier appel, puis bascule
+  # sur le tableau final quand la dernière rencontre de poule est jouée.
+  # Idempotent (même garde-fou anti double-clic que le suisse).
   def next_round!
     ActiveRecord::Base.transaction do
       # Critérium Fédéral : dès que la phase finale a commencé, c'est CriteriumFlow
@@ -28,26 +51,30 @@ class PoolBuilder
       # de l'une parce que l'autre n'est pas finie.
       return CriteriumFlow.new(@tournament).advance! if criterium_final_phase?
 
-      current = @tournament.current_round
-      return current if current && !current.complete?
+      # Tableau final déjà lancé : la phase de poules est derrière nous, on rend la
+      # main à son moteur (même garde qu'avant, `current_round` privilégiant les
+      # tours de tableau).
+      if @tournament.bracket_started?
+        current = @tournament.current_round
+        return current if current && !current.complete?
 
-      current&.update!(status: "completed")
-
-      return BracketBuilder.new(@tournament).advance! if @tournament.bracket_started?
+        current&.update!(status: "completed")
+        return BracketBuilder.new(@tournament).advance!
+      end
 
       assign_pools! if pools_unassigned?
 
       recompute_stats_for("pool", apply_state: false)
 
-      schedules      = pool_schedules
-      total_journees = schedules.values.map(&:size).max.to_i
-      next_index     = @tournament.pool_rounds.count
+      create_missing_pool_rounds!
 
-      if next_index < total_journees
-        create_pool_round!(number: next_index + 1, schedules: schedules, index: next_index)
-      else
-        start_playoffs!
-      end
+      # Tant qu'une seule rencontre de poule manque, il n'y a rien à faire de plus :
+      # le classement vient d'être rafraîchi, et aucune poule ne peut qualifier
+      # qui que ce soit.
+      return current_pool_round unless pool_phase_complete?
+
+      close_pool_rounds!
+      start_playoffs!
     end
   end
 
@@ -80,6 +107,49 @@ class PoolBuilder
   def pool_schedules
     ordered_player_scope.to_a.group_by(&:pool).transform_values do |members|
       LeagueBuilder.schedule(members)
+    end
+  end
+
+  # Crée les journées qui manquent — donc TOUTES au premier appel, aucune ensuite.
+  # Écrit comme un rattrapage et non comme un « create_all » : c'est ce qui rend la
+  # méthode idempotente (double-clic, rechargement Turbo) et ce qui répare aussi les
+  # tournois lancés AVANT ce changement, dont seules les premières journées existent.
+  def create_missing_pool_rounds!
+    schedules      = pool_schedules
+    total_journees = schedules.values.map(&:size).max.to_i
+    existing       = @tournament.pool_rounds.count
+
+    (existing...total_journees).each do |index|
+      create_pool_round!(number: index + 1, schedules: schedules, index: index)
+    end
+  rescue ActiveRecord::RecordNotUnique
+    # Deux requêtes concurrentes ont créé la même journée : l'index unique
+    # (tournoi, phase, branche, numéro) a tranché, il n'y a rien à réparer.
+    nil
+  end
+
+  # Journée « en cours » = la PREMIÈRE non terminée, pas la dernière créée : les
+  # rencontres ne se jouent plus dans l'ordre du calendrier (deux joueurs peuvent
+  # boucler leur 3e confrontation avant que la 1re journée soit finie).
+  def current_pool_round
+    rounds = @tournament.pool_rounds.to_a
+    rounds.find { |round| !round.complete? } || rounds.last
+  end
+
+  # Toutes les rencontres de toutes les poules sont-elles jouées ?
+  def pool_phase_complete?
+    rounds = @tournament.pool_rounds.to_a
+    rounds.any? && rounds.all?(&:complete?)
+  end
+
+  # Verrouillage EN BLOC de la phase (cf. l'en-tête) : à partir d'ici, seul
+  # l'organisateur peut corriger un score (TournamentMatchPolicy#update? refuse un
+  # tour "completed", #correct? prend le relais). Verrouiller journée par journée
+  # aurait fermé la carte d'un joueur sur un critère qu'il ne voit même pas — que
+  # l'AUTRE rencontre de la même journée de sa poule ait été saisie.
+  def close_pool_rounds!
+    @tournament.pool_rounds.where.not(status: "completed").each do |round|
+      round.update!(status: "completed")
     end
   end
 

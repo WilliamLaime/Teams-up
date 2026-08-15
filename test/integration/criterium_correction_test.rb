@@ -148,6 +148,16 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
       assert_select ".tmatch-card--placeholder", 4, "4 poules → 4 barrages préfigurés"
       assert_select ".tmatch-card:not(.tmatch-card--placeholder)", 0,
                     "aucun barrage réel tant que les poules ne sont pas jouées"
+
+      # Chaque poule fournit un 2e et il y a un barrage par poule : les quatre
+      # poules doivent donc être nommées, une fois chacune. Ce sont les cases qui
+      # répondent à « de quelle poule viennent les joueurs », pas une phrase.
+      labels = css_select("section[data-phase=barrage] .tmatch-card__placeholder-label")
+               .map { |node| node.text.strip }
+      assert_equal ["2e de Poule A", "2e de Poule B", "2e de Poule C", "2e de Poule D"],
+                   labels.grep(/^2e /).sort
+      assert_equal 4, labels.count("3e d'une autre poule"),
+                   "le 3e vient par construction d'une AUTRE poule : impossible de la nommer d'avance"
     end
     # On ne doit pas ATTERRIR sur cette section : les poules se jouent encore.
     assert_select ".tournament-board__phases[data-tournament-phase-switch-default-value=?]", "main"
@@ -174,8 +184,17 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
       assert_select ".round-col__matches--grid .tmatch-card", 4,
                     "4 poules → 4 barrages, rangés en grille"
     end
-    # Les poules gardent leur ruban paginé : la grille ne doit pas déborder dessus.
-    assert_select ".round-ribbon--paginated .round-col__matches--grid", 0
+    # Les barrages reprennent la carte empilée des poules et du tableau final.
+    assert_select ".round-col__matches--grid .tmatch-card--stacked", 4
+    # Chaque joueur porte sa poule d'origine : c'est ce qui rend vérifiable la règle
+    # « jamais deux joueurs de la même poule » (cf. CriteriumFlow#avoid_same_pool).
+    assert_select "section[data-phase=barrage] .tmatch-card__pool", 8
+    assert_select "section[data-phase=barrage] .tmatch-card--stacked" do |cards|
+      cards.each do |card|
+        pools = card.css(".tmatch-card__pool").map(&:text).map(&:strip)
+        assert_equal 2, pools.uniq.size, "un barrage n'oppose jamais deux joueurs d'une même poule"
+      end
+    end
   end
 
   test "l'onglet Classement affiche le classement final une fois le tournoi terminé" do
@@ -185,7 +204,10 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
     get tournament_path(@tournament)
     assert_select ".tournament-ranking__pool-title", text: /Classement final/
     # 16 joueurs, 16 places jouées : une ligne par joueur, aucun badge « ex æquo ».
-    assert_select ".tournament-ranking__table" do |tables|
+    # Sélecteur ancré sur l'onglet Classement : la phase de poules affiche
+    # désormais elle aussi des tables (le classement de chaque poule, en version
+    # compacte), qui viennent AVANT dans le document.
+    assert_select ".tournament-ranking .tournament-ranking__table" do |tables|
       final = tables.first
       assert_equal 16, final.css("tbody tr").size
       assert_equal 0, final.css(".tournament-ranking__tie").size

@@ -238,6 +238,63 @@ règlement est que **chaque place se joue** — pas seulement la première.
       d'une branche voisine (consolante) survivent. Un abandon en phase finale pose un forfait et
       les tours suivants naissent quand même (`build_match!`), sinon la branche resterait ouverte.
 
+### ✅ Refonte UI (post-Lot 8) — phase de poules centrée sur la poule `[FAIT]`
+La phase de poules était organisée **par journée** (`_round_ribbon` paginé → `_round_column`
+`group_by_pool`) : une journée à la fois, un menu à ouvrir pour balayer les autres, et le
+classement de la poule dans un **autre onglet**. Or un joueur suit **sa poule**, pas le
+calendrier général. Renversé :
+- [x] **Tout le calendrier de poule créé au lancement** (`PoolBuilder#create_missing_pool_rounds!`) :
+      un round-robin est connu d'avance (poule de N → **N-1 matchs par joueur**, chacun affronte
+      tous les autres), le générer journée par journée ne cachait que de l'information. Un joueur
+      voit donc ses N-1 adversaires d'emblée — indispensable depuis le Lot 7, où c'est **lui** qui
+      planifie ses rencontres. Conséquences : les poules n'avancent plus au rythme de la plus
+      lente ; le calendrier n'est plus recalculé à chaque journée (fin de la fragilité décrite
+      dans `RoundRobinStats#ordered_player_scope`) ; `Tournament#current_round` désigne la
+      première ronde **non terminée** et non la dernière créée. Écrit comme un rattrapage
+      idempotent : les tournois lancés avant reçoivent leurs journées manquantes au premier appel.
+- [x] **Verrouillage de la phase EN BLOC** (`PoolBuilder#close_pool_rounds!`), à la dernière
+      rencontre jouée, et non journée par journée : une journée n'est plus visible dans l'UI,
+      fermer la carte d'un joueur parce que l'AUTRE rencontre de sa journée vient d'être saisie
+      serait un critère invisible. Pendant la phase, chacun corrige son score ; après, c'est
+      « Corriger » (organisateur).
+- [x] **Sélecteur de poules** (`_pool_phase` + `pool_selector_controller.js`) : des onglets ARIA
+      `Poule A…E`, **ma poule ouverte d'emblée** (`TournamentsHelper#my_pool_index`, lu depuis
+      l'inscription — un joueur exempt une journée reste dans sa poule). Poule active et
+      visibilité du classement mémorisées en `sessionStorage`, rejouées au `connect()` : sans ça
+      le `turbo_stream.update("tournament_board")` de chaque saisie de score renverrait
+      l'organisateur sur la poule A. Même raison, même mécanique que `journee_selector`.
+- [x] **Toutes les confrontations de la poule d'un coup**, journées confondues
+      (`TournamentsHelper#pool_matches` — une requête, byes exclus). Le filtre par journée a
+      disparu de la phase de poules ; il reste au championnat.
+- [x] **Classement de la poule à côté des matchs**, masquable (`.pool-view--full` → les cartes
+      se répartissent alors sur plus de colonnes). Même source que l'onglet Classement
+      (`ranked_pools`), en version compacte (`_ranking_table`, local `compact`).
+- [x] **Carte empilée** (`_tmatch_scoreline`, local `stacked`) : A au-dessus de B, score à droite
+      — poules et barrages, comme le tableau final. Championnat et ronde suisse gardent la
+      scoreline centrée, adaptée à une colonne de ruban étroite.
+- [x] **Un seul bouton « Gérer le score »** (plus de « Saisir » / « Modifier ») : la modale fait
+      les deux. Le pied de carte commun aux trois cartes vit dans `_tmatch_actions`.
+- [x] **Poule d'origine en barrage** : badge `Poule X` sur chaque joueur d'un barrage réel
+      (`_tmatch_scoreline`, dérivé de `phase == "barrage"`), seul tour où deux poules se
+      rencontrent et où le règlement l'interdit entre joueurs d'une même poule
+      (`CriteriumFlow#avoid_same_pool`). Sur les cases **préfigurées**, le 2e est nommé
+      (`2e de Poule A`… — un barrage par poule, la bijection est certaine) mais pas le 3e :
+      il vient par construction d'une AUTRE poule, et l'appariement croisé ne sera tranché
+      qu'à la fin des poules.
+- [x] Devenus morts et supprimés : le local `group_by_pool` (`_round_ribbon` / `_round_column`)
+      et le bloc SCSS `.pool-grid`.
+- [x] **Règle du set durcie** (`TournamentMatch#valid_set?` + son miroir JS) : un set s'arrête
+      dès qu'il est gagné, on ne peut donc pas dépasser la cible librement. La validation ne
+      regardait que l'écart et acceptait `12-9` ou `15-3` au ping-pong ; au-delà de la cible,
+      l'écart vaut désormais **exactement 2** (`12-10` ✔, `13-11` ✔, `12-9` ✘). Généralisé par
+      `target` / `cap` / `win_by_two` (tennis : `7-5` ✔, `7-6` ✔, `8-6` ✘) ; les sports non
+      configurés restent tolérants, faute de connaître leur règle.
+- [x] **Migration de rattrapage** `BackfillMissingPoolRounds` : les tournois déjà en cours
+      n'auraient récupéré leurs journées manquantes qu'au prochain score terminant une journée
+      (`next_round!` n'est appelé qu'à l'écriture). Elle relaie une fois au moteur, dont les
+      gardes protègent les tournois déjà passés en phase finale. Reste ouvert : les
+      vérifications visuelles navigateur.
+
 ### 🔜 (ex-Lot 5, reporté) — affinements
 - [ ] Winner / Loser Bracket (format e-sport) — voir « Formats envisagés » #4.
 - [x] Gestion des co-organisateurs après création (ajout/retrait + transfert d'administration
@@ -265,7 +322,10 @@ manuellement** un tournoi. Depuis le Lot 7, **les joueurs planifient eux-mêmes 
 structure** de son tournoi (taille des poules, seuils de la ronde suisse, taille du tableau
 final) avec des valeurs recommandées par défaut. Le Lot 8 ajoute le **Critérium Fédéral**
 (ping-pong) : départage FFTT, barrages, consolante, matchs de classement — **chaque place se
-joue** — avec constitution des poules par chapeaux. Prochain chantier envisagé : Winner/Loser
+joue** — avec constitution des poules par chapeaux. L'onglet Matchs d'un tournoi à poules est
+depuis **centré sur la poule** : on choisit sa poule (la sienne par défaut), on y voit **toutes**
+ses confrontations et **son classement** côte à côte, et un unique bouton « Gérer le score ».
+Prochain chantier envisagé : Winner/Loser
 Bracket, puis les « Futurs » ci-dessous (gamification, calendrier, Slack…).
 
 <details><summary>Historique Lots 1 à 4</summary>

@@ -259,21 +259,54 @@ class TournamentMatch < ApplicationRecord
       if a == b
         errors.add(:sets, "set #{index + 1} : un set ne peut pas être nul")
       elsif !valid_set?(a, b, rules)
-        errors.add(:sets, "set #{index + 1} : score invalide (#{a}-#{b})")
+        errors.add(:sets, "set #{index + 1} : score invalide (#{a}-#{b}) — #{set_rule_reminder(rules)}")
       end
     end
   end
 
-  # Un set est valide si le vainqueur atteint la cible avec 2 points d'écart
-  # (ou pile au plafond, où 1 point suffit — tie-break).
+  # Un set s'arrête DÈS que quelqu'un a gagné : on ne peut donc pas dépasser la
+  # cible librement. Au ping-pong (cible 11, 2 points d'écart, pas de plafond) :
+  #   11-9  ✔  cible atteinte avec 2 d'écart
+  #   11-10 ✘  1 seul point d'écart → le set continue
+  #   12-10 ✔  prolongation depuis 10-10, conclue aux 2 points d'écart
+  #   12-9  ✘  le set était déjà fini à 11-9 : ce point n'a pas pu être joué
+  #   15-3  ✘  idem, quatre points après la fin
+  # C'est le cas « hi > target » que l'ancienne version laissait passer : elle ne
+  # regardait que l'écart, or au-delà de la cible l'écart vaut TOUJOURS exactement 2
+  # (à 2 d'écart le set s'arrête, il ne peut donc jamais atteindre 3).
+  #
+  # Généralisé aux autres sports par les mêmes règles, sans cas particulier :
+  #   • `cap` (tennis 7, badminton 30) — plafond où 1 point d'écart suffit et
+  #     au-dessus duquel plus rien n'est jouable : 7-5 ✔, 7-6 ✔, 8-6 ✘.
+  #   • sans `win_by_two` ni `cap` — c'est le fallback des sports non encore
+  #     configurés : on ignore comment leur set se conclut, donc on se contente
+  #     d'exiger la cible. Durcir ici bloquerait des scores légitimes d'un sport
+  #     dont on n'a simplement pas écrit les règles.
   def valid_set?(games_a, games_b, rules)
-    hi = [games_a, games_b].max
-    lo = [games_a, games_b].min
-    return false if hi < rules[:target]
-    return true  if rules[:cap] && hi >= rules[:cap]
-    return true  unless rules[:win_by_two]
+    hi     = [games_a, games_b].max
+    lo     = [games_a, games_b].min
+    target = rules[:target]
+    cap    = rules[:cap]
 
-    (hi - lo) >= 2
+    return false if hi < target
+    return false if cap && hi > cap
+    return true unless rules[:win_by_two]
+
+    if hi == target then lo <= target - 2 # fin « normale », 2 points d'écart
+    elsif cap && hi == cap then true      # au plafond, 1 point d'écart suffit
+    else (hi - lo) == 2                   # prolongation : elle se conclut à 2, jamais plus
+    end
+  end
+
+  # Rappel de la règle appliquée, joint au message d'erreur : « score invalide »
+  # tout court laisse l'organisateur deviner ce qui cloche dans un 12-9.
+  def set_rule_reminder(rules)
+    target = rules[:target]
+    return "le gagnant du set doit atteindre #{target} points" unless rules[:win_by_two]
+    return "un set se gagne en #{target} points avec 2 points d'écart, sans dépasser #{rules[:cap]}" if rules[:cap]
+
+    "un set se gagne en #{target} points avec 2 points d'écart " \
+      "(au-delà de #{target}, il se termine dès 2 points d'écart : #{target + 1}-#{target - 1}, #{target + 2}-#{target}…)"
   end
 
   # ── Helpers de score ──────────────────────────────────────────────────────────

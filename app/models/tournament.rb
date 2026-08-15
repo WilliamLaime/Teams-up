@@ -507,12 +507,21 @@ class Tournament < ApplicationRecord
   # la bannière du vainqueur, qui doivent tous afficher le même classement.
   def standings = @standings ||= TournamentStandings.new(self)
 
-  # Ronde en cours : la dernière ronde générée. Le tableau final (bracket) est
-  # prioritaire ; sinon la dernière ronde de la phase round-robin du format
-  # (un tournoi n'emploie qu'UNE phase round-robin : swiss OU league OU pool).
+  # Ronde en cours. Le tableau final (bracket) est prioritaire ; sinon la première
+  # ronde NON TERMINÉE de la phase round-robin du format (un tournoi n'emploie
+  # qu'UNE phase round-robin : swiss OU league OU pool), à défaut la dernière.
+  #
+  # « La première non terminée » et non « la dernière générée » : en poules, tout le
+  # calendrier est créé au lancement (cf. PoolBuilder) et les rencontres ne se
+  # jouent plus dans l'ordre — la dernière journée existe dès le départ et
+  # désignerait une ronde à laquelle personne n'a encore touché. Pour la ronde
+  # suisse et le championnat, qui génèrent toujours un tour à la fois, les deux
+  # définitions coïncident.
   def current_round
-    bracket_rounds.last ||
-      tournament_rounds.where(phase: %w[swiss league pool]).ordered.last
+    bracket_rounds.last || begin
+      rounds = tournament_rounds.where(phase: %w[swiss league pool]).ordered.to_a
+      rounds.find { |round| !round.complete? } || rounds.last
+    end
   end
 
   # Regroupement des joueurs par poule (Lot 5, format "poules").

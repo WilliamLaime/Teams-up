@@ -1,14 +1,16 @@
 <%# ── Une colonne du ruban horizontal (un tour) ───────────────────────────────
-    Réutilisée par la ronde suisse, le championnat et les poules (via
+    Réutilisée par la ronde suisse, le championnat et les barrages (via
     _round_ribbon) dans l'onglet Matchs ÉDITABLE — pendant du bracket-viewer
     (Vue d'ensemble, lecture seule) mais avec des cartes _tmatch_scoreline
-    cliquables (le tableau final, lui, garde _tmatch — cf. _bracket.html.erb).
+    cliquables (le tableau final, lui, garde _tmatch — cf. _bracket.html.erb ;
+    les poules ont leur propre vue par poule, cf. _pool_phase.html.erb).
     `id="round_<id>"` : ancre stable pour un éventuel deep-link direct vers un tour.
     Locals : round, title (optionnel, défaut "Ronde N"),
-    group_by_pool (optionnel, défaut false — regroupe les matchs par poule,
-    format "poules" uniquement), group_by_record (optionnel, défaut false —
+    stacked (optionnel, défaut false — cartes empilées A/B, cf. _tmatch_scoreline),
+    group_by_record (optionnel, défaut false —
     regroupe les matchs par bilan V/D EN ENTRANT dans ce tour — ex. 2V-0D /
     1V-1D / 0V-2D —, ronde suisse uniquement, cf. Tournament#swiss_entering_records). %>
+<% stacked = local_assigns.fetch(:stacked, false) %>
 <% score_groups = if local_assigns.fetch(:group_by_record, false)
                     entering = round.tournament.swiss_entering_records[round.number] || {}
                     round.tournament_matches.order(:position)
@@ -24,37 +26,9 @@
   </div>
 
   <%# wide : phase à tour unique (barrages) — les matchs se rangent deux par ligne
-      au lieu de s'empiler dans une colonne étroite. Sans effet avec group_by_pool
-      (les poules ont déjà leur propre grille) ni group_by_record. %>
+      au lieu de s'empiler dans une colonne étroite. Sans effet avec group_by_record. %>
   <div class="round-col__matches <%= "round-col__matches--grid" if local_assigns.fetch(:wide, false) %>">
-    <% if local_assigns.fetch(:group_by_pool, false) %>
-      <%# Ma poule est mise en avant : sur une grille de 8 cartes, c'est le premier
-          repère qu'on cherche. Lu depuis l'INSCRIPTION et non depuis les matchs
-          affichés : dans une poule de 3, un joueur se repose chaque journée — sa
-          poule doit rester repérable le jour où il n'y joue pas. %>
-      <% my_pool_index = round.tournament.tournament_users.players.approved
-                              .find { |tu| my_player?(tu) }&.pool %>
-      <%# Les poules d'une journée sont INDÉPENDANTES : les empiler dans une seule
-          colonne obligeait à scroller pour comparer, alors qu'elles se lisent en
-          parallèle. Une carte par poule, côte à côte (grille auto-fit), et à
-          l'intérieur les confrontations restent empilées à la verticale. %>
-      <div class="pool-grid">
-        <% round.tournament_matches.order(:position).group_by { |m| m.player_a.pool }.sort_by { |pool, _| pool.to_i }.each do |pool_index, matches| %>
-          <% my_pool = my_pool_index.present? && my_pool_index == pool_index %>
-          <div class="pool-grid__col <%= "pool-grid__col--mine" if my_pool %>">
-            <h4 class="pool-label">
-              Poule <%= ("A".ord + pool_index.to_i).chr %>
-              <% if my_pool %><span class="pool-label__mine">ta poule</span><% end %>
-            </h4>
-            <div class="pool-grid__matches">
-              <% matches.each do |match| %>
-                <%= render "tournaments/tmatch_scoreline", match: match %>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% elsif score_groups %>
+    <% if score_groups %>
       <% score_groups.each do |(wins, losses), matches| %>
         <% if score_groups.size > 1 %>
           <div class="score-bracket__header" title="<%= wins %> victoire(s) / <%= losses %> défaite(s) avant ce tour">
@@ -62,12 +36,12 @@
           </div>
         <% end %>
         <% matches.each do |match| %>
-          <%= render "tournaments/tmatch_scoreline", match: match %>
+          <%= render "tournaments/tmatch_scoreline", match: match, stacked: stacked %>
         <% end %>
       <% end %>
     <% else %>
       <% round.tournament_matches.order(:position).each do |match| %>
-        <%= render "tournaments/tmatch_scoreline", match: match %>
+        <%= render "tournaments/tmatch_scoreline", match: match, stacked: stacked %>
       <% end %>
     <% end %>
   </div>

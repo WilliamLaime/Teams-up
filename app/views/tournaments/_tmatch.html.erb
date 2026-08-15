@@ -9,15 +9,6 @@
     Réservé au tableau final (_bracket.html.erb) : les journées de championnat/
     poules et les rondes suisses utilisent _tmatch_scoreline (scoreline centrée),
     cf. _round_column.html.erb. %>
-<% can_edit = user_signed_in? && policy(match).update? %>
-<%# Création/consultation de la rencontre réelle : ouverte aux 2 joueurs du match
-    ET aux organisateurs (cf. TournamentMatchPolicy#create_match?), pour que les
-    joueurs puissent convenir eux-mêmes de la date et de l'heure. %>
-<% can_create_match = user_signed_in? && policy(match).create_match? %>
-<%# Correction après verrouillage : réservée à l'organisateur, seulement quand le
-    tour est verrouillé (sinon la saisie normale can_edit suffit). %>
-<% round_locked = match.tournament_round.status == "completed" %>
-<% can_correct = round_locked && !match.is_bye && user_signed_in? && policy(match).correct? %>
 <%# « Où suis-je ? » : la carte où je joue se repère sans lire les noms. %>
 <% mine = match.players.any? { |player| my_player?(player) } %>
 <div id="tmatch_<%= match.id %>" class="tmatch-card <%= "tmatch-card--bye" if match.is_bye %> <%= "tmatch-card--done" if match.decided? %> <%= "tmatch-card--mine" if mine %>">
@@ -52,40 +43,9 @@
     <% end %>
 
     <%# Score global + accès à la modale (saisie ou détail selon les droits) +
-        rattachement d'une rencontre standard (joueurs du match ou organisateurs). %>
-    <% if match.score_entered? || can_edit || can_create_match || match.match || can_correct %>
-      <div class="tmatch-card__footer">
-        <% if match.score_entered? %>
-          <span class="tmatch-card__score" title="Score (<%= match.player_a.display_name %> – <%= match.player_b.display_name %>)">
-            <%= match.score_summary %>
-          </span>
-        <% end %>
-
-        <% if match.match %>
-          <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
-        <% elsif can_create_match %>
-          <%= link_to "Créer la rencontre", new_match_path(tournament_match_id: match.id), class: "tmatch-card__link" %>
-        <% end %>
-
-        <% if can_edit %>
-          <%= score_modal_button match,
-                label: match.score_entered? ? "Modifier" : "Saisir le score",
-                editable: true,
-                url: tournament_tournament_match_path(match.tournament, match) %>
-        <% elsif match.score_entered? %>
-          <%= score_modal_button match, label: "Détail", editable: false, css_class: "tmatch-card__detail-btn" %>
-        <% end %>
-
-        <%# Correction organisateur d'un tour verrouillé : rouvre la modale en édition,
-            mais poste sur l'action `correct` (régénère l'aval si le vainqueur change). %>
-        <% if can_correct %>
-          <%= score_modal_button match,
-                label: "Corriger",
-                editable: true,
-                url: correct_tournament_tournament_match_path(match.tournament, match),
-                css_class: "tmatch-card__score-btn tmatch-card__score-btn--correct" %>
-        <% end %>
-      </div>
-    <% end %>
+        rattachement d'une rencontre standard (joueurs du match ou organisateurs).
+        show_score : seule carte à répéter le score global en pied, les scores
+        affichés plus haut étant ceux de chaque joueur pris séparément. %>
+    <%= render "tournaments/tmatch_actions", match: match, show_score: true %>
   <% end %>
 </div>

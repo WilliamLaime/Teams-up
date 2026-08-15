@@ -16,20 +16,26 @@
     `tu.qualified?` (state posé par PoolBuilder#start_playoffs! sur les 2 premiers
     de chaque poule une fois la phase de poules terminée) — répond au besoin de
     voir qui est qualifié DANS chaque poule sans réintroduire un texte redondant. %>
-<% show_draws = tournament.sport&.ranking_points_rules&.dig(:draw)&.positive? %>
-<% show_sets  = tournament.sport&.scoring_rules&.dig(:mode) == :sets %>
+<%# compact (optionnel, défaut false) : version réduite à « # / Joueur / V / D »,
+    pour la colonne latérale du sélecteur de poules (_pool_phase). Huit colonnes
+    n'y tiendraient pas sans scroll horizontal permanent, et le détail (points de
+    classement, différentiels) reste à un clic dans l'onglet Classement — qui, lui,
+    garde la table complète. %>
+<% compact = local_assigns.fetch(:compact, false) %>
+<% show_draws = !compact && tournament.sport&.ranking_points_rules&.dig(:draw)&.positive? %>
+<% show_sets  = !compact && tournament.sport&.scoring_rules&.dig(:mode) == :sets %>
 <div class="tournament-ranking__scroll">
-  <table class="tournament-ranking__table">
+  <table class="tournament-ranking__table <%= "tournament-ranking__table--compact" if compact %>">
     <thead>
       <tr>
         <th class="is-rank">#</th>
         <th class="is-player">Joueur</th>
-        <th title="Points de classement">Pts</th>
+        <% unless compact %><th title="Points de classement">Pts</th><% end %>
         <th title="Victoires">V</th>
         <% if show_draws %><th title="Nuls">N</th><% end %>
         <th title="Défaites">D</th>
         <% if show_sets %><th title="Différentiel de sets">Sets</th><% end %>
-        <th title="Différentiel de points marqués/encaissés">+/-</th>
+        <% unless compact %><th title="Différentiel de points marqués/encaissés">+/-</th><% end %>
       </tr>
     </thead>
     <tbody>
@@ -50,14 +56,16 @@
                  title="Qualifié pour le tableau final" aria-label="Qualifié pour le tableau final"></i>
             <% end %>
           </td>
-          <td class="is-num is-pts"><%= tu.ranking_points %></td>
+          <% unless compact %><td class="is-num is-pts"><%= tu.ranking_points %></td><% end %>
           <td class="is-num is-win"><%= tu.wins %></td>
           <% if show_draws %><td class="is-num"><%= tu.draws %></td><% end %>
           <td class="is-num"><%= tu.losses %></td>
           <% if show_sets %>
             <td class="is-num"><%= tu.set_average.positive? ? "+#{tu.set_average}" : tu.set_average %></td>
           <% end %>
-          <td class="is-num"><%= tu.point_average.positive? ? "+#{tu.point_average}" : tu.point_average %></td>
+          <% unless compact %>
+            <td class="is-num"><%= tu.point_average.positive? ? "+#{tu.point_average}" : tu.point_average %></td>
+          <% end %>
         </tr>
       <% end %>
     </tbody>

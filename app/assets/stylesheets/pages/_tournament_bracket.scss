@@ -692,6 +692,73 @@
   white-space: nowrap;
 }
 
+// ── Carte empilée (poules, barrages) ─────────────────
+// Joueur A au-dessus de joueur B, score de chacun aligné à droite — une feuille
+// de match. Choisie là où plusieurs confrontations s'affichent en GRILLE (toutes
+// celles d'une poule d'un coup) : les scores forment alors une colonne qu'on
+// parcourt d'un seul coup d'œil, ce que la scoreline centrée, dont les scores se
+// baladent au milieu de noms de longueurs variables, ne permet pas.
+.tmatch-card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.tmatch-card__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 8px;
+  min-width: 0;
+
+  // Ma ligne : même repère que .tmatch-card__player--me sur les autres cartes.
+  &--me .tmatch-card__name {
+    color: var(--theme-text-strong);
+    font-weight: 800;
+  }
+}
+
+// Poule d'origine, en barrage (cf. _tmatch_scoreline). Gris et discret, à l'inverse
+// de la pastille « Toi » : c'est une provenance, pas un état — elle doit se lire
+// sans jamais concurrencer le nom du joueur.
+.tmatch-card__pool {
+  flex: 0 0 auto;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background-color: var(--theme-hover-bg);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+// Colonne de score : largeur mini fixe + chiffres tabulaires, pour que les scores
+// de deux lignes (et de deux cartes voisines dans la grille) restent alignés.
+.tmatch-card__row-score {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 1.4rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--theme-text-strong);
+
+  // Même code couleur que la scoreline centrée : le vert sur le SEUL score du
+  // vainqueur suffit à le désigner, sans aplat plein cadre ni nom barré.
+  &.is-winner {
+    color: $green;
+    border-bottom: 2px solid $green;
+  }
+
+  &--pending {
+    color: var(--theme-text-muted);
+    font-weight: 600;
+  }
+}
+
 // Pied de carte : score global + bouton d'accès à la modale.
 .tmatch-card__footer {
   display: flex;
@@ -1374,7 +1441,8 @@
   }
 }
 
-// Sous-titre de poule dans le board (phase poules) : « Poule A », « Poule B »…
+// Sous-titre de poule (constitution des poules) : « Poule A », « Poule B »…
+// `__mine` sert aussi dans le sélecteur de poules du board (cf. .pool-switcher).
 .pool-label {
   margin: 0.6rem 0 0.35rem;
   font-size: 0.78rem;
@@ -1395,55 +1463,146 @@
   }
 }
 
-// ── Poules d'une journée, côte à côte ────────────────
-// DEUX poules par ligne, pas « autant que la largeur en permet » : à 4 colonnes
-// les cartes tombent sous ~250 px et les noms des joueurs sont tronqués
-// (« Pongi… vs Pongi… »), ce qui rend la lecture impossible. Deux colonnes
-// laissent la place au nom complet tout en gardant les poules comparables d'un
-// coup d'œil. Une seule colonne en mobile.
-// `minmax(0, 1fr)` et non `1fr` : la taille mini par défaut d'une piste de
-// grille est `auto`, donc un long nom élargirait la colonne et ferait déborder
-// la rangée.
-.pool-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+// ── Sélecteur de poules (onglet Matchs) ──────────────
+// Une rangée de pastilles-onglets, une poule affichée à la fois. Même gabarit que
+// .phase-nav (pastille remplie quand active) : les deux font la même chose — un
+// clic bascule le contenu affiché — et inventer un 3e style de pastille dans la
+// même page n'aurait fait qu'ajouter du bruit.
+.pool-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 1rem;
-  align-items: start;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+  // Scroll horizontal plutôt qu'un retour à la ligne : au-delà de 5-6 poules, une
+  // 2e rangée de pastilles pousse tout le contenu vers le bas sur mobile.
+  &__tabs {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    @include themed-scrollbar;
   }
 
-  &__col {
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover { color: var(--theme-text-primary); }
+
+    &[aria-selected="true"] {
+      color: #fff;
+      background-color: $green;
+      border-color: $green;
+
+      // Sur fond vert plein, la pastille « ta poule » doit s'inverser : sa teinte
+      // verte translucide y devient invisible.
+      .pool-label__mine {
+        background-color: rgba(#fff, 0.22);
+        color: #fff;
+      }
+    }
+  }
+
+  // Masquer/afficher le classement. Secondaire par rapport aux poules : contour
+  // seul, jamais rempli — ce n'est pas un onglet, ça ne change pas de contenu.
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: transparent;
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      color: var(--theme-text-primary);
+      border-color: var(--theme-border-strong);
+    }
+
+    i { width: 16px; height: 16px; }
+  }
+}
+
+// ── Panneau d'une poule : ses matchs + son classement ─
+// Les confrontations à gauche, le classement à droite : c'est la lecture directe
+// d'une série de scores, et l'obliger à un aller-retour vers l'onglet Classement
+// n'avait pas de sens.
+// Colonne de classement à largeur FIXE (pas un fr) : elle contient un tableau de
+// 4 colonnes dont la largeur naturelle ne varie pas, autant donner toute
+// l'élasticité restante aux cartes de match.
+.pool-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.5rem;
+  align-items: start;
+  margin-bottom: 1.75rem;
+
+  // Classement masqué : la grille des matchs récupère toute la largeur et se
+  // répartit donc sur PLUS de colonnes (auto-fill) — c'est tout l'intérêt du
+  // bouton, voir plus de rencontres d'un coup.
+  &--full {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (max-width: 900px) {
+    // Le classement passe SOUS les matchs : à 900 px, deux colonnes tronquent
+    // les noms des deux côtés.
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  // `minmax(0, 1fr)` et non `1fr` : la taille mini par défaut d'une piste de
+  // grille est `auto`, donc un long nom élargirait la colonne et ferait déborder
+  // la rangée.
+  &__matches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+    align-items: start;
+  }
+
+  &--full &__matches {
+    // Cartes un peu plus larges quand la place est libre : sous ~280 px les noms
+    // commencent à être tronqués côté score.
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  &__standings {
     background-color: var(--theme-bg-card);
     border: 1px solid var(--theme-border);
     border-radius: 14px;
     padding: 0.9rem;
-
-    // Ma poule. Teinte de fond plutôt qu'une bordure verte : les cartes de match
-    // qu'elle contient en portent déjà une, deux cadres verts imbriqués seraient
-    // illisibles.
-    &--mine {
-      border-color: rgba($green, 0.45);
-      background-color: rgba($green, 0.05);
-    }
-    // min-width: 0 : sans ça un long nom de joueur pousse la piste de grille
-    // au-delà du 1fr et la rangée déborde horizontalement.
     min-width: 0;
-
-    .pool-label {
-      margin: 0 0 0.6rem;
-      padding-bottom: 0.4rem;
-      border-bottom: 1px solid var(--theme-border);
-      color: var(--theme-text-strong);
-      font-size: 0.85rem;
-    }
   }
 
-  &__matches {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
+  &__standings-title {
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--theme-border);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--theme-text-strong);
   }
 }
 
@@ -1523,6 +1682,16 @@
     .is-num { font-variant-numeric: tabular-nums; color: var(--theme-text-primary); }
     .is-win { font-weight: 700; color: $green; }
     .is-pts { font-weight: 700; color: var(--theme-text-strong); }
+
+    // Variante compacte (colonne latérale du sélecteur de poules) : quatre
+    // colonnes seulement, donc on resserre le rembourrage pour que la table tienne
+    // dans ~300 px sans scroll horizontal permanent.
+    &--compact {
+      font-size: 0.82rem;
+
+      th, td { padding: 0.4rem 0.45rem; }
+      .is-rank { width: 1.9rem; }
+    }
   }
 
   // Avatar + nom cliquables vers le profil, même principe que

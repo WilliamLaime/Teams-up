@@ -1,7 +1,8 @@
 <%# ── Ruban horizontal de colonnes (une par tour) ─────────────────────────────
-    Réutilisé pour la ronde suisse, le championnat et les poules dans l'onglet
-    Matchs éditable. Locals : rounds (array ordonné de TournamentRound),
-    title_for (proc round -> String), group_by_pool / group_by_record
+    Réutilisé pour la ronde suisse, le championnat et les barrages dans l'onglet
+    Matchs éditable (les poules ont leur propre vue par poule, cf. _pool_phase).
+    Locals : rounds (array ordonné de TournamentRound),
+    title_for (proc round -> String), stacked / group_by_record
     (optionnels, défaut false, transmis tels quels à _round_column), extra_columns
     (optionnel, HTML déjà rendu ajouté APRÈS la dernière colonne — ex. la colonne
     Qualifiés/Éliminés de la ronde suisse, en continuité horizontale du ruban).
@@ -83,14 +84,14 @@
            <%= "hidden" unless round == current_round %>>
         <%= render "tournaments/round_column", round: round,
                     title: title_for.call(round),
-                    group_by_pool: local_assigns.fetch(:group_by_pool, false),
+                    stacked: local_assigns.fetch(:stacked, false),
                     group_by_record: local_assigns.fetch(:group_by_record, false) %>
       </div>
     <% else %>
       <%= render "tournaments/round_column", round: round,
                   title: title_for.call(round),
                   wide: wide,
-                  group_by_pool: local_assigns.fetch(:group_by_pool, false),
+                  stacked: local_assigns.fetch(:stacked, false),
                   group_by_record: local_assigns.fetch(:group_by_record, false) %>
     <% end %>
   <% end %>
