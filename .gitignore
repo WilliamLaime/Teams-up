@@ -64,3 +64,27 @@ package-lock.json
 # Réglages Claude Code personnels (machine-spécifiques, non partagés).
 # settings.json (sans .local) reste versionnable pour d'éventuels réglages d'équipe.
 .claude/settings.local.json
+
+# Graphe de connaissance graphify.
+# Le graphe est VERSIONNÉ pour que toute l'équipe en dispose sans rien installer
+# ni reconstruire. Malgré leur taille brute (~6 Mo), ces fichiers se compressent
+# à ~370 Ko dans git, et le pilote de fusion (.gitattributes) absorbe les
+# conflits. Ils sont maintenus par le hook .githooks/pre-commit.
+# ⚠️ `!graphify-out/` d'abord, et il n'est pas décoratif : git refuse de
+# ré-inclure un fichier si un RÉPERTOIRE parent est exclu — il n'y descend même
+# pas. Or le .gitignore_global de certains postes (dont celui d'origine) exclut
+# `graphify-out/`. Cette ligne annule cette exclusion pour ce dépôt, sans quoi
+# les trois négations ci-dessous n'ont aucun effet.
+!graphify-out/
+graphify-out/*
+!graphify-out/graph.json
+!graphify-out/graph.html
+!graphify-out/GRAPH_REPORT.md
+
+# En revanche, tout ce qui est propre à un poste reste local : le cache
+# d'extraction AST (plusieurs Mo, reconstruit en 6 s), le manifeste, le chemin
+# de l'interpréteur Python de la machine et les sauvegardes datées.
+graphify-out/cache/
+graphify-out/manifest.json
+graphify-out/.graphify_*
+graphify-out/20*/

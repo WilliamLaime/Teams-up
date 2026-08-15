@@ -1,0 +1,53 @@
+#!/bin/sh
+# ── Rafraîchit le graphe de code graphify et l'inclut dans le commit ──────────
+#
+# Pourquoi ce dossier existe : git ne versionne JAMAIS .git/hooks/. Pour qu'un
+# hook soit partagé, il doit vivre dans un dossier suivi (.githooks/) et git doit
+# être pointé dessus par `core.hooksPath` — ce que fait `bin/setup`.
+#
+# Pourquoi pre-commit et non post-commit : `graphify-out/graph.json` est
+# versionné. Reconstruit APRÈS le commit, le graphe serait toujours en retard
+# d'un commit et laisserait l'arbre de travail sale en permanence. Reconstruit
+# AVANT, il entre dans le commit qu'il décrit.
+#
+# Ce hook ne doit JAMAIS empêcher de commiter : graphify est un confort, pas une
+# dépendance du projet. Tous les chemins d'échec sortent en 0.
+#
+# Pour le sauter ponctuellement (rebuild ~6 s) :  git commit --no-verify
+
+# Collègue sans graphify installé : on ne fait rien, silencieusement. Le projet
+# fonctionne à 100 % sans lui — cf. « Graphe de code » dans bin/setup.
+command -v graphify >/dev/null 2>&1 || exit 0
+
+# Pendant un rebase, un merge ou un cherry-pick, git enchaîne les commits : on
+# reconstruirait le graphe des dizaines de fois pour un état intermédiaire dont
+# personne ne se sert. Le commit final déclenchera le rebuild.
+GIT_DIR_PATH=$(git rev-parse --git-dir)
+if [ -d "$GIT_DIR_PATH/rebase-merge" ] || [ -d "$GIT_DIR_PATH/rebase-apply" ] ||
+   [ -f "$GIT_DIR_PATH/MERGE_HEAD" ] || [ -f "$GIT_DIR_PATH/CHERRY_PICK_HEAD" ]; then
+  exit 0
+fi
+
+# Rien à faire si aucun fichier de code n'est mis en scène : une correction de
+# doc ou de traduction ne change pas la structure du graphe.
+if ! git diff --cached --name-only --diff-filter=ACMR |
+     grep -qE '\.(rb|erb|js|scss|css|yml|rake)$|^(Gemfile|Rakefile)$'; then
+  exit 0
+fi
+
+echo "[graphify] mise à jour du graphe de code..."
+
+# `|| exit 0` : un graphe non regénéré est un désagrément, un commit bloqué est
+# un incident. En cas d'échec, le graphe du commit précédent reste en place.
+graphify update . >/dev/null 2>&1 || {
+  echo "[graphify] rebuild échoué — commit poursuivi, graphe inchangé"
+  exit 0
+}
+
+# Seuls les trois artefacts versionnés sont ajoutés (cf. .gitignore) : le cache
+# AST et le manifeste restent locaux.
+git add graphify-out/graph.json \
+        graphify-out/graph.html \
+        graphify-out/GRAPH_REPORT.md 2>/dev/null
+
+exit 0

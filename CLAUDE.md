@@ -56,8 +56,32 @@ rails test        # tests
 
 ## Frugalité tokens (économise le contexte à chaque requête)
 
-- Pour fouiller de **gros fichiers** (`matches/show.html.erb` ~1570 l., `matches/_form.html.erb` ~1045 l., `_match_form.scss` / `_match_show.scss` ~36 Ko), **déléguer à un sous-agent Explore** plutôt que tout lire dans la fenêtre principale
-- Lire des **plages de lignes ciblées** dans les méga-fichiers, pas l'intégralité
+**Choisir l'outil selon la question** — pas de « graphe d'abord » systématique, les mesures
+sur ce dépôt (15 août 2026) ne le justifient pas :
+
+| Question | Outil | Pourquoi |
+|---|---|---|
+| Fichier déjà connu / chaîne précise à trouver | **`grep` ciblé** | `grep -rn 'state: "qualified"' app/` = ~95 tokens et réponse complète, contre ~500 et une réponse incomplète via le graphe. Le graphe est un détour ici |
+| « Qui appelle vraiment X ? », « qu'est-ce qui casse si je change X ? » | **`graphify affected "<X>"`** | ⭐ le vrai gain : sur `TournamentStandings`, 1 appelant réel contre 10 résultats grep dont **8 en commentaire**. Le graphe est bâti sur l'AST, il ne confond pas « appelle X » et « parle de X » — décisif dans un dépôt aussi commenté que celui-ci |
+| « Que fait ce service, avec quoi est-il lié ? » | **`graphify explain "<Classe>"`** | 43 relations avec `fichier:ligne` en ~500 tokens, contre ~5 800 pour ouvrir `criterium_flow.rb` (23 Ko) |
+| Relation entre deux entités nommées | **`graphify path "<A>" "<B>"`** | |
+| Question floue en langage naturel | **`graphify query`, en dernier recours** | ⚠️ le plus faible ici : la recherche est captée par les titres markdown de `docs/TOURNOI.md` et `tasks/`, et retourne des sections de doc plutôt que du code |
+
+`explain` et `affected` attendent un **nom d'entité** (`CriteriumFlow`, `TournamentUser`) —
+c'est ce qui les rend fiables. Si le nom de l'entité est encore inconnu, le trouver d'abord
+(`graphify god-nodes`, ou un grep étroit) plutôt que de tenter `query`.
+
+Quand le graphe ne suffit pas :
+
+1. **Sous-agent Explore** pour fouiller de **gros fichiers** (`matches/show.html.erb` ~1570 l., `matches/_form.html.erb` ~1045 l., `_match_form.scss` / `_match_show.scss` ~36 Ko)
+2. **Lecture directe** de plages de lignes ciblées — jamais un méga-fichier en entier
+
+Autres règles :
+
+- Ne PAS lire `graphify-out/GRAPH_REPORT.md` en entier (33 Ko) : réservé à une revue d'architecture d'ensemble, quand `explain`/`affected` n'ont pas suffi
+- Le graphe ne couvre PAS tout : il a raté une écriture d'état dans `league_builder.rb` que le grep ciblé trouvait. Ne jamais conclure « ça n'existe pas » sur la seule foi du graphe
+- Le graphe se reconstruit **sans aucun appel LLM** (extraction AST locale, coût 0 token) : un hook post-commit le rafraîchit à chaque commit. Après un gros refactor hors commit, `graphify update .`
+- ⚠️ Un graphe périmé est pire que pas de graphe (il décrit du code disparu) : vérifier `built_at_commit` en tête de `GRAPH_REPORT.md` face à `git rev-parse HEAD` en cas de doute
 - Les commandes bash passent déjà par RTK (proxy économe) — ne rien changer
 
 ---
