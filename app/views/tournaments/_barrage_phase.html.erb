@@ -22,7 +22,11 @@
 
     Local : tournament. %>
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="barrage">
-  <h2 class="tournament-phase__title">Barrages</h2>
+  <%# Titre masqué visuellement, PAS supprimé : le ruban affiche déjà « Barrages »
+      juste en dessous (round-col__title), le bandeau majuscule + filet doublonnait
+      donc le libellé. Conservé dans le DOM pour que la section garde un intitulé de
+      niveau 2 au lecteur d'écran et dans le plan du document. %>
+  <h2 class="tournament-phase__title visually-hidden">Barrages</h2>
 
   <% if tournament.barrage_rounds.any? %>
     <%# wide : un seul tour, donc une seule colonne — inutile de la brider à la

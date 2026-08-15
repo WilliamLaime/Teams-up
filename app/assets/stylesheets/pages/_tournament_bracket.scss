@@ -760,12 +760,16 @@
 }
 
 // Pied de carte : score global + bouton d'accès à la modale.
+// `margin-top: auto` : la carte est une colonne flex étirée à la hauteur de sa
+// rangée (grille des poules) — sans cela, le pied resterait collé sous les noms
+// et l'espace vide tomberait SOUS lui. Poussé en bas, les pieds d'actions de
+// toute une rangée s'alignent sur la même ligne.
 .tmatch-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-top: 0.15rem;
+  margin-top: auto;
   padding-top: 0.35rem;
   border-top: 1px solid var(--theme-border);
 }
@@ -1573,11 +1577,17 @@
   // `minmax(0, 1fr)` et non `1fr` : la taille mini par défaut d'une piste de
   // grille est `auto`, donc un long nom élargirait la colonne et ferait déborder
   // la rangée.
+  // `align-items: stretch` (défaut, laissé explicite) et non `start` : seules les
+  // cartes de MES matchs portent un pied d'actions, elles sont donc plus hautes
+  // que les autres. Alignées en haut, les cartes d'une même rangée finissaient à
+  // des hauteurs différentes et la grille paraissait décalée. Étirées, toutes les
+  // cartes d'une rangée ont la même hauteur et les pieds d'actions s'alignent
+  // (cf. `margin-top: auto` sur .tmatch-card__footer).
   &__matches {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 0.75rem;
-    align-items: start;
+    align-items: stretch;
   }
 
   &--full &__matches {
