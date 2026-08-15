@@ -8,7 +8,13 @@
 #   ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY
 #   ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY
 #   ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT
-# en dev (.env) et en production (config vars de l'hébergeur).
+# en dev (.env), en production (config vars de l'hébergeur) ET en CI
+# (.github/workflows/ci.yml, avec des clés jetables en clair : la base de test
+# est recréée à chaque run, ces clés n'y protègent aucune donnée réelle).
+#
+# Oublier la CI ne casse rien visiblement : les tests passent en local grâce au
+# .env, et seule l'intégration continue tombe — 44 tests en erreur restés
+# plusieurs jours sans être diagnostiqués.
 #
 # Utilisé par SlackWorkspace#bot_token (`encrypts`). Sans ces clés, toute écriture
 # d'un attribut chiffré lève ActiveRecord::Encryption::Errors::Configuration.
