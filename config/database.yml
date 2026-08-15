@@ -17,7 +17,11 @@ default: &default
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
-  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # `pool` est la clé reconnue par Active Record (`max_connections` était ignorée,
+  # le pool restait donc bloqué à la valeur par défaut de 5 connexions).
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # Évite qu'un thread reste bloqué indéfiniment si la base ne répond plus.
+  connect_timeout: 5
 
 
 development:

@@ -6,5 +6,7 @@ builder = "dockerfile"
 # PORT=80 doit être défini dans Railway Dashboard → Variables.
 healthcheckPath = "/up"
 healthcheckTimeout = 100
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 10
+# "always" et non "on_failure" : quand la base coupe, le plugin Solid Queue
+# arrête Puma *proprement* (exit 0). Railway ne voyait donc pas d'échec et
+# ne relançait rien → 502 permanent jusqu'à un redéploiement manuel.
+restartPolicyType = "always"
