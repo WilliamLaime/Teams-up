@@ -150,8 +150,47 @@ class TournamentMatchTest < ActiveSupport::TestCase
     end
 
     assert build.call([[11, 9]]).valid?,  "11-9 doit être valide"
+    assert build.call([[11, 0]]).valid?,  "11-0 doit être valide"
     refute build.call([[11, 10]]).valid?, "11-10 (1 pt d'écart) doit être refusé"
-    assert build.call([[12, 10]]).valid?, "12-10 doit être valide"
+    refute build.call([[10, 8]]).valid?,  "10-8 : le gagnant n'a pas atteint 11"
+
+    # Prolongation : elle NE démarre qu'à 10-10 et s'arrête au premier écart de 2.
+    # Un score au-dessus de 11 avec plus de 2 points d'écart décrit donc des points
+    # joués après la fin du set — c'est ce que l'ancienne validation laissait passer.
+    assert build.call([[12, 10]]).valid?, "12-10 doit être valide (prolongation depuis 10-10)"
+    assert build.call([[15, 13]]).valid?, "15-13 doit être valide (longue prolongation)"
+    refute build.call([[12, 9]]).valid?,  "12-9 : le set était déjà fini à 11-9"
+    refute build.call([[15, 3]]).valid?,  "15-3 : impossible, le set s'arrête à 11-3"
+    refute build.call([[13, 10]]).valid?, "13-10 : le set était déjà fini à 12-10"
+
+    message = build.call([[12, 9]]).tap(&:valid?).errors[:sets].first
+    assert_includes message, "12-9", "le message doit citer le set fautif"
+    assert_includes message, "2 points d'écart", "et rappeler la règle appliquée"
+  end
+
+  # Les mêmes règles, sans cas particulier dans le code : c'est `target`, `cap` et
+  # `win_by_two` du sport qui changent, pas la validation.
+  test "la règle du set s'adapte au sport (tennis : plafond à 7)" do
+    tennis = Sport.create!(name: "Tennis", slug: "tennis", icon: "🎾")
+    tournament = Tournament.create!(name: "T", sport: tennis, format: "ronde_suisse", status: "in_progress",
+                                    max_players: 8, date: Date.tomorrow, place: "Terrain test")
+    round = tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
+    p1 = tournament.tournament_users.create!(user: create_test_user(email: "t1-#{SecureRandom.hex(3)}@t.fr"),
+                                             role: "joueur", status: "approved")
+    p2 = tournament.tournament_users.create!(user: create_test_user(email: "t2-#{SecureRandom.hex(3)}@t.fr"),
+                                             role: "joueur", status: "approved")
+
+    build = lambda do |sets|
+      m = round.tournament_matches.new(player_a: p1, player_b: p2, position: rand(1_000_000))
+      m.assign_score(sets)
+      m
+    end
+
+    assert build.call([[6, 4]]).valid?,  "6-4 doit être valide"
+    refute build.call([[6, 5]]).valid?,  "6-5 : à 5 partout on va au jeu décisif"
+    assert build.call([[7, 5]]).valid?,  "7-5 doit être valide"
+    assert build.call([[7, 6]]).valid?,  "7-6 (jeu décisif) doit être valide"
+    refute build.call([[8, 6]]).valid?,  "8-6 : le set ne peut pas dépasser 7 jeux"
   end
 
   test "ping-pong best_of 5 : il faut 3 sets pour gagner" do

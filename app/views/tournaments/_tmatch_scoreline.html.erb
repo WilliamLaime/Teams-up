@@ -1,26 +1,35 @@
-<%# ── Carte d'un match de journée/ronde (championnat, poules, ronde suisse) ────
-    Affiche les deux joueurs (ou l'exempt pour un bye) et une scoreline centrale
-    façon tableau de scores sportif (noms de part et d'autre, score au centre,
-    vainqueur surligné en vert). Lot 4 : le résultat se saisit set-par-set via la
-    modale partagée (contrôleur Stimulus tournament-score) — le vainqueur en est
-    dérivé. Le bouton de saisie n'apparaît que si l'utilisateur peut éditer ce match
-    (organisateur OU joueur du match, tour non verrouillé — cf. TournamentMatchPolicy).
-    Réservé à _round_column.html.erb : le tableau final utilise _tmatch (carte
-    empilée classique), cf. _bracket.html.erb — la scoreline ne concerne que les
-    tours en ruban/paginés. %>
-<% can_edit = user_signed_in? && policy(match).update? %>
-<%# Création/consultation de la rencontre réelle : ouverte aux 2 joueurs du match
-    ET aux organisateurs (cf. TournamentMatchPolicy#create_match?), pour que les
-    joueurs puissent convenir eux-mêmes de la date et de l'heure de leur rencontre. %>
-<% can_create_match = user_signed_in? && policy(match).create_match? %>
-<%# Correction après verrouillage : réservée à l'organisateur, seulement quand le
-    tour est verrouillé (sinon la saisie normale can_edit suffit). %>
-<% round_locked = match.tournament_round.status == "completed" %>
-<% can_correct = round_locked && !match.is_bye && user_signed_in? && policy(match).correct? %>
+<%# ── Carte d'un match de journée/ronde/poule ─────────────────────────────────
+    Deux mises en page selon le local `stacked` (défaut false) :
+
+      • false — SCORELINE CENTRÉE (championnat, ronde suisse) : les deux noms de
+        part et d'autre, le score au centre, façon tableau de scores sportif.
+        Compact, adapté à une colonne de ruban.
+
+      • true  — EMPILÉE (poules, barrages) : joueur A au-dessus de joueur B, le
+        score de chacun aligné à droite, comme une feuille de match. C'est la
+        seule lecture qui tienne quand plusieurs confrontations d'une même poule
+        s'affichent en grille : les scores forment alors une colonne qu'on
+        parcourt d'un coup d'œil, ce que la scoreline centrée ne permet pas.
+
+    Le résultat se saisit set-par-set via la modale partagée (contrôleur Stimulus
+    tournament-score) — le vainqueur en est dérivé. Les actions (saisie, création
+    de la rencontre, correction) vivent dans _tmatch_actions, commun aux deux
+    variantes ET au tableau final (_tmatch).
+
+    Locals : match, stacked (optionnel, défaut false). %>
+<% stacked = local_assigns.fetch(:stacked, false) %>
+<%# Poule d'origine affichée à côté du nom, en BARRAGE uniquement : c'est le seul
+    tour qui fait se rencontrer deux joueurs venus de poules différentes, et le
+    règlement l'impose (jamais deux joueurs de la même poule, cf.
+    CriteriumFlow#avoid_same_pool) — sans ce repère, impossible de le vérifier.
+    Dérivé de la phase plutôt que passé en local : la règle est intrinsèque au
+    match, pas à l'écran qui l'affiche. En poule, ce serait redondant (on est déjà
+    DANS la poule) ; en tableau final, l'origine n'a plus d'incidence. %>
+<% show_pool = match.tournament_round.phase == "barrage" %>
 <%# « Où suis-je ? » : la carte où je joue se repère sans lire les noms. %>
 <% mine_a = my_player?(match.player_a) %>
 <% mine_b = my_player?(match.player_b) %>
-<div id="tmatch_<%= match.id %>" class="tmatch-card <%= "tmatch-card--bye" if match.is_bye %> <%= "tmatch-card--done" if match.decided? %> <%= "tmatch-card--mine" if mine_a || mine_b %>">
+<div id="tmatch_<%= match.id %>" class="tmatch-card <%= "tmatch-card--stacked" if stacked %> <%= "tmatch-card--bye" if match.is_bye %> <%= "tmatch-card--done" if match.decided? %> <%= "tmatch-card--mine" if mine_a || mine_b %>">
   <% if match.is_bye %>
     <div class="tmatch-card__player tmatch-card__player--winner">
       <%= link_to user_profil_path(match.player_a.user), class: "tmatch-card__player-link" do %>
@@ -29,6 +38,35 @@
       <% end %>
     </div>
     <span class="tmatch-card__bye-badge">Exempt (qualifié d'office)</span>
+  <% elsif stacked %>
+    <%# Une ligne par joueur : nom à gauche, score à droite. Le vainqueur est
+        signalé par le vert sur SON SEUL score — même code couleur que la
+        scoreline centrée ci-dessous, pour que les deux variantes se lisent de la
+        même façon. %>
+    <div class="tmatch-card__rows">
+      <% [[match.player_a, mine_a], [match.player_b, mine_b]].each do |player, mine| %>
+        <div class="tmatch-card__row <%= "tmatch-card__row--me" if mine %>">
+          <%= link_to user_profil_path(player.user), class: "tmatch-card__player-link" do %>
+            <%= user_avatar_tag player.user, css_class: "tmatch-card__avatar" %>
+            <span class="tmatch-card__name"><%= player.display_name %></span>
+          <% end %>
+          <%= me_badge if mine %>
+          <% if show_pool && player.pool.present? %>
+            <span class="tmatch-card__pool"><%= pool_label(player.pool) %></span>
+          <% end %>
+
+          <% if match.score_entered? %>
+            <span class="tmatch-card__row-score <%= "is-winner" if match.winner_id == player.id %>">
+              <%= match.display_score_for(player) %>
+            </span>
+          <% else %>
+            <%# Tiret plutôt qu'une case vide : la colonne de score reste alignée
+                d'une carte à l'autre, et « pas encore joué » se lit explicitement. %>
+            <span class="tmatch-card__row-score tmatch-card__row-score--pending" aria-label="Score non saisi">–</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
   <% else %>
     <%# Scoreline centrée façon tableau de scores sportif (2 noms encadrant les
         scores + un statut au centre) plutôt que 2 lignes empilées : plus compact.
@@ -66,40 +104,11 @@
         <%= me_badge if mine_b %>
       </div>
     </div>
+  <% end %>
 
-    <%# Accès à la modale (saisie ou détail selon les droits) + rattachement d'une
-        rencontre standard (joueurs du match ou organisateurs). Le score global est
-        déjà visible dans la scoreline centrale ci-dessus, pas besoin de le répéter ici. %>
-    <% if can_edit || can_create_match || match.match || can_correct || match.score_entered? %>
-      <%# --inline : boutons groupés à gauche à la suite (pas de space-between)
-          — sur une carte pleine largeur (paginated), space-between les écartait
-          sur toute la largeur de la ligne. %>
-      <div class="tmatch-card__footer tmatch-card__footer--inline">
-        <% if match.match %>
-          <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
-        <% elsif can_create_match %>
-          <%= link_to "Créer la rencontre", new_match_path(tournament_match_id: match.id), class: "tmatch-card__link" %>
-        <% end %>
-
-        <% if can_edit %>
-          <%= score_modal_button match,
-                label: match.score_entered? ? "Modifier" : "Saisir le score",
-                editable: true,
-                url: tournament_tournament_match_path(match.tournament, match) %>
-        <% elsif match.score_entered? %>
-          <%= score_modal_button match, label: "Détail", editable: false, css_class: "tmatch-card__detail-btn" %>
-        <% end %>
-
-        <%# Correction organisateur d'un tour verrouillé : rouvre la modale en édition,
-            mais poste sur l'action `correct` (régénère l'aval si le vainqueur change). %>
-        <% if can_correct %>
-          <%= score_modal_button match,
-                label: "Corriger",
-                editable: true,
-                url: correct_tournament_tournament_match_path(match.tournament, match),
-                css_class: "tmatch-card__score-btn tmatch-card__score-btn--correct" %>
-        <% end %>
-      </div>
-    <% end %>
+  <%# Le score global est déjà visible sur la carte (scoreline ou colonne de
+      droite) : show_score reste faux, seul le tableau final le répète. %>
+  <% unless match.is_bye %>
+    <%= render "tournaments/tmatch_actions", match: match, inline: true %>
   <% end %>
 </div>

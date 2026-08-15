@@ -28,8 +28,11 @@
     <%# wide : un seul tour, donc une seule colonne — inutile de la brider à la
         largeur d'une colonne de ruban, ce qui tronquait les noms en « G... » sur les
         trois quarts d'une page vide. Deux barrages par ligne, pleine largeur. %>
+    <%# stacked : même carte empilée (A au-dessus de B, score à droite) que la
+        phase de poules et le tableau final — les trois phases du Critérium se
+        lisent ainsi de la même façon. %>
     <%= render "tournaments/round_ribbon", rounds: tournament.barrage_rounds,
-                title_for: ->(_round) { "Barrages" }, wide: true %>
+                title_for: ->(_round) { "Barrages" }, wide: true, stacked: true %>
   <% else %>
     <%# Même ossature que le ruban réel (.round-ribbon--wide > .round-col) pour que
         la phase ne change pas de gabarit le jour où le tour est créé. %>
@@ -40,11 +43,25 @@
           <span class="round-col__status round-col__status--in_progress">À venir</span>
         </div>
 
+        <%# Chaque poule fournit exactement UN 2e et UN 3e, et il y a un barrage par
+            poule (cf. Tournament#expected_barrage_count) : nommer la poule d'origine
+            du 2e sur chaque case est donc exact — l'ENSEMBLE des poules affichées
+            est celui qui jouera. Seule la ligne où chacune atterrira reste ouverte
+            (l'appariement croisé trie les 2es par force, cf. le rappel sous la
+            grille et l'avertissement en tête de fichier), et le 3e en face vient par
+            construction d'une AUTRE poule, qu'on ne peut donc pas nommer d'avance.
+            Repli sur un libellé générique si la structure prévoit un nombre de
+            barrages qui ne correspond pas au nombre de poules (effectif « Libre ») :
+            mieux vaut ne rien dire que dire faux. %>
+        <% pool_indexes = tournament.pools.keys.compact.sort %>
+        <% named = pool_indexes.size == tournament.expected_barrage_count %>
         <div class="round-col__matches round-col__matches--grid">
-          <% tournament.expected_barrage_count.times do %>
+          <% tournament.expected_barrage_count.times do |i| %>
             <div class="tmatch-card tmatch-card--placeholder tmatch-card--placeholder-known">
               <div class="tmatch-card__player tmatch-card__player--pending">
-                <span class="tmatch-card__placeholder-label">2e de poule</span>
+                <span class="tmatch-card__placeholder-label">
+                  <%= named ? "2e de #{pool_label(pool_indexes[i])}" : "2e de poule" %>
+                </span>
               </div>
               <div class="tmatch-card__player tmatch-card__player--pending">
                 <span class="tmatch-card__placeholder-label">3e d'une autre poule</span>
@@ -54,8 +71,12 @@
         </div>
 
         <p class="tournament-empty">
-          Les barrages se rempliront à la fin des poules : chaque 2e de poule y
-          affrontera le 3e d'une autre poule.
+          Les barrages se rempliront à la fin des poules : le 2e de chaque poule y
+          affrontera le 3e d'une autre poule — le règlement interdit d'opposer deux
+          joueurs venus de la même poule. Le meilleur 2e étant opposé au plus faible
+          3e, l'ordre définitif des rencontres ne sera connu qu'une fois les poules
+          jouées ; la poule d'origine des deux joueurs sera alors indiquée sur
+          chaque case.
         </p>
       </div>
     </div>

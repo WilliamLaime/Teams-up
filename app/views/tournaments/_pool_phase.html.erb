@@ -1,13 +1,93 @@
 <%# ── Phase de poules ───────────────────────────────────────────────────────────
-    Ruban horizontal : une colonne par journée, matchs regroupés par poule à
-    l'intérieur de chaque colonne (Poule A, B… — cf. _round_column,
-    group_by_pool: true, dérivé de player_a.pool). Le classement par poule vit
-    dans l'onglet Classement (_ranking.html.erb) — pas ici, "Matchs" ne montre
-    que des matchs.
-    Locals : tournament. %>
+    Vue centrée sur LA POULE, pas sur la journée : on choisit sa poule dans un
+    sélecteur d'onglets, et on voit d'un coup TOUTES ses confrontations (journées
+    confondues, dans l'ordre) avec son classement à droite.
+
+    Pourquoi ce renversement — un joueur suit sa poule, pas le calendrier général :
+    l'ancien filtre par journée n'affichait qu'une journée à la fois et obligeait à
+    ouvrir un menu pour reconstituer mentalement les résultats de sa poule, pendant
+    que le classement, lui, vivait dans un autre onglet. La journée n'est plus
+    qu'un ordre de tri (cf. TournamentsHelper#pool_matches).
+
+    Poule active par défaut = LA MIENNE si je suis inscrit (cf. #my_pool_index),
+    la première sinon — présélection posée côté serveur via `hidden`, le JS ne fait
+    que basculer (même principe que _round_ribbon pour les journées).
+
+    Local : tournament. %>
+<% pools = tournament.ranked_pools %>
+<% matches_by_pool = pool_matches(tournament) %>
+<% mine = my_pool_index(tournament) %>
+<%# `pools.key?(mine)` et pas juste `mine` : un joueur retiré de sa poule (abandon,
+    re-constitution) ne doit pas ouvrir un onglet qui n'existe plus. %>
+<% active_pool = pools.key?(mine) ? mine : pools.keys.first %>
+
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
   <h2 class="tournament-phase__title">Poules</h2>
 
-  <%= render "tournaments/round_ribbon", rounds: tournament.pool_rounds,
-              title_for: ->(round) { "Journée #{round.number}" }, group_by_pool: true, paginated: true %>
+  <% if pools.empty? %>
+    <p class="tournament-empty">Les poules apparaîtront une fois constituées.</p>
+  <% else %>
+    <div class="pool-selector" data-controller="pool-selector"
+         data-pool-selector-storage-key-value="pool:<%= tournament.id %>">
+      <div class="pool-switcher">
+        <%# De vrais onglets ARIA (tablist/tab/tabpanel) : c'est exactement ce que
+            fait le sélecteur — une poule visible à la fois. Navigation aux flèches
+            gérée par le contrôleur, comme l'attend le motif. %>
+        <div class="pool-switcher__tabs" role="tablist" aria-label="Poules du tournoi">
+          <% pools.each_key do |index| %>
+            <button type="button" role="tab"
+                    id="pool_tab_<%= index %>"
+                    class="pool-switcher__chip <%= "pool-switcher__chip--mine" if index == mine %>"
+                    aria-controls="pool_panel_<%= index %>"
+                    aria-selected="<%= index == active_pool %>"
+                    tabindex="<%= index == active_pool ? 0 : -1 %>"
+                    data-pool-selector-target="chip"
+                    data-pool-index="<%= index %>"
+                    data-action="click->pool-selector#choose keydown->pool-selector#navigate">
+              <%= pool_label(index) %>
+              <% if index == mine %><span class="pool-label__mine">ta poule</span><% end %>
+            </button>
+          <% end %>
+        </div>
+
+        <%# Masquer le classement libère la colonne de droite : les confrontations
+            se répartissent alors sur plus de colonnes (cf. .pool-view--full). %>
+        <button type="button" class="pool-switcher__toggle"
+                data-pool-selector-target="standingsToggle"
+                data-action="click->pool-selector#toggleStandings"
+                aria-pressed="true">
+          <i data-lucide="list-ordered" aria-hidden="true"></i>
+          <span data-pool-selector-target="standingsLabel">Masquer le classement</span>
+        </button>
+      </div>
+
+      <% pools.each do |index, players| %>
+        <% matches = matches_by_pool[index] || [] %>
+        <div class="pool-view" id="pool_panel_<%= index %>" role="tabpanel"
+             aria-labelledby="pool_tab_<%= index %>" tabindex="0"
+             data-pool-selector-target="panel" data-pool-index="<%= index %>"
+             <%= "hidden" unless index == active_pool %>>
+          <div class="pool-view__matches">
+            <% if matches.any? %>
+              <% matches.each do |match| %>
+                <%= render "tournaments/tmatch_scoreline", match: match, stacked: true %>
+              <% end %>
+            <% else %>
+              <p class="tournament-empty">Aucune rencontre à jouer dans cette poule.</p>
+            <% end %>
+          </div>
+
+          <%# Le classement de la poule, ici plutôt que dans le seul onglet
+              Classement : c'est la lecture immédiate d'une série de scores, et
+              faire l'aller-retour entre deux onglets pour l'obtenir n'avait pas de
+              sens. Même source (Tournament#ranked_pools), donc jamais deux
+              classements divergents. %>
+          <aside class="pool-view__standings" data-pool-selector-target="standings">
+            <h3 class="pool-view__standings-title"><%= pool_label(index) %></h3>
+            <%= render "tournaments/ranking_table", players: players, tournament: tournament, compact: true %>
+          </aside>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 </section>

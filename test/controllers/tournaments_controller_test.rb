@@ -548,18 +548,29 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     sign_in me.user
     get tournament_path(t)
     assert_response :success
-    assert_select ".tmatch-card--mine", 1 # un seul match par journée
-    assert_select ".pool-grid__col--mine", 1
+    # Poule de 4 → je vois mes 3 confrontations d'emblée (règle générale : dans une
+    # poule de N, chacun affronte les N-1 autres).
+    assert_select ".tmatch-card--mine", 3
+    assert_select ".pool-switcher__chip--mine", 1
     assert_select ".tmatch-card__me-badge"
-    assert_select ".tournament-ranking__row.is-me", 1
+    # Ma ligne est repérée dans les DEUX classements : celui de ma poule (dans le
+    # panneau) et celui de l'onglet Classement.
+    assert_select ".pool-view__standings .tournament-ranking__row.is-me", 1
+    assert_select ".tournament-ranking .tournament-ranking__row.is-me", 1
+    # J'arrive DIRECTEMENT dans ma poule : c'est son onglet qui est sélectionné et
+    # son panneau qui est visible, sans un clic.
+    assert_select "#pool_tab_#{me.pool}[aria-selected=true]"
+    assert_select "#pool_panel_#{me.pool}:not([hidden])"
 
-    # L'organisateur, lui, ne joue pas : aucun repère ne doit s'allumer.
+    # L'organisateur, lui, ne joue pas : aucun repère ne doit s'allumer, et c'est
+    # la première poule qui s'ouvre.
     sign_in @user
     get tournament_path(t)
     assert_response :success
     assert_select ".tmatch-card--mine", 0
-    assert_select ".pool-grid__col--mine", 0
+    assert_select ".pool-switcher__chip--mine", 0
     assert_select ".tournament-ranking__row.is-me", 0
+    assert_select "#pool_tab_0[aria-selected=true]"
   end
 
   test "GET show rend la phase championnat" do
@@ -615,13 +626,46 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card__center-score", text: "2"
   end
 
-  test "GET show rend la phase poules (matchs groupés par poule)" do
+  # La phase de poules est centrée sur LA POULE : un onglet par poule, et chaque
+  # panneau porte toutes les confrontations de sa poule (toutes journées) plus son
+  # classement — plus aucun filtre par journée ici.
+  test "GET show rend la phase poules (un onglet et un classement par poule)" do
     sign_in @user
-    t = launched_tournament("poules", 8)
+    t = launched_tournament("poules", 8) # 8 joueurs → 2 poules de 4
     get tournament_path(t)
     assert_response :success
     assert_select ".tournament-phase__title", text: "Poules"
-    assert_select ".pool-label"
+    assert_select ".pool-switcher__chip", 2
+    assert_select ".pool-switcher__chip", text: /Poule A/
+    assert_select ".pool-switcher__chip", text: /Poule B/
+    assert_select ".pool-view", 2
+    # Une seule poule visible à la fois.
+    assert_select ".pool-view:not([hidden])", 1
+    # Le classement de la poule est dans le panneau, plus seulement dans l'onglet
+    # Classement — en version compacte (# / Joueur / V / D).
+    assert_select ".pool-view__standings .tournament-ranking__table--compact", 2
+    assert_select ".pool-switcher__toggle" # bouton masquer/afficher le classement
+    # Cartes empilées (A au-dessus de B, score à droite), pas la scoreline centrée.
+    assert_select ".pool-view .tmatch-card--stacked"
+    assert_select ".pool-view .tmatch-card__scoreline", 0
+    # Le filtre par journée a disparu de la phase de poules.
+    assert_select ".pool-selector .journee-picker", 0
+  end
+
+  # Un seul libellé pour la saisie ET la modification : la modale fait les deux.
+  test "GET show : le bouton de score s'appelle toujours « Gérer le score »" do
+    sign_in @user
+    t = launched_tournament("poules", 8)
+    match = t.pool_rounds.first.tournament_matches.reject(&:is_bye).first
+
+    get tournament_path(t)
+    assert_select ".tmatch-card__score-btn", text: "Gérer le score"
+    assert_select ".tmatch-card__score-btn", text: "Saisir le score", count: 0
+
+    # Score déjà saisi : le libellé ne change pas (avant, « Modifier »).
+    win_tournament_match!(match, match.player_a)
+    get tournament_path(t)
+    assert_select ".tmatch-card__score-btn", text: "Modifier", count: 0
   end
 
   test "GET show : bouton forfait visible pour l'organisateur d'un tournoi en cours" do

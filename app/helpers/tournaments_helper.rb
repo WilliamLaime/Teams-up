@@ -150,6 +150,47 @@ module TournamentsHelper
     safe_join(pips.map { |kind| content_tag(:span, "", class: "score-bracket__pip score-bracket__pip--#{kind}") })
   end
 
+  # ── Poules ────────────────────────────────────────────────────────────────────
+
+  # Nom d'affichage d'une poule à partir de son index 0-based : 0 → "Poule A".
+  # Source unique du libellé, partagée par le sélecteur de poules (_pool_phase) et
+  # l'onglet Classement (_ranking) — les deux doivent nommer la même poule pareil.
+  def pool_label(pool_index)
+    "Poule #{("A".ord + pool_index.to_i).chr}"
+  end
+
+  # Index de MA poule dans ce tournoi, ou nil si je n'y suis pas inscrit.
+  #
+  # Lu depuis l'INSCRIPTION et non depuis les matchs affichés : dans une poule de
+  # 3, un joueur est exempt une journée sur trois — sa poule doit rester la sienne
+  # le jour où il n'y joue pas.
+  def my_pool_index(tournament)
+    tournament.tournament_users.players.approved.find { |tu| my_player?(tu) }&.pool
+  end
+
+  # Matchs de la phase de poules, groupés par poule et ordonnés journée puis
+  # position : { index_poule => [TournamentMatch, ...] }.
+  #
+  # UNE seule requête pour toutes les poules, puis regroupement en mémoire — même
+  # motif que Tournament#pool_standings, qui charge déjà les matchs de poule en
+  # bloc : la vue affiche jusqu'à 8 poules d'un coup, une requête par poule serait
+  # un N+1 immédiat. Les associations lues par la carte (_tmatch_scoreline :
+  # joueurs, utilisateurs, rencontre rattachée, tour pour le verrouillage) sont
+  # préchargées pour la même raison.
+  #
+  # Les BYES sont exclus : « exempt cette journée » n'est pas une confrontation, et
+  # dans une poule impaire chaque joueur en a un — autant de cartes vides à faire
+  # défiler avant d'atteindre les vrais matchs.
+  def pool_matches(tournament)
+    TournamentMatch.joins(:tournament_round)
+                   .where(tournament_rounds: { tournament_id: tournament.id, phase: "pool" })
+                   .where(is_bye: false)
+                   .includes(:match, :tournament_round, player_a: :user, player_b: :user)
+                   .to_a
+                   .sort_by { |m| [m.tournament_round.number, m.position.to_i] }
+                   .group_by { |m| m.player_a.pool }
+  end
+
   # ── Modale de score ───────────────────────────────────────────────────────────
   # Bouton d'ouverture de la modale de score partagée (contrôleur Stimulus
   # tournament-score). Les 3 usages — « Saisir/Modifier », « Détail » (lecture

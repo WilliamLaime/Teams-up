@@ -59,7 +59,10 @@ export default class extends Controller {
     if (url) this.formTarget.action = url
     this.nameATarget.textContent = nameA || "Joueur A"
     this.nameBTarget.textContent = nameB || "Joueur B"
-    this.titleTarget.textContent = editable ? "Saisir le score" : "Détail du score"
+    // « Gérer le score » : même libellé que le bouton qui ouvre la modale (cf.
+    // _tmatch_actions), qu'un score soit déjà saisi ou non — la modale fait les
+    // deux, deux titres pour la même fenêtre ne renseignaient sur rien.
+    this.titleTarget.textContent = editable ? "Gérer le score" : "Détail du score"
     this.submitTarget.style.display = editable ? "" : "none"
     this.hintTarget.textContent = editable
       ? this.buildHint(allowDraw, target, winByTwo, cap)
@@ -206,11 +209,28 @@ export default class extends Controller {
 
     if (hi === lo) return "Un set ne peut pas se terminer sur une égalité."
     if (target && hi < target) return `Le gagnant du set doit atteindre ${target} points.`
-    if (cap && hi >= cap) return null // au plafond (tie-break), 1 point d'écart suffit
-    if (winByTwo && hi - lo < 2) {
-      return cap
-        ? `À ${hi}-${lo}, il faut 2 points d'écart (ou atteindre ${cap}).`
-        : `À ${hi}-${lo}, il faut 2 points d'écart : le set continue.`
+    if (cap && hi > cap) return `Le set ne peut pas dépasser ${cap} points.`
+
+    // Sport non configuré (pas de règle des 2 points) : atteindre la cible suffit.
+    if (!winByTwo) return null
+
+    if (hi === target) {
+      if (lo > target - 2) {
+        return cap
+          ? `À ${hi}-${lo}, il faut 2 points d'écart (ou atteindre ${cap}).`
+          : `À ${hi}-${lo}, il faut 2 points d'écart : le set continue.`
+      }
+      return null
+    }
+
+    if (cap && hi === cap) return null // au plafond, 1 point d'écart suffit
+
+    // Au-delà de la cible, on est en prolongation : elle se conclut à 2 points
+    // d'écart, jamais plus — un set ne continue pas après avoir été gagné.
+    if (hi - lo !== 2) {
+      return hi - lo < 2
+        ? `À ${hi}-${lo}, il faut 2 points d'écart : le set continue.`
+        : `Score impossible : au-delà de ${target}, le set se termine dès 2 points d'écart (${lo + 2}-${lo}).`
     }
 
     return null
