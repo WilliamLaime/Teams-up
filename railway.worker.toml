@@ -1,0 +1,30 @@
+# Configuration du service *worker* Railway (Solid Queue).
+#
+# Pourquoi un service séparé du service web ?
+# Tant que Solid Queue tournait à l'intérieur de Puma (`plugin :solid_queue`),
+# une coupure de la base tuait le superviseur de jobs, qui arrêtait Puma dans la
+# foulée : le site entier tombait à cause d'un incident de file d'attente.
+# Deux services = deux cycles de vie indépendants. Si le worker meurt, le site
+# reste debout (les jobs s'accumulent en base et repartent au redémarrage).
+#
+# Rattachement dans Railway :
+#   service worker → Settings → Config-as-code → chemin `railway.worker.toml`
+# Le service web, lui, continue d'utiliser `railway.toml`.
+
+[build]
+builder = "dockerfile"
+
+[deploy]
+# `bin/jobs` démarre le superviseur Solid Queue (dispatcher + workers), tel que
+# décrit dans `config/queue.yml`. Il remplace le CMD du Dockerfile
+# (Thruster + Puma) : ce service n'expose aucun port HTTP, donc pas de
+# `healthcheckPath` ici — Railway le tuerait en boucle faute de réponse.
+#
+# Effet de bord voulu : `bin/docker-entrypoint` ne lance `db:prepare` que si la
+# commande finale est `./bin/rails server`. Le worker ne migre donc pas la base,
+# ce qui évite deux migrations concurrentes au déploiement.
+startCommand = "./bin/jobs"
+
+# Comme pour le web : un worker arrêté doit toujours être relancé, y compris
+# lorsqu'il quitte proprement (code 0) après avoir perdu la base.
+restartPolicyType = "always"
