@@ -306,4 +306,70 @@ class TournamentMatchTest < ActiveSupport::TestCase
       assert_equal 3, match_in("bracket", [[6, 4]]).scoring_rules[:best_of]
     end
   end
+
+  # ── Rafraîchissement de la carte Slack ──────────────────────────────────────
+  # La carte postée dans un channel restait figée sur « À venir » alors que le
+  # résultat était connu sur le site. Le hook vit sur le modèle (et non dans le
+  # controller) parce que le score s'écrit par plusieurs chemins.
+  class SlackRefreshTest < ActiveSupport::TestCase
+    include ActiveJob::TestHelper
+
+    setup do
+      @sport = Sport.create!(name: "Tennis slack", slug: "tennis-#{SecureRandom.hex(4)}", icon: "🎾")
+      @tournament = Tournament.create!(name: "T slack", sport: @sport, format: "ronde_suisse",
+                                       status: "in_progress", max_players: 8,
+                                       date: Date.tomorrow, place: "Terrain test")
+      @round = @tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
+      @a = player("a")
+      @b = player("b")
+    end
+
+    teardown { teardown_db }
+
+    def player(tag)
+      user = create_test_user(email: "#{tag}-#{SecureRandom.hex(3)}@test.fr")
+      @tournament.tournament_users.create!(user: user, role: "joueur", status: "approved")
+    end
+
+    # La rencontre réelle rattachée à la carte : c'est ELLE qui porte les cartes
+    # Slack (slack_match_messages), la carte du tableau n'en a pas.
+    def link_match!(tmatch)
+      Match.create!(title: "Rencontre", date: Date.tomorrow, players_needed: 2,
+                    level: "Débutant", visibility: "public", validation_mode: "automatic",
+                    genre_restriction: "tous", user: create_test_user(email: "o-#{SecureRandom.hex(3)}@t.fr"),
+                    sport: @sport, tournament: @tournament, tournament_match: tmatch)
+    end
+
+    test "saisir un score planifie la mise à jour de la carte Slack" do
+      match = @round.tournament_matches.create!(player_a: @a, player_b: @b, position: 0)
+      link_match!(match)
+
+      assert_enqueued_with(job: SlackMatchStatusJob) do
+        match.assign_score([[6, 0], [6, 0]])
+        match.save!
+      end
+    end
+
+    # Un simple `touch` ne doit pas repeindre la carte : chaque appel coûte une
+    # requête chat.update à Slack, qui limite le débit.
+    test "une sauvegarde sans changement de score ne planifie rien" do
+      match = @round.tournament_matches.create!(player_a: @a, player_b: @b, position: 0)
+      link_match!(match)
+
+      assert_no_enqueued_jobs(only: SlackMatchStatusJob) do
+        match.update!(position: 7)
+      end
+    end
+
+    # Tant que personne n'a planifié de rencontre réelle, il n'y a pas de carte
+    # Slack à mettre à jour — et donc aucun job à empiler.
+    test "sans rencontre rattachée, aucun job n'est planifié" do
+      match = @round.tournament_matches.create!(player_a: @a, player_b: @b, position: 0)
+
+      assert_no_enqueued_jobs(only: SlackMatchStatusJob) do
+        match.assign_score([[6, 0], [6, 0]])
+        match.save!
+      end
+    end
+  end
 end

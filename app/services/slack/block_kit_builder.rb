@@ -9,33 +9,25 @@ module Slack
 
     # ── Match créé ────────────────────────────────────────────────────────────
     # Header + détails + bouton "S'inscrire" (interactivity) + lien "Voir sur Teams-up".
+    #
+    # Deux mises en page, parce que les deux cartes ne répondent pas à la même
+    # question. Un match OUVERT dit « peux-tu venir jouer ? » : il lui faut le
+    # niveau, le compteur de places et la liste des inscrits, qui grandit. Une
+    # rencontre de TOURNOI dit « qui joue, quand, et qui a gagné ? » : les deux
+    # adversaires sont fixés par le tirage, la carte n'a donc que quatre choses à
+    # dire et tient en deux lignes de champs.
     def match_created_blocks(match)
-      sport = match.sport&.name || "Sport"
-
-      # Le champ "Format" n'apparaît que si l'organisateur en a choisi un à la
-      # création ; sinon on n'affiche que le nombre de joueurs.
-      fields = [
-        { type: "mrkdwn", text: "*Sport*\n#{sport}" },
-        { type: "mrkdwn", text: "*Quand*\n#{match_when_label(match)}" },
-        { type: "mrkdwn", text: "*Où*\n#{location_label(match)}" }
-      ]
-      # Niveau et compteur de joueurs n'ont de sens que sur un match OUVERT : ils
-      # répondent à « puis-je m'inscrire ? ». Une rencontre de tournoi oppose deux
-      # joueurs déjà désignés par le tirage — la question ne se pose pas, et un
-      # « 2/2 personnes » sur un 1v1 ne fait que brouiller la carte.
-      fields << { type: "mrkdwn", text: "*Niveau*\n#{match.level.presence || 'Tout niveau'}" } unless match.tournament_linked?
-      fields << { type: "mrkdwn", text: "*Format*\n#{match.format}" } if match.format.present?
-      fields << { type: "mrkdwn", text: "*Joueurs*\n#{players_label(match)}" } unless match.tournament_linked?
-
       [
         { type: "header",
-          text: { type: "plain_text", text: "#{match_emoji(match)} Nouveau match : #{match.title}", emoji: true } },
-        # Tag de statut (À venir / En cours / Terminé), ré-édité par SlackMatchStatusJob.
+          text: { type: "plain_text", text: card_title(match), emoji: true } },
+        # Tag de statut (À venir / En cours / Terminé + résultat), ré-édité par
+        # SlackMatchStatusJob à chaque changement d'état ou de score.
         { type: "context",
           elements: [{ type: "mrkdwn", text: status_tag(match) }] },
-        { type: "section", fields: fields },
-        # Adversaires (tournoi) ou liste des inscrits ("Prénom N."), web ET Slack confondus.
-        { type: "section", text: { type: "mrkdwn", text: participants_label(match) } },
+        { type: "section", fields: detail_fields(match) },
+        # Liste des inscrits : réservée aux matchs ouverts (sur une confrontation,
+        # les adversaires sont déjà dans les champs ci-dessus).
+        *enrolled_block(match),
         { type: "actions", elements: action_elements(match) }
       ]
     end
@@ -46,8 +38,13 @@ module Slack
       match.sport&.icon.presence || "🏆"
     end
 
-    # Texte de repli (notif mobile / accessibilité) pour un match.
+    # Texte de repli (notif mobile / accessibilité) pour un match. C'est ce que
+    # lisent la notification push et le lecteur d'écran : quand le score est
+    # tombé, c'est LUI l'information, pas la date de la rencontre.
     def match_created_text(match)
+      tmatch = match.tournament_confrontation? ? match.tournament_match : nil
+      return "#{match.title} — score final #{tmatch.score_summary}" if tmatch&.score_entered?
+
       "Nouveau match : #{match.title} — #{formatted_datetime(match)}"
     end
 
@@ -170,6 +167,59 @@ module Slack
 
     private
 
+    # Titre de la carte. « Nouveau match : » n'a de sens qu'une fois : la carte
+    # est ré-éditée sur place à chaque changement (statut, score), et une
+    # confrontation dont le score est tombé n'est plus « nouvelle ». Son titre
+    # (« Ping-Pong — Léa Martin vs Tom Roux ») se suffit d'ailleurs à lui-même.
+    def card_title(match)
+      prefix = match.tournament_confrontation? ? "" : "Nouveau match : "
+
+      "#{match_emoji(match)} #{prefix}#{match.title}"
+    end
+
+    # Champs à deux colonnes du bloc de détails. Slack les remplit DE GAUCHE À
+    # DROITE, deux par ligne : l'ordre du tableau est donc l'ordre à l'écran.
+    #
+    # Confrontation de tournoi — deux lignes, rien de superflu :
+    #     Quand        | Adversaires (ou Score, une fois joué)
+    #     Où           | Format
+    # Le sport n'y a plus de champ dédié : l'emoji de tête et le titre le disent
+    # déjà deux fois. Niveau et compteur de places répondent à « puis-je
+    # m'inscrire ? », question qui ne se pose pas sur une rencontre tirée au sort.
+    def detail_fields(match)
+      if match.tournament_confrontation?
+        fields = [
+          { type: "mrkdwn", text: "*Quand*\n#{match_when_label(match)}" },
+          { type: "mrkdwn", text: opponents_label(match) },
+          { type: "mrkdwn", text: "*Où*\n#{location_label(match)}" }
+        ]
+        fields << { type: "mrkdwn", text: "*Format*\n#{match.format}" } if match.format.present?
+        return fields
+      end
+
+      fields = [
+        { type: "mrkdwn", text: "*Sport*\n#{match.sport&.name || 'Sport'}" },
+        { type: "mrkdwn", text: "*Quand*\n#{match_when_label(match)}" },
+        { type: "mrkdwn", text: "*Où*\n#{location_label(match)}" }
+      ]
+      # Un match seulement rattaché à un tournoi (sélecteur du Descriptif, sans
+      # carte du tableau) reste ouvert aux inscriptions mais n'a ni niveau ni
+      # quota à annoncer : il hérite du cadre du tournoi.
+      fields << { type: "mrkdwn", text: "*Niveau*\n#{match.level.presence || 'Tout niveau'}" } unless match.tournament_linked?
+      fields << { type: "mrkdwn", text: "*Format*\n#{match.format}" } if match.format.present?
+      fields << { type: "mrkdwn", text: "*Joueurs*\n#{players_label(match)}" } unless match.tournament_linked?
+      fields
+    end
+
+    # Section "inscrits", en bloc à part car la liste peut être longue. Renvoie un
+    # tableau (splaté par l'appelant) pour n'ajouter AUCUN bloc sur une
+    # confrontation, où les adversaires tiennent déjà dans les champs.
+    def enrolled_block(match)
+      return [] if match.tournament_confrontation?
+
+      [{ type: "section", text: { type: "mrkdwn", text: enrolled_players_label(match) } }]
+    end
+
     # Formate date + heure de façon lisible ("15/07/2026 à 18:30").
     def formatted_datetime(record)
       date = record.date&.strftime("%d/%m/%Y")
@@ -240,12 +290,37 @@ module Slack
     end
 
     # Libellé mrkdwn du tag de statut affiché en tête de carte.
+    #
+    # Le score fait AUTORITÉ sur l'horloge : une rencontre dont le résultat est
+    # saisi est finie, même si l'heure de fin annoncée n'est pas encore passée
+    # (les joueurs saisissent souvent le score dans la foulée du dernier point).
+    # À l'inverse, une carte « Terminé » d'après l'horloge mais sans score reste
+    # exacte : la rencontre a bien eu lieu, on n'en connaît juste pas l'issue.
     def status_tag(match)
+      outcome = confrontation_outcome(match)
+      return outcome if outcome
+
       case match_status(match)
       when :in_progress then "🟢 *En cours*"
       when :completed   then "🏁 *Terminé*"
       else                   "🗓️ *À venir*"
       end
+    end
+
+    # "🏆 *Terminé* — victoire de Léa M." / "🤝 *Terminé* — match nul".
+    # nil hors confrontation ou tant qu'aucun score n'est saisi : l'appelant
+    # retombe alors sur le statut horaire.
+    def confrontation_outcome(match)
+      return nil unless match.tournament_confrontation?
+
+      tmatch = match.tournament_match
+      return nil if tmatch.nil? || !tmatch.score_entered?
+      return "🤝 *Terminé* — match nul" if tmatch.draw?
+
+      winner = tmatch.winner
+      return "🏁 *Terminé*" if winner.nil?
+
+      "🏆 *Terminé* — victoire de #{winner.short_name}"
     end
 
     # "Quand" pour un match : date + heure de début, suivie de l'heure de fin
@@ -288,23 +363,25 @@ module Slack
     # couverts à l'identique. `includes(user: :profil)` évite le N+1 (short_name
     # lit le profil). Un bloc section Slack est plafonné à 3000 caractères → on
     # tronque l'ensemble par sécurité si la liste est très longue.
-    # Bloc "qui joue ?" de la carte. Deux régimes :
-    #   - confrontation de tournoi → les deux adversaires, et EUX SEULS (même si
-    #     c'est un organisateur tiers qui a planifié la rencontre) ;
-    #   - match ouvert (ou match seulement rattaché à un tournoi, sans carte du
-    #     tableau) → la liste d'inscrits habituelle.
-    def participants_label(match)
-      return opponents_label(match) if match.tournament_confrontation?
-
-      enrolled_players_label(match)
-    end
-
-    # "*Adversaires*\nPrénom N. 🆚 Prénom N." — l'affiche de la rencontre.
+    # Le champ "qui joue ?" d'une confrontation. Il change de nature une fois la
+    # rencontre jouée : tant qu'il n'y a pas de score c'est l'affiche
+    # ("Léa M. 🆚 Tom R."), ensuite c'est le résultat ("Léa M. *2* – *0* Tom R.").
+    # Un seul champ pour les deux : le score arrive là où l'œil cherchait déjà
+    # les noms, et la carte ne grandit pas d'une ligne au moment du résultat.
     def opponents_label(match)
       names = match.confrontation_opponents.map(&:short_name)
       return "*Adversaires*\n_À déterminer_" if names.empty?
 
-      "*Adversaires*\n#{names.join(' 🆚 ')}"
+      # `names.size == 2` : un exempt (bye) n'a pas d'adversaire à opposer, et
+      # aucun score n'a de sens en face d'un seul nom.
+      tmatch = match.tournament_match
+      unless tmatch&.score_entered? && names.size == 2
+        return "*Adversaires*\n#{names.join(' 🆚 ')}"
+      end
+
+      a = tmatch.display_score_for(tmatch.player_a)
+      b = tmatch.display_score_for(tmatch.player_b)
+      "*Score*\n#{names.first} *#{a}* – *#{b}* #{names.last}"
     end
 
     def enrolled_players_label(match)
