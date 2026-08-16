@@ -470,6 +470,14 @@
   }
 
 
+  // Selects habillés (Tournoi, Confrontation) : le composant met par défaut un
+  // fond --theme-bg-card, qui est AUSSI celui de .match-form-section — le champ
+  // se fondait donc dans la carte au lieu de se lire comme un champ. On aligne
+  // sur --theme-bg-surface, le fond des .form-control voisins.
+  .custom-select__toggle {
+    background-color: var(--theme-bg-surface);
+  }
+
   // Dropdown de l'autocomplete lieu
   .dropdown-menu {
     background-color: var(--theme-bg-surface); // Fond du dropdown selon le thème

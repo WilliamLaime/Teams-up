@@ -42,6 +42,22 @@ module Slack
       execute(uri, request)
     end
 
+    # POST form-urlencoded AVEC Bearer token — exigé par les endpoints de LISTE
+    # (conversations.list, users.list).
+    #
+    # ⚠️  Ces méthodes n'acceptent PAS de corps JSON. Envoyées en JSON, Slack
+    # répond `ok: true` mais ignore silencieusement TOUS les arguments : ni
+    # `types`, ni `limit`, ni `cursor` ne sont pris en compte, et on reçoit
+    # invariablement la première page des channels publics. Le bug est muet —
+    # d'où cette méthode distincte de post_json.
+    def self.post_form_authed(url, token, params)
+      uri = URI(url)
+      request = Net::HTTP::Post.new(uri)
+      request["Authorization"] = "Bearer #{token}"
+      request.set_form_data(params)
+      execute(uri, request)
+    end
+
     # POST JSON vers une `response_url` Slack (fournie dans un payload interactif).
     # Ces URLs sont à usage unique et DÉJÀ authentifiées par un jeton intégré à l'URL :
     # ni Bearer, ni vérification de `ok` (Slack répond par un simple 200). On renvoie

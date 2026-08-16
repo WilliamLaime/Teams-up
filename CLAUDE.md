@@ -80,7 +80,8 @@ Autres règles :
 
 - Ne PAS lire `graphify-out/GRAPH_REPORT.md` en entier (33 Ko) : réservé à une revue d'architecture d'ensemble, quand `explain`/`affected` n'ont pas suffi
 - Le graphe ne couvre PAS tout : il a raté une écriture d'état dans `league_builder.rb` que le grep ciblé trouvait. Ne jamais conclure « ça n'existe pas » sur la seule foi du graphe
-- Le graphe se reconstruit **sans aucun appel LLM** (extraction AST locale, coût 0 token) : un hook post-commit le rafraîchit à chaque commit. Après un gros refactor hors commit, `graphify update .`
+- Le graphe se reconstruit **sans aucun appel LLM** (extraction AST locale, coût 0 token) : un hook pre-commit le rafraîchit à chaque commit. Après un gros refactor hors commit, `graphify update .`
+- `graphify-out/` n'est **pas versionné** : le graphe est local à chaque poste. Sur un dépôt fraîchement cloné il n'existe pas encore — `bin/setup` le construit, ou `graphify update .` directement
 - ⚠️ Un graphe périmé est pire que pas de graphe (il décrit du code disparu) : vérifier `built_at_commit` en tête de `GRAPH_REPORT.md` face à `git rev-parse HEAD` en cas de doute
 - Les commandes bash passent déjà par RTK (proxy économe) — ne rien changer
 
