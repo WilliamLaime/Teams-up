@@ -11,7 +11,8 @@
     ne se jouent pas, ils sont attribués au classement (cf. TournamentStandings).
 
     Local : tournament. %>
-<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="classification">
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="classification"
+         <%= "hidden" if phase_section_hidden?(tournament, "classification") %>>
   <h2 class="tournament-phase__title">Matchs de classement</h2>
 
   <% classification_tables(tournament).each do |node, rounds| %>

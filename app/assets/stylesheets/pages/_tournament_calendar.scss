@@ -1,0 +1,344 @@
+// ── Onglet « Calendrier » d'un tournoi ───────────────────────────────────────
+// Grille du mois, vue semaine (7 colonnes-jours) et mode agenda en mobile.
+//
+// Tout passe par les custom properties de thème (--theme-*) et non par les
+// variables SCSS de couleur : c'est ce qui fait suivre le calendrier au bouton
+// clair/sombre, comme les cartes du board (cf. .tmatch-card).
+//
+// La densité mois/semaine est purement CSS : le même markup de vignette est rendu
+// une fois par Rails, et c'est la classe d'état posée sur .tcal qui décide de ce
+// qui reste visible. Voir _calendar_event.html.erb.
+
+.tcal {
+  // ── Barre d'outils ────────────────────────────────────
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  &__period {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__title {
+    font-family: $headers-font;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    min-width: 11ch;         // Évite que la barre saute d'un mois à l'autre.
+    text-align: center;
+    color: var(--theme-text-primary);
+    // Pas de `text-transform: capitalize` : il majusculerait chaque mot, et
+    // « 3 – 9 Août 2026 » est fauté — en français, un nom de mois ne prend la
+    // majuscule qu'en tête de libellé. C'est le JS qui la pose, au bon endroit.
+  }
+
+  &__nav,
+  &__today,
+  &__view {
+    background: none;
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--theme-hover-bg);
+      color: var(--theme-text-primary);
+    }
+  }
+
+  &__nav {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem;
+
+    i { width: 18px; height: 18px; }
+  }
+
+  &__views { display: flex; gap: 0.35rem; }
+
+  // L'état actif ne repose pas que sur la couleur : le bouton pressé est aussi
+  // le seul à porter une bordure pleine.
+  &__view[aria-pressed="true"] {
+    background-color: var(--theme-hover-bg);
+    border-color: $green;
+    color: $green;
+  }
+
+  // Note sous la grille : aucune rencontre n'a de créneau dans TOUT le tournoi.
+  &__note {
+    color: var(--theme-text-muted);
+    font-size: 0.85rem;
+    margin: 0.9rem 0 0;
+    text-align: center;
+
+    &[hidden] { display: none; }
+  }
+
+  // « Aucune rencontre en octobre » : la période affichée est vide, mais le
+  // tournoi a des créneaux ailleurs. Utilisé en mode agenda (mobile), où il n'y
+  // a pas de grille vide à montrer.
+  &__none {
+    color: var(--theme-text-muted);
+    font-size: 0.9rem;
+    padding: 1.5rem 0;
+    text-align: center;
+  }
+}
+
+// ── Grille du mois ─────────────────────────────────────
+.tcal-month {
+  border-collapse: separate;
+  border-spacing: 3px;
+  table-layout: fixed;      // 7 colonnes égales quel que soit le contenu.
+  width: 100%;
+
+  th {
+    color: var(--theme-text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding-bottom: 0.25rem;
+    text-transform: uppercase;
+
+    abbr { text-decoration: none; }
+  }
+
+  &__day {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    height: 104px;          // `height` sur un <td> se comporte en hauteur mini.
+    padding: 0.3rem;
+    vertical-align: top;
+
+    &--out {
+      background: none;
+      border-color: transparent;
+    }
+
+    &--today {
+      border-color: $green;
+
+      .tcal-month__num {
+        background-color: $green;
+        border-radius: 999px;
+        color: #111;
+        padding: 0 0.35rem;
+      }
+    }
+  }
+
+  &__num {
+    color: var(--theme-text-muted);
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+
+  &__more {
+    background: none;
+    border: none;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.1rem 0.2rem;
+    text-align: left;
+    width: 100%;
+
+    &:hover { color: $green; }
+  }
+}
+
+// ── Vue semaine ────────────────────────────────────────
+.tcal-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+
+  &__day {
+    background-color: var(--theme-bg-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    min-height: 220px;
+    padding: 0.4rem;
+
+    &--today { border-color: $green; }
+
+    &--empty { opacity: 0.6; }
+  }
+
+  &__head {
+    color: var(--theme-text-muted);
+    font-family: $body-font;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    text-transform: capitalize;
+
+    time { color: var(--theme-text-primary); }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+// ── Mode agenda (mobile) ───────────────────────────────
+.tcal-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &__head {
+    color: var(--theme-text-primary);
+    font-family: $body-font;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    text-transform: capitalize;
+  }
+
+  &__day--today .tcal-agenda__head { color: $green; }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+// ── Vignette d'une rencontre ───────────────────────────
+.tcal-event {
+  background-color: var(--theme-surface);
+  border-left: 3px solid $green;
+  border-radius: 5px;
+  color: var(--theme-text-primary);
+  display: block;
+  font-size: 0.7rem;
+  margin-bottom: 0.2rem;
+  padding: 0.2rem 0.35rem;
+  text-decoration: none;
+
+  &:hover {
+    background-color: var(--theme-hover-bg);
+    color: var(--theme-text-primary);
+  }
+
+  // Rencontre jouée : accent neutre, l'attention va aux matchs à venir. L'état
+  // n'est jamais porté par la seule couleur — le score affiché le dit déjà.
+  &--done { border-left-color: var(--theme-border-strong, var(--theme-border)); }
+
+  // « Je joue ce jour-là » : se repère sans lire les noms, même repère visuel
+  // que .tmatch-card--mine sur le board.
+  &--mine { box-shadow: 0 0 0 1px rgba($green, 0.55); }
+
+  &__line {
+    align-items: baseline;
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  &__time {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__group {
+    color: var(--theme-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__score {
+    font-weight: 700;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  &__players {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__flag {
+    color: var(--theme-text-muted);
+    display: block;
+    font-size: 0.65rem;
+    font-style: italic;
+  }
+}
+
+// ── Densité : ce que la vue mois n'a pas la place d'afficher ──
+// Le libellé complet reste lisible au survol (title) et par les lecteurs
+// d'écran (span.visually-hidden dans la vignette) : rien n'est perdu.
+.tcal--month .tcal-event {
+  // Les adversaires restent visibles jusque dans la case du mois — savoir QUI
+  // joue est la moitié de l'intérêt d'un calendrier. Les noms y sont déjà
+  // compacts (« Hugo M. ») et coupés proprement par l'ellipsis si besoin.
+  &__players { font-size: 0.66rem; }
+
+  &__flag { display: none; }
+
+  // La poule reste écrite en toutes lettres (« Poule A »), même dans une case de
+  // mois : abrégée en « A », l'information devenait une énigme. Si la place
+  // manque, c'est l'ellipsis qui tranche — pas nous.
+  &__group { font-size: 0.66rem; }
+}
+
+// ── Responsive ─────────────────────────────────────────
+// Tablette : la grille du mois tient encore, mais une case ne peut plus porter
+// qu'une vignette lisible — on réduit tout d'un cran.
+@media (max-width: 991px) {
+  .tcal-month__day { height: 88px; }
+  .tcal-week__day { min-height: 170px; }
+  .tcal-event { font-size: 0.66rem; }
+}
+
+// Mobile : ni grille de mois ni sept colonnes ne tiennent sur 375 px — le
+// contrôleur rend un agenda (liste par jour), et la vue semaine s'empile.
+@media (max-width: 767px) {
+  .tcal__toolbar { flex-direction: column; align-items: stretch; }
+  .tcal__period { justify-content: space-between; }
+
+  // Zones tactiles confortables (≥ 44 px).
+  .tcal__nav, .tcal__today, .tcal__view { min-height: 44px; }
+  .tcal__views .tcal__view { flex: 1; }
+
+  .tcal-event {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.6rem;
+  }
+
+  // En agenda, on a la largeur : tout est déplié, y compris en « vue mois ».
+  .tcal--month .tcal-event {
+    &__players { font-size: 0.8rem; }
+    &__flag { display: block; }
+    &__group { font-size: 0.75rem; }
+  }
+}

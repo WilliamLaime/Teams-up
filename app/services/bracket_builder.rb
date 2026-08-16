@@ -92,7 +92,12 @@ class BracketBuilder
   # Ordre de seeding standard d'un tableau à `slots` places (puissance de 2).
   # Ex. slots=8 → [1, 8, 4, 5, 2, 7, 3, 6] : découpé par paires, 1 et 2 sont en
   # moitiés opposées. Public : CriteriumFlow s'en sert pour vérifier ses appariements.
-  def seed_order(slots)
+  #
+  # Exposé AUSSI en méthode de classe : la vue du tableau final s'en sert pour
+  # annoncer les têtes de série attendues sur les cases encore vides de la
+  # première colonne (cf. TournamentsHelper#bracket_seed_labels), sans avoir à
+  # instancier un builder — le calcul ne dépend que du nombre de places.
+  def self.seed_order(slots)
     order = [1]
     while order.size < slots
       mirror = (order.size * 2) + 1
@@ -100,6 +105,8 @@ class BracketBuilder
     end
     order
   end
+
+  def seed_order(slots) = self.class.seed_order(slots)
 
   private
 

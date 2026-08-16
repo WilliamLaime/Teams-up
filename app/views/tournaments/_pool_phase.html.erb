@@ -21,7 +21,8 @@
     re-constitution) ne doit pas ouvrir un onglet qui n'existe plus. %>
 <% active_pool = pools.key?(mine) ? mine : pools.keys.first %>
 
-<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main"
+         <%= "hidden" if phase_section_hidden?(tournament, "main") %>>
   <h2 class="tournament-phase__title">Poules</h2>
 
   <% if pools.empty? %>

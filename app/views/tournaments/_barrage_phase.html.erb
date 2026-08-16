@@ -21,7 +21,8 @@
     adversaire qui valse ne l'est pas.
 
     Local : tournament. %>
-<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="barrage">
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="barrage"
+         <%= "hidden" if phase_section_hidden?(tournament, "barrage") %>>
   <%# Titre masqué visuellement, PAS supprimé : le ruban affiche déjà « Barrages »
       juste en dessous (round-col__title), le bandeau majuscule + filet doublonnait
       donc le libellé. Conservé dans le DOM pour que la section garde un intitulé de

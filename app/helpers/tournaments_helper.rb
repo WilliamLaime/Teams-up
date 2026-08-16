@@ -33,11 +33,24 @@ module TournamentsHelper
     return if match.nil? || match.date.blank?
 
     label = match_day_label(match)
-    return label if match.time.blank?
+    hour  = tournament_hour(match)
+    return label if hour.nil?
 
-    # Convention d'heure du projet : « 19h » plutôt que « 19h00 » (cf. _overview).
-    hour = match.time.strftime("%M") == "00" ? match.time.strftime("%Hh") : match.time.strftime("%Hh%M")
     "#{label} à #{hour}"
+  end
+
+  # Heure seule d'une rencontre, à la convention du projet : « 19h » plutôt que
+  # « 19h00 », « 17h45 » quand il y a des minutes (cf. _overview). nil si la
+  # rencontre n'a pas d'heure — la colonne est nullable.
+  #
+  # Extraite de `tournament_match_schedule` parce que le calendrier affiche
+  # l'heure NUE dans ses vignettes (le jour est déjà porté par la case du
+  # calendrier) : sans cette extraction, la convention serait recopiée à deux
+  # endroits et finirait par diverger.
+  def tournament_hour(match)
+    return if match.nil? || match.time.blank?
+
+    match.time.strftime(match.time.strftime("%M") == "00" ? "%Hh" : "%Hh%M")
   end
 
   # Tours à afficher en colonnes dans le bracket viewer : les rondes de la phase
@@ -113,6 +126,60 @@ module TournamentsHelper
     end
   end
 
+  # D'où viendra le joueur qui occupera une case encore vide du tableau final :
+  # « Vainqueur demi-finale 1 », « Vainqueur quart de finale 3 ».
+  #
+  # Une case de tour N+1 est nourrie par deux matchs précis du tour N (les
+  # matchs 2p et 2p+1, cf. BracketBuilder#advance!) : sa provenance est donc
+  # connue AVANT que le moindre match soit joué. « À déterminer » ne disait rien
+  # d'une information que la structure du tableau donne pourtant — impossible de
+  # se projeter (« si je gagne mon quart, je tombe où ? »). Même intention que les
+  # barrages, qui annoncent déjà « 2e de Poule A » (cf. _barrage_phase).
+  #
+  # `feeder_position` est l'index 0-based du match nourricier DANS le tour
+  # précédent ; on l'affiche en 1-based, comme le lisent les joueurs.
+  # Renvoie nil pour la première colonne : ses occupants viennent de la phase
+  # qualificative (poules, barrages, ronde suisse), dont l'appariement dépend du
+  # format et n'est PAS déductible ici — mieux vaut ne rien dire que dire faux.
+  def bracket_feeder_label(round_index, feeder_position, total_rounds)
+    return if round_index.zero?
+
+    stage  = bracket_stage_label(round_index - 1, total_rounds)
+    number = feeder_position + 1
+
+    singular = { "Finale" => "finale", "Demi-finales" => "demi-finale",
+                 "Quarts" => "quart de finale", "8es" => "8e de finale" }[stage]
+
+    # Tour lointain (« Tour 3 ») : pas de forme singulière naturelle, on nomme
+    # explicitement le match pour éviter un « Vainqueur tour 3 2 » illisible.
+    return "Vainqueur match #{number} du #{stage.downcase}" if singular.nil?
+
+    "Vainqueur #{singular} #{number}"
+  end
+
+  # Têtes de série attendues sur une case de la PREMIÈRE colonne du tableau final
+  # (8es, quarts… selon la taille), sous la forme ["Tête de série 1", "Tête de
+  # série 8"]. nil quand le tableau n'est pas seedé (voir plus bas).
+  #
+  # L'appariement du premier tour n'a rien d'aléatoire : BracketBuilder place les
+  # entrants selon le seeding standard 1 vs N, 2 vs N-1… (cf. seed_order), donc la
+  # case p oppose des têtes de série connues AVANT que le premier qualifié soit
+  # désigné. « À déterminer » cachait cette information et empêchait de se
+  # projeter (« si je sors 3e des poules, je joue le 6e, dans la moitié basse »).
+  #
+  # Réservé au tableau PRINCIPAL (`phase_key == "bracket"`) : la consolante et les
+  # matchs de classement se construisent avec `persist_seeds: false`, où la
+  # position n'est qu'un ordre d'arrivée et non une force — y écrire « Tête de
+  # série 3 » serait faux.
+  def bracket_seed_labels(size, position)
+    return if size.to_i < 2
+
+    order = BracketBuilder.seed_order(size)
+    [order[position * 2], order[(position * 2) + 1]].map do |seed|
+      "Tête de série #{seed}" if seed
+    end
+  end
+
   # Libellé + icône Lucide de la phase round-robin du tournoi (ronde suisse /
   # championnat / poules — un seul de ces 3 formats existe par tournoi) pour
   # le sélecteur de phase (_phase_nav, bascule round-robin vs tableau final).
@@ -138,6 +205,23 @@ module TournamentsHelper
     return "barrage" if tournament.barrage_rounds.any?
 
     "main"
+  end
+
+  # Une section de phase doit-elle arriver masquée dans le HTML ?
+  #
+  # Toutes les phases (poules, barrages, tableau final, consolante, classement)
+  # sont rendues côté serveur, et c'est le contrôleur Stimulus qui n'en laisse
+  # qu'une visible — mais seulement une fois le JavaScript chargé. Sans attribut
+  # `hidden` d'origine, toutes s'empilaient donc à l'écran pendant un instant :
+  # au rechargement, on voyait la section des barrages surgir en bas de page puis
+  # disparaître, sur n'importe quel onglet du tournoi.
+  #
+  # On pose donc l'état initial côté serveur, avec la même phase par défaut que
+  # celle du contrôleur. Reste au plus UNE bascule au connect, quand une phase
+  # différente a été mémorisée en sessionStorage — un échange net, pas un
+  # empilement.
+  def phase_section_hidden?(tournament, phase_key)
+    phase_key != default_board_phase(tournament)
   end
 
   # Les phases réellement présentes dans le board, dans l'ordre de déroulement :
@@ -214,6 +298,58 @@ module TournamentsHelper
                    .to_a
                    .sort_by { |m| [m.tournament_round.number, m.position.to_i] }
                    .group_by { |m| m.player_a.pool }
+  end
+
+  # ── Calendrier ────────────────────────────────────────────────────────────────
+  # Rencontres du tournoi POSITIONNÉES dans le temps, triées par date puis heure.
+  #
+  # La date ne vit pas sur le TournamentMatch mais sur le Match rattaché (cf.
+  # tournament_match_schedule) : une carte sans rencontre, ou dont la rencontre
+  # n'a pas encore de date, n'a tout simplement pas de case dans une grille de
+  # calendrier. Le `joins(:match)` (jointure interne) écarte les premières, le
+  # scope `Match.scheduled` les secondes.
+  #
+  # Le `includes` est celui de `pool_matches`, pour la même raison : la vignette
+  # lit les joueurs et leur utilisateur, le tour (libellé de phase) et la
+  # rencontre (heure et lien) — sans préchargement, c'est 4 requêtes par vignette.
+  # `joins` filtre en SQL, `includes` précharge pour la lecture : les deux sont
+  # nécessaires, ils ne font pas le même travail.
+  #
+  # Les BYES sont exclus, comme partout : « exempt » n'est pas une confrontation.
+  #
+  # Le tri est fait en Ruby et non en SQL : quelques dizaines de lignes tout au
+  # plus, et cela évite un ORDER BY avec NULLS LAST sur `matches.time` (nullable).
+  def calendar_matches(tournament)
+    TournamentMatch.joins(:tournament_round, :match)
+                   .where(tournament_rounds: { tournament_id: tournament.id })
+                   .where(is_bye: false)
+                   .merge(Match.scheduled)
+                   .includes(:match, :tournament_round, player_a: :user, player_b: :user)
+                   .to_a
+                   .sort_by { |m| [m.match.date, m.match.time || Time.zone.parse("00:00")] }
+  end
+
+  # Contexte d'une rencontre affiché sur sa vignette de calendrier : sa POULE
+  # quand elle en a une, son tour sinon (« Journée 3 », « Quarts »…).
+  #
+  # La poule ne vit pas sur la rencontre mais sur l'INSCRIPTION
+  # (`tournament_users.pool`), lue côté joueur A : en phase de poules, les deux
+  # joueurs sont par construction dans la même — c'est justement la définition
+  # d'une poule. Hors de cette phase, l'information n'a pas de sens : barrages et
+  # tableau final font délibérément se rencontrer des joueurs de poules
+  # différentes (cf. CriteriumFlow#avoid_same_pool), afficher « Poule A » y serait
+  # trompeur. On retombe alors sur `round_label`, déjà utilisé par le board.
+  #
+  # `bracket_rounds` est passé par l'appelant, chargé UNE fois pour toute la
+  # grille : `round_label` en a besoin pour situer un tour du tableau final, et le
+  # relire par rencontre serait un N+1 silencieux.
+  def calendar_context_label(tmatch, bracket_rounds)
+    round = tmatch.tournament_round
+    pool  = tmatch.player_a&.pool
+
+    return pool_label(pool) if round.phase == "pool" && pool.present?
+
+    round_label(round, bracket_rounds)
   end
 
   # ── Modale de score ───────────────────────────────────────────────────────────

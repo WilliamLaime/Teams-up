@@ -80,6 +80,11 @@
                 data-tournament-tabs-panel-param="classement">
           <i data-lucide="list-ordered" aria-hidden="true"></i> Classement
         </button>
+        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
+                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
+                data-tournament-tabs-panel-param="calendrier">
+          <i data-lucide="calendar-days" aria-hidden="true"></i> Calendrier
+        </button>
       </div>
 
       <%# La modale de score et le contrôleur tournament-score vivent HORS de
@@ -118,6 +123,11 @@
         <section class="tournament-tabs__panel" role="tabpanel" hidden
                  data-tournament-tabs-target="panel" data-panel="classement">
           <%= render "tournaments/ranking", tournament: @tournament %>
+        </section>
+
+        <section class="tournament-tabs__panel" role="tabpanel" hidden
+                 data-tournament-tabs-target="panel" data-panel="calendrier">
+          <%= render "tournaments/calendar", tournament: @tournament %>
         </section>
 
         <%= render "tournaments/score_modal" %>
