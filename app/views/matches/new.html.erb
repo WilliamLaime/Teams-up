@@ -24,20 +24,39 @@
       ══════════════════════════════════════════════════════════ %>
   <%# id="match-new-banner" → Stimulus le trouve via document.getElementById pour
       changer le background dynamiquement selon le sport sélectionné %>
-  <div class="match-new-banner" id="match-new-banner">
+  <%# Quand l'image est déjà connue côté serveur (rencontre créée depuis un
+      tournoi : le sport est imposé), on peint le fond tout de suite. Sans ça on
+      verrait d'abord l'image multisport du CSS, puis un saut vers l'image du
+      sport une fois le JS chargé. La chaîne CSS est identique à celle produite
+      par updateBanner() (match_form_controller.js), donc aucun changement visible
+      quand Stimulus prend le relais. Match libre : pas d'image → comportement
+      inchangé (fond CSS par défaut, puis choix par le JS). %>
+  <% banner_style = @match.banner_image.presence &&
+       "background: linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), " \
+       "url('#{@match.banner_image}') center 25% / cover no-repeat;" %>
+  <div class="match-new-banner" id="match-new-banner" style="<%= banner_style %>">
     <div class="container">
 
       <%# Lien retour vers la liste des matchs %>
       <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-3" %>
 
-      <%# Titre principal de la page %>
+      <%# Titre + sous-titre — adaptés quand on arrive depuis une carte de tournoi :
+          on reprend le vocabulaire du tournoi (« rencontre ») et on rappelle qui
+          affronte qui, plutôt qu'une invite générique à remplir un formulaire. %>
+      <% tmatch = @match.tournament_match %>
+
       <h1 class="match-new-banner-title">
-        Créer un match
+        <%= tmatch ? "Créer la rencontre" : "Créer un match" %>
       </h1>
 
-      <%# Sous-titre / description courte %>
       <p class="match-new-banner-subtitle">
-        Remplis les informations ci-dessous et publie ton match en quelques secondes.
+        <% if tmatch %>
+          <%= tmatch.player_a&.display_name %> vs <%= tmatch.player_b&.display_name %><%
+             %><% if @match.tournament %> — <%= @match.tournament.name %><% end %>
+          · convenez de votre créneau, le reste est déjà prérempli.
+        <% else %>
+          Remplis les informations ci-dessous et publie ton match en quelques secondes.
+        <% end %>
       </p>
 
     </div>
