@@ -1,0 +1,30 @@
+<%# ═══════════════════════════════════════════════════════════════
+    Contexte tournoi : valeurs imposées, envoyées en champs cachés
+    ═══════════════════════════════════════════════════════════════
+    La section « Détails du match » n'est pas affichée pour une rencontre
+    issue d'une confrontation (cf. _form.html.erb). Ce partial renvoie
+    malgré tout les valeurs que le modèle exige, telles que posées par
+    MatchesController#prefill_from_tournament_match.
+
+    Ne sont PAS repris ici les champs qui ont une valeur par défaut en base
+    (cf. db/schema.rb) : validation_mode (« automatic »), visibility
+    (« public »), genre_restriction (« tous »), price_per_player (0), ainsi
+    que team_id et booking_link qui restent vides.
+
+    Locals : f (form builder).
+    ═══════════════════════════════════════════════════════════════ %>
+
+<%# Niveau — obligatoire (match.rb). « Tout niveau » est accepté quel que soit
+    le sport : la validation le laisse passer avant de consulter la grille. %>
+<%= f.hidden_field :level, value: @match.level.presence || "Tout niveau" %>
+
+<%# Joueurs recherchés — obligatoire et > 0. Une confrontation oppose 2 joueurs. %>
+<%= f.hidden_field :players_needed, value: (@match.players_needed || 2) %>
+
+<%# Format — non validé par le modèle, mais utilisé pour l'affichage du match.
+    Premier format à taille définie du sport : « 1v1 » en ping-pong, tennis ou
+    badminton. « Libre » est écarté : il rendrait players_present obligatoire
+    alors que plus aucun champ ne permet de le saisir ici. %>
+<% fallback_format = @match.sport&.available_formats&.find { |fmt| fmt[:players].present? } %>
+<%= f.hidden_field :format,
+      value: (@match.format.presence || fallback_format&.dig(:label)) %>

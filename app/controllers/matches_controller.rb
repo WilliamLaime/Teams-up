@@ -637,6 +637,15 @@ class MatchesController < ApplicationController
     @match.level            = "Tout niveau" # niveau neutre : bypass la grille du sport
     @match.players_needed   = 2
     @match.title            = tournament_match_title(tm, tm.tournament)
+    # Format : premier format à taille définie du sport (1v1 en ping-pong, tennis
+    # ou badminton, 2v2 en padel). Le sélecteur de format n'est pas affiché en
+    # contexte tournoi (cf. _form.html.erb) : une confrontation oppose deux
+    # joueurs, la question ne se pose pas.
+    #
+    # On écarte le format « Libre » : il rendrait `players_present` obligatoire
+    # (cf. Match) alors qu'aucun champ ne permet plus de le saisir. Un sport sans
+    # format chiffré reste donc sans format, ce que le modèle accepte.
+    @match.format = tournament_match_format(tm)
 
     # Reprend le lieu et la date/heure déjà connus du tournoi, pour éviter de tout
     # ressaisir à la main. Tout reste modifiable : les deux joueurs conviennent de
@@ -648,7 +657,35 @@ class MatchesController < ApplicationController
       @match.time     = tm.tournament.time
       @match.end_time = @match.time + 1.hour # le défaut posé dans `new` (basé sur l'heure courante) ne vaut plus une fois `time` écrasée
     end
-    @match.banner_image = tm.tournament.banner_image if tm.tournament.banner_image.present?
+    @match.banner_image = tournament_banner_image(tm)
+  end
+
+  # Format imposé à une rencontre créée depuis une carte de tournoi : le premier
+  # format du sport dont la taille d'équipe est chiffrée (« Libre » exclu, voir
+  # prefill_from_tournament_match). nil si le sport n'en propose aucun.
+  def tournament_match_format(tmatch)
+    formats = tmatch.tournament.sport&.available_formats || []
+    formats.find { |fmt| fmt[:players].present? }&.dig(:label)
+  end
+
+  # Image de bannière d'une rencontre créée depuis une carte de tournoi.
+  #
+  # On veut une image DU SPORT du tournoi, connue dès le rendu serveur : la vue
+  # `new` s'en sert pour peindre la bannière tout de suite, sans laisser
+  # apparaître l'image multisport du CSS avant que le JS ne prenne la main.
+  #
+  # L'image du tournoi n'est conservée que si elle appartient à la banque du
+  # sport : sinon `updateBanner()` (match_form_controller.js) la jugerait
+  # incohérente au chargement et la remplacerait par une autre — ce qui
+  # provoquerait justement le clignotement qu'on cherche à éviter.
+  #
+  # Choix déterministe (id de la carte) : le ré-affichage du formulaire après
+  # une erreur de validation ne change pas l'image sous les yeux de l'utilisateur.
+  def tournament_banner_image(tmatch)
+    images = helpers.sport_images_for(tmatch.tournament.sport&.slug)
+    current = tmatch.tournament.banner_image
+
+    images.include?(current) ? current : images[tmatch.id % images.size]
   end
 
   # Valide le rattachement tournoi envoyé par le formulaire : ne le persiste que

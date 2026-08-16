@@ -104,6 +104,34 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     assert_equal [["Bob", "U9"]], dest["Messages directs"] # le bot est exclu
   end
 
+  # ── Pagination : Slack tronque ses listes et fournit un curseur ───────────────
+  # Sans suivre next_cursor, un workspace de plus de 200 conversations perdait
+  # silencieusement les suivantes (elles ne sont pas triées par nom côté Slack).
+  test "ChannelLister suit next_cursor pour lister tous les channels" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(
+        # 1re page : curseur non vide → il reste des channels à lire.
+        { status: 200, headers: { "Content-Type" => "application/json" },
+          body: { ok: true, channels: [{ id: "C1", name: "general" }],
+                  response_metadata: { next_cursor: "page2" } }.to_json },
+        # 2e page : curseur vide → fin du parcours.
+        { status: 200, headers: { "Content-Type" => "application/json" },
+          body: { ok: true, channels: [{ id: "C2", name: "pingpong-midi" }],
+                  response_metadata: { next_cursor: "" } }.to_json }
+      )
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, members: [] }.to_json)
+
+    dest = Slack::ChannelLister.destinations(ws)
+    assert_equal [["#general", "C1"], ["#pingpong-midi", "C2"]], dest["Channels"]
+
+    # La 2e requête doit bien transmettre le curseur reçu.
+    assert_requested :post, "https://slack.com/api/conversations.list",
+                     body: hash_including("cursor" => "page2"), times: 1
+  end
+
   # ── Robustesse : un appel qui échoue ne fait pas disparaître l'autre liste ─────
   test "ChannelLister isole les appels : users.list en échec garde les channels" do
     ws = link_slack!

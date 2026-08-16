@@ -11,6 +11,14 @@
 //      → Stimulus appelle la méthode quand l'utilisateur tape/change
 //   3. Les éléments du récap ont aussi des targets (recapTitle, etc.)
 //      → la méthode lit la valeur du champ et l'écrit dans le récap
+//
+// ⚠️  Targets optionnels : en contexte tournoi (« Créer la rencontre » depuis
+// une carte de confrontation), la section « Détails du match » n'est pas rendue
+// — format, nombre de joueurs, niveau, validation et prix disparaissent du DOM.
+// Or lire un `this.xxxTarget` absent lève une exception Stimulus qui remonte de
+// connect() et empêche TOUT le contrôleur de démarrer (récap, bannière et
+// synchronisation des horaires compris). D'où les gardes `hasXxxTarget` sur
+// chaque méthode qui touche à cette section.
 // ══════════════════════════════════════════════════════════════
 
 import { Controller } from "@hotwired/stimulus"
@@ -104,8 +112,11 @@ export default class extends Controller {
     this.updateLevel()
     this.updateValidation()
     this.updatePrice()
-    // Initialise les couleurs des boutons − et + selon la valeur de départ
-    this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
+    // Initialise les couleurs des boutons − et + selon la valeur de départ.
+    // Absents en contexte tournoi : la section « Détails du match » n'y est pas rendue.
+    if (this.hasPlayersInputTarget) {
+      this.updateCounterButtons(parseInt(this.playersInputTarget.value) || 4)
+    }
   }
 
   // ══════════════════════════════════════════════════════════
@@ -238,33 +249,35 @@ export default class extends Controller {
       this.maxPlayers = maxMap[sportId] || 9
 
       // Met à jour le récap sport
-      this.recapSportTarget.textContent = nameMap[sportId] || "—"
+      if (this.hasRecapSportTarget) this.recapSportTarget.textContent = nameMap[sportId] || "—"
 
       // Tous les sports ont maintenant au moins 2 formats (sport-specific + Libre)
-      // → le sélecteur de format est toujours affiché
-      this._renderFormatButtons(formats)
-      this.formatWrapperTarget.style.display = ""
-      this.recapFormatRowTarget.style.display = ""
+      // → le sélecteur de format est toujours affiché, SAUF en contexte tournoi
+      // où la section « Détails du match » n'est pas rendue du tout.
+      if (this.hasFormatWrapperTarget) {
+        this._renderFormatButtons(formats)
+        this.formatWrapperTarget.style.display = ""
+        if (this.hasRecapFormatRowTarget) this.recapFormatRowTarget.style.display = ""
 
-      // En mode édition, restaure le format sauvegardé ; sinon applique le premier format
-      const savedFormat = this.formatInputTarget.value
-      const allBtns     = this.formatButtonsTarget.querySelectorAll(".match-level-btn")
-      const matchedFmt  = formats.find(f => f.label === savedFormat) || formats[0]
-      const matchedBtn  = Array.from(allBtns).find(b => b.dataset.label === savedFormat) || allBtns[0]
-      this._applyFormat(matchedFmt, matchedBtn)
+        // En mode édition, restaure le format sauvegardé ; sinon applique le premier format
+        const savedFormat = this.formatInputTarget.value
+        const allBtns     = this.formatButtonsTarget.querySelectorAll(".match-level-btn")
+        const matchedFmt  = formats.find(f => f.label === savedFormat) || formats[0]
+        const matchedBtn  = Array.from(allBtns).find(b => b.dataset.label === savedFormat) || allBtns[0]
+        this._applyFormat(matchedFmt, matchedBtn)
+      }
 
       // Génère les boutons de niveau dynamiquement selon le sport
-      const levelsMap  = JSON.parse(select.dataset.levels || "{}")
-      const savedLevel = this.levelInputTarget.value
-      if (levelsMap[sportId]) {
-        this._renderLevelButtons(levelsMap[sportId], savedLevel)
+      const levelsMap = JSON.parse(select.dataset.levels || "{}")
+      if (this.hasLevelInputTarget && this.hasLevelButtonsTarget && levelsMap[sportId]) {
+        this._renderLevelButtons(levelsMap[sportId], this.levelInputTarget.value)
       }
 
     } else {
       // Aucun sport sélectionné
       this.maxPlayers = 9
-      this.recapSportTarget.textContent = "—"
-      this.formatWrapperTarget.style.display = "none"
+      if (this.hasRecapSportTarget) this.recapSportTarget.textContent = "—"
+      if (this.hasFormatWrapperTarget) this.formatWrapperTarget.style.display = "none"
     }
 
     // Met à jour la banner selon le nouveau sport
@@ -273,6 +286,8 @@ export default class extends Controller {
 
   // Génère les boutons de format dans le conteneur dédié
   _renderFormatButtons(formats) {
+    if (!this.hasFormatButtonsTarget) return
+
     const container = this.formatButtonsTarget
     container.innerHTML = ""
 
@@ -318,6 +333,10 @@ export default class extends Controller {
   // Applique un format : met à jour le compteur, le max et l'input caché
   // Détecte si c'est le format Libre (players === null) pour basculer l'interface
   _applyFormat(fmt, clickedBtn = null) {
+    // Section « Détails du match » non rendue (contexte tournoi) : le format
+    // soumis vient alors du champ caché de _tournament_hidden_fields.html.erb.
+    if (!this.hasFormatInputTarget) return
+
     // Met à jour l'input caché format (soumis avec le formulaire)
     this.formatInputTarget.value = fmt.label
 
@@ -397,6 +416,8 @@ export default class extends Controller {
 
   // Retourne le max de joueurs pour le sport actuellement sélectionné au chargement
   _maxForCurrentSport() {
+    if (!this.hasSportInputTarget) return 9
+
     const select = this.sportInputTarget
     const maxMap = JSON.parse(select.dataset.maxPlayers || "{}")
     return maxMap[select.value] || 9
@@ -543,6 +564,8 @@ export default class extends Controller {
 
   // ── Nombre de joueurs standard : décrémenter ("-") ────────────────
   decrement() {
+    if (!this.hasPlayersInputTarget) return
+
     const input = this.playersInputTarget
     const current = parseInt(input.value) || 1
     // Minimum : 1 joueur manquant
@@ -557,6 +580,8 @@ export default class extends Controller {
 
   // ── Nombre de joueurs standard : incrémenter ("+") ────────────────
   increment() {
+    if (!this.hasPlayersInputTarget) return
+
     const input = this.playersInputTarget
     const current = parseInt(input.value) || 1
     // Maximum dynamique selon le sport (this.maxPlayers, par défaut 9)
@@ -576,6 +601,8 @@ export default class extends Controller {
   //   val = max    → "-" vert, "+" gris (maximum atteint)
   //   entre les deux → les deux verts
   updateCounterButtons(val) {
+    if (!this.hasMinusBtnTarget || !this.hasPlusBtnTarget) return
+
     const minus = this.minusBtnTarget
     const plus  = this.plusBtnTarget
     const max   = this.maxPlayers || 9
@@ -597,6 +624,8 @@ export default class extends Controller {
 
   // ── Synchroniser le récap avec la valeur actuelle (standard) ────────
   updatePlayers() {
+    if (!this.hasPlayersInputTarget || !this.hasPlayersCountTarget) return
+
     const val = this.playersInputTarget.value || "—"
     this.playersCountTarget.textContent = val
     this.recapPlayersTarget.textContent  = val
@@ -659,6 +688,8 @@ export default class extends Controller {
   // ── Niveau : génère les boutons de niveau pour le sport sélectionné ──
   // Même style et même pattern que _renderFormatButtons
   _renderLevelButtons(levels, savedLevel) {
+    if (!this.hasLevelButtonsTarget) return
+
     const container = this.levelButtonsTarget
     container.innerHTML = ""
 
@@ -704,6 +735,8 @@ export default class extends Controller {
 
   // Applique un niveau : met à jour l'input caché, le récap et les styles des boutons
   _applyLevel(label, clickedBtn) {
+    if (!this.hasLevelInputTarget || !this.hasLevelButtonsTarget) return
+
     this.levelInputTarget.value        = label
     this.recapLevelTarget.textContent  = label
 
@@ -724,6 +757,8 @@ export default class extends Controller {
 
   // ── Niveau : synchroniser le récap au chargement ────────────
   updateLevel() {
+    if (!this.hasLevelInputTarget || !this.hasRecapLevelTarget) return
+
     const val = this.levelInputTarget.value
     this.recapLevelTarget.textContent = val
   }
@@ -731,6 +766,8 @@ export default class extends Controller {
   // ── Prix par joueur ──────────────────────────────────────
   // Affiche "X €" si prix > 0, sinon rien (pas de "Gratuit")
   updatePrice() {
+    if (!this.hasPriceInputTarget || !this.hasRecapPriceTarget) return
+
     const val = parseInt(this.priceInputTarget.value) || 0
     this.recapPriceTarget.textContent = val > 0 ? `${val} €` : ""
   }
@@ -739,6 +776,8 @@ export default class extends Controller {
   // Source de vérité : le champ caché #match_validation_mode
   // Synchronise uniquement la ligne "Validation" du récapitulatif
   updateValidation() {
+    if (!this.hasRecapValidationTarget) return
+
     const hidden = document.getElementById("match_validation_mode")
     const mode = (hidden && hidden.value) || "automatic"
     this.recapValidationTarget.textContent = mode === "manual" ? "Manuel" : "Automatique"

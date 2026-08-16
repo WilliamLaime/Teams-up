@@ -398,8 +398,8 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
 
   # Crée un tournoi organisé par @user avec deux joueurs approuvés et une carte
   # de match suisse prête à être « transformée » en rencontre standard.
-  def build_tournament_match(owner: @user)
-    tournament = Tournament.create!(name: "Tournoi test", sport: @sport, user: owner,
+  def build_tournament_match(owner: @user, sport: @sport)
+    tournament = Tournament.create!(name: "Tournoi test", sport: sport, user: owner,
                                     format: "ronde_suisse", status: "in_progress", max_players: 8,
                                     date: Date.tomorrow, place: "Terrain test", time: "18:00")
     player_b_user = create_test_user(email: "tplayer-#{SecureRandom.hex(3)}@example.com")
@@ -422,6 +422,88 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/value="#{tournament.date}"/, response.body)
     assert_includes response.body[/<input[^>]*name="match\[time\(4i\)\]"[^>]*>/], 'value="18"'
     assert_includes response.body[/<input[^>]*name="match\[time\(5i\)\]"[^>]*>/], 'value="0"'
+  end
+
+  # ── Formulaire allégé en contexte tournoi ──────────────────────────────────
+  # Une confrontation est un 1v1 entre deux joueurs déjà connus et inscrits par
+  # le tournoi : la section « Détails du match » n'a pas lieu d'être.
+
+  test "GET /matches/new depuis une carte de tournoi masque les détails du match" do
+    sign_in @user
+    _tournament, tmatch = build_tournament_match
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    assert_no_match(/Détails du match/, response.body)
+    assert_select "[data-match-form-target='formatWrapper']", 0
+    assert_select "[data-match-form-target='levelButtons']", 0
+    assert_select "[data-match-form-target='priceInput']", 0
+  end
+
+  test "GET /matches/new depuis une carte de tournoi soumet les valeurs imposées en caché" do
+    sign_in @user
+    _tournament, tmatch = build_tournament_match
+
+    get new_match_path(tournament_match_id: tmatch.id)
+
+    # Les deux seules valeurs que le modèle exige et qui n'ont plus de champ visible.
+    assert_select "input[type=hidden][name='match[level]'][value='Tout niveau']"
+    assert_select "input[type=hidden][name='match[players_needed]'][value='2']"
+  end
+
+  # Non-régression : hors tournoi, le formulaire complet est toujours rendu.
+  test "GET /matches/new sans tournoi conserve la section Détails du match" do
+    sign_in @user
+
+    get new_match_path
+    assert_response :success
+
+    assert_match(/Détails du match/, response.body)
+    assert_select "[data-match-form-target='formatWrapper']"
+  end
+
+  # ── Bannière : une image DU SPORT du tournoi, connue dès le rendu serveur ───
+
+  test "GET /matches/new depuis un tournoi de ping-pong affiche une bannière ping-pong" do
+    sign_in @user
+    pingpong = Sport.find_by(slug: "ping-pong") ||
+               Sport.create!(name: "Ping-Pong Test", slug: "ping-pong", icon: "🏓")
+    _tournament, tmatch = build_tournament_match(sport: pingpong)
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    # Le fond est peint côté serveur (pas de clignotement au chargement du JS)…
+    banner = response.body[/<div class="match-new-banner"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, banner
+
+    # …et le champ caché soumis pointe sur exactement la même image.
+    hidden = response.body[/<input[^>]*name="match\[banner_image\]"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, hidden
+  end
+
+  test "GET /matches/new écarte une bannière de tournoi étrangère au sport" do
+    sign_in @user
+    pingpong = Sport.find_by(slug: "ping-pong") ||
+               Sport.create!(name: "Ping-Pong Test", slug: "ping-pong", icon: "🏓")
+    tournament, tmatch = build_tournament_match(sport: pingpong)
+    # Image hors de la banque du sport : le JS la remplacerait au chargement,
+    # ce qui provoquerait le clignotement. Le serveur doit déjà l'avoir écartée.
+    tournament.update!(banner_image: "https://example.com/pas-du-ping-pong.png")
+
+    get new_match_path(tournament_match_id: tmatch.id)
+
+    # Ni le champ soumis ni le fond peint ne reprennent l'image du tournoi.
+    # (Elle reste présente dans le JSON du select « Confrontation », qui décrit
+    # les tournois rattachables et ne sert pas à la bannière.)
+    hidden = response.body[/<input[^>]*name="match\[banner_image\]"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, hidden
+    assert_no_match(/pas-du-ping-pong/, hidden)
+
+    banner = response.body[/<div class="match-new-banner"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, banner
+    assert_no_match(/pas-du-ping-pong/, banner)
   end
 
   test "POST /matches depuis un tournoi inscrit les deux joueurs et lie la carte" do

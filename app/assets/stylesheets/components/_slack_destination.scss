@@ -40,11 +40,15 @@
 }
 
 // Liste déroulante (positionnée au-dessus du reste du modal).
+// max-height est recalculée à l'ouverture par slack_destination_controller.js
+// (positionList) selon la place réellement disponible à l'écran ; la valeur ci-
+// dessous reste le plafond et le repli si le JS n'a pas encore tourné.
 .slack-dest-list {
   position: absolute;
   z-index: 20;
   left: 0;
   right: 0;
+  top: 100%;
   margin: 4px 0 0;
   padding: 4px;
   list-style: none;
@@ -54,6 +58,15 @@
   border: 1px solid var(--theme-border);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+// Ouverture vers le haut, quand le champ est trop bas dans la fenêtre pour que la
+// liste tienne en dessous (cf. positionList).
+.slack-dest-list--up {
+  top: auto;
+  bottom: 100%;
+  margin: 0 0 4px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
 }
 
 // En-tête de groupe (★ Favoris / Channels / Messages directs).
