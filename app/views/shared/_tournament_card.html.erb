@@ -115,7 +115,12 @@
     <div class="match-players-row">
       <div class="match-avatars">
         <% tournament.tournament_users.select { |tu| tu.role == "joueur" }.first(3).each do |tu| %>
-          <%= user_avatar_tag tu.user, css_class: "match-avatar" %>
+          <%# Taille passée EXPLICITEMENT (26px = celle de .match-avatar en SCSS) :
+              sans elle, `user_avatar_tag` pose son défaut de 40px EN INLINE sur
+              l'avatar à initiales (un <div>), qui l'emporte donc sur le CSS, tandis
+              que l'avatar photo (un <img> dimensionné par attributs) reste à 26px —
+              d'où deux tailles d'avatars sur la même ligne. %>
+          <%= user_avatar_tag tu.user, css_class: "match-avatar", width: 26, height: 26 %>
         <% end %>
       </div>
       <span class="match-players-text">
