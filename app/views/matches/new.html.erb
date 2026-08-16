@@ -37,6 +37,10 @@
   <div class="match-new-banner" id="match-new-banner" style="<%= banner_style %>">
     <div class="container">
 
+      <%# Fil d'Ariane dans la bannière (sombre → on_dark). %>
+      <%= breadcrumb_for([["Matchs", matches_path], ["Créer un match", nil]],
+                         bare: true, on_dark: true) %>
+
       <%# Lien retour vers la liste des matchs %>
       <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-3" %>
 

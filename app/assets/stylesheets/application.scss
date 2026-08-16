@@ -63,6 +63,15 @@ body {
   // le moindre `color: inherit` (les liens de classement, par exemple) tombait
   // dans le piège. On ancre donc l'héritage sur le thème.
   color: var(--theme-text-primary);
+
+  // ⚠️ Même piège que la couleur de texte, côté FOND. Le body n'avait aucun
+  // background : il restait blanc, y compris en thème sombre. Personne ne le
+  // voyait tant que chaque page peignait son propre fond sur toute la hauteur
+  // (`.tournaments-index-page { background: var(--theme-page-bg) }`, etc.). Dès
+  // qu'un élément se place AVANT ce bloc — le fil d'Ariane, posé dans le <main>
+  // en amont du contenu — le blanc du body apparaît en bande. On ancre donc le
+  // fond sur le thème, comme le texte.
+  background-color: var(--theme-page-bg);
 }
 
 // ── Respect de la préférence système prefers-reduced-motion ─────────────────

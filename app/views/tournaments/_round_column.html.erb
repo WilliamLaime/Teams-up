@@ -13,7 +13,7 @@
 <% stacked = local_assigns.fetch(:stacked, false) %>
 <% score_groups = if local_assigns.fetch(:group_by_record, false)
                     entering = round.tournament.swiss_entering_records[round.number] || {}
-                    round.tournament_matches.order(:position)
+                    round.tournament_matches.order(:position).includes(:match)
                          .group_by { |m| entering.fetch(m.player_a_id, [0, 0]) }
                          .sort_by { |record, _| [-record[0], record[1]] }
                   end %>
@@ -40,7 +40,9 @@
         <% end %>
       <% end %>
     <% else %>
-      <% round.tournament_matches.order(:position).each do |match| %>
+      <%# includes(:match) : le pied de carte lit la rencontre rattachée (lien +
+          créneau) — sans préchargement, c'est une requête par match. %>
+      <% round.tournament_matches.order(:position).includes(:match).each do |match| %>
         <%= render "tournaments/tmatch_scoreline", match: match, stacked: stacked %>
       <% end %>
     <% end %>

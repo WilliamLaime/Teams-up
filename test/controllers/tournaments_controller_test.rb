@@ -295,6 +295,63 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_not_equal ids_by_registration_order, ids_by_draw_order
   end
 
+  # ── Mise en scène du tirage ─────────────────────────────────────────────────
+  # Dans un tournoi à poules, les poules du board sont des onglets dont un seul
+  # est visible : sans overlay, le tirage ne montrerait jamais la composition des
+  # autres poules.
+  test "POST start rend l'overlay de tirage pour un tournoi à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t), as: :turbo_stream
+
+    assert_response :success
+    assert_includes response.body, "draw-overlay"
+    assert_includes response.body, "tournament-draw"
+  end
+
+  # Les autres formats gardent le battage des cartes du board : l'overlay ne doit
+  # pas s'y inviter.
+  test "POST start ne rend pas d'overlay hors format à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8) # ronde_suisse
+
+    post start_tournament_path(t), as: :turbo_stream
+
+    assert_response :success
+    assert_not_includes response.body, "draw-overlay"
+    assert_includes response.body, "tournament-draw"
+  end
+
+  # Chemin HTML (sans Turbo Stream) : il aboutissait à un simple flash, sans
+  # jamais montrer le tirage. `?draw=1` rebranche l'animation à l'arrivée.
+  test "POST start en HTML redirige avec le drapeau d'animation" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t)
+    assert_redirected_to tournament_path(t, draw: 1)
+
+    follow_redirect!
+    assert_select "#tournament_board[data-controller*=?]", "tournament-draw"
+    assert_select ".draw-overlay"
+  end
+
+  # Sans le drapeau (simple rechargement), l'animation ne rejoue pas.
+  test "GET show sans ?draw ne greffe pas l'animation" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+    post start_tournament_path(t)
+
+    get tournament_path(t)
+
+    assert_select "#tournament_board[data-controller=?]", "bracket"
+    assert_select ".draw-overlay", count: 0
+  end
+
   test "POST start refuse un non-organisateur" do
     sign_in @co_org # ni admin ni co-org de ce tournoi
     t = open_tournament_with_players(8)

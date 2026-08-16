@@ -1,8 +1,16 @@
 <%# Lancement du tournoi : on remplace le board et on greffe le contrôleur
     `tournament-draw` (en plus de `bracket`) → il joue l'animation de tirage au
-    sort sur les cartes de la 1re ronde, puis se retire. %>
+    sort, puis se retire.
+
+    Deux mises en scène selon le format, décidées par la PRÉSENCE de l'overlay :
+      • formats à poules → overlay qui révèle les poules l'une après l'autre
+        (les poules du board sont des onglets : une seule y est visible à la fois) ;
+      • autres formats   → battage puis révélation en cascade des cartes du board. %>
 <%= turbo_stream.replace "tournament_board" do %>
   <div id="tournament_board" class="tournament-board" data-controller="bracket tournament-draw">
+    <% if Tournament::POOL_BASED_FORMATS.include?(@tournament.format) %>
+      <%= render "tournaments/draw_overlay", tournament: @tournament %>
+    <% end %>
     <%= render "tournaments/board", tournament: @tournament %>
   </div>
 <% end %>

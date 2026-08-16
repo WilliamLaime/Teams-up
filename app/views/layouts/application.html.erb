@@ -173,6 +173,12 @@
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
     <%# id="main-content" : cible du lien d'évitement (RGAA 12.11) %>
     <main id="main-content" tabindex="-1">
+      <%# Fil d'Ariane : posé par les vues via `content_for :breadcrumb,
+          breadcrumb_for([...])`. Rendu ici, DANS le main, pour que sa position
+          soit la même partout — une page qui l'oublie n'affiche simplement rien.
+          Le partial embarque son propre .container : le layout n'en pose aucun,
+          chaque page apportant le sien. %>
+      <%= yield :breadcrumb %>
       <%= yield %>
     </main>
 

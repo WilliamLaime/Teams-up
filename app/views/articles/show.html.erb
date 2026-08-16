@@ -35,30 +35,14 @@
     <%= ", \"image\": \"#{j @article.cover_image_url}\"" if @article.cover_image_url.present? %>
   }
   </script>
-  <%# BreadcrumbList — affiche le fil d'Ariane directement dans les résultats Google %>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Accueil", "item": "<%= root_url %>" },
-      { "@type": "ListItem", "position": 2, "name": "Blog", "item": "<%= articles_url %>" },
-      { "@type": "ListItem", "position": 3, "name": "<%= j @article.title %>" }
-    ]
-  }
-  </script>
 <% end %>
+
+<%# Fil d'Ariane commun (nav + JSON-LD BreadcrumbList d'un seul appel). %>
+<% content_for :breadcrumb, breadcrumb_for([["Blog", articles_path], [@article.title, nil]]) %>
 
 <div class="blog-show">
   <div class="container">
     <div class="blog-show__wrapper">
-
-      <%# Fil d'Ariane : aide la navigation et le SEO %>
-      <nav class="blog-show__breadcrumb" aria-label="Fil d'Ariane">
-        <%= link_to "Accueil", root_path %> /
-        <%= link_to "Blog", articles_path %> /
-        <span><%= truncate(@article.title, length: 40) %></span>
-      </nav>
 
       <%# En-tête article %>
       <header class="blog-show__header">

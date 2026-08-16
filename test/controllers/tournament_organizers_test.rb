@@ -207,4 +207,29 @@ class TournamentOrganizersTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form[action=?]", add_co_organizer_tournament_path(@tournament), 0
   end
+
+  # La vue d'ensemble n'affichait que l'admin : un tournoi géré à plusieurs y
+  # paraissait tenu par une seule personne, alors que l'onglet Participants les
+  # listait déjà tous.
+  test "la vue d'ensemble liste l'admin ET les co-organisateurs" do
+    @tournament.tournament_users.create!(user: @co_org, role: "co_organisateur", status: "approved")
+
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".tournament-overview__item dt", text: /Organisateurs/
+    assert_select ".tournament-overview__item dd", text: /#{@admin.display_name}/
+    assert_select ".tournament-overview__item dd", text: /#{@co_org.display_name}/
+  end
+
+  # Sans co-organisateur, préciser « (admin) » n'apporte rien : il n'y a personne
+  # dont se distinguer, et le libellé reste au singulier.
+  test "la vue d'ensemble reste au singulier sans co-organisateur" do
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".tournament-overview__item dt", text: /Organisateur/
+    assert_select ".tournament-overview__item dt", text: /Organisateurs/, count: 0
+    assert_select ".tournament-overview__role", count: 0
+  end
 end

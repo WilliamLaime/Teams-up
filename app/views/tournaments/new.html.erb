@@ -13,6 +13,11 @@
       fond suit le sport sélectionné (comme à la création d'un match). %>
   <div class="match-new-banner" id="tournament-new-banner">
     <div class="container">
+      <%# Fil dans la bannière (bare) : au-dessus, il décollerait la bannière de
+          la navbar. Le bouton Retour reste — il revient en arrière, là où le fil
+          remonte la hiérarchie ; ce n'est pas la même promesse. %>
+      <%= breadcrumb_for([["Tournois", tournaments_path], ["Créer un tournoi", nil]],
+                         bare: true, on_dark: true) %>
       <%= render "shared/nav_button", label: "Retour", direction: "back", extra_class: "mb-3" %>
 
       <h1 class="match-new-banner-title">Créer un tournoi</h1>

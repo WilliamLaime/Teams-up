@@ -1,0 +1,81 @@
+// ── Fil d'Ariane ─────────────────────────────────────────────────────────────
+// Navigation hiérarchique posée en haut du contenu (RGAA 12.2).
+//
+// Discret par construction : c'est un repère, pas un élément d'action. Il ne doit
+// jamais concurrencer le titre de la page qui le suit immédiatement.
+//
+// Les couleurs passent par les tokens `--theme-*` (cf. config/_colors.scss) et
+// non par des `rgba(255,255,255,…)` en dur : ces derniers deviennent illisibles
+// en mode clair, ce qui était le défaut de l'ancien fil d'Ariane du blog.
+
+.breadcrumb-trail {
+  padding: 1rem 0 0.25rem;
+  font-size: 0.82rem;
+
+  // Variante posée DANS une bannière (cf. le local `bare` du partial) : la
+  // bannière gère déjà ses marges, le fil ne doit pas en rajouter au-dessus.
+  &--bare {
+    padding: 0 0 0.5rem;
+  }
+
+  &__list {
+    // Le <ol> porte la sémantique d'ordre (1er, 2e, 3e niveau) ; ses puces n'ont
+    // aucun sens visuel ici, le séparateur « / » joue déjà ce rôle.
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__link {
+    color: var(--theme-text-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      color: $green;
+      text-decoration: underline;
+    }
+  }
+
+  &__separator {
+    color: var(--theme-text-muted);
+    opacity: 0.6;
+  }
+
+  // Page courante : plus appuyée que les maillons parents, mais sans être un lien.
+  &__current {
+    color: var(--theme-text-primary);
+    font-weight: 600;
+  }
+
+  // Variante posée sur une bannière sombre (photo ou dégradé). Ces bannières sont
+  // sombres DANS LES DEUX THÈMES : les tokens --theme-* y deviendraient illisibles
+  // en mode clair (texte noir sur photo sombre). D'où des blancs fixes, comme le
+  // reste du contenu de ces bannières.
+  &--on-dark {
+    .breadcrumb-trail__link,
+    .breadcrumb-trail__separator {
+      color: rgba(255, 255, 255, 0.65); // blanc intentionnel — fond sombre garanti
+    }
+
+    .breadcrumb-trail__current {
+      color: #fff;
+    }
+
+    .breadcrumb-trail__link:hover,
+    .breadcrumb-trail__link:focus-visible {
+      color: $green;
+    }
+  }
+}

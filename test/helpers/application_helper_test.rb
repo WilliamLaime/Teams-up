@@ -224,4 +224,46 @@ class ApplicationHelperTest < ActionView::TestCase
   test "sport_icon_html_attr retourne une chaîne vide si sport est nil" do
     assert_equal "", sport_icon_html_attr(nil)
   end
+
+  # ── Fil d'Ariane ────────────────────────────────────────────────────────────
+  # L'accueil est ajouté par le helper : les vues ne le passent jamais, sinon
+  # chacune finirait par l'écrire à sa façon.
+  test "breadcrumb_for préfixe le fil par l'accueil" do
+    html = breadcrumb_for([["Tournois", "/tournois"], ["Open de printemps", nil]])
+
+    assert_includes html, "Accueil"
+    assert_includes html, "Open de printemps"
+    assert_includes html, %(aria-label="Fil d'Ariane")
+  end
+
+  # Le dernier maillon est la page courante : jamais un lien.
+  test "breadcrumb_for ne lie pas la page courante" do
+    html = breadcrumb_for([["Tournois", "/tournois"], ["Open de printemps", nil]])
+
+    assert_includes html, '<a class="breadcrumb-trail__link" href="/tournois">Tournois</a>'
+    assert_includes html, 'aria-current="page"'
+    assert_no_match(/<a[^>]*>\s*Open de printemps/, html)
+  end
+
+  # Un libellé long ferait déborder le fil sur mobile. Seul l'AFFICHAGE est
+  # tronqué : le JSON-LD garde le nom complet, c'est celui-là que Google indexe.
+  test "breadcrumb_for tronque l'affichage mais pas le JSON-LD" do
+    html = breadcrumb_for([["A" * 80, nil]])
+    nav  = html[/<nav.*?<\/nav>/m]
+
+    assert_includes nav, "..."
+    assert_not_includes nav, "A" * 80
+    assert_includes html[/<script.*?<\/script>/m], "A" * 80
+  end
+
+  # schema.org exige des URLs absolues : un chemin relatif y est ignoré.
+  test "breadcrumb_json_ld rend des URLs absolues et omet la page courante" do
+    json = JSON.parse(breadcrumb_json_ld([["Accueil", "/"], ["Tournois", "/tournois"], ["Open", nil]]))
+    items = json["itemListElement"]
+
+    assert_equal "BreadcrumbList", json["@type"]
+    assert_equal [1, 2, 3], items.map { |i| i["position"] }
+    assert_match %r{\Ahttps?://.+/tournois\z}, items[1]["item"]
+    assert_nil items[2]["item"], "la page courante ne doit pas porter d'item"
+  end
 end

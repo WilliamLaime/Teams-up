@@ -8,6 +8,11 @@
     (voir la condition dans _form.html.erb).
     ══════════════════════════════════════════════════════════════ %>
 
+<%# Pas de bannière ici (contrairement à new) : le fil passe par le layout. %>
+<% content_for :breadcrumb, breadcrumb_for([["Matchs", matches_path],
+                                            [@match.title, match_path(@match)],
+                                            ["Modifier", nil]]) %>
+
 <%# Même fond sombre que la page de création pour une cohérence visuelle %>
 <div class="match-create-page">
   <%= render "form" %>
