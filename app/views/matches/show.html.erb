@@ -1446,7 +1446,10 @@
 
           <%= form_with url: share_on_slack_match_path(@match), method: :post do %>
             <div style="padding: 16px 0 8px; text-align:left;">
-              <%= render "shared/slack_share_field", workspaces: @slack_destinations, standalone: true %>
+              <%# `lazy` : le champ est dans une modale — la requête ne part qu'à
+                  son ouverture. La page match n'appelle donc plus Slack du tout
+                  tant que l'organisateur ne partage pas. %>
+              <%= render "shared/slack_share_frame", standalone: true, loading: "lazy" %>
             </div>
             <div class="d-flex gap-3" style="margin-top: 20px;">
               <button type="submit"
