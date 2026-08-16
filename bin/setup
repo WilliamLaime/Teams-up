@@ -38,19 +38,16 @@ FileUtils.chdir APP_ROOT do
     # .githooks/ ne serait jamais exécuté chez qui que ce soit.
     system! "git config core.hooksPath .githooks"
 
-    # Le pilote de fusion est nommé dans .gitattributes, mais sa commande doit
-    # être déclarée dans la config LOCALE : git refuse d'exécuter une commande
-    # arbitraire venant d'un fichier versionné (ce serait une faille évidente).
-    system! "git config merge.graphify.name 'fusion de graphes graphify'"
-    system! "git config merge.graphify.driver 'graphify merge-driver %O %A %B'"
+    # Le graphe n'est plus versionné : il faut le construire une première fois
+    # sur ce poste. Ensuite le hook pre-commit le maintient à jour.
+    system "graphify update ."
 
-    puts "  hooks et pilote de fusion configurés."
-    puts "  le graphe se met à jour tout seul à chaque commit."
+    puts "  hook configuré, graphe construit localement."
+    puts "  il se met à jour tout seul à chaque commit."
   else
     puts "  graphify n'est pas installé — étape ignorée, le projet fonctionne normalement."
-    puts "  Le graphe est déjà présent dans graphify-out/ (versionné) : les commandes"
-    puts "  `graphify explain \"MaClasse\"` et `graphify affected \"MaClasse\"` deviennent"
-    puts "  disponibles après :"
+    puts "  Les commandes `graphify explain \"MaClasse\"` et `graphify affected \"MaClasse\"`"
+    puts "  deviennent disponibles après :"
     puts ""
     puts "      pipx install graphifyy   # ou : brew install pipx && pipx install graphifyy"
     puts "      bin/setup                # relancer pour activer les hooks"

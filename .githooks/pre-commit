@@ -44,10 +44,7 @@ graphify update . >/dev/null 2>&1 || {
   exit 0
 }
 
-# Seuls les trois artefacts versionnés sont ajoutés (cf. .gitignore) : le cache
-# AST et le manifeste restent locaux.
-git add graphify-out/graph.json \
-        graphify-out/graph.html \
-        graphify-out/GRAPH_REPORT.md 2>/dev/null
+# Rien à ajouter au commit : `graphify-out/` est désormais entièrement ignoré
+# (cf. .gitignore). Le graphe reste local à chaque poste, rafraîchi ci-dessus.
 
 exit 0
