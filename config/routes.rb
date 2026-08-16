@@ -216,6 +216,9 @@ Rails.application.routes.draw do
     get "connect",         to: "connections#connect"
     get "connect/callback", to: "connections#callback"
     delete "disconnect/:id", to: "connections#destroy", as: :disconnect
+    # Champ « Partager sur Slack » chargé à part (turbo-frame) : lister les
+    # destinations passe par l'API Slack, on ne fait pas attendre la page pour ça.
+    get "share_field", to: "share_fields#show"
     # Épinglage d'une destination favorite (channel/DM) — appelé en fetch depuis le combobox.
     post   "favorites", to: "favorites#create"
     delete "favorites", to: "favorites#destroy"

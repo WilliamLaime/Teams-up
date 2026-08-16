@@ -97,8 +97,8 @@ class TournamentsController < ApplicationController
     )
     authorize @tournament
 
-    # Destinations Slack pour le partage optionnel (vide si le compte n'est pas lié)
-    @slack_destinations = slack_destinations_for(current_user)
+    # Les destinations Slack arrivent dans un turbo-frame (cf.
+    # shared/_slack_share_frame) : l'API Slack ne retarde plus l'affichage.
   end
 
   # POST /tournois

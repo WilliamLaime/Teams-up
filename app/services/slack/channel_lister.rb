@@ -29,10 +29,35 @@ module Slack
     PAGE_SIZE = 200
     MAX_PAGES = 10
 
+    # Durée de vie du cache des destinations (cf. .resolve). Channels et membres d'un
+    # workspace bougent rarement, alors que le formulaire de création de match est
+    # rendu très souvent : 5 minutes suppriment l'attente sans rendre la liste
+    # sensiblement obsolète (un channel créé à l'instant apparaît au pire 5 min plus tard).
+    CACHE_TTL = 5.minutes
+
     # Version riche : hash groupé des destinations + drapeau `auth_failed` indiquant que
     # le workspace doit être réinstallé (token mort ou bot_token illisible).
     #   { groups: { "Channels" => [...], "Messages directs" => [...] }, auth_failed: false }
-    def self.resolve(workspace)
+    #
+    # ⚠️ MISE EN CACHE (perf) : sans elle, chaque rendu du formulaire de match ou de
+    # tournoi déclenchait DEUX séries d'appels HTTP Slack (conversations.list +
+    # users.list, paginés) DANS le cycle de la requête — soit plusieurs centaines de ms
+    # à plusieurs secondes avant que la page ne s'affiche, et jusqu'à 8 s par appel si
+    # Slack traîne (READ_TIMEOUT). La clé inclut `cache_key_with_version` : une
+    # réinstallation du workspace (nouveau bot_token → updated_at modifié) invalide
+    # l'entrée d'elle-même, sans attendre le TTL.
+    # `force: true` contourne le cache quand l'utilisateur demande explicitement une
+    # actualisation de ses destinations.
+    def self.resolve(workspace, force: false)
+      return uncached_resolve(workspace) if workspace.blank?
+
+      Rails.cache.fetch(["slack/channel_lister", workspace.cache_key_with_version],
+                        expires_in: CACHE_TTL, force: force) do
+        uncached_resolve(workspace)
+      end
+    end
+
+    def self.uncached_resolve(workspace)
       token = read_token(workspace)
       return { groups: {}, auth_failed: false }         if token == :missing
       return { groups: {}, auth_failed: true }          if token == :unreadable

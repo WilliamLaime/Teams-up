@@ -118,13 +118,6 @@ class MatchesController < ApplicationController
     # Vérifie si l'utilisateur connecté est déjà inscrit à ce match
     @current_match_user = @match.match_users.find_by(user: current_user)
 
-    # Destinations Slack pour la modale de partage — chargées uniquement pour
-    # l'organisateur lié (chaque entrée déclenche des appels API Slack, inutile
-    # pour un simple visiteur).
-    if @current_match_user&.role == "organisateur" && current_user&.slack_linked?
-      @slack_destinations = slack_destinations_for(current_user)
-    end
-
     # Vérifie si current_user est ami avec l'organisateur (pour afficher l'icône ami)
     if user_signed_in?
       organizer_user = @match_users.find { |mu| mu.role == "organisateur" }&.user
@@ -197,9 +190,9 @@ class MatchesController < ApplicationController
     # confrontations rattachables, pour le préremplissage côté client).
     prefill_from_tournament_match
     load_tournament_link_options
-
-    # Destinations Slack pour le partage optionnel (vide si le compte n'est pas lié)
-    @slack_destinations = slack_destinations_for(current_user)
+    # Les destinations Slack ne sont PLUS chargées ici : elles arrivent dans un
+    # turbo-frame (cf. shared/_slack_share_frame et Slack::ShareFieldsController),
+    # pour que l'API Slack ne retarde plus l'affichage du formulaire.
   end
 
   # POST /matches
@@ -579,7 +572,14 @@ class MatchesController < ApplicationController
     pending = TournamentMatch.where(is_bye: false).where.missing(:match)
                              .joins(:tournament_round)
                              .where(tournament_rounds: { tournament_id: tournaments.map(&:id) })
-                             .includes(:tournament_round, :player_a, :player_b)
+                             # user > profil préchargés : les libellés des options
+                             # appellent short_name / display_name sur les DEUX joueurs
+                             # (cf. tournament_match_option), soit 4 requêtes par
+                             # confrontation sans ce preload — une centaine de
+                             # confrontations en poule suffit à faire traîner la page.
+                             .includes(:tournament_round,
+                                       player_a: { user: :profil },
+                                       player_b: { user: :profil })
                              .order(:position)
 
     pending.group_by { |tm| tm.tournament_round.tournament_id }.each_with_object({}) do |(tournament_id, tms), map|

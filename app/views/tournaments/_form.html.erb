@@ -585,7 +585,7 @@
             </div>
 
             <%# ── Partage Slack (création uniquement) ── %>
-            <%= render "shared/slack_share_field", workspaces: @slack_destinations %>
+            <%= render "shared/slack_share_frame" %>
           <% end %>
 
           <%= f.submit(@tournament.new_record? ? "Créer le tournoi" : "Enregistrer les modifications", class: "match-publish-btn") %>

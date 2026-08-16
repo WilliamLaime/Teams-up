@@ -71,7 +71,13 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
                  ] }.to_json)
 
     sign_in @user
+    # Le formulaire ne porte plus que le turbo-frame : le champ lui-même est chargé
+    # à part pour ne pas faire attendre la page sur l'API Slack.
     get new_match_path
+    assert_response :success
+    assert_select "turbo-frame#slack_share_field[src]", count: 1
+
+    get slack_share_field_path
     assert_response :success
     assert_select "input#post_to_slack", count: 1
     # Workspace unique → champ caché (pas de select workspace)
@@ -248,7 +254,7 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
                  body: { ok: true, members: [] }.to_json)
 
     sign_in @user
-    get new_match_path
+    get slack_share_field_path # champ chargé dans son turbo-frame
     assert_response :success
     # Le JSON embarqué doit contenir la paire favorite.
     assert_match(/#general/, response.body)

@@ -860,7 +860,7 @@
 
           <%# ── Partage Slack (création uniquement) ── %>
           <% if @match.new_record? %>
-            <%= render "shared/slack_share_field", workspaces: @slack_destinations %>
+            <%= render "shared/slack_share_frame" %>
           <% end %>
 
           <%# ── Bouton de soumission ──
