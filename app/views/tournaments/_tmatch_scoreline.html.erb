@@ -30,6 +30,14 @@
 <% mine_a = my_player?(match.player_a) %>
 <% mine_b = my_player?(match.player_b) %>
 <div id="tmatch_<%= match.id %>" class="tmatch-card <%= "tmatch-card--stacked" if stacked %> <%= "tmatch-card--bye" if match.is_bye %> <%= "tmatch-card--done" if match.decided? %> <%= "tmatch-card--mine" if mine_a || mine_b %>">
+  <%# Créneau en tête de carte (« Jeudi à 17h45 » / « Date à définir »), commun aux
+      deux mises en page. Rendu AVANT le branchement plutôt que dupliqué dans
+      chacune : la seule carte qui n'en veut pas est le bye (un exempt n'a pas de
+      rencontre à planifier). %>
+  <% unless match.is_bye %>
+    <%= render "tournaments/tmatch_when", match: match %>
+  <% end %>
+
   <% if match.is_bye %>
     <div class="tmatch-card__player tmatch-card__player--winner">
       <%= link_to user_profil_path(match.player_a.user), class: "tmatch-card__player-link" do %>

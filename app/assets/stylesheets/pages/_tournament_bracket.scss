@@ -859,9 +859,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // Le pied peut porter jusqu'à 4 éléments (score, créneau, lien, bouton) alors
-  // que les cartes du tableau final sont étroites : sans wrap, le créneau
-  // écraserait le bouton de score au lieu de passer à la ligne.
+  // Le pied peut porter jusqu'à 3 éléments (score, lien, bouton) alors que les
+  // cartes du tableau final sont étroites : sans wrap, le lien écraserait le
+  // bouton de score au lieu de passer à la ligne.
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: auto;
@@ -889,17 +889,33 @@
   letter-spacing: 0.03em;
 }
 
-// Créneau de la rencontre planifiée (« Demain à 19h »). Discret — c'est une
-// information de contexte, pas une action : le score et les boutons doivent
-// rester les éléments saillants du pied de carte.
-.tmatch-card__schedule {
-  display: inline-flex;
+// Bandeau « quand ? » en TÊTE de carte (« Jeudi à 17h45 » / « Date à définir »).
+// Toujours rendu sur une carte de match (jamais sur un bye) : c'est ce qui garantit
+// que deux cartes voisines ont la même hauteur, qu'une rencontre soit datée ou non.
+// Le trait du bas répond à celui du pied (border-top) : la carte se lit en trois
+// zones — quand, qui, quoi faire.
+// Discret volontairement : information de contexte, les noms et le score restent
+// les éléments saillants.
+.tmatch-card__when {
+  display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--theme-text-muted);
   white-space: nowrap;
+  overflow: hidden;      // cartes étroites du tableau final : jamais de débordement
+  text-overflow: ellipsis;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+// Aucune date fixée : état VIDE, pas une information. L'italique et l'opacité
+// réduite le disent sans ajouter un badge de plus sur une carte déjà chargée.
+.tmatch-card__when--tbd {
+  font-style: italic;
+  font-weight: 500;
+  opacity: 0.75;
 }
 
 .tmatch-card__score-btn,
