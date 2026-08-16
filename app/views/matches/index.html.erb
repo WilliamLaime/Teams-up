@@ -3,6 +3,10 @@
 <%# Abonnement ActionCable : mises à jour en temps réel sans rechargement %>
 <%= turbo_stream_from "matches" %>
 
+<%# « Mes matchs » est un mode de la même page (?mine=1) : le fil le reflète. %>
+<% content_for :breadcrumb, breadcrumb_for(
+     params[:mine].present? ? [["Matchs", matches_path], ["Mes matchs", nil]] : [["Matchs", nil]]) %>
+
 <div class="matches-index-page">
   <div class="container">
 

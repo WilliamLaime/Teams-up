@@ -1,4 +1,5 @@
 <%# ── Page détail d'une équipe ─────────────────────────────────────────────── %>
+<% content_for :breadcrumb, breadcrumb_for([["Mes équipes", teams_path], [@team.name, nil]]) %>
 
 <div class="teams-page">
 <div class="container py-4">

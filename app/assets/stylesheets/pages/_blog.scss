@@ -240,19 +240,8 @@
     margin: 0 auto;
   }
 
-  // Fil d'Ariane
-  &__breadcrumb {
-    font-size: 0.82rem;
-    color: rgba(255, 255, 255, 0.35);
-    margin-bottom: 2rem;
-
-    a {
-      color: rgba(255, 255, 255, 0.4);
-      text-decoration: none;
-
-      &:hover { color: $green; }
-    }
-  }
+  // Le fil d'Ariane du blog était écrit en dur ici : il vit désormais dans le
+  // composant partagé components/_breadcrumb.scss (et gère les deux thèmes).
 
   &__header { margin-bottom: 2rem; }
 

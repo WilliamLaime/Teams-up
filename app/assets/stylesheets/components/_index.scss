@@ -11,6 +11,7 @@
 @import "chat";
 @import "footer"; // pied de page partagé sur toutes les pages
 @import "nav_button";
+@import "breadcrumb"; // Fil d'Ariane — navigation hiérarchique (RGAA 12.2)
 @import "match_card"; // Carte match — partagée entre home et liste des matchs
 @import "sticky_chat"; // Bouton et panneau chat sticky global (toutes les pages)
 @import "sport";       // Sélecteur de sport, badges, styles multi-sport

@@ -16,6 +16,30 @@ module TournamentsHelper
     tag.span "Toi", class: "tmatch-card__me-badge", aria: { label: "C'est toi" }
   end
 
+  # ── Rencontre planifiée ───────────────────────────────────────────────────────
+  # Quand vaut lieu ce match de tournoi, en une ligne lisible (« Demain à 19h »).
+  #
+  # La date ne vit PAS sur le TournamentMatch : depuis le Lot 7, les joueurs
+  # conviennent eux-mêmes de leur créneau en créant une vraie rencontre (Match)
+  # rattachée à la carte (has_one :match). Tant qu'elle n'existe pas — ou qu'elle
+  # n'a pas de date, la colonne étant nullable — il n'y a rien à annoncer : on
+  # renvoie `nil` pour que l'appelant n'affiche aucun nœud plutôt qu'un libellé vide.
+  #
+  # Le jour réutilise `match_day_label` (ApplicationHelper) : il dit « Ce soir »,
+  # « Demain » ou « Mardi » quand c'est proche, ce qui se lit bien plus vite qu'une
+  # date complète sur une carte déjà dense.
+  def tournament_match_schedule(tournament_match)
+    match = tournament_match.match
+    return if match.nil? || match.date.blank?
+
+    label = match_day_label(match)
+    return label if match.time.blank?
+
+    # Convention d'heure du projet : « 19h » plutôt que « 19h00 » (cf. _overview).
+    hour = match.time.strftime("%M") == "00" ? match.time.strftime("%Hh") : match.time.strftime("%Hh%M")
+    "#{label} à #{hour}"
+  end
+
   # Tours à afficher en colonnes dans le bracket viewer : les rondes de la phase
   # round-robin du format (suisse / championnat / poules) dans l'ordre, PUIS les
   # tours du tableau final. Renvoie un tableau (les colonnes du ruban).

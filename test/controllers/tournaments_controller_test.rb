@@ -93,6 +93,15 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='tournament[swiss_wins_to_qualify]']"
     assert_select "input[name='tournament[swiss_losses_to_eliminate]']"
     assert_select "input[name='tournament[time(4i)]']", 0
+
+    # Effectif : les presets, le mode Libre puis « Sans limite », dans cette
+    # rangée et dans cet ordre — le bouton ferme la ligne, après « Libre ».
+    assert_select ".tournament-capacity-buttons .tournament-unlimited-btn", text: /Sans limite/
+    buttons = css_select(".tournament-capacity-buttons button").map { |b| b["class"] }
+    assert_equal buttons.length - 1, buttons.index { |c| c.include?("tournament-unlimited-btn") },
+                 "« Sans limite » doit être le dernier bouton de la rangée"
+    assert_operator buttons.index { |c| c.include?("tournament-libre-btn") }, :<,
+                    buttons.index { |c| c.include?("tournament-unlimited-btn") }
   end
 
   test "GET /tournois/new redirige un visiteur non connecté" do
@@ -121,6 +130,46 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ─── Bannière + réglages de structure (Lot 7) ───────────────────────────────
+  # ── Effectif libre ──────────────────────────────────────────────────────────
+  # Le formulaire soumet une chaîne vide quand l'organisateur choisit
+  # « Sans limite » : le tournoi doit se créer sans plafond, et pas être rejeté.
+  test "POST /tournois crée un tournoi sans plafond d'effectif" do
+    sign_in @user
+
+    assert_difference "Tournament.count", 1 do
+      post tournaments_path, params: {
+        tournament: {
+          name: "Open sans limite", sport_id: @sport.id, format: "poules",
+          max_players: "", date: Date.tomorrow.to_s, place: "Club Test"
+        }
+      }
+    end
+
+    t = Tournament.last
+    assert_nil t.max_players
+    assert t.unlimited_capacity?
+    assert_redirected_to tournament_path(t)
+  end
+
+  # Sans plafond, l'inscription ne doit jamais être refusée pour cause de
+  # tournoi complet — c'est tout l'intérêt de l'option.
+  test "on peut s'inscrire à un tournoi sans plafond quel que soit l'effectif" do
+    t = Tournament.create!(name: "Sans limite", sport: @sport, user: @user, format: "poules",
+                           status: "open", date: Date.tomorrow, place: "Club Test")
+    5.times do |i|
+      t.tournament_users.create!(user: create_test_user(email: "libre#{i}@example.com"),
+                                 role: "joueur", status: "approved")
+    end
+
+    joiner = create_test_user(email: "dernier@example.com")
+    sign_in joiner
+
+    assert_difference -> { t.tournament_users.count }, 1 do
+      post tournament_tournament_users_path(t)
+    end
+    assert_equal "open", t.reload.status, "aucune clôture automatique sans plafond"
+  end
+
   test "POST /tournois persiste la bannière choisie et les réglages de structure" do
     sign_in @user
     banner = "https://res.cloudinary.com/test/image/upload/pingpong.png"
@@ -293,6 +342,63 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     # draw_order, mais un vrai mélange.
     ids_by_draw_order = approved.order(:draw_order).pluck(:id)
     assert_not_equal ids_by_registration_order, ids_by_draw_order
+  end
+
+  # ── Mise en scène du tirage ─────────────────────────────────────────────────
+  # Dans un tournoi à poules, les poules du board sont des onglets dont un seul
+  # est visible : sans overlay, le tirage ne montrerait jamais la composition des
+  # autres poules.
+  test "POST start rend l'overlay de tirage pour un tournoi à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t), as: :turbo_stream
+
+    assert_response :success
+    assert_includes response.body, "draw-overlay"
+    assert_includes response.body, "tournament-draw"
+  end
+
+  # Les autres formats gardent le battage des cartes du board : l'overlay ne doit
+  # pas s'y inviter.
+  test "POST start ne rend pas d'overlay hors format à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8) # ronde_suisse
+
+    post start_tournament_path(t), as: :turbo_stream
+
+    assert_response :success
+    assert_not_includes response.body, "draw-overlay"
+    assert_includes response.body, "tournament-draw"
+  end
+
+  # Chemin HTML (sans Turbo Stream) : il aboutissait à un simple flash, sans
+  # jamais montrer le tirage. `?draw=1` rebranche l'animation à l'arrivée.
+  test "POST start en HTML redirige avec le drapeau d'animation" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t)
+    assert_redirected_to tournament_path(t, draw: 1)
+
+    follow_redirect!
+    assert_select "#tournament_board[data-controller*=?]", "tournament-draw"
+    assert_select ".draw-overlay"
+  end
+
+  # Sans le drapeau (simple rechargement), l'animation ne rejoue pas.
+  test "GET show sans ?draw ne greffe pas l'animation" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+    post start_tournament_path(t)
+
+    get tournament_path(t)
+
+    assert_select "#tournament_board[data-controller=?]", "bracket"
+    assert_select ".draw-overlay", count: 0
   end
 
   test "POST start refuse un non-organisateur" do

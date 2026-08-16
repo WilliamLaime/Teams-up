@@ -3,6 +3,7 @@
     effectif, description). Purement lecture ; la mécanique de jeu vit dans
     l'onglet « Matchs ». Local : tournament. %>
 <%
+  co_organizers = tournament.co_organizers
   fr_days   = %w[Dim Lun Mar Mer Jeu Ven Sam]
   fr_months = %w[janv. févr. mars avr. mai juin juil. août sept. oct. nov. déc.]
   date_str  = if tournament.date
@@ -44,10 +45,24 @@
       <dd><%= tournament.place.presence || "Non défini" %></dd>
     </div>
 
+    <%# Équipe organisatrice au complet : l'admin PUIS ses co-organisateurs. Ne
+        montrer que l'admin donnait une fiche fausse dès qu'un tournoi était géré
+        à plusieurs — l'onglet Participants, lui, les listait déjà tous.
+        `co_organizers` précharge user: :profil : aucun N+1 ajouté ici. %>
     <% if tournament.user %>
       <div class="tournament-overview__item">
-        <dt><i data-lucide="shield" aria-hidden="true"></i> Organisateur</dt>
-        <dd><%= tournament.user.display_name %></dd>
+        <dt>
+          <i data-lucide="shield" aria-hidden="true"></i>
+          Organisateur<%= "s" if co_organizers.any? %>
+        </dt>
+        <dd>
+          <%# Le rôle n'est précisé que s'il y a quelqu'un dont se distinguer :
+              « Admin » seul face à personne n'apporte rien. %>
+          <%= tournament.user.display_name %><% if co_organizers.any? %> <span class="tournament-overview__role">(admin)</span><% end %>
+          <% co_organizers.each do |tu| %>
+            <br><%= tu.display_name %> <span class="tournament-overview__role">(co-organisateur)</span>
+          <% end %>
+        </dd>
       </div>
     <% end %>
 
@@ -55,7 +70,12 @@
       <dt><i data-lucide="users" aria-hidden="true"></i> Inscrits</dt>
       <dd>
         <%= tournament.approved_players_count %><% if tournament.max_players %> / <%= tournament.max_players %><% end %>
-        <% if tournament.preset_capacity? %>
+        <%# Sans plafond, « participants attendus » n'a pas de sens : personne
+            n'est attendu, on compte simplement les inscrits. %>
+        <% if tournament.unlimited_capacity? %>
+          inscrit<%= "s" if tournament.approved_players_count > 1 %>
+          <span class="tournament-overview__role">(sans limite)</span>
+        <% elsif tournament.preset_capacity? %>
           joueur<%= "s" if tournament.approved_players_count > 1 %>
         <% else %>
           participant<%= "s" if tournament.approved_players_count > 1 %> attendu<%= "s" if tournament.approved_players_count > 1 %>

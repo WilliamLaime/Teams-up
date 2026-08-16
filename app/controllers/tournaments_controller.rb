@@ -84,7 +84,12 @@ class TournamentsController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream # start.turbo_stream.erb : remplace le board + déclenche le tirage
-      format.html { redirect_to tournament_path(@tournament), notice: "Tournoi lancé, le tirage est fait !" }
+      # `draw: 1` : sans lui, le chemin HTML (JS indisponible, requête non-Turbo)
+      # atterrissait sur un simple flash, sans jamais montrer le tirage.
+      format.html do
+        redirect_to tournament_path(@tournament, draw: 1),
+                    notice: "Tournoi lancé, le tirage est fait !"
+      end
     end
   end
 

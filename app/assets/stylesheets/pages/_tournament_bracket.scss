@@ -592,6 +592,97 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+// ── Overlay de tirage des poules (contrôleur tournament-draw) ─────────────────
+// Affiché une seule fois, au lancement d'un tournoi à poules, puis retiré du DOM.
+// Fond sombre assumé dans les deux thèmes : c'est un moment de mise en scène, pas
+// une surface de lecture — d'où les blancs fixes plutôt que les tokens de thème.
+.draw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1080; // au-dessus des modales Bootstrap (1055)
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.92);
+  animation: tmatch-reveal 0.3s ease forwards;
+
+  &__inner {
+    width: 100%;
+    max-width: 900px;
+    text-align: center;
+  }
+
+  &__kicker {
+    font-family: $display-font;
+    font-size: clamp(1.6rem, 5vw, 2.6rem);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: $green;
+    margin-bottom: 1.5rem;
+  }
+
+  &__pools {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  // Chaque poule reste invisible jusqu'à ce que le JS la révèle : c'est la
+  // succession qui fait le suspense du tirage.
+  &__pool {
+    opacity: 0;
+    transform: translateY(12px);
+    padding: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    background-color: rgba(255, 255, 255, 0.04);
+
+    &--revealed { animation: tmatch-reveal 0.4s ease forwards; }
+  }
+
+  &__pool-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff; // blanc intentionnel — fond sombre garanti
+    margin-bottom: 0.6rem;
+  }
+
+  &__players {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  &__player {
+    opacity: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+
+    &--revealed { animation: tmatch-reveal 0.35s ease forwards; }
+  }
+
+  &__skip {
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    padding: 0.35rem 1.1rem;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible { color: $green; border-color: $green; }
+  }
+}
+
 // ── Score du tableau final (carte empilée _tmatch) ────
 // Nombre affiché à droite du nom de chaque joueur (via display_score_for).
 // Pastille « Toi » à côté de mon nom : la bordure verte dit « ton match », cette
@@ -768,6 +859,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  // Le pied peut porter jusqu'à 4 éléments (score, créneau, lien, bouton) alors
+  // que les cartes du tableau final sont étroites : sans wrap, le créneau
+  // écraserait le bouton de score au lieu de passer à la ligne.
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: auto;
   padding-top: 0.35rem;
@@ -792,6 +887,19 @@
   font-weight: 700;
   color: var(--theme-text-muted);
   letter-spacing: 0.03em;
+}
+
+// Créneau de la rencontre planifiée (« Demain à 19h »). Discret — c'est une
+// information de contexte, pas une action : le score et les boutons doivent
+// rester les éléments saillants du pied de carte.
+.tmatch-card__schedule {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--theme-text-muted);
+  white-space: nowrap;
 }
 
 .tmatch-card__score-btn,
@@ -1213,6 +1321,14 @@
       font-weight: 600;
       color: var(--theme-text-strong);
     }
+  }
+
+  // Rôle en regard d'un nom d'organisateur (« (admin) », « (co-organisateur) »).
+  // Volontairement en retrait du nom : c'est une précision, pas l'information.
+  &__role {
+    font-weight: 500;
+    font-size: 0.82rem;
+    color: var(--theme-text-muted);
   }
 
   &__description {

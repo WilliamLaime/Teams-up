@@ -397,6 +397,11 @@
     ══════════════════════════════════════════════════ %>
 <div class="match-show-wrapper">
   <div class="container">
+    <%# Fil d'Ariane rendu ICI, sous la bannière, et non via `content_for` : la
+        bannière est une photo sombre à texte blanc, où les couleurs de thème du
+        fil seraient illisibles en mode clair. `bare` car on est déjà dans le
+        .container de la page. %>
+    <%= breadcrumb_for([["Matchs", matches_path], [@match.title, nil]], bare: true) %>
     <div class="row g-4">
 
       <%# ════════════════════════════════════════

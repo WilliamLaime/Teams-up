@@ -43,7 +43,9 @@
         </div>
         <div class="bracket__matches">
           <% if round %>
-            <% round.tournament_matches.order(:position).each do |match| %>
+            <%# includes(:match) : le pied de carte lit la rencontre rattachée (lien +
+                créneau) — sans préchargement, c'est une requête par match. %>
+            <% round.tournament_matches.order(:position).includes(:match).each do |match| %>
               <%= render "tournaments/tmatch", match: match %>
             <% end %>
           <% else %>

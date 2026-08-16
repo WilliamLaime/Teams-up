@@ -42,7 +42,8 @@ export default class extends Controller {
     // Sources
     "sportInput", "formatInput", "formatWrapper", "formatButtons",
     "nameInput", "descriptionInput", "placeInput", "dateInput",
-    "maxPlayersInput", "presetsGroup", "countBtn", "libreBtn", "libreSection", "libreInput",
+    "maxPlayersInput", "countBtn", "libreBtn", "libreSection", "libreInput",
+    "unlimitedBtn", "unlimitedHint",
     "proposals", "structurePreview", "structureText", "selfRegister", "coOrgInput",
     "playoffsWrapper", "playoffsInput", "playoffsBtn", "bannerImageInput",
     // Réglages de structure personnalisables (Lot 7)
@@ -59,6 +60,11 @@ export default class extends Controller {
   connect() {
     // Vrai quand l'utilisateur est en saisie "Libre" (nombre arbitraire).
     this.libreMode = false
+    // Vrai quand l'organisateur a choisi « Sans limite » : max_players reste vide,
+    // aucun plafond n'est annoncé. À distinguer d'un effectif simplement pas
+    // encore choisi — d'où un drapeau explicite plutôt qu'un test sur le champ.
+    this.unlimitedMode = this.hasUnlimitedBtnTarget &&
+                         this.unlimitedBtnTarget.classList.contains("active")
     // Vrai quand le mode Libre a été forcé par le format championnat (pas un choix
     // manuel) — permet de le désactiver proprement si on change de format ensuite.
     this.forcedLibreByChampionnat = false
@@ -212,11 +218,15 @@ export default class extends Controller {
   // @return {boolean} true si on vient de forcer l'entrée en mode Libre.
   _syncPlayerCountMode(format) {
     const isChampionnat = format === "championnat"
-    this.presetsGroupTarget.style.display = isChampionnat ? "none" : ""
-    this.libreBtnTarget.style.display     = isChampionnat ? "none" : ""
+    // On masque les presets UN PAR UN et non la rangée entière : « Sans limite »
+    // y figure aussi et doit rester accessible en championnat.
+    this.countBtnTargets.forEach(b => { b.style.display = isChampionnat ? "none" : "" })
+    this.libreBtnTarget.style.display = isChampionnat ? "none" : ""
 
     if (isChampionnat) {
-      if (!this.libreMode) {
+      // « Sans limite » est un choix explicite et compatible avec le championnat :
+      // on ne le remplace pas par une saisie libre dans le dos de l'organisateur.
+      if (!this.libreMode && !this.unlimitedMode) {
         this._enterLibreMode(true) // préserve une valeur déjà saisie
         return true
       }
@@ -233,11 +243,43 @@ export default class extends Controller {
     this.libreBtnTarget.classList.remove("active")
   }
 
+  // ── Nombre de joueurs : sans limite ──────────────────────────
+  // Le seul mode qui laisse max_players VIDE. Il n'y a alors pas de structure à
+  // prévisualiser (elle dépendra des inscrits), ni de réglages avancés à
+  // proposer : leurs valeurs recommandées se calculent toutes sur l'effectif.
+  selectUnlimited() {
+    this.unlimitedMode = true
+    this.libreMode = false
+    this.forcedLibreByChampionnat = false
+
+    this.libreSectionTarget.style.display = "none"
+    this.libreBtnTarget.classList.remove("active")
+    this.countBtnTargets.forEach(b => b.classList.remove("active"))
+    this.unlimitedBtnTarget.classList.add("active")
+    this.unlimitedHintTarget.style.display = ""
+
+    this.maxPlayersInputTarget.value = ""
+    this.recapPlayersTarget.textContent = "Sans limite"
+    this.structurePreviewTarget.style.display = "none"
+    this.recapStructureRowTarget.style.display = "none"
+    this.advancedSectionTarget.style.display = "none"
+  }
+
+  // Quitte le mode « sans limite ». Appelé par tout autre choix d'effectif.
+  _exitUnlimitedMode() {
+    if (!this.unlimitedMode) return
+
+    this.unlimitedMode = false
+    this.unlimitedBtnTarget.classList.remove("active")
+    this.unlimitedHintTarget.style.display = "none"
+  }
+
   // ── Nombre de joueurs : presets ──────────────────────────────
   selectPlayerCount(event) {
     const btn = event.currentTarget
     this.libreMode = false
     this.forcedLibreByChampionnat = false
+    this._exitUnlimitedMode()
     this.libreSectionTarget.style.display = "none"
     this.libreBtnTarget.classList.remove("active")
 
@@ -257,6 +299,7 @@ export default class extends Controller {
   // déjà saisie dans maxPlayersInput au lieu de la vider.
   _enterLibreMode(preserveExisting) {
     this.libreMode = true
+    this._exitUnlimitedMode()
     this.forcedLibreByChampionnat = this.formatInputTarget.value === "championnat"
     this.libreSectionTarget.style.display = ""
     this.countBtnTargets.forEach(b => b.classList.remove("active"))
@@ -522,6 +565,10 @@ export default class extends Controller {
 
   // ── Aperçu de structure ──────────────────────────────────────
   _refreshStructure() {
+    // Sans limite : rien à prévisualiser tant qu'on ne connaît pas les inscrits.
+    // On sort avant _syncAdvanced, qui rouvrirait le bloc des réglages.
+    if (this.unlimitedMode) return
+
     const format  = this.formatInputTarget.value
     const players = parseInt(this.maxPlayersInputTarget.value)
     this._syncAdvanced(format, players)

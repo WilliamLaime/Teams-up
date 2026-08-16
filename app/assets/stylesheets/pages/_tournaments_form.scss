@@ -255,3 +255,13 @@
 .tournament-form-hint {
   color: var(--theme-text-muted);
 }
+
+// Bouton « Sans limite » : même apparence que les presets d'effectif (il hérite
+// de .match-level-btn), avec de quoi aligner l'icône ∞ sur le texte. Il vit hors
+// du groupe de presets, qui est masqué pour un championnat alors que l'effectif
+// libre vaut pour tous les formats.
+.tournament-unlimited-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}

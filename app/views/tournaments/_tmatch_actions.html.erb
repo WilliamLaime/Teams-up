@@ -34,7 +34,18 @@
       </span>
     <% end %>
 
+    <%# Quand la rencontre est planifiée, la DATE prime sur le lien : sans elle, il
+        fallait ouvrir chaque rencontre une par une pour savoir quand on joue.
+        `tournament_match_schedule` renvoie nil tant qu'aucune date n'est fixée —
+        une rencontre peut exister sans créneau — auquel cas seul le lien reste. %>
     <% if match.match %>
+      <% schedule = tournament_match_schedule(match) %>
+      <% if schedule %>
+        <span class="tmatch-card__schedule">
+          <i data-lucide="calendar-clock" style="width:13px;height:13px;" aria-hidden="true"></i>
+          <%= schedule %>
+        </span>
+      <% end %>
       <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
     <% elsif can_create_match %>
       <%= link_to "Créer la rencontre", new_match_path(tournament_match_id: match.id), class: "tmatch-card__link" %>
