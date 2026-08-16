@@ -31,6 +31,11 @@ class TournamentMatch < ApplicationRecord
   before_validation :resolve_bye, on: :create
   # Le vainqueur découle du score : recalculé avant chaque sauvegarde.
   before_save :derive_winner_from_sets
+  # …et la carte Slack de la rencontre suit le score. Posé ICI, sur le modèle, et
+  # non dans TournamentMatchesController : le score s'écrit par au moins trois
+  # chemins (saisie, correction d'un tour verrouillé, seed de démo) et un hook de
+  # controller en oublierait fatalement un.
+  after_commit :refresh_slack_card, on: :update
 
   # ── Écriture du score ─────────────────────────────────────────────────────────
   # Normalise puis affecte le détail set-par-set. `raw` = tableau de paires
@@ -144,6 +149,22 @@ class TournamentMatch < ApplicationRecord
   def final_phase? = Tournament::FINAL_PHASES.include?(tournament_round&.phase)
 
   private
+
+  # ── Rafraîchissement de la carte Slack ────────────────────────────────────────
+  # Une rencontre partagée dans un channel y laisse une carte que SlackMatchStatusJob
+  # sait ré-éditer (chat.update). Sans ce hook, la carte restait figée sur « À venir »
+  # alors que le résultat était connu sur le site : ceux qui suivent le tournoi depuis
+  # Slack ne voyaient jamais les scores.
+  #
+  # Le job reconstruit les blocs à l'état du moment et ne fait rien si la rencontre
+  # n'a jamais été partagée — inutile de tester ici l'existence d'une carte.
+  def refresh_slack_card
+    return unless saved_change_to_sets? || saved_change_to_winner_id? ||
+                  saved_change_to_status? || saved_change_to_forfeit?
+
+    linked = match
+    SlackMatchStatusJob.perform_later(linked.id) if linked
+  end
 
   # ── Dérivation du vainqueur ───────────────────────────────────────────────────
   # Deux modes selon le sport (cf. Sport#scoring_rules) :
