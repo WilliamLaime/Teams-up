@@ -17,23 +17,33 @@ module Slack
       fields = [
         { type: "mrkdwn", text: "*Sport*\n#{sport}" },
         { type: "mrkdwn", text: "*Quand*\n#{match_when_label(match)}" },
-        { type: "mrkdwn", text: "*Où*\n#{location_label(match)}" },
-        { type: "mrkdwn", text: "*Niveau*\n#{match.level.presence || 'Tout niveau'}" }
+        { type: "mrkdwn", text: "*Où*\n#{location_label(match)}" }
       ]
+      # Niveau et compteur de joueurs n'ont de sens que sur un match OUVERT : ils
+      # répondent à « puis-je m'inscrire ? ». Une rencontre de tournoi oppose deux
+      # joueurs déjà désignés par le tirage — la question ne se pose pas, et un
+      # « 2/2 personnes » sur un 1v1 ne fait que brouiller la carte.
+      fields << { type: "mrkdwn", text: "*Niveau*\n#{match.level.presence || 'Tout niveau'}" } unless match.tournament_linked?
       fields << { type: "mrkdwn", text: "*Format*\n#{match.format}" } if match.format.present?
-      fields << { type: "mrkdwn", text: "*Joueurs*\n#{players_label(match)}" }
+      fields << { type: "mrkdwn", text: "*Joueurs*\n#{players_label(match)}" } unless match.tournament_linked?
 
       [
         { type: "header",
-          text: { type: "plain_text", text: "🏆 Nouveau match : #{match.title}", emoji: true } },
+          text: { type: "plain_text", text: "#{match_emoji(match)} Nouveau match : #{match.title}", emoji: true } },
         # Tag de statut (À venir / En cours / Terminé), ré-édité par SlackMatchStatusJob.
         { type: "context",
           elements: [{ type: "mrkdwn", text: status_tag(match) }] },
         { type: "section", fields: fields },
-        # Liste des joueurs déjà inscrits ("Prénom N."), web ET Slack confondus.
-        { type: "section", text: { type: "mrkdwn", text: enrolled_players_label(match) } },
+        # Adversaires (tournoi) ou liste des inscrits ("Prénom N."), web ET Slack confondus.
+        { type: "section", text: { type: "mrkdwn", text: participants_label(match) } },
         { type: "actions", elements: action_elements(match) }
       ]
+    end
+
+    # Emoji de tête de carte : celui du sport quand il est connu (🏓 en ping-pong,
+    # ⚽ en foot — cf. db/sports.rb), sinon la coupe générique.
+    def match_emoji(match)
+      match.sport&.icon.presence || "🏆"
     end
 
     # Texte de repli (notif mobile / accessibilité) pour un match.
@@ -75,8 +85,13 @@ module Slack
     # Nouveau message (pas une ré-édition de la carte) posté dans le(s) même(s)
     # channel(s) que la carte du match. `mentions` (optionnel) = chaîne "<@U…> <@U…>"
     # des joueurs dont le compte Slack est lié, pour les notifier nommément.
-    def match_prep_blocks(match, mentions = nil)
+    # `opponent` (optionnel) : le User d'en face, quand le rappel part en message
+    # privé à un joueur précis (rencontre de tournoi). Dans ce cas on ne met pas
+    # de mention `<@U…>` — le destinataire est déjà seul dans la conversation,
+    # se pinguer soi-même n'a pas de sens.
+    def match_prep_blocks(match, mentions = nil, opponent: nil)
       lines = ["*#{match.title}* démarre dans ~15 min. À vous de jouer ! 💪"]
+      lines << "🆚 Tu affrontes *#{opponent.short_name}*" if opponent.present?
       lines << "📍 #{location_label(match)}"
       lines << mentions if mentions.present?
 
@@ -170,6 +185,19 @@ module Slack
         text: { type: "plain_text", text: "Voir sur Teams-up", emoji: true },
         url: match_url(match)
       }
+
+      # Rencontre de tournoi : la composition est décidée par le tirage, personne
+      # ne s'inscrit ni ne se désinscrit depuis Slack. On ne laisse donc que de la
+      # consultation — le match, et le tableau du tournoi dont il fait partie.
+      if match.tournament_linked?
+        tournament_button = {
+          type: "button",
+          text: { type: "plain_text", text: "Voir le tournoi", emoji: true },
+          url: tournament_url(match.tournament)
+        }
+        return [view_button, tournament_button]
+      end
+
       return [view_button] unless match_status(match) == :upcoming
 
       join_button = {
@@ -260,8 +288,27 @@ module Slack
     # couverts à l'identique. `includes(user: :profil)` évite le N+1 (short_name
     # lit le profil). Un bloc section Slack est plafonné à 3000 caractères → on
     # tronque l'ensemble par sécurité si la liste est très longue.
+    # Bloc "qui joue ?" de la carte. Deux régimes :
+    #   - confrontation de tournoi → les deux adversaires, et EUX SEULS (même si
+    #     c'est un organisateur tiers qui a planifié la rencontre) ;
+    #   - match ouvert (ou match seulement rattaché à un tournoi, sans carte du
+    #     tableau) → la liste d'inscrits habituelle.
+    def participants_label(match)
+      return opponents_label(match) if match.tournament_confrontation?
+
+      enrolled_players_label(match)
+    end
+
+    # "*Adversaires*\nPrénom N. 🆚 Prénom N." — l'affiche de la rencontre.
+    def opponents_label(match)
+      names = match.confrontation_opponents.map(&:short_name)
+      return "*Adversaires*\n_À déterminer_" if names.empty?
+
+      "*Adversaires*\n#{names.join(' 🆚 ')}"
+    end
+
     def enrolled_players_label(match)
-      players = match.match_users
+      players = match.displayed_match_users
                      .where("status IN (:shown) OR role = :organizer",
                             shown: %w[pending approved], organizer: "organisateur")
                      .includes(user: :profil)

@@ -139,3 +139,18 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   2. Un test doit épingler ce qu'il prétend tester. Tout réglage laissé au défaut est une dépendance cachée à une décision future.
   3. Une garde déduite de l'**état** (« il y a des 2es de poule, donc barrages ») répond à la mauvaise question. La bonne source est la **déclaration** de structure : elle sait ce qui doit exister, l'état ne sait que ce qui existe.
   4. Une condition de fin formulée en « la dernière étape est-elle finie ? » boucle indéfiniment quand cette étape n'existe pas. Traiter l'absence comme un cas explicite, jamais comme un « pas encore ».
+
+## 2026-08-16 — Une string d'affichage sans validation devient une donnée fausse persistante
+- **Symptôme** : une rencontre de tournoi **ping-pong** affichait « 3v3 » sur sa page, et sa carte Slack annonçait « Joueurs 3/3 personnes » sur un 1v1.
+- **Cause racine** : trois défauts qui se renforçaient.
+  1. `matches.format` n'était validé **par rien** — aucun lien avec le sport. Un match créé en volley puis repassé en ping-pong gardait son « 3v3 » indéfiniment.
+  2. Le champ caché du formulaire tournoi faisait `@match.format.presence || fallback` : la valeur périmée passait **en premier**, donc était réémise à chaque édition et le fallback correct n'était jamais atteint.
+  3. Le format n'était imposé qu'au **préremplissage** (GET `new`), jamais à la soumission — rien ne garantissait la valeur côté serveur.
+- **Effet de bord** : `Match#format_total` déduit le nombre de joueurs attendus de `format.scan(/\d+/)` → un « 3v3 » fabriquait 4 joueurs « sur place » fantômes sur un 1v1. Une string décorative ne l'était pas : elle **alimentait un calcul**.
+- **Correctif** : validation `format_valid_for_sport`, priorité du champ caché inversée (on ne garde la valeur en base que si elle existe pour le sport), format et capacité réimposés dans `sanitize_tournament_link` (POST), et `rake match_formats:realign` pour les données existantes.
+- **Le « 3/3 » avait sa propre cause** : `MatchCreationService` inscrit toujours le créateur en `organisateur`, mais sur une confrontation de tournoi l'organisateur n'est pas forcément un des deux joueurs — il occupait une place dans un 1v1. D'où `Match#displayed_match_users`, qui l'écarte de l'affichage **sans** supprimer son `MatchUser` (il en a besoin pour ses droits).
+- **Leçons**
+  1. Une valeur « juste pour l'affichage » finit toujours par être parsée quelque part. Si elle a un domaine de valeurs valides, la valider — le coût est d'une méthode.
+  2. `valeur_en_base.presence || fallback` est un piège quand la base est justement la source de l'erreur : le fallback n'est atteint que si la donnée est *absente*, jamais si elle est *fausse*. Tester la validité, pas la présence.
+  3. Un préremplissage n'est pas une contrainte. Ce que le serveur doit garantir se réimpose à l'écriture, pas au rendu du formulaire.
+  4. « Participant » n'est pas une notion unique : porter des droits (organisateur) et occuper une place (joueur) sont deux rôles distincts. Les confondre dans un compteur donne « 3/3 » sur un 1v1.

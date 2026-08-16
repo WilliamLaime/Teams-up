@@ -43,7 +43,14 @@ class SlackMatchPrepJob < ApplicationJob
     return unless claim_send(match)
 
     text = builder.match_prep_text(match)
-    messages.each { |msg| post_one(msg, match, text) }
+
+    # Rencontre de tournoi → rappel en message privé aux deux adversaires.
+    # Match ouvert → rappel dans le(s) channel(s) où la carte a été postée.
+    if match.tournament_confrontation?
+      post_direct_messages(match, messages, text)
+    else
+      messages.each { |msg| post_one(msg, match, text) }
+    end
   end
 
   private
@@ -71,6 +78,49 @@ class SlackMatchPrepJob < ApplicationJob
       match.update_column(:slack_prep_sent_at, Time.current)
       true
     end
+  end
+
+  # Rappel en MP : un chat.postMessage par adversaire, adressé à son ID Slack.
+  #
+  # Pas besoin de conversations.open : Slack accepte indifféremment un ID de
+  # channel (C…/G…) ou un ID d'utilisateur (U…) dans `channel`, et ouvre le
+  # message direct lui-même (cf. Slack::ChannelLister). Le scope `im:write` est
+  # déjà demandé à l'installation (config/initializers/slack.rb).
+  #
+  # Le workspace vient des cartes déjà postées pour ce match : c'est celui où les
+  # joueurs ont lié leur compte. Un joueur sans compte Slack lié est sauté — on
+  # NE retombe PAS sur le channel, l'intérêt du MP étant justement de ne notifier
+  # que les deux intéressés.
+  def post_direct_messages(match, messages, text)
+    opponents = match.confrontation_opponents
+    return if opponents.size < 2
+
+    messages.map(&:slack_workspace).uniq.each do |workspace|
+      identities = SlackIdentity.where(slack_workspace: workspace, user_id: opponents.map(&:id))
+                                .index_by(&:user_id)
+
+      opponents.each do |player|
+        identity = identities[player.id]
+        next log_missing_identity(match, player) if identity.nil?
+
+        opponent = opponents.find { |other| other.id != player.id }
+        post_dm(workspace, identity.slack_user_id, match, text, opponent)
+      end
+    end
+  end
+
+  def post_dm(workspace, slack_user_id, match, text, opponent)
+    SlackNotifierService.new(workspace).post_message(
+      channel: slack_user_id, # un ID U… → Slack ouvre le MP
+      text: text,
+      blocks: builder.match_prep_blocks(match, nil, opponent: opponent)
+    )
+  rescue Slack::ApiClient::Error => e
+    Rails.logger.warn("[SlackMatchPrepJob] MP abandonné (#{e.slack_error}) match ##{match.id}")
+  end
+
+  def log_missing_identity(match, player)
+    Rails.logger.info("[SlackMatchPrepJob] pas de compte Slack lié pour l'user ##{player.id} (match ##{match.id})")
   end
 
   def post_one(msg, match, text)
