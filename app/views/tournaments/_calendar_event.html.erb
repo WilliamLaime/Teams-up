@@ -1,0 +1,61 @@
+<%# ── Vignette d'une rencontre dans le calendrier du tournoi ───────────────────
+    Un seul partial sert les DEUX vues (mois et semaine) : la densité se règle en
+    CSS depuis la classe d'état posée sur la racine du calendrier (.tcal--month /
+    .tcal--week). Deux partials distincts auraient voulu dire deux markups à faire
+    évoluer ensemble — et à désynchroniser un jour.
+
+    En vue mois, la case fait quelques dizaines de pixels : seuls l'heure, la
+    poule abrégée et le score restent visibles. Le libellé complet ne disparaît
+    pas pour autant — il est porté à la fois par `title` (survol souris) et par un
+    texte en `visually-hidden` (clavier et lecteurs d'écran, qui n'ont pas accès
+    au `title`).
+
+    Locals : tmatch (TournamentMatch), bracket_rounds (chargés une fois par la
+    grille, cf. calendar_context_label). %>
+<% m       = tmatch.match %>
+<% hour    = tournament_hour(m) %>
+<% context = calendar_context_label(tmatch, bracket_rounds) %>
+<% score   = tmatch.score_summary %>
+<% mine    = my_player?(tmatch.player_a) || my_player?(tmatch.player_b) %>
+<%# « Hugo M. » plutôt que « Hugo Martin » : une case de calendrier fait quelques
+    dizaines de pixels, deux noms complets y seraient tronqués en plein milieu.
+    L'initiale du nom suffit à distinguer deux homonymes de prénom — c'est
+    exactement ce à quoi sert `short_name` (cf. User#short_name). Le nom complet
+    reste dans le libellé accessible et l'infobulle, plus bas. %>
+<% names      = "#{tmatch.player_a&.short_name} – #{tmatch.player_b&.short_name || "?"}" %>
+<% full_names = "#{tmatch.player_a&.display_name} – #{tmatch.player_b&.display_name || "?"}" %>
+<%# Libellé complet, une phrase autonome : c'est ce que « lit » un lecteur d'écran
+    à la place des morceaux visuels éparpillés dans la vignette. %>
+<% full = [context, full_names, "#{l(m.date, format: :long)}#{" à #{hour}" if hour}", score]
+            .compact_blank.join(" — ") %>
+
+<%= link_to match_path(m),
+            class: class_names("tcal-event",
+                               "tcal-event--done" => score.present?,
+                               "tcal-event--mine" => mine),
+            title: full do %>
+  <span class="visually-hidden"><%= full %></span>
+
+  <span class="tcal-event__line" aria-hidden="true">
+    <% if hour %>
+      <span class="tcal-event__time"><%= hour %></span>
+    <% end %>
+    <span class="tcal-event__group"><%= context %></span>
+    <% if score %>
+      <span class="tcal-event__score"><%= score %></span>
+    <% end %>
+  </span>
+
+  <span class="tcal-event__players" aria-hidden="true"><%= names %></span>
+
+  <%# Un score seul ne dit pas tout : « 2-0 » sur forfait ou abandon se lit
+      autrement qu'un 2-0 joué. Pastille discrète, jamais portée par la couleur
+      seule (le texte suffit à comprendre). %>
+  <% if tmatch.forfeit %>
+    <span class="tcal-event__flag" aria-hidden="true">Forfait</span>
+  <% elsif tmatch.retired_player_id.present? %>
+    <span class="tcal-event__flag" aria-hidden="true">Abandon</span>
+  <% elsif tmatch.draw? %>
+    <span class="tcal-event__flag" aria-hidden="true">Nul</span>
+  <% end %>
+<% end %>

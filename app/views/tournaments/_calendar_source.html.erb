@@ -1,0 +1,34 @@
+<%# ── Source des vignettes du calendrier ───────────────────────────────────────
+    Toutes les rencontres datées du tournoi, rendues UNE fois par Rails et
+    regroupées par jour dans des <template> inertes. Le contrôleur Stimulus
+    tournament-calendar ne construit que la charpente (cases de jour vides) et y
+    clone le template du jour correspondant.
+
+    Pourquoi ce détour plutôt que de sérialiser les rencontres en JSON et de
+    fabriquer le HTML en JS : la vignette a besoin de `pool_label`, `round_label`,
+    `score_summary`, du format d'heure du projet et de l'échappement des noms
+    d'utilisateurs. Tout réécrire en JavaScript, ce serait deux sources de vérité
+    pour les mêmes libellés (elles divergent toujours) et un échappement à faire à
+    la main sur des données saisies par des utilisateurs. Ici, le JS ne connaît
+    que des dates.
+
+    Ce partial est isolé pour servir de CIBLE Turbo Stream : après une saisie de
+    score, TournamentMatchesController#render_board le remplace, et le contrôleur
+    Stimulus redessine la vue courante (cf. sourceTargetConnected).
+
+    Locals : tournament ; events (optionnel — les rencontres déjà chargées par
+    l'appelant, pour ne pas refaire la requête ; le Turbo Stream, lui, appelle ce
+    partial seul et la fait lui-même). %>
+<% events = local_assigns.fetch(:events) { calendar_matches(tournament) } %>
+<%# Chargés une seule fois pour toute la grille : `round_label` en a besoin pour
+    situer un tour du tableau final, et le relire par rencontre serait un N+1. %>
+<% bracket_rounds = tournament.bracket_rounds.to_a %>
+<div id="tournament_calendar_source" hidden data-tournament-calendar-target="source">
+  <% events.group_by { |tmatch| tmatch.match.date }.each do |date, day_matches| %>
+    <template data-date="<%= date.iso8601 %>">
+      <% day_matches.each do |tmatch| %>
+        <%= render "tournaments/calendar_event", tmatch: tmatch, bracket_rounds: bracket_rounds %>
+      <% end %>
+    </template>
+  <% end %>
+</div>

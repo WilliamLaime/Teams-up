@@ -141,6 +141,17 @@ class TournamentMatchesController < ApplicationController
       turbo_stream.update("tournament_board",
                           partial: "tournaments/board",
                           locals: { tournament: @tournament.reload }),
+      # L'onglet Calendrier affiche les scores : sa source de vignettes vit hors du
+      # board (il ne doit pas être écrasé par les rerendus du tableau), elle
+      # resterait donc figée sur l'ancien score. Le contrôleur Stimulus redessine
+      # la période affichée dès que cette source est remplacée.
+      #
+      # `replace` et non `update` : le partial rend LE conteneur lui-même (il porte
+      # l'id et la cible Stimulus). En `update` on l'imbriquerait dans son propre
+      # id — et surtout la cible ne serait jamais reconnectée, donc jamais redessinée.
+      turbo_stream.replace("tournament_calendar_source",
+                          partial: "tournaments/calendar_source",
+                          locals: { tournament: @tournament }),
       # Efface le bandeau d'erreur d'une tentative précédente : la modale n'est pas
       # rerendue (elle vit hors du board), ses erreurs resteraient donc affichées.
       score_errors_stream([])

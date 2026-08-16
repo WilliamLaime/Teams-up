@@ -30,7 +30,8 @@
 <% phase_key = local_assigns.fetch(:phase_key, "bracket") %>
 <% expected  = local_assigns.fetch(:expected_rounds) { tournament.expected_bracket_round_count } %>
 
-<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="<%= phase_key %>">
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="<%= phase_key %>"
+         <%= "hidden" if phase_section_hidden?(tournament, phase_key) %>>
   <h2 class="tournament-phase__title"><%= title %></h2>
 
   <div class="bracket">
@@ -56,9 +57,20 @@
                 nourricier — au-delà, il n'y a rien à lire, d'où le tableau vide. %>
             <% feeders = index.positive? && rounds[index - 1] ? rounds[index - 1].tournament_matches.order(:position).to_a : [] %>
             <% (size / (2**(index + 1))).times do |position| %>
+              <%# La PROVENANCE, elle, est connue même quand le tour nourricier
+                  n'existe pas encore : c'est la structure du tableau qui la fixe.
+                  On l'annonce donc toujours, ce qui permet de se projeter sans
+                  attendre le moindre résultat.
+                    • colonnes suivantes → « Vainqueur quart 3 » ;
+                    • première colonne  → les têtes de série attendues, l'ordre du
+                      premier tour étant lui aussi déterminé d'avance (seeding
+                      1 vs N). Tableau principal seulement : voir bracket_seed_labels. %>
+              <% seeds = index.zero? && phase_key == "bracket" ? bracket_seed_labels(size, position) : nil %>
               <%= render "tournaments/bracket_placeholder_cell",
                          player_a: feeders[position * 2]&.winner,
-                         player_b: feeders[(position * 2) + 1]&.winner %>
+                         player_b: feeders[(position * 2) + 1]&.winner,
+                         from_a: bracket_feeder_label(index, position * 2, total) || seeds&.first,
+                         from_b: bracket_feeder_label(index, (position * 2) + 1, total) || seeds&.second %>
             <% end %>
           <% end %>
         </div>

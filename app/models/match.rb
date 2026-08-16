@@ -81,6 +81,12 @@ class Match < ApplicationRecord
   # Scope visibilité : exclut les matchs privés de l'affichage public
   scope :publicly_visible, -> { where(visibility: "public").or(where(visibility: nil)) }
 
+  # Scope "créneau fixé" : la colonne date est nullable, une rencontre peut donc
+  # exister sans être encore posée dans le temps (les joueurs d'un tournoi créent
+  # la rencontre puis conviennent de la date). Tout affichage chronologique —
+  # calendrier en tête — doit écarter ces rencontres : elles n'ont pas de case.
+  scope :scheduled, -> { where.not(date: nil) }
+
   # Scope historique : matchs terminés (débutés il y a plus d'1h)
   scope :completed, -> { where("(date + time) < ?", Time.current - 1.hour) }
 

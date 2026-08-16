@@ -896,4 +896,53 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tournament-start-panel form[action=?]", toggle_registrations_tournament_path(t)
     assert_select ".tournament-edit-link"
   end
+
+  # ─── Onglet Calendrier ──────────────────────────────────────────────────────
+  # Le calendrier est rendu côté serveur dans des <template> groupés par jour,
+  # que Stimulus se contente ensuite de placer dans la grille. Ce test garde donc
+  # les deux bouts : l'onglet existe, et la source des vignettes est bien remplie.
+  test "GET show rend l'onglet Calendrier avec les rencontres datées en source" do
+    t = open_tournament("Avec calendrier")
+    t.update!(user: @user, status: "in_progress")
+    joueurs = 2.times.map do |i|
+      u = create_test_user(email: "cal-ctrl#{i}@example.com")
+      t.tournament_users.create!(user: u, role: "joueur", status: "approved", pool: 0)
+    end
+    round  = t.tournament_rounds.create!(phase: "pool", number: 1, branch: "main")
+    tmatch = TournamentMatch.create!(tournament_round: round, position: 0,
+                                     player_a: joueurs[0], player_b: joueurs[1])
+    Match.create!(title: "Rencontre", date: Date.current + 3,
+                  time: Time.current.change(hour: 19, min: 0),
+                  players_needed: 2, level: "Débutant", visibility: "public",
+                  validation_mode: "automatic", genre_restriction: "tous",
+                  user: @user, sport: @sport, tournament: t, tournament_match: tmatch)
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "[data-tournament-tabs-panel-param=?]", "calendrier"
+    assert_select "[data-panel=?]", "calendrier"
+    assert_select "#tournament_calendar_source template[data-date=?]", (Date.current + 3).iso8601
+    assert_select ".tcal-event__time", text: "19h"
+    assert_select ".tcal-event__group", text: "Poule A"
+  end
+
+  # Une rencontre sans créneau n'a pas de case où se poser : elle ne doit pas
+  # apparaître dans la source, sans quoi Stimulus chercherait une date nulle.
+  test "GET show n'expose pas les rencontres sans date dans le calendrier" do
+    t = open_tournament("Sans créneau")
+    t.update!(user: @user, status: "in_progress")
+    joueurs = 2.times.map do |i|
+      u = create_test_user(email: "nocal#{i}@example.com")
+      t.tournament_users.create!(user: u, role: "joueur", status: "approved")
+    end
+    round = t.tournament_rounds.create!(phase: "swiss", number: 1, branch: "main")
+    TournamentMatch.create!(tournament_round: round, position: 0,
+                            player_a: joueurs[0], player_b: joueurs[1])
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "#tournament_calendar_source template", 0
+  end
 end

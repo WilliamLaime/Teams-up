@@ -244,6 +244,37 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to match_path(Match.last)
   end
 
+  # ─── Retour au tournoi après « Publier le match » ───────────────────────────
+  # Une rencontre planifiée depuis une carte de tournoi doit ramener AU TOURNOI :
+  # celui qui vient de caler son créneau veut le voir apparaître dans le board et
+  # le calendrier, pas atterrir sur la page du match et refaire tout le chemin
+  # pour planifier la suivante.
+  test "POST /matches redirige vers le tournoi quand la rencontre en fait partie" do
+    sign_in @user
+    tournament = Tournament.create!(name: "Tournoi retour", sport: @sport, user: @user,
+                                    format: "poules", status: "in_progress", max_players: 8,
+                                    date: Date.tomorrow, place: "Terrain test")
+
+    assert_difference "Match.count", 1 do
+      post matches_path, params: {
+        match: {
+          title: "Rencontre de tournoi",
+          date: Date.tomorrow,
+          time: "18:00",
+          level: "Débutant",
+          players_needed: 2,
+          sport_id: @sport.id,
+          tournament_id: tournament.id,
+          visibility: "public",
+          validation_mode: "automatic",
+          genre_restriction: "tous"
+        }
+      }
+    end
+
+    assert_redirected_to tournament_path(tournament)
+  end
+
   # Cas d'erreur : des params invalides (level manquant) réaffichent le formulaire
   test "POST /matches réaffiche le formulaire (422) si params invalides" do
     sign_in @user

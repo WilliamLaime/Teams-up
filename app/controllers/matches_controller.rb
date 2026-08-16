@@ -256,7 +256,17 @@ class MatchesController < ApplicationController
                                      params[:slack_workspace_id].presence)
       end
 
-      redirect_to @match, notice: "Match créé avec succès !"
+      # Rencontre créée depuis une carte de tournoi : on revient au TOURNOI, pas
+      # sur la page du match. Celui qui vient de caler son créneau depuis le
+      # tableau veut le voir apparaître dans le tournoi (board et calendrier) ;
+      # l'atterrissage sur la page du match lui faisait perdre son contexte et
+      # l'obligeait à refaire tout le chemin pour planifier la rencontre suivante.
+      if @match.tournament
+        redirect_to tournament_path(@match.tournament),
+                    notice: "Rencontre planifiée : elle apparaît maintenant dans le calendrier du tournoi."
+      else
+        redirect_to @match, notice: "Match créé avec succès !"
+      end
     else
       @my_captained_teams = current_user.captained_teams.order(:name)
       load_tournament_link_options

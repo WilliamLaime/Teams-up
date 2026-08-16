@@ -1,0 +1,68 @@
+<%# ── Onglet « Calendrier » d'un tournoi ───────────────────────────────────────
+    Vision d'ensemble temporelle des rencontres : grille du mois, avec bascule en
+    vue semaine. Jusqu'ici, savoir quand on jouait imposait de parcourir l'onglet
+    Matchs carte par carte, phase par phase.
+
+    La navigation mois/semaine est CLIENTE, et ce n'est pas un détail : les
+    onglets du tournoi basculent en JavaScript sans toucher à l'URL
+    (tournament_tabs_controller). Un rechargement de page à chaque flèche
+    ramènerait le visiteur sur l'onglet Matchs — le calendrier serait
+    inutilisable. Le serveur rend donc toutes les vignettes d'avance
+    (_calendar_source) et Stimulus ne fait que les placer.
+
+    Seules les rencontres DATÉES y apparaissent : tant que les joueurs n'ont pas
+    convenu d'un créneau, il n'y a pas de case où les poser (cf. calendar_matches).
+    La grille, elle, est toujours dessinée — un mois vide est une information.
+
+    Local : tournament. %>
+<% events = calendar_matches(tournament) %>
+
+<div class="tcal tcal--month"
+     data-controller="tournament-calendar"
+     data-tournament-calendar-view-value="month">
+
+  <div class="tcal__toolbar">
+    <div class="tcal__period">
+      <button type="button" class="tcal__nav"
+              data-action="tournament-calendar#previous"
+              aria-label="Période précédente">
+        <i data-lucide="chevron-left" aria-hidden="true"></i>
+      </button>
+
+      <%# aria-live : le titre est la SEULE chose qui change quand on navigue.
+          Sans annonce, un lecteur d'écran laisse croire que rien ne s'est passé. %>
+      <h3 class="tcal__title" data-tournament-calendar-target="title" aria-live="polite"></h3>
+
+      <button type="button" class="tcal__nav"
+              data-action="tournament-calendar#next"
+              aria-label="Période suivante">
+        <i data-lucide="chevron-right" aria-hidden="true"></i>
+      </button>
+
+      <button type="button" class="tcal__today" data-action="tournament-calendar#today">
+        Aujourd'hui
+      </button>
+    </div>
+
+    <div class="tcal__views" role="group" aria-label="Type d'affichage">
+      <button type="button" class="tcal__view" aria-pressed="true"
+              data-tournament-calendar-target="viewButton" data-view="month"
+              data-action="tournament-calendar#showMonth">Mois</button>
+      <button type="button" class="tcal__view" aria-pressed="false"
+              data-tournament-calendar-target="viewButton" data-view="week"
+              data-action="tournament-calendar#showWeek">Semaine</button>
+    </div>
+  </div>
+
+  <div class="tcal__grid" data-tournament-calendar-target="grid"></div>
+
+  <%# Note discrète SOUS la grille (et non à sa place) : le calendrier reste
+      visible, on explique seulement pourquoi il est vide. Masquée par le
+      contrôleur dès qu'une rencontre a un créneau. %>
+  <p class="tcal__note" data-tournament-calendar-target="empty">
+    Aucune rencontre n'a encore de créneau. Les dates apparaîtront ici au fur et à
+    mesure que les joueurs fixeront leurs rencontres.
+  </p>
+
+  <%= render "tournaments/calendar_source", tournament: tournament, events: events %>
+</div>

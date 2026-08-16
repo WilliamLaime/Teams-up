@@ -43,7 +43,8 @@
 
     <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>
     <% if tournament.swiss_rounds.any? %>
-      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
+      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main"
+               <%= "hidden" if phase_section_hidden?(tournament, "main") %>>
         <h2 class="tournament-phase__title">Ronde Suisse</h2>
         <%= render "tournaments/round_ribbon", rounds: tournament.swiss_rounds,
                     title_for: ->(round) { "Ronde #{round.number}" }, group_by_record: true,
@@ -53,7 +54,8 @@
 
     <%# Championnat : round-robin intégral, une section par journée. %>
     <% if tournament.league_rounds.any? %>
-      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
+      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main"
+               <%= "hidden" if phase_section_hidden?(tournament, "main") %>>
         <h2 class="tournament-phase__title">Championnat</h2>
         <%= render "tournaments/round_ribbon", rounds: tournament.league_rounds,
                     title_for: ->(round) { "Journée #{round.number}" }, paginated: true %>
@@ -95,5 +97,42 @@
     <% if classification_tables(tournament).any? %>
       <%= render "tournaments/classification_phase", tournament: tournament %>
     <% end %>
+
+    <%# ── Anti-flash de phase ───────────────────────────────────────────────
+        Les sections arrivent déjà avec le bon `hidden` pour la phase par DÉFAUT
+        (cf. phase_section_hidden?), ce qui évite de toutes les empiler au
+        chargement. Mais la phase réellement affichée est celle mémorisée en
+        sessionStorage : le contrôleur Stimulus la rétablit à son connect, or les
+        modules d'importmap se chargent APRÈS le premier rendu. On voyait donc
+        une fraction de seconde la phase par défaut (les poules) avant de
+        retomber sur la sienne.
+
+        Ce script, lui, est exécuté pendant l'analyse du document — donc avant
+        que quoi que ce soit soit peint. Il ne fait que déplacer l'attribut
+        `hidden`, exactement comme le contrôleur ; ce dernier refait le même
+        calcul au connect, l'opération est idempotente. Même principe que les
+        scripts anti-flash de thème sombre.
+
+        Volontairement sans `defer` ni type=module : ces deux modes repoussent
+        l'exécution après le rendu, ce qui annulerait tout l'intérêt. %>
+    <script>
+      (function () {
+        var board = document.currentScript.parentElement;
+        var stored = null;
+        try { stored = sessionStorage.getItem("phase:<%= tournament.id %>"); } catch (e) { /* stockage refusé */ }
+        if (!stored) return;
+
+        var sections = board.querySelectorAll("[data-tournament-phase-switch-target='section']");
+        // Une phase mémorisée peut avoir disparu (score corrigé, aval détruit) :
+        // sans cette garde on masquerait toutes les sections d'un coup.
+        var exists = Array.prototype.some.call(sections, function (s) { return s.dataset.phase === stored });
+        if (!exists) return;
+
+        Array.prototype.forEach.call(sections, function (s) { s.hidden = s.dataset.phase !== stored });
+        board.querySelectorAll(".phase-nav__pill").forEach(function (pill) {
+          pill.classList.toggle("is-active", pill.dataset.phase === stored);
+        });
+      })();
+    </script>
   </div>
 <% end %>

@@ -2,22 +2,32 @@
     Place d'un tour futur (cf. _bracket.html.erb), stylée comme .tmatch-card--bye
     (bordure en pointillés) pour signaler « pas encore joué ».
 
-    Locals optionnels : player_a, player_b (TournamentUser ou nil) — les joueurs
-    DÉJÀ qualifiés pour cette place. Un vainqueur connu monte d'une case sans
-    attendre son adversaire : sinon le tableau affiche « À déterminer » alors que
-    la moitié de l'information est disponible, et on perd la lecture du parcours.
-    Les deux nil (aucun résultat en amont) → la case vide d'origine. %>
+    Locals optionnels :
+      • player_a, player_b (TournamentUser ou nil) — les joueurs DÉJÀ qualifiés
+        pour cette place. Un vainqueur connu monte d'une case sans attendre son
+        adversaire : sinon le tableau affiche « À déterminer » alors que la moitié
+        de l'information est disponible, et on perd la lecture du parcours.
+      • from_a, from_b (String ou nil) — la PROVENANCE de chaque camp
+        (« Vainqueur demi-finale 1 »), calculée par bracket_feeder_label.
+        Contrairement au joueur, elle est connue dès la construction du tableau :
+        c'est ce qui permet de se projeter (« si je gagne mon quart, je tombe
+        contre le vainqueur de l'autre quart »). nil sur la première colonne,
+        dont les occupants viennent de la phase qualificative — leur appariement
+        dépend du format et n'est pas déductible ici. %>
 <% player_a = local_assigns[:player_a] %>
 <% player_b = local_assigns[:player_b] %>
+<% from_a   = local_assigns[:from_a] %>
+<% from_b   = local_assigns[:from_b] %>
 
-<% if player_a.nil? && player_b.nil? %>
+<% if player_a.nil? && player_b.nil? && from_a.nil? && from_b.nil? %>
+  <%# Ni joueur ni provenance : première colonne d'un tableau pas encore nourri. %>
   <div class="tmatch-card tmatch-card--placeholder">
     <span class="tmatch-card__placeholder-label">À déterminer</span>
   </div>
 <% else %>
   <% mine = [player_a, player_b].compact.any? { |player| my_player?(player) } %>
   <div class="tmatch-card tmatch-card--placeholder tmatch-card--placeholder-known <%= "tmatch-card--mine" if mine %>">
-    <% [player_a, player_b].each do |player| %>
+    <% [[player_a, from_a], [player_b, from_b]].each do |player, origin| %>
       <% if player %>
         <div class="tmatch-card__player <%= "tmatch-card__player--me" if my_player?(player) %>">
           <%= link_to user_profil_path(player.user), class: "tmatch-card__player-link" do %>
@@ -30,7 +40,7 @@
         <%# Le camp encore inconnu garde la hauteur d'une ligne de joueur : les deux
             cases d'une même colonne restent alignées avec les vraies cartes. %>
         <div class="tmatch-card__player tmatch-card__player--pending">
-          <span class="tmatch-card__placeholder-label">À déterminer</span>
+          <span class="tmatch-card__placeholder-label"><%= origin || "À déterminer" %></span>
         </div>
       <% end %>
     <% end %>
