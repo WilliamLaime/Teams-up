@@ -311,7 +311,10 @@
             <label class="form-label d-block">Nombre de joueurs</label>
             <%= f.hidden_field :max_players, data: { "tournament-form-target": "maxPlayersInput" } %>
 
-            <div class="match-level-buttons" data-tournament-form-target="presetsGroup">
+            <%# `tournament-capacity-buttons` : la page compte trois rangées
+                `.match-level-buttons` (format, playoffs, effectif) — celle-ci a
+                besoin d'un nom à elle pour être désignée sans ambiguïté. %>
+            <div class="match-level-buttons tournament-capacity-buttons">
               <% Tournament::PLAYER_COUNTS.each do |count| %>
                 <button type="button"
                         class="match-level-btn tournament-count-btn <%= 'active' if @tournament.max_players == count %>"
@@ -324,18 +327,21 @@
                       class="match-level-btn tournament-libre-btn"
                       data-tournament-form-target="libreBtn"
                       data-action="click->tournament-form#toggleLibre">Libre</button>
-            </div>
 
-            <%# « Sans limite » vit HORS du groupe de presets : celui-ci est masqué
-                pour un championnat, alors que l'effectif libre a du sens dans tous
-                les formats. C'est aussi le seul bouton qui VIDE max_players. %>
-            <button type="button"
-                    class="match-level-btn tournament-unlimited-btn mt-2 <%= 'active' if @tournament.persisted? && @tournament.unlimited_capacity? %>"
-                    data-tournament-form-target="unlimitedBtn"
-                    data-action="click->tournament-form#selectUnlimited">
-              <i data-lucide="infinity" style="width:14px;height:14px;" aria-hidden="true"></i>
-              Sans limite
-            </button>
+              <%# « Sans limite » ferme la rangée, juste après « Libre » : les trois
+                  façons de fixer l'effectif se lisent d'un seul coup d'œil. C'est
+                  le seul bouton qui VIDE max_players.
+                  Il reste dans la rangée même pour un championnat, où les presets
+                  et « Libre » sont masqués un par un (cf. _syncPlayerCountMode) :
+                  l'effectif libre, lui, vaut pour tous les formats. %>
+              <button type="button"
+                      class="match-level-btn tournament-unlimited-btn <%= 'active' if @tournament.persisted? && @tournament.unlimited_capacity? %>"
+                      data-tournament-form-target="unlimitedBtn"
+                      data-action="click->tournament-form#selectUnlimited">
+                <i data-lucide="infinity" style="width:14px;height:14px;" aria-hidden="true"></i>
+                Sans limite
+              </button>
+            </div>
             <p class="tournament-form-hint mt-2" data-tournament-form-target="unlimitedHint"
                style="<%= 'display:none;' unless @tournament.persisted? && @tournament.unlimited_capacity? %>">
               Aucun plafond : les inscriptions restent ouvertes jusqu'à ce que vous

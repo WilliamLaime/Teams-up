@@ -94,10 +94,14 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='tournament[swiss_losses_to_eliminate]']"
     assert_select "input[name='tournament[time(4i)]']", 0
 
-    # Effectif : les presets, le mode Libre et « Sans limite ». Ce dernier vit
-    # HORS du groupe de presets, masqué pour un championnat.
-    assert_select "[data-tournament-form-target='presetsGroup'] .tournament-unlimited-btn", 0
-    assert_select ".tournament-unlimited-btn", text: /Sans limite/
+    # Effectif : les presets, le mode Libre puis « Sans limite », dans cette
+    # rangée et dans cet ordre — le bouton ferme la ligne, après « Libre ».
+    assert_select ".tournament-capacity-buttons .tournament-unlimited-btn", text: /Sans limite/
+    buttons = css_select(".tournament-capacity-buttons button").map { |b| b["class"] }
+    assert_equal buttons.length - 1, buttons.index { |c| c.include?("tournament-unlimited-btn") },
+                 "« Sans limite » doit être le dernier bouton de la rangée"
+    assert_operator buttons.index { |c| c.include?("tournament-libre-btn") }, :<,
+                    buttons.index { |c| c.include?("tournament-unlimited-btn") }
   end
 
   test "GET /tournois/new redirige un visiteur non connecté" do

@@ -42,7 +42,7 @@ export default class extends Controller {
     // Sources
     "sportInput", "formatInput", "formatWrapper", "formatButtons",
     "nameInput", "descriptionInput", "placeInput", "dateInput",
-    "maxPlayersInput", "presetsGroup", "countBtn", "libreBtn", "libreSection", "libreInput",
+    "maxPlayersInput", "countBtn", "libreBtn", "libreSection", "libreInput",
     "unlimitedBtn", "unlimitedHint",
     "proposals", "structurePreview", "structureText", "selfRegister", "coOrgInput",
     "playoffsWrapper", "playoffsInput", "playoffsBtn", "bannerImageInput",
@@ -218,8 +218,10 @@ export default class extends Controller {
   // @return {boolean} true si on vient de forcer l'entrée en mode Libre.
   _syncPlayerCountMode(format) {
     const isChampionnat = format === "championnat"
-    this.presetsGroupTarget.style.display = isChampionnat ? "none" : ""
-    this.libreBtnTarget.style.display     = isChampionnat ? "none" : ""
+    // On masque les presets UN PAR UN et non la rangée entière : « Sans limite »
+    // y figure aussi et doit rester accessible en championnat.
+    this.countBtnTargets.forEach(b => { b.style.display = isChampionnat ? "none" : "" })
+    this.libreBtnTarget.style.display = isChampionnat ? "none" : ""
 
     if (isChampionnat) {
       // « Sans limite » est un choix explicite et compatible avec le championnat :
