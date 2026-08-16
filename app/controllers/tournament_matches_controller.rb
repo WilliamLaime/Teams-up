@@ -32,7 +32,7 @@ class TournamentMatchesController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render_board }
+        format.turbo_stream { render_score_errors }
         format.html { redirect_to tournament_path(@tournament), alert: @match.errors.full_messages.to_sentence }
       end
     end
@@ -57,7 +57,7 @@ class TournamentMatchesController < ApplicationController
       end
     else
       respond_to do |format|
-        format.turbo_stream { render_board }
+        format.turbo_stream { render_score_errors }
         format.html { redirect_to tournament_path(@tournament), alert: @match.errors.full_messages.to_sentence }
       end
     end
@@ -137,10 +137,31 @@ class TournamentMatchesController < ApplicationController
   # CONTENU de #tournament_board sans détruire le conteneur ni son contrôleur
   # Stimulus (bracket), donc la cible reste valide pour les saisies suivantes.
   def render_board
-    render turbo_stream: turbo_stream.update(
-      "tournament_board",
-      partial: "tournaments/board",
-      locals: { tournament: @tournament.reload }
-    )
+    render turbo_stream: [
+      turbo_stream.update("tournament_board",
+                          partial: "tournaments/board",
+                          locals: { tournament: @tournament.reload }),
+      # Efface le bandeau d'erreur d'une tentative précédente : la modale n'est pas
+      # rerendue (elle vit hors du board), ses erreurs resteraient donc affichées.
+      score_errors_stream([])
+    ]
+  end
+
+  # Score refusé par le modèle : on NE touche PAS au tableau (rien n'a changé en
+  # base) et on renvoie les messages dans la modale, restée ouverte.
+  #
+  # `:unprocessable_entity` est ce qui maintient la modale ouverte : le contrôleur
+  # Stimulus ne la ferme que si `turbo:submit-end` signale un succès. En 200, un
+  # score invalide se refermait sans un mot — il paraissait enregistré alors qu'il
+  # ne l'était pas.
+  def render_score_errors
+    render turbo_stream: score_errors_stream(@match.errors.full_messages),
+           status: :unprocessable_entity
+  end
+
+  def score_errors_stream(messages)
+    turbo_stream.update("score_modal_errors",
+                        partial: "tournaments/score_errors",
+                        locals: { messages: messages })
   end
 end

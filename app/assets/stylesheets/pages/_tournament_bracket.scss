@@ -999,6 +999,61 @@
     }
   }
 
+  // Erreurs renvoyées par le serveur (score refusé) : en tête de la modale, qui
+  // reste ouverte pour permettre la correction.
+  &__server-error {
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid rgba(224, 106, 92, 0.5);
+    border-radius: 8px;
+    background: rgba(224, 106, 92, 0.12);
+    color: #e06a5c;
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    p { margin: 0; }
+  }
+
+  // Compteur de sets gagnés, juste sous les lignes de saisie. Même grille que
+  // `&__set` : chaque total tombe pile sous la colonne de scores de son joueur.
+  &__tally {
+    display: grid;
+    grid-template-columns: $score-columns;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--theme-border);
+
+    // `display: grid` l'emporterait sur l'attribut `hidden` (display: none par
+    // défaut du navigateur) : on le rétablit explicitement.
+    &[hidden] { display: none; }
+  }
+
+  &__tally-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+  }
+
+  &__tally-count {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--theme-text-muted);
+    transition: color 0.15s ease;
+
+    // Le joueur en tête ressort : c'est l'information qu'on vient chercher d'un
+    // coup d'œil.
+    &.is-leading { color: $green; }
+  }
+
+  &__tally-sep {
+    text-align: center;
+    color: var(--theme-text-muted);
+  }
+
   &__hint {
     margin: 0.5rem 0 0;
     font-size: 0.75rem;

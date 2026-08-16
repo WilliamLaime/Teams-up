@@ -21,7 +21,10 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["modal", "form", "rows", "title", "nameA", "nameB", "hint", "submit"]
+  static targets = [
+    "modal", "form", "rows", "title", "nameA", "nameB", "hint", "submit",
+    "tally", "tallyA", "tallyB", "serverErrors"
+  ]
 
   connect() {
     // ── Fix Bootstrap backdrop + Turbo Drive (cf. review_modal_controller) ──────
@@ -68,6 +71,9 @@ export default class extends Controller {
       ? this.buildHint(allowDraw, target, winByTwo, cap)
       : ""
 
+    // Erreurs serveur d'une saisie précédente : elles ne concernent pas ce match.
+    this.serverErrorsTarget.innerHTML = ""
+
     this.renderRows(existing)
     this.modal.show()
   }
@@ -96,7 +102,45 @@ export default class extends Controller {
 
   // Recalcule les lignes après une saisie, en conservant ce qui est déjà tapé.
   refreshRows() {
-    this.renderRows(this.currentSets(), { keepFocus: true })
+    const sets = this.currentSets()
+    this.renderRows(sets, { keepFocus: true })
+    // renderRows peut court-circuiter (nombre de lignes inchangé) : le compteur,
+    // lui, doit suivre CHAQUE frappe, on le met donc à jour ici aussi.
+    this.updateTally(sets)
+  }
+
+  // Sets gagnés par chaque joueur : [gagnés par A, gagnés par B].
+  // Un set ne compte que s'il est RÉELLEMENT gagné selon les règles du sport :
+  //   • les deux scores saisis (« 11 – vide » est encore en cours) ;
+  //   • et le score est valide — au ping-pong, 11 points, ou plus de 11 avec
+  //     2 points d'écart. Un 11-10 ou un 12-2 ne fait donc monter personne :
+  //     ce set n'est pas terminé (ou n'a pas pu se produire).
+  setWins(sets) {
+    const wins = [0, 0]
+
+    sets.forEach(([a, b]) => {
+      if (a === "" || b === "") return
+      if (this.setError(a, b)) return
+      if (Number(a) > Number(b)) wins[0] += 1
+      else if (Number(b) > Number(a)) wins[1] += 1
+    })
+
+    return wins
+  }
+
+  // Compteur de sets sous les lignes de saisie : 0 – 0 au départ, incrémenté dès
+  // qu'un set est complet. Le joueur en tête est mis en avant (classe is-leading).
+  updateTally(sets) {
+    // Sport à score final unique : pas de sets à compter.
+    this.tallyTarget.hidden = this.isScoreMode
+    if (this.isScoreMode) return
+
+    const [winsA, winsB] = this.setWins(sets)
+
+    this.tallyATarget.textContent = winsA
+    this.tallyBTarget.textContent = winsB
+    this.tallyATarget.classList.toggle("is-leading", winsA > winsB)
+    this.tallyBTarget.classList.toggle("is-leading", winsB > winsA)
   }
 
   // Sets actuellement dans le DOM, y compris les lignes incomplètes (on ne veut pas
@@ -121,21 +165,14 @@ export default class extends Controller {
   rowCount(sets) {
     if (this.isScoreMode) return 1
 
-    let wins = [0, 0]
+    const wins = this.setWins(sets)
     let complete = 0 // sets aux deux scores saisis
     let pending = 0  // sets à un seul score saisi (en cours de frappe)
 
     sets.forEach(([a, b]) => {
       if (a === "" && b === "") return
-
-      if (a === "" || b === "") {
-        pending += 1
-        return
-      }
-
-      complete += 1
-      if (Number(a) > Number(b)) wins[0] += 1
-      else if (Number(b) > Number(a)) wins[1] += 1
+      if (a === "" || b === "") pending += 1
+      else complete += 1
     })
 
     // Match décidé : on n'affiche que les sets réellement joués (au moins setsToWin).
@@ -191,6 +228,7 @@ export default class extends Controller {
     // est stable, on n'ajoute/retire qu'en fin de liste).
     if (activeIndex >= 0) this.rowsTarget.querySelectorAll("input")[activeIndex]?.focus()
     this.refreshErrors()
+    this.updateTally(sets)
   }
 
   // ── Validation d'un set ─────────────────────────────────────────────────────
@@ -228,8 +266,14 @@ export default class extends Controller {
     // Au-delà de la cible, on est en prolongation : elle se conclut à 2 points
     // d'écart, jamais plus — un set ne continue pas après avoir été gagné.
     if (hi - lo !== 2) {
-      return hi - lo < 2
-        ? `À ${hi}-${lo}, il faut 2 points d'écart : le set continue.`
+      if (hi - lo < 2) return `À ${hi}-${lo}, il faut 2 points d'écart : le set continue.`
+
+      // Écart de plus de 2 au-delà de la cible : impossible, mais le score correct
+      // dépend du perdant. En dessous de target-1 (ex. 12-2), la prolongation n'a
+      // jamais eu lieu : le set s'était terminé à 11-2. Au-delà, il s'agit d'une
+      // prolongation qui aurait dû s'arrêter 2 points plus tôt (ex. 15-11 → 13-11).
+      return lo <= target - 2
+        ? `Score impossible : le set était déjà gagné à ${target}-${lo}.`
         : `Score impossible : au-delà de ${target}, le set se termine dès 2 points d'écart (${lo + 2}-${lo}).`
     }
 
@@ -303,6 +347,9 @@ export default class extends Controller {
 
     input.value = Math.max(0, (Number(input.value) || 0) + delta)
     this.refreshRows() // une ligne de set peut apparaître ou disparaître
+    // Les boutons − / + ne déclenchent aucun `blur` : sans cet appel, un 12-2
+    // construit uniquement à la souris n'affichait son erreur qu'à l'envoi.
+    this.refreshErrors()
   }
 
   get modal() {

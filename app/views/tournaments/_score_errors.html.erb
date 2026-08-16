@@ -1,0 +1,9 @@
+<%# Bandeau d'erreurs de la modale de score. Rendu vide (aucun message) quand la
+    sauvegarde réussit : le même Turbo Stream sert donc à afficher ET à effacer. %>
+<% if messages.present? %>
+  <div class="score-modal__server-error" role="alert">
+    <% messages.each do |message| %>
+      <p><%= message %></p>
+    <% end %>
+  </div>
+<% end %>

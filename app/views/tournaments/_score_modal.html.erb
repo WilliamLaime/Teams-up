@@ -22,6 +22,12 @@
                             action: "submit->tournament-score#validateForm " \
                                     "turbo:submit-end->tournament-score#close" } do %>
         <div class="modal-body">
+          <%# Erreurs renvoyées par le SERVEUR (TournamentMatch#sets_valid_for_sport).
+              Rempli par un Turbo Stream depuis TournamentMatchesController quand la
+              sauvegarde échoue : sans ça la modale se refermait sur un échec, ce qui
+              donnait l'impression que le score était accepté. %>
+          <div id="score_modal_errors" data-tournament-score-target="serverErrors"></div>
+
           <div class="score-modal__players">
             <span class="score-modal__player" data-tournament-score-target="nameA"></span>
             <span class="score-modal__vs">vs</span>
@@ -31,6 +37,17 @@
           <%# Le controller injecte ici une ligne d'inputs par set. %>
           <div class="score-modal__sets" data-tournament-score-target="rows"></div>
 
+          <%# Compteur de sets gagnés, tenu à jour par le contrôleur à chaque saisie.
+              Il se cale sur la MÊME grille que les lignes de sets : chaque total se
+              trouve donc exactement sous la colonne de scores du joueur concerné.
+              Masqué pour les sports à score final unique (pas de sets). %>
+          <div class="score-modal__tally" data-tournament-score-target="tally" hidden>
+            <span class="score-modal__tally-label">Score</span>
+            <span class="score-modal__tally-count" data-tournament-score-target="tallyA">0</span>
+            <span class="score-modal__tally-sep">–</span>
+            <span class="score-modal__tally-count" data-tournament-score-target="tallyB">0</span>
+          </div>
+
           <p class="score-modal__hint" data-tournament-score-target="hint"></p>
         </div>
 
@@ -39,7 +56,7 @@
               les couleurs ($primary mappé sur $green), btn-cta-primary ne fait
               qu'arrondir et régler le survol. Sans lui, le bouton s'affichait sans
               fond — c'est la convention suivie partout ailleurs dans l'app. %>
-          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-cta-secondary" data-bs-dismiss="modal">Fermer</button>
           <button type="submit" class="btn btn-primary btn-cta-primary" data-tournament-score-target="submit">
             Enregistrer le score
           </button>
