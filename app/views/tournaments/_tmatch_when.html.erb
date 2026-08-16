@@ -1,0 +1,21 @@
+<%# ── Bandeau « quand ? » en tête d'une carte de match de tournoi ──────────────
+    Une ligne, toujours présente (sauf bye) : le créneau de la rencontre s'il est
+    fixé, « Date à définir » sinon.
+
+    Pourquoi EN TÊTE et pourquoi TOUJOURS :
+      • en tête — le créneau est une information de contexte qui se lit avant les
+        noms (« quand est-ce que je joue ? »), pas une action ; le pied reste
+        réservé aux actions, sur une seule ligne ;
+      • toujours — c'est ce qui aligne les cartes entre elles. Un bandeau qui
+        n'apparaît que sur les rencontres datées décale tout ce qui le suit d'une
+        carte à l'autre dans une même rangée de grille.
+
+    `tournament_match_schedule` renvoie nil tant qu'aucune date n'est fixée (pas
+    de rencontre rattachée, ou rencontre sans date) : c'est l'état « à définir ».
+
+    Locals : match — le TournamentMatch. %>
+<% schedule = tournament_match_schedule(match) %>
+<div class="tmatch-card__when <%= "tmatch-card__when--tbd" unless schedule %>">
+  <i data-lucide="calendar-clock" style="width:13px;height:13px;" aria-hidden="true"></i>
+  <span><%= schedule || "Date à définir" %></span>
+</div>

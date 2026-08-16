@@ -22,6 +22,10 @@
     </div>
     <span class="tmatch-card__bye-badge">Exempt (qualifié d'office)</span>
   <% else %>
+    <%# Créneau en tête de carte (« Jeudi à 17h45 » / « Date à définir »), jamais
+        sur un bye : un exempt n'a pas de rencontre à planifier. %>
+    <%= render "tournaments/tmatch_when", match: match %>
+
     <% match.players.each do |player| %>
       <% is_winner = match.decided? && match.winner_id == player.id %>
       <div class="tmatch-card__player <%= "tmatch-card__player--winner" if is_winner %> <%= "tmatch-card__player--loser" if match.decided? && !is_winner %> <%= "tmatch-card__player--me" if my_player?(player) %>">
