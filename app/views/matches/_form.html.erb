@@ -83,64 +83,6 @@
         </p>
 
         <%# ────────────────────────────────────────────────
-            Rattachement à un tournoi (Lot 4, élargi Lot 7) — optionnel.
-            Visible dès que l'utilisateur organise OU est inscrit à un tournoi non
-            terminé (cf. MatchesController#linkable_tournaments_for_select).
-            Choisir un tournoi révèle ses confrontations rattachables ; en choisir
-            une préremplit le reste du formulaire (sport, titre avec l'adversaire,
-            lieu, date) — tout reste modifiable, les deux joueurs conviennent de
-            leur créneau. Le lien est aussi posé côté serveur quand on arrive via
-            « Créer la rencontre » (?tournament_match_id=X).
-            ──────────────────────────────────────────────── %>
-        <% if @linkable_tournaments&.any? %>
-          <div class="mb-3">
-            <%= f.label :tournament_id, "Tournoi (optionnel)", class: "form-label" %>
-            <%# Le <select> reste la source de vérité (soumission, data-attributes,
-                évènement `change`) ; custom-select ne fait que l'habiller, le menu
-                natif étant dessiné par l'OS et impossible à mettre au code couleur
-                de l'app. Cf. custom_select_controller.js. %>
-            <div class="custom-select" data-controller="custom-select"
-                 data-action="keydown->custom-select#keydown">
-              <%= f.collection_select :tournament_id, @linkable_tournaments, :id, :name,
-                    { include_blank: "Aucun (match indépendant)" },
-                    class: "form-select custom-select__native",
-                    data: {
-                      "custom-select-target": "native",
-                      "match-form-target": "tournamentInput",
-                      "action": "change->match-form#updateTournament",
-                      "tournament-matches": (@linkable_tournament_matches || {}).to_json,
-                      "new-match-path": new_match_path
-                    } %>
-            </div>
-          </div>
-
-          <%# Confrontation du tournoi. Les options du tournoi COURANT sont rendues
-              côté serveur (état initial, y compris à l'arrivée via « Créer la
-              rencontre ») ; le JS les remplace quand on change de tournoi. %>
-          <% current_confrontations = (@linkable_tournament_matches || {})[@match.tournament_id] || [] %>
-          <div class="mb-3" data-match-form-target="tournamentMatchWrapper"
-               style="<%= 'display:none;' if current_confrontations.empty? %>">
-            <%= f.label :tournament_match_id, "Confrontation (optionnel)", class: "form-label" %>
-            <div class="custom-select" data-controller="custom-select"
-                 data-action="keydown->custom-select#keydown">
-              <%= f.select :tournament_match_id,
-                    options_for_select(current_confrontations.map { |c| [c[:label], c[:id]] }, @match.tournament_match_id),
-                    { include_blank: "Aucune (rencontre libre)" },
-                    class: "form-select custom-select__native",
-                    data: {
-                      "custom-select-target": "native",
-                      "match-form-target": "tournamentMatchInput",
-                      "action": "change->match-form#applyTournamentMatch"
-                    } %>
-            </div>
-            <small class="form-text text-muted">
-              Rattacher la rencontre à ta confrontation préremplit le lieu, la date et l'adversaire.
-            </small>
-          </div>
-        <% end %>
-
-
-        <%# ────────────────────────────────────────────────
             SECTION 1 : Descriptif
             Champs : Titre + Description
             ──────────────────────────────────────────────── %>
@@ -151,6 +93,68 @@
             <div class="match-form-step-badge">1</div>
             <h2 class="match-form-section-title">Descriptif</h2>
           </div>
+
+          <%# ────────────────────────────────────────────────
+              Rattachement à un tournoi (Lot 4, élargi Lot 7) — optionnel.
+              Visible dès que l'utilisateur organise OU est inscrit à un tournoi non
+              terminé (cf. MatchesController#linkable_tournaments_for_select).
+              Choisir un tournoi révèle ses confrontations rattachables ; en choisir
+              une préremplit le reste du formulaire (sport, titre avec l'adversaire,
+              lieu, date) — tout reste modifiable, les deux joueurs conviennent de
+              leur créneau. Le lien est aussi posé côté serveur quand on arrive via
+              « Créer la rencontre » (?tournament_match_id=X).
+              ──────────────────────────────────────────────── %>
+          <% if @linkable_tournaments&.any? %>
+            <%# Les deux sélecteurs vont de pair (choisir un tournoi révèle ses
+                confrontations) : on les met côte à côte sur ≥ md, empilés en
+                dessous. `row` gère l'empilement tout seul, aucune media query. %>
+            <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <%= f.label :tournament_id, class: "form-label" do %>Tournoi <span class="required-star">*</span><% end %>
+              <%# Le <select> reste la source de vérité (soumission, data-attributes,
+                  évènement `change`) ; custom-select ne fait que l'habiller, le menu
+                  natif étant dessiné par l'OS et impossible à mettre au code couleur
+                  de l'app. Cf. custom_select_controller.js. %>
+              <div class="custom-select" data-controller="custom-select"
+                   data-action="keydown->custom-select#keydown">
+                <%= f.collection_select :tournament_id, @linkable_tournaments, :id, :name,
+                      { include_blank: "Aucun (match indépendant)" },
+                      class: "form-select custom-select__native",
+                      data: {
+                        "custom-select-target": "native",
+                        "match-form-target": "tournamentInput",
+                        "action": "change->match-form#updateTournament",
+                        "tournament-matches": (@linkable_tournament_matches || {}).to_json,
+                        "new-match-path": new_match_path
+                      } %>
+              </div>
+            </div>
+
+            <%# Confrontation du tournoi. Les options du tournoi COURANT sont rendues
+                côté serveur (état initial, y compris à l'arrivée via « Créer la
+                rencontre ») ; le JS les remplace quand on change de tournoi. %>
+            <% current_confrontations = (@linkable_tournament_matches || {})[@match.tournament_id] || [] %>
+            <%# Stimulus bascule `style.display` entre "none" et "" sur ce wrapper :
+                une colonne Bootstrap est un simple bloc, la valeur vide restaure
+                donc bien la mise en page. %>
+            <div class="col-md-6" data-match-form-target="tournamentMatchWrapper"
+                 style="<%= 'display:none;' if current_confrontations.empty? %>">
+              <%= f.label :tournament_match_id, class: "form-label" do %>Confrontation <span class="required-star">*</span><% end %>
+              <div class="custom-select" data-controller="custom-select"
+                   data-action="keydown->custom-select#keydown">
+                <%= f.select :tournament_match_id,
+                      options_for_select(current_confrontations.map { |c| [c[:label], c[:id]] }, @match.tournament_match_id),
+                      { include_blank: "Aucune (rencontre libre)" },
+                      class: "form-select custom-select__native",
+                      data: {
+                        "custom-select-target": "native",
+                        "match-form-target": "tournamentMatchInput",
+                        "action": "change->match-form#applyTournamentMatch"
+                      } %>
+              </div>
+            </div>
+            </div><%# fin row tournoi + confrontation %>
+          <% end %>
 
           <%# Champ Sport — visible et pré-rempli avec le sport actif
               L'utilisateur peut le modifier si besoin %>
