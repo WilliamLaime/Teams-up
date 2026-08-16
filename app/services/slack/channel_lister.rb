@@ -92,14 +92,25 @@ module Slack
         payload = params.merge(limit: PAGE_SIZE)
         payload[:cursor] = cursor if cursor.present?
 
-        body = Slack::ApiClient.post_json(url, token, payload)
+        # post_form_authed et NON post_json : ces endpoints ignorent un corps
+        # JSON sans le signaler (cf. Slack::ApiClient), ce qui renverrait dix
+        # fois la première page.
+        body = Slack::ApiClient.post_form_authed(url, token, payload)
         items.concat(body[key] || [])
 
-        cursor = body.dig("response_metadata", "next_cursor")
+        previous = cursor
+        cursor   = body.dig("response_metadata", "next_cursor")
         break if cursor.blank?
+
+        # Garde-fou : un curseur qui ne progresse pas signifie que Slack ne l'a
+        # pas pris en compte. Mieux vaut une liste tronquée que la même page
+        # répétée MAX_PAGES fois.
+        break if cursor == previous
       end
 
-      items
+      # Dédoublonnage par id : ceinture et bretelles. Une liste dupliquée est
+      # bien plus déroutante pour l'utilisateur qu'une liste incomplète.
+      items.uniq { |item| item["id"] }
     end
 
     # Lit le bot_token en gérant le cas où il n'existe pas (:missing) et celui où il

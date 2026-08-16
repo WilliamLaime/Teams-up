@@ -1,16 +1,16 @@
 # Graph Report - Teams-up  (2026-08-16)
 
 ## Corpus Check
-- 510 files · ~1,007,748 words
+- 510 files · ~1,008,081 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3425 nodes · 4703 edges · 417 communities (182 shown, 235 thin omitted)
+- 3426 nodes · 4705 edges · 420 communities (183 shown, 237 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 142 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `30d7fdef`
+- Built from commit: `1986249c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -21,7 +21,7 @@
 - teams-up.fit
 - tournament_form_controller.js
 - ContactMessage
-- TeamInvitationTest
+- TeamInvitation
 - ImageModeration::Checker
 - CriteriumFlow
 - WaitlistEntry
@@ -87,7 +87,7 @@
 - PoolBuilder
 - ProfilsControllerTest
 - journee_selector_controller.js
-- SlackNotifierService
+- .for
 - SportProfil
 - ProfilPolicy
 - PagesController
@@ -109,14 +109,14 @@
 - TournamentMatchTest
 - ImageModeration
 - Slack::CommandsController
-- TournamentUsersController
+- MatchEnrollmentService
 - SportImagesHelperTest
 - city_search_controller.js
 - date_picker_controller.js
 - pool_selector_controller.js
 - sport_filter_controller.js
 - sport_select_controller.js
-- SlackMatchStatusJob
+- SlackNotifyJob
 - PoolSeeding
 - ⚽ Teams Up
 - NotificationsControllerTest
@@ -151,7 +151,7 @@
 - BracketBuilderTest
 - LeagueBuilderTest
 - PoolBuilderTest
-- PoolStandingsTest
+- SlackWorkspace
 - MatchChatChannel
 - PrivateChatChannel
 - SlackRequestVerification
@@ -188,8 +188,8 @@
 - level_grid_controller.js
 - profil_invite_controller.js
 - tournament_draw_controller.js
-- ConversationsController
-- TeamInvitation
+- ImageModeration::Adapters::Sightengine
+- TeamInvitationsControllerTest
 - ImageModeration::Result
 - AddSlugToMatchesAndTeams
 - PrivateChatChannelTest
@@ -202,7 +202,7 @@
 - UserTest
 - DrawOrderStabilityTest
 - ApplicationCable
-- .show
+- Admin::DashboardController
 - participant_filter_controller.js
 - share_controller.js
 - toast_controller.js
@@ -210,7 +210,7 @@
 - CreateActiveStorageTables
 - FixLocalisationToString
 - AddLightModeToProfils
-- ApplicationHelperTest
+- Admin::UsersController
 - TournamentSeedingTest
 - Users::OmniauthCallbacksControllerTest
 - SlackEventsTest
@@ -354,14 +354,18 @@
 - rack_attack.rb
 - seed_sports
 - TeamsController
-- ProfilFavoriteVenueTest
-- BackfillMissingPoolRounds
-- SecurityLogCleanupJobTest
-- TournamentMatchPolicy::Scope
-- MatchVotesController
+- MatchUnenrollmentService
+- NotificationsController
+- MatchChatChannelTest
+- SlackInteractivityTest
+- MessagesController
+- .cancel_upcoming_matches_for
+- MatchEnrollmentServiceTest
+- MatchUnenrollmentServiceTest
+- MatchReminderJob
 - SportsController
-- VenuesController
-- TeamConversationsController
+- ImageModeration
+- ImageModeration
 - TournamentUserPolicy
 - pre-commit
 
@@ -380,10 +384,10 @@
 ## Surprising Connections (you probably didn't know these)
 - `seed_sports()` --calls--> `Sport`  [EXTRACTED]
   db/sports.rb → app/models/sport.rb
-- `ApplicationHelperTest` --mixes_in--> `ApplicationHelper`  [EXTRACTED]
-  test/helpers/application_helper_test.rb → app/helpers/application_helper.rb
 - `seed_custom_venues()` --calls--> `Venue`  [EXTRACTED]
   db/custom_venues.rb → app/models/venue.rb
+- `ApplicationHelperTest` --mixes_in--> `ApplicationHelper`  [EXTRACTED]
+  test/helpers/application_helper_test.rb → app/helpers/application_helper.rb
 - `SportImagesHelperTest` --mixes_in--> `SportImagesHelper`  [EXTRACTED]
   test/helpers/sport_images_helper_test.rb → app/helpers/sport_images_helper.rb
 - `Admin::BaseController` --inherits--> `ApplicationController`  [EXTRACTED]
@@ -392,7 +396,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (417 total, 235 thin omitted)
+## Communities (420 total, 237 thin omitted)
 
 ### Community 1 - ".create_test_user"
 Cohesion: 0.10
@@ -414,9 +418,9 @@ Nodes (37): _applyFormat(), _applyPlayoffsValue(), BRACKET_STAGE_NAMES, buildPro
 Cohesion: 0.06
 Nodes (13): Admin, Admin::ContactMessagesController, BaseController, ContactMessagesController, ContactMessage, Admin::ContactMessagesControllerTest, IntegrationTest, ValidEmail2 (+5 more)
 
-### Community 7 - "ImageModeration::Checker"
-Cohesion: 0.09
-Nodes (6): ImageModeration, ImageModeration::Adapters, ImageModeration::Adapters::Sightengine, Base, ImageModeration, ImageModeration::Checker
+### Community 6 - "TeamInvitation"
+Cohesion: 0.13
+Nodes (3): TeamInvitation, TestCase, TeamInvitationTest
 
 ### Community 9 - "WaitlistEntry"
 Cohesion: 0.06
@@ -435,8 +439,8 @@ Cohesion: 0.08
 Nodes (5): Scope, TeamPolicy, TeamPolicy::Scope, TestCase, TeamPolicyTest
 
 ### Community 14 - "MatchUser"
-Cohesion: 0.09
-Nodes (7): MatchUser, MatchChatChannelTest, TestCase, MatchUserTest, TestCase, AchievementServiceTest, TestCase
+Cohesion: 0.12
+Nodes (5): MatchUser, MatchUserTest, TestCase, AchievementServiceTest, TestCase
 
 ### Community 17 - "Sport"
 Cohesion: 0.11
@@ -447,12 +451,12 @@ Cohesion: 0.06
 Nodes (32): 1. Lien profil manquant dans "Classement", 1. Vrai tirage au sort, 2. Liens profils dans la Vue d'ensemble (`_bracket_cell.html.erb`), 2. Sélecteur de journée : `<select>` natif → menu déroulant CUSTOM, 3. Scores : vrai score + affichage centré compact, 3. Sélecteur de journée (menu déroulant), 4. Score adapté au sport — vérifié, rien à coder, Ajout — indicateur de qualification par poule dans l'onglet Classement (+24 more)
 
 ### Community 19 - "TournamentMatchPolicy"
-Cohesion: 0.12
-Nodes (3): TournamentMatchPolicy, TestCase, TournamentMatchPolicyTest
+Cohesion: 0.11
+Nodes (5): Scope, TournamentMatchPolicy, TournamentMatchPolicy::Scope, TestCase, TournamentMatchPolicyTest
 
 ### Community 20 - "ApplicationController"
-Cohesion: 0.12
-Nodes (3): ApplicationController, Base, ErrorsController
+Cohesion: 0.10
+Nodes (4): ApplicationController, Base, ErrorsController, TeamConversationsController
 
 ### Community 22 - "Avis"
 Cohesion: 0.17
@@ -471,16 +475,20 @@ Cohesion: 0.08
 Nodes (24): Décisions actées, 🔜 (ex-Lot 5, reporté) — affinements, Feature Tournoi — Pilotage, Formats envisagés, 💡 Futurs, ✅ Lot 1 — Page liste des tournois `[FAIT]`, ✅ Lot 2 — Flux de création d'un tournoi `[FAIT]`, ✅ Lot 3 — Ronde Suisse + tableau final `[FAIT]` (+16 more)
 
 ### Community 26 - "Venue"
-Cohesion: 0.20
-Nodes (4): Venue, seed_custom_venues(), TestCase, VenueTest
+Cohesion: 0.11
+Nodes (7): VenuesController, Venue, seed_custom_venues(), ProfilFavoriteVenueTest, TestCase, TestCase, VenueTest
 
 ### Community 27 - "TeamMember"
 Cohesion: 0.12
 Nodes (5): TeamMember, IntegrationTest, TeamMembersControllerTest, TestCase, TeamMemberTest
 
+### Community 28 - "PoolStandings"
+Cohesion: 0.09
+Nodes (4): PoolStandings, PoolStandings::Row, PoolStandingsTest, TestCase
+
 ### Community 29 - "Notification"
-Cohesion: 0.11
-Nodes (5): NotificationsController, TeamMembersController, Notification, NotificationTest, TestCase
+Cohesion: 0.15
+Nodes (4): TeamMembersController, Notification, NotificationTest, TestCase
 
 ### Community 30 - "slack_destination_controller.js"
 Cohesion: 0.16
@@ -490,13 +498,9 @@ Nodes (20): _attr(), close(), connect(), currentWorkspace(), currentWorkspaceId(
 Cohesion: 0.13
 Nodes (3): MatchUserPolicy, MatchUserPolicyTest, TestCase
 
-### Community 32 - "User"
-Cohesion: 0.10
-Nodes (4): Admin, Admin::UsersController, BaseController, User
-
 ### Community 33 - "Slack::InteractivityController"
-Cohesion: 0.13
-Nodes (5): BaseController, Slack, Slack::InteractivityController, MatchCreationService, MatchCreationService::Result
+Cohesion: 0.22
+Nodes (3): BaseController, Slack, Slack::InteractivityController
 
 ### Community 34 - "place_search_controller.js"
 Cohesion: 0.19
@@ -507,20 +511,20 @@ Cohesion: 0.13
 Nodes (5): Scope, TeamInvitationPolicy, TeamInvitationPolicy::Scope, TestCase, TeamInvitationPolicyTest
 
 ### Community 39 - ".for"
-Cohesion: 0.13
-Nodes (5): TournamentEngine, CriteriumBoardTest, IntegrationTest, CriteriumPlacementTest, TestCase
+Cohesion: 0.10
+Nodes (6): TournamentEngine, BackfillMissingPoolRounds, CriteriumBoardTest, IntegrationTest, CriteriumPlacementTest, TestCase
 
 ### Community 40 - "ApplicationJob"
-Cohesion: 0.10
-Nodes (7): ApplicationJob, Base, SlackEphemeralResponder, MatchReminderJob, SlackCancelJob, SlackEnrollJob, SlackUnenrollJob
+Cohesion: 0.12
+Nodes (6): ApplicationJob, Base, SlackEphemeralResponder, SlackCancelJob, SlackEnrollJob, SlackUnenrollJob
 
 ### Community 41 - "AchievementService"
 Cohesion: 0.13
 Nodes (4): Achievement, AchievementService, TestCase, UserAchievementTest
 
 ### Community 42 - "SlackIdentity"
-Cohesion: 0.11
-Nodes (7): SlackIdentity, IntegrationTest, SlackIntegrationTest, IntegrationTest, SlackInteractivityTest, TestCase, SlackCancelJobTest
+Cohesion: 0.25
+Nodes (3): SlackIdentity, TestCase, SlackCancelJobTest
 
 ### Community 43 - "ApplicationPolicy"
 Cohesion: 0.14
@@ -539,8 +543,8 @@ Cohesion: 0.21
 Nodes (15): applyMineStyles(), applyMineStyleTo(), clearTypingTimeout(), connect(), disconnect(), hideTypingIndicator(), markConversationRead(), observeNewMessages() (+7 more)
 
 ### Community 48 - "ApplicationRecord"
-Cohesion: 0.11
-Nodes (10): ApplicationRecord, Base, ProfilFavoriteVenue, PushSubscription, SlackFavoriteDestination, TournamentRound, UserAchievement, UserSport (+2 more)
+Cohesion: 0.09
+Nodes (11): ApplicationRecord, Base, ProfilFavoriteVenue, PushSubscription, SlackFavoriteDestination, SlackMatchMessage, TournamentRound, UserAchievement (+3 more)
 
 ### Community 49 - "TournamentPolicy"
 Cohesion: 0.15
@@ -559,23 +563,15 @@ Cohesion: 0.11
 Nodes (18): 2026-07-02 — Conversation qui disparaît parfois de la sidebar de chat, 2026-07-03 — Broadcast Turbo Stream des places qui ne partait jamais, 2026-07-03 — Compteur de places du match affichait "1/15" au lieu de "4/18", 2026-07-03 — "Il manque encore 17 places" alors que 2 joueurs ont rejoint, 2026-07-03 — Le chat sticky ne se ferme pas au clic sur un profil depuis une bulle, 2026-07-03 — Procédure : ajouter un nouveau sport (mémo réutilisable), 2026-07-10 — Abandon (withdrawn) « annulé » à la ronde suivante (Lot 5 tournoi), 2026-07-16 — Inscription : mot de passe + captcha perdus quand un sport manque (+10 more)
 
 ### Community 55 - "MatchVote"
-Cohesion: 0.18
-Nodes (3): MatchVote, MatchVoteTest, TestCase
+Cohesion: 0.14
+Nodes (4): MatchVotesController, MatchVote, MatchVoteTest, TestCase
 
 ### Community 56 - "Slack::ApiClient"
 Cohesion: 0.13
 Nodes (6): StandardError, Slack, Slack::ApiClient, Slack::ApiClient::Error, AddMutualToAvis, AddPlayersNeededToMatches
 
-### Community 57 - "MatchUsersController"
-Cohesion: 0.06
-Nodes (9): MatchUsersController, MatchEnrollmentService, MatchEnrollmentService::Result, MatchUnenrollmentService, MatchUnenrollmentService::Result, MatchEnrollmentServiceTest, TestCase, MatchUnenrollmentServiceTest (+1 more)
-
-### Community 59 - "Slack::OauthController"
-Cohesion: 0.19
-Nodes (3): Slack, Slack::OauthController, SlackWorkspace
-
 ### Community 60 - "Users::RegistrationsController"
-Cohesion: 0.16
+Cohesion: 0.18
 Nodes (3): Users, Users::RegistrationsController, RegistrationsController
 
 ### Community 62 - "pwa_install_controller.js"
@@ -594,9 +590,9 @@ Nodes (16): Auto-vérification, Cadre légal à rappeler quand c'est pertinent, 
 Cohesion: 0.12
 Nodes (16): 🖼️ Banque d'images, 🃏 Cards Match, ➕ Création d'un Match, ✅ DONE, 🦶 Footer, 🎨 Général, 🏠 HomePage, 🚧 IN PROGRESS (+8 more)
 
-### Community 66 - "PrivateConversation"
-Cohesion: 0.11
-Nodes (3): MessagesController, PrivateConversationsController, PrivateConversation
+### Community 67 - "ApplicationHelper"
+Cohesion: 0.15
+Nodes (3): ApplicationHelper, ApplicationHelperTest, TestCase
 
 ### Community 68 - "TeamMemberPolicy"
 Cohesion: 0.16
@@ -606,9 +602,9 @@ Nodes (5): Scope, TeamMemberPolicy, TeamMemberPolicy::Scope, TestCase, TeamMembe
 Cohesion: 0.24
 Nodes (11): apply(), choose(), close(), closeOnOutsideClick(), connect(), defaultNumber(), labelFor(), persist() (+3 more)
 
-### Community 72 - "SlackNotifierService"
-Cohesion: 0.16
-Nodes (5): SlackMatchCancelJob, Slack, Slack::ChannelResolver, Slack::ChannelResolver::Resolution, SlackNotifierService
+### Community 72 - ".for"
+Cohesion: 0.50
+Nodes (3): Slack, Slack::ChannelResolver, Slack::ChannelResolver::Resolution
 
 ### Community 73 - "SportProfil"
 Cohesion: 0.18
@@ -621,6 +617,10 @@ Nodes (3): ProfilPolicy, ProfilPolicyTest, TestCase
 ### Community 77 - "review_modal_controller.js"
 Cohesion: 0.26
 Nodes (10): checkIfAllReviewed(), connect(), dismiss(), nextStep(), showCardError(), submitReview(), submitVote(), updateNextBtn() (+2 more)
+
+### Community 78 - "TournamentUser"
+Cohesion: 0.08
+Nodes (3): TournamentUsersController, TournamentUser, WithdrawPlayer
 
 ### Community 79 - "ImageModeration::CheckerTest"
 Cohesion: 0.16
@@ -637,10 +637,6 @@ Nodes (8): _applyTransform(), connect(), _drag(), _dragTouch(), previewFile(), _
 ### Community 82 - "Les 9 blocs d'Osterwalder"
 Cohesion: 0.15
 Nodes (12): 1. SEGMENTS DE CLIENTÈLE, 2. PROPOSITION DE VALEUR, 3. CANAUX DE DISTRIBUTION, 4. RELATIONS CLIENTS, 5. SOURCES DE REVENUS, 6. RESSOURCES CLÉS, 7. ACTIVITÉS CLÉS, 8. PARTENAIRES CLÉS (+4 more)
-
-### Community 84 - "MatchCancellationService"
-Cohesion: 0.18
-Nodes (3): MatchCancelledMailerJob, MatchCancellationService, MatchCancellationService::Result
 
 ### Community 85 - "countdown_controller.js"
 Cohesion: 0.32
@@ -698,6 +694,10 @@ Nodes (8): change(), closeAndSubmitIfDirty(), connect(), _dispatchSportChanged()
 Cohesion: 0.35
 Nodes (7): connect(), getSelectedRows(), nextSport(), prevSport(), syncCarousel(), toggle(), updateError()
 
+### Community 101 - "SlackNotifyJob"
+Cohesion: 0.16
+Nodes (3): SlackMatchStatusJob, SlackNotifyJob, SlackNotifierService
+
 ### Community 104 - "⚽ Teams Up"
 Cohesion: 0.18
 Nodes (10): Architecture — Modèles principaux, Design system, Fonctionnalités, Installation locale, License, Prérequis, Stack technique, Structure du projet (+2 more)
@@ -743,7 +743,7 @@ Cohesion: 0.25
 Nodes (3): TestCase, SwissPairingTest, SwissPairingTest::Player
 
 ### Community 127 - "ImageModeration::Adapters::Base"
-Cohesion: 0.25
+Cohesion: 0.20
 Nodes (3): ImageModeration, ImageModeration::Adapters, ImageModeration::Adapters::Base
 
 ### Community 129 - "invite_search_controller.js"
@@ -762,6 +762,10 @@ Nodes (7): Autorisations, Modèles clés, Moteurs de tournoi, Structure fichiers
 Cohesion: 0.25
 Nodes (7): Avatars, Boutons — toujours utiliser les partials existants, Couleurs — `config/_colors.scss`, Organisation SCSS, Responsive, Teams-up — Design System, Typographie — `config/_fonts.scss`
 
+### Community 137 - "SlackWorkspace"
+Cohesion: 0.22
+Nodes (4): SlackMatchCancelJob, SlackWorkspace, IntegrationTest, SlackIntegrationTest
+
 ### Community 140 - "SlackRequestVerification"
 Cohesion: 0.29
 Nodes (4): SlackRequestVerification, Base, Slack, Slack::BaseController
@@ -773,6 +777,10 @@ Nodes (5): #checkEmptyState(), deleteNotif(), markAllRead(), #updateBadge(), #up
 ### Community 143 - "time_picker_controller.js"
 Cohesion: 0.33
 Nodes (3): connect(), select(), toggle()
+
+### Community 144 - "SecurityLog"
+Cohesion: 0.24
+Nodes (4): SecurityLogCleanupJob, SecurityLog, TestCase, SecurityLogCleanupJobTest
 
 ### Community 151 - "ApplicationCable::Connection"
 Cohesion: 0.33
@@ -806,6 +814,10 @@ Nodes (5): connect(), persist(), select(), show(), stored()
 Cohesion: 0.40
 Nodes (3): Admin, Admin::ImageModerationsController, BaseController
 
+### Community 165 - ".create"
+Cohesion: 0.15
+Nodes (3): MatchWebPushJob, MatchCreationService, MatchCreationService::Result
+
 ### Community 167 - "Admin::SecurityLogsController"
 Cohesion: 0.40
 Nodes (3): Admin, Admin::SecurityLogsController, BaseController
@@ -826,16 +838,12 @@ Nodes (3): connect(), update(), _updateAction()
 Cohesion: 0.80
 Nodes (4): #cleanup(), connect(), #reveal(), #shuffle()
 
-### Community 175 - "TeamInvitation"
-Cohesion: 0.10
-Nodes (3): TeamInvitation, IntegrationTest, TeamInvitationsControllerTest
-
 ### Community 187 - "ApplicationCable"
 Cohesion: 0.50
 Nodes (3): ApplicationCable, ApplicationCable::Channel, Base
 
-### Community 188 - ".show"
-Cohesion: 0.33
+### Community 188 - "Admin::DashboardController"
+Cohesion: 0.50
 Nodes (3): Admin, Admin::DashboardController, BaseController
 
 ### Community 190 - "share_controller.js"
@@ -846,6 +854,10 @@ Nodes (3): copy(), _fallbackCopy(), _showCopiedFeedback()
 Cohesion: 0.50
 Nodes (3): Application, TeamUp, TeamUp::Application
 
+### Community 196 - "Admin::UsersController"
+Cohesion: 0.25
+Nodes (3): Admin, Admin::UsersController, BaseController
+
 ### Community 200 - "Moderatable"
 Cohesion: 0.25
 Nodes (3): ModerateImageJob, Moderatable, _moderated_attachment_names()
@@ -853,17 +865,17 @@ Nodes (3): ModerateImageJob, Moderatable, _moderated_attachment_names()
 ## Knowledge Gaps
 - **199 isolated node(s):** `security-precommit.sh script`, `application`, `SHAPES`, `FORMAT_LABELS`, `DEFAULTS` (+194 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **235 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **237 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ApplicationRecord` connect `ApplicationRecord` to `Tournament`, `.create_test_user`, `Friendship`, `ContactMessage`, `WaitlistEntry`, `Match`, `MatchUser`, `SecurityLog`, `Sport`, `TournamentMatch`, `Avis`, `Admin::ArticlesController`, `Message`, `Venue`, `TeamMember`, `Notification`, `User`, `AchievementService`, `SlackIdentity`, `TeamInvitation`, `MatchVote`, `Slack::OauthController`, `PrivateConversation`, `SportProfil`, `TournamentUser`, `Profil`, `ImageModeration`, `SlackMatchStatusJob`?**
-  _High betweenness centrality (0.106) - this node is a cross-community bridge._
-- **Why does `Match` connect `Match` to `SlackMatchPrepJob`, `MatchChatChannel`, `MatchUser`, `MatchesController`, `TournamentMatchPolicy`, `Avis`, `Message`, `MatchVotesController`, `Slack::InteractivityController`, `Sluggable`, `MatchTest`, `.create`, `ApplicationJob`, `ConversationsController`, `ApplicationRecord`, `ProfilsController`, `MatchVote`, `MatchUsersController`, `Users::RegistrationsController`, `.show`, `PrivateConversation`, `UserMailerTest`, `PagesController`, `MatchCancellationServiceTest`, `ApplicationSystemTestCase`, `Slack::CommandsController`, `SportImagesHelperTest`, `SlackMatchStatusJob`, `Slack::ChannelLister`?**
-  _High betweenness centrality (0.073) - this node is a cross-community bridge._
-- **Why does `ApplicationPolicy` connect `ApplicationPolicy` to `Friendship`, `ConversationPolicy`, `TeamMemberPolicy`, `TeamInvitationPolicy`, `TournamentUserPolicy`, `ProfilPolicy`, `MatchPolicy`, `NotificationPolicy`, `TeamPolicy`, `AvisPolicy`, `MatchVotePolicy`, `PrivateConversationPolicy`, `TournamentPolicy`, `TournamentMatchPolicy`, `MatchUserPolicy`?**
+- **Why does `ApplicationRecord` connect `ApplicationRecord` to `Tournament`, `.create_test_user`, `Friendship`, `ContactMessage`, `TeamInvitation`, `SlackWorkspace`, `WaitlistEntry`, `Match`, `MatchUser`, `SecurityLog`, `Sport`, `TournamentMatch`, `Avis`, `Admin::ArticlesController`, `Message`, `Venue`, `TeamMember`, `Notification`, `User`, `AchievementService`, `SlackIdentity`, `MatchVote`, `PrivateConversation`, `SportProfil`, `TournamentUser`, `Profil`, `ImageModeration`?**
+  _High betweenness centrality (0.113) - this node is a cross-community bridge._
+- **Why does `Match` connect `Match` to `SlackMatchPrepJob`, `MatchChatChannel`, `MatchUser`, `MatchesController`, `TournamentMatchPolicy`, `Avis`, `MatchChatChannelTest`, `Message`, `MessagesController`, `.cancel_upcoming_matches_for`, `MatchEnrollmentServiceTest`, `MatchUnenrollmentServiceTest`, `MatchReminderJob`, `Slack::InteractivityController`, `Sluggable`, `MatchTest`, `.create`, `ApplicationJob`, `ApplicationRecord`, `ProfilsController`, `MatchVote`, `MatchUsersController`, `UserMailerTest`, `PagesController`, `MatchCancellationServiceTest`, `ApplicationSystemTestCase`, `Slack::CommandsController`, `SportImagesHelperTest`, `SlackNotifyJob`?**
   _High betweenness centrality (0.069) - this node is a cross-community bridge._
+- **Why does `ApplicationPolicy` connect `ApplicationPolicy` to `Friendship`, `ConversationPolicy`, `TeamMemberPolicy`, `TeamInvitationPolicy`, `TournamentUserPolicy`, `ProfilPolicy`, `MatchPolicy`, `NotificationPolicy`, `TeamPolicy`, `AvisPolicy`, `MatchVotePolicy`, `PrivateConversationPolicy`, `TournamentPolicy`, `TournamentMatchPolicy`, `MatchUserPolicy`?**
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
 - **What connects `security-precommit.sh script`, `application`, `SHAPES` to the rest of the system?**
   _199 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Tournament` be split into smaller, more focused modules?**

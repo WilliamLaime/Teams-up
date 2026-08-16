@@ -132,6 +132,32 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
                      body: hash_including("cursor" => "page2"), times: 1
   end
 
+  # ── Les arguments doivent VRAIMENT partir dans la requête ─────────────────────
+  # conversations.list et users.list n'acceptent pas de corps JSON : envoyés ainsi,
+  # Slack répond ok: true mais ignore tout (types, limit, cursor) et renvoie la
+  # première page des seuls channels publics. Le bug était totalement muet — d'où
+  # ce test sur la forme de la requête et pas seulement sur son résultat.
+  test "ChannelLister envoie ses arguments en form-urlencoded, pas en JSON" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, channels: [] }.to_json)
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, members: [] }.to_json)
+
+    Slack::ChannelLister.destinations(ws)
+
+    assert_requested :post, "https://slack.com/api/conversations.list", times: 1 do |req|
+      assert_includes req.headers["Content-Type"].to_s, "application/x-www-form-urlencoded"
+      params = Rack::Utils.parse_nested_query(req.body)
+      # Sans `types`, les channels privés ne sont jamais listés.
+      assert_equal "public_channel,private_channel", params["types"]
+      assert_equal "200", params["limit"]
+      true
+    end
+  end
+
   # ── Robustesse : un appel qui échoue ne fait pas disparaître l'autre liste ─────
   test "ChannelLister isole les appels : users.list en échec garde les channels" do
     ws = link_slack!
