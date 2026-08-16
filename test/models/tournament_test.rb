@@ -189,4 +189,53 @@ class TournamentTest < ActiveSupport::TestCase
     assert_empty TournamentRound.where(id: round_ids)
     assert_empty TournamentMatch.where(tournament_round_id: round_ids)
   end
+
+  # ─── Effectif libre (max_players vide) ──────────────────────────────────────
+  # L'organisateur peut ne fixer aucun plafond : on verra bien combien de
+  # personnes s'inscrivent. La structure ne s'en trouve pas empêchée — elle se
+  # calcule de toute façon au lancement, sur les inscrits réels.
+  test "un tournoi sans effectif est valide" do
+    t = Tournament.new(name: "Sans limite", sport: @sport, format: "poules", status: "open",
+                       date: Date.tomorrow, place: "Terrain test")
+
+    assert t.valid?, t.errors.full_messages.join(", ")
+    assert t.unlimited_capacity?
+  end
+
+  # Un champ nombre vidé arrive en "" : le typecast entier doit le rendre à nil,
+  # sinon `unlimited_capacity?` serait faux sur un tournoi pourtant sans plafond.
+  test "une chaîne vide vaut un effectif libre" do
+    t = Tournament.new(max_players: "")
+
+    assert_nil t.max_players
+    assert t.unlimited_capacity?
+  end
+
+  test "un effectif libre n'est jamais complet et ne se clôture pas tout seul" do
+    t = Tournament.create!(name: "Sans limite", sport: @sport, format: "poules", status: "open",
+                           date: Date.tomorrow, place: "Terrain test")
+    5.times { |i| join!(t, "j#{i}") }
+
+    refute t.reload.full?
+    assert_equal "open", t.status, "sans plafond, rien ne déclenche la clôture automatique"
+    assert t.startable?, "l'organisateur reste maître du lancement"
+  end
+
+  # Un effectif nul reste refusé : c'est une saisie fautive, pas un choix.
+  test "un effectif de zéro ou négatif est refusé" do
+    t = Tournament.new(name: "T", sport: @sport, format: "poules", status: "open",
+                       date: Date.tomorrow, place: "Terrain test", max_players: 0)
+
+    refute t.valid?
+    assert t.errors[:max_players].any?
+  end
+
+  # Le scope des tournois « à rejoindre » doit les inclure : sans plafond, il y a
+  # toujours de la place.
+  test "un tournoi sans effectif reste listé comme rejoignable" do
+    t = Tournament.create!(name: "Sans limite", sport: @sport, format: "poules", status: "open",
+                           date: Date.tomorrow, place: "Terrain test")
+
+    assert_includes Tournament.not_full, t
+  end
 end

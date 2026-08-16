@@ -70,7 +70,12 @@
       <dt><i data-lucide="users" aria-hidden="true"></i> Inscrits</dt>
       <dd>
         <%= tournament.approved_players_count %><% if tournament.max_players %> / <%= tournament.max_players %><% end %>
-        <% if tournament.preset_capacity? %>
+        <%# Sans plafond, « participants attendus » n'a pas de sens : personne
+            n'est attendu, on compte simplement les inscrits. %>
+        <% if tournament.unlimited_capacity? %>
+          inscrit<%= "s" if tournament.approved_players_count > 1 %>
+          <span class="tournament-overview__role">(sans limite)</span>
+        <% elsif tournament.preset_capacity? %>
           joueur<%= "s" if tournament.approved_players_count > 1 %>
         <% else %>
           participant<%= "s" if tournament.approved_players_count > 1 %> attendu<%= "s" if tournament.approved_players_count > 1 %>

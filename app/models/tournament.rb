@@ -132,8 +132,15 @@ class Tournament < ApplicationRecord
   # redondant (voire une traduction manquante pour "inclusion" en fr.yml)
   # quand le champ est simplement vide — la presence ci-dessus suffit déjà.
   validates :format, presence: true, inclusion: { in: FORMATS, allow_blank: true }
-  validates :max_players, presence: true,
-                          numericality: { only_integer: true, greater_than: 0, allow_blank: true }
+  # max_players VIDE = effectif libre : aucun plafond, on verra bien combien de
+  # personnes s'inscrivent. Ce n'est pas un oubli de saisie mais un choix, d'où
+  # l'absence de `presence` — même convention que les autres réglages de
+  # structure (players_per_pool, bracket_size…), où NULL veut dire « pas fixé ».
+  # La structure du tournoi n'a de toute façon jamais besoin de ce nombre pour
+  # fonctionner : elle se calcule au lancement sur les inscrits réels, et
+  # max_players ne sert qu'à plafonner les inscriptions et à annoncer à l'avance
+  # ce que ça donnera.
+  validates :max_players, numericality: { only_integer: true, greater_than: 0, allow_blank: true }
   validates :date, presence: true
   validates :place, presence: true
   validates :status, inclusion: { in: STATUSES }
@@ -217,6 +224,13 @@ class Tournament < ApplicationRecord
   # Libre — sert uniquement à l'affichage ("joueurs" vs "participants attendus").
   def preset_capacity?
     PLAYER_COUNTS.include?(max_players)
+  end
+
+  # Effectif libre : aucun plafond annoncé. Le tournoi ne sera jamais « complet »
+  # (cf. #full?), n'est jamais clôturé automatiquement, et sa structure ne peut
+  # être annoncée qu'au lancement, une fois les inscrits connus.
+  def unlimited_capacity?
+    max_players.blank?
   end
 
   # Inscriptions réellement ouvertes : statut "open" ET deadline non dépassée.

@@ -93,6 +93,11 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select "input[name='tournament[swiss_wins_to_qualify]']"
     assert_select "input[name='tournament[swiss_losses_to_eliminate]']"
     assert_select "input[name='tournament[time(4i)]']", 0
+
+    # Effectif : les presets, le mode Libre et « Sans limite ». Ce dernier vit
+    # HORS du groupe de presets, masqué pour un championnat.
+    assert_select "[data-tournament-form-target='presetsGroup'] .tournament-unlimited-btn", 0
+    assert_select ".tournament-unlimited-btn", text: /Sans limite/
   end
 
   test "GET /tournois/new redirige un visiteur non connecté" do
@@ -121,6 +126,46 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ─── Bannière + réglages de structure (Lot 7) ───────────────────────────────
+  # ── Effectif libre ──────────────────────────────────────────────────────────
+  # Le formulaire soumet une chaîne vide quand l'organisateur choisit
+  # « Sans limite » : le tournoi doit se créer sans plafond, et pas être rejeté.
+  test "POST /tournois crée un tournoi sans plafond d'effectif" do
+    sign_in @user
+
+    assert_difference "Tournament.count", 1 do
+      post tournaments_path, params: {
+        tournament: {
+          name: "Open sans limite", sport_id: @sport.id, format: "poules",
+          max_players: "", date: Date.tomorrow.to_s, place: "Club Test"
+        }
+      }
+    end
+
+    t = Tournament.last
+    assert_nil t.max_players
+    assert t.unlimited_capacity?
+    assert_redirected_to tournament_path(t)
+  end
+
+  # Sans plafond, l'inscription ne doit jamais être refusée pour cause de
+  # tournoi complet — c'est tout l'intérêt de l'option.
+  test "on peut s'inscrire à un tournoi sans plafond quel que soit l'effectif" do
+    t = Tournament.create!(name: "Sans limite", sport: @sport, user: @user, format: "poules",
+                           status: "open", date: Date.tomorrow, place: "Club Test")
+    5.times do |i|
+      t.tournament_users.create!(user: create_test_user(email: "libre#{i}@example.com"),
+                                 role: "joueur", status: "approved")
+    end
+
+    joiner = create_test_user(email: "dernier@example.com")
+    sign_in joiner
+
+    assert_difference -> { t.tournament_users.count }, 1 do
+      post tournament_tournament_users_path(t)
+    end
+    assert_equal "open", t.reload.status, "aucune clôture automatique sans plafond"
+  end
+
   test "POST /tournois persiste la bannière choisie et les réglages de structure" do
     sign_in @user
     banner = "https://res.cloudinary.com/test/image/upload/pingpong.png"

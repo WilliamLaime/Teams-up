@@ -306,7 +306,9 @@
 
           <%# Nombre de joueurs : presets rapides + mode Libre %>
           <div class="mb-3">
-            <label class="form-label d-block">Nombre de joueurs <span class="required-star">*</span></label>
+            <%# Plus d'étoile : l'effectif est facultatif depuis l'ajout de
+                « Sans limite » (max_players vide = aucun plafond). %>
+            <label class="form-label d-block">Nombre de joueurs</label>
             <%= f.hidden_field :max_players, data: { "tournament-form-target": "maxPlayersInput" } %>
 
             <div class="match-level-buttons" data-tournament-form-target="presetsGroup">
@@ -323,6 +325,23 @@
                       data-tournament-form-target="libreBtn"
                       data-action="click->tournament-form#toggleLibre">Libre</button>
             </div>
+
+            <%# « Sans limite » vit HORS du groupe de presets : celui-ci est masqué
+                pour un championnat, alors que l'effectif libre a du sens dans tous
+                les formats. C'est aussi le seul bouton qui VIDE max_players. %>
+            <button type="button"
+                    class="match-level-btn tournament-unlimited-btn mt-2 <%= 'active' if @tournament.persisted? && @tournament.unlimited_capacity? %>"
+                    data-tournament-form-target="unlimitedBtn"
+                    data-action="click->tournament-form#selectUnlimited">
+              <i data-lucide="infinity" style="width:14px;height:14px;" aria-hidden="true"></i>
+              Sans limite
+            </button>
+            <p class="tournament-form-hint mt-2" data-tournament-form-target="unlimitedHint"
+               style="<%= 'display:none;' unless @tournament.persisted? && @tournament.unlimited_capacity? %>">
+              Aucun plafond : les inscriptions restent ouvertes jusqu'à ce que vous
+              lanciez le tournoi. La structure (poules, tableau) sera calculée à ce
+              moment-là, d'après les inscrits.
+            </p>
           </div>
 
           <%# Aperçu de la structure figée (lecture seule) %>
