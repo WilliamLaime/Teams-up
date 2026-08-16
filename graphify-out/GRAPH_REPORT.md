@@ -1,7 +1,7 @@
-# Graph Report - Teams-up  (2026-08-15)
+# Graph Report - Teams-up  (2026-08-16)
 
 ## Corpus Check
-- 510 files · ~1,006,100 words
+- 510 files · ~1,006,247 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9b9d461c`
+- Built from commit: `e9006226`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -71,7 +71,7 @@
 - Leçons — erreurs à ne pas répéter
 - ProfilsController
 - MatchVote
-- .post_json
+- Slack::ApiClient
 - MatchUsersController
 - MatchEnrollmentService
 - Slack::OauthController
@@ -555,7 +555,7 @@ Nodes (18): 2026-07-02 — Conversation qui disparaît parfois de la sidebar de 
 Cohesion: 0.22
 Nodes (3): MatchVote, MatchVoteTest, TestCase
 
-### Community 56 - ".post_json"
+### Community 56 - "Slack::ApiClient"
 Cohesion: 0.13
 Nodes (6): StandardError, Slack, Slack::ApiClient, Slack::ApiClient::Error, AddMutualToAvis, AddPlayersNeededToMatches
 

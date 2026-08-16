@@ -76,7 +76,7 @@ module Slack
       workspace = SlackWorkspace.find_or_initialize_by(team_id: data.dig("team", "id"))
       workspace.update!(
         team_name: data.dig("team", "name"),
-        bot_token: data["access_token"],   # jeton "xoxb-..." (chiffré au repos)
+        bot_token: data["access_token"], # jeton "xoxb-..." (chiffré au repos)
         bot_user_id: data["bot_user_id"],
         scope: data["scope"],
         installer_user: current_user

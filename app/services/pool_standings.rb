@@ -36,11 +36,11 @@ class PoolStandings
   def initialize(tournament, members, matches: nil)
     @tournament = tournament
     @members    = members.to_a
-    @member_ids = @members.map(&:id).to_set
+    @member_ids = @members.to_set(&:id)
     # Byes exclus (cf. en-tête) et matchs indécis ignorés : un match non joué ne
     # rapporte rien et ne peut pas servir de critère de départage.
     @matches = (matches || fetch_pool_matches).reject(&:is_bye)
-                                             .select { |m| internal?(m) && m.status == "completed" }
+                                              .select { |m| internal?(m) && m.status == "completed" }
   end
 
   # Les joueurs de la poule, du 1er au dernier.
@@ -151,7 +151,7 @@ class PoolStandings
   end
 
   def matches_between(group)
-    ids = group.map(&:id).to_set
+    ids = group.to_set(&:id)
     @matches.select { |m| ids.include?(m.player_a_id) && ids.include?(m.player_b_id) }
   end
 
@@ -164,14 +164,14 @@ class PoolStandings
   # Tous les membres du groupe se sont-ils rencontrés ?
   def round_robin_complete?(group, sub)
     ids = group.map(&:id)
-    pairs = sub.map { |m| [m.player_a_id, m.player_b_id].sort }.to_set
+    pairs = sub.to_set { |m| [m.player_a_id, m.player_b_id].sort }
     ids.combination(2).all? { |pair| pairs.include?(pair.sort) }
   end
 
   # Somme sur les matchs de `player` uniquement (évite de compter les matchs des
   # autres membres du sous-groupe).
-  def sum(matches, player, &block)
-    matches.select { |m| m.player_a_id == player.id || m.player_b_id == player.id }.sum(&block)
+  def sum(matches, player, &)
+    matches.select { |m| m.player_a_id == player.id || m.player_b_id == player.id }.sum(&)
   end
 
   # Les deux joueurs du match appartiennent-ils à cette poule ?

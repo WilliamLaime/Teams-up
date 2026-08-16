@@ -141,10 +141,10 @@ module Slack
             action_id: "match_cancel",
             value: match.id.to_s,
             confirm: {
-              title:   { type: "plain_text", text: "Annuler ce match ?" },
-              text:    { type: "mrkdwn", text: "Les joueurs inscrits seront prévenus. Action irréversible." },
+              title: { type: "plain_text", text: "Annuler ce match ?" },
+              text: { type: "mrkdwn", text: "Les joueurs inscrits seront prévenus. Action irréversible." },
               confirm: { type: "plain_text", text: "Annuler le match" },
-              deny:    { type: "plain_text", text: "Retour" }
+              deny: { type: "plain_text", text: "Retour" }
             }
           }
         }

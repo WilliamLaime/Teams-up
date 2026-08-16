@@ -46,17 +46,17 @@ module Slack
       matches = Match.where(user: identity.user).upcoming.order(:date, :time)
       render json: {
         response_type: "ephemeral",
-        text:          "Tes matchs à venir",
-        blocks:        Slack::BlockKitBuilder.new.cancel_list_blocks(matches)
+        text: "Tes matchs à venir",
+        blocks: Slack::BlockKitBuilder.new.cancel_list_blocks(matches)
       }
     end
 
     # Ouvre la modale de création dans le workspace de l'utilisateur.
     def open_modal(workspace)
       view = Slack::MatchModalBuilder.new(
-        channel_id:   params[:channel_id],
+        channel_id: params[:channel_id],
         response_url: params[:response_url],
-        team_id:      params[:team_id]
+        team_id: params[:team_id]
       ).view
 
       Slack::ApiClient.post_json(VIEWS_OPEN_URL, workspace.bot_token,

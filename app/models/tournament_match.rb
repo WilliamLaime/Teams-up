@@ -178,14 +178,14 @@ class TournamentMatch < ApplicationRecord
       # Nul : résultat définitif, pas de vainqueur (cf. Sport#scoring_rules[:allow_draw],
       # déjà garanti par la validation sets_valid_for_sport).
       self.winner_id = nil
-      self.status = "completed"
     elsif a > b
       self.winner_id = player_a_id
-      self.status = "completed"
     else
       self.winner_id = player_b_id
-      self.status = "completed"
     end
+    # Commun aux trois branches : dès qu'un score final est saisi, le match est terminé,
+    # nul compris.
+    self.status = "completed"
   end
 
   # Mode :sets — le vainqueur est celui qui atteint le nombre de sets requis (best_of / 2 + 1).
@@ -259,7 +259,7 @@ class TournamentMatch < ApplicationRecord
       if a == b
         errors.add(:sets, "set #{index + 1} : un set ne peut pas être nul")
       elsif !valid_set?(a, b, rules)
-        errors.add(:sets, "set #{index + 1} : score invalide (#{a}-#{b}) — #{set_rule_reminder(rules)}")
+        errors.add(:sets, "set #{index + 1} : score invalide (#{a}-#{b}) — #{rule_reminder_for_set(rules)}")
       end
     end
   end
@@ -300,7 +300,7 @@ class TournamentMatch < ApplicationRecord
 
   # Rappel de la règle appliquée, joint au message d'erreur : « score invalide »
   # tout court laisse l'organisateur deviner ce qui cloche dans un 12-9.
-  def set_rule_reminder(rules)
+  def rule_reminder_for_set(rules)
     target = rules[:target]
     return "le gagnant du set doit atteindre #{target} points" unless rules[:win_by_two]
     return "un set se gagne en #{target} points avec 2 points d'écart, sans dépasser #{rules[:cap]}" if rules[:cap]

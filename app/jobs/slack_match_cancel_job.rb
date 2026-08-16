@@ -33,7 +33,7 @@ class SlackMatchCancelJob < ApplicationJob
     if %w[message_not_found cant_update_message channel_not_found].include?(e.slack_error)
       nil
     elsif PERMANENT_SLACK_ERRORS.include?(e.slack_error)
-      Rails.logger.warn("[SlackMatchCancelJob] abandon (#{e.slack_error}) carte #{card["channel_id"]}")
+      Rails.logger.warn("[SlackMatchCancelJob] abandon (#{e.slack_error}) carte #{card['channel_id']}")
     else
       raise
     end

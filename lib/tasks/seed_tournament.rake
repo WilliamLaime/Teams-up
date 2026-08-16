@@ -144,11 +144,13 @@ namespace :tournament do
       break if round.nil? || tournament.completed?
       # Garde-fou anti boucle infinie : le moteur n'a plus rien à générer.
       break if round.id == last_round_id
+
       last_round_id = round.id
 
       # Arrêts demandés par PROGRESS : on laisse la suite « à jouer » dans l'UI.
       break if progress == "round_robin" && round.phase == "bracket"
-      if progress == "final" && round.phase == "bracket" && round.tournament_matches.count == 1
+
+      if progress == "final" && round.phase == "bracket" && round.tournament_matches.one?
         puts "⏸  Finale laissée à jouer (PROGRESS=final)."
         break
       end

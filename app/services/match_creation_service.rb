@@ -10,7 +10,7 @@
 # autour de ce service ; la modale Slack, elle, n'en a pas besoin.
 class MatchCreationService
   # `saved` porte le résultat du save ; `success?` en est l'alias lisible.
-  Result = Struct.new(:match, :saved, keyword_init: true) do
+  Result = Struct.new(:match, :saved) do
     def success?
       saved
     end

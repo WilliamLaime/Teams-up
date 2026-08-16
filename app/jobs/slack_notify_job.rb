@@ -60,10 +60,10 @@ class SlackNotifyJob < ApplicationJob
     return if message_ts.blank?
 
     SlackMatchMessage.track!(
-      match:           match,
+      match: match,
       slack_workspace: resolution.workspace,
-      channel_id:      channel_id,
-      message_ts:      message_ts
+      channel_id: channel_id,
+      message_ts: message_ts
     )
 
     SlackMatchStatusJob.schedule_transitions(match)

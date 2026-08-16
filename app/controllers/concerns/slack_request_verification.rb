@@ -33,7 +33,7 @@ module SlackRequestVerification
     return head :unauthorized if (Time.now.to_i - timestamp.to_i).abs > MAX_TIMESTAMP_SKEW
 
     base     = "v0:#{timestamp}:#{request.raw_post}"
-    expected = "v0=" + OpenSSL::HMAC.hexdigest("SHA256", secret, base)
+    expected = "v0=#{OpenSSL::HMAC.hexdigest('SHA256', secret, base)}"
 
     # Comparaison en temps constant (évite les attaques temporelles).
     return if ActiveSupport::SecurityUtils.secure_compare(expected, signature)

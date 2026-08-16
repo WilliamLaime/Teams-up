@@ -150,20 +150,26 @@ class Sport < ApplicationRecord
     when "volleyball"      then { mode: :sets, best_of: 5, target: 25, win_by_two: true, cap: nil, allow_draw: false }
     when "football", "handball" then { mode: :score, allow_draw: true }
     when "basketball"           then { mode: :score, allow_draw: false }
-    else                         { mode: :sets, best_of: 3, target: 6, win_by_two: false, cap: nil, allow_draw: false }
+    else { mode: :sets, best_of: 3, target: 6, win_by_two: false, cap: nil, allow_draw: false }
     end
   end
 
   # Barème de points de classement V/N/D pour le championnat/poules (Lot 6). nil pour
   # les sports de raquette (ronde suisse / poules) : ils n'ont pas de barème dédié,
   # cf. TournamentUser#ranking_points qui retombe alors sur 1 point par victoire.
+  # Table de correspondance plutôt qu'un case/when : quatre branches qui ne font que
+  # renvoyer une valeur constante se lisent mieux alignées (et rubocop le signale via
+  # Style/HashLikeCase). Gelée car partagée entre tous les appels — aucun appelant ne
+  # la mute : ils font `.merge`, `.dig` ou une lecture simple.
+  RANKING_POINTS_RULES = {
+    "football" => { win: 3, draw: 1, loss: 0 }.freeze, # barème FIFA en vigueur
+    "handball" => { win: 2, draw: 1, loss: 0 }.freeze, # barème IHF historique
+    "basketball" => { win: 1, draw: 0, loss: 0 }.freeze, # pas de nul possible
+    "volleyball" => { win: 1, draw: 0, loss: 0 }.freeze # pas de nul possible
+  }.freeze
+
   def ranking_points_rules
-    case slug
-    when "football"   then { win: 3, draw: 1, loss: 0 } # barème FIFA en vigueur
-    when "handball"   then { win: 2, draw: 1, loss: 0 } # barème IHF historique
-    when "basketball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
-    when "volleyball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
-    end
+    RANKING_POINTS_RULES[slug]
   end
 
   # Barème « points-parties » d'une phase de POULES, lu UNIQUEMENT par PoolStandings.
