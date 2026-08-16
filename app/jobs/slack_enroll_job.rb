@@ -27,6 +27,13 @@ class SlackEnrollJob < ApplicationJob
     match = Match.find_by(id: match_id)
     return respond(response_url, "Ce match n'existe plus. 🙁") unless match
 
+    # Filet de sécurité : les cartes de tournoi ne portent plus de bouton
+    # d'inscription, mais une carte ANCIENNE reste cliquable dans l'historique du
+    # channel. La composition d'une rencontre de tournoi vient du tirage.
+    if match.tournament_linked?
+      return respond(response_url, "« #{match.title} » est une rencontre de tournoi : les joueurs sont désignés par le tirage.")
+    end
+
     result = MatchEnrollmentService.new(match: match, user: identity.user).call
     respond(response_url, message_for(result.status, match))
   end

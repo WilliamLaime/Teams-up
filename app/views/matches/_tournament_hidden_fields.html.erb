@@ -21,10 +21,16 @@
 <%# Joueurs recherchés — obligatoire et > 0. Une confrontation oppose 2 joueurs. %>
 <%= f.hidden_field :players_needed, value: (@match.players_needed || 2) %>
 
-<%# Format — non validé par le modèle, mais utilisé pour l'affichage du match.
-    Premier format à taille définie du sport : « 1v1 » en ping-pong, tennis ou
-    badminton. « Libre » est écarté : il rendrait players_present obligatoire
-    alors que plus aucun champ ne permet de le saisir ici. %>
-<% fallback_format = @match.sport&.available_formats&.find { |fmt| fmt[:players].present? } %>
+<%# Format — premier format à taille définie du sport : « 1v1 » en ping-pong,
+    tennis ou badminton. « Libre » est écarté : il rendrait players_present
+    obligatoire alors que plus aucun champ ne permet de le saisir ici.
+
+    ⚠️ On ne conserve la valeur en base QUE si elle existe pour ce sport. L'ancien
+    ordre (`@match.format.presence || fallback`) réémettait indéfiniment un format
+    hérité d'un autre sport — un « 3v3 » sur un ping-pong survivait à chaque
+    édition, et `format_total` en déduisait 4 joueurs « sur place » fantômes. %>
+<% sport_formats   = @match.sport&.available_formats || [] %>
+<% fallback_format = sport_formats.find { |fmt| fmt[:players].present? } %>
+<% current_format  = @match.format if sport_formats.any? { |fmt| fmt[:label] == @match.format } %>
 <%= f.hidden_field :format,
-      value: (@match.format.presence || fallback_format&.dig(:label)) %>
+      value: (current_format.presence || fallback_format&.dig(:label)) %>

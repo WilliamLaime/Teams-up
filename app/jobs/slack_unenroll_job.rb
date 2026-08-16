@@ -29,6 +29,13 @@ class SlackUnenrollJob < ApplicationJob
     match = Match.find_by(id: match_id)
     return respond(response_url, "Ce match n'existe plus. 🙁") unless match
 
+    # Filet de sécurité, comme dans SlackEnrollJob : une carte de tournoi ancienne
+    # peut encore porter le bouton. On ne laisse pas quitter une rencontre issue
+    # du tirage depuis Slack (l'abandon d'un tournoi se gère sur le web).
+    if match.tournament_linked?
+      return respond(response_url, "« #{match.title} » est une rencontre de tournoi : contacte l'organisateur si tu ne peux pas jouer.")
+    end
+
     result = MatchUnenrollmentService.new(match: match, user: identity.user).call
     respond(response_url, message_for(result.status, match))
   end

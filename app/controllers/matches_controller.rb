@@ -95,8 +95,11 @@ class MatchesController < ApplicationController
       end
     end
 
-    # Récupère les participants du match avec leur profil (évite les N+1 dans la vue)
-    @match_users = @match.match_users.includes(user: :profil)
+    # Récupère les participants du match avec leur profil (évite les N+1 dans la vue).
+    # `displayed_match_users` = tous les inscrits, SAUF sur une confrontation de
+    # tournoi où seuls les deux adversaires sont montrés : l'organisateur qui a
+    # planifié la rencontre sans y jouer n'a pas à figurer dans un 1v1.
+    @match_users = @match.displayed_match_users.includes(user: :profil)
     authorize @match
 
     # Meta tags dynamiques — chaque match a son propre titre dans Google
@@ -120,7 +123,9 @@ class MatchesController < ApplicationController
 
     # Vérifie si current_user est ami avec l'organisateur (pour afficher l'icône ami)
     if user_signed_in?
-      organizer_user = @match_users.find { |mu| mu.role == "organisateur" }&.user
+      # L'organisateur vient du match lui-même, et non de @match_users : sur une
+      # confrontation de tournoi il peut avoir été écarté de la liste affichée.
+      organizer_user = @match.user
       @organizer_friend_status = organizer_user.present? &&
                                  current_user != organizer_user &&
                                  current_user.friends_with?(organizer_user)
@@ -696,6 +701,14 @@ class MatchesController < ApplicationController
       tm = TournamentMatch.find_by(id: @match.tournament_match_id)
       if tm && policy(tm).create_match?
         @match.tournament = tm.tournament
+        # Le format et la capacité d'une confrontation ne se négocient pas : ils
+        # découlent du sport du tournoi (1v1 en ping-pong). On les réimpose ici
+        # plutôt que de faire confiance aux champs cachés du formulaire — sinon
+        # un POST forgé, ou une valeur héritée d'un autre sport ("3v3"), passe.
+        # Mêmes règles qu'au préremplissage (prefill_from_tournament_match).
+        @match.sport           = tm.tournament.sport
+        @match.format          = tournament_match_format(tm)
+        @match.players_needed  = 2
       else
         @match.tournament = nil
         @match.tournament_match = nil
