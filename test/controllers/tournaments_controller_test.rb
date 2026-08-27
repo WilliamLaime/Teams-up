@@ -619,15 +619,27 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".score-bracket__pip", minimum: 1
   end
 
-  test "GET show : les boutons vainqueur n'apparaissent que pour l'organisateur" do
+  # La carte ne propose plus de « bouton vainqueur » : depuis la refonte du score,
+  # tout passe par un bouton unique « Gérer le score » (`tmatch-card__score-btn`),
+  # dont le pendant en lecture seule est « Détail » (`tmatch-card__detail-btn`).
+  #
+  # Le test vérifie les DEUX côtés dans la même foulée. Une assertion « count: 0 »
+  # seule ne prouve rien : si le sélecteur devient obsolète (ce qui est arrivé ici),
+  # elle reste verte alors que n'importe qui pourrait saisir les scores.
+  test "GET show : le bouton de saisie du score n'apparaît que pour l'organisateur" do
     t = open_tournament_with_players(8)
     t.update!(status: "in_progress")
     SwissPairing.new(t).next_round!
 
-    sign_in @co_org # non-organisateur
+    sign_in @co_org # ni créateur, ni co-organisateur de CE tournoi, ni joueur
     get tournament_path(t)
     assert_select ".round-col" # les rondes sont bien affichées
-    assert_select ".tmatch-card__win-btn", 0 # mais aucun bouton vainqueur
+    assert_select ".tmatch-card__score-btn", 0, "un non-organisateur ne saisit aucun score"
+
+    # Contre-épreuve : l'organisateur, lui, doit bien l'obtenir.
+    sign_in @user
+    get tournament_path(t)
+    assert_select ".tmatch-card__score-btn", minimum: 1
   end
 
   # ─── Formats Lot 5 : rendu des nouvelles vues (les partials ERB compilent) ────

@@ -168,3 +168,16 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   2. Un commentaire qui affirme un invariant est une **assertion non testée**. Quand il est faux, il coûte plus cher que son absence : il détourne la relecture.
   3. Reconstruire un fragment de DOM **pendant** une interaction avec ce fragment est une erreur de conception, pas un détail d'implémentation. Réconcilier (ajouter/retirer le delta) préserve l'état de saisie gratuitement, et se trouve être moins coûteux qu'un `innerHTML` massif.
   4. Quand le correctif « évident » demande de dégrader un choix technique par ailleurs sain (ici `type="number"`), c'est le signe qu'on soigne le symptôme.
+
+## 2026-08-27 — Un `assert_select` sur un sélecteur obsolète devient un test vert qui ne teste rien
+- **Symptôme** : un test rouge (`tmatch-card__schedule` introuvable) après la refonte du bandeau créneau… et **deux tests verts au même endroit qui ne vérifiaient plus rien du tout**.
+- **Cause racine** : le renommage d'une classe CSS casse bruyamment les assertions **positives** (`assert_select ".x", text: /…/`) mais rend les assertions **négatives** (`assert_select ".x", 0` / `count: 0`) définitivement vertes. Un sélecteur qui n'existe plus est absent — donc « conforme ».
+  - `.tmatch-card__schedule` → renommé `.tmatch-card__when` : le test « aucun créneau quand la rencontre n'a pas de date » passait sur une classe fantôme, alors que le comportement attendu avait changé (le bandeau est désormais TOUJOURS affiché, avec « Date à définir »).
+  - `.tmatch-card__win-btn` → n'existe plus depuis l'unification en « Gérer le score » (`.tmatch-card__score-btn`) : le test « les boutons vainqueur n'apparaissent que pour l'organisateur » serait resté vert **même si n'importe qui pouvait saisir les scores**. C'est un test de droits qui avait cessé de tester des droits.
+- **Correctif** : sélecteurs remis à jour, test du créneau réécrit pour le comportement réellement voulu, et test de droits doté d'une **contre-épreuve** (le non-organisateur n'a pas le bouton, l'organisateur l'a) — vérifiée en simulant une fuite de droits (`can_edit = user_signed_in?`) pour s'assurer qu'elle échoue bien.
+- **Comment on les a trouvés** : en extrayant toutes les classes citées par `assert_select` dans `test/` et en vérifiant leur présence dans `app/`. Deux « absentes » sur 53, dont un vrai faux positif — l'autre (`tournament-status-badge--closed`) est composée dynamiquement dans l'ERB (`--<%= variant %>`), donc invisible au grep mais bien réelle.
+- **Leçons**
+  1. Une assertion négative doit être accompagnée d'une assertion positive sur le **même sélecteur**, sinon rien ne prouve qu'elle porte encore sur quelque chose d'existant. « Absent » et « obsolète » sont indistinguables pour `assert_select`.
+  2. Après tout renommage de classe CSS, les tests qui échouent ne sont pas le problème : ce sont ceux qui **continuent de passer** qu'il faut aller regarder.
+  3. Un test de droits qui ne tombe pas quand on ouvre les droits en grand est un test mort. Le vérifier en cassant volontairement le garde coûte trente secondes.
+  4. Corriger un sélecteur ne suffit pas : quand le comportement a changé (un bandeau conditionnel devenu permanent), c'est l'**intention** du test qu'il faut réécrire, nom du test et commentaire compris.
