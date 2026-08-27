@@ -48,12 +48,14 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     get tournament_path(@tournament)
 
     assert_response :success
-    assert_select ".tmatch-card__schedule", text: /Demain à 19h/
+    assert_select ".tmatch-card__when", text: /Demain à 19h/
   end
 
-  # Une rencontre peut exister sans date (colonne nullable) : on n'affiche alors
-  # aucun nœud plutôt qu'un libellé vide.
-  test "aucun créneau affiché quand la rencontre n'a pas de date" do
+  # Une rencontre peut exister sans date (colonne nullable). Le bandeau reste
+  # AFFICHÉ et annonce « Date à définir » : c'est lui qui aligne les cartes entre
+  # elles, un bandeau conditionnel décalerait tout ce qui le suit d'une carte à
+  # l'autre dans une même rangée (cf. _tmatch_when.html.erb).
+  test "le créneau annonce « Date à définir » quand la rencontre n'a pas de date" do
     match = schedule_match!(date: Date.tomorrow, time: nil)
     match.update_columns(date: nil)
 
@@ -63,7 +65,7 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     get tournament_path(@tournament)
 
     assert_response :success
-    assert_select ".tmatch-card__schedule", count: 0
+    assert_select ".tmatch-card__when.tmatch-card__when--tbd", text: /Date à définir/
     assert_select "a", text: "Voir la rencontre"
   end
 

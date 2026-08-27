@@ -8,6 +8,9 @@
 //                   finale) et on n'ajoute une ligne QUE si le match n'est pas encore
 //                   décidé — un 2-1 fait apparaître un 4e set, un 3-0 n'en propose
 //                   aucun. Évite les 5 (ou 7) lignes vides affichées d'emblée.
+//                   Le rendu est INCRÉMENTAL : les lignes déjà affichées ne sont
+//                   jamais recréées ni réécrites (cf. le bloc « Rendu des lignes de
+//                   sets » plus bas, qui explique quel bug cela corrige).
 // - close()       : ferme la modale après un enregistrement réussi (turbo:submit-end).
 //
 // Le nombre de sets à gagner vient du serveur (data-...-sets-to-win-param, dérivé de
@@ -74,7 +77,7 @@ export default class extends Controller {
     // Erreurs serveur d'une saisie précédente : elles ne concernent pas ce match.
     this.serverErrorsTarget.innerHTML = ""
 
-    this.renderRows(existing)
+    this.resetRows(existing)
     this.modal.show()
   }
 
@@ -101,11 +104,11 @@ export default class extends Controller {
   }
 
   // Recalcule les lignes après une saisie, en conservant ce qui est déjà tapé.
+  // Pas de refreshErrors() ici : la validation reste au blur (cf. rowAttrs), sinon
+  // les messages des autres lignes clignoteraient en pleine frappe.
   refreshRows() {
     const sets = this.currentSets()
-    this.renderRows(sets, { keepFocus: true })
-    // renderRows peut court-circuiter (nombre de lignes inchangé) : le compteur,
-    // lui, doit suivre CHAQUE frappe, on le met donc à jour ici aussi.
+    this.syncRows(sets)
     this.updateTally(sets)
   }
 
@@ -183,52 +186,101 @@ export default class extends Controller {
     return Math.min(Math.max(this.setsToWin, needed), this.bestOf)
   }
 
-  // (Re)construit les lignes de sets, préremplies avec `sets` ([[a, b], …]).
-  // Ne recrée les inputs que si leur nombre change, pour ne pas perdre le focus /
-  // le curseur pendant la frappe (refreshRows est appelé à chaque `input`).
-  renderRows(sets, { keepFocus = false } = {}) {
+  // ── Rendu des lignes de sets ────────────────────────────────────────────────
+  // ⚠️ Ce bloc a été écrit deux fois. La 1re version reconstruisait TOUTES les
+  // lignes à chaque frappe (`rowsTarget.innerHTML = ""`) puis rendait le focus à
+  // l'input qui l'avait. L'élément refocalisé était bien le bon, mais un input
+  // fraîchement créé replace son CARET en position 0 : taper « 13 » quand le 1er
+  // chiffre complète un set (donc fait apparaître une ligne) écrivait « 31 » — le
+  // « 3 » s'insérait DEVANT le « 1 ». Et `setSelectionRange()` ne pouvait pas
+  // réparer ça : il lève InvalidStateError sur un `<input type="number">`.
+  //
+  // D'où le rendu INCRÉMENTAL ci-dessous : on n'ajoute et ne retire que des lignes
+  // EN FIN de liste, et on ne réécrit JAMAIS la valeur d'une ligne conservée. Le
+  // champ en cours de frappe n'est donc jamais recréé ni réécrit — son caret est
+  // intact par construction, et aucun focus() programmatique n'est nécessaire.
+
+  // Rendu COMPLET, pour une nouvelle carte : seul endroit qui détruit des lignes.
+  // Légitime ici, et seulement ici — la modale n'est pas encore visible, et le match,
+  // le sport et le mode changent (des N lignes de sets à 1 ligne « Score final »,
+  // par exemple, ce que syncRows refuserait de faire sur des lignes remplies).
+  resetRows(sets) {
+    this.rowsTarget.innerHTML = ""
+    this.syncRows(sets)
+    this.refreshErrors() // réaffiche les erreurs d'un score déjà enregistré
+    this.updateTally(sets)
+  }
+
+  // Réconciliation : amène le nombre de lignes à rowCount(sets) SANS toucher aux
+  // lignes conservées. Appelé à chaque frappe — cf. l'avertissement ci-dessus.
+  syncRows(sets) {
     const count = this.rowCount(sets)
-    const existingRows = this.rowsTarget.querySelectorAll(".score-modal__set").length
-    if (keepFocus && existingRows === count) return
 
-    const active = document.activeElement
-    const activeIndex = keepFocus ? Array.from(this.rowsTarget.querySelectorAll("input")).indexOf(active) : -1
+    // 1) Retrait de l'excédent, en partant de la fin. Le `break` est essentiel :
+    //    il garantit qu'on ne laisse jamais de trou au milieu de la liste, ce qui
+    //    désynchroniserait les libellés « Set N » et l'ordre des games_a[]/games_b[]
+    //    envoyés au serveur.
+    const rows = this.rowElements()
+    for (let i = rows.length - 1; i >= count; i--) {
+      if (!this.isRemovableRow(rows[i])) break
+      rows[i].remove()
+    }
 
-    // data-action sur les inputs générés : Stimulus observe le DOM et les branche
-    // tout seul, y compris injectés (inutile d'ajouter des listeners à la main).
-    // Uniquement en saisie de sets : en lecture seule ou en mode :score, rien à
-    // recalculer.
-    // `blur->…#validateSet` : le message d'erreur n'apparaît qu'une fois le champ
-    // quitté. Valider à la frappe accuserait « 1 » d'être un score invalide alors
-    // que l'utilisateur est en train de taper « 11 ».
+    // 2) Ajout des lignes manquantes, en fin de liste.
+    const attrs = this.rowAttrs()
+    for (let i = this.rowElements().length; i < count; i++) {
+      this.rowsTarget.appendChild(this.buildRow(i, sets[i], attrs))
+    }
+  }
+
+  rowElements() {
+    return Array.from(this.rowsTarget.querySelectorAll(".score-modal__set"))
+  }
+
+  // Une ligne ne se retire que si elle est VIDE et ne contient pas le focus.
+  // Vide : sinon un 4e set déjà saisi disparaîtrait en vidant le set 1 (ce que
+  // faisait l'ancienne version, silencieusement). Sans le focus : on n'arrache pas
+  // le champ sous les doigts de l'utilisateur — la ligne sera élaguée à son blur
+  // (cf. validateSet).
+  isRemovableRow(row) {
+    if (row.contains(document.activeElement)) return false
+
+    return Array.from(row.querySelectorAll("input")).every((input) => input.value === "")
+  }
+
+  // Attributs communs aux inputs générés. Seul endroit qui connaît le mode lecture
+  // seule et isScoreMode.
+  // data-action posé en ATTRIBUT : Stimulus observe le DOM et branche tout seul les
+  // inputs injectés (inutile — et nuisible — d'ajouter des listeners à la main).
+  // Uniquement en saisie de sets : en lecture seule ou en mode :score, rien à
+  // recalculer.
+  // `blur->…#validateSet` : le message d'erreur n'apparaît qu'une fois le champ
+  // quitté. Valider à la frappe accuserait « 1 » d'être un score invalide alors
+  // que l'utilisateur est en train de taper « 11 ».
+  rowAttrs() {
     const actions = [
       this.editable && !this.isScoreMode ? "input->tournament-score#refreshRows" : "",
       this.editable ? "blur->tournament-score#validateSet" : ""
     ].filter(Boolean).join(" ")
-    const attrs = [this.editable ? "" : "readonly", actions ? `data-action="${actions}"` : ""].join(" ")
 
-    this.rowsTarget.innerHTML = ""
-    for (let i = 0; i < count; i++) {
-      const pair = sets[i] || ["", ""]
-      const row = document.createElement("div")
-      row.className = "score-modal__set"
-      // isScoreMode : sport collectif à score final unique → 1 seule ligne, libellée
-      // "Score final" plutôt que "Set 1".
-      row.innerHTML = `
-        <span class="score-modal__set-label">${this.isScoreMode ? "Score final" : `Set ${i + 1}`}</span>
-        ${this.stepperHtml("games_a", pair[0], attrs)}
-        <span class="score-modal__sep">–</span>
-        ${this.stepperHtml("games_b", pair[1], attrs)}
-        <p class="score-modal__error" hidden></p>
-      `
-      this.rowsTarget.appendChild(row)
-    }
+    return [this.editable ? "" : "readonly", actions ? `data-action="${actions}"` : ""].join(" ")
+  }
 
-    // Les lignes ont été recréées : on rend le focus à l'input qui l'avait (son index
-    // est stable, on n'ajoute/retire qu'en fin de liste).
-    if (activeIndex >= 0) this.rowsTarget.querySelectorAll("input")[activeIndex]?.focus()
-    this.refreshErrors()
-    this.updateTally(sets)
+  // Une ligne de set, prête à être insérée.
+  // isScoreMode : sport collectif à score final unique → 1 seule ligne, libellée
+  // "Score final" plutôt que "Set 1".
+  buildRow(index, pair, attrs = this.rowAttrs()) {
+    const [a, b] = pair || ["", ""]
+    const row = document.createElement("div")
+    row.className = "score-modal__set"
+    row.innerHTML = `
+      <span class="score-modal__set-label">${this.isScoreMode ? "Score final" : `Set ${index + 1}`}</span>
+      ${this.stepperHtml("games_a", a, attrs)}
+      <span class="score-modal__sep">–</span>
+      ${this.stepperHtml("games_b", b, attrs)}
+      <p class="score-modal__error" hidden></p>
+    `
+    return row
   }
 
   // ── Validation d'un set ─────────────────────────────────────────────────────
@@ -281,7 +333,12 @@ export default class extends Controller {
   }
 
   validateSet(event) {
+    // showError AVANT l'élagage : il a besoin du closest(".score-modal__set") du
+    // champ quitté, que refreshRows peut justement retirer.
     this.showError(event.currentTarget.closest(".score-modal__set"))
+    // Élague une ligne vide conservée uniquement parce qu'elle avait le focus
+    // (cf. isRemovableRow). Pas de récursion : refreshRows ne déclenche aucun blur.
+    if (this.editable && !this.isScoreMode) this.refreshRows()
   }
 
   // Réaffiche les erreurs de toutes les lignes — appelé après une reconstruction
