@@ -11,8 +11,15 @@
 # ── Lancement ────────────────────────────────────────────────────────────────
 #   bin/rails runner db/seeds/tournoi_test_cacd2_lcl.rb
 #
-# En production sur Railway (le dossier db/ est bien dans l'image Docker) :
-#   railway run bin/rails runner db/seeds/tournoi_test_cacd2_lcl.rb
+# En production sur Railway, DANS le conteneur du service web :
+#   railway ssh --service Teams-up bin/rails runner db/seeds/tournoi_test_cacd2_lcl.rb
+#
+# ⚠️ Et NON `railway run` : celui-ci exécute la commande sur la machine locale en y
+# injectant les variables du service. Or `DATABASE_URL` pointe sur un hôte
+# `*.railway.internal`, qui n'est joignable que depuis le réseau Railway — la
+# connexion échoue donc depuis un poste de dev. `railway ssh` exécute bel et bien
+# dans le conteneur, où cet hôte résout. Corollaire : le fichier doit être DÉPLOYÉ
+# (il vient de l'image, pas du poste local).
 #
 # Idempotent : relancer ne recrée rien. Pour repartir de zéro :
 #   RESET=1 bin/rails runner db/seeds/tournoi_test_cacd2_lcl.rb
