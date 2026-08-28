@@ -253,9 +253,11 @@ class Tournament < ApplicationRecord
     tournament_users.approved.players.includes(user: :profil)
   end
 
-  # Co-organisateurs approuvés (n'occupent pas de place de joueur).
+  # Co-organisateurs approuvés : ceux qui portent les DROITS de gestion, lus sur la
+  # colonne `co_organizer` et non sur le rôle. Un co-organisateur peut donc être
+  # inscrit comme joueur — il figure alors dans `approved_players` ET ici.
   def co_organizers
-    tournament_users.approved.where(role: "co_organisateur").includes(user: :profil)
+    tournament_users.approved.co_organizers.includes(user: :profil)
   end
 
   # Classement des joueurs : victoires décroissantes, puis départage set average
@@ -301,7 +303,7 @@ class Tournament < ApplicationRecord
   def organizer?(user)
     return false if user.blank?
 
-    user_id == user.id || tournament_users.any? { |tu| tu.user_id == user.id && tu.role == "co_organisateur" }
+    user_id == user.id || tournament_users.any? { |tu| tu.user_id == user.id && tu.co_organizer? }
   end
 
   # Résumé lisible de la structure PRÉVUE, calculé depuis le format, l'effectif
