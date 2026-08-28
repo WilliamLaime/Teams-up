@@ -13,7 +13,7 @@
 <% mine = match.players.any? { |player| my_player?(player) } %>
 <div id="tmatch_<%= match.id %>" class="tmatch-card <%= "tmatch-card--bye" if match.is_bye %> <%= "tmatch-card--done" if match.decided? %> <%= "tmatch-card--mine" if mine %>">
   <% if match.is_bye %>
-    <div class="tmatch-card__player tmatch-card__player--winner <%= "tmatch-card__player--me" if my_player?(match.player_a) %>">
+    <div class="tmatch-card__player <%= "tmatch-card__player--me" if my_player?(match.player_a) %>">
       <%= link_to user_profil_path(match.player_a.user), class: "tmatch-card__player-link" do %>
         <%= user_avatar_tag match.player_a.user, css_class: "tmatch-card__avatar" %>
         <span class="tmatch-card__name"><%= match.player_a.display_name %></span>

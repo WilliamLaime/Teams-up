@@ -150,4 +150,53 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_match(/barrages/, @tournament.structure_summary)
     assert_match(/consolante/, @tournament.structure_summary)
   end
+
+  # ── Carte d'un joueur exempt ────────────────────────────────────────────────
+
+  # Un effectif impair met un joueur au repos à chaque journée. Sa carte doit rester
+  # une carte de rencontre — même gabarit, même alignement — et ne se distinguer que
+  # par le pointillé et le badge « Exempt ». Elle ne porte donc PAS le halo vert du
+  # vainqueur : un exempt n'a rien gagné, il n'a pas joué. C'est ce halo, sur une
+  # ligne pleine largeur, qui avait imposé de recentrer la carte et l'avait rendue
+  # visuellement étrangère à ses voisines.
+  test "la carte d'un joueur exempt garde le gabarit d'une carte de rencontre" do
+    odd = Tournament.create!(name: "Critérium impair", sport: @sport, user: @owner,
+                             format: "criterium_federal", status: "in_progress", max_players: 17,
+                             players_per_pool: 3, final_phase_mode: "standard",
+                             date: Date.tomorrow, place: "Salle test")
+    17.times do |i|
+      user = create_test_user(email: "odd#{i}@example.com")
+      odd.tournament_users.create!(user: user, role: "joueur", status: "approved")
+    end
+    odd.tournament_users.players.approved.order(:id).each_with_index { |tu, i| tu.update_column(:draw_order, i) }
+
+    # Jusqu'aux barrages : c'est là que la carte d'un exempt est visible. En phase de
+    # poules, le bye n'est pas affiché du tout (TournamentsHelper#pool_matches les
+    # écarte) — 6 poules dont une de 2, donc un 2e sans 3e à affronter, qui monte au
+    # tableau final d'office.
+    TournamentEngine.for(odd).next_round!
+    20.times do
+      break if odd.barrage_rounds.exists?
+
+      TournamentMatch.joins(:tournament_round)
+                     .where(tournament_rounds: { tournament_id: odd.id })
+                     .where(status: "pending", is_bye: false)
+                     .to_a
+                     .each { |match| win_tournament_match!(match, match.player_a) }
+      TournamentEngine.for(odd).next_round!
+    end
+
+    bye = odd.barrage_rounds.first.tournament_matches.find_by(is_bye: true)
+    assert bye, "la poule de 2 doit produire un exempt au tour de barrages"
+
+    sign_in @owner
+    get tournament_path(odd)
+    assert_response :success
+
+    assert_select ".tmatch-card--bye .tmatch-card__bye-badge", text: "Exempt (qualifié d'office)"
+    assert_select ".tmatch-card--bye .tmatch-card__player--winner", { count: 0 },
+                  "un exempt n'est pas un vainqueur : pas de halo vert, donc pas d'aplat pleine largeur"
+    # Le créneau reste réservé aux vraies rencontres (rien à planifier pour un exempt).
+    assert_select ".tmatch-card--bye .tmatch-card__when", count: 0
+  end
 end

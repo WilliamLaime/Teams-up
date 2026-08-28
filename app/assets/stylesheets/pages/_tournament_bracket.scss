@@ -444,10 +444,13 @@
   gap: 0.35rem;
   transition: opacity 0.3s ease, transform 0.3s ease;
 
-  &--bye {
-    border-style: dashed;
-    align-items: center;
-  }
+  // Carte d'un joueur exempt (effectif impair). Elle garde le gabarit d'une carte
+  // de rencontre — ligne joueur pleine largeur, alignée à gauche — et ne s'en
+  // distingue que par le pointillé et le badge « Exempt ». Surtout PAS
+  // `align-items: center` : le bloc joueur se rétractait alors à la largeur de son
+  // contenu et flottait au milieu, si bien que la carte ne ressemblait plus du tout
+  // à ses voisines dans un tour de barrages.
+  &--bye { border-style: dashed; }
 
   &--done { border-color: var(--theme-border-strong); }
 
@@ -498,11 +501,12 @@
     border-radius: 8px;
     transition: background-color 0.15s ease;
 
-    // Halo vert du vainqueur : cette classe n'est posée que par _tmatch (carte
-    // empilée du tableau final) et le badge « Exempt », jamais par
-    // _tmatch_scoreline (poules/championnat/ronde suisse, qui ne pose pas ce
-    // modificateur) — pas de risque de reproduire l'aplat plein cadre qui
-    // posait problème sur les cartes pleine largeur.
+    // Halo vert du vainqueur : posé uniquement par _tmatch (carte empilée du
+    // tableau final), jamais par _tmatch_scoreline (poules / championnat / ronde
+    // suisse) — pas de risque de reproduire l'aplat plein cadre qui posait
+    // problème sur les cartes pleine largeur. Un BYE ne le porte pas non plus :
+    // un exempt n'a rien gagné, et c'est ce qui permet à sa carte de rester
+    // pleine largeur sans virer à l'aplat vert.
     &--winner {
       background: rgba($green, 0.12);
       .tmatch-card__name { color: var(--theme-text-strong); font-weight: 700; }

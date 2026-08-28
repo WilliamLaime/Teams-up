@@ -64,7 +64,7 @@ class PoolBuilder
 
       assign_pools! if pools_unassigned?
 
-      recompute_stats_for("pool", apply_state: false)
+      recompute_stats_for("pool", apply_state: false, count_byes: false)
 
       create_missing_pool_rounds!
 

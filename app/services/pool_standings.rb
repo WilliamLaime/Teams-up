@@ -18,9 +18,11 @@
 #   • QUOTIENTS et non différences (#set_average / #point_average sont des
 #     différences) : le règlement FFTT départage au quotient.
 #   • les BYES ne comptent pas. Dans une poule de 3, le calendrier round-robin
-#     donne un bye par joueur ; le compter comme une victoire (ce que fait
-#     RoundRobinStats#recompute_stats_for) offrirait 2 points-parties gratuits à
-#     tout le monde. Une poule de 3 se joue en 2 matchs par joueur, point.
+#     donne un bye par joueur ; le compter comme une victoire offrirait 2
+#     points-parties gratuits à tout le monde. Une poule de 3 se joue en 2 matchs
+#     par joueur, point. `RoundRobinStats#recompute_stats_for` applique désormais
+#     la même règle (`count_byes: false` hors ronde suisse) : les colonnes de
+#     TournamentUser et ce service ne divergent donc plus sur ce point.
 #
 # Déterminisme absolu : aucun `shuffle` / `rand`. `draw_order` est la seule source
 # d'aléa, tirée une fois au lancement — c'est la condition pour qu'une correction de
@@ -58,9 +60,11 @@ class PoolStandings
   # Position (1-based) d'un joueur dans sa poule.
   def place_of(player) = ordered.index { |p| p.id == player.id }&.succ
 
-  # Lignes de classement, dans l'ordre.
+  # Lignes de classement, dans l'ordre. Memoïsé : `#row_for` y pioche joueur par
+  # joueur pour seeder la phase finale (cf. CriteriumFlow#by_strength), ce qui
+  # rejouerait sinon tout le calcul à chaque appel.
   def rows
-    ordered.each_with_index.map do |player, index|
+    @rows ||= ordered.each_with_index.map do |player, index|
       played = played_by(player)
       Row.new(
         player: player, place: index + 1, points: points_of(player), played: played.size,
@@ -74,6 +78,12 @@ class PoolStandings
       )
     end
   end
+
+  # La ligne de classement d'UN joueur, ou nil s'il n'appartient pas à cette poule.
+  # Sert à comparer des joueurs de poules DIFFÉRENTES (seeding du tableau final) :
+  # c'est la seule source qui expose à la fois les points-parties FFTT et le nombre
+  # de matchs réellement joués, donc la seule qui permette un ratio.
+  def row_for(player) = rows.find { |row| row.player.id == player.id }
 
   # La poule est-elle intégralement jouée ? (garde avant de qualifier qui que ce soit)
   def complete?

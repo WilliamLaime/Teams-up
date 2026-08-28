@@ -331,4 +331,54 @@ class CriteriumFlowTest < ActiveSupport::TestCase
     assert_equal 0, tournament.barrage_rounds.count
     assert tournament.bracket_started?, "le format Poules bascule directement en tableau final"
   end
+
+  # ── Seeding inter-poules : au ratio, pas au total ───────────────────────────
+
+  # Un effectif impair produit des poules de tailles différentes (17 joueurs →
+  # [3, 3, 3, 3, 3, 2]). Le 1er de la poule de 2 ne dispute qu'UN match. Classer les
+  # 1ers de poule sur des TOTAUX le condamne alors quoi qu'il fasse : invaincu, il
+  # compte 1 victoire là où un 1er de poule de 3 tout aussi invaincu en compte 2.
+  # Il hérite donc de la dernière tête de série des 1ers — donc du tour que les
+  # mieux classés sautent — pour la seule raison qu'on lui a tiré un adversaire de
+  # moins.
+  #
+  # Ce test compare les deux clés sur ce cas exact : #rank_key les sépare (c'est le
+  # défaut), la clé normalisée les reconnaît à égalité de performance (2 points-
+  # parties par match de part et d'autre). Les départages suivants (quotients,
+  # draw_order) font le reste, et eux sont légitimes.
+  test "seeding : deux 1ers de poule invaincus pèsent pareil, quelle que soit la taille de leur poule" do
+    tournament = build_tournament(17, players_per_pool: 3)
+    play_pools!(tournament)
+
+    pools = standings_of(tournament)
+    assert_equal 6, pools.size, "17 joueurs en poules de 3 doivent donner [3, 3, 3, 3, 3, 2]"
+
+    small = pools.values.find { |pool| pool.rows.size == 2 }
+    big   = pools.values.find { |pool| pool.rows.size == 3 }
+    assert small, "il doit exister une poule de 2"
+
+    small_first = small.qualifier(1)
+    big_first   = big.qualifier(1)
+
+    # Les deux sont invaincus, mais sur un nombre de matchs différent.
+    assert_equal [1, 2], [small.row_for(small_first).played, big.row_for(big_first).played]
+    assert_equal [2, 4], [small.row_for(small_first).points, big.row_for(big_first).points]
+
+    flow = CriteriumFlow.new(Tournament.find(tournament.id))
+
+    # Le défaut : sur les totaux, le 1er de la poule de 2 est DERRIÈRE, et le tri
+    # global le relègue au dernier rang des 1ers de poule.
+    fresh = Tournament.find(tournament.id)
+    assert_operator fresh.rank_key(small_first).first, :>, fresh.rank_key(big_first).first,
+                    "c'est bien le total brut qui pénalise la poule de 2"
+    firsts_by_total = (1..6).filter_map { |i| pools[i - 1]&.qualifier(1) }
+                            .sort_by { |tu| fresh.rank_key(tu) }
+    assert_equal small_first.id, firsts_by_total.last.id,
+                 "au total brut, le 1er de la poule de 2 est toujours le dernier des 1ers"
+
+    # La correction : à performance PAR MATCH égale, les deux pèsent pareil.
+    assert_equal flow.send(:pool_strength_key, small_first).first,
+                 flow.send(:pool_strength_key, big_first).first,
+                 "2 points en 1 match et 4 points en 2 matchs, c'est le même rendement"
+  end
 end

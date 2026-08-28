@@ -446,9 +446,51 @@ class CriteriumFlow
 
   # Ordre de force inter-poules. Le règlement FFTT ne définit pas de classement
   # entre poules (il s'appuie sur le classement officiel des joueurs, que l'app
-  # n'a pas) : on réutilise donc #rank_key, cohérent avec le reste de l'app et
-  # surtout DÉTERMINISTE (draw_order en dernier ressort).
-  def by_strength(players) = players.sort_by { |tu| @tournament.rank_key(tu) }
+  # n'a pas) : on classe donc au RATIO des points-parties, et non à leur total.
+  #
+  # Pourquoi le ratio : un effectif impair produit des poules de tailles
+  # différentes (17 joueurs → plan [3, 3, 3, 3, 3, 2]). Le 1er de la poule de 2
+  # n'a disputé qu'UN match, celui d'une poule de 3 en a disputé deux : comparer
+  # des totaux bruts, c'est classer sur le nombre d'adversaires reçus au tirage,
+  # pas sur la performance. Le vainqueur de la poule de 2 serait toujours dernier
+  # des 1ers de poule, donc toujours celui qu'on envoie jouer un tour de plus.
+  # Le quotient est d'ailleurs déjà la façon dont le règlement départage À
+  # L'INTÉRIEUR d'une poule (cf. PoolStandings#tiebreak_key) : on prolonge la même
+  # logique entre poules.
+  #
+  # DÉTERMINISME préservé : aucun aléa, `draw_order` reste l'ultime départage —
+  # c'est la condition pour qu'une correction de score reconstruise l'aval à
+  # l'identique (cf. en-tête de ce fichier).
+  def by_strength(players)
+    keys = players.to_h { |tu| [tu.id, pool_strength_key(tu)] }
+    # Les deux clés ne sont pas comparables entre elles (des ratios face à des
+    # totaux) : dès qu'UN joueur du lot n'a pas de ligne de poule, on retombe sur
+    # #rank_key pour TOUT le lot. Mélanger lèverait sur `sort_by`.
+    return players.sort_by { |tu| @tournament.rank_key(tu) } if keys.value?(nil)
+
+    players.sort_by { |tu| keys[tu.id] }
+  end
+
+  # Clé de force d'un joueur, normalisée par son nombre de matchs joués. nil si le
+  # joueur n'a pas de ligne de poule exploitable — poule non renseignée, poule
+  # reconstituée, ou aucun match joué (division par zéro).
+  def pool_strength_key(tu)
+    row = standings[tu.pool]&.row_for(tu)
+    return nil if row.nil? || row.played.zero?
+
+    [-row.points.fdiv(row.played),
+     -quotient(row.sets_won, row.sets_lost),
+     -quotient(row.points_won, row.points_lost),
+     tu.draw_order.to_i]
+  end
+
+  # Quotient et non différence, comme PoolStandings : rien de concédé = avantage
+  # maximal, 0/0 = 0.0. Jamais de ZeroDivisionError.
+  def quotient(won, lost)
+    return won.zero? ? 0.0 : Float::INFINITY if lost.zero?
+
+    won.fdiv(lost)
+  end
 
   def standings = @standings ||= @tournament.pool_standings
 
