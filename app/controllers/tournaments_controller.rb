@@ -216,42 +216,51 @@ class TournamentsController < ApplicationController
     return redirect_back_to_edit(alert: "Choisis un joueur dans la liste de suggestions.") if user.nil?
     return redirect_back_to_edit(alert: "Tu es déjà l'admin de ce tournoi.") if user == @tournament.user
 
-    # Une seule ligne d'inscription par personne (index unique) : selon qu'elle est
-    # déjà inscrite ou pas, on promeut sa ligne existante ou on en crée une.
+    # Une seule ligne d'inscription par personne (index unique), mais elle peut
+    # porter les deux casquettes : on lève le drapeau sur la ligne existante, ou on
+    # en crée une si la personne n'est pas inscrite.
     existing = @tournament.tournament_users.find_by(user: user)
 
-    if existing.nil?
-      @tournament.tournament_users.create!(user: user, role: "co_organisateur", status: "approved")
-      notify_new_co_organizer(user)
-      redirect_back_to_edit(notice: "#{user.display_name} est maintenant co-organisateur.")
-    elsif existing.co_organizer?
-      redirect_back_to_edit(alert: "#{user.display_name} est déjà co-organisateur.")
-    elsif @tournament.open? || @tournament.closed?
-      # Promotion d'un joueur inscrit : il libère sa place (les co-organisateurs
-      # n'occupent pas de place, cf. Tournament#approved_players_count).
-      existing.update!(role: "co_organisateur")
-      notify_new_co_organizer(user)
-      redirect_back_to_edit(notice: "#{user.display_name} passe de joueur à co-organisateur : sa place de joueur est libérée.")
-    else
-      # Tournoi lancé : ce joueur a des matchs et une ligne de classement. Changer
-      # son rôle le retirerait des appariements et des poules en cours de route.
-      redirect_back_to_edit(alert: "#{user.display_name} joue ce tournoi : impossible de le passer co-organisateur maintenant qu'il est lancé.")
+    if existing&.co_organizer?
+      return redirect_back_to_edit(alert: "#{user.display_name} est déjà co-organisateur.")
     end
+
+    if existing.nil?
+      # Nommer quelqu'un qui n'a pas rejoint le tournoi ne doit pas lui donner une
+      # place de joueur : le rôle "co_organisateur" est là pour ça.
+      @tournament.tournament_users.create!(user: user, role: "co_organisateur", status: "approved")
+      notice = "#{user.display_name} est maintenant co-organisateur."
+    else
+      # Joueur déjà inscrit : il GARDE sa place. Le rôle ne bouge pas, seul le
+      # drapeau de gestion se lève — d'où l'absence de garde sur l'état du tournoi,
+      # rien n'est retiré des poules ni des appariements en cours.
+      existing.update!(co_organizer: true)
+      notice = "#{user.display_name} est maintenant co-organisateur, et garde sa place de joueur."
+    end
+
+    notify_new_co_organizer(user)
+    redirect_back_to_edit(notice: notice)
   end
 
   # DELETE /tournois/:id/co-organisateurs/retrait?tournament_user_id=...
-  # Révoque un co-organisateur. On détruit la ligne d'inscription entière plutôt
-  # que de la repasser en "joueur" : un co-organisateur n'a jamais occupé de place
-  # de joueur, le remettre joueur l'inscrirait à un tournoi qu'il n'a pas rejoint.
+  # Révoque un co-organisateur. Deux cas, selon ce que la ligne portait d'autre :
+  #   • il joue aussi le tournoi → on baisse le drapeau, il reste inscrit ;
+  #   • il ne fait que gérer → on détruit la ligne, car le remettre "joueur"
+  #     l'inscrirait à un tournoi qu'il n'a jamais rejoint.
   def remove_co_organizer
     authorize @tournament, :manage_organizers?
 
-    co_org = @tournament.tournament_users.find_by(id: params[:tournament_user_id], role: "co_organisateur")
+    co_org = @tournament.tournament_users.find_by(id: params[:tournament_user_id], co_organizer: true)
     return redirect_back_to_edit(alert: "Ce co-organisateur n'existe plus.") if co_org.nil?
 
     name = co_org.display_name
-    co_org.destroy
-    redirect_back_to_edit(notice: "#{name} n'est plus co-organisateur.")
+    if co_org.player?
+      co_org.update!(co_organizer: false)
+      redirect_back_to_edit(notice: "#{name} n'est plus co-organisateur, mais reste inscrit comme joueur.")
+    else
+      co_org.destroy
+      redirect_back_to_edit(notice: "#{name} n'est plus co-organisateur.")
+    end
   end
 
   # PATCH /tournois/:id/transfert-admin
@@ -265,21 +274,28 @@ class TournamentsController < ApplicationController
     return redirect_back_to_edit(alert: "Tu es déjà l'admin de ce tournoi.") if new_admin == @tournament.user
 
     previous_admin = @tournament.user
-    # Si l'ancien admin est aussi inscrit comme JOUEUR, on ne peut pas lui donner
-    # une ligne co-organisateur (index unique) sans lui prendre sa place dans le
-    # tableau : on préserve la place, il perd donc les droits de gestion.
-    previous_stays_player = previous_admin.present? &&
-                            @tournament.tournament_users.find_by(user: previous_admin)&.player?
+    # Le drapeau `co_organizer` étant indépendant du rôle, l'ancien admin garde sa
+    # place de joueur ET les droits de gestion — plus d'arbitrage entre les deux.
+    previous_plays = previous_admin.present? &&
+                     @tournament.tournament_users.find_by(user: previous_admin)&.player?
 
     ActiveRecord::Base.transaction do
-      # Le nouvel admin n'a plus besoin de sa ligne co-organisateur (le rôle admin
-      # est porté par tournaments.user_id). Une ligne "joueur" est en revanche
-      # conservée : rien n'interdit à l'admin de jouer son tournoi.
-      @tournament.tournament_users.find_by(user: new_admin, role: "co_organisateur")&.destroy!
+      # Le nouvel admin n'a plus besoin du drapeau (ses droits viennent désormais de
+      # tournaments.user_id). On baisse le drapeau s'il joue, on détruit la ligne
+      # s'il ne faisait que gérer — même arbitrage que #remove_co_organizer.
+      existing = @tournament.tournament_users.find_by(user: new_admin, co_organizer: true)
+      existing&.player? ? existing.update!(co_organizer: false) : existing&.destroy!
+
       @tournament.update!(user: new_admin)
 
-      if previous_admin.present? && !previous_stays_player
-        @tournament.tournament_users.create!(user: previous_admin, role: "co_organisateur", status: "approved")
+      if previous_admin.present?
+        # find_or_initialize_by : l'ancien admin est peut-être déjà inscrit comme
+        # joueur (index unique), auquel cas on lève simplement son drapeau.
+        row = @tournament.tournament_users.find_or_initialize_by(user: previous_admin)
+        row.role ||= "co_organisateur"
+        row.status = "approved"
+        row.co_organizer = true
+        row.save!
       end
     end
 
@@ -290,8 +306,8 @@ class TournamentsController < ApplicationController
       link: tournament_path(@tournament)
     )
 
-    notice = if previous_stays_player
-               "#{new_admin.display_name} est le nouvel admin. Tu gardes ta place de joueur, mais tu n'as plus les droits de gestion."
+    notice = if previous_plays
+               "#{new_admin.display_name} est le nouvel admin. Tu gardes ta place de joueur et tu restes co-organisateur."
              else
                "#{new_admin.display_name} est le nouvel admin. Tu restes co-organisateur."
              end
@@ -466,7 +482,7 @@ class TournamentsController < ApplicationController
     return ids if tournament.nil?
 
     ids + [tournament.user_id] +
-      tournament.tournament_users.where(role: "co_organisateur").pluck(:user_id)
+      tournament.tournament_users.co_organizers.pluck(:user_id)
   end
 
   # Inscrit le créateur comme joueur uniquement s'il a coché le toggle dédié.

@@ -32,9 +32,13 @@ class TournamentUser < ApplicationRecord
     "active"
   end
 
-  # Rôle dans le tournoi. "joueur" = participant qui occupe une place ;
-  # "co_organisateur" = co-gestionnaire (mêmes droits que l'admin sauf suppression
-  # / édition des métadonnées), sans occuper de place de joueur.
+  # Rôle dans le tournoi — il ne répond qu'à UNE question : cette inscription
+  # occupe-t-elle une place de joueur ? "joueur" = oui ; "co_organisateur" = non,
+  # c'est quelqu'un qu'on a nommé sans qu'il ait rejoint le tournoi.
+  #
+  # Les DROITS de gestion, eux, sont portés par la colonne `co_organizer` et non
+  # par le rôle : les deux sont indépendants, un joueur peut donc co-organiser le
+  # tournoi qu'il joue (cf. #co_organizer? et Tournament#organizer?).
   ROLES = %w[joueur co_organisateur].freeze
 
   validates :status, inclusion: { in: STATUSES }
@@ -44,6 +48,13 @@ class TournamentUser < ApplicationRecord
   # nil = chapeau général, le cas de la grande majorité des inscrits.
   validates :pot, numericality: { only_integer: true, greater_than_or_equal_to: 1 }, allow_nil: true
 
+  # Invariant : une ligne dont le rôle est "co_organisateur" n'existe QUE pour
+  # donner les droits de gestion (elle n'occupe pas de place de joueur). Le drapeau
+  # ne peut donc pas y être faux — sinon la ligne ne servirait plus à rien, et il
+  # n'y aurait aucune raison de faire porter cette cohérence aux appelants.
+  # L'inverse n'est pas vrai : un "joueur" peut porter le drapeau ou non.
+  before_validation :flag_dedicated_co_organizer
+
   # Clôture réactive des inscriptions dès que le tournoi devient complet — même
   # pattern que Match#recompute_player_left!. Pas de hook after_destroy : quitter
   # un tournoi ne peut jamais le rendre plus complet.
@@ -52,6 +63,9 @@ class TournamentUser < ApplicationRecord
   scope :approved, -> { where(status: "approved") }
   # Uniquement les inscrits qui occupent une place de joueur.
   scope :players,  -> { where(role: "joueur") }
+  # Les gestionnaires du tournoi (hors admin, qui est `tournaments.user_id`).
+  # Volontairement indépendant de `players` : les deux scopes se recoupent.
+  scope :co_organizers, -> { where(co_organizer: true) }
   # Parcours dans la phase suisse.
   scope :active,     -> { where(state: "active") }
   scope :qualified,  -> { where(state: "qualified") }
@@ -59,11 +73,12 @@ class TournamentUser < ApplicationRecord
   scope :withdrawn,  -> { where(state: "withdrawn") }
 
   # ── Prédicats de rôle ────────────────────────────────────────────────────────
-  # L'index unique [tournament_id, user_id] impose qu'une inscription porte UN
-  # seul rôle : promouvoir un joueur en co-organisateur lui fait donc perdre sa
-  # place de joueur (cf. TournamentsController#add_co_organizer).
+  # Les deux sont INDÉPENDANTS, c'est tout l'intérêt de la colonne `co_organizer` :
+  # `player?` dit si l'inscription occupe une place dans le tableau, `co_organizer?`
+  # si elle donne les droits de gestion. Trois combinaisons existent — joueur seul,
+  # co-organisateur seul (nommé sans avoir rejoint), et les deux à la fois.
   def player?         = role == "joueur"
-  def co_organizer?   = role == "co_organisateur"
+  def co_organizer?   = co_organizer
 
   # ── Prédicats de parcours (Lot 3, étendu Lot 5) ──────────────────────────────
   def active?     = state == "active"
@@ -99,5 +114,10 @@ class TournamentUser < ApplicationRecord
 
   def close_tournament_if_full
     tournament.close_registrations_if_full!
+  end
+
+  # Cf. le before_validation en tête de classe.
+  def flag_dedicated_co_organizer
+    self.co_organizer = true if role == "co_organisateur"
   end
 end

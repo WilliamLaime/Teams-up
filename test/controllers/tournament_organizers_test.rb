@@ -57,7 +57,7 @@ class TournamentOrganizersTest < ActionDispatch::IntegrationTest
     assert_nil @tournament.tournament_users.find_by(user: @co_org)
   end
 
-  test "promouvoir un joueur inscrit met à jour sa ligne et libère sa place" do
+  test "nommer un joueur inscrit lui donne les droits SANS lui prendre sa place" do
     inscription = @tournament.tournament_users.create!(user: @outsider, role: "joueur", status: "approved")
     sign_in @admin
 
@@ -65,19 +65,39 @@ class TournamentOrganizersTest < ActionDispatch::IntegrationTest
       post add_co_organizer_tournament_path(@tournament), params: { co_organizer_sgid: @outsider.invite_sgid }
     end
 
-    assert_equal "co_organisateur", inscription.reload.role
-    assert_equal 0, @tournament.reload.approved_players_count
+    # Le rôle ne bouge pas : il dit « occupe une place », pas « a les droits ».
+    assert_equal "joueur", inscription.reload.role
+    assert_predicate inscription, :co_organizer?
+    assert_equal 1, @tournament.reload.approved_players_count
+    assert @tournament.organizer?(@outsider)
   end
 
-  test "on ne promeut pas un joueur d'un tournoi déjà lancé" do
+  test "on peut nommer un joueur même une fois le tournoi lancé" do
     inscription = @tournament.tournament_users.create!(user: @outsider, role: "joueur", status: "approved")
     @tournament.update!(status: "in_progress")
     sign_in @admin
 
     post add_co_organizer_tournament_path(@tournament), params: { co_organizer_sgid: @outsider.invite_sgid }
 
+    # Rien n'est retiré des poules ni des appariements en cours : c'est justement
+    # ce que le drapeau permet, là où un changement de rôle était interdit.
     assert_equal "joueur", inscription.reload.role
-    assert_match(/lancé/, flash[:alert])
+    assert_predicate inscription, :co_organizer?
+    assert_nil flash[:alert]
+  end
+
+  test "révoquer un co-organisateur qui joue le laisse inscrit comme joueur" do
+    inscription = @tournament.tournament_users.create!(user: @outsider, role: "joueur",
+                                                       status: "approved", co_organizer: true)
+    sign_in @admin
+
+    assert_no_difference -> { @tournament.tournament_users.count } do
+      delete remove_co_organizer_tournament_path(@tournament, tournament_user_id: inscription.id)
+    end
+
+    assert_not_predicate inscription.reload, :co_organizer?
+    assert_equal "joueur", inscription.role
+    assert_not @tournament.reload.organizer?(@outsider)
   end
 
   test "nommer deux fois la même personne ne crée pas de doublon" do

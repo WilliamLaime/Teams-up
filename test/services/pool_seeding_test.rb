@@ -142,6 +142,21 @@ class PoolSeedingTest < ActiveSupport::TestCase
     end
   end
 
+  test "un co-organisateur qui joue est réparti comme n'importe quel joueur" do
+    tournament = build_tournament(8, mode: "pots", pots: 2)
+    # Le drapeau de gestion est indépendant du rôle : cette inscription occupe une
+    # place ET donne les droits. PoolSeeding ne doit pas la traiter à part.
+    co_org = ordered(tournament).first
+    co_org.update!(co_organizer: true)
+    fill_pots!(tournament, 2)
+
+    PoolSeeding.new(tournament).assign!
+
+    assert tournament.organizer?(co_org.user), "le drapeau doit donner les droits de gestion"
+    assert_not_nil co_org.reload.pool, "un co-organisateur joueur doit être tiré dans une poule"
+    assert_equal 8, tournament.tournament_users.players.approved.where.not(pool: nil).count
+  end
+
   private
 
   def build_tournament(count, format: "criterium_federal", mode: nil, pots: nil)

@@ -48,7 +48,7 @@ c'est de l'élimination directe d'emblée).
 - [x] Paramètres : nom, description (facultative), date, heure, lieu (place-search), deadline d'inscription (date + heure).
 - [x] Nombre de joueurs : **presets 8 / 16 / 32** (structure figée affichée) **+ mode « Libre »** (saisie d'un nombre → 1 config recommandée + propositions avec récap).
 - [x] Le créateur est **admin** ; **pas inscrit d'office**, mais **toggle optionnel** d'auto-inscription comme joueur.
-- [x] Ajout d'un **co-organisateur** (autocomplete d'utilisateurs, réutilise `invite-search`) → rôle `co_organisateur` dans `tournament_users` (n'occupe pas de place de joueur).
+- [x] Ajout d'un **co-organisateur** (autocomplete d'utilisateurs, réutilise `invite-search`) → drapeau `co_organizer` dans `tournament_users` (cf. la décision d'archi plus bas : un co-organisateur peut aussi être joueur).
 - [x] `Sport#available_tournament_formats` (raquette → RS/Poules ; collectif → Championnat/Poules).
 - [x] Comptage des joueurs scopé au rôle `joueur` (admin/co-org exclus des places).
 
@@ -382,15 +382,24 @@ d'ensemble embarque un **bracket viewer** interactif (défilement, zoom, filtre 
   2. *Tournois à rejoindre* — `open`, deadline future, non complet, non inscrit.
   3. *Tournois en cours* (publics) — `in_progress`, non inscrit → lecture seule.
 - **Droits** : tout utilisateur connecté peut créer un tournoi (en devient l'admin).
-- **Co-organisateur** (tranché Lot 2) : **pas de nouvelle colonne** — rôle `co_organisateur`
-  dans `tournament_users` (n'occupe pas de place de joueur). Droits fins sur la gestion du
-  tableau : câblés via `Tournament#organizer?`. Nombre **illimité**, composés depuis `#edit`
-  par le **seul admin** (`TournamentPolicy#manage_organizers?` → `owner?`, et non `manage?` :
-  sinon un co-organisateur pourrait coopter ou révoquer celui qui l'a nommé). L'admin peut
-  **transmettre l'administration** (`#transfer_ownership`) : il redevient co-organisateur.
-  L'index unique `[tournament_id, user_id]` impose un seul rôle par personne → promouvoir un
-  joueur inscrit **met à jour sa ligne** (il libère sa place), et c'est refusé une fois le
-  tournoi lancé (il a déjà des matchs et une ligne de classement).
+- **Co-organisateur** (tranché Lot 2, **révisé** depuis) : porté par la colonne booléenne
+  `tournament_users.co_organizer`, et non plus par le rôle. Les deux informations sont
+  désormais séparées — `role` répond à « occupe une place de joueur ? », `co_organizer` à
+  « a les droits de gestion ? » — ce qui permet à **un joueur de co-organiser le tournoi
+  qu'il joue**, impossible tant que l'index unique `[tournament_id, user_id]` et le rôle
+  portaient les deux à la fois. Trois combinaisons existent : joueur seul, co-organisateur
+  seul (nommé sans avoir rejoint le tournoi → rôle `co_organisateur`, qui n'occupe pas de
+  place), et les deux. Invariant tenu par le modèle : une ligne de rôle `co_organisateur`
+  porte toujours le drapeau, sinon elle ne servirait à rien
+  (`TournamentUser#flag_dedicated_co_organizer`).
+  Droits fins sur la gestion du tableau : câblés via `Tournament#organizer?`, qui lit le
+  drapeau. Nombre **illimité**, composés depuis `#edit` par le **seul admin**
+  (`TournamentPolicy#manage_organizers?` → `owner?`, et non `manage?` : sinon un
+  co-organisateur pourrait coopter ou révoquer celui qui l'a nommé). Nommer un joueur
+  inscrit lui **laisse sa place**, et reste possible tournoi lancé (rien n'est retiré des
+  poules ni des appariements). Le révoquer le laisse joueur s'il en était un, et détruit sa
+  ligne sinon. L'admin peut **transmettre l'administration** (`#transfer_ownership`) : il
+  redevient co-organisateur, en gardant sa place de joueur s'il en avait une.
 - **Nombre de joueurs** : presets 8/16/32 **+ mode Libre** (nombre arbitraire). Depuis le Lot 7,
   la structure qui en découle n'est plus un aperçu figé en lecture seule : elle est **calculée**
   (`Tournament#structure_summary`) et chacun de ses critères est **personnalisable** par
