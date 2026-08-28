@@ -79,7 +79,7 @@ class SwissPairing
       return BracketBuilder.new(@tournament).advance! if @tournament.bracket_started?
 
       # Recalcul déterministe du bilan V/D + qualifications/éliminations.
-      recompute_stats_for("swiss", apply_state: true)
+      recompute_stats_for("swiss", apply_state: true, count_byes: true)
 
       if ready_for_bracket?
         BracketBuilder.new(@tournament).build!

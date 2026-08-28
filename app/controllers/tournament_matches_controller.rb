@@ -19,7 +19,9 @@ class TournamentMatchesController < ApplicationController
       # Classement rafraîchi dès CE score saisi (Lot 6) — sans attendre que toute la
       # ronde soit jouée. Idempotent, même appel que apply_correction! ci-dessous.
       if %w[swiss league pool].include?(round.phase)
-        TournamentEngine.for(@tournament).recompute_stats_for(round.phase, apply_state: round.phase == "swiss")
+        swiss = round.phase == "swiss"
+        TournamentEngine.for(@tournament)
+                        .recompute_stats_for(round.phase, apply_state: swiss, count_byes: swiss)
       end
 
       # Ronde terminée → générer automatiquement la suite (idempotent).
@@ -93,8 +95,9 @@ class TournamentMatchesController < ApplicationController
 
     ActiveRecord::Base.transaction do
       if %w[swiss league pool].include?(round.phase)
+        swiss = round.phase == "swiss"
         TournamentEngine.for(@tournament)
-                        .recompute_stats_for(round.phase, apply_state: round.phase == "swiss")
+                        .recompute_stats_for(round.phase, apply_state: swiss, count_byes: swiss)
       end
 
       # Vainqueur inchangé : le score est ajusté mais l'aval reste valide.

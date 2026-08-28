@@ -57,7 +57,7 @@ class LeagueBuilder
       return BracketBuilder.new(@tournament).advance! if @tournament.bracket_started?
 
       # Recalcul du bilan V/D (sans logique suisse : le classement décide, pas 3 V/3 D).
-      recompute_stats_for("league", apply_state: false)
+      recompute_stats_for("league", apply_state: false, count_byes: false)
 
       full       = self.class.schedule(ordered_players)
       next_index = @tournament.league_rounds.count

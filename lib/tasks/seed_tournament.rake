@@ -179,7 +179,10 @@ namespace :tournament do
       end
 
       if %w[swiss league pool].include?(round.phase)
-        engine.recompute_stats_for(round.phase, apply_state: round.phase == "swiss")
+        # `count_byes` suit la phase : le bye ne vaut une victoire qu'en ronde
+        # suisse (cf. RoundRobinStats#recompute_stats_for).
+        swiss = round.phase == "swiss"
+        engine.recompute_stats_for(round.phase, apply_state: swiss, count_byes: swiss)
       end
 
       played_rounds += 1

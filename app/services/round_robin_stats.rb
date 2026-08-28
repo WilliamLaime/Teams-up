@@ -13,8 +13,24 @@ module RoundRobinStats
   #   • apply_state: true  → met aussi à jour `state` via `state_for` (suisse).
   #   • apply_state: false → laisse `state` inchangé (championnat / poules, où la
   #     qualification est décidée par le classement final, pas par un seuil 3 V/3 D).
-  def recompute_stats_for(phase, apply_state:)
+  #
+  # `count_byes` : un bye est clôturé avec `winner_id = player_a` (cf.
+  # TournamentMatch#resolve_bye) pour que la journée puisse se terminer, mais ce
+  # vainqueur est TECHNIQUE. Le paramètre n'a volontairement pas de valeur par
+  # défaut : la réponse dépend du format, et un défaut silencieux se propagerait
+  # au mauvais endroit.
+  #   • true  → ronde suisse UNIQUEMENT. Le bye y vaut 1 point par convention (on
+  #     ne punit pas le joueur du hasard des appariements) et le seuil de
+  #     qualification à 3 V le suppose.
+  #   • false → poules et championnat, où le bye n'est qu'un tour de repos né d'un
+  #     effectif impair. Le compter offrirait une victoire gratuite à tout joueur
+  #     d'une poule de 3 — et comme le seeding du tableau final lit ces colonnes
+  #     via Tournament#rank_key, avantagerait mécaniquement les poules impaires.
+  #     C'est déjà la règle de PoolStandings (cf. son en-tête) : les deux calculs
+  #     doivent enfin dire la même chose.
+  def recompute_stats_for(phase, apply_state:, count_byes:)
     matches = matches_in_phase(phase).to_a
+    matches = matches.reject(&:is_bye) unless count_byes
     player_scope.find_each do |tu|
       played = matches.select { |m| m.player_a_id == tu.id || m.player_b_id == tu.id }
       wins   = played.count { |m| m.winner_id == tu.id }
