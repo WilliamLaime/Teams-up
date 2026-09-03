@@ -14,12 +14,18 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
 
   teardown { teardown_db }
 
-  # ─── GET /tournois/bientot : page d'attente publique + non-indexée ──────────
-  test "GET /tournois/bientot se rend pour un visiteur non connecté et est noindex" do
-    get coming_soon_tournaments_path
+  # ─── GET /tournois/bientot : ancienne page d'attente → redirigée ────────────
+  test "GET /tournois/bientot redirige (301) vers la liste des tournois" do
+    get "/tournois/bientot"
+    assert_response :moved_permanently
+    assert_redirected_to "/tournois"
+  end
+
+  # ─── GET /tournois : la liste est publique et indexable ─────────────────────
+  test "GET /tournois se rend pour un visiteur non connecté sans noindex" do
+    get tournaments_path
     assert_response :success
-    assert_select "meta[name=?][content*=?]", "robots", "noindex"
-    assert_select ".tournament-soon__title"
+    assert_select "meta[name=?]", "robots", count: 0
   end
 
   # ─── GET /tournois : onglets + pagination (page liste) ──────────────────────

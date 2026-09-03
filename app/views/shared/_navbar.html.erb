@@ -61,7 +61,7 @@
       <%# Tournoi — accès à l'environnement tournois (remplace l'ancien lien Blog, déplacé au footer) %>
       <li class="nav-item">
         <% tournaments_active = request.path.start_with?('/tournois') %>
-        <%= link_to coming_soon_tournaments_path,
+        <%= link_to tournaments_path,
             class: "nav-link #{tournaments_active ? 'active' : ''}",
             "aria-current": (tournaments_active ? "page" : nil) do %>
           Tournoi
@@ -385,7 +385,7 @@
         <% end %>
 
         <% tournaments_active = request.path.start_with?('/tournois') %>
-        <%= link_to coming_soon_tournaments_path,
+        <%= link_to tournaments_path,
             class: "drawer-nav-link #{'active' if tournaments_active}",
             "aria-current": (tournaments_active ? "page" : nil) do %>
           <i data-lucide="trophy" style="width:17px;height:17px;" aria-hidden="true"></i>
@@ -452,7 +452,7 @@
         <% end %>
 
         <% tournaments_active = request.path.start_with?('/tournois') %>
-        <%= link_to coming_soon_tournaments_path,
+        <%= link_to tournaments_path,
             class: "drawer-nav-link #{'active' if tournaments_active}" do %>
           <i data-lucide="trophy" style="width:17px;height:17px;" aria-hidden="true"></i>
           Tournoi

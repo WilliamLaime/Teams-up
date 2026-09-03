@@ -2,8 +2,7 @@ class TournamentsController < ApplicationController
   include Pagy::Backend
 
   # Liste et détail accessibles aux visiteurs non connectés (comme les matchs).
-  # coming_soon : page d'attente publique (la feature tournoi n'est pas encore lancée).
-  skip_before_action :authenticate_user!, only: %i[index show coming_soon]
+  skip_before_action :authenticate_user!, only: %i[index show]
 
   before_action :set_tournament, only: %i[show start edit update toggle_registrations finish seeding
                                           add_co_organizer remove_co_organizer transfer_ownership]
@@ -19,11 +18,6 @@ class TournamentsController < ApplicationController
 
   # Onglets de la page liste (cf. docs/TOURNOI.md).
   TABS = %i[mine join ongoing completed].freeze
-
-  # Tant que la feature tournoi est en chantier, on empêche son indexation par les
-  # moteurs de recherche (cf. layout application.html.erb + robots.txt). Les devs
-  # accèdent aux pages via l'URL directe ; seul le header pointe vers coming_soon.
-  before_action :mark_noindex
 
   # GET /tournois
   # Un seul onglet affiché à la fois (cf. TABS), paginé — cf. docs/TOURNOI.md :
@@ -43,14 +37,6 @@ class TournamentsController < ApplicationController
 
     # Liste des sports pour les filtres pill de la barre.
     @sports = Sport.order(:name)
-  end
-
-  # GET /tournois/bientot
-  # Page d'attente publique affichée depuis le header tant que la feature tournoi
-  # n'est pas officiellement lancée. Les vraies pages (/tournois) restent
-  # accessibles par URL directe pour permettre aux développeurs de travailler.
-  def coming_soon
-    authorize Tournament, :coming_soon?
   end
 
   # GET /tournois/:id
@@ -394,11 +380,6 @@ class TournamentsController < ApplicationController
     when :ongoing   then scope.in_progress.where.not(id: my_ids).order(date: :asc)
     when :completed then scope.completed.order(date: :desc)
     end
-  end
-
-  # Marque la page comme non-indexable (voir <meta robots> dans le layout).
-  def mark_noindex
-    @noindex = true
   end
 
   # Verrouille format/nb de joueurs/sport/playoffs et les réglages de structure

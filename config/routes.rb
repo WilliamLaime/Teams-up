@@ -144,10 +144,11 @@ Rails.application.routes.draw do
   #   DELETE /tournois/:tournament_id/tournament_users/:id => quitter
   resources :tournaments, path: "tournois" do
     # GET /tournois/search => autocomplete JSON pour désigner un co-organisateur
-    # GET /tournois/bientot => page d'attente (feature tournoi en chantier)
     collection do
       get :search
-      get :coming_soon, path: "bientot"
+      # Ancienne page d'attente : la feature tournoi est lancée, on redirige
+      # définitivement (301) vers la liste pour ne pas casser les liens existants.
+      get "bientot", to: redirect("/tournois", status: 301)
     end
     # POST  /tournois/:id/start                 => lancer le tournoi (génère la ronde suisse 1)
     # PATCH /tournois/:id/toggle_registrations   => clôturer/rouvrir les inscriptions

@@ -47,8 +47,8 @@
       <meta name="sentry-dsn" content="<%= ENV["SENTRY_DSN"] %>">
     <% end %>
 
-    <%# Non-indexation : les pages en chantier (ex. tournois) posent @noindex = true
-        pour éviter que Google les référence tant que la feature n'est pas publiée. %>
+    <%# Non-indexation : une page peut poser @noindex = true (pages légales, profils,
+        matchs privés…) pour éviter que Google la référence. %>
     <% if @noindex %>
       <meta name="robots" content="noindex, nofollow">
     <% end %>
