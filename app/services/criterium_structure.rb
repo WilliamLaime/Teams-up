@@ -17,10 +17,14 @@
 #                                 1/8 → 8 perdants → places 9-16
 #   Consolante de 16, offset 17 : finale → 17/18 · 1/2 → 19/20 · 1/4 → 21-24…
 #
-# TOUS les chiffres du règlement tombent de cette seule récursion. La variante
-# « classement intégral » n'en diffère que par un seuil : au-delà de TIE_FROM
-# perdants sur un même tour on classe ex æquo, sinon on fait rejouer. En mode
-# intégral ce seuil est infini → aucun ex æquo, chaque place est jouée.
+# TOUS les chiffres du règlement tombent de cette seule récursion, et elle
+# descend jusqu'en bas : CHAQUE PLACE SE JOUE, il n'y a jamais d'ex æquo. Les 8
+# perdants du 8e de finale disputent les places 9-16 exactement comme les 2
+# perdants de demi-finale disputent la 3e place — même méthode, même code.
+#
+# Conséquence utile : dans un tableau de `size` places, tout le monde joue
+# exactement log2(size) matchs, et la place finale est la lecture binaire de la
+# suite victoire/défaite (victoire = 0, défaite = 1, premier tour en tête).
 class CriteriumStructure
   # ── Sources d'entrants ──────────────────────────────────────────────────────
   # D'où viennent les joueurs d'un tableau. Ce sont des DESCRIPTIONS : c'est
@@ -29,21 +33,19 @@ class CriteriumStructure
   Winners        = Data.define(:key, :round) # vainqueurs du tour N d'un tableau
   Losers         = Data.define(:key, :round) # perdants du tour N d'un tableau
 
-  # ── Un nœud = un tableau (ou un palier d'ex æquo) ───────────────────────────
+  # ── Un nœud = un tableau ────────────────────────────────────────────────────
   #   key      : identifiant unique et stable ("ok", "ko", "ok:5-8"…)
   #   phase    : la phase TournamentRound correspondante
   #   branch   : la branche TournamentRound (2e dimension de l'index unique)
-  #   kind     : :elimination (tableau) · :playoff (tour unique) · :tie (ex æquo)
+  #   kind     : :elimination (tableau) · :playoff (tour unique, transit)
   #   sources  : qui entre ici
   #   pairing  : comment apparier le 1er tour (cf. CriteriumFlow)
   #   places   : [première, dernière] place couverte — nil = nœud de transit
-  #   tie_at   : place commune attribuée aux ex æquo (nœuds :tie uniquement)
   #   size     : nombre de places du tableau (puissance de 2 pour :elimination)
   #   entrants : nombre de joueurs qui y entrent réellement (≤ size → byes)
   Node = Data.define(:key, :phase, :branch, :label, :kind, :sources, :pairing,
-                     :places, :tie_at, :size, :entrants) do
+                     :places, :size, :entrants) do
     def elimination? = kind == :elimination
-    def tie?         = kind == :tie
     # Nœud de TRANSIT : n'attribue aucune place, et ses DEUX camps continuent
     # (vainqueurs → tableau final, perdants → consolante). Seuls les barrages.
     def transit?     = kind == :playoff
@@ -51,32 +53,16 @@ class CriteriumStructure
     def first_place = places&.first
     def last_place  = places&.last
 
-    # Nombre de tours à jouer : un palier d'ex æquo ne se joue pas, un barrage
-    # est un tour unique, un tableau se joue en log2(size) tours.
-    def round_count
-      case kind
-      when :tie     then 0
-      when :playoff then 1
-      else Integer(Math.log2(size))
-      end
-    end
+    # Nombre de tours à jouer : un barrage est un tour unique, un tableau se
+    # joue en log2(size) tours.
+    def round_count = transit? ? 1 : Integer(Math.log2(size))
 
     # Nombre de cartes de match générées par ce nœud, byes inclus (un tableau de
     # `size` places produit toujours `size - 1` cartes, quelle que soit la façon
     # dont ses perdants sont ensuite reclassés — ceux-là comptent pour leur
     # propre nœud).
-    def match_count
-      case kind
-      when :tie     then 0
-      when :playoff then entrants / 2
-      else size - 1
-      end
-    end
+    def match_count = transit? ? entrants / 2 : size - 1
   end
-
-  # Au-delà de ce nombre de perdants sur un même tour, le règlement les classe
-  # ex æquo plutôt que de les faire rejouer (8 joueurs → « 9es ex æquo »).
-  TIE_FROM = 8
 
   # `pool_count`       : nombre de poules
   # `players_per_pool` : 3 ou 4 (le 4e de poule descend directement en consolante)
@@ -119,11 +105,6 @@ class CriteriumStructure
 
   private
 
-  def integral? = @mode == :integral
-
-  # Seuil d'ex æquo : désactivé en mode intégral (chaque place est jouée).
-  def tie_from = integral? ? Float::INFINITY : TIE_FROM
-
   # ── Mode standard : barrages + tableau final + consolante ───────────────────
   def standard_nodes
     [barrage_node] + ok_nodes + ko_nodes
@@ -136,7 +117,7 @@ class CriteriumStructure
 
     Node.new(key: "barrage", **coords("barrage"), label: "Barrages", kind: :playoff,
              sources: [PoolQualifiers[2], PoolQualifiers[3]], pairing: :cross_pool,
-             places: nil, tie_at: nil, size: entrants, entrants: entrants)
+             places: nil, size: entrants, entrants: entrants)
   end
 
   # Tableau final : les 1ers de poule (exemptés de barrage) + les vainqueurs de
@@ -168,7 +149,7 @@ class CriteriumStructure
 
   def ko_entrants = @players_per_pool >= 4 ? @pool_count * 2 : @pool_count
 
-  # ── Mode intégral : un seul tableau, aucun barrage, aucun ex æquo ────────────
+  # ── Mode intégral : un seul tableau, aucun barrage ───────────────────────────
   # Tout le monde entre dans le même tableau, classé par POSITION DE POULE : les
   # 1ers de poule prennent les têtes de série, puis les 2es, etc. (`:pool_rank`).
   # Ni serpentin ni classement individuel — l'app n'a pas de classement officiel,
@@ -189,7 +170,7 @@ class CriteriumStructure
   def placement_tree(prefix:, key:, label:, sources:, pairing:, size:, offset:, entrants:)
     root = Node.new(key: key, **coords(key), label: label, kind: :elimination,
                     sources: sources, pairing: pairing,
-                    places: [offset, offset + size - 1], tie_at: nil,
+                    places: [offset, offset + size - 1],
                     size: size, entrants: entrants)
 
     # Le dernier tour est la finale du nœud : elle attribue `offset` et
@@ -202,22 +183,19 @@ class CriteriumStructure
     [root] + children
   end
 
-  # Les perdants du tour `round` : soit un palier d'ex æquo, soit un mini-tableau
-  # qui rejoue intégralement les places concernées.
+  # Les perdants du tour `round` : un mini-tableau qui rejoue INTÉGRALEMENT les
+  # places concernées, quelle qu'en soit la taille. C'est le même `placement_tree`
+  # que le tableau parent, donc lui aussi reclasse ses propres perdants, et ainsi
+  # de suite jusqu'aux matchs à deux joueurs. Aucun palier d'ex æquo : perdre son
+  # 8e de finale envoie disputer les places 9-16, pas partager une 9e place.
   def losers_node(prefix:, parent_key:, round:, group:, offset:)
     first = offset + group
     last  = first + group - 1
-    key   = "#{prefix}:#{first}-#{last}"
 
-    if group >= tie_from
-      [Node.new(key: key, **coords(key), label: "#{ordinal(first)}s ex æquo", kind: :tie,
-                sources: [Losers[parent_key, round]], pairing: nil,
-                places: [first, last], tie_at: first, size: group, entrants: group)]
-    else
-      placement_tree(prefix: prefix, key: key, label: placement_label(first, last),
-                     sources: [Losers[parent_key, round]], pairing: :carry_over,
-                     size: group, offset: first, entrants: group)
-    end
+    placement_tree(prefix: prefix, key: "#{prefix}:#{first}-#{last}",
+                   label: placement_label(first, last),
+                   sources: [Losers[parent_key, round]], pairing: :carry_over,
+                   size: group, offset: first, entrants: group)
   end
 
   # ── Clé → coordonnées en base ───────────────────────────────────────────────

@@ -8,61 +8,93 @@ require "test_helper"
 class CriteriumStructureTest < ActiveSupport::TestCase
   # ── 32 joueurs : 8 poules de 4, la configuration de référence du document ────
 
-  test "8 poules de 4 déclare les 11 nœuds attendus" do
+  test "8 poules de 4 déclare les 17 nœuds attendus" do
     keys = structure(pool_count: 8, players_per_pool: 4).nodes.map(&:key)
 
-    assert_equal 11, keys.size
-    assert_equal %w[barrage ok ok:9-16 ok:5-8 ok:7-8 ok:3-4
-                    ko ko:25-32 ko:21-24 ko:23-24 ko:19-20].sort,
+    assert_equal 17, keys.size
+    assert_equal %w[barrage
+                    ok ok:9-16 ok:13-16 ok:15-16 ok:11-12 ok:5-8 ok:7-8 ok:3-4
+                    ko ko:25-32 ko:29-32 ko:31-32 ko:27-28 ko:21-24 ko:23-24 ko:19-20].sort,
                  keys.sort
   end
 
   test "8 poules de 4 : les plages de places du tableau final sont celles du règlement" do
     s = structure(pool_count: 8, players_per_pool: 4)
 
-    # Tableau OK de 16 : la finale donne 1/2, puis 3/4, 5-8, et 9 ex æquo.
-    assert_equal [1, 16], s.node("ok").places
-    assert_equal [3, 4],  s.node("ok:3-4").places
-    assert_equal [5, 8],  s.node("ok:5-8").places
-    assert_equal [7, 8],  s.node("ok:7-8").places
-    assert_equal [9, 16], s.node("ok:9-16").places
+    # Tableau OK de 16 : la finale donne 1/2, puis 3/4, 5-8, 9-16 — et chacun de
+    # ces mini-tableaux reclasse à son tour ses propres perdants.
+    assert_equal [1, 16],  s.node("ok").places
+    assert_equal [3, 4],   s.node("ok:3-4").places
+    assert_equal [5, 8],   s.node("ok:5-8").places
+    assert_equal [7, 8],   s.node("ok:7-8").places
+    assert_equal [9, 16],  s.node("ok:9-16").places
+    assert_equal [13, 16], s.node("ok:13-16").places
+    assert_equal [15, 16], s.node("ok:15-16").places
+    assert_equal [11, 12], s.node("ok:11-12").places
   end
 
   test "8 poules de 4 : les plages de places de la consolante sont celles du règlement" do
     s = structure(pool_count: 8, players_per_pool: 4)
 
-    # Consolante : 17/18 pour sa finale, puis 19/20, 21-24, 25 ex æquo.
+    # Consolante : 17/18 pour sa finale, puis 19/20, 21-24, 25-32 — même arbre
+    # que le tableau final, décalé de 16 places.
     assert_equal [17, 32], s.node("ko").places
     assert_equal [19, 20], s.node("ko:19-20").places
     assert_equal [21, 24], s.node("ko:21-24").places
     assert_equal [23, 24], s.node("ko:23-24").places
     assert_equal [25, 32], s.node("ko:25-32").places
+    assert_equal [29, 32], s.node("ko:29-32").places
+    assert_equal [31, 32], s.node("ko:31-32").places
+    assert_equal [27, 28], s.node("ko:27-28").places
   end
 
-  test "au-delà de 8 perdants sur un tour, le règlement classe ex æquo" do
+  test "les perdants d'un 8e de finale rejouent pour les places 9 à 16" do
     s = structure(pool_count: 8, players_per_pool: 4)
 
-    # Les 8 perdants du 1er tour sont « 9es ex æquo » : ils ne rejouent pas.
-    tie = s.node("ok:9-16")
-    assert tie.tie?
-    assert_equal 9, tie.tie_at
-    assert_equal 0, tie.round_count
-    assert_equal "9es ex æquo", tie.label
+    # Perdre son 8e n'attribue AUCUNE place : ça envoie dans un vrai tableau de 8,
+    # qui se joue en 3 tours et reclasse lui-même ses perdants.
+    node = s.node("ok:9-16")
+    assert node.elimination?
+    assert_equal "Places 9 à 16", node.label
+    assert_equal 8, node.size
+    assert_equal 3, node.round_count
+    assert_equal [CriteriumStructure::Losers["ok", 1]], node.sources
 
-    # Les 4 perdants des quarts, eux, sont sous le seuil → ils rejouent.
-    assert s.node("ok:5-8").elimination?
-    assert_nil s.node("ok:5-8").tie_at
+    # Ses propres perdants descendent en 13-16, ses vainqueurs jouent 11-12 puis 9-10.
+    assert_equal [CriteriumStructure::Losers["ok:9-16", 1]], s.node("ok:13-16").sources
+    assert_equal [CriteriumStructure::Losers["ok:13-16", 1]], s.node("ok:15-16").sources
+    assert_equal [CriteriumStructure::Losers["ok:9-16", 2]], s.node("ok:11-12").sources
   end
 
-  test "8 poules de 4 : le total de matchs est celui du document (96)" do
+  test "aucun nœud n'attribue de place sans la faire jouer, quel que soit le mode" do
+    [structure(pool_count: 8, players_per_pool: 4),
+     structure(pool_count: 8, players_per_pool: 3),
+     structure(pool_count: 4, players_per_pool: 4, mode: :integral, player_count: 16)].each do |s|
+      s.nodes.reject(&:transit?).each do |node|
+        # Un nœud qui couvre k places est un tableau de k places joué en log2(k)
+        # tours : il n'existe aucun moyen de repartir une plage sans la disputer.
+        assert node.elimination?, "#{node.key} n'est pas un tableau"
+        assert_equal node.last_place - node.first_place + 1, node.size
+        assert_operator node.round_count, :>=, 1
+      end
+    end
+  end
+
+  test "8 poules de 4 : 120 matchs, dont 4 de phase finale par joueur" do
     s = structure(pool_count: 8, players_per_pool: 4)
 
     pool_matches = 8 * 6 # round-robin d'une poule de 4 = 6 rencontres
     assert_equal 48, pool_matches
     assert_equal 8,  s.node("barrage").match_count
-    assert_equal 20, s.nodes.select { |n| n.key.start_with?("ok") }.sum(&:match_count)
-    assert_equal 20, s.nodes.select { |n| n.key.start_with?("ko") }.sum(&:match_count)
-    assert_equal 96, pool_matches + s.nodes.sum(&:match_count)
+
+    # Un tableau de n places entièrement disputé coûte n/2 × log2(n) matchs :
+    # 16/2 × 4 = 32, de chaque côté.
+    assert_equal 32, s.nodes.select { |n| n.key.start_with?("ok") }.sum(&:match_count)
+    assert_equal 32, s.nodes.select { |n| n.key.start_with?("ko") }.sum(&:match_count)
+    assert_equal 120, pool_matches + s.nodes.sum(&:match_count)
+
+    # La charge par joueur, elle, ne bouge pas : 4 matchs de tableau chacun.
+    assert_equal 4, s.node("ok").round_count
   end
 
   # ── 24 joueurs : 8 poules de 3 (pas de 4e, donc consolante deux fois plus petite)
@@ -78,13 +110,13 @@ class CriteriumStructureTest < ActiveSupport::TestCase
     assert_equal 8, ko.entrants
   end
 
-  test "8 poules de 3 : aucun palier d'ex æquo dans la consolante" do
+  test "8 poules de 3 : la consolante de 8 rejoue ses 4 places basses" do
     s = structure(pool_count: 8, players_per_pool: 3)
 
     ko_keys = s.nodes.map(&:key).select { |k| k.start_with?("ko") }
     assert_equal %w[ko ko:19-20 ko:21-24 ko:23-24].sort, ko_keys.sort
-    # 4 perdants au 1er tour d'une consolante de 8 : sous le seuil de 8, ils rejouent.
-    assert s.nodes.select { |n| n.key.start_with?("ko") }.none?(&:tie?)
+    # 8/2 × log2(8) = 12 matchs pour disputer les 8 places de la consolante.
+    assert_equal 12, s.nodes.select { |n| n.key.start_with?("ko") }.sum(&:match_count)
   end
 
   test "les 4es de poule n'entrent en consolante qu'en poules de 4" do
@@ -130,14 +162,17 @@ class CriteriumStructureTest < ActiveSupport::TestCase
     assert_equal :cross_pool, barrage.pairing
   end
 
-  # ── Mode intégral : chaque place est jouée, aucun ex æquo ────────────────────
+  # ── Mode intégral : un seul tableau, sans barrage ni consolante ──────────────
 
-  test "mode intégral à 16 joueurs : aucun nœud ex æquo" do
-    s = structure(pool_count: 4, players_per_pool: 4, mode: :integral)
+  test "mode intégral à 16 joueurs : le même arbre que le tableau final standard" do
+    integral = structure(pool_count: 4, players_per_pool: 4, mode: :integral)
+    standard = structure(pool_count: 8, players_per_pool: 4)
 
-    assert s.nodes.none?(&:tie?), "le mode intégral ne doit produire aucun ex æquo"
-    assert_equal %w[ok ok:9-16 ok:13-16 ok:15-16 ok:11-12 ok:5-8 ok:7-8 ok:3-4].sort,
-                 s.nodes.map(&:key).sort
+    keys = %w[ok ok:9-16 ok:13-16 ok:15-16 ok:11-12 ok:5-8 ok:7-8 ok:3-4].sort
+    assert_equal keys, integral.nodes.map(&:key).sort
+    # Le mode ne change QUE l'entrée dans le tableau (pas de barrage, pas de
+    # consolante) : l'arbre de classement d'un tableau de 16 est le même partout.
+    assert_equal keys, standard.nodes.map(&:key).select { |k| k.start_with?("ok") }.sort
   end
 
   test "mode intégral à 16 joueurs : les 16 places sont attribuées une seule fois" do

@@ -1,14 +1,15 @@
 <%# ── Matchs de classement du Critérium Fédéral ───────────────────────────────
     Les mini-tableaux qui font jouer les places au-delà du podium : 3e/4e, 5e-8e,
-    et leurs équivalents en consolante. Ils tournent EN PARALLÈLE du tableau
-    principal (le match pour la 3e place se joue pendant que la finale se joue),
-    d'où un bloc par branche plutôt qu'un ruban unique.
+    9e-16e… et leurs équivalents en consolante. Ils tournent EN PARALLÈLE du
+    tableau principal (le match pour la 3e place se joue pendant que la finale se
+    joue), d'où un bloc par branche plutôt qu'un ruban unique.
 
     Un bloc = une branche = un nœud de CriteriumStructure, titré par la plage de
     places qu'il attribue. Les colonnes ne sont titrées que s'il y a plusieurs
     tours : pour un match unique, « Finale » serait redondant avec « Match pour la
-    3e place ». Les paliers d'ex æquo (9es ex æquo…) n'apparaissent pas ici — ils
-    ne se jouent pas, ils sont attribués au classement (cf. TournamentStandings).
+    3e place ». CHAQUE place se jouant, un tableau de 16 produit ici 7 branches
+    par côté — les blocs sont triés par première place attribuée, si bien qu'un
+    mini-tableau apparaît avant ceux nés de ses propres perdants.
 
     Local : tournament. %>
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="classification"

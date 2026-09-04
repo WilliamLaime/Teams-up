@@ -156,8 +156,7 @@ module TournamentsHelper
   #
   # On part de la structure et non de la base pour l'ORDRE : les branches sont
   # créées dans l'ordre où leurs sources se terminent, qui n'est pas l'ordre du
-  # classement. Les paliers d'ex æquo sont naturellement exclus — ils n'ont aucun
-  # tour, donc aucune clé dans `rounds`.
+  # classement. `rounds.key?` écarte celles qui ne sont pas encore ouvertes.
   def classification_tables(tournament)
     return [] unless tournament.criterium?
 
@@ -318,7 +317,8 @@ module TournamentsHelper
     # Même condition que _board.html.erb : un Critérium à poule unique (≤ 7
     # joueurs) n'a pas de tableau, la pastille ouvrirait une section vide.
     phases << ["bracket", "Tableau final", "trophy"] if tournament.bracket_expected?
-    phases << ["consolation", "Consolante", "life-buoy"] if tournament.tournament_rounds.consolation.exists?
+    # Même condition que _board.html.erb : préfigurée dès le lancement, elle aussi.
+    phases << ["consolation", "Consolante", "life-buoy"] if tournament.consolation_expected?
     phases << ["classification", "Classement", "list-ordered"] if classification_tables(tournament).any?
 
     phases

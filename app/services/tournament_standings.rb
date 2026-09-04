@@ -12,15 +12,15 @@
 # `places.first + 1` à son perdant. C'est vrai de la finale du tournoi (1er / 2e)
 # comme du match pour la 23e place (23e / 24e) : CriteriumStructure a déjà rangé
 # chaque tableau derrière la plage de places qu'il couvre, il n'y a donc qu'une
-# seule règle à appliquer, récursivement. Les paliers d'ex æquo donnent la même
-# place à tous leurs entrants.
+# seule règle à appliquer, récursivement — et comme CHAQUE place se joue, il n'y
+# a aucun ex æquo à traiter : la structure ne produit que des tableaux.
 #
 # ── Pourquoi la compaction est obligatoire ────────────────────────────────────
 # Les byes créent des places jamais attribuées : un tableau de 8 à 6 entrants
 # n'envoie que 2 perdants vers son mini-tableau 5e-8e, donc les places 7 et 8 ne
 # sont jouées par personne. Sans renumérotation, le classement afficherait un trou
-# entre le 6e et le 9e. On renumérote donc 1..n en PRÉSERVANT les ex æquo (deux
-# joueurs 9es ex æquo restent tous deux 9es, et le suivant est 11e).
+# entre le 6e et le 9e. On renumérote donc 1..n en préservant les rangs partagés —
+# seule #tail_groups peut encore en produire (joueurs qu'aucun tableau ne classe).
 class TournamentStandings
   # Un rang du classement : une place, et les joueurs qui la partagent.
   Tier = Struct.new(:place, :players, :label) do
@@ -41,7 +41,7 @@ class TournamentStandings
   # livré de place, `tiers` ne contient que la queue, c'est-à-dire le classement
   # des poules recopié — un doublon exact des tables de poules affichées juste en
   # dessous, et un « Classement final » qui annonce des places que personne n'a
-  # gagnées (16 joueurs en 4 rangs d'ex æquo).
+  # gagnées.
   #
   # `first(n)` suffit : #ordered_groups place toujours les groupes issus des
   # tableaux AVANT la queue, et la compaction préserve cet ordre.
@@ -59,11 +59,6 @@ class TournamentStandings
 
   def structure = @tournament.criterium_structure
 
-  # Résolution des entrants d'un palier d'ex æquo : on réutilise celle du moteur.
-  # Une seule implémentation de « qui entre ici », sinon le classement et le moteur
-  # pourraient diverger.
-  def flow = @flow ||= CriteriumFlow.new(@tournament)
-
   def places_by_player
     @places_by_player ||= tiers.each_with_object({}) do |tier, index|
       tier.players.each { |player| index[player.id] = tier.place }
@@ -80,22 +75,9 @@ class TournamentStandings
   # brutes peuvent comporter des trous (byes) : la compaction s'en charge.
   def placed_groups
     @placed_groups ||= structure.nodes.flat_map do |node|
-      if node.tie?
-        tie_group(node)
-      elsif node.elimination?
-        final_groups(node)
-      else
-        [] # barrages : nœud de transit, n'attribue aucune place
-      end
+      # Les barrages sont un nœud de transit : ils n'attribuent aucune place.
+      node.elimination? ? final_groups(node) : []
     end
-  end
-
-  # Un palier d'ex æquo : tous ses entrants partagent la même place.
-  def tie_group(node)
-    entrants = flow.entrants_for(node)
-    return [] if entrants.empty?
-
-    [[node.tie_at, by_strength(entrants)]]
   end
 
   # La finale d'un tableau : vainqueur et perdant. Rien tant qu'elle n'est pas
@@ -137,8 +119,8 @@ class TournamentStandings
   def by_strength(players) = players.sort_by { |player| @tournament.rank_key(player) }
 
   # ── Compaction ──────────────────────────────────────────────────────────────
-  # Renumérote 1..n en préservant les ex æquo : un groupe de k joueurs occupe k
-  # places, donc le groupe suivant commence k places plus loin.
+  # Renumérote 1..n en préservant les rangs partagés : un groupe de k joueurs
+  # occupe k places, donc le groupe suivant commence k places plus loin.
   def compact(groups)
     counter = 0
 

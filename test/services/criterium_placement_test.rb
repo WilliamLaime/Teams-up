@@ -2,14 +2,14 @@ require "test_helper"
 
 # ── Tests Lot 5 — consolante, matchs de classement, places finales ────────────
 # Le Lot 4 a validé les barrages et le tableau final. Ici on vérifie ce qui fait
-# la spécificité du règlement FFTT : CHAQUE place est jouée (sauf les ex æquo que
-# le règlement prévoit explicitement), les mini-tableaux de classement tournent EN
-# PARALLÈLE, et le tournoi ne se termine qu'une fois la dernière branche jouée.
+# la spécificité du règlement FFTT : CHAQUE place est jouée, sans aucun ex æquo,
+# les mini-tableaux de classement tournent EN PARALLÈLE, et le tournoi ne se
+# termine qu'une fois la dernière branche jouée.
 #
 # L'assertion la plus forte du fichier est la bijection : réunis, les rangs du
 # classement final contiennent chaque joueur exactement une fois. C'est elle qui
 # prouve qu'aucun joueur n'est perdu ni compté deux fois — l'erreur la plus facile
-# à commettre dans une topologie à 11 tableaux imbriqués.
+# à commettre dans une topologie à 17 tableaux imbriqués.
 class CriteriumPlacementTest < ActiveSupport::TestCase
   def setup
     @sport = Sport.create!(name: "Ping place", slug: "ping-pong", icon: "🏓")
@@ -171,26 +171,36 @@ class CriteriumPlacementTest < ActiveSupport::TestCase
                  "bijection : aucun joueur perdu, aucun classé deux fois"
   end
 
-  test "32 joueurs : mapping exact du règlement, ex æquo inclus" do
+  test "32 joueurs : chaque place de 1 à 32 est jouée, aucun ex æquo" do
     tournament = build_tournament(32)
-    play_all!(tournament, limit: 80)
+    play_all!(tournament, limit: 120)
 
     assert tournament.completed?, "le tournoi doit être terminé"
 
     tiers = standings_of(tournament).tiers
-    # Tableau final de 16 → places 1-8 jouées, puis 9es ex æquo (8 joueurs).
-    # Consolante de 16 → places 17-24 jouées, puis 25es ex æquo (8 joueurs).
-    assert_equal (1..8).to_a, tiers.select { |t| t.place <= 8 }.map(&:place)
-    assert_equal [17, 18, 19, 20, 21, 22, 23, 24],
-                 tiers.map(&:place).select { |place| place.between?(17, 24) }
-
-    tied = tiers.select(&:tied?)
-    assert_equal [9, 25], tied.map(&:place), "deux paliers d'ex æquo : les 9es et les 25es"
-    assert_equal [8, 8], tied.map { |tier| tier.players.size }
+    # Tableau final de 16 → places 1-16, consolante de 16 → places 17-32, chacune
+    # disputée. C'est le règlement : perdre son 8e envoie jouer les places 9-16,
+    # pas partager une 9e place.
+    assert_equal (1..32).to_a, tiers.map(&:place)
+    assert tiers.none?(&:tied?), "aucun rang partagé"
 
     assert_equal 32, tiers.sum { |tier| tier.players.size }, "somme des rangs = effectif"
     assert_equal tournament.approved_players.map(&:id).sort,
                  tiers.flat_map(&:players).map(&:id).sort
+  end
+
+  test "32 joueurs : les places 9 à 16 sortent bien du tableau des perdants de 8e" do
+    tournament = build_tournament(32)
+    play_all!(tournament, limit: 120)
+
+    # Les 8 perdants du 1er tour du tableau final occupent EXACTEMENT les places
+    # 9 à 16 — c'est la propriété que le palier d'ex æquo masquait auparavant.
+    first_round = tournament.tournament_rounds.bracket.main_branch.ordered.first
+    losers = first_round.tournament_matches.filter_map(&:loser)
+    assert_equal 8, losers.size
+
+    standings = standings_of(tournament)
+    assert_equal (9..16).to_a, losers.map { |p| standings.place_of(p) }.sort
   end
 
   # ── Places acquises vs classement complet ───────────────────────────────────
@@ -244,13 +254,14 @@ class CriteriumPlacementTest < ActiveSupport::TestCase
                     "les joueurs encore en course ne doivent PAS être classés"
   end
 
-  test "le libellé d'un palier d'ex æquo l'annonce" do
+  test "chaque rang porte un libellé au singulier, faute d'ex æquo à annoncer" do
     tournament = build_tournament(32)
-    play_all!(tournament, limit: 80)
+    play_all!(tournament, limit: 120)
 
-    tier = standings_of(tournament).tiers.find(&:tied?)
-    assert_equal "9es ex æquo", tier.label
-    assert_equal "1er", standings_of(tournament).tiers.first.label
+    tiers = standings_of(tournament).tiers
+    assert_equal "1er", tiers.first.label
+    assert_equal %w[9e 16e 32e], tiers.values_at(8, 15, 31).map(&:label)
+    assert_nil tiers.find(&:tied?), "aucun palier partagé à libeller"
   end
 
   # ── Fin de tournoi ──────────────────────────────────────────────────────────
@@ -339,6 +350,26 @@ class CriteriumPlacementTest < ActiveSupport::TestCase
     play_all!(tournament)
     assert tournament.reload.completed?
     assert_equal (1..16).to_a, standings_of(tournament).tiers.map(&:place)
+  end
+
+  # ── Effectif qui ne tombe pas juste ─────────────────────────────────────────
+  # 31 joueurs : une poule de 3 parmi des poules de 4, donc un 4e manquant, donc
+  # une consolante à 15 entrants pour 16 places. Le tableau distribue un bye, dont
+  # le « perdant » n'existe pas (cf. CriteriumFlow#camp_of) — un mini-tableau reçoit
+  # alors moins de monde que sa taille, et une place n'est jouée par personne.
+  # C'est #compact qui rebouche le trou : le classement doit couvrir 1..31 d'affilée.
+  test "31 joueurs : le bye ne laisse ni trou ni doublon dans le classement" do
+    tournament = build_tournament(31)
+    play_all!(tournament, limit: 120)
+
+    assert tournament.completed?, "le tournoi doit être terminé malgré l'effectif impair"
+
+    tiers = standings_of(tournament).tiers
+    assert_equal (1..31).to_a, tiers.map(&:place), "31 places consécutives, sans trou"
+    assert tiers.none?(&:tied?), "aucun rang partagé"
+    assert_equal tournament.approved_players.map(&:id).sort,
+                 tiers.flat_map(&:players).map(&:id).sort,
+                 "bijection : chaque joueur classé exactement une fois"
   end
 
   test "aucune rencontre n'est programmée deux fois sur un tournoi complet" do

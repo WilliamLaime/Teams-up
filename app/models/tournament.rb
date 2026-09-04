@@ -84,9 +84,9 @@ class Tournament < ApplicationRecord
   #                à partir de 17 joueurs (assez de poules pour que les barrages
   #                aient un sens et que la consolante se remplisse).
   #   "integral" — « classement intégral » : un SEUL tableau, tout le monde dedans,
-  #                aucun barrage, et aucun ex æquo — chaque place se joue. C'est la
-  #                variante des effectifs réduits (8 à 16), où découper en barrages
-  #                + consolante produirait des tableaux de 2 ou 4 joueurs.
+  #                aucun barrage. C'est la variante des effectifs réduits (8 à 16),
+  #                où découper en barrages + consolante produirait des tableaux de
+  #                2 ou 4 joueurs. (Chaque place se joue dans TOUS les modes.)
   #   "none"     — jusqu'à 7 joueurs, une poule unique suffit : le classement final
   #                EST le classement de la poule, il n'y a aucune phase finale.
   #
@@ -296,13 +296,19 @@ class Tournament < ApplicationRecord
   # joueurs en tête par ordre alphabétique) — partagé par ranked_players /
   # ranked_pools et le seeding (BracketBuilder, PoolBuilder).
   #
+  # ⚠️ Ordre de départage : points, puis MANCHES (set average), puis POINTS de
+  # manche (point average). Les manches avant les points — c'est le règlement
+  # FFTT, et c'est le même ordre que PoolStandings#tiebreak_key, qui départage à
+  # l'intérieur d'une poule. Les deux doivent rester d'accord : ce tri est le
+  # dernier recours du classement final, où il n'y a plus d'ex æquo à afficher.
+  #
   # `draw_order.to_i` et non `draw_order` : la colonne est nullable (aucun backfill
   # sur les tournois lancés avant sa migration) et un effectif où certains joueurs
   # l'ont et d'autres pas ferait lever `ArgumentError: comparison of Array with
   # Array failed` à `sort_by` — `nil <=> 1` vaut nil. Un nil se comporte donc comme
   # un 0, c'est-à-dire « tiré en premier », plutôt que de casser le classement.
   def rank_key(tu)
-    [-tu.ranking_points, -tu.point_average, -tu.set_average, tu.losses, tu.draw_order.to_i]
+    [-tu.ranking_points, -tu.set_average, -tu.point_average, tu.losses, tu.draw_order.to_i]
   end
 
   # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.
@@ -488,6 +494,18 @@ class Tournament < ApplicationRecord
   # sans barrage, et un Critérium à poule unique n'a aucune phase finale.
   def barrage_expected? = criterium? && criterium_structure.node("barrage").present?
 
+  # Ce tournoi aura-t-il une consolante ? Même intention que #barrage_expected? :
+  # la phase s'affiche dès le lancement plutôt que de surgir en cours de route.
+  #
+  # Elle n'a rien de secondaire — c'est la moitié de l'effectif et la moitié des
+  # places (17e à 32e à 32 joueurs) — donc la masquer jusqu'à son ouverture privait
+  # ces joueurs-là de toute projection, alors même que le tableau final, lui, était
+  # préfiguré depuis le lancement.
+  #
+  # Comme pour les barrages, c'est la STRUCTURE qui tranche : le mode intégral
+  # (8-16 joueurs) et la poule unique (≤ 7) n'en déclarent aucune.
+  def consolation_expected? = criterium? && criterium_structure.node("ko").present?
+
   # Nombre de barrages à jouer : les 2es contre les 3es de poule, donc une
   # rencontre par poule. Lu sur la structure et non recalculé ici, pour que la
   # préfiguration ne puisse pas diverger de ce que CriteriumFlow créera.
@@ -536,7 +554,7 @@ class Tournament < ApplicationRecord
     ranked_players.first if format == "championnat"
   end
 
-  # Classement final dérivé des matchs (places jouées, ex æquo, compaction) —
+  # Classement final dérivé des matchs (places jouées, compaction des byes) —
   # cf. TournamentStandings. Memoïsé : lu par #champion, l'onglet Classement et
   # la bannière du vainqueur, qui doivent tous afficher le même classement.
   def standings = @standings ||= TournamentStandings.new(self)
@@ -640,7 +658,7 @@ class Tournament < ApplicationRecord
   # panneau de constitution pour afficher le remplissage réel.
   def pots = approved_players.group_by(&:pot)
 
-  # Tableau unique à classement intégral : chaque place est jouée, aucun ex æquo.
+  # Tableau unique : tout l'effectif dans un seul tableau, sans barrage ni consolante.
   def criterium_integral? = criterium? && criterium_mode == :integral
 
   # Poule unique sans phase finale : le classement final EST celui de la poule.

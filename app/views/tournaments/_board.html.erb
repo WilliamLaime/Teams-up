@@ -86,14 +86,18 @@
       <%= render "tournaments/bracket", tournament: tournament %>
     <% end %>
 
-    <%# Critérium Fédéral : la consolante et les matchs de classement font jouer
-        les places au-delà du podium. Contrairement au tableau final, ils ne
-        s'affichent qu'une fois réellement ouverts — leur structure dépend des
-        perdants des tours amont, il n'y a donc rien à préfigurer avant. %>
-    <% if tournament.tournament_rounds.consolation.exists? %>
+    <%# Consolante (Critérium Fédéral) : affichée dès le lancement, comme les
+        barrages et le tableau final. Sa taille et ses places sont déclarées par la
+        structure avant le premier match ; seuls les noms manquent, et _bracket
+        remplit les colonnes vides de cases « À déterminer ». %>
+    <% if (tournament.in_progress? || tournament.completed?) && tournament.consolation_expected? %>
       <%= render "tournaments/consolation_phase", tournament: tournament %>
     <% end %>
 
+    <%# Matchs de classement : eux ne se préfigurent PAS. Une branche naît des
+        perdants d'un tour amont, et tant que ce tour n'est pas joué on ne sait ni
+        combien de joueurs elle recevra ni si elle s'ouvrira (un tableau à effectif
+        incomplet en laisse certaines vides). %>
     <% if classification_tables(tournament).any? %>
       <%= render "tournaments/classification_phase", tournament: tournament %>
     <% end %>

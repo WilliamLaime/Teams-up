@@ -19,6 +19,31 @@ class TournamentTest < ActiveSupport::TestCase
     tournament.tournament_users.create!(user: user, role: "joueur", status: "approved")
   end
 
+  # ─── Ordre de départage ──────────────────────────────────────────────────────
+  # rank_key est le dernier recours du classement : il tranche entre deux joueurs
+  # à égalité de points. Le règlement FFTT départage au quotient de MANCHES avant
+  # le quotient de POINTS, et PoolStandings#tiebreak_key applique déjà cet ordre à
+  # l'intérieur d'une poule. Les deux doivent rester d'accord, sinon le classement
+  # final contredirait la table de poule dont il découle.
+  test "rank_key départage au set average avant le point average" do
+    tournament = open_tournament(max_players: 2)
+    weak_sets  = join!(tournament, "weak")
+    good_sets  = join!(tournament, "good")
+
+    # Même bilan de victoires : seul le départage peut les séparer.
+    weak_sets.update!(wins: 1, sets_won: 3, sets_lost: 2, points_won: 200, points_lost: 100)
+    good_sets.update!(wins: 1, sets_won: 6, sets_lost: 2, points_won: 100, points_lost: 100)
+
+    assert_operator weak_sets.point_average, :>, good_sets.point_average,
+                    "le premier a le meilleur point average"
+    assert_operator good_sets.set_average, :>, weak_sets.set_average,
+                    "le second a le meilleur set average"
+
+    # Les manches priment : c'est good_sets qui passe devant.
+    sorted = [weak_sets, good_sets].sort_by { |tu| tournament.rank_key(tu) }
+    assert_equal [good_sets, weak_sets], sorted
+  end
+
   # ─── closed? / startable? ────────────────────────────────────────────────────
   test "closed? reflète le statut" do
     t = open_tournament

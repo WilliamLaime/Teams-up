@@ -84,11 +84,12 @@ class CriteriumFlow
     end
   end
 
+  private
+
+  def structure = @structure ||= @tournament.criterium_structure
+
   # ── Résolution des entrants d'un nœud ───────────────────────────────────────
-  # PUBLIC parce que TournamentStandings en a besoin : pour attribuer une place
-  # aux « 9es ex æquo », il faut savoir QUI est entré dans ce palier. Une seule
-  # implémentation de « qui entre ici », partagée par le moteur et le classement —
-  # sinon les deux pourraient diverger et le classement mentirait.
+  # Les joueurs qui entrent dans un nœud, dans l'ordre de tête de série.
   #
   # Renvoie [] tant que les sources ne sont pas jouées : c'est ce qui fait qu'un
   # mini-tableau ne s'ouvre pas avant l'heure, sans aucun test d'étape explicite.
@@ -116,10 +117,6 @@ class CriteriumFlow
     else                    by_strength(groups.flatten)
     end
   end
-
-  private
-
-  def structure = @structure ||= @tournament.criterium_structure
 
   # ── Barrages ────────────────────────────────────────────────────────────────
   # Les 2es de poule contre les 3es, croisés. Nœud de TRANSIT : les vainqueurs
@@ -185,10 +182,10 @@ class CriteriumFlow
 
   # ── Les tableaux, pilotés par la structure ──────────────────────────────────
   # Tous les nœuds jouables, dans l'ordre de dépendance (un tableau avant les
-  # mini-tableaux nés de ses perdants). Les paliers d'ex æquo ne se jouent pas —
-  # ils n'existent que pour attribuer une place (cf. TournamentStandings) — et les
-  # barrages ont leur propre chemin.
-  def playable_nodes = structure.nodes.reject { |node| node.transit? || node.tie? }
+  # mini-tableaux nés de ses perdants). Seuls les barrages sont écartés : ils ont
+  # leur propre chemin (#ensure_barrage!). Tout le reste est un tableau à jouer,
+  # jusqu'au dernier match de classement.
+  def playable_nodes = structure.nodes.reject(&:transit?)
 
   def sync_nodes! = playable_nodes.map { |node| sync_node!(node) }
 

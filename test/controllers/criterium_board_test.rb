@@ -74,6 +74,41 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
                   "aucun barrage réel avant la fin des poules"
   end
 
+  # La consolante est la moitié de l'effectif et la moitié des places. Elle
+  # n'apparaissait qu'à l'ouverture du tableau final, alors que les barrages et le
+  # tableau final, eux, étaient préfigurés dès le lancement : les joueurs qui y
+  # atterrissent ne voyaient donc rien de ce qui les attendait.
+  test "la consolante est préfigurée dès le lancement, comme le tableau final" do
+    TournamentEngine.for(@tournament).next_round!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".phase-nav__pill[data-phase=?]", "consolation"
+    assert_select "section[data-phase=?] .tournament-phase__title", "consolation",
+                  text: /Consolante/
+    assert_select "section[data-phase='consolation'] .tmatch-card:not(.tmatch-card--placeholder)", 0,
+                  "aucun match réel de consolante avant la fin des barrages"
+    # Sans provenance à afficher sur la 1re colonne, la note dit qui viendra y jouer.
+    assert_select "section[data-phase='consolation'] .tournament-empty",
+                  text: /4es de poule/
+  end
+
+  # Les effectifs réduits n'ont ni barrage ni consolante (tableau unique) : la
+  # pastille ouvrirait une section vide.
+  test "aucune pastille Consolante en classement intégral" do
+    @tournament.update!(final_phase_mode: "integral")
+    TournamentEngine.for(@tournament).next_round!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".phase-nav__pill[data-phase=?]", "consolation", 0
+    assert_select "section[data-phase=?]", "consolation", 0
+  end
+
   test "le board affiche une section et une pastille Barrages une fois les poules terminées" do
     play_until_barrages!
     assert @tournament.barrage_rounds.exists?, "les barrages doivent exister pour ce test"
