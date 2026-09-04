@@ -7,6 +7,11 @@ class TournamentsController < ApplicationController
   before_action :set_tournament, only: %i[show start edit update toggle_registrations finish seeding
                                           add_co_organizer remove_co_organizer transfer_ownership]
 
+  # Autocomplete de désignation (#search) : ce que le dropdown affiche au maximum,
+  # et le nombre de lignes qu'on accepte de charger avant de les trier par priorité.
+  SEARCH_RESULTS_LIMIT = 8
+  SEARCH_SCAN_LIMIT    = 50
+
   # Associations préchargées pour les cards (sport, avatars des participants,
   # organisateur) — appliquées uniquement à l'onglet actif (cf. #index), jamais
   # aux requêtes de comptage.
@@ -310,15 +315,17 @@ class TournamentsController < ApplicationController
   # les affiche grisées. Les masquer produisait un « Aucun joueur trouvé »
   # indiscernable d'une faute de frappe, et donc un blocage indiagnosticable depuis
   # l'interface (incident prod du 4 septembre 2026).
+  #
+  # Sans `q` (ou avec moins de 3 caractères), l'endpoint ne renvoie plus une liste
+  # vide mais des SUGGESTIONS : les inscrits au tournoi, puis les amis du demandeur.
+  # Le champ ne s'ouvrait sinon sur rien, sans aucune piste sur qui nommer.
   def search
     authorize Tournament, :search?
 
     q = params[:q].to_s.strip
-    return render json: [] if q.length < 3
-
-    users = User.search_for_invite(q)
-                .where.not(id: excluded_search_ids)
-                .limit(8)
+    # Moins de 3 caractères (y compris un champ vide, au focus) : on ne cherche pas,
+    # on SUGGÈRE. C'est ce qui remplit le dropdown à l'ouverture du champ.
+    users = q.length < 3 ? suggested_users : searched_users(q)
     organizer_ids = current_organizer_ids
 
     render json: users.map { |u|
@@ -326,6 +333,7 @@ class TournamentsController < ApplicationController
         sgid: u.invite_sgid,
         first_name: u.profil&.first_name,
         last_name: u.profil&.last_name,
+        group: suggestion_group(u),
         already_organizer: organizer_ids.include?(u.id)
       }
     }
@@ -500,13 +508,21 @@ class TournamentsController < ApplicationController
   # est exactement ce qui est affiché dans le panneau, et exactement ce qui
   # refuserait une nouvelle nomination.
   #
-  # Vide sans `tournament_id` — le champ de transfert d'administration appelle le
-  # même endpoint sans paramètre, et DOIT proposer normalement un co-organisateur
-  # en place pour pouvoir le promouvoir admin.
+  # Vide sans `tournament_id`, et vide en contexte TRANSFERT : ce champ-là doit
+  # proposer normalement un co-organisateur en place, puisque c'est justement lui
+  # qu'on promeut admin. Le griser reviendrait à interdire le cas principal.
   def current_organizer_ids
-    return [] if params[:tournament_id].blank?
+    return [] if params[:tournament_id].blank? || transfer_context?
 
     search_tournament&.tournament_users&.co_organizers&.pluck(:user_id) || []
+  end
+
+  # Lequel des deux champs du panneau interroge l'endpoint ? Les deux ont besoin du
+  # `tournament_id` pour suggérer les membres du tournoi, mais n'en tirent pas les
+  # mêmes conclusions : la NOMINATION grise les co-organisateurs en place, le
+  # TRANSFERT les propose (cf. #current_organizer_ids et #participant_ids).
+  def transfer_context?
+    params[:context] == "transfer"
   end
 
   # Le tournoi visé par l'autocomplete, chargé une seule fois par requête
@@ -515,6 +531,111 @@ class TournamentsController < ApplicationController
     return @search_tournament if defined?(@search_tournament)
 
     @search_tournament = Tournament.find_by_param(params[:tournament_id])
+  end
+
+  # ── Suggestions de l'autocomplete ───────────────────────────────────────────
+  #
+  # Deux cercles, dans cet ordre : les personnes DÉJÀ dans le tournoi (les plus
+  # probables — on nomme d'abord quelqu'un qui joue), puis les amis du demandeur.
+  # Ils servent à deux choses : remplir le dropdown quand rien n'est tapé, et
+  # remonter en tête des résultats quand une recherche est lancée.
+
+  # Les membres du tournoi. Vide sans `tournament_id` — la page de CRÉATION appelle
+  # le même endpoint sans paramètre (le tournoi n'existe pas encore), elle ne
+  # proposera donc que des amis.
+  #
+  # En contexte transfert, les co-organisateurs en place comptent aussi comme
+  # membres, même s'ils n'occupent pas de place de joueur : ce sont les candidats
+  # les plus probables à la promotion. Pour la nomination, ils sont hors sujet —
+  # ils gèrent déjà le tournoi, et #current_organizer_ids les grise.
+  def participant_ids
+    return @participant_ids if defined?(@participant_ids)
+
+    rows = search_tournament&.tournament_users
+    ids  = rows&.approved&.players&.pluck(:user_id) || []
+    ids |= rows&.co_organizers&.pluck(:user_id) || [] if transfer_context?
+
+    @participant_ids = ids
+  end
+
+  # Amis de l'UTILISATEUR COURANT (pas de l'admin du tournoi) : en pratique c'est le
+  # même, seul l'admin accède au panneau (TournamentPolicy#manage_organizers?), mais
+  # ça reste correct si la policy s'ouvrait un jour aux co-organisateurs.
+  def friend_ids
+    return @friend_ids if defined?(@friend_ids)
+
+    @friend_ids = current_user.all_friends.pluck(:id)
+  end
+
+  # Les deux cercles, purgés des personnes qu'on ne propose jamais (soi-même,
+  # l'admin). Un ami déjà inscrit ne compte que comme inscrit : il n'apparaît
+  # qu'une fois, dans le groupe le plus pertinent.
+  def suggested_participant_ids
+    @suggested_participant_ids ||= participant_ids - excluded_search_ids
+  end
+
+  def suggested_friend_ids
+    @suggested_friend_ids ||= friend_ids - excluded_search_ids - suggested_participant_ids
+  end
+
+  # Union des deux cercles, dans l'ordre d'affichage. Sert de clé de tri à la
+  # recherche libre (#searched_users).
+  def suggested_ids
+    @suggested_ids ||= suggested_participant_ids + suggested_friend_ids
+  end
+
+  # Les 8 places du dropdown, PARTAGÉES entre les deux cercles : chacun a droit à sa
+  # moitié et récupère ce que l'autre n'utilise pas. Sans ce partage, un tournoi un
+  # peu fourni (25 inscrits) saturait la liste et les amis n'apparaissaient jamais —
+  # or ce sont eux qu'on nomme quand la personne visée n'est pas encore inscrite.
+  def suggested_slice
+    half         = SEARCH_RESULTS_LIMIT / 2
+    participants = suggested_participant_ids.first([half, SEARCH_RESULTS_LIMIT - suggested_friend_ids.size].max)
+    friends      = suggested_friend_ids.first(SEARCH_RESULTS_LIMIT - participants.size)
+
+    participants + friends
+  end
+
+  # Le dropdown à l'ouverture du champ. Le tri se fait EN RUBY sur l'ordre de la
+  # tranche : un ORDER BY SQL ne saurait pas rendre cet ordre métier (inscrits
+  # d'abord, amis ensuite).
+  def suggested_users
+    ids = suggested_slice
+
+    User.where(id: ids).includes(:profil).sort_by { |u| ids.index(u.id) }
+  end
+
+  # Recherche libre sur TOUS les utilisateurs (inchangée), avec les inscrits et amis
+  # remontés en tête.
+  #
+  # Le plafond est appliqué APRÈS le tri, jamais en SQL : un LIMIT côté base
+  # tronquerait avant même qu'un inscrit ou un ami n'apparaisse, et la priorité
+  # deviendrait invisible. `SEARCH_SCAN_LIMIT` borne quand même le nombre de lignes
+  # chargées, pour qu'une recherche très large ne rapatrie pas toute la table.
+  def searched_users(query)
+    candidates = User.search_for_invite(query)
+                     .where.not(id: excluded_search_ids)
+                     .limit(SEARCH_SCAN_LIMIT)
+                     .to_a
+
+    suggested, others = candidates.partition { |u| suggested_ids.include?(u.id) }
+    suggested.sort_by! { |u| suggested_ids.index(u.id) }
+    (suggested + others).first(SEARCH_RESULTS_LIMIT)
+  end
+
+  # Libellé du groupe sous lequel le dropdown range la personne. `nil` = résultat de
+  # recherche ordinaire, affiché sans en-tête.
+  def suggestion_group(user)
+    return participants_group_label if participant_ids.include?(user.id)
+    return "Tes amis" if friend_ids.include?(user.id)
+
+    nil
+  end
+
+  # « Inscrits » serait faux en contexte transfert, où le groupe contient aussi des
+  # co-organisateurs qui ne jouent pas.
+  def participants_group_label
+    transfer_context? ? "Membres du tournoi" : "Inscrits au tournoi"
   end
 
   # Inscrit le créateur comme joueur uniquement s'il a coché le toggle dédié.
