@@ -199,6 +199,24 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   4. Un mot-clé **sans valeur par défaut** sur une règle métier n'est pas de la rigidité : c'est un compilateur qu'on s'offre pour trouver les appelants oubliés (ici, un `.rake` hors du champ des tests).
   5. « C'est aléatoire ? » est presque toujours la mauvaise question. Un tri déterministe sur des données fausses est indistinguable d'un tirage au sort pour qui regarde le résultat — vérifier d'abord la **donnée d'entrée**, pas l'algorithme.
 
+## 2026-09-04 — Colonnes fantômes dans db/schema.rb (`matches`)
+- **Symptôme** : `db/schema.rb` déclarait `max_supporters`, `pin_latitude` et
+  `pin_longitude` sur `matches`. Aucune migration ne les crée, aucun code ne les
+  utilise (vérifié sur tout l'historique Git).
+- **Cause racine** : ce n'était pas un dump accidentel isolé mais une
+  **oscillation permanente** — 25 commits touchent ces lignes. Les colonnes
+  existent dans la base locale d'au moins un poste ; chacun de ses `db:migrate`
+  les re-déversait dans `schema.rb`, ceux des autres postes les retiraient.
+  Corriger `schema.rb` seul aurait été une rustine.
+- **Correctif** : migration idempotente `20260904130000_drop_phantom_columns_from_matches`
+  (`remove_column` sous `if column_exists?`, donc no-op sur les bases qui ne les
+  ont pas) + retrait chirurgical des 3 lignes dans `db/schema.rb`.
+- **⚠️ Piège à retenir** : ne JAMAIS committer un `bin/rails db:schema:dump` fait
+  depuis un poste local sur ce dépôt. Le dump y supprime aussi les 13 tables
+  `solid_cable_*` / `solid_cache_*` / `solid_queue_*` (~142 lignes) présentes dans
+  le schéma committé — `config/database.yml` les déclare dans des bases séparées
+  (`db/cache_migrate`, `db/queue_migrate`, `db/cable_migrate`), d'où l'écart.
+  Toujours éditer `schema.rb` chirurgicalement, et relire le diff avant commit.
 ## 2026-09-04 — Deux casquettes, une seule ligne : le co-organisateur qui ne pouvait plus jouer, ni redevenir co-organisateur
 - **Symptôme** (prod) : l'admin nomme quelqu'un co-organisateur. Celui-ci ne trouve **aucun moyen de s'inscrire** au tournoi. L'admin le retire donc de l'organisation pour l'inscrire comme joueur… et ne peut **plus jamais** le renommer : l'autocomplete répond « Aucun joueur trouvé », y compris sur son prénom seul.
 - **Cause racine — la première moitié** : `TournamentsController#my_tournament_ids` prenait **toutes** les lignes `tournament_users`, tous rôles confondus. Une ligne `role: "co_organisateur"` suffisait donc à faire sortir le tournoi de l'onglet « À rejoindre » — et le bouton « Rejoindre » n'existait **que là**, sur la carte de l'index, sous `context == :join`. Aucune validation n'a jamais refusé l'inscription : l'UI avait simplement cessé de la proposer. Et un POST forcé aurait violé l'index unique `[tournament_id, user_id]` sur un `TournamentUser.new` — sans `validates_uniqueness` ni `rescue_from`, une 500 au lieu du flash prévu.

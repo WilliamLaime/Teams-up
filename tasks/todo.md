@@ -1,3 +1,49 @@
+# Fix : colonnes fantômes dans db/schema.rb (`matches`)
+
+## Constat (vérifié le 4 septembre 2026)
+`db/schema.rb` déclare sur la table `matches` trois colonnes que **rien** ne crée
+ni n'utilise :
+
+- `max_supporters` (integer, default 0)
+- `pin_latitude` (float)
+- `pin_longitude` (float)
+
+Preuves :
+- aucune migration ne les crée — `git log -S` sur `db/migrate/` : 0 résultat sur
+  tout l'historique
+- aucun code ne les lit ni ne les écrit — `git log -S` sur `app/ lib/ config/` :
+  0 résultat sur tout l'historique
+- la base locale d'un poste à jour (102 migrations `up`, 0 pending) ne les a pas
+
+## Cause racine
+Ce n'est pas un dump accidentel isolé : `schema.rb` **oscille depuis des mois**.
+25 commits touchent ces lignes, et le sens dépend de l'auteur du dernier
+`db:migrate` — les dumps d'un poste les rajoutent (`+1`), ceux des autres postes
+les retirent (`-1`). Les colonnes existent donc dans la base locale d'au moins un
+poste, et y sont re-déversées à chaque dump.
+
+Corriger `schema.rb` seul serait une rustine : le prochain `db:migrate` du poste
+concerné les remettrait. Il faut supprimer les colonnes **dans les bases** qui les
+ont.
+
+## Étapes
+1. [x] Migration idempotente `DropPhantomColumnsFromMatches` — `remove_column`
+   sous `if column_exists?`, pour passer sans erreur sur les bases qui ne les ont
+   pas, et les supprimer là où elles existent
+2. [x] Édition **chirurgicale** de `db/schema.rb` : retirer les 3 lignes + bumper
+   la version. ⚠️ Ne PAS committer un `db:schema:dump` local : le dump de ce poste
+   supprime aussi les 13 tables `solid_cable_*` / `solid_cache_*` / `solid_queue_*`
+   (~142 lignes) qui sont légitimes dans le schéma committé
+3. [x] Vérifier que la migration passe à blanc en local (colonnes déjà absentes)
+
+## Point à trancher en équipe (hors périmètre de ce fix)
+`config/database.yml` déclare des bases séparées pour cache / queue / cable
+(`db/cache_migrate`, `db/queue_migrate`, `db/cable_migrate`), mais les 13 tables
+`solid_*` sont présentes dans le `schema.rb` **primaire**. C'est la seconde source
+de bruit sur ce fichier. À arbitrer séparément.
+
+---
+
 # Feature : refonte UI onglet Matchs des tournois — Phase A (ruban horizontal) + Phase B (pastilles)
 
 Plan complet (5 phases) : `/home/axelb/.claude/plans/woolly-tinkering-nebula.md`
