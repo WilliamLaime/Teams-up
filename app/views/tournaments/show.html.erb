@@ -90,7 +90,7 @@
       <%# La modale de score et le contrôleur tournament-score vivent HORS de
           #tournament_board (pour survivre à ses remplacements Turbo Stream) mais
           englobent les panneaux → la modale reste accessible depuis l'onglet Matchs. %>
-      <div data-controller="tournament-score">
+      <div data-controller="tournament-score tmatch-chat">
 
         <section class="tournament-tabs__panel" role="tabpanel" hidden
                  data-tournament-tabs-target="panel" data-panel="overview">
@@ -131,6 +131,9 @@
         </section>
 
         <%= render "tournaments/score_modal" %>
+        <%# Même raison que la modale de score : rendue ICI, hors de
+            #tournament_board, pour survivre à ses remplacements Turbo Stream. %>
+        <%= render "tournaments/tmatch_chat_modal" %>
       </div>
     </div>
 

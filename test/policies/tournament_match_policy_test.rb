@@ -100,4 +100,40 @@ class TournamentMatchPolicyTest < ActiveSupport::TestCase
     @round.update!(status: "completed")
     assert TournamentMatchPolicy.new(@player_a.user, @match).create_match?
   end
+
+  # ── chat? : le fil d'organisation de la confrontation ───────────────────────
+  def test_joueurs_et_organisateurs_peuvent_discuter
+    assert TournamentMatchPolicy.new(@player_a.user, @match).chat?
+    assert TournamentMatchPolicy.new(@player_b.user, @match).chat?
+    assert TournamentMatchPolicy.new(@admin, @match).chat?
+    assert TournamentMatchPolicy.new(@co_org, @match).chat?
+  end
+
+  # Le fil est privé à la confrontation : c'est ce qui le rend utilisable pour
+  # convenir d'un créneau.
+  def test_tiers_et_visiteur_ne_peuvent_pas_discuter
+    refute TournamentMatchPolicy.new(@stranger, @match).chat?
+    refute TournamentMatchPolicy.new(nil, @match).chat?
+  end
+
+  def test_pas_de_chat_pour_un_bye
+    bye = @round.tournament_matches.create!(player_a: @player_a, is_bye: true, position: 2)
+    refute TournamentMatchPolicy.new(@player_a.user, bye).chat?
+  end
+
+  # Contrairement à create_match?, une rencontre déjà planifiée ne ferme PAS le
+  # chat : une date se déplace, et c'est là qu'on en rediscute.
+  def test_chat_reste_ouvert_une_fois_la_rencontre_planifiee
+    Match.create!(user: @player_a.user, sport: @sport, tournament: @tournament, tournament_match: @match,
+                  title: "Rencontre", date: Date.tomorrow, time: Time.current, end_time: 1.hour.from_now,
+                  place: "Terrain test", level: "Tout niveau", players_needed: 2, validation_mode: "automatic")
+
+    assert TournamentMatchPolicy.new(@player_a.user, @match.reload).chat?
+  end
+
+  # Le verrou de tour ne concerne que la saisie : un match joué se commente encore.
+  def test_tour_verrouille_n_empeche_pas_le_chat
+    @round.update!(status: "completed")
+    assert TournamentMatchPolicy.new(@player_a.user, @match).chat?
+  end
 end

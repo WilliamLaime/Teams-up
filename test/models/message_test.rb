@@ -1,13 +1,14 @@
 require "test_helper"
 
 # Tests du modèle Message.
-# Un Message appartient à un User et à l'une de ces trois cibles :
+# Un Message appartient à un User et à l'une de ces quatre cibles :
 #   - un Match (chat de groupe du match)
 #   - une PrivateConversation (chat 1-to-1)
 #   - une Team (chat d'équipe)
+#   - un TournamentMatch (chat d'organisation d'une confrontation de tournoi)
 # Règles :
 #   - Le contenu est obligatoire et limité à 1000 caractères
-#   - Un message doit appartenir à au moins une des trois cibles ci-dessus
+#   - Un message doit appartenir à au moins une des quatre cibles ci-dessus
 class MessageTest < ActiveSupport::TestCase
   teardown { teardown_db }
 
@@ -80,8 +81,8 @@ class MessageTest < ActiveSupport::TestCase
   def test_message_invalide_sans_aucune_cible
     user = create_user
     msg  = Message.new(user: user, content: "Message orphelin")
-    # match_id, private_conversation_id et team_id sont tous nil → invalide
-    refute msg.valid?, "Un message sans aucune cible (match/conv/team) doit être invalide"
+    # match_id, private_conversation_id, team_id et tournament_match_id sont tous nil
+    refute msg.valid?, "Un message sans aucune cible (match/conv/team/tmatch) doit être invalide"
     assert msg.errors[:base].any? { |e| e.include?("doit appartenir") },
            "L'erreur doit mentionner l'obligation d'appartenir à une cible"
   end
@@ -100,5 +101,41 @@ class MessageTest < ActiveSupport::TestCase
     team    = Team.create!(name: "Team Chat", captain: captain)
     msg     = Message.new(user: captain, team: team, content: "Bonjour l'équipe !")
     assert msg.valid?, "Un message attaché à une équipe doit être valide"
+  end
+
+  # Cas nominal : le chat d'organisation d'une confrontation de tournoi.
+  # 4e cible ajoutée au même motif que team_id — une colonne nullable de plus sur
+  # `messages` plutôt qu'une table de messages parallèle.
+  def test_message_valide_attache_a_un_match_de_tournoi
+    tmatch = create_tournament_match
+    msg = Message.new(user: tmatch.player_a.user, tournament_match: tmatch,
+                      content: "Jeudi 17h45, ça te va ?")
+
+    assert msg.valid?, "Un message attaché à un match de tournoi doit être valide"
+  end
+
+  # Le fil disparaît avec sa carte : un tour régénéré ne doit pas laisser des
+  # messages orphelins, invisibles mais bien en base.
+  def test_messages_supprimes_avec_le_match_de_tournoi
+    tmatch = create_tournament_match
+    Message.create!(user: tmatch.player_a.user, tournament_match: tmatch, content: "On joue quand ?")
+
+    assert_difference("Message.count", -1) { tmatch.destroy }
+  end
+
+  # Crée une confrontation de tournoi minimale (2 joueurs inscrits, une ronde).
+  def create_tournament_match
+    admin = create_user(email: "tmatch_admin@example.com")
+    sport = Sport.create!(name: "Padel Msg", slug: "padel_msg", icon: "🎾")
+    tournament = Tournament.create!(name: "T chat", sport: sport, user: admin, format: "ronde_suisse",
+                                    status: "in_progress", max_players: 8,
+                                    date: Date.tomorrow, place: "Terrain test")
+    round = tournament.tournament_rounds.create!(phase: "swiss", number: 1)
+    players = 2.times.map do |i|
+      tournament.tournament_users.create!(user: create_user(email: "tmatch_p#{i}@example.com"),
+                                         role: "joueur", status: "approved")
+    end
+
+    round.tournament_matches.create!(player_a: players[0], player_b: players[1], position: 0)
   end
 end

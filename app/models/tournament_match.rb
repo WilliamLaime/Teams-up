@@ -20,6 +20,16 @@ class TournamentMatch < ApplicationRecord
   # nullify : supprimer la carte ne détruit pas la rencontre (chat, inscriptions).
   has_one :match, dependent: :nullify
 
+  # ── Chat d'organisation ───────────────────────────────────────────────────────
+  # Fil dédié aux deux joueurs de cette carte (et aux organisateurs), pour convenir
+  # d'une date sans passer par un message privé. Rattaché au TournamentMatch et non
+  # à la rencontre `match` ci-dessus : cette dernière n'existe qu'une fois la date
+  # fixée, alors que le chat sert justement à la fixer.
+  # destroy : le fil n'a aucun sens hors de sa carte — le régénérer d'un tour
+  # laisserait des messages orphelins invisibles.
+  has_many :messages, dependent: :destroy
+  has_many :chat_reads, class_name: "TournamentMatchChatRead", dependent: :destroy
+
   STATUSES = %w[pending completed].freeze
 
   validates :position, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }

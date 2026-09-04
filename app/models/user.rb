@@ -67,6 +67,10 @@ class User < ApplicationRecord
   # Inscriptions aux tournois (feature Tournoi)
   has_many :tournament_users, dependent: :destroy
   has_many :tournaments, through: :tournament_users
+  # Accusés de lecture des chats de match de tournoi. dependent: :destroy est ici
+  # obligatoire, pas décoratif : la clé étrangère bloquerait la suppression du
+  # compte tant qu'un accusé subsiste.
+  has_many :tournament_match_chat_reads, dependent: :destroy
   has_many :notifications, dependent: :destroy
   # Subscriptions Web Push : un user peut avoir plusieurs appareils/navigateurs enregistrés
   has_many :push_subscriptions, dependent: :destroy

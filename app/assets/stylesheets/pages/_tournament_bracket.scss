@@ -854,6 +854,42 @@
   }
 }
 
+// ── Forfait : « V » / « D » à la place du score ───────────────────────────────
+// Un match gagné sur forfait n'a aucun set saisi : sans cette marque, la carte
+// n'affichait qu'un tiret « pas encore joué » alors que le résultat était acquis
+// et le classement de la poule déjà recalculé.
+// Reprend la géométrie de .tmatch-card__row-score (même colonne de droite, même
+// largeur mini) pour que forfaits et matchs joués restent alignés dans la grille
+// d'une poule. Sert aussi au tableau final, où elle prend la place de
+// .tmatch-card__sets — d'où la double géométrie, inoffensive dans les deux cas.
+.tmatch-card__forfeit-mark {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 1.4rem;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1;
+
+  // Même code couleur que le score d'un match joué : vert pour qui gagne, muted
+  // pour qui perd. Un joueur lit sa carte de la même façon dans les deux cas.
+  &.is-winner {
+    color: $green;
+    border-bottom: 2px solid $green;
+  }
+
+  &.is-loser {
+    color: var(--theme-text-muted);
+  }
+
+  // Scoreline centrée : la marque prend la place d'un score au MILIEU de la
+  // carte, pas dans une colonne de droite — le `margin-left: auto` ci-dessus la
+  // collerait au bord et disloquerait la ligne « nom — score — statut — score ».
+  &--center {
+    margin-left: 0;
+  }
+}
+
 // Pied de carte : score global + bouton d'accès à la modale.
 // `margin-top: auto` : la carte est une colonne flex étirée à la hauteur de sa
 // rangée (grille des poules) — sans cela, le pied resterait collé sous les noms
@@ -956,6 +992,57 @@
   color: var(--theme-text-muted);
 
   &:hover { background: var(--theme-hover-bg); color: var(--theme-text-primary); }
+}
+
+// ── Bulle de discussion (chat d'organisation du match) ───────────────────────
+// Icône seule, ronde, sans libellé : le pied porte déjà jusqu'à trois éléments
+// sur des cartes étroites, un 4e bouton texte l'aurait fait passer à la ligne.
+// Le titre + l'aria-label portent le sens (cf. _tmatch_actions).
+.tmatch-card__chat-btn {
+  position: relative;   // ancre le point non-lu
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  border: 1px solid var(--theme-border-strong);
+  background: transparent;
+  color: var(--theme-text-muted);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  svg { width: 14px; height: 14px; }
+
+  &:hover {
+    background: var(--theme-hover-bg);
+    color: var(--theme-text-primary);
+    border-color: var(--theme-text-muted);
+  }
+}
+
+// Un message attend : la bulle passe au vert et sort du gris des actions
+// secondaires. C'est le SEUL signal de non-lu de ce chat — il n'apparaît ni dans
+// la sidebar globale, ni en notification.
+.tmatch-card__chat-btn--unread {
+  border-color: $green;
+  color: $green;
+
+  &:hover { background: $green; color: #fff; }
+}
+
+// Point de notification, posé à cheval sur le bord de la bulle. `box-shadow`
+// plutôt que `border` pour le liseré : la couleur de fond de la carte change avec
+// le thème, l'ombre reprend la variable et suit sans être redéfinie deux fois.
+.tmatch-card__chat-dot {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: $green;
+  box-shadow: 0 0 0 2px var(--theme-bg-card);
 }
 
 // Lien « Créer / Voir la rencontre » (couplage Match ↔ tournoi).

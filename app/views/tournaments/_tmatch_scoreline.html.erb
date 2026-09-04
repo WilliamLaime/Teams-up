@@ -70,6 +70,11 @@
             <span class="tmatch-card__row-score <%= "is-winner" if match.winner_id == player.id %>">
               <%= match.display_score_for(player) %>
             </span>
+          <% elsif (mark = forfeit_mark_tag(match, player)) %>
+            <%# Forfait : pas de set saisi, mais un vainqueur bien réel. Sans ce
+                V/D, la carte affichait le tiret « pas encore joué » alors que le
+                classement de la poule était déjà tranché. %>
+            <%= mark %>
           <% else %>
             <%# Tiret plutôt qu'une case vide : la colonne de score reste alignée
                 d'une carte à l'autre, et « pas encore joué » se lit explicitement. %>
@@ -97,13 +102,21 @@
         <%= me_badge if mine_a %>
       </div>
 
+      <%# Un forfait n'a pas de set saisi : on remplace les deux scores par V/D
+          plutôt que de laisser le centre vide avec un « Fin » qui ne dit pas qui a
+          gagné. Le statut passe à « Forfait », plus parlant que « Fin » ici. %>
+      <% forfeited = match.forfeit? && match.winner_id.present? && !match.score_entered? %>
       <div class="tmatch-card__center">
         <% if match.score_entered? %>
           <span class="tmatch-card__center-score <%= "is-winner" if match.winner_id == match.player_a_id %>"><%= match.display_score_for(match.player_a) %></span>
+        <% elsif forfeited %>
+          <%= forfeit_mark_tag(match, match.player_a, extra_class: "tmatch-card__forfeit-mark--center") %>
         <% end %>
-        <span class="tmatch-card__center-status"><%= match.status == "completed" ? "Fin" : (match.score_entered? ? "En cours" : "VS") %></span>
+        <span class="tmatch-card__center-status"><%= forfeited ? "Forfait" : (match.status == "completed" ? "Fin" : (match.score_entered? ? "En cours" : "VS")) %></span>
         <% if match.score_entered? %>
           <span class="tmatch-card__center-score <%= "is-winner" if match.winner_id == match.player_b_id %>"><%= match.display_score_for(match.player_b) %></span>
+        <% elsif forfeited %>
+          <%= forfeit_mark_tag(match, match.player_b, extra_class: "tmatch-card__forfeit-mark--center") %>
         <% end %>
       </div>
 
