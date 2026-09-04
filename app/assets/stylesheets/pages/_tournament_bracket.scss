@@ -1671,11 +1671,17 @@
     background-color: rgba(#c0392b, 0.12);
   }
 
-  // Bouton « Déclarer forfait » (organisateur). button_to avec un bloc applique
-  // la classe directement au <button> généré (pas au <form> englobant) — on
-  // stylise donc ce sélecteur en pastille discrète, cohérente avec le reste du
-  // design system (pastille outline rouge, inversée au survol).
-  &__forfeit {
+  // Actions destructives de l'organisateur sur une pastille de joueur :
+  // « Forfait » (tournoi en cours) et « Retirer » (désinscription sèche, avant
+  // le lancement). Même geste, même poids visuel — une seule règle, deux noms
+  // sémantiques plutôt qu'une classe fourre-tout.
+  //
+  // button_to avec un bloc applique la classe directement au <button> généré
+  // (pas au <form> englobant) : on stylise donc ce sélecteur en pastille
+  // discrète, cohérente avec le reste du design system (outline rouge, inversée
+  // au survol).
+  &__forfeit,
+  &__remove {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;

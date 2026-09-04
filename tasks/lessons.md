@@ -229,3 +229,32 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   3. Un filtrage silencieux dans une recherche est un piège à diagnostic : il rend « interdit » indistinguable de « inexistant ». Montrer et griser coûte trois lignes de JS et évite un aller-retour en console de prod.
   4. Un seul point d'entrée pour une action essentielle (ici, un unique bouton « Rejoindre », sur une carte, dans un onglet) suffit à rendre cette action inatteignable dès qu'une condition d'affichage bouge ailleurs.
   5. La suite était verte, et un test encodait même le comportement fautif (« l'autocomplete masque les personnes déjà à l'organisation »). Un test qui décrit une décision d'implémentation plutôt que le besoin de l'utilisateur défend le bug au lieu de le trouver.
+
+## 2026-09-04 — Une règle métier qui ne vit que dans la vue n'est pas une règle
+- **Symptôme** : aucun organisateur ne pouvait retirer un inscrit d'un tournoi avant son
+  lancement. Le seul bouton disponible, « Forfait », n'apparaît que sur un tournoi
+  `in_progress` — un inscrit fantôme restait donc dans le tableau jusqu'au tirage.
+- **Ce que la recherche a trouvé au passage, et qui était plus grave** :
+  `TournamentUserPolicy#destroy?` se réduisait à `record.user == user`. La règle « on ne se
+  désinscrit plus après le lancement » n'existait **que** dans une condition d'affichage de
+  `show.html.erb`. Or `tournament_matches` porte **quatre** clés étrangères vers
+  `tournament_users` (`player_a_id`, `player_b_id`, `winner_id`, `retired_player_id`) : un
+  DELETE forgé sur un tournoi lancé ne rendait pas une 403, il levait une
+  `PG::ForeignKeyViolation` — une 500. La suite était verte : aucun test ne faisait de DELETE
+  sur un tournoi lancé, puisque l'UI ne le proposait pas.
+- **Correctif** : la garde d'état remonte dans la policy (seule couche que personne ne
+  contourne), la vue interroge désormais `policy(tu).destroy?` au lieu de redupliquer la
+  règle, et un test de non-régression fait explicitement le DELETE interdit — par le joueur
+  **et** par l'organisateur.
+- **Leçons**
+  1. Une condition d'affichage n'est pas une autorisation. Tant que la règle n'est pas dans
+     la policy, elle n'est vraie que pour ceux qui passent par les boutons.
+  2. Les clés étrangères disent quelles suppressions sont *structurellement* impossibles.
+     Elles méritent d'être relues avant d'ouvrir une action de suppression — ce sont elles
+     qui décident si un refus se présente en 403 propre ou en 500.
+  3. Une action symétrique ne l'est jamais toute seule : « le joueur peut sortir » n'implique
+     pas « l'organisation peut le sortir ». La seconde moitié a dormi jusqu'au premier
+     inscrit à retirer.
+  4. Un droit de gestion partagé (admin + co-organisateur) demande toujours de se demander
+     ce que les pairs peuvent se faire entre eux — même garde que
+     `TournamentPolicy#manage_organizers?`, oubliée elle aussi à la première écriture.

@@ -144,4 +144,113 @@ class TournamentUsersControllerTest < ActionDispatch::IntegrationTest
       delete tournament_tournament_user_path(t, entry)
     end
   end
+  # ── Retrait par l'organisation (admin / co-organisateur) ────────────────────
+  # Le pendant du « Quitter le tournoi » côté joueur : l'organisateur doit
+  # pouvoir retirer un inscrit fantôme AVANT le lancement.
+
+  test "DELETE destroy : l'admin retire un joueur et le prévient" do
+    admin = create_test_user(email: "admin-#{SecureRandom.hex(3)}@test.fr")
+    t = tournament(max_players: 8)
+    t.update!(user: admin)
+    entry = join!(t, "victim")
+
+    sign_in admin
+    assert_difference "t.tournament_users.count", -1 do
+      assert_difference "Notification.count", 1 do
+        delete tournament_tournament_user_path(t, entry)
+      end
+    end
+
+    notif = Notification.order(:created_at).last
+    assert_equal entry.user, notif.user, "c'est la personne retirée qui est prévenue"
+    assert_equal admin, notif.actor
+  end
+
+  # Le chemin réellement emprunté par le bouton « Retirer » de l'onglet
+  # Participants : sans Turbo Stream, l'organisateur retomberait sur l'onglet
+  # « Matchs » après chaque retrait. Les DEUX cibles comptent — l'en-tête aussi,
+  # sinon son compteur continue d'annoncer le joueur qu'on vient de retirer.
+  test "DELETE destroy en Turbo Stream : rafraîchit participants ET compteur d'en-tête" do
+    admin = create_test_user(email: "admin-#{SecureRandom.hex(3)}@test.fr")
+    t = tournament(max_players: 8)
+    t.update!(user: admin)
+    entry = join!(t, "victim")
+
+    sign_in admin
+    delete tournament_tournament_user_path(t, entry), as: :turbo_stream
+
+    assert_response :success
+    assert_match 'target="tournament_participants"', response.body
+    assert_match 'target="tournament_header_counts"', response.body
+  end
+
+  test "DELETE destroy : un co-organisateur peut retirer un simple joueur" do
+    admin  = create_test_user(email: "admin-#{SecureRandom.hex(3)}@test.fr")
+    co_org = create_test_user(email: "coorg-#{SecureRandom.hex(3)}@test.fr")
+    t = tournament(max_players: 8)
+    t.update!(user: admin)
+    t.tournament_users.create!(user: co_org, role: "co_organisateur", status: "approved")
+    entry = join!(t, "victim")
+
+    sign_in co_org
+    assert_difference "t.tournament_users.count", -1 do
+      delete tournament_tournament_user_path(t, entry)
+    end
+  end
+
+  # Même garde que TournamentPolicy#manage_organizers? : sans elle, un
+  # co-organisateur pourrait désinscrire l'admin ou un pair.
+  test "DELETE destroy : un co-organisateur ne peut retirer ni l'admin ni un pair" do
+    admin   = create_test_user(email: "admin-#{SecureRandom.hex(3)}@test.fr")
+    co_org  = create_test_user(email: "coorg-#{SecureRandom.hex(3)}@test.fr")
+    other   = create_test_user(email: "coorg2-#{SecureRandom.hex(3)}@test.fr")
+    t = tournament(max_players: 8)
+    t.update!(user: admin)
+    t.tournament_users.create!(user: co_org, role: "co_organisateur", status: "approved")
+    admin_entry = t.tournament_users.create!(user: admin, role: "joueur", status: "approved")
+    peer_entry  = t.tournament_users.create!(user: other, role: "joueur", status: "approved")
+    peer_entry.update!(co_organizer: true)
+
+    sign_in co_org
+    assert_no_difference "t.tournament_users.count" do
+      delete tournament_tournament_user_path(t, admin_entry)
+      delete tournament_tournament_user_path(t, peer_entry)
+    end
+  end
+
+  test "DELETE destroy : un simple joueur ne peut pas en retirer un autre" do
+    t = tournament(max_players: 8)
+    t.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+    entry = join!(t, "victim")
+
+    sign_in @user
+    assert_no_difference "t.tournament_users.count" do
+      delete tournament_tournament_user_path(t, entry)
+    end
+  end
+
+  # Non-régression FK : `tournament_matches` référence `tournament_users` par
+  # quatre colonnes. Une désinscription sur un tournoi lancé lèverait une
+  # PG::ForeignKeyViolation — la garde est dans la policy, pas dans la vue.
+  test "DELETE destroy : plus aucune désinscription une fois le tournoi lancé" do
+    admin = create_test_user(email: "admin-#{SecureRandom.hex(3)}@test.fr")
+    t = tournament(status: "in_progress", max_players: 8)
+    t.update!(user: admin)
+    entry = t.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+
+    # …ni par le joueur lui-même…
+    sign_in @user
+    assert_no_difference "t.tournament_users.count" do
+      delete tournament_tournament_user_path(t, entry)
+    end
+    assert_response :redirect
+
+    # …ni par l'organisateur, qui doit passer par le forfait.
+    sign_out @user
+    sign_in admin
+    assert_no_difference "t.tournament_users.count" do
+      delete tournament_tournament_user_path(t, entry)
+    end
+    assert_response :redirect
+  end
 end

@@ -1,0 +1,29 @@
+<%# ── Sous-titre de l'en-tête d'un tournoi ──────────────────────────────────────
+    Sport · format · compteur d'inscrits. Extrait en partial parce qu'il est la
+    CIBLE d'un Turbo Stream (#tournament_header_counts, cf.
+    TournamentUsersController#destroy) : au retrait d'un joueur, la liste des
+    participants est rafraîchie sans rechargement, et sans cela le compteur
+    continuerait d'annoncer l'inscrit qu'on vient justement de retirer.
+
+    Rend le CONTENU du <p>, pas le <p> lui-même : l'id et la classe vivent dans
+    show.html.erb, ce qui évite un conteneur supplémentaire dans l'en-tête.
+    Local : tournament. %>
+<%
+  # Libellé du compteur de joueurs. Trois cas, et non deux :
+  #   - effectif LIBRE (aucun plafond) → "inscrits" : rien n'est "attendu", le
+  #     compteur décrit ce qu'il y a, pas ce qu'il manque ;
+  #   - preset 8/16/32 → "joueurs" (plafond ferme) ;
+  #   - nombre saisi à la main → "participants attendus".
+  plural_players = tournament.approved_players_count > 1
+  players_word = if tournament.unlimited_capacity?
+                   plural_players ? "inscrits" : "inscrit"
+                 elsif tournament.preset_capacity?
+                   plural_players ? "joueurs" : "joueur"
+                 else
+                   plural_players ? "participants attendus" : "participant attendu"
+                 end
+%>
+<% if tournament.sport %><%= tournament.sport.name %> · <% end %>
+<%= Tournament::FORMAT_LABELS[tournament.format] %>
+· <%= tournament.approved_players_count %><% if tournament.max_players %>/<%= tournament.max_players %><% end %>
+<%= players_word %>
