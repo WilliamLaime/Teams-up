@@ -20,6 +20,11 @@
       title           : titre de la section               (défaut : "Tableau final")
       phase_key       : valeur data-phase du sélecteur    (défaut : "bracket")
       expected_rounds : nombre de tours prévus            (défaut : celui du tableau final)
+      note            : phrase sous le tableau            (défaut : aucune)
+
+    `note` sert aux tableaux préfigurés dont la première colonne n’annonce aucune
+    provenance : sans elle, une consolante pas encore ouverte n’est qu’une grille
+    de cases « À déterminer », sans dire à qui elle est destinée.
 
     ⚠️ Les cases "À déterminer" se comptent sur `size`, PAS sur
     `tournament.final_size` : ce dernier ne décrit que le tableau final, donc la
@@ -29,6 +34,7 @@
 <% title     = local_assigns.fetch(:title, "Tableau final") %>
 <% phase_key = local_assigns.fetch(:phase_key, "bracket") %>
 <% expected  = local_assigns.fetch(:expected_rounds) { tournament.expected_bracket_round_count } %>
+<% note      = local_assigns[:note] %>
 
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="<%= phase_key %>"
          <%= "hidden" if phase_section_hidden?(tournament, phase_key) %>>
@@ -77,4 +83,8 @@
       </div>
     <% end %>
   </div>
+
+  <% if note.present? %>
+    <p class="tournament-empty"><%= note %></p>
+  <% end %>
 </section>

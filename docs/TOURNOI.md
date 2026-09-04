@@ -211,6 +211,14 @@ règlement est que **chaque place se joue** — pas seulement la première.
       récursion produit tous les chiffres du règlement — pour un tableau de `size` places dont
       la première est `offset`, les perdants du tour `r` sont `size / 2**r` joueurs qui se
       disputent les places à partir de `offset + size / 2**r`.
+      La récursion **descend jusqu'en bas, sans seuil** : les 8 perdants d'un 8e de finale
+      disputent les places 9-16 dans un vrai tableau de 8, qui reclasse lui-même ses perdants
+      en 13-16 puis 15-16, exactement comme les 2 perdants de demi-finale disputent la 3e place.
+      Il n'y a donc **jamais d'ex æquo** ; le seul rang partagé possible vient de
+      `TournamentStandings#tail_groups` (joueurs qu'aucun tableau ne classe), départagé au
+      quotient de manches puis de points comme partout ailleurs (`Tournament#rank_key`).
+      À 32 joueurs (8 poules de 4) : **17 nœuds** et **120 matchs** (48 en poules, 8 barrages,
+      32 par côté) — soit 4 matchs de tableau par joueur, `n/2 × log2(n)` matchs pour n places.
 - [x] **Moteur** (`CriteriumFlow`) : un **réconciliateur**, pas une machine à états. Chaque appel
       recalcule ce qui devrait exister et ne crée que ce qui manque → idempotent par construction
       et déterministe (aucun `shuffle` : `draw_order` reste la seule source d'aléa). Barrages
@@ -222,8 +230,9 @@ règlement est que **chaque place se joue** — pas seulement la première.
       des places jamais jouées (byes), sinon le classement saute des rangs.
 - [x] **Variantes par effectif** (`Tournament#criterium_mode`, colonne `final_phase_mode` = simple
       échappatoire) : ≤ 7 → poule unique, le classement final **est** celui de la poule ;
-      8-16 → « classement intégral », un tableau unique, aucun barrage, **aucun ex æquo** ;
-      ≥ 17 → barrages + tableau + consolante. `pool_plan` décrit la taille de chaque poule
+      8-16 → « classement intégral », un tableau unique, sans barrage ni consolante ;
+      ≥ 17 → barrages + tableau + consolante. Le mode ne change que l'ENTRÉE dans le tableau :
+      l'arbre de classement d'un tableau de 16 est le même dans les deux cas. `pool_plan` décrit la taille de chaque poule
       (11 joueurs → 4-4-3) et devient la source unique de `pool_count`, du dimensionnement du
       tableau et de `structure_summary` (miroir JS compris).
 - [x] **Constitution des poules** (`PoolSeeding`) : `random` (le serpentin historique, déplacé

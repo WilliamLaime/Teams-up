@@ -11,9 +11,11 @@
     classement des poules recopié — un doublon exact des tables ci-dessous, sous un
     titre « Classement final » qui annonçait des places gagnées par personne.
 
-    Un rang partagé (« 9es ex æquo ») porte le badge correspondant : le règlement
-    ne fait pas rejouer 8 joueurs éliminés au même tour, ils sont donc légitimement
-    à égalité. Local : tournament. %>
+    En Critérium, chaque place se joue : les tableaux ne produisent donc JAMAIS
+    d'ex æquo. Le badge subsiste pour le seul cas qui puisse encore en créer — les
+    joueurs qu'aucun tableau ne classe (retrait avant les barrages, poule unique),
+    départagés par TournamentStandings#by_strength, donc au quotient de manches
+    puis de points. Local : tournament. %>
 <% tiers = tournament.standings.decided_tiers %>
 <% if tiers.any? %>
   <%# Le tournoi n'est pas fini : les places du bas ne sont pas encore jouées, le

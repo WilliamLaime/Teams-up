@@ -7,11 +7,35 @@
     place, avec ses propres matchs de classement (cf. _classification_phase).
 
     Local : tournament. %>
-<% node = tournament.criterium_structure.node("ko") %>
+<% node   = tournament.criterium_structure.node("ko") %>
+<% rounds = tournament.tournament_rounds.consolation.main_branch.ordered.to_a %>
+
+<%# Tant que le tableau n'est pas ouvert, sa première colonne n'annonce aucune
+    provenance : contrairement au tableau final, les entrants ne sont pas des
+    têtes de série connues d'avance mais des joueurs classés par force à la fin
+    des barrages. Une note dit donc en clair qui viendra y jouer — sans elle, la
+    phase préfigurée n'est qu'une grille de cases muettes.
+
+    Le tableau final ne descend PAS ici : les 4es de poule y entrent directement,
+    et les perdants de barrage aussi. Le texte le dit dans les deux cas, la
+    présence des 4es dépendant de la taille des poules (pas de 4e en poules de 3,
+    cf. CriteriumStructure#ko_nodes). %>
+<% note = if rounds.any?
+            nil
+          elsif tournament.players_per_pool.to_i >= 4
+            "La consolante se remplira à la fin des barrages : les 4es de poule y " \
+            "rejoindront les perdants de barrage. Chacune de ses places se joue, " \
+            "jusqu'à la dernière."
+          else
+            "La consolante se remplira à la fin des barrages, avec les joueurs qui " \
+            "s'y seront inclinés. Chacune de ses places se joue, jusqu'à la dernière."
+          end %>
+
 <%= render "tournaments/bracket",
            tournament: tournament,
-           rounds: tournament.tournament_rounds.consolation.main_branch.ordered.to_a,
+           rounds: rounds,
            size: node&.size || 0,
            expected_rounds: node&.round_count || 0,
            title: "Consolante — places #{node&.first_place} à #{node&.last_place}",
-           phase_key: "consolation" %>
+           phase_key: "consolation",
+           note: note %>
