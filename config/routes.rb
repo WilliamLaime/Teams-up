@@ -289,6 +289,22 @@ Rails.application.routes.draw do
     resources :messages, only: [:create]
   end
 
+  # Chat d'organisation d'un match de tournoi — les deux joueurs tirés l'un contre
+  # l'autre (et les organisateurs) conviennent d'une date sans passer par un
+  # message privé.
+  # GET  /tournament_matches/:id/conversation => charge le fil dans la modale du tableau
+  # POST /tournament_matches/:id/messages     => envoie un message
+  #
+  # Déclaré à la RACINE et non sous `resources :tournaments` (où vit déjà
+  # `tournament_matches`) : `render "messages/form", tournament_match: …` construit
+  # son URL par `form_with model: [tournament_match, message]`, qui résout un
+  # helper à un seul segment. Sous le tournoi, il faudrait passer l'URL à la main
+  # dans le partial partagé par les quatre types de chat.
+  resources :tournament_matches, only: [] do
+    resource  :conversation, only: [:show], controller: "tournament_match_conversations"
+    resources :messages, only: [:create]
+  end
+
   # Route multisport EN PREMIER — doit être avant /:id sinon "all" est capturé comme un id
   post "/switch_sport/all", to: "sports#multisport", as: :multisport_switch
 

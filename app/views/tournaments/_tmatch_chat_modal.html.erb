@@ -1,0 +1,36 @@
+<%# ── Modale du chat d'organisation d'un match de tournoi ─────────────────────
+    UNE SEULE modale pour tout le tableau, comme _score_modal : une poule affiche
+    des dizaines de cartes, une modale par carte alourdirait la page d'autant de
+    fils de messages jamais ouverts.
+
+    Le contenu arrive par TURBO-FRAME : la bulle d'une carte est un simple lien
+    vers /tournament_matches/:id/conversation qui cible ce frame, et le contrôleur
+    Stimulus tmatch-chat ouvre la modale en parallèle. Le frame est donc vide au
+    chargement de la page — c'est voulu, aucun message n'est rendu tant que
+    personne n'a cliqué.
+
+    Rendue HORS de #tournament_board (cf. show.html.erb) pour survivre à ses
+    remplacements Turbo Stream : une modale ouverte au moment d'un rafraîchissement
+    du tableau disparaîtrait avec lui, backdrop compris. %>
+<div class="modal fade tmatch-chat-modal" id="tmatchChatModal" tabindex="-1"
+     aria-labelledby="tmatchChatModalTitle" aria-hidden="true"
+     data-tmatch-chat-target="modal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content tmatch-chat-modal__content">
+      <div class="modal-header tmatch-chat-modal__header">
+        <h5 class="modal-title" id="tmatchChatModalTitle">
+          <i data-lucide="message-circle" aria-hidden="true"></i>
+          Organiser le match
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer le chat"></button>
+      </div>
+
+      <%# Le frame porte l'état vide : tant qu'aucune bulle n'a été cliquée, la
+          modale ne peut pas s'ouvrir (le lien et l'ouverture partent du même clic),
+          mais ce message couvre le cas d'une réponse serveur vide. %>
+      <turbo-frame id="tmatch-chat-frame" class="tmatch-chat-modal__frame">
+        <div class="tmatch-chat-modal__loading">Chargement de la discussion…</div>
+      </turbo-frame>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,54 @@
+<%# ── Fil du chat d'organisation d'un match de tournoi ────────────────────────
+    Chargé dans le turbo-frame de la modale partagée du tableau
+    (tournaments/_tmatch_chat_modal). Volontairement SANS la colonne de gauche du
+    chat sticky : ce fil ne se liste nulle part, il ne se trouve qu'en cliquant la
+    bulle de sa carte — une sidebar n'aurait rien à y afficher.
+
+    Le data-controller="chat" existant est réutilisé tel quel (auto-scroll, style
+    « mine » sur mes messages, envoi à la touche Entrée). Il n'y a pas
+    d'indicateur « est en train d'écrire » : cela demanderait un channel ActionCable
+    dédié, et le chat d'équipe s'en passe déjà. %>
+<%= turbo_frame_tag "tmatch-chat-frame", class: "tmatch-chat-modal__frame" do %>
+  <div data-controller="chat"
+       data-chat-current-user-id-value="<%= current_user.id %>"
+       class="tmatch-chat">
+
+    <%# Abonnement Turbo Stream — reçoit en temps réel les messages de l'adversaire.
+        Un seul stream : ce fil n'a qu'une surface d'affichage (cette modale), donc
+        pas de risque de double insertion comme sur le chat de match. %>
+    <%= turbo_stream_from "tournament_match_chat_#{@tournament_match.id}" %>
+
+    <%# Qui discute — rappelé en tête : la modale est partagée par toutes les
+        cartes du tableau, sans ce rappel on ne sait plus quel match on organise. %>
+    <div class="tmatch-chat__header">
+      <span class="tmatch-chat__vs">
+        <%= @tournament_match.player_a.display_name %>
+        <span class="tmatch-chat__vs-sep">vs</span>
+        <%= @tournament_match.player_b&.display_name %>
+      </span>
+      <% if (schedule = tournament_match_schedule(@tournament_match)) %>
+        <span class="tmatch-chat__when"><%= schedule %></span>
+      <% else %>
+        <span class="tmatch-chat__when tmatch-chat__when--tbd">Date à définir</span>
+      <% end %>
+    </div>
+
+    <%# id="tmatch-chat-messages" : cible des broadcasts de Message#broadcast_tournament_match_message %>
+    <div class="tmatch-chat__messages" id="tmatch-chat-messages" data-chat-target="messages">
+      <% if @messages.any? %>
+        <%= render @messages %>
+      <% else %>
+        <%# id="chat-empty" : supprimé par chat_controller.js à l'arrivée du 1er message %>
+        <div class="chat-empty text-center py-4" id="chat-empty">
+          <div style="font-size: 1.6rem;">📅</div>
+          <p class="small mb-0">Proposez un créneau pour jouer ce match.</p>
+        </div>
+      <% end %>
+    </div>
+
+    <%# id="tmatch-chat-form" : réinitialisé par MessagesController après envoi %>
+    <div class="tmatch-chat__form" id="tmatch-chat-form">
+      <%= render "messages/form", tournament_match: @tournament_match, message: @message %>
+    </div>
+  </div>
+<% end %>

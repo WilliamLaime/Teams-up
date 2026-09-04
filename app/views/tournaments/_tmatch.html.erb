@@ -39,6 +39,10 @@
             le vrai score marqué, pas juste 0/1 "set" gagné. %>
         <% if match.score_entered? %>
           <span class="tmatch-card__sets"><%= match.display_score_for(player) %></span>
+        <% else %>
+          <%# Forfait : aucun set à afficher, mais le match est bien tranché.
+              Renvoie nil hors forfait, donc rien ne s'affiche sur un match à venir. %>
+          <%= forfeit_mark_tag(match, player) %>
         <% end %>
         <% if is_winner %>
           <i data-lucide="check" class="tmatch-card__win-icon" aria-hidden="true"></i>

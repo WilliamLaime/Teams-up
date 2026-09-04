@@ -29,6 +29,22 @@ class TournamentMatchPolicy < ApplicationPolicy
     record.tournament.organizer?(user) || player_of_match?
   end
 
+  # Chat d'organisation de la confrontation : mêmes ayants droit que la
+  # planification ci-dessus — les DEUX joueurs, plus l'admin et les
+  # co-organisateurs (qui doivent pouvoir arbitrer un désaccord sur la date).
+  # Personne d'autre : le fil est privé à la confrontation, et c'est ce qui le
+  # rend utilisable pour convenir d'un créneau.
+  #
+  # Un bye n'a pas d'adversaire, donc personne avec qui s'organiser.
+  # Contrairement à create_match?, la présence d'une rencontre déjà planifiée ne
+  # ferme PAS le chat : une date se déplace, et c'est là qu'on en discute.
+  def chat?
+    return false if user.blank?
+    return false if record.is_bye
+
+    record.tournament.organizer?(user) || player_of_match?
+  end
+
   # Correction d'un score même après verrouillage du tour (Lot 5).
   # Réservée à l'organisateur : contourne délibérément le verrou de update?,
   # avec régénération de l'aval côté controller.

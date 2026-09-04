@@ -16,8 +16,85 @@ module TournamentsHelper
     tag.span "Toi", class: "tmatch-card__me-badge", aria: { label: "C'est toi" }
   end
 
+  # ── Forfait : « V » / « D » à la place du score ───────────────────────────────
+  # Un match gagné sur forfait n'a AUCUN set saisi (`score_entered?` est faux) : la
+  # carte tombait donc dans la branche « pas encore joué » et n'affichait qu'un
+  # tiret. Le classement de la poule, lui, était bien recalculé — le vainqueur
+  # apprenait sa victoire ailleurs que sur la carte de son propre match.
+  #
+  # Renvoie nil hors forfait : sur un match joué, le score en vert signale déjà le
+  # vainqueur, doubler le signal alourdirait la carte pour rien.
+  #
+  # `winner_id.present?` n'est pas défensif par excès : `forfeit: true` sans
+  # `retired_player_id` ne désigne aucun vainqueur (cf.
+  # TournamentMatch#forfeit_winner_id) — dans ce cas on n'invente pas un perdant.
+  def forfeit_mark(match, player)
+    return if player.blank?
+    return unless match.forfeit? && match.winner_id.present?
+
+    match.winner_id == player.id ? "V" : "D"
+  end
+
+  # Le « V »/« D » ci-dessus, rendu prêt à poser dans une carte. `aria-label` :
+  # hors contexte, une lettre seule ne se comprend pas — un lecteur d'écran
+  # annoncerait « V » sans dire de quoi il s'agit.
+  #
+  # `tmatch-card__forfeit-mark` est TOUJOURS posée, quelle que soit la variante de
+  # carte : c'est elle qui dit « ceci est une marque de forfait ». Les trois mises
+  # en page n'ajoutent qu'un modificateur de géométrie via `extra_class` — sans
+  # cette classe commune, chaque variante aurait son propre nom et il n'y aurait
+  # plus un seul endroit où retrouver la marque (ni en CSS, ni en test).
+  def forfeit_mark_tag(match, player, extra_class: nil)
+    mark = forfeit_mark(match, player)
+    return if mark.nil?
+
+    won = mark == "V"
+    label = won ? "Victoire par forfait" : "Défaite par forfait"
+
+    tag.span mark,
+             class: ["tmatch-card__forfeit-mark", (won ? "is-winner" : "is-loser"), extra_class].compact,
+             title: label,
+             aria: { label: label }
+  end
+
+  # ── Chat d'organisation : pastille non-lu ────────────────────────────────────
+  # Ids des matchs de ce tournoi où un message d'un AUTRE joueur attend d'être lu.
+  #
+  # Renvoyé sous forme d'ensemble et calculé UNE FOIS par rendu de tableau : une
+  # poule affiche des dizaines de cartes, et interroger la base par carte, c'était
+  # un N+1 garanti sur la page la plus consultée du tournoi.
+  #
+  # Pas de ligne d'accusé de lecture = n'a jamais ouvert le fil : le LEFT JOIN
+  # laisse alors `last_read_at` à NULL, traité comme « tout est non-lu » — c'est
+  # exactement le bon comportement pour un joueur à qui l'adversaire vient d'écrire
+  # pour la première fois.
+  def unread_tmatch_chat_ids(tournament)
+    return Set.new unless user_signed_in?
+
+    @unread_tmatch_chat_ids ||= {}
+    @unread_tmatch_chat_ids[tournament.id] ||= begin
+      tmatch_ids = TournamentMatch.joins(:tournament_round)
+                                  .where(tournament_rounds: { tournament_id: tournament.id })
+                                  .select(:id)
+
+      join_sql = "LEFT JOIN tournament_match_chat_reads reads " \
+                 "ON reads.tournament_match_id = messages.tournament_match_id " \
+                 "AND reads.user_id = ?"
+      reads_join = ActiveRecord::Base.sanitize_sql_array([join_sql, current_user.id])
+
+      Set.new(
+        Message.where(tournament_match_id: tmatch_ids)
+               .where.not(user_id: current_user.id)
+               .joins(reads_join)
+               .where("reads.last_read_at IS NULL OR messages.created_at > reads.last_read_at")
+               .distinct
+               .pluck(:tournament_match_id)
+      )
+    end
+  end
+
   # ── Rencontre planifiée ───────────────────────────────────────────────────────
-  # Quand vaut lieu ce match de tournoi, en une ligne lisible (« Demain à 19h »).
+  # Quand a lieu ce match de tournoi, en une ligne lisible (« jeudi 3 sept. 19h »).
   #
   # La date ne vit PAS sur le TournamentMatch : depuis le Lot 7, les joueurs
   # conviennent eux-mêmes de leur créneau en créant une vraie rencontre (Match)
@@ -25,18 +102,21 @@ module TournamentsHelper
   # n'a pas de date, la colonne étant nullable — il n'y a rien à annoncer : on
   # renvoie `nil` pour que l'appelant n'affiche aucun nœud plutôt qu'un libellé vide.
   #
-  # Le jour réutilise `match_day_label` (ApplicationHelper) : il dit « Ce soir »,
-  # « Demain » ou « Mardi » quand c'est proche, ce qui se lit bien plus vite qu'une
-  # date complète sur une carte déjà dense.
+  # Le jour est affiché en DATE ABSOLUE (« jeudi 3 sept. »), volontairement pas
+  # via `match_day_label` (ApplicationHelper) qui dit « Jeudi » tout court en deçà
+  # d'une semaine : sur un tournoi qui s'étale sur plusieurs semaines, « Jeudi »
+  # ne dit pas DE QUEL jeudi il s'agit, et deux cartes de deux journées
+  # différentes portaient le même libellé. Le mois est abrégé (cf.
+  # `abbr_month_names` dans config/locales/fr.yml) pour tenir sur une carte dense.
   def tournament_match_schedule(tournament_match)
     match = tournament_match.match
     return if match.nil? || match.date.blank?
 
-    label = match_day_label(match)
-    hour  = tournament_hour(match)
-    return label if hour.nil?
+    day  = I18n.l(match.date, format: "%A %-d %b")
+    hour = tournament_hour(match)
+    return day if hour.nil?
 
-    "#{label} à #{hour}"
+    "#{day} #{hour}"
   end
 
   # Heure seule d'une rencontre, à la convention du projet : « 19h » plutôt que

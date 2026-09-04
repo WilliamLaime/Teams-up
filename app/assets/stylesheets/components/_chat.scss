@@ -370,3 +370,109 @@
     }
   }
 }
+
+// ── Chat d'organisation d'un match de tournoi ────────────────────────────────
+// Fil dédié aux deux joueurs d'une confrontation (et aux organisateurs), ouvert
+// depuis la bulle d'une carte du tableau. Volontairement SANS la colonne de
+// gauche du chat sticky : ce fil ne se liste nulle part, une sidebar n'aurait
+// rien à y afficher.
+// Réutilise .chat-message / .chat-empty / .chat-form (classes globales ci-dessus)
+// pour que les messages s'y lisent exactement comme dans les autres chats.
+.tmatch-chat-modal__content {
+  background-color: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border);
+}
+
+.tmatch-chat-modal__header {
+  border-bottom: 1px solid var(--theme-border);
+
+  .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 1rem;
+    color: var(--theme-text-primary);
+  }
+
+  svg { width: 17px; height: 17px; }
+}
+
+// Le turbo-frame doit se comporter en bloc : par défaut il est inline, et la
+// hauteur fixe de la zone de messages ne s'appliquerait pas.
+.tmatch-chat-modal__frame {
+  display: block;
+}
+
+.tmatch-chat-modal__loading {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--theme-text-muted);
+  font-size: 0.85rem;
+}
+
+// Rappel de QUI s'organise : la modale est partagée par toutes les cartes du
+// tableau, sans ce bandeau on ne sait plus quel match on est en train de caler.
+.tmatch-chat__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-bottom: 1px solid var(--theme-border);
+  font-size: 0.8rem;
+}
+
+.tmatch-chat__vs {
+  font-weight: 700;
+  color: var(--theme-text-primary);
+}
+
+.tmatch-chat__vs-sep {
+  margin: 0 0.25rem;
+  font-weight: 500;
+  color: var(--theme-text-muted);
+}
+
+.tmatch-chat__when {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--theme-text-muted);
+  white-space: nowrap;
+}
+
+// Aucune date fixée — c'est précisément la raison d'être de ce chat, donc l'état
+// est signalé plutôt que masqué. Même traitement que sur la carte
+// (.tmatch-card__when--tbd) : italique et opacité, pas un badge de plus.
+.tmatch-chat__when--tbd {
+  font-style: italic;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+// Même fond que les autres fils du site : c'est lui qui rend lisible le blanc de
+// .chat-empty, réutilisé tel quel dans la vue.
+.tmatch-chat__messages {
+  height: 360px;
+  overflow-y: auto;
+  padding: 14px 12px;
+  background-image: asset-url('fond_chat.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tmatch-chat__form {
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid var(--theme-border);
+}
+
+.tmatch-chat__missing {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--theme-text-muted);
+  font-size: 0.85rem;
+}
