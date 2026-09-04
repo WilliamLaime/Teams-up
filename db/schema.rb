@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_28_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_04_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -206,6 +206,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_120000) do
     t.bigint "match_id"
     t.bigint "private_conversation_id"
     t.bigint "team_id"
+    t.bigint "tournament_match_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["match_id", "created_at"], name: "index_messages_on_match_id_created_at"
@@ -214,6 +215,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_120000) do
     t.index ["private_conversation_id"], name: "index_messages_on_private_conversation_id"
     t.index ["team_id", "created_at"], name: "index_messages_on_team_id_created_at"
     t.index ["team_id"], name: "index_messages_on_team_id"
+    t.index ["tournament_match_id", "created_at"], name: "index_messages_on_tournament_match_id_created_at"
+    t.index ["tournament_match_id"], name: "index_messages_on_tournament_match_id"
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
@@ -573,6 +576,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_120000) do
     t.index ["visibility"], name: "index_teams_on_visibility"
   end
 
+  create_table "tournament_match_chat_reads", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "last_read_at", null: false
+    t.bigint "tournament_match_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["tournament_match_id", "user_id"], name: "index_tmatch_chat_reads_on_tmatch_and_user", unique: true
+    t.index ["tournament_match_id"], name: "index_tournament_match_chat_reads_on_tournament_match_id"
+    t.index ["user_id"], name: "index_tournament_match_chat_reads_on_user_id"
+  end
+
   create_table "tournament_matches", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "forfeit", default: false, null: false
@@ -753,6 +767,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_120000) do
   add_foreign_key "messages", "matches"
   add_foreign_key "messages", "private_conversations"
   add_foreign_key "messages", "teams"
+  add_foreign_key "messages", "tournament_matches"
   add_foreign_key "messages", "users", on_delete: :nullify
   add_foreign_key "notifications", "users"
   add_foreign_key "private_conversations", "users", column: "recipient_id", on_delete: :nullify
@@ -783,6 +798,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_28_120000) do
   add_foreign_key "team_members", "teams"
   add_foreign_key "team_members", "users"
   add_foreign_key "teams", "users", column: "captain_id"
+  add_foreign_key "tournament_match_chat_reads", "tournament_matches"
+  add_foreign_key "tournament_match_chat_reads", "users"
   add_foreign_key "tournament_matches", "tournament_rounds", on_delete: :cascade
   add_foreign_key "tournament_matches", "tournament_users", column: "player_a_id"
   add_foreign_key "tournament_matches", "tournament_users", column: "player_b_id"

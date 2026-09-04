@@ -48,7 +48,79 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     get tournament_path(@tournament)
 
     assert_response :success
-    assert_select ".tmatch-card__when", text: /Demain à 19h/
+    # Date ABSOLUE, jamais « Demain » : un tournoi s'étale sur plusieurs semaines,
+    # et deux journées différentes portaient sinon le même libellé.
+    attendu = "#{I18n.l(Date.tomorrow, format: '%A %-d %b')} 19h"
+    assert_select ".tmatch-card__when", text: /#{Regexp.escape(attendu)}/
+  end
+
+  # ── Forfait : V / D sur la carte ────────────────────────────────────────────
+  # Un forfait n'a AUCUN set saisi : la carte tombait donc dans la branche « pas
+  # encore joué » et n'affichait qu'un tiret, alors que le classement de la poule
+  # était déjà recalculé. Le vainqueur apprenait sa victoire ailleurs que sur la
+  # carte de son propre match.
+  test "la carte d'un match par forfait affiche V et D" do
+    @match.update!(forfeit: true, retired_player: @match.player_b)
+    @tournament.update!(status: "in_progress")
+
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-winner", text: "V"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-loser",  text: "D"
+  end
+
+  # Sur un match joué, le score en vert désigne déjà le vainqueur : pas de marque.
+  test "la carte d'un match joué n'affiche aucune marque de forfait" do
+    @tournament.update!(status: "in_progress")
+    sign_in @admin
+    patch tournament_tournament_match_path(@tournament, @match), params: straight_win
+
+    get tournament_path(@tournament)
+
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark", count: 0
+  end
+
+  # ── Bulle de discussion ─────────────────────────────────────────────────────
+  # Le fil est privé à la confrontation, et la bulle est le SEUL moyen de le
+  # trouver : si elle fuit vers un tiers, le fil fuit avec elle.
+  test "la bulle de chat n'est visible que des joueurs du match et des organisateurs" do
+    @tournament.update!(status: "in_progress")
+    autre_joueur = @tournament.tournament_users.where.not(id: [@match.player_a_id, @match.player_b_id]).first
+
+    { @match.player_a.user => 1, @admin => 1, autre_joueur.user => 0, @lambda => 0 }.each do |user, attendu|
+      sign_in user
+      get tournament_path(@tournament)
+      assert_select "#tmatch_#{@match.id} .tmatch-card__chat-btn", { count: attendu },
+                    "bulle attendue #{attendu} fois pour #{user.email}"
+      sign_out user
+    end
+  end
+
+  # La pastille est le seul signal de non-lu de ce chat (il n'apparaît ni dans la
+  # sidebar globale, ni en notification) : sans elle, un message passe inaperçu.
+  test "la pastille non-lu s'allume puis s'éteint une fois le fil ouvert" do
+    @tournament.update!(status: "in_progress")
+    Message.create!(user: @match.player_b.user, tournament_match: @match, content: "Jeudi 17h45 ?")
+
+    sign_in @match.player_a.user
+    get tournament_path(@tournament)
+    assert_select "#tmatch_#{@match.id} .tmatch-card__chat-dot", count: 1
+
+    get tournament_match_conversation_path(@match)
+    get tournament_path(@tournament)
+    assert_select "#tmatch_#{@match.id} .tmatch-card__chat-dot", count: 0
+  end
+
+  # Mon propre message ne doit jamais allumer ma propre pastille.
+  test "la pastille ignore mes propres messages" do
+    @tournament.update!(status: "in_progress")
+    Message.create!(user: @match.player_a.user, tournament_match: @match, content: "Jeudi 17h45 ?")
+
+    sign_in @match.player_a.user
+    get tournament_path(@tournament)
+
+    assert_select "#tmatch_#{@match.id} .tmatch-card__chat-dot", count: 0
   end
 
   # Une rencontre peut exister sans date (colonne nullable). Le bandeau reste

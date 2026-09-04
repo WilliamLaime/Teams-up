@@ -61,7 +61,8 @@ module ActiveSupport
     def teardown_db
       MatchVote.delete_all
       Avis.delete_all
-      # Les messages couvrent les 3 types : match, équipe, conversation privée
+      # Les messages couvrent les 4 types : match, équipe, conversation privée,
+      # match de tournoi
       Message.delete_all
       Notification.delete_all
       MatchUser.delete_all
@@ -69,6 +70,9 @@ module ActiveSupport
       # Tournois : les matchs référencent les inscriptions (player_a/b/winner) et
       # les rondes → vider matchs → rondes → inscriptions → tournois, puis avant
       # User/Sport pour éviter les violations de FK.
+      # Les accusés de lecture du chat référencent le match ET l'utilisateur :
+      # à vider avant les deux.
+      TournamentMatchChatRead.delete_all
       TournamentMatch.delete_all
       TournamentRound.delete_all
       TournamentUser.delete_all

@@ -1,0 +1,8 @@
+<%# Une carte peut disparaître (régénération d'un tour) pendant qu'un joueur a la
+    modale ouverte. On répond dans le frame plutôt qu'en 404 pleine page : la
+    modale reste fermable, le tableau derrière est intact. %>
+<%= turbo_frame_tag "tmatch-chat-frame", class: "tmatch-chat-modal__frame" do %>
+  <div class="tmatch-chat__missing">
+    <p class="mb-0">Ce match n'existe plus. Le tour a probablement été régénéré.</p>
+  </div>
+<% end %>

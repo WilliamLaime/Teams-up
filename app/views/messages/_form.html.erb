@@ -1,10 +1,11 @@
 <%# Formulaire d'envoi de message — réinitialisé après chaque envoi via Turbo Stream
-    Accepte un match, une private_conversation ou une équipe
+    Accepte un match, une private_conversation, une équipe ou un match de tournoi
     Variables attendues :
       - message              : objet Message.new
       - match                : objet Match (ou nil)
       - private_conversation : objet PrivateConversation (ou nil)
-      - team                 : objet Team (ou nil) %>
+      - team                 : objet Team (ou nil)
+      - tournament_match     : objet TournamentMatch (ou nil) %>
 
 <%# Détermine l'URL de soumission selon le type de conversation %>
 <% if local_assigns[:private_conversation] && private_conversation.present?
@@ -13,6 +14,10 @@
    elsif local_assigns[:team] && team.present?
      # Message d'équipe → POST /teams/:team_id/messages
      form_model = [team, message]
+   elsif local_assigns[:tournament_match] && tournament_match.present?
+     # Chat d'organisation d'un match de tournoi
+     # → POST /tournament_matches/:tournament_match_id/messages
+     form_model = [tournament_match, message]
    else
      # Message de match → POST /matches/:match_id/messages
      form_model = [match, message]

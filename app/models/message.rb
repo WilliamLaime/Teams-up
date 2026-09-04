@@ -2,17 +2,21 @@ class Message < ApplicationRecord
   # Un message appartient à un utilisateur (l'expéditeur)
   belongs_to :user
 
-  # Un message appartient soit à un match (groupe), soit à une conversation privée, soit à une équipe
-  # Les trois sont optionnels pour permettre l'un ou l'autre
+  # Un message appartient soit à un match (groupe), soit à une conversation privée,
+  # soit à une équipe, soit à un match de tournoi (chat d'organisation entre les
+  # deux joueurs tirés l'un contre l'autre).
+  # Les quatre sont optionnels pour permettre l'un ou l'autre
   belongs_to :match, optional: true
   belongs_to :private_conversation, optional: true
   belongs_to :team, optional: true
+  belongs_to :tournament_match, optional: true
 
   # Validation : le contenu est obligatoire et limité à 1000 caractères
   validates :content, presence: true, length: { maximum: 1000 }
 
-  # Validation : un message doit appartenir à un match, une conversation privée OU une équipe
-  validate :belongs_to_match_or_private_conversation_or_team
+  # Validation : un message doit appartenir à un match, une conversation privée,
+  # une équipe OU un match de tournoi
+  validate :belongs_to_a_conversation
 
   # Après la création d'un message, on le diffuse en temps réel via Turbo Streams
   after_create_commit :broadcast_message, :broadcast_unread_notifications
@@ -25,11 +29,13 @@ class Message < ApplicationRecord
 
   private
 
-  # ── Validation : match_id OU private_conversation_id OU team_id doit être présent ────
-  def belongs_to_match_or_private_conversation_or_team
-    return unless match_id.blank? && private_conversation_id.blank? && team_id.blank?
+  # ── Validation : un des quatre contextes doit être présent ───────────────────
+  # Sans cette garde, un message orphelin serait créé sans erreur et n'apparaîtrait
+  # dans aucun fil — invisible, mais bien en base.
+  def belongs_to_a_conversation
+    return if [match_id, private_conversation_id, team_id, tournament_match_id].any?(&:present?)
 
-    errors.add(:base, "Un message doit appartenir à un match, une conversation privée ou une équipe")
+    errors.add(:base, "Un message doit appartenir à un match, une conversation privée, une équipe ou un match de tournoi")
   end
 
   # ── Diffuse les badges non-lus dans la sidebar ────────────────────────────
@@ -43,6 +49,12 @@ class Message < ApplicationRecord
   # deux broadcasts distincts et un échec de rendu du prepend laissait l'item
   # supprimé jusqu'au prochain rechargement complet).
   def broadcast_unread_notifications
+    # Le chat d'un match de tournoi n'a PAS d'entrée dans la sidebar : il ne se
+    # trouve qu'en cliquant la bulle de sa carte. Son signal de non-lu est la
+    # pastille sur cette bulle, calculée au rendu du tableau (elle dépend du
+    # lecteur — la diffuser sur un stream partagé l'afficherait chez tout le monde).
+    return if tournament_match_id?
+
     if team_id?
       # Message d'équipe : tous les membres voient le chat d'équipe dans leur sidebar,
       # on remonte donc la conv pour chaque membre SAUF l'expéditeur.
@@ -156,7 +168,23 @@ class Message < ApplicationRecord
       broadcast_match_message
     elsif private_conversation_id?
       broadcast_private_message
+    elsif tournament_match_id?
+      broadcast_tournament_match_message
     end
+  end
+
+  # ── Broadcast pour le chat d'un match de tournoi ──────────────────────────
+  # Une seule surface (la modale partagée du tableau), donc un seul stream —
+  # contrairement au match ou à l'équipe, ce chat n'est visible nulle part
+  # ailleurs : ni preview de carte, ni sidebar globale, c'est voulu (il ne se
+  # trouve qu'en cliquant la bulle de la carte concernée).
+  def broadcast_tournament_match_message
+    broadcast_append_to(
+      "tournament_match_chat_#{tournament_match_id}",
+      target: "tmatch-chat-messages",
+      partial: "messages/message",
+      locals: { message: self }
+    )
   end
 
   # ── Broadcast pour les messages de match ──────────────────────────────────

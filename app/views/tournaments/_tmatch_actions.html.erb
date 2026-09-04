@@ -24,9 +24,16 @@
     tour est verrouillé (sinon la saisie normale can_edit suffit). %>
 <% round_locked = match.tournament_round.status == "completed" %>
 <% can_correct = round_locked && !match.is_bye && user_signed_in? && policy(match).correct? %>
+<%# Chat d'organisation : mêmes ayants droit que la création de la rencontre (les
+    2 joueurs + les organisateurs), mais SANS se fermer une fois la rencontre
+    planifiée — une date se déplace, et c'est là qu'on en discute. %>
+<% can_chat = user_signed_in? && policy(match).chat? %>
 <% show_score = local_assigns.fetch(:show_score, false) %>
 
-<% if can_edit || can_create_match || can_correct || match.match || match.score_entered? %>
+<%# can_chat DOIT figurer dans ce garde : sur une carte sans aucune autre action
+    (match à venir, spectateur devenu joueur), le pied ne rendrait aucun nœud et
+    la bulle disparaîtrait avec lui. %>
+<% if can_edit || can_create_match || can_correct || can_chat || match.match || match.score_entered? %>
   <div class="tmatch-card__footer <%= "tmatch-card__footer--inline" if local_assigns.fetch(:inline, false) %>">
     <% if show_score && match.score_entered? %>
       <span class="tmatch-card__score" title="Score (<%= match.player_a.display_name %> – <%= match.player_b.display_name %>)">
@@ -58,6 +65,28 @@
             url: tournament_tournament_match_path(match.tournament, match) %>
     <% elsif match.score_entered? %>
       <%= score_modal_button match, label: "Détail", editable: false, css_class: "tmatch-card__detail-btn" %>
+    <% end %>
+
+    <%# Bulle de discussion : ouvre la modale partagée du tableau
+        (tournaments/_tmatch_chat_modal) et charge le fil de CE match dans son
+        turbo-frame. Un simple lien : sans JS il mène quand même au fil, le
+        contrôleur Stimulus n'ajoute que l'ouverture de la fenêtre.
+        Posée en dernier, après les actions de score : c'est un canal annexe, pas
+        l'action principale d'une carte. %>
+    <% if can_chat %>
+      <% unread = unread_tmatch_chat_ids(match.tournament).include?(match.id) %>
+      <%= link_to tournament_match_conversation_path(match),
+            class: "tmatch-card__chat-btn #{"tmatch-card__chat-btn--unread" if unread}",
+            title: unread ? "Nouveau message — organiser le match" : "Organiser le match",
+            aria: { label: unread ? "Discussion : nouveau message" : "Discuter pour organiser le match" },
+            data: { turbo_frame: "tmatch-chat-frame", action: "tmatch-chat#open" } do %>
+        <i data-lucide="message-circle" aria-hidden="true"></i>
+        <%# Point non-lu. Le chat n'apparaissant nulle part ailleurs (ni sidebar,
+            ni notification), c'est le SEUL signal qu'un message attend. %>
+        <% if unread %>
+          <span class="tmatch-card__chat-dot" aria-hidden="true"></span>
+        <% end %>
+      <% end %>
     <% end %>
 
     <%# Correction organisateur d'un tour verrouillé : rouvre la modale en édition,

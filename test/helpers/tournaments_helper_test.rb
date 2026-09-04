@@ -139,4 +139,94 @@ class TournamentsHelperTest < ActionView::TestCase
     assert_equal ["Tête de série 1", "Tête de série 16"], bracket_seed_labels(16, 0)
     assert_equal ["Tête de série 8", "Tête de série 9"],  bracket_seed_labels(16, 1)
   end
+
+  # ─── tournament_match_schedule ──────────────────────────────────────────────
+  # Le créneau est affiché en date ABSOLUE. « Jeudi » tout court ne disait pas de
+  # quel jeudi il s'agissait : sur un tournoi étalé sur plusieurs semaines, deux
+  # journées différentes portaient le même libellé.
+
+  test "tournament_match_schedule donne le jour, le quantième, le mois abrégé et l'heure" do
+    tmatch = tmatch!(position: 0)
+    schedule!(tmatch, date: Date.new(2026, 9, 3), time: "17:45")
+
+    assert_equal "jeudi 3 sept. 17h45", tournament_match_schedule(tmatch.reload)
+  end
+
+  # Un match tout proche n'est PAS raccourci en « Aujourd'hui » / « Demain » :
+  # toutes les cartes du tableau gardent la même forme, donc se comparent.
+  test "tournament_match_schedule ne raccourcit pas les dates proches" do
+    tmatch = tmatch!(position: 0)
+    schedule!(tmatch, date: Date.current + 1, time: "19:00")
+
+    resultat = tournament_match_schedule(tmatch.reload)
+
+    assert_equal "#{I18n.l(Date.current + 1, format: '%A %-d %b')} 19h", resultat
+    assert_no_match(/Demain/, resultat)
+  end
+
+  # Convention du projet conservée : « 19h », jamais « 19h00 ».
+  test "tournament_match_schedule omet les minutes à l'heure pile" do
+    tmatch = tmatch!(position: 0)
+    schedule!(tmatch, date: Date.new(2026, 12, 14), time: "19:00")
+
+    assert_equal "lundi 14 déc. 19h", tournament_match_schedule(tmatch.reload)
+  end
+
+  test "tournament_match_schedule se tait sans rencontre ni date" do
+    sans_rencontre = tmatch!(position: 0)
+    assert_nil tournament_match_schedule(sans_rencontre)
+
+    sans_date = tmatch!(position: 1, player_b: @players[2])
+    schedule!(sans_date, date: Date.current + 1).update_columns(date: nil)
+    assert_nil tournament_match_schedule(sans_date.reload)
+  end
+
+  # ─── forfeit_mark ───────────────────────────────────────────────────────────
+  # Un forfait n'a aucun set saisi : sans cette marque, la carte affichait le
+  # tiret « pas encore joué » alors que le classement de la poule était tranché.
+
+  test "forfeit_mark donne V au vainqueur et D au joueur forfait" do
+    tmatch = tmatch!(position: 0)
+    tmatch.update!(forfeit: true, retired_player: @players[1])
+    tmatch.reload
+
+    assert_equal @players[0].id, tmatch.winner_id, "le vainqueur doit être dérivé du forfait"
+    assert_equal "V", forfeit_mark(tmatch, @players[0])
+    assert_equal "D", forfeit_mark(tmatch, @players[1])
+  end
+
+  # Sur un match joué, le score en vert désigne déjà le vainqueur : doubler le
+  # signal alourdirait la carte pour rien.
+  test "forfeit_mark se tait hors forfait" do
+    tmatch = tmatch!(position: 0)
+    assert_nil forfeit_mark(tmatch, @players[0])
+
+    tmatch.assign_score([[6, 4], [6, 3]])
+    tmatch.save!
+    assert_nil forfeit_mark(tmatch.reload, @players[0])
+  end
+
+  # forfeit sans retired_player ne désigne aucun vainqueur : on n'invente pas un
+  # perdant à partir d'un drapeau incomplet.
+  test "forfeit_mark se tait quand aucun vainqueur n'est désigné" do
+    tmatch = tmatch!(position: 0)
+    tmatch.update_columns(forfeit: true)
+
+    assert_nil tmatch.reload.winner_id
+    assert_nil forfeit_mark(tmatch, @players[0])
+  end
+
+  test "forfeit_mark_tag rend une marque accessible" do
+    tmatch = tmatch!(position: 0)
+    tmatch.update!(forfeit: true, retired_player: @players[1])
+
+    gagnant = forfeit_mark_tag(tmatch.reload, @players[0])
+    perdant = forfeit_mark_tag(tmatch, @players[1])
+
+    assert_includes gagnant, "is-winner"
+    assert_includes gagnant, "Victoire par forfait"
+    assert_includes perdant, "is-loser"
+    assert_includes perdant, "Défaite par forfait"
+    assert_nil forfeit_mark_tag(tmatch, nil)
+  end
 end

@@ -7,7 +7,39 @@ class MessagesController < ApplicationController
   def create
     skip_authorization
 
-    if @team
+    if @tournament_match
+      # ── Message d'un chat de match de tournoi ─────────────────────────────
+      # Le plus simple des quatre : une seule surface d'affichage (la modale
+      # partagée du tableau), donc un seul formulaire à réinitialiser et aucune
+      # sidebar à remonter — ce chat n'y figure pas, il ne se trouve qu'en
+      # cliquant la bulle de sa carte.
+      @message = @tournament_match.messages.build(
+        content: message_params[:content],
+        user: current_user
+      )
+
+      if @message.save
+        # L'expéditeur vient de lire son propre fil : sans ce marquage, sa
+        # pastille non-lu se rallumerait sur sa propre carte au prochain
+        # affichage du tableau.
+        TournamentMatchChatRead.mark_read!(@tournament_match, current_user)
+
+        respond_to do |format|
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.update(
+              "tmatch-chat-form",
+              partial: "messages/form",
+              locals: { tournament_match: @tournament_match, message: Message.new }
+            )
+          end
+          format.html { redirect_to tournament_path(@tournament_match.tournament) }
+        end
+      else
+        redirect_to tournament_path(@tournament_match.tournament),
+                    alert: "Impossible d'envoyer le message."
+      end
+
+    elsif @team
       # ── Message d'équipe ──────────────────────────────────────────────────
       @message = @team.messages.build(
         content: message_params[:content],
@@ -171,9 +203,20 @@ class MessagesController < ApplicationController
 
   private
 
-  # ── Charge le contexte : équipe, match ou conversation privée ────────────
+  # ── Charge le contexte : équipe, match, conversation privée ou match de tournoi ──
   def set_context_and_check_access
-    if params[:team_id]
+    if params[:tournament_match_id]
+      # Chat d'organisation d'un match de tournoi — les deux joueurs et les
+      # organisateurs. La règle vit dans TournamentMatchPolicy#chat?, seule source :
+      # la recopier ici, c'était deux endroits à corriger le jour où elle change.
+      @tournament_match = TournamentMatch.find(params[:tournament_match_id])
+
+      return if TournamentMatchPolicy.new(current_user, @tournament_match).chat?
+
+      redirect_to tournament_path(@tournament_match.tournament),
+                  alert: "Ce chat est réservé aux joueurs du match et aux organisateurs."
+
+    elsif params[:team_id]
       # Message d'équipe — vérifie que l'utilisateur est membre
       @team = Team.from_param(params[:team_id])
       @team_member = @team.team_members.find_by(user: current_user)
