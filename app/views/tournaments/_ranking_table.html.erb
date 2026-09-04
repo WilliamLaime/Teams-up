@@ -22,6 +22,12 @@
     classement, différentiels) reste à un clic dans l'onglet Classement — qui, lui,
     garde la table complète. %>
 <% compact = local_assigns.fetch(:compact, false) %>
+<%# destinations (optionnel, défaut false) : liseré + icône annonçant où chaque
+    position de poule ira en phase finale (Critérium). OPT-IN volontaire — dériver
+    la valeur ici rendrait le HTML de la ronde suisse, du championnat et du format
+    « poules » dépendant d'un helper qui ne les concerne pas ; avec le défaut à
+    false, il reste byte-identique. %>
+<% destinations = local_assigns.fetch(:destinations, false) %>
 <% show_draws = !compact && tournament.sport&.ranking_points_rules&.dig(:draw)&.positive? %>
 <% show_sets  = !compact && tournament.sport&.scoring_rules&.dig(:mode) == :sets %>
 <div class="tournament-ranking__scroll">
@@ -41,7 +47,9 @@
     <tbody>
       <% players.each_with_index do |tu, index| %>
         <% mine = my_player?(tu) %>
-        <tr class="tournament-ranking__row tournament-ranking__row--<%= tu.state %> <%= "is-me" if mine %>">
+        <% destination = pool_destination_for(tournament, tu) if destinations %>
+        <tr class="tournament-ranking__row tournament-ranking__row--<%= tu.state %> <%= "is-me" if mine %>
+                   <%= "tournament-ranking__row--dest-#{destination}" if destination %>">
           <td class="is-rank"><%= index + 1 %></td>
           <td class="is-player">
             <%= link_to user_profil_path(tu.user), class: "tournament-ranking__player-link" do %>
@@ -51,9 +59,21 @@
             <%# Repère « moi » : dans un classement à 32 lignes, retrouver sa place
                 demande sinon de lire chaque nom. %>
             <%= me_badge if mine %>
+            <%# Forfait : la ligne est déjà barrée et atténuée par le modificateur
+                --withdrawn, la pastille dit POURQUOI. %>
+            <% if tu.withdrawn? %>
+              <span class="tournament-ranking__forfeit" title="Forfait" aria-label="Forfait">F</span>
+            <% end %>
             <% if tu.qualified? %>
               <i data-lucide="check-circle" class="tournament-ranking__qualified-icon"
                  title="Qualifié pour le tableau final" aria-label="Qualifié pour le tableau final"></i>
+            <%# `elsif` et non un second `if` : un joueur ne doit jamais porter deux
+                fois le même message. La destination est une PRÉDICTION, elle
+                s'efface donc dès que la qualification est acquise. %>
+            <% elsif destination %>
+              <i data-lucide="<%= destination_icon(destination) %>"
+                 class="tournament-ranking__destination-icon tournament-ranking__destination-icon--<%= destination %>"
+                 title="<%= destination_label(destination) %>" aria-label="<%= destination_label(destination) %>"></i>
             <% end %>
           </td>
           <% unless compact %><td class="is-num is-pts"><%= tu.ranking_points %></td><% end %>

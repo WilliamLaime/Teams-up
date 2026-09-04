@@ -89,7 +89,7 @@
       <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         <% @tournaments.each do |tournament| %>
           <div class="col">
-            <%= render "shared/tournament_card", tournament: tournament, context: @active_tab %>
+            <%= render "shared/tournament_card", tournament: tournament %>
           </div>
         <% end %>
       </div>

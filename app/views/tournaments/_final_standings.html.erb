@@ -59,6 +59,9 @@
                   <span><%= player.display_name %></span>
                 <% end %>
                 <%= me_badge if mine %>
+                <% if player.withdrawn? %>
+                  <span class="tournament-ranking__forfeit" title="Forfait" aria-label="Forfait">F</span>
+                <% end %>
               </td>
             </tr>
           <% end %>

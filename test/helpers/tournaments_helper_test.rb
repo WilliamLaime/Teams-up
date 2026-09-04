@@ -185,14 +185,17 @@ class TournamentsHelperTest < ActionView::TestCase
   # Un forfait n'a aucun set saisi : sans cette marque, la carte affichait le
   # tiret « pas encore joué » alors que le classement de la poule était tranché.
 
-  test "forfeit_mark donne V au vainqueur et D au joueur forfait" do
+  # « F » et non « D » pour le joueur qui s'est retiré : il ne s'est pas présenté,
+  # il n'a pas perdu au score. Le « D » reste pour le seul cas où le forfait ne
+  # désigne personne (cf. le test suivant).
+  test "forfeit_mark donne V au vainqueur et F au joueur forfait" do
     tmatch = tmatch!(position: 0)
     tmatch.update!(forfeit: true, retired_player: @players[1])
     tmatch.reload
 
     assert_equal @players[0].id, tmatch.winner_id, "le vainqueur doit être dérivé du forfait"
     assert_equal "V", forfeit_mark(tmatch, @players[0])
-    assert_equal "D", forfeit_mark(tmatch, @players[1])
+    assert_equal "F", forfeit_mark(tmatch, @players[1])
   end
 
   # Sur un match joué, le score en vert désigne déjà le vainqueur : doubler le
@@ -225,8 +228,10 @@ class TournamentsHelperTest < ActionView::TestCase
 
     assert_includes gagnant, "is-winner"
     assert_includes gagnant, "Victoire par forfait"
-    assert_includes perdant, "is-loser"
-    assert_includes perdant, "Défaite par forfait"
+    # Un forfait n'est pas une défaite au score : la marque a son propre état.
+    assert_includes perdant, "is-forfeit"
+    assert_includes perdant, "Forfait"
+    refute_includes perdant, "is-loser"
     assert_nil forfeit_mark_tag(tmatch, nil)
   end
 end

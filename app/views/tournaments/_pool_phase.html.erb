@@ -85,7 +85,12 @@
               classements divergents. %>
           <aside class="pool-view__standings" data-pool-selector-target="standings">
             <h3 class="pool-view__standings-title"><%= pool_label(index) %></h3>
-            <%= render "tournaments/ranking_table", players: players, tournament: tournament, compact: true %>
+            <%# Destinations aussi dans la table compacte : c'est là qu'on lit une
+                poule en cours. Le liseré ne coûte aucune largeur et le title porte
+                le sens ; la légende, elle, ne tiendrait pas dans ~300px. %>
+            <%= render "tournaments/ranking_table", players: players, tournament: tournament,
+                                                    compact: true,
+                                                    destinations: show_pool_destinations?(tournament) %>
           </aside>
         </div>
       <% end %>

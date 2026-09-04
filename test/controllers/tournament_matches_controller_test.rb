@@ -54,20 +54,26 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card__when", text: /#{Regexp.escape(attendu)}/
   end
 
-  # ── Forfait : V / D sur la carte ────────────────────────────────────────────
+  # ── Forfait : V / F sur la carte ────────────────────────────────────────────
   # Un forfait n'a AUCUN set saisi : la carte tombait donc dans la branche « pas
   # encore joué » et n'affichait qu'un tiret, alors que le classement de la poule
   # était déjà recalculé. Le vainqueur apprenait sa victoire ailleurs que sur la
   # carte de son propre match.
-  test "la carte d'un match par forfait affiche V et D" do
+  #
+  # Le joueur qui a déclaré forfait porte « F », pas « D » : il ne s'est pas
+  # présenté, il n'a pas perdu au score, et son nom est barré.
+  test "la carte d'un match par forfait affiche V et F" do
     @match.update!(forfeit: true, retired_player: @match.player_b)
+    @match.player_b.update!(state: "withdrawn")
     @tournament.update!(status: "in_progress")
 
     get tournament_path(@tournament)
 
     assert_response :success
-    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-winner", text: "V"
-    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-loser",  text: "D"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-winner",  text: "V"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-forfeit", text: "F"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__name.is-withdrawn",
+                  text: @match.player_b.display_name
   end
 
   # Sur un match joué, le score en vert désigne déjà le vainqueur : pas de marque.

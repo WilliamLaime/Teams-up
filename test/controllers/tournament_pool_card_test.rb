@@ -31,15 +31,19 @@ class TournamentPoolCardTest < ActionDispatch::IntegrationTest
     @tournament.update_columns(status: "in_progress")
   end
 
-  test "un forfait affiche V au vainqueur et D au joueur forfait" do
+  # « F » et non « D » pour le joueur qui a déclaré forfait : il ne s'est pas
+  # présenté, il n'a pas perdu au score. Le « D » reste réservé au forfait dont
+  # aucun partant n'est identifié (cf. TournamentsHelper#forfeit_mark).
+  test "un forfait affiche V au vainqueur et F au joueur forfait" do
     @match.update!(forfeit: true, retired_player: @match.player_b)
 
     sign_in @match.player_a.user
     get tournament_path(@tournament)
 
     assert_response :success
-    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-winner", text: "V"
-    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-loser",  text: "D"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-winner",  text: "V"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-forfeit", text: "F"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-loser",   count: 0
     # Le tiret « pas encore joué » ne doit plus cohabiter avec le résultat.
     assert_select "#tmatch_#{@match.id} .tmatch-card__row-score--pending", count: 0
   end

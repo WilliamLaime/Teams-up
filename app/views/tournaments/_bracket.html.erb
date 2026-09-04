@@ -1,8 +1,9 @@
 <%# ── Tableau à élimination directe ───────────────────────────────────────────
-    Une colonne par tour PRÉVU (pas seulement joué) : les tours déjà joués
-    affichent leurs vrais matchs ; les tours futurs affichent des cases "À
-    déterminer" (autant que ce tour comptera de places) — on voit donc la
-    structure complète (huitièmes → quarts → demies → finale) dès le lancement.
+    Une colonne par tour PRÉVU (pas seulement joué), et dans chaque colonne une
+    case par POSITION prévue : les positions jouées affichent leur vrai match, les
+    autres une case "À déterminer" — on voit donc la structure complète (huitièmes
+    → quarts → demies → finale) dès le lancement, y compris quand un tour n'est
+    que partiellement construit (cf. BracketBuilder en mode incrémental).
     Une fois le tournoi terminé, on se limite aux tours réellement joués (évite
     des colonnes fantômes si l'effectif réel a produit moins de tours que prévu,
     cf. BracketBuilder#select_finalists).
@@ -44,26 +45,39 @@
     <% total = tournament.completed? ? rounds.size : [expected, rounds.size].max %>
     <% total.times do |index| %>
       <% round = rounds[index] %>
+      <%# ── Une seule boucle, sur les positions ATTENDUES ────────────────────
+          Un tour de tableau se construit AU FUR ET À MESURE en Critérium (cf.
+          BracketBuilder en mode incrémental) : il peut donc exister avec un seul
+          de ses deux matchs. Rendre « les matchs du tour » et non « les positions
+          du tour » ferait alors disparaître la case manquante, et la colonne se
+          désalignerait de sa voisine.
+          `expected_matches` est plus juste que le calcul sur `size` quand le tour
+          existe : un mini-tableau de 4 places à 2 entrants ne compte qu'un match. %>
+      <% slots   = round&.expected_matches || size / (2**(index + 1)) %>
+      <%# includes(:match) : le pied de carte lit la rencontre rattachée (lien +
+          créneau) — sans préchargement, c'est une requête par match.
+          Indexation par POSITION, jamais par ordre d'itération : un tour partiel a
+          des trous (positions 0 et 2 sans la 1), donc un index de tableau décalerait
+          tout — et le tour nourricier a exactement le même problème. %>
+      <% placed  = round ? round.tournament_matches.order(:position).includes(:match).index_by(&:position) : {} %>
+      <% feeders = index.positive? && rounds[index - 1] ? rounds[index - 1].tournament_matches.index_by(&:position) : {} %>
       <div class="bracket__round">
         <div class="bracket__round-title">
           <%= bracket_stage_label(index, total) %>
         </div>
         <div class="bracket__matches">
-          <% if round %>
-            <%# includes(:match) : le pied de carte lit la rencontre rattachée (lien +
-                créneau) — sans préchargement, c'est une requête par match. %>
-            <% round.tournament_matches.order(:position).includes(:match).each do |match| %>
+          <% slots.times do |position| %>
+            <% if (match = placed[position]) %>
               <%= render "tournaments/tmatch", match: match %>
-            <% end %>
-          <% else %>
-            <%# Un joueur déjà qualifié monte d'une case sans attendre son adversaire.
-                Le tour N+1, position p, oppose les vainqueurs des matchs 2p et 2p+1
-                du tour N (cf. BracketBuilder#advance!) : c'est la seule règle à
-                connaître pour préremplir. Seule la PREMIÈRE colonne vide a un tour
-                nourricier — au-delà, il n'y a rien à lire, d'où le tableau vide. %>
-            <% feeders = index.positive? && rounds[index - 1] ? rounds[index - 1].tournament_matches.order(:position).to_a : [] %>
-            <% (size / (2**(index + 1))).times do |position| %>
-              <%# La PROVENANCE, elle, est connue même quand le tour nourricier
+            <% else %>
+              <%# Un joueur déjà qualifié monte d'une case sans attendre son adversaire.
+                  Le tour N+1, position p, oppose les vainqueurs des matchs 2p et 2p+1
+                  du tour N (cf. BracketBuilder#advance!) : c'est la seule règle à
+                  connaître pour préremplir. Vaut aussi pour un TROU d'un tour
+                  existant — c'est exactement l'affichage voulu (« le vainqueur du
+                  match 3 attend son adversaire »).
+
+                  La PROVENANCE, elle, est connue même quand le tour nourricier
                   n'existe pas encore : c'est la structure du tableau qui la fixe.
                   On l'annonce donc toujours, ce qui permet de se projeter sans
                   attendre le moindre résultat.

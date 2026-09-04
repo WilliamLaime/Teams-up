@@ -3,8 +3,15 @@
     le seeding). Pour le format « poules », un classement PAR poule. N'a de sens
     qu'une fois le tournoi lancé. Local : tournament. %>
 <div class="tournament-ranking">
+  <%# Critérium : podium à 3 marches, chaque place s'y jouant. Les autres formats
+      n'ont qu'un vainqueur à montrer — et leur `standings` n'est pas exploitable
+      (cf. l'en-tête de _podium). %>
   <% if tournament.completed? %>
-    <%= render "tournaments/champion_banner", tournament: tournament %>
+    <% if tournament.criterium? %>
+      <%= render "tournaments/podium", tournament: tournament %>
+    <% else %>
+      <%= render "tournaments/champion_banner", tournament: tournament %>
+    <% end %>
   <% end %>
 
   <% if tournament.tournament_rounds.any? %>
@@ -14,9 +21,15 @@
     <% end %>
 
     <% if Tournament::POOL_BASED_FORMATS.include?(tournament.format) && tournament.pools.any? %>
+      <% destinations = show_pool_destinations?(tournament) %>
+      <%# Une seule légende, avant la boucle : elle vaut pour toutes les poules. %>
+      <% if destinations %>
+        <%= render "tournaments/pool_destination_legend", tournament: tournament %>
+      <% end %>
       <% tournament.ranked_pools.each do |pool_index, players| %>
         <h3 class="tournament-ranking__pool-title"><%= pool_label(pool_index) %></h3>
-        <%= render "tournaments/ranking_table", players: players, tournament: tournament %>
+        <%= render "tournaments/ranking_table", players: players, tournament: tournament,
+                                                destinations: destinations %>
       <% end %>
     <% else %>
       <%= render "tournaments/ranking_table", players: tournament.ranked_players, tournament: tournament %>

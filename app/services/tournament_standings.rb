@@ -103,20 +103,36 @@ class TournamentStandings
   end
 
   # Les joueurs qu'aucun tableau ne classe : 5es de poule quand les poules
-  # dépassent 4, poule unique sans phase finale, joueurs retirés avant les
-  # barrages. Groupés par position de poule, après la dernière place attribuée —
-  # cas que le règlement ne couvre pas, on reste donc factuel et stable.
+  # dépassent 4, poule unique sans phase finale, joueurs déclarés forfait (ils
+  # n'entrent plus dans les tableaux ouverts après leur départ, cf.
+  # CriteriumFlow#resolve). Groupés par position de poule, après la dernière place
+  # attribuée — cas que le règlement ne couvre pas, on reste donc factuel et stable.
+  #
+  # ⚠️ Les partants passent DERNIERS, avant tout regroupement par poule : sans
+  # cette partition, un partant 1er de poule se retrouverait classé devant un
+  # joueur qui a joué tout le tournoi et fini 3e de la sienne.
   def tail_groups(already_placed)
     placed_ids = already_placed.to_set(&:id)
     rest = @tournament.approved_players.reject { |player| placed_ids.include?(player.id) }
     return [] if rest.empty?
 
-    rest.group_by { |player| @tournament.pool_position_of(player) || Float::INFINITY }
-        .sort_by(&:first)
-        .map { |_position, players| by_strength(players) }
+    playing, quitters = rest.partition { |player| !player.withdrawn? }
+
+    by_pool_position(playing) + by_pool_position(quitters)
   end
 
-  def by_strength(players) = players.sort_by { |player| @tournament.rank_key(player) }
+  def by_pool_position(players)
+    players.group_by { |player| @tournament.pool_position_of(player) || Float::INFINITY }
+           .sort_by(&:first)
+           .map { |_position, group| by_strength(group) }
+  end
+
+  # Clé locale, et surtout PAS un préfixe posé sur Tournament#rank_key : ce dernier
+  # sert le classement affiché de la ronde suisse et du championnat, ainsi que le
+  # seeding des tableaux — y reléguer les partants sortirait du périmètre.
+  def by_strength(players)
+    players.sort_by { |player| [player.withdrawn? ? 1 : 0, *@tournament.rank_key(player)] }
+  end
 
   # ── Compaction ──────────────────────────────────────────────────────────────
   # Renumérote 1..n en préservant les rangs partagés : un groupe de k joueurs

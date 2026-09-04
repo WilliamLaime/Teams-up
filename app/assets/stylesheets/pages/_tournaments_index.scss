@@ -209,3 +209,28 @@
     }
   }
 }
+
+// ── Carte tournoi entièrement cliquable ──
+// Scopé à la page tournois : `.match-card` est partagé avec les cartes match, qui
+// ne portent pas ce motif (cf. shared/_tournament_card.html.erb).
+.tournaments-index-page .match-card {
+  // ⚠️ Pas cosmétique : `.match-card` n'est pas positionnée. Sans cette ligne,
+  // l'::after de .stretched-link s'étire jusqu'au bloc conteneur le plus proche —
+  // la grille — et le lien capte les clics des cartes voisines.
+  position: relative;
+  cursor: pointer;
+
+  // .stretched-link pose z-index: 1 sur son ::after : le pied doit passer
+  // au-dessus, sinon son bouton reste focusable mais couvert.
+  .match-card-footer {
+    position: relative;
+    z-index: 2;
+  }
+
+  // `outline` et non `box-shadow` : la carte a `overflow: hidden`, qui rognerait
+  // une ombre.
+  &:focus-within {
+    outline: 2px solid $green;
+    outline-offset: 2px;
+  }
+}

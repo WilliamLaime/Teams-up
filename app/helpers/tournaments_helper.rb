@@ -28,9 +28,13 @@ module TournamentsHelper
   # `winner_id.present?` n'est pas défensif par excès : `forfeit: true` sans
   # `retired_player_id` ne désigne aucun vainqueur (cf.
   # TournamentMatch#forfeit_winner_id) — dans ce cas on n'invente pas un perdant.
+  # « F » plutôt que « D » pour le joueur qui a DÉCLARÉ forfait : il n'a pas perdu
+  # au score, il ne s'est pas présenté, et c'est cette distinction qu'on veut voir
+  # sur la carte. Le « D » subsiste pour le forfait sans partant identifié.
   def forfeit_mark(match, player)
     return if player.blank?
     return unless match.forfeit? && match.winner_id.present?
+    return "F" if match.retired_player_id == player.id
 
     match.winner_id == player.id ? "V" : "D"
   end
@@ -44,15 +48,20 @@ module TournamentsHelper
   # en page n'ajoutent qu'un modificateur de géométrie via `extra_class` — sans
   # cette classe commune, chaque variante aurait son propre nom et il n'y aurait
   # plus un seul endroit où retrouver la marque (ni en CSS, ni en test).
+  # Trois états, et « F » n'est PAS `is-loser` : un forfait n'est pas une défaite
+  # au score, et `is-loser` porte le barré + l'atténuation du perdant.
   def forfeit_mark_tag(match, player, extra_class: nil)
     mark = forfeit_mark(match, player)
     return if mark.nil?
 
-    won = mark == "V"
-    label = won ? "Victoire par forfait" : "Défaite par forfait"
+    state, label = case mark
+                   when "F" then ["is-forfeit", "Forfait"]
+                   when "V" then ["is-winner",  "Victoire par forfait"]
+                   else          ["is-loser",   "Défaite par forfait"]
+                   end
 
     tag.span mark,
-             class: ["tmatch-card__forfeit-mark", (won ? "is-winner" : "is-loser"), extra_class].compact,
+             class: ["tmatch-card__forfeit-mark", state, extra_class].compact,
              title: label,
              aria: { label: label }
   end
@@ -319,10 +328,86 @@ module TournamentsHelper
     phases << ["bracket", "Tableau final", "trophy"] if tournament.bracket_expected?
     # Même condition que _board.html.erb : préfigurée dès le lancement, elle aussi.
     phases << ["consolation", "Consolante", "life-buoy"] if tournament.consolation_expected?
-    phases << ["classification", "Classement", "list-ordered"] if classification_tables(tournament).any?
+    # « Matchs de classement », et non « Classement » : la pastille était homonyme
+    # de l'ONGLET Classement juste au-dessus, qui montre tout autre chose (le
+    # classement lui-même, pas les matchs qui le décident). Le libellé reprend
+    # celui de la section (_classification_phase). Le JS apparie sur `data-phase`,
+    # inchangé.
+    phases << ["classification", "Matchs de classement", "list-ordered"] if classification_tables(tournament).any?
 
     phases
   end
+
+  # ── Destinations de poule (Critérium) ───────────────────────────────────────
+  # Où va chaque position de poule à l'issue des poules : tableau final, barrage
+  # ou consolante. RIEN n'est codé en dur — la réponse est lue dans les sources
+  # déclarées par CriteriumStructure (`PoolQualifiers[rang]`), donc un changement
+  # de règlement se fait à un seul endroit. { rang => :bracket|:barrage|:consolation }.
+  #
+  # Memoïsé par tournoi : appelé une fois par ligne de chaque table de poule.
+  def pool_destinations(tournament)
+    @pool_destinations ||= {}
+    @pool_destinations[tournament.id] ||= begin
+      # ⚠️ La garde `criterium?` est ce qui protège les autres formats, PAS
+      # l'absence de données : `pool_position_of` répond très bien pour un tournoi
+      # au format « poules », qui n'a pourtant aucune structure de Critérium.
+      if tournament.criterium?
+        tournament.criterium_structure.nodes.each_with_object({}) do |node, index|
+          destination = destination_of(node)
+          next if destination.nil?
+
+          node.sources.each do |source|
+            next unless source.is_a?(CriteriumStructure::PoolQualifiers)
+
+            index[source.rank] = destination
+          end
+        end
+      else
+        {}
+      end
+    end
+  end
+
+  # Le nœud « barrage » est un transit, les deux autres racines sont les tableaux.
+  # Les mini-tableaux de classement n'ont aucune source de poule : ils sortent
+  # d'eux-mêmes de la boucle ci-dessus.
+  def destination_of(node)
+    case node.key
+    when "barrage" then :barrage
+    when "ok"      then :bracket
+    when "ko"      then :consolation
+    end
+  end
+
+  def pool_destination_for(tournament, tournament_user)
+    rank = tournament.pool_position_of(tournament_user)
+    rank && pool_destinations(tournament)[rank]
+  end
+
+  # Afficher les destinations n'a de sens que tant qu'elles sont une PRÉDICTION.
+  # `final_phase_started?` est la bonne coupure : dès que les barrages existent,
+  # les placements réels sont connus et posés en `state: "qualified"` — une
+  # prédiction contredirait alors le tableau, et deux liserés se disputeraient la
+  # même ligne.
+  #
+  # `uniq.size > 1` retire l'indicateur du mode intégral, où tout le monde va au
+  # tableau final : un liseré vert partout n'informe de rien.
+  def show_pool_destinations?(tournament)
+    tournament.criterium? && tournament.in_progress? && !tournament.final_phase_started? &&
+      pool_destinations(tournament).values.uniq.size > 1
+  end
+
+  # Libellé et icône d'une destination. L'icône est LITTÉRALEMENT celle de la
+  # pastille de phase correspondante (cf. board_phases) : la table de poule
+  # annonce ainsi la phase avec le signe qu'on retrouvera dans le board.
+  DESTINATION_META = {
+    bracket:     ["Va au tableau final", "trophy"],
+    barrage:     ["Passe par les barrages", "git-branch-plus"],
+    consolation: ["Descend en consolante", "life-buoy"]
+  }.freeze
+
+  def destination_label(destination) = DESTINATION_META.dig(destination, 0)
+  def destination_icon(destination)  = DESTINATION_META.dig(destination, 1)
 
   # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde
   # suisse (façon Lolesports) — matérialise le bilan du groupe EN ENTRANT dans ce
