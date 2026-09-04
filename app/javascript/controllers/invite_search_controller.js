@@ -84,7 +84,6 @@ export default class extends Controller {
         const item = document.createElement("button")
         item.type            = "button"
         item.className       = "invite-search-item"
-        item.dataset.action  = "click->invite-search#select"
         item.dataset.sgid    = u.sgid
         item.dataset.label   = `${firstName} ${lastName}`.trim()
 
@@ -97,6 +96,23 @@ export default class extends Controller {
         last.textContent = lastName
 
         item.append(first, last)
+
+        // `already_organizer` : la personne co-organise déjà ce tournoi. On la
+        // montre quand même, grisée — la masquer donnait un « Aucun joueur trouvé »
+        // impossible à distinguer d'une faute de frappe, et l'organisateur n'avait
+        // aucun moyen de comprendre pourquoi il ne trouvait pas quelqu'un.
+        if (u.already_organizer) {
+          item.disabled  = true
+          item.className = "invite-search-item invite-search-item--disabled"
+
+          const badge = document.createElement("span")
+          badge.className   = "invite-search-badge"
+          badge.textContent = "déjà co-organisateur"
+          item.appendChild(badge)
+        } else {
+          item.dataset.action = "click->invite-search#select"
+        }
+
         this.dropdownTarget.appendChild(item)
       })
     }

@@ -29,6 +29,12 @@
                   else
                     plural_players ? "participants attendus" : "participant attendu"
                   end
+
+  # Inscription de l'utilisateur courant, si elle existe. Sert au bouton d'action
+  # de l'en-tête : #player? dit s'il occupe une place de joueur, la ligne elle-même
+  # est nécessaire pour construire l'URL de désinscription (DELETE).
+  # find sur l'association déjà préchargée → pas de requête supplémentaire.
+  my_entry = current_user && @tournament.tournament_users.find { |tu| tu.user_id == current_user.id }
 %>
 
 <div class="tournaments-index-page">
@@ -55,6 +61,45 @@
         · <%= @tournament.approved_players_count %><% if @tournament.max_players %>/<%= @tournament.max_players %><% end %>
         <%= players_word %>
       </p>
+
+      <%# ── Rejoindre / Quitter ──────────────────────────────────────────────
+          Le seul autre point d'entrée est la carte de l'index, en onglet
+          « À rejoindre » (cf. shared/_tournament_card) : qui arrive ici par un
+          lien direct n'avait aucun moyen de s'inscrire. Mêmes routes que la carte. %>
+      <div class="tournament-detail-header__actions">
+        <% if @tournament.player?(current_user) %>
+          <%# Une fois le tournoi lancé, on ne se désinscrit plus : le retrait passe
+              par le forfait déclaré par l'organisateur (cf. WithdrawPlayer), sinon
+              les matchs déjà générés se retrouveraient sans adversaire. %>
+          <% if @tournament.open? || @tournament.closed? %>
+            <%= button_to tournament_tournament_user_path(@tournament, my_entry),
+                  method: :delete,
+                  class: "btn-cta-secondary tournament-detail-header__action",
+                  form: { data: { turbo_confirm: "Quitter le tournoi « #{@tournament.name} » ?" } },
+                  data: { turbo_confirm_danger: true, turbo_confirm_accept: "Quitter" } do %>
+              <i data-lucide="user-minus" aria-hidden="true"></i> Quitter le tournoi
+            <% end %>
+          <% else %>
+            <span class="tournament-detail-header__enrolled">
+              <i data-lucide="check" aria-hidden="true"></i> Tu joues ce tournoi
+            </span>
+          <% end %>
+        <% elsif @tournament.registration_open? && !@tournament.full? %>
+          <%# Vaut aussi pour un co-organisateur nommé sans être inscrit : il garde
+              ses droits de gestion en rejoignant (cf. TournamentUsersController#create). %>
+          <% if user_signed_in? %>
+            <%= button_to tournament_tournament_users_path(@tournament),
+                  method: :post,
+                  class: "btn-cta-primary tournament-detail-header__action" do %>
+              <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
+            <% end %>
+          <% else %>
+            <%= link_to new_user_session_path, class: "btn-cta-primary tournament-detail-header__action" do %>
+              <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
     </header>
 
     <%# ── Onglets ─────────────────────────────────────────────────────────── %>

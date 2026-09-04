@@ -56,6 +56,92 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/#{Regexp.escape(full.name)}/, response.body)
   end
 
+  # Cœur de l'incident prod du 4 septembre 2026 : nommé co-organisateur, on avait
+  # une ligne tournament_users, donc le tournoi quittait l'onglet « À rejoindre »
+  # — et avec lui le seul bouton « Rejoindre » des cartes.
+  test "GET /tournois?tab=join propose encore un tournoi qu'on co-organise sans y jouer" do
+    sign_in @user
+    t = open_tournament("Je le co-organise")
+    t.tournament_users.create!(user: @user, role: "co_organisateur", status: "approved")
+
+    get tournaments_path(tab: "join")
+    assert_response :success
+    assert_match t.name, response.body
+    assert_select "form[action=?]", tournament_tournament_users_path(t)
+  end
+
+  test "GET /tournois?tab=join exclut un tournoi où l'on occupe une place de joueur" do
+    sign_in @user
+    t = open_tournament("Je le joue")
+    t.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+
+    get tournaments_path(tab: "join")
+    assert_response :success
+    assert_no_match(/#{Regexp.escape(t.name)}/, response.body)
+  end
+
+  # Le badge et le contenu de l'onglet lisent le même jeu d'IDs : un compteur qui
+  # annonce un tournoi que l'onglet ne montre pas (ou l'inverse) est un bug.
+  test "GET /tournois : le badge de l'onglet 'À rejoindre' compte le tournoi co-organisé" do
+    sign_in @user
+    t = open_tournament("Je le co-organise")
+    t.tournament_users.create!(user: @user, role: "co_organisateur", status: "approved")
+
+    get tournaments_path(tab: "join")
+    assert_select ".tournaments-index-tabs__tab", text: /Tournois à rejoindre\s*1/
+  end
+
+  # ─── GET /tournois/:id : bouton Rejoindre / Quitter de l'en-tête ────────────
+  # Le seul point d'entrée était la carte de l'index : qui arrivait ici par un lien
+  # direct (ou en co-organisant le tournoi) n'avait aucun moyen de s'inscrire.
+  test "GET /tournois/:id propose Rejoindre à qui ne joue pas encore" do
+    sign_in @co_org
+    t = open_tournament("Ouvert à tous")
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select "form[action=?][method=?]", tournament_tournament_users_path(t), "post"
+  end
+
+  test "GET /tournois/:id propose Rejoindre à un co-organisateur non inscrit" do
+    sign_in @co_org
+    t = open_tournament("Je le co-organise")
+    t.tournament_users.create!(user: @co_org, role: "co_organisateur", status: "approved")
+
+    get tournament_path(t)
+    assert_select "form[action=?]", tournament_tournament_users_path(t)
+  end
+
+  test "GET /tournois/:id propose Quitter à un joueur inscrit, et plus Rejoindre" do
+    sign_in @co_org
+    t = open_tournament("Je le joue")
+    entry = t.tournament_users.create!(user: @co_org, role: "joueur", status: "approved")
+
+    get tournament_path(t)
+    assert_select "form[action=?]", tournament_tournament_user_path(t, entry)
+    assert_select "form[action=?]", tournament_tournament_users_path(t), count: 0
+  end
+
+  # Tournoi lancé : le retrait passe par le forfait déclaré par l'organisateur
+  # (WithdrawPlayer), pas par une désinscription qui orphelinerait des matchs.
+  test "GET /tournois/:id ne propose plus Quitter une fois le tournoi lancé" do
+    sign_in @co_org
+    t = open_tournament("Lancé")
+    entry = t.tournament_users.create!(user: @co_org, role: "joueur", status: "approved")
+    t.update!(status: "in_progress")
+
+    get tournament_path(t)
+    assert_select "form[action=?]", tournament_tournament_user_path(t, entry), count: 0
+  end
+
+  test "GET /tournois/:id renvoie un visiteur non connecté vers la connexion" do
+    t = open_tournament("Ouvert à tous")
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select "a[href=?]", new_user_session_path
+  end
+
   test "GET /tournois?tab=join pagine à 9 par page" do
     10.times { |i| open_tournament("Pagination #{i}") }
 
