@@ -6,23 +6,41 @@ class TournamentUsersController < ApplicationController
 
   # POST /tournois/:tournament_id/tournament_users
   def create
-    # Construit via TournamentUser.new (côté belongs_to), PAS via
-    # @tournament.tournament_users.new : ce dernier ajoute immédiatement le
-    # nouvel enregistrement (non sauvegardé) à la collection en mémoire, ce qui
-    # fausserait le comptage de #full? juste en dessous (le tournoi semblerait
-    # déjà complet à cause de CE joueur, avant même qu'il soit inscrit).
-    tournament_user = TournamentUser.new(tournament: @tournament, user: current_user, role: "joueur", status: "approved")
-    authorize tournament_user
+    # find_or_initialize_by, et non new : une personne peut DÉJÀ avoir une ligne sur
+    # ce tournoi sans y occuper de place de joueur — c'est le cas du co-organisateur
+    # nommé par l'admin (`role: "co_organisateur"`). Comme l'index unique
+    # [tournament_id, user_id] n'autorise qu'une ligne par personne, s'inscrire
+    # revient à COMPLÉTER la ligne existante, pas à en créer une seconde (ce qui
+    # lèverait un RecordNotUnique non rattrapé, donc une 500).
+    #
+    # Construit côté belongs_to (TournamentUser.…) et PAS via
+    # @tournament.tournament_users.… : ce dernier ajouterait immédiatement
+    # l'enregistrement non sauvegardé à la collection en mémoire, ce qui fausserait
+    # le comptage de #full? juste en dessous (le tournoi semblerait déjà complet à
+    # cause de CE joueur, avant même qu'il soit inscrit).
+    tournament_user = TournamentUser.find_or_initialize_by(tournament: @tournament, user: current_user)
+
+    authorize tournament_user, :create?
+
+    if tournament_user.player?
+      redirect_to tournaments_path, alert: "Tu es déjà inscrit à ce tournoi."
+      return
+    end
 
     unless @tournament.registration_open? && !@tournament.full?
       redirect_to tournaments_path, alert: "Les inscriptions sont closes ou le tournoi est complet."
       return
     end
 
+    # Le rôle n'est assigné qu'ici, une fois les gardes passées (cf. #full? plus haut).
+    # `co_organizer` n'est jamais touché : un co-organisateur qui s'inscrit garde ses
+    # droits de gestion — les deux casquettes sont indépendantes.
+    tournament_user.role   = "joueur"
+    tournament_user.status = "approved"
+
     if tournament_user.save
       redirect_to tournaments_path, notice: "Tu es inscrit au tournoi « #{@tournament.name} »."
     else
-      # Cas principal : déjà inscrit (index unique) → on ne bloque pas l'utilisateur.
       redirect_to tournaments_path, alert: "Impossible de rejoindre ce tournoi."
     end
   end
@@ -31,8 +49,19 @@ class TournamentUsersController < ApplicationController
   def destroy
     tournament_user = @tournament.tournament_users.find(params[:id])
     authorize tournament_user
-    tournament_user.destroy
-    redirect_to tournaments_path, notice: "Tu t'es désinscrit du tournoi."
+
+    # Symétrique de TournamentsController#remove_co_organizer : quitter le tournoi
+    # ne doit retirer que la PLACE DE JOUEUR. Un co-organisateur qui se désinscrit
+    # garde ses droits de gestion, sa ligne redevient une ligne d'organisation pure.
+    if tournament_user.co_organizer?
+      tournament_user.update!(role: "co_organisateur")
+      notice = "Tu n'es plus inscrit comme joueur, mais tu restes co-organisateur."
+    else
+      tournament_user.destroy
+      notice = "Tu t'es désinscrit du tournoi."
+    end
+
+    redirect_to tournaments_path, notice: notice
   end
 
   # PATCH /tournois/:tournament_id/tournament_users/:id/withdraw

@@ -942,6 +942,25 @@
 
   &:hover { background: rgba(30, 221, 136, 0.08); }
   & + & { border-top: 1px solid var(--theme-border); } // séparateur adaptatif
+
+  // Personne déjà co-organisatrice du tournoi : proposée mais non sélectionnable.
+  // Elle reste VISIBLE à dessein (cf. invite_search_controller.js) — c'est ce qui
+  // permet de comprendre pourquoi on ne peut pas la nommer.
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+
+    &:hover { background: none; }
+  }
+}
+
+// Motif de la ligne grisée (« déjà co-organisateur »), poussé à droite.
+.invite-search-badge {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--theme-text-muted);
+  white-space: nowrap;
 }
 
 // Nom dans le dropdown autocomplete — adaptatif

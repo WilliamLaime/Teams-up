@@ -202,14 +202,46 @@ class TournamentOrganizersTest < ActionDispatch::IntegrationTest
 
   # ── Autocomplete ────────────────────────────────────────────────────────────
 
-  test "l'autocomplete masque les personnes déjà à l'organisation" do
+  # Les co-organisateurs en place étaient RETIRÉS des résultats : l'admin voyait
+  # « Aucun joueur trouvé », indiscernable d'une faute de frappe. Ils sont désormais
+  # proposés et marqués — c'est le seul moyen de comprendre le refus depuis l'UI.
+  test "l'autocomplete marque les personnes déjà à l'organisation au lieu de les masquer" do
     @tournament.tournament_users.create!(user: @co_org, role: "co_organisateur", status: "approved")
     sign_in @admin
 
     get search_tournaments_path(q: "Coorg", tournament_id: @tournament.to_param)
 
     assert_response :success
-    assert_equal [], JSON.parse(response.body)
+    result = JSON.parse(response.body)
+    assert_equal 1, result.size
+    assert result.first["already_organizer"], "le co-organisateur en place doit être marqué"
+  end
+
+  # Le cas qui rendait l'incident indiagnosticable : une ligne co_organizer: true
+  # avec un statut non approuvé était invisible dans le panneau (filtré .approved)
+  # tout en bloquant toute nouvelle nomination.
+  test "un co-organisateur non approuvé est visible dans le panneau et marqué dans l'autocomplete" do
+    @tournament.tournament_users.create!(user: @co_org, role: "co_organisateur", status: "pending")
+    sign_in @admin
+
+    assert_includes @tournament.reload.co_organizers.map(&:user), @co_org
+
+    get search_tournaments_path(q: "Coorg", tournament_id: @tournament.to_param)
+    assert result = JSON.parse(response.body).first
+    assert result["already_organizer"]
+  end
+
+  # Le transfert d'administration appelle le même endpoint SANS tournament_id :
+  # un co-organisateur en place doit y rester sélectionnable pour être promu.
+  test "l'autocomplete de transfert ne marque personne" do
+    @tournament.tournament_users.create!(user: @co_org, role: "co_organisateur", status: "approved")
+    sign_in @admin
+
+    get search_tournaments_path(q: "Coorg")
+
+    result = JSON.parse(response.body)
+    assert_equal 1, result.size
+    refute result.first["already_organizer"]
   end
 
   # ── Affichage ───────────────────────────────────────────────────────────────

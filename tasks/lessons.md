@@ -198,3 +198,34 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   3. Deux calculs de la même grandeur qui coexistent finiront par diverger. Le commentaire qui explique laquelle est la bonne n'est pas une documentation, c'est une **dette signalée** — à traiter comme un ticket, pas comme une note.
   4. Un mot-clé **sans valeur par défaut** sur une règle métier n'est pas de la rigidité : c'est un compilateur qu'on s'offre pour trouver les appelants oubliés (ici, un `.rake` hors du champ des tests).
   5. « C'est aléatoire ? » est presque toujours la mauvaise question. Un tri déterministe sur des données fausses est indistinguable d'un tirage au sort pour qui regarde le résultat — vérifier d'abord la **donnée d'entrée**, pas l'algorithme.
+
+## 2026-09-04 — Colonnes fantômes dans db/schema.rb (`matches`)
+- **Symptôme** : `db/schema.rb` déclarait `max_supporters`, `pin_latitude` et
+  `pin_longitude` sur `matches`. Aucune migration ne les crée, aucun code ne les
+  utilise (vérifié sur tout l'historique Git).
+- **Cause racine** : ce n'était pas un dump accidentel isolé mais une
+  **oscillation permanente** — 25 commits touchent ces lignes. Les colonnes
+  existent dans la base locale d'au moins un poste ; chacun de ses `db:migrate`
+  les re-déversait dans `schema.rb`, ceux des autres postes les retiraient.
+  Corriger `schema.rb` seul aurait été une rustine.
+- **Correctif** : migration idempotente `20260904130000_drop_phantom_columns_from_matches`
+  (`remove_column` sous `if column_exists?`, donc no-op sur les bases qui ne les
+  ont pas) + retrait chirurgical des 3 lignes dans `db/schema.rb`.
+- **⚠️ Piège à retenir** : ne JAMAIS committer un `bin/rails db:schema:dump` fait
+  depuis un poste local sur ce dépôt. Le dump y supprime aussi les 13 tables
+  `solid_cable_*` / `solid_cache_*` / `solid_queue_*` (~142 lignes) présentes dans
+  le schéma committé — `config/database.yml` les déclare dans des bases séparées
+  (`db/cache_migrate`, `db/queue_migrate`, `db/cable_migrate`), d'où l'écart.
+  Toujours éditer `schema.rb` chirurgicalement, et relire le diff avant commit.
+## 2026-09-04 — Deux casquettes, une seule ligne : le co-organisateur qui ne pouvait plus jouer, ni redevenir co-organisateur
+- **Symptôme** (prod) : l'admin nomme quelqu'un co-organisateur. Celui-ci ne trouve **aucun moyen de s'inscrire** au tournoi. L'admin le retire donc de l'organisation pour l'inscrire comme joueur… et ne peut **plus jamais** le renommer : l'autocomplete répond « Aucun joueur trouvé », y compris sur son prénom seul.
+- **Cause racine — la première moitié** : `TournamentsController#my_tournament_ids` prenait **toutes** les lignes `tournament_users`, tous rôles confondus. Une ligne `role: "co_organisateur"` suffisait donc à faire sortir le tournoi de l'onglet « À rejoindre » — et le bouton « Rejoindre » n'existait **que là**, sur la carte de l'index, sous `context == :join`. Aucune validation n'a jamais refusé l'inscription : l'UI avait simplement cessé de la proposer. Et un POST forcé aurait violé l'index unique `[tournament_id, user_id]` sur un `TournamentUser.new` — sans `validates_uniqueness` ni `rescue_from`, une 500 au lieu du flash prévu.
+- **Cause racine — la seconde moitié, et la plus instructive** : deux scopes décrivaient « les co-organisateurs », et ils n'étaient pas les mêmes. `Tournament#co_organizers` (le **panneau**) filtrait `.approved` ; `#excluded_search_ids` (l'**autocomplete**) non. Une ligne `co_organizer: true, status != "approved"` était donc **invisible dans le panneau tout en rendant la personne introuvable dans la recherche** : rien à retirer, rien à ajouter, et zéro information à l'écran.
+- **Le masquage silencieux est ce qui a rendu l'incident indiagnosticable** : retirer quelqu'un des résultats produit exactement le même « Aucun joueur trouvé » qu'une faute de frappe. L'admin ne pouvait pas distinguer « je tape mal son nom » de « l'application refuse ». Le refus est désormais **montré** : la personne apparaît, grisée, « déjà co-organisateur ».
+- **Correctif** : `TournamentUser#find_or_initialize_by` à l'inscription (on **complète** la ligne existante, on n'en crée pas une seconde) ; `#my_player_tournament_ids` (scope `players`) pour l'exclusion de l'onglet « À rejoindre », distinct de `#my_tournament_ids` qui alimente « Mes tournois » ; `Tournament#co_organizers` sans filtre de statut, aligné sur la garde de `#add_co_organizer` ; `#search` marque au lieu d'exclure ; désinscription symétrique (`destroy` ne retire que la place de joueur, les droits de gestion survivent) ; et un bouton Rejoindre/Quitter sur la page du tournoi, qui n'en avait aucun.
+- **Leçons**
+  1. Quand deux attributs indépendants coexistent sur une même ligne (`role` = place de joueur, `co_organizer` = droits), **chaque** chemin qui lit la ligne doit choisir explicitement lequel des deux il interroge. Un `pluck(:tournament_id)` sans filtre de rôle répond à la question « a-t-il une ligne ? » alors que l'appelant demandait « joue-t-il ? ».
+  2. Deux scopes qui prétendent nommer la même population et qui divergent d'un `where` créent des entités **invisibles mais bloquantes**. Ce qui bloque une action doit être exactement ce que l'écran affiche — sinon le blocage n'est explicable par personne.
+  3. Un filtrage silencieux dans une recherche est un piège à diagnostic : il rend « interdit » indistinguable de « inexistant ». Montrer et griser coûte trois lignes de JS et évite un aller-retour en console de prod.
+  4. Un seul point d'entrée pour une action essentielle (ici, un unique bouton « Rejoindre », sur une carte, dans un onglet) suffit à rendre cette action inatteignable dès qu'une condition d'affichage bouge ailleurs.
+  5. La suite était verte, et un test encodait même le comportement fautif (« l'autocomplete masque les personnes déjà à l'organisation »). Un test qui décrit une décision d'implémentation plutôt que le besoin de l'utilisateur défend le bug au lieu de le trouver.

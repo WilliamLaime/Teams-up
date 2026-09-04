@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_04_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -166,9 +166,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_120001) do
     t.string "genre_restriction", default: "tous"
     t.bigint "homme_du_match_id"
     t.string "level"
-    t.integer "max_supporters", default: 0
-    t.float "pin_latitude"
-    t.float "pin_longitude"
     t.string "place"
     t.integer "player_left"
     t.integer "players_needed"

@@ -253,11 +253,18 @@ class Tournament < ApplicationRecord
     tournament_users.approved.players.includes(user: :profil)
   end
 
-  # Co-organisateurs approuvés : ceux qui portent les DROITS de gestion, lus sur la
-  # colonne `co_organizer` et non sur le rôle. Un co-organisateur peut donc être
-  # inscrit comme joueur — il figure alors dans `approved_players` ET ici.
+  # Co-organisateurs : ceux qui portent les DROITS de gestion, lus sur la colonne
+  # `co_organizer` et non sur le rôle. Un co-organisateur peut donc être inscrit
+  # comme joueur — il figure alors dans `approved_players` ET ici.
+  #
+  # PAS de filtre `.approved` ici, à dessein : ce scope alimente le panneau
+  # « Équipe organisatrice », et il DOIT montrer exactement ce qui bloque une
+  # nouvelle nomination (cf. TournamentsController#add_co_organizer). Avec un
+  # filtre, une ligne `co_organizer: true, status: "pending"` restait invisible
+  # dans le panneau tout en rendant la personne non-nommable : un incident réel,
+  # impossible à diagnostiquer depuis l'interface.
   def co_organizers
-    tournament_users.approved.co_organizers.includes(user: :profil)
+    tournament_users.co_organizers.includes(user: :profil)
   end
 
   # Classement des joueurs : victoires décroissantes, puis départage set average
@@ -304,6 +311,17 @@ class Tournament < ApplicationRecord
     return false if user.blank?
 
     user_id == user.id || tournament_users.any? { |tu| tu.user_id == user.id && tu.co_organizer? }
+  end
+
+  # Vrai si `user` occupe une PLACE DE JOUEUR dans ce tournoi. Volontairement
+  # indépendant de #organizer? : les deux casquettes se cumulent (cf. la colonne
+  # `co_organizer` de TournamentUser), donc un co-organisateur peut jouer et un
+  # joueur peut co-organiser. C'est ce prédicat — et non #organizer? — qui décide
+  # d'afficher « Rejoindre » ou « Quitter ».
+  def player?(user)
+    return false if user.blank?
+
+    tournament_users.any? { |tu| tu.user_id == user.id && tu.player? }
   end
 
   # Résumé lisible de la structure PRÉVUE, calculé depuis le format, l'effectif
