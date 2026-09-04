@@ -1305,6 +1305,63 @@
     font-size: 0.95rem;
     margin: 0.4rem 0 0;
   }
+
+  // Rejoindre / Quitter. Le conteneur est toujours rendu (il peut être vide),
+  // d'où :empty plutôt qu'une condition dans la vue : pas de marge fantôme
+  // sous le sous-titre quand aucune action n'est proposée.
+  &__actions {
+    margin-top: 0.85rem;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  // button_to génère un <form> : sans cette règle il occupe toute la largeur
+  // et le bouton se retrouve étiré sur desktop.
+  &__actions form {
+    display: inline-block;
+    margin: 0;
+  }
+
+  &__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+
+    // Les icônes Lucide sont injectées en <svg> : on les cale à la taille du
+    // texte, sinon elles arrivent à leur taille par défaut (24px).
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  // Tournoi lancé : plus de désinscription possible, seulement un rappel d'état.
+  &__enrolled {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    &__action {
+      width: 100%;
+      justify-content: center;
+    }
+
+    &__actions form {
+      display: block;
+    }
+  }
 }
 
 // Badge d'état du tournoi (aligné sur les overlays des cartes).

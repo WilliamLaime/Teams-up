@@ -22,16 +22,17 @@ class TournamentsController < ApplicationController
   # GET /tournois
   # Un seul onglet affiché à la fois (cf. TABS), paginé — cf. docs/TOURNOI.md :
   #   mine      → inscrit + non terminé
-  #   join      → inscriptions ouvertes, non inscrit, non complet
+  #   join      → inscriptions ouvertes, pas encore JOUEUR, non complet
   #   ongoing   → lancés, non inscrit (lecture seule)
   #   completed → clôturés, tous (lecture seule)
   def index
     filtered    = filtered_tournaments
     my_ids      = my_tournament_ids
-    @tab_counts = tab_counts(filtered, my_ids)
+    player_ids  = my_player_tournament_ids
+    @tab_counts = tab_counts(filtered, my_ids, player_ids)
     @active_tab = resolve_active_tab(@tab_counts)
     @pagy, @tournaments = pagy(
-      tab_scope(filtered, @active_tab, my_ids).includes(CARD_INCLUDES),
+      tab_scope(filtered, @active_tab, my_ids, player_ids).includes(CARD_INCLUDES),
       limit: 9
     )
 
@@ -302,8 +303,13 @@ class TournamentsController < ApplicationController
 
   # GET /tournois/search?q=...[&tournament_id=...]
   # Autocomplete JSON pour désigner un co-organisateur (même pattern que
-  # TeamInvitationsController#search). Avec `tournament_id`, on masque les
-  # personnes déjà à la manœuvre — inutile de les proposer.
+  # TeamInvitationsController#search).
+  #
+  # Avec `tournament_id`, les personnes déjà à la manœuvre ne sont PAS retirées des
+  # résultats : elles sont renvoyées avec `already_organizer: true` et le dropdown
+  # les affiche grisées. Les masquer produisait un « Aucun joueur trouvé »
+  # indiscernable d'une faute de frappe, et donc un blocage indiagnosticable depuis
+  # l'interface (incident prod du 4 septembre 2026).
   def search
     authorize Tournament, :search?
 
@@ -313,9 +319,15 @@ class TournamentsController < ApplicationController
     users = User.search_for_invite(q)
                 .where.not(id: excluded_search_ids)
                 .limit(8)
+    organizer_ids = current_organizer_ids
 
     render json: users.map { |u|
-      { sgid: u.invite_sgid, first_name: u.profil&.first_name, last_name: u.profil&.last_name }
+      {
+        sgid: u.invite_sgid,
+        first_name: u.profil&.first_name,
+        last_name: u.profil&.last_name,
+        already_organizer: organizer_ids.include?(u.id)
+      }
     }
   end
 
@@ -344,19 +356,33 @@ class TournamentsController < ApplicationController
     scope
   end
 
-  # IDs des tournois où l'utilisateur courant est inscrit (1 requête, réutilisée).
+  # IDs des tournois où l'utilisateur courant a une ligne, TOUS RÔLES CONFONDUS :
+  # ceux qu'il joue, mais aussi ceux qu'il co-organise sans y jouer. C'est la base
+  # de l'onglet « Mes tournois » (1 requête, réutilisée).
   def my_tournament_ids
     return [] unless user_signed_in?
 
     current_user.tournament_users.pluck(:tournament_id)
   end
 
+  # IDs des tournois où l'utilisateur courant occupe une PLACE DE JOUEUR.
+  # Distinct de #my_tournament_ids à dessein : c'est ce jeu d'IDs — et lui seul —
+  # qui exclut un tournoi de l'onglet « À rejoindre ». Sinon un co-organisateur
+  # nommé sans être inscrit voyait le tournoi quitter cet onglet, et avec lui le
+  # SEUL bouton « Rejoindre » de l'application : il n'avait plus aucun moyen de
+  # s'inscrire au tournoi qu'il co-organise (incident prod du 4 septembre 2026).
+  def my_player_tournament_ids
+    return [] unless user_signed_in?
+
+    current_user.tournament_users.players.pluck(:tournament_id)
+  end
+
   # Compteurs légers par onglet (COUNT seul, pas d'eager loading) — servent aux
   # badges de la barre d'onglets et à déterminer l'onglet par défaut.
-  def tab_counts(scope, my_ids)
+  def tab_counts(scope, my_ids, player_ids)
     {
       mine: user_signed_in? ? scope.not_completed.where(id: my_ids).count : 0,
-      join: scope.open_for_registration.where.not(id: my_ids).not_full.count,
+      join: scope.open_for_registration.where.not(id: player_ids).not_full.count,
       ongoing: scope.in_progress.where.not(id: my_ids).count,
       completed: scope.completed.count
     }
@@ -373,10 +399,12 @@ class TournamentsController < ApplicationController
       (user_signed_in? ? :mine : :join)
   end
 
-  def tab_scope(scope, tab, my_ids)
+  # Les deux jeux d'IDs doivent rester alignés sur #tab_counts, sinon un badge
+  # annonce des tournois que l'onglet ne montre pas.
+  def tab_scope(scope, tab, my_ids, player_ids)
     case tab
     when :mine      then scope.not_completed.where(id: my_ids).order(date: :asc)
-    when :join      then scope.open_for_registration.where.not(id: my_ids).not_full.order(date: :asc)
+    when :join      then scope.open_for_registration.where.not(id: player_ids).not_full.order(date: :asc)
     when :ongoing   then scope.in_progress.where.not(id: my_ids).order(date: :asc)
     when :completed then scope.completed.order(date: :desc)
     end
@@ -451,19 +479,42 @@ class TournamentsController < ApplicationController
     )
   end
 
-  # Personnes à masquer dans l'autocomplete : toujours soi-même, et — si un tournoi
-  # est passé en paramètre — celles qui l'organisent déjà. Le paramètre est optionnel
-  # à dessein : le champ de transfert d'administration, lui, DOIT pouvoir proposer un
-  # co-organisateur en place.
+  # Personnes à retirer des résultats de l'autocomplete : soi-même, et — si un
+  # tournoi est passé en paramètre — son admin, qui n'a rien à faire dans une liste
+  # de co-organisateurs à nommer. Les co-organisateurs en place, eux, restent
+  # proposés (grisés) : cf. #search et #current_organizer_ids.
   def excluded_search_ids
     ids = [current_user.id]
     return ids if params[:tournament_id].blank?
 
-    tournament = Tournament.find_by_param(params[:tournament_id])
+    tournament = search_tournament
     return ids if tournament.nil?
 
-    ids + [tournament.user_id] +
-      tournament.tournament_users.co_organizers.pluck(:user_id)
+    ids + [tournament.user_id]
+  end
+
+  # IDs des personnes qui co-organisent DÉJÀ le tournoi passé en paramètre, pour
+  # les marquer dans l'autocomplete. Volontairement lu sur le même scope que le
+  # panneau « Équipe organisatrice » (Tournament#co_organizers, sans filtre de
+  # statut) et que la garde de #add_co_organizer : ce qui est grisé dans la liste
+  # est exactement ce qui est affiché dans le panneau, et exactement ce qui
+  # refuserait une nouvelle nomination.
+  #
+  # Vide sans `tournament_id` — le champ de transfert d'administration appelle le
+  # même endpoint sans paramètre, et DOIT proposer normalement un co-organisateur
+  # en place pour pouvoir le promouvoir admin.
+  def current_organizer_ids
+    return [] if params[:tournament_id].blank?
+
+    search_tournament&.tournament_users&.co_organizers&.pluck(:user_id) || []
+  end
+
+  # Le tournoi visé par l'autocomplete, chargé une seule fois par requête
+  # (#excluded_search_ids et #current_organizer_ids le demandent tous les deux).
+  def search_tournament
+    return @search_tournament if defined?(@search_tournament)
+
+    @search_tournament = Tournament.find_by_param(params[:tournament_id])
   end
 
   # Inscrit le créateur comme joueur uniquement s'il a coché le toggle dédié.
