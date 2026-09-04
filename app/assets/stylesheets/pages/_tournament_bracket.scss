@@ -100,6 +100,96 @@
   &__name { font-size: 1.4rem; font-family: $display-font; color: var(--theme-text-strong); }
 }
 
+// ── Podium à 3 marches (Critérium) ───────────────────
+// Reprend volontairement le cadre du bandeau vainqueur (dégradé $green, bordure,
+// rayon) : c'est le même composant « voici le résultat », en plus détaillé.
+.tournament-podium {
+  padding: 1.5rem 1rem 0;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, rgba($green, 0.12), transparent);
+  border: 1px solid rgba($green, 0.4);
+  border-radius: 16px;
+
+  &__steps {
+    display: flex;
+    // Les socles n'ont pas la même hauteur : c'est le BAS des marches qui doit
+    // s'aligner, pas le haut.
+    align-items: flex-end;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    flex: 0 1 8rem;
+    min-width: 0;
+
+    // Mise en scène 2 · 1 · 3, purement visuelle : l'ordre du DOM reste 1-2-3
+    // pour les lecteurs d'écran (cf. _podium.html.erb).
+    &--1 { order: 2; }
+    &--2 { order: 1; }
+    &--3 { order: 3; }
+  }
+
+  &__player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+    max-width: 100%;
+  }
+
+  &__avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--theme-border);
+  }
+
+  &__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--theme-text-strong);
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+
+  // Surélévation par la HAUTEUR du socle, pas par transform : la marche reste
+  // dans le flux, donc rien ne se chevauche quand un nom passe sur deux lignes.
+  &__base {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    width: 100%;
+    border-radius: 10px 10px 0 0;
+    color: #1B1B1B;
+  }
+
+  &__place { font-family: $display-font; font-size: 1.6rem; line-height: 1; }
+  &__tie   { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  &__step--1 &__base { height: 96px; background: $yellow; border: 2px solid $green; border-bottom: 0; }
+  &__step--2 &__base { height: 68px; background: #B9C2C7; }
+  &__step--3 &__base { height: 52px; background: #CD7F32; }
+
+  @media (max-width: 768px) {
+    &__steps { flex-direction: column; align-items: center; gap: 1rem; }
+    // Empilé, la mise en scène n'a plus de sens : on revient à l'ordre réel.
+    &__step { order: initial; width: 100%; max-width: 14rem; }
+    &__base { height: auto !important; padding: 0.4rem 0; border-radius: 10px; }
+  }
+}
+
 // ── Phases (Ronde Suisse / Tableau final) ────────────
 .tournament-phase {
   margin-bottom: 2.5rem;
@@ -133,6 +223,9 @@
 // affiché (cf. tournament_phase_switch_controller.js), pas un simple filtre visuel.
 .phase-nav {
   display: flex;
+  // Cinq pastilles dont « Matchs de classement », nettement plus large que les
+  // autres : sans passage à la ligne, la rangée déborde dès 375px.
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
 
@@ -451,6 +544,18 @@
   // contenu et flottait au milieu, si bien que la carte ne ressemblait plus du tout
   // à ses voisines dans un tour de barrages.
   &--bye { border-style: dashed; }
+
+  // Position prévue dont le match n'existe pas encore : le tableau se construit
+  // au fur et à mesure, la cellule garde donc la place (et la hauteur) de la
+  // rencontre à venir, sinon la colonne ne s'aligne plus avec sa voisine.
+  &--pending {
+    border-style: dashed;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.4em;
+    color: var(--theme-text-muted);
+    font-size: 0.8em;
+  }
 
   &--done { border-color: var(--theme-border-strong); }
 
@@ -862,6 +967,15 @@
 // largeur mini) pour que forfaits et matchs joués restent alignés dans la grille
 // d'une poule. Sert aussi au tableau final, où elle prend la place de
 // .tmatch-card__sets — d'où la double géométrie, inoffensive dans les deux cas.
+// Nom d'un joueur déclaré forfait : barré partout où il apparaît encore, y
+// compris quand il n'est pas le perdant de la carte affichée (il a gagné son tour
+// puis abandonné). `--loser` ne couvre que le second cas.
+.tmatch-card__name.is-withdrawn,
+.bracket-cell__name.is-withdrawn {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
 .tmatch-card__forfeit-mark {
   flex: 0 0 auto;
   margin-left: auto;
@@ -880,6 +994,22 @@
 
   &.is-loser {
     color: var(--theme-text-muted);
+  }
+
+  // Forfait DÉCLARÉ : ni victoire ni défaite au score, d'où un traitement à part.
+  // Motif de pastille maison (cf. .participant-chip__state--eliminated), et non la
+  // grosse lettre du V/D : « F » est un statut, pas un résultat.
+  // ⚠️ Le bloc parent pose min-width: 1.4rem et font-size: 1.05rem — les deux sont
+  // à défaire ici, sinon la pastille sort difforme.
+  &.is-forfeit {
+    min-width: auto;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #c0392b;
+    background-color: rgba(#c0392b, 0.12);
   }
 
   // Scoreline centrée : la marque prend la place d'un score au MILIEU de la
@@ -2079,7 +2209,51 @@
   }
 
   &__row--eliminated td { opacity: 0.6; }
+
+  // Joueur déclaré forfait : atténué comme un éliminé, et le nom barré. Le barré
+  // porte sur le <span> du nom et pas sur la cellule, parce que c'est lui qui
+  // porte la couleur du texte (.is-player span, cf. _final_standings.html.erb).
+  &__row--withdrawn {
+    td { opacity: 0.6; }
+    td.is-player span { text-decoration: line-through; }
+  }
+
+  // Pastille « F » du classement : même motif que la marque de forfait des cartes
+  // de match, pour qu'un forfait se lise partout de la même façon.
+  &__forfeit {
+    flex: 0 0 auto;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #c0392b;
+    background-color: rgba(#c0392b, 0.12);
+    text-decoration: none;
+  }
+
   &__row--qualified td:first-child { box-shadow: inset 3px 0 0 $green; }
+
+  // ── Destinations de poule (Critérium, avant la phase finale) ──
+  // Placées APRÈS --qualified pour l'emporter à spécificité égale. En pratique
+  // les deux ne coexistent jamais : show_pool_destinations? s'éteint dès que la
+  // phase finale démarre, c'est-à-dire dès que `qualified` est posé.
+  &__row--dest-bracket     td:first-child { box-shadow: inset 3px 0 0 $green; }
+  &__row--dest-barrage     td:first-child { box-shadow: inset 3px 0 0 $orange; }
+  &__row--dest-consolation td:first-child { box-shadow: inset 3px 0 0 $red; }
+
+  // Icône : le rouge vif du liseré (qui doit trancher sur 3px) serait trop saturé
+  // à côté d'un nom, et $red est réservé aux actions destructrices — on reprend
+  // donc le rouge « négatif » maison des pastilles d'état.
+  &__destination-icon {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 auto;
+
+    &--bracket     { color: $green; }
+    &--barrage     { color: $orange; }
+    &--consolation { color: #c0392b; }
+  }
 
   // Ma ligne : un fond vert très léger sur toute la largeur. Volontairement une
   // TEINTE et non un liseré — le liseré de gauche est déjà pris par « qualifié »,
@@ -2391,4 +2565,30 @@
     text-transform: uppercase;
     color: var(--theme-text-muted);
   }
+}
+
+// ── Légende des destinations de poule ────────────────
+// Rendue une seule fois au-dessus des tables de poule (cf.
+// _pool_destination_legend.html.erb).
+.tournament-destination-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--theme-text-muted);
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  i { width: 15px; height: 15px; flex: 0 0 auto; }
+
+  &__item--bracket i     { color: $green; }
+  &__item--barrage i     { color: $orange; }
+  &__item--consolation i { color: #c0392b; }
 }

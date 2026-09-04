@@ -10,6 +10,16 @@
 #   • #advance! : tour suivant, en appariant les vainqueurs du tour précédent. Quand
 #     il ne reste qu'un vainqueur, le tableau est terminé.
 #
+# ── Deux régimes de progression ──────────────────────────────────────────────
+# Par défaut, #advance! attend que le tour précédent soit ENTIÈREMENT joué avant
+# de créer le suivant : c'est le régime des playoffs de la ronde suisse et du
+# championnat, où tout le monde joue le même jour.
+#
+# `incremental: true` (Critérium Fédéral, cf. CriteriumFlow#builder_for) crée
+# chaque match du tour n+1 DÈS QUE ses deux matchs nourriciers sont joués. Sur un
+# tournoi étalé dans le temps, un quart de finale devient donc jouable sans
+# attendre les trois autres huitièmes.
+#
 # Seeding réel (Lot 4) : classement par victoires, puis set average et point average
 # (cf. #ranked) — les compteurs sont recalculés par SwissPairing#recompute_stats!.
 #
@@ -34,14 +44,19 @@ class BracketBuilder
   # `owns_completion` : ce tableau décide-t-il de la fin du tournoi ? false pour le
   #   Critérium, où la finale « OK » est souvent jouée alors que la consolante et
   #   les matchs de classement tournent encore (cf. CriteriumFlow#advance!).
+  # `incremental` : progression anticipée (cf. l'en-tête du fichier). Réservé au
+  #   Critérium — les autres formats gardent le régime historique, et c'est
+  #   volontaire : ce mode renseigne `expected_matches`, une colonne que seul
+  #   CriteriumFlow sait tenir à jour.
   def initialize(tournament, finalists: nil, phase: "bracket", branch: TournamentRound::MAIN_BRANCH,
-                 persist_seeds: true, owns_completion: true)
+                 persist_seeds: true, owns_completion: true, incremental: false)
     @tournament      = tournament
     @finalists       = finalists
     @phase           = phase
     @branch          = branch
     @persist_seeds   = persist_seeds
     @owns_completion = owns_completion
+    @incremental     = incremental
   end
 
   # Premier tour du tableau.
@@ -54,7 +69,10 @@ class BracketBuilder
     # un tableau secondaire ne persiste pas les têtes de série (cf. persist_seeds),
     # et deux tableaux concurrents s'écraseraient mutuellement.
     by_seed = entrants.each_with_index.to_h { |tu, index| [index + 1, tu] }
-    round   = create_round!(number: 1)
+    # `slots / 2` est EXACTEMENT le nombre de matchs posés juste en dessous (byes
+    # inclus) : la colonne ne décrit donc rien de nouveau, elle rend seulement
+    # l'invariant lisible par TournamentRound#complete?.
+    round   = create_round!(number: 1, expected_matches: @incremental ? slots / 2 : nil)
 
     seed_order(slots).each_slice(2).with_index do |(seed_a, seed_b), position|
       player_a = by_seed[seed_a]
@@ -72,6 +90,8 @@ class BracketBuilder
   # Tour suivant. Renvoie nil quand le tableau est terminé (un seul vainqueur), et
   # clôt alors le tournoi si ce tableau en est responsable.
   def advance!
+    return advance_incrementally! if @incremental
+
     last = rounds.last
     return last unless last&.complete?
 
@@ -113,9 +133,144 @@ class BracketBuilder
   # Les tours DE CE TABLEAU (phase + branche), dans l'ordre.
   def rounds = @tournament.tournament_rounds.where(phase: @phase, branch: @branch).ordered
 
-  def create_round!(number:)
-    @tournament.tournament_rounds.create!(phase: @phase, branch: @branch,
-                                          number: number, status: "in_progress")
+  def create_round!(number:, expected_matches: nil)
+    @tournament.tournament_rounds.create!(phase: @phase, branch: @branch, number: number,
+                                          status: "in_progress", expected_matches: expected_matches)
+  end
+
+  # ── Progression anticipée (mode incrémental) ────────────────────────────────
+  # Chaque appel complète UN tour, puis on recommence : créer la demi-finale peut
+  # rendre la finale créable dans la même passe. La boucle termine parce qu'un
+  # tableau a un nombre borné de tours et qu'on ne repasse jamais sur un tour déjà
+  # complet.
+  #
+  # ⚠️ Renvoie nil quand rien n'a été créé — JAMAIS un tour existant. C'est un
+  # contrat, pas un détail : CriteriumFlow#complete_if_finished! renonce à
+  # terminer le tournoi dès que la passe a créé quelque chose, donc un retour
+  # non-nil systématique empêcherait le tournoi de se terminer, définitivement.
+  def advance_incrementally!
+    created = nil
+
+    while (round = fill_next_round!)
+      created = round
+    end
+
+    complete_tournament_if_owned!
+    created
+  end
+
+  # Le premier tour, dans l'ordre, auquel il manque un match créable. nil = rien à
+  # faire (soit tout est créé, soit les nourriciers ne sont pas joués).
+  #
+  # ⚠️ On balaie TOUS les tours, pas seulement le dernier : dès qu'un tour n+1
+  # partiel existe, `rounds.last` le désigne et on ne reviendrait jamais compléter
+  # le tour n. C'est la différence de fond avec le régime historique.
+  def fill_next_round!
+    series = rounds.to_a
+    return nil if series.empty?
+
+    expected = expected_count_of(series.first)
+
+    series.each do |round|
+      # Un tour à un seul match est la finale du tableau : rien en aval.
+      return nil if expected <= 1
+
+      filled = fill_successor_of!(round, expected / 2)
+      return filled if filled
+
+      expected /= 2
+    end
+
+    nil
+  end
+
+  # Pose dans le successeur de `round` tous les matchs dont les deux nourriciers
+  # sont joués. Renvoie le tour successeur si au moins un match a été créé.
+  def fill_successor_of!(round, expected)
+    successor = rounds.find { |r| r.number == round.number + 1 }
+    return nil if successor && successor.tournament_matches.count >= expected
+
+    feeders = round.tournament_matches.index_by(&:position)
+    created = false
+
+    expected.times do |position|
+      pair = feeders.values_at(position * 2, (position * 2) + 1)
+      # Les DEUX nourriciers doivent être joués : c'est ce qui autorise à jouer un
+      # quart sans attendre les autres huitièmes, et ce qui interdit de créer un
+      # match dont un adversaire est encore inconnu.
+      next unless pair.all? { |match| match&.status == "completed" }
+
+      successor ||= reopen_or_create_successor!(round, expected)
+      next if successor.tournament_matches.exists?(position: position)
+
+      created = true if place_match!(successor, pair, position)
+    end
+
+    created ? successor : nil
+  end
+
+  # Le tour successeur, prêt à recevoir un match. S'il existe déjà en "completed"
+  # (données antérieures à ce mode, ou tour clos avant l'ajout d'un match), on le
+  # rouvre : un tour clos est VERROUILLÉ, donc son nouveau match serait injouable
+  # (cf. TournamentMatchPolicy#update?).
+  def reopen_or_create_successor!(round, expected)
+    existing = rounds.find { |r| r.number == round.number + 1 }
+    if existing
+      existing.update!(status: "in_progress") if existing.status == "completed"
+      existing.update!(expected_matches: expected) if existing.expected_matches != expected
+      return existing
+    end
+
+    create_round!(number: round.number + 1, expected_matches: expected)
+  end
+
+  # ⚠️ SAVEPOINT obligatoire (`requires_new: true`) : en PostgreSQL une violation
+  # d'unicité AVORTE la transaction courante. Sans point de reprise, deux passes
+  # concurrentes feraient perdre SILENCIEUSEMENT tout le travail de #advance!,
+  # le `rescue` de CriteriumFlow#sync_node! avalant l'erreur.
+  def place_match!(round, pair, position)
+    player_a, player_b = pair_players(pair)
+
+    ActiveRecord::Base.transaction(requires_new: true) do
+      build_match!(round, player_a, player_b, position)
+    end
+    true
+  rescue ActiveRecord::RecordNotUnique
+    false
+  end
+
+  # Les deux joueurs qui montent, un forfait déclaré entre-temps écarté : gagner
+  # son huitième puis abandonner ne doit pas faire traverser tout le tableau en
+  # défaites. L'adversaire prend alors un bye plutôt qu'une victoire par forfait.
+  #
+  # ⚠️ Cas dégénéré : les DEUX vainqueurs ont abandonné. Aucun match n'est alors
+  # créable (`player_a` est NOT NULL), et laisser la position vide gèlerait la
+  # branche pour toujours — le tableau ne finirait jamais et le tournoi non plus.
+  # On retombe donc sur le comportement historique : un match en forfait, dont le
+  # « vainqueur » poursuit et prend des byes ensuite. Laid, mais vivant.
+  def pair_players(pair)
+    raw     = pair.map(&:winner)
+    playing = raw.map { |player| player&.withdrawn? ? nil : player }
+
+    playing.compact.empty? ? raw : playing
+  end
+
+  # Nombre de matchs attendus au premier tour. La colonne d'abord ; à défaut le
+  # compte réel, qui est exact parce que #build! crée TOUJOURS le premier tour
+  # d'un bloc, byes inclus (utile sur les tours antérieurs au backfill).
+  def expected_count_of(round) = round.expected_matches || round.tournament_matches.count
+
+  # Le mode incrémental sert au Critérium, où `owns_completion` est false : c'est
+  # CriteriumFlow qui décide de la fin du tournoi, en regardant TOUS les tableaux.
+  # La garde reste explicite pour que le mode soit correct hors de ce contexte.
+  def complete_tournament_if_owned!
+    return unless @owns_completion
+
+    last = rounds.last
+    return unless last && expected_count_of(rounds.first) / (2**(last.number - rounds.first.number)) <= 1
+    return unless last.complete?
+
+    @tournament.update!(status: "completed")
   end
 
   # Finalistes : qualifiés d'abord, complétés au besoin par les meilleurs actifs.

@@ -26,7 +26,13 @@ class TournamentMatchesController < ApplicationController
 
       # Ronde terminée → générer automatiquement la suite (idempotent).
       # Aiguillage selon le format via la façade TournamentEngine.
-      TournamentEngine.for(@tournament).next_round! if round.complete?
+      #
+      # Critérium en phase finale : la progression est ANTICIPÉE (une demi-finale
+      # naît dès que ses deux quarts sont joués, cf. BracketBuilder en mode
+      # incrémental), donc le moteur doit tourner à CHAQUE score et pas seulement
+      # à la fin du tour — sinon le match suivant n'existerait jamais.
+      advance_eagerly = @tournament.criterium? && Tournament::FINAL_PHASES.include?(round.phase)
+      TournamentEngine.for(@tournament).next_round! if advance_eagerly || round.complete?
 
       respond_to do |format|
         format.turbo_stream { render_board }

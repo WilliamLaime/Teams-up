@@ -8,9 +8,11 @@ require "test_helper"
 # vérifie les deux moments où ça pourrait casser.
 #
 #   • le match en cours du partant → forfait immédiat, son adversaire continue ;
-#   • le tour SUIVANT, généré alors qu'il est déjà parti → créé quand même, en
-#     forfait, sinon la branche resterait ouverte pour toujours et le tournoi ne
-#     se terminerait jamais.
+#   • les tableaux ouverts APRÈS son départ → il n'y entre plus (cf.
+#     CriteriumFlow#resolve : il s'arrête là où il s'est arrêté), mais la branche
+#     doit rester vivante — son adversaire y est exempté et prend la place. Sans
+#     cela le tableau resterait ouvert pour toujours et le tournoi ne se
+#     terminerait jamais.
 class CriteriumForfeitTest < ActiveSupport::TestCase
   def setup
     @sport = Sport.create!(name: "Ping forfait", slug: "ping-pong", icon: "🏓")
@@ -33,7 +35,7 @@ class CriteriumForfeitTest < ActiveSupport::TestCase
     teardown_db
   end
 
-  test "l'abandon d'un demi-finaliste crée quand même le match pour la 3e place" do
+  test "l'abandon d'un demi-finaliste n'entre plus dans le match pour la 3e place" do
     play_until_bracket_round!(2)
     semi = bracket_round(2).tournament_matches.order(:position).first
     quitter = semi.player_a
@@ -41,19 +43,30 @@ class CriteriumForfeitTest < ActiveSupport::TestCase
     WithdrawPlayer.new(@tournament, quitter).call!
 
     # 1. Sa demi-finale est perdue par forfait, son adversaire monte en finale.
+    #    C'est là qu'il s'est arrêté, et ça ne change pas.
     semi.reload
     assert semi.forfeit?, "la demi-finale du partant devait passer en forfait"
     assert_equal semi.player_b_id, semi.winner_id
 
-    # 2. Le match pour la 3e place oppose les deux perdants des demies — dont le
-    #    partant. Il doit exister : sans lui, la branche « places 3-4 » resterait
-    #    ouverte et le tournoi ne se terminerait jamais.
+    # 2. La branche « places 3-4 » doit rester VIVANTE — sans elle le tournoi ne
+    #    se terminerait jamais — mais le partant n'y entre plus : l'autre perdant
+    #    de demi-finale y est exempté et prend la 3e place, qu'il a bel et bien
+    #    gagnée sur le terrain.
     play_all!
     third_place = classification_matches("ok:3-4").first
-    assert third_place.present?, "le match pour la 3e place n'a pas été créé"
-    assert_includes [third_place.player_a_id, third_place.player_b_id], quitter.id
-    assert third_place.forfeit?, "un match opposant un joueur parti doit naître en forfait"
-    assert_not_equal quitter.id, third_place.winner_id
+    assert third_place.present?, "la branche « places 3-4 » n'a pas été ouverte"
+    assert_not_includes [third_place.player_a_id, third_place.player_b_id], quitter.id,
+                        "un joueur parti n'entre pas dans un tableau ouvert après son forfait"
+    assert third_place.is_bye, "le seul prétendant restant doit être exempté"
+    assert_equal 3, @tournament.standings.place_of(third_place.winner)
+
+    # 3. Personne n'est perdu du classement, et le partant y figure DERNIER :
+    #    aucun tableau ne lui a attribué de place, il tombe donc dans la queue,
+    #    derrière tous ceux qui sont allés au bout.
+    assert @tournament.reload.completed?, "le tournoi doit se terminer"
+    standings = @tournament.standings
+    assert_equal 16, standings.tiers.sum { |tier| tier.players.size }
+    assert_equal 16, standings.place_of(quitter), "un joueur parti finit dernier"
   end
 
   test "un tournoi dont un finaliste abandonne se termine quand même" do

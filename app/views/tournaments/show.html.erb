@@ -47,9 +47,10 @@
       </p>
 
       <%# ── Rejoindre / Quitter ──────────────────────────────────────────────
-          Le seul autre point d'entrée est la carte de l'index, en onglet
-          « À rejoindre » (cf. shared/_tournament_card) : qui arrive ici par un
-          lien direct n'avait aucun moyen de s'inscrire. Mêmes routes que la carte. %>
+          SEUL point d'entrée de l'inscription : les cartes de l'index mènent
+          désormais ici plutôt que d'inscrire d'un clic (cf.
+          shared/_tournament_card). On voit donc toujours le tournoi avant de s'y
+          engager. %>
       <div class="tournament-detail-header__actions">
         <% if @tournament.player?(current_user) %>
           <%# Une fois le tournoi lancé, on ne se désinscrit plus : le retrait passe
@@ -86,34 +87,29 @@
       </div>
     </header>
 
-    <%# ── Onglets ─────────────────────────────────────────────────────────── %>
+    <%# ── Onglets ───────────────────────────────────────────────────────────
+        Un tournoi terminé s'ouvre sur son classement : c'est le résultat qu'on
+        vient chercher. La garde `tournament_rounds.any?` évite d'atterrir sur un
+        onglet vide — un tournoi terminé à la main avant tout lancement n'a rien à
+        classer, _ranking.html.erb n'y affiche qu'un message d'attente.
+        Aucune persistance côté JS (cf. tournament_tabs_controller) : le panneau
+        actif vient uniquement du HTML rendu ici. %>
+    <% active_panel = @tournament.completed? && @tournament.tournament_rounds.any? ? "classement" : "matchs" %>
+    <% tabs = [["overview", "info", "Vue d'ensemble"], ["matchs", "swords", "Matchs"],
+               ["participants", "users", "Participants"], ["classement", "list-ordered", "Classement"],
+               ["calendrier", "calendar-days", "Calendrier"]] %>
+
     <div data-controller="tournament-tabs">
       <div class="tournament-tabs" role="tablist" aria-label="Sections du tournoi">
-        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
-                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
-                data-tournament-tabs-panel-param="overview">
-          <i data-lucide="info" aria-hidden="true"></i> Vue d'ensemble
-        </button>
-        <button type="button" class="tournament-tabs__tab is-active" role="tab" aria-selected="true"
-                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
-                data-tournament-tabs-panel-param="matchs">
-          <i data-lucide="swords" aria-hidden="true"></i> Matchs
-        </button>
-        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
-                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
-                data-tournament-tabs-panel-param="participants">
-          <i data-lucide="users" aria-hidden="true"></i> Participants
-        </button>
-        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
-                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
-                data-tournament-tabs-panel-param="classement">
-          <i data-lucide="list-ordered" aria-hidden="true"></i> Classement
-        </button>
-        <button type="button" class="tournament-tabs__tab" role="tab" aria-selected="false"
-                data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
-                data-tournament-tabs-panel-param="calendrier">
-          <i data-lucide="calendar-days" aria-hidden="true"></i> Calendrier
-        </button>
+        <% tabs.each do |key, icon, label| %>
+          <% active = key == active_panel %>
+          <button type="button" class="tournament-tabs__tab <%= "is-active" if active %>"
+                  role="tab" aria-selected="<%= active %>"
+                  data-tournament-tabs-target="tab" data-action="tournament-tabs#select"
+                  data-tournament-tabs-panel-param="<%= key %>">
+            <i data-lucide="<%= icon %>" aria-hidden="true"></i> <%= label %>
+          </button>
+        <% end %>
       </div>
 
       <%# La modale de score et le contrôleur tournament-score vivent HORS de
@@ -121,12 +117,14 @@
           englobent les panneaux → la modale reste accessible depuis l'onglet Matchs. %>
       <div data-controller="tournament-score tmatch-chat">
 
-        <section class="tournament-tabs__panel" role="tabpanel" hidden
+        <section class="tournament-tabs__panel <%= "is-active" if active_panel == "overview" %>"
+                 role="tabpanel" <%= "hidden" unless active_panel == "overview" %>
                  data-tournament-tabs-target="panel" data-panel="overview">
           <%= render "tournaments/overview", tournament: @tournament %>
         </section>
 
-        <section class="tournament-tabs__panel is-active" role="tabpanel"
+        <section class="tournament-tabs__panel <%= "is-active" if active_panel == "matchs" %>"
+                 role="tabpanel" <%= "hidden" unless active_panel == "matchs" %>
                  data-tournament-tabs-target="panel" data-panel="matchs">
           <%# `?draw=1` : on arrive du lancement par le chemin HTML (sans Turbo
               Stream). On greffe alors le contrôleur d'animation ici, pour que le
@@ -142,19 +140,22 @@
           </div>
         </section>
 
-        <section class="tournament-tabs__panel" role="tabpanel" hidden
+        <section class="tournament-tabs__panel <%= "is-active" if active_panel == "participants" %>"
+                 role="tabpanel" <%= "hidden" unless active_panel == "participants" %>
                  data-tournament-tabs-target="panel" data-panel="participants">
           <div id="tournament_participants">
             <%= render "tournaments/participants", tournament: @tournament %>
           </div>
         </section>
 
-        <section class="tournament-tabs__panel" role="tabpanel" hidden
+        <section class="tournament-tabs__panel <%= "is-active" if active_panel == "classement" %>"
+                 role="tabpanel" <%= "hidden" unless active_panel == "classement" %>
                  data-tournament-tabs-target="panel" data-panel="classement">
           <%= render "tournaments/ranking", tournament: @tournament %>
         </section>
 
-        <section class="tournament-tabs__panel" role="tabpanel" hidden
+        <section class="tournament-tabs__panel <%= "is-active" if active_panel == "calendrier" %>"
+                 role="tabpanel" <%= "hidden" unless active_panel == "calendrier" %>
                  data-tournament-tabs-target="panel" data-panel="calendrier">
           <%= render "tournaments/calendar", tournament: @tournament %>
         </section>

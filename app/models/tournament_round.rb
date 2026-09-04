@@ -43,8 +43,19 @@ class TournamentRound < ApplicationRecord
   scope :ordered, -> { order(:number) }
 
   # Ronde terminée : tous ses matchs ont un résultat définitif (victoire, nul ou bye —
-  # PAS `decided?`, qui exige un vainqueur : un match nul n'en a pas, cf. Lot 6).
+  # PAS `decided?`, qui exige un vainqueur : un match nul n'en a pas, cf. Lot 6)
+  # ET tous ceux qu'elle doit compter existent.
+  #
+  # La seconde condition ne concerne que les tours de tableau construits AU FUR ET
+  # À MESURE (cf. BracketBuilder#advance! en mode incrémental) : un quart créé
+  # avant l'autre ne doit pas faire passer la colonne pour terminée, sinon
+  # CriteriumFlow#close_finished_rounds! la verrouille et le match restant devient
+  # injouable. `expected_matches` à nil = tour généré d'un bloc (poules, ronde
+  # suisse, championnat, barrages) → comportement historique inchangé.
   def complete?
-    tournament_matches.all? { |m| m.status == "completed" }
+    matches = tournament_matches.to_a
+    return false if expected_matches.present? && matches.size < expected_matches
+
+    matches.all? { |m| m.status == "completed" }
   end
 end

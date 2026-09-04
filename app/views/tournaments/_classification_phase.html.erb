@@ -25,9 +25,25 @@
           <% if rounds.size > 1 %>
             <div class="bracket__round-title"><%= bracket_stage_label(index, rounds.size) %></div>
           <% end %>
+          <%# Une case par POSITION prévue, pas par match existant : ces
+              mini-tableaux se construisent au fur et à mesure comme le tableau
+              final (cf. BracketBuilder en mode incrémental), donc un tour peut
+              n'avoir qu'un de ses deux matchs. Sans cela la case manquante
+              disparaîtrait et la colonne se désalignerait. %>
+          <% slots  = round.expected_matches || node.size / (2**(index + 1)) %>
+          <% placed = round.tournament_matches.order(:position).index_by(&:position) %>
+          <% feeders = index.positive? ? rounds[index - 1].tournament_matches.index_by(&:position) : {} %>
           <div class="bracket__matches">
-            <% round.tournament_matches.order(:position).each do |match| %>
-              <%= render "tournaments/tmatch", match: match %>
+            <% slots.times do |position| %>
+              <% if (match = placed[position]) %>
+                <%= render "tournaments/tmatch", match: match %>
+              <% else %>
+                <%= render "tournaments/bracket_placeholder_cell",
+                           player_a: feeders[position * 2]&.winner,
+                           player_b: feeders[(position * 2) + 1]&.winner,
+                           from_a: bracket_feeder_label(index, position * 2, rounds.size),
+                           from_b: bracket_feeder_label(index, (position * 2) + 1, rounds.size) %>
+              <% end %>
             <% end %>
           </div>
         </div>

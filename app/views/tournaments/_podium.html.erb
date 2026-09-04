@@ -1,0 +1,51 @@
+<%# ── Podium à 3 marches (Critérium Fédéral) ────────────────────────────────────
+    En Critérium, CHAQUE place se joue (cf. CriteriumStructure) : n'afficher que le
+    vainqueur revenait à jeter le résultat de la moitié des matchs. On montre donc
+    le trio de tête. Local : tournament.
+
+    ⚠️ Réservé au Critérium par l'appelant : Tournament#standings construit une
+    CriteriumStructure quelle que soit la famille de format, et hors Critérium elle
+    est vide — `tiers` rendrait alors un unique rang ex æquo contenant tout le
+    plateau. Les autres formats gardent _champion_banner.
+
+    Source : `tiers` — la MÊME que Tournament#champion (qui lit tiers.first). Le
+    bandeau de l'onglet Matchs et ce podium ne peuvent donc jamais désigner deux
+    vainqueurs différents, ce qui arriverait avec `decided_tiers` sur un tournoi
+    terminé à la main avant sa finale.
+
+    Aplatissement : un Tier peut porter PLUSIEURS joueurs (ex æquo de la queue de
+    classement) et les places sont compactées — on déroule donc les joueurs un à un
+    en gardant la place de leur rang, plutôt que de lire tiers[0..2]. %>
+<% steps = tournament.standings.tiers.flat_map { |tier| tier.players.map { |player| [tier, player] } }.first(3) %>
+
+<% if steps.any? %>
+  <div class="tournament-podium">
+    <%# Ordre du DOM = 1er, 2e, 3e : c'est l'ordre de lecture (lecteurs d'écran) et
+        l'empilement mobile. La mise en scène 2-1-3 est purement visuelle, faite en
+        CSS par `order` et annulée sous 768px. %>
+    <ol class="tournament-podium__steps">
+      <% steps.each_with_index do |(tier, player), index| %>
+        <% rank = index + 1 %>
+        <li class="tournament-podium__step tournament-podium__step--<%= rank %>">
+          <%# width/height explicites : user_avatar_tag pose son défaut de 40px EN
+              INLINE sur l'avatar à initiales, qui l'emporterait sur le CSS — la
+              photo et les initiales n'auraient alors pas la même taille. %>
+          <%= link_to user_profil_path(player.user), class: "tournament-podium__player" do %>
+            <%= user_avatar_tag player.user, css_class: "tournament-podium__avatar",
+                                             width: 72, height: 72 %>
+            <span class="tournament-podium__name"><%= player.display_name %></span>
+          <% end %>
+          <% if my_player?(player) %>
+            <%= me_badge %>
+          <% end %>
+          <div class="tournament-podium__base">
+            <span class="tournament-podium__place"><%= tier.place %></span>
+            <% if tier.tied? %>
+              <span class="tournament-podium__tie"><%= tier.label %></span>
+            <% end %>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+<% end %>

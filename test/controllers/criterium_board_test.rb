@@ -234,4 +234,118 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     # Le créneau reste réservé aux vraies rencontres (rien à planifier pour un exempt).
     assert_select ".tmatch-card--bye .tmatch-card__when", count: 0
   end
+
+  # ── Destinations de poule (étape 5c) ────────────────────────────────────────
+  # Le classement de poule ne disait pas où chacun allait ensuite. Les liserés
+  # sont DÉRIVÉS de CriteriumStructure, pas codés en dur.
+  test "le classement de poule annonce tableau final, barrage et consolante" do
+    TournamentEngine.for(@tournament).next_round!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    # 4 poules de 4 → un 1er, deux (2e/3e) et un 4e par poule. Sélecteurs portés
+    # sur l'onglet Classement : la table compacte de l'onglet Matchs porte les
+    # mêmes liserés, et les deux panneaux coexistent dans le DOM.
+    panel = "section[data-panel='classement']"
+    assert_select "#{panel} tr.tournament-ranking__row--dest-bracket",     4
+    assert_select "#{panel} tr.tournament-ranking__row--dest-barrage",     8
+    assert_select "#{panel} tr.tournament-ranking__row--dest-consolation", 4
+    # Une seule légende, dans l'onglet Classement (elle ne tiendrait pas dans la
+    # colonne latérale de l'onglet Matchs).
+    assert_select ".tournament-destination-legend", 1
+    assert_select ".tournament-destination-legend__item", 3
+    # La table compacte de l'onglet Matchs les porte aussi : c'est là qu'on lit
+    # une poule en cours.
+    assert_select "section[data-panel='matchs'] tr.tournament-ranking__row--dest-barrage", 8
+  end
+
+  # La prédiction s'efface dès que les placements réels sont connus : sinon deux
+  # liserés se disputeraient la même ligne, et l'un des deux mentirait.
+  test "les destinations disparaissent une fois les barrages tirés" do
+    play_until_barrages!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select "tr[class*=?]", "tournament-ranking__row--dest-", 0
+    assert_select ".tournament-destination-legend", 0
+  end
+
+  # En intégral, tout le monde va au tableau final : un liseré vert partout
+  # n'informe de rien.
+  test "aucune destination en classement intégral" do
+    @tournament.update!(final_phase_mode: "integral")
+    TournamentEngine.for(@tournament).next_round!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select "tr[class*=?]", "tournament-ranking__row--dest-", 0
+    assert_select ".tournament-destination-legend", 0
+  end
+
+  # ⚠️ C'est la garde `criterium?` qui protège les autres formats, PAS l'absence
+  # de données : pool_position_of répond très bien pour un tournoi « poules ».
+  test "un tournoi au format poules n'affiche aucune destination" do
+    pools = Tournament.create!(name: "Poules simples", sport: @sport, user: @owner, format: "poules",
+                               status: "open", max_players: 8, date: Date.tomorrow, place: "Salle test")
+    8.times { |i| pools.tournament_users.create!(user: create_test_user(email: "pd#{i}@example.com"),
+                                                 role: "joueur", status: "approved") }
+    pools.update!(status: "in_progress")
+    TournamentEngine.for(pools).next_round!
+
+    sign_in @owner
+    get tournament_path(pools)
+
+    assert_response :success
+    assert_select "tr[class*=?]", "tournament-ranking__row--dest-", 0
+  end
+
+  # ── Podium et atterrissage (étapes 4 et 5a) ─────────────────────────────────
+  test "un Critérium terminé s'ouvre sur son classement et montre un podium" do
+    play_all!
+    assert @tournament.reload.completed?, "le tournoi doit être terminé pour ce test"
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select "section[data-panel='classement'].is-active"
+    assert_select "section[data-panel='matchs'][hidden]"
+    # Trois marches, dans l'ordre du DOM 1 · 2 · 3.
+    assert_select ".tournament-podium__step", 3
+    assert_select ".tournament-podium__step--1 .tournament-podium__place",
+                  text: @tournament.standings.tiers.first.place.to_s
+    # Le bandeau vainqueur reste celui de l'onglet Matchs — le podium ne doit pas
+    # s'afficher deux fois.
+    assert_select ".tournament-champion", 1
+  end
+
+  test "un Critérium en cours s'ouvre toujours sur l'onglet Matchs" do
+    TournamentEngine.for(@tournament).next_round!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select "section[data-panel='matchs'].is-active"
+    assert_select "section[data-panel='classement'][hidden]"
+    assert_select ".tournament-podium", 0
+  end
+
+  # Le libellé de la pastille faisait doublon avec l'ONGLET Classement, qui montre
+  # tout autre chose. La clé data-phase, elle, ne change pas.
+  test "la pastille de phase s'appelle Matchs de classement" do
+    play_all!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".phase-nav__pill[data-phase=?]", "classification", text: /Matchs de classement/
+  end
 end

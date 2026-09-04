@@ -1,0 +1,15 @@
+<%# ── Légende des destinations de poule (Critérium) ────────────────────────────
+    Les liserés et icônes des tables de poule ne parlent d'eux-mêmes qu'une fois
+    lus ici. Construite DEPUIS les destinations réellement présentes : une poule de
+    3 n'a pas de 4e, donc aucune entrée « consolante » qui ne concernerait personne.
+    Local : tournament. %>
+<% destinations = pool_destinations(tournament).values.uniq %>
+
+<ul class="tournament-destination-legend">
+  <% destinations.each do |destination| %>
+    <li class="tournament-destination-legend__item tournament-destination-legend__item--<%= destination %>">
+      <i data-lucide="<%= destination_icon(destination) %>" aria-hidden="true"></i>
+      <%= destination_label(destination) %>
+    </li>
+  <% end %>
+</ul>

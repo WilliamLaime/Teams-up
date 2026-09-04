@@ -225,6 +225,119 @@ class BracketBuilderTest < ActiveSupport::TestCase
     assert_equal 2, tournament.bracket_rounds.count
   end
 
+  # ── advance! en mode incrémental (Critérium Fédéral) ────────────────────────
+  # Les tests ci-dessus valent pour le régime HISTORIQUE, qui reste celui de la
+  # ronde suisse et du championnat. Le Critérium, lui, s'étale dans le temps :
+  # `incremental: true` crée chaque match dès que ses deux nourriciers sont joués.
+  # Les deux régimes doivent donc être testés côte à côte.
+
+  test "incrémental : deux matchs joués sur quatre créent le match aval correspondant" do
+    tournament = build_tournament(8, bracket_size: 8)
+    first = BracketBuilder.new(tournament, finalists: finalists_in_seed_order(tournament, 8),
+                                           incremental: true).build!
+    assert_equal 4, first.expected_matches, "le premier tour annonce ses 4 matchs"
+
+    first.tournament_matches.order(:position).first(2).each { |m| win_tournament_match!(m, m.player_a) }
+
+    second = incremental(tournament).advance!
+
+    assert_equal 2, second.number
+    assert_equal 1, second.tournament_matches.count
+    assert_equal 0, second.tournament_matches.first.position
+    assert_equal 2, second.expected_matches
+    assert_not second.complete?, "un tour à 1 match sur 2 attendus n'est pas terminé"
+    assert_not_equal "completed", second.status, "un tour partiel ne doit pas être verrouillé"
+  end
+
+  test "incrémental : ne crée rien quand aucune paire de nourriciers n'est jouée" do
+    tournament = build_tournament(8, bracket_size: 8)
+    BracketBuilder.new(tournament, finalists: finalists_in_seed_order(tournament, 8),
+                                   incremental: true).build!
+
+    assert_no_difference -> { tournament.tournament_rounds.count } do
+      assert_nil incremental(tournament).advance!, "rien créé → nil, jamais un tour existant"
+    end
+  end
+
+  test "incrémental : complète le tour aval au lieu de repartir du dernier tour" do
+    tournament = build_tournament(8, bracket_size: 8)
+    first = BracketBuilder.new(tournament, finalists: finalists_in_seed_order(tournament, 8),
+                                           incremental: true).build!
+    matches = first.tournament_matches.order(:position).to_a
+    matches.first(2).each { |m| win_tournament_match!(m, m.player_a) }
+    incremental(tournament).advance!
+
+    # Le tour 2 existe déjà et partiel : c'est le piège de `rounds.last`, qui
+    # ferait ignorer les positions restantes du tour 1 pour toujours.
+    matches.last(2).each { |m| win_tournament_match!(m, m.player_a) }
+    second = incremental(tournament).advance!
+
+    assert_equal 2, second.number
+    assert_equal [0, 1], second.tournament_matches.order(:position).map(&:position)
+  end
+
+  test "incrémental : cascade jusqu'à la finale en une seule passe" do
+    tournament = build_tournament(4, bracket_size: 4)
+    first = BracketBuilder.new(tournament, finalists: finalists_in_seed_order(tournament, 4),
+                                           incremental: true, owns_completion: false).build!
+    play_round!(first)
+
+    final = incremental(tournament).advance!
+    assert_equal 2, final.number
+    assert_equal 1, final.tournament_matches.count
+
+    play_round!(final)
+    assert_nil incremental(tournament).advance!, "plus rien à créer après la finale"
+  end
+
+  test "incrémental : appelé cinq fois de suite ne crée rien de plus" do
+    tournament = build_tournament(8, bracket_size: 8)
+    play_round!(BracketBuilder.new(tournament, finalists: finalists_in_seed_order(tournament, 8),
+                                               incremental: true).build!)
+    incremental(tournament).advance!
+    count = TournamentMatch.joins(:tournament_round)
+                           .where(tournament_rounds: { tournament_id: tournament.id }).count
+
+    4.times { incremental(tournament).advance! }
+
+    assert_equal count, TournamentMatch.joins(:tournament_round)
+                                       .where(tournament_rounds: { tournament_id: tournament.id }).count
+    positions = tournament.bracket_rounds.flat_map { |r| r.tournament_matches.map { |m| [r.id, m.position] } }
+    assert_equal positions.uniq, positions
+  end
+
+  test "incrémental : un vainqueur qui abandonne ensuite laisse un bye, pas un forfait" do
+    tournament = build_tournament(8, bracket_size: 8)
+    first = BracketBuilder.new(tournament, finalists: finalists_in_seed_order(tournament, 8),
+                                           incremental: true).build!
+    matches = first.tournament_matches.order(:position).to_a
+    matches.first(2).each { |m| win_tournament_match!(m, m.player_a) }
+    quitter = matches.first.winner
+    quitter.update!(state: "withdrawn")
+
+    second = incremental(tournament).advance!
+    match = second.tournament_matches.first
+
+    assert match.is_bye, "l'adversaire doit être exempté, pas vainqueur par forfait"
+    refute_equal quitter.id, match.player_a_id, "le partant n'entre pas dans le tableau"
+  end
+
+  test "incrémental : deux partants sur la même position ne gèlent pas la branche" do
+    tournament = build_tournament(8, bracket_size: 8)
+    first = BracketBuilder.new(tournament, finalists: finalists_in_seed_order(tournament, 8),
+                                           incremental: true).build!
+    matches = first.tournament_matches.order(:position).to_a
+    matches.first(2).each { |m| win_tournament_match!(m, m.player_a) }
+    matches.first(2).each { |m| m.winner.update!(state: "withdrawn") }
+
+    second = incremental(tournament).advance!
+
+    assert second.present?, "la position doit rester créable, sinon la branche ne finit jamais"
+    assert_equal "completed", second.tournament_matches.first.status
+  end
+
+  def incremental(tournament) = BracketBuilder.new(tournament, incremental: true, owns_completion: false)
+
   # ── select_finalists (chemin ronde suisse / championnat, sans finalists:) ────
 
   test "select_finalists : les qualifiés d'abord, complétés par les meilleurs actifs" do

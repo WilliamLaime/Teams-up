@@ -67,7 +67,60 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     get tournaments_path(tab: "join")
     assert_response :success
     assert_match t.name, response.body
-    assert_select "form[action=?]", tournament_tournament_users_path(t)
+    assert_select "a[href=?]", tournament_path(t)
+  end
+
+  # ── La carte mène à la page, elle n'inscrit plus ────────────────────────────
+  # Un clic sur une carte engageait le joueur sans qu'il ait vu le tournoi.
+  test "GET /tournois?tab=join : la carte ouvre le tournoi au lieu d'y inscrire" do
+    sign_in @user
+    t = open_tournament("À rejoindre")
+
+    get tournaments_path(tab: "join")
+    assert_response :success
+    assert_select "form[action=?]", tournament_tournament_users_path(t), count: 0
+    assert_select "a.stretched-link[href=?]", tournament_path(t)
+  end
+
+  # Le lien étiré doit rester utilisable déconnecté : la page du tournoi est
+  # publique, elle aiguille elle-même vers la connexion au moment de s'inscrire.
+  test "GET /tournois : la carte est cliquable pour un visiteur non connecté" do
+    t = open_tournament("Visible sans compte")
+
+    get tournaments_path(tab: "join")
+    assert_response :success
+    assert_select "a.stretched-link[href=?]", tournament_path(t)
+    # Le pied ne renvoie plus vers la connexion (le lien de la navbar, lui, reste).
+    assert_select ".match-card-footer a[href=?]", new_user_session_path, count: 0
+    assert_select ".match-card-footer a[href=?]", tournament_path(t), text: /Voir le tournoi/
+  end
+
+  # ── Date de clôture (étape 5d) ──────────────────────────────────────────────
+  # Elle n'apparaissait qu'en « À rejoindre » ; un inscrit veut aussi savoir quand
+  # la porte se ferme. Jamais sur un tournoi lancé : l'échéance est passée.
+  test "GET /tournois?tab=mine affiche la date de clôture d'un tournoi pas encore lancé" do
+    sign_in @user
+    t = open_tournament("Ouvert avec deadline")
+    t.update!(registration_deadline: 3.days.from_now)
+    t.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+
+    get tournaments_path(tab: "mine")
+    assert_response :success
+    assert_select ".tournament-deadline-line"
+  end
+
+  test "GET /tournois?tab=ongoing n'affiche pas la date de clôture" do
+    sign_in @user
+    # L'onglet « En cours » ne montre que les tournois où l'on n'est PAS inscrit.
+    t = open_tournament("Lancé avec deadline")
+    t.update!(registration_deadline: 3.days.from_now)
+    t.tournament_users.create!(user: @co_org, role: "joueur", status: "approved")
+    t.update_columns(status: "in_progress")
+
+    get tournaments_path(tab: "ongoing")
+    assert_response :success
+    assert_match t.name, response.body
+    assert_select ".tournament-deadline-line", count: 0
   end
 
   test "GET /tournois?tab=join exclut un tournoi où l'on occupe une place de joueur" do

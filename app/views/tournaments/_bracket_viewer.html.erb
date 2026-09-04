@@ -44,9 +44,19 @@
             <%= round.complete? ? "Terminée" : "En cours" %>
           </span>
         </div>
+        <%# Une cellule par POSITION prévue : un tour construit au fur et à
+            mesure a des trous (cf. BracketBuilder en mode incrémental), et sans
+            cellule d'attente la colonne perdrait de la hauteur et ne s'alignerait
+            plus avec sa voisine. %>
+        <% slots  = round.expected_matches || round.tournament_matches.size %>
+        <% placed = round.tournament_matches.order(:position).index_by(&:position) %>
         <div class="bracket-col__cells">
-          <% round.tournament_matches.order(:position).each do |match| %>
-            <%= render "tournaments/bracket_cell", match: match %>
+          <% slots.times do |position| %>
+            <% if (match = placed[position]) %>
+              <%= render "tournaments/bracket_cell", match: match %>
+            <% else %>
+              <div class="bracket-cell bracket-cell--pending">À déterminer</div>
+            <% end %>
           <% end %>
         </div>
       </div>

@@ -21,9 +21,16 @@
       <div class="bracket-cell__player <%= "bracket-cell__player--winner" if is_winner %> <%= "bracket-cell__player--loser" if match.decided? && !is_winner %>">
         <%= link_to user_profil_path(player.user), class: "bracket-cell__player-link" do %>
           <%= user_avatar_tag player.user, css_class: "bracket-cell__avatar" %>
-          <span class="bracket-cell__name"><%= player.display_name %></span>
+          <span class="bracket-cell__name <%= "is-withdrawn" if player.withdrawn? %>"><%= player.display_name %></span>
         <% end %>
-        <span class="bracket-cell__score"><%= match.score_entered? ? match.display_score_for(player) : "–" %></span>
+        <%# Marque de forfait POSÉE HORS DU LIEN, comme le score : le lien ne
+            contient qu'avatar + nom (cf. l'en-tête du fichier). Le score reste
+            affiché quand il existe — un forfait n'en a pas. %>
+        <% if match.score_entered? %>
+          <span class="bracket-cell__score"><%= match.display_score_for(player) %></span>
+        <% else %>
+          <span class="bracket-cell__score"><%= forfeit_mark_tag(match, player) || "–" %></span>
+        <% end %>
       </div>
     <% end %>
   <% end %>

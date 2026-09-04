@@ -2,11 +2,14 @@
   Composant carte tournoi — réutilise les classes CSS du composant match (.match-card*)
   pour rester cohérent avec le reste de l'app.
 
+  La carte est ENTIÈREMENT cliquable et mène toujours à la page du tournoi : elle
+  n'inscrit plus directement (l'inscription se fait depuis la page, cf.
+  tournaments/show), un clic sur une carte ne devant jamais engager le joueur.
+  D'où l'absence de local `context` : le pied est le même partout.
+
   Variables locales :
     tournament (required) — l'objet Tournament à afficher
-    context    (optional) — :mine | :join | :ongoing | :completed → détermine le bouton du pied
 %>
-<% context ||= :join %>
 
 <%
   # Image de couverture : banner_image manuelle sinon rotation déterministe par sport.
@@ -26,8 +29,7 @@
   # n'occupent pas de place). Association préchargée → pas de N+1.
   players_count = tournament.tournament_users.count { |tu| tu.status == "approved" && tu.role == "joueur" }
 
-  # Date/heure limite d'inscription (affichée dans la section "À rejoindre").
-  # Ex: "Clôture le 13 juil. à 18h30".
+  # Date/heure limite d'inscription. Ex: "Clôture le 13 juil. à 18h30".
   deadline_str = if tournament.registration_deadline
     d = tournament.registration_deadline
     heure = d.strftime("%M") == "00" ? d.strftime("%Hh") : d.strftime("%Hh%M")
@@ -36,6 +38,15 @@
 %>
 
 <div class="match-card">
+
+  <%# ── Carte cliquable ──────────────────────────────────────────────────────
+      Un lien FRÈRE, vide, dont l'::after (.stretched-link, Bootstrap) recouvre la
+      carte : un <a> englobant serait invalide, le pied étant déjà un lien. Le
+      libellé passe par aria-label — un lien sans texte est inexploitable au
+      lecteur d'écran (RGAA 6.1). Le pied reste cliquable grâce à son z-index
+      (cf. _tournaments_index.scss). %>
+  <%= link_to tournament_path(tournament), class: "stretched-link",
+        aria: { label: "Voir le tournoi #{tournament.name}" } do %><% end %>
 
   <%# ── Image + overlays ──────────────────────────────────────────────────── %>
   <div class="match-card-img-wrapper">
@@ -103,8 +114,11 @@
       <span><%= tournament.place || "Lieu non défini" %></span>
     </div>
 
-    <%# Date limite d'inscription — uniquement dans la section "À rejoindre" %>
-    <% if context == :join && deadline_str %>
+    <%# Date limite d'inscription — dans TOUS les onglets tant que le tournoi n'est
+        pas lancé : un inscrit veut savoir quand la porte se ferme autant qu'un
+        visiteur. `open? || closed?` est exactement l'ensemble « pas encore lancé »
+        (même formulation que _board.html.erb et tournaments/show). %>
+    <% if deadline_str && (tournament.open? || tournament.closed?) %>
       <div class="match-info-line tournament-deadline-line">
         <i data-lucide="alarm-clock" style="width:13px;height:13px;" aria-hidden="true"></i>
         <span><%= deadline_str %></span>
@@ -134,25 +148,13 @@
 
   </div>
 
-  <%# ── Pied : bouton contextuel ──────────────────────────────────────────── %>
+  <%# ── Pied ─────────────────────────────────────────────────────────────────
+      Même destination que le lien étiré, mais visible et atteignable au clavier.
+      L'inscription se décide sur la page du tournoi, qui aiguille déjà selon
+      l'état de l'utilisateur (connecté, déjà inscrit, inscriptions ouvertes). %>
   <div class="match-card-footer">
-    <% if context == :join && user_signed_in? %>
-      <%# Rejoindre — inscription directe (POST) %>
-      <%= button_to tournament_tournament_users_path(tournament),
-            method: :post,
-            class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
-        Rejoindre
-      <% end %>
-    <% elsif context == :join %>
-      <%# Non connecté → on renvoie vers la connexion %>
-      <%= link_to new_user_session_path, class: "btn btn-primary btn-sm w-100 match-card-btn" do %>
-        Rejoindre
-      <% end %>
-    <% else %>
-      <%# Mes tournois / en cours publics → visualisation du tableau %>
-      <%= link_to tournament_path(tournament), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
-        Voir le tableau
-      <% end %>
+    <%= link_to tournament_path(tournament), class: "btn btn-cta-secondary btn-sm w-100 match-card-btn" do %>
+      Voir le tournoi
     <% end %>
   </div>
 

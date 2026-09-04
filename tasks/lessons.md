@@ -258,3 +258,36 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   4. Un droit de gestion partagé (admin + co-organisateur) demande toujours de se demander
      ce que les pairs peuvent se faire entre eux — même garde que
      `TournamentPolicy#manage_organizers?`, oubliée elle aussi à la première écriture.
+
+## 2026-09-04 — « Ça n'existe pas encore » se confond avec « c'est interdit »
+- **Symptôme** : en Critérium Fédéral, un joueur qualifié en quart devait attendre que **tous**
+  les huitièmes soient joués avant de pouvoir jouer. Sur un tournoi étalé sur plusieurs
+  semaines, tout le tableau restait immobilisé derrière la rencontre la plus lente.
+- **Cause racine** : aucune règle n'interdisait ce match. `TournamentMatchPolicy#update?` ne
+  regarde que le verrou du tour ; le match du tour suivant n'était simplement **pas créé**,
+  `BracketBuilder#advance!` ne construisant le tour n+1 qu'une fois le tour n complet. Le
+  diagnostic « c'est bloqué » orientait vers les autorisations, alors que tout se jouait dans
+  la génération.
+- **Le vrai risque du correctif était ailleurs** : dès qu'un tour peut exister à moitié,
+  `TournamentRound#complete?` (« tous mes matchs sont joués ») devient un **faux positif** —
+  `all?` sur une collection incomplète, et pire, sur une collection vide, vaut `true`. Ce
+  prédicat est lu à 18 endroits, dont `close_finished_rounds!`, qui aurait **verrouillé** un
+  tour partiel et rendu ses matchs restants injouables. La colonne `expected_matches` répare
+  l'invariant à la source plutôt qu'aux 18 appels.
+- **Deux régressions n'étaient visibles que sur un tour partiel** : `CriteriumFlow#stale?`
+  comparait des *ensembles* de joueurs (un tour à moitié construit paraissait donc périmé et
+  était détruit à la moindre correction de score) et `_bracket.html.erb` rendait « les matchs
+  du tour » et non « les positions du tour » (la case manquante disparaissait, la colonne se
+  désalignait). Les deux étaient justes tant que « exister » impliquait « être complet ».
+- **Leçons**
+  1. Avant de chercher quelle règle bloque une action, vérifier que l'objet sur lequel elle
+     porte existe. Une action absente et une action refusée se ressemblent à l'écran.
+  2. Relâcher un invariant implicite (« un tour est créé d'un bloc ») invalide silencieusement
+     tout le code qui s'y appuyait sans le dire. Le corriger à la source — ici un compteur sur
+     la ligne — vaut mieux qu'auditer chaque lecteur en espérant n'en oublier aucun.
+  3. `all?` sur une collection vide est `true` : tout prédicat « tout est fini » doit d'abord
+     répondre à « tout est là ».
+  4. Filtrer un joueur en amont (le forfait qui n'entre plus dans les tableaux ouverts après
+     son départ) déplace le problème vers l'aval : un nœud tombé à un seul entrant ne devait
+     ni se fermer en volant sa place au survivant, ni s'ouvrir en la lui attribuant deux fois.
+     Un filtre n'est jamais local quand les données alimentent une cascade.

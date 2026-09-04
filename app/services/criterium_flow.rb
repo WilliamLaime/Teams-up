@@ -189,14 +189,17 @@ class CriteriumFlow
 
   def sync_nodes! = playable_nodes.map { |node| sync_node!(node) }
 
-  # Deux seuls cas : le nœud n'est pas ouvert (ses sources sont-elles prêtes ?),
-  # ou il est en cours (son dernier tour est-il terminé ?).
+  # Trois cas : le nœud n'est pas ouvert (ses sources sont-elles prêtes ?), il est
+  # ouvert et complétable, ou il est ouvert et il n'y a rien à faire.
+  #
+  # Aucune garde de complétude sur le dernier tour : c'est le builder qui décide,
+  # match par match, ce qui est créable — un quart naît dès que ses deux huitièmes
+  # sont joués (cf. BracketBuilder en mode incrémental), sans attendre les autres.
+  # #advance! renvoie nil quand il n'a rien créé, y compris quand le tableau a
+  # atteint sa finale.
   def sync_node!(node)
-    existing = rounds_of(node).to_a
-    return open_node!(node) if existing.empty?
-    return nil unless existing.last.complete?
+    return open_node!(node) if rounds_of(node).empty?
 
-    # #advance! renvoie nil quand le tableau a atteint sa finale : rien à créer.
     builder_for(node).advance!
   rescue ActiveRecord::RecordNotUnique
     nil
@@ -211,15 +214,26 @@ class CriteriumFlow
   # n'y entreraient JAMAIS. Même piège pour le tableau final (1ers de poule connus
   # avant les vainqueurs de barrage).
   #
-  # `entrants.size < 2` en revanche n'est pas une erreur : un tableau de 8 à 6
-  # entrants ne produit que 2 perdants au premier tour, donc son mini-tableau des
-  # 7e/8e n'aura jamais lieu. Le nœud reste simplement vide, et la compaction des
-  # places absorbe le trou (cf. TournamentStandings).
+  # Un nœud SANS entrant n'est pas une erreur : un tableau de 8 à 6 entrants ne
+  # produit que 2 perdants au premier tour, donc son mini-tableau des 7e/8e n'aura
+  # jamais lieu. Le nœud reste simplement vide, et la compaction des places absorbe
+  # le trou (cf. TournamentStandings).
+  #
+  # ⚠️ Un nœud à UN SEUL entrant, en revanche, s'ouvre — sous condition : #build!
+  # y pose un bye, et ce bye attribue la première place du nœud. C'est le cas
+  # fréquent depuis que les forfaits sont écartés des tableaux (cf. #resolve) — si
+  # le perdant d'une demi-finale voit l'autre perdant déclarer forfait, il reste
+  # seul à disputer la 3e place et doit l'obtenir. Le laisser dehors le renverrait
+  # dans la queue du classement (TournamentStandings#tail_groups), très loin
+  # derrière la place qu'il a réellement gagnée sur le terrain.
+  # La condition, c'est #awaits_placement? : voir ci-dessous, faute de quoi un
+  # joueur serait compté DEUX FOIS au classement.
   def open_node!(node)
     return nil unless sources_ready?(node)
 
     entrants = entrants_for(node)
-    return nil if entrants.size < 2
+    return nil if entrants.empty?
+    return nil if entrants.size == 1 && !awaits_placement?(node)
 
     # Les entrants du tableau final sont les qualifiés du tournoi. Les perdants de
     # barrage ne sont PAS éliminés : ils rejoignent la consolante, donc ils restent
@@ -227,6 +241,30 @@ class CriteriumFlow
     entrants.each { |tu| tu.update!(state: "qualified") } if node.key == "ok"
 
     builder_for(node, entrants).build!
+  end
+
+  # Ce nœud attribuerait-il une place que son entrant unique n'a pas déjà ?
+  #
+  # Un nœud de classement se nourrit des PERDANTS d'un tour de son nœud source.
+  # Quand ce nœud source a moins d'entrants que de places (byes), il joue moins de
+  # tours que sa taille ne le prévoit, et son DERNIER tour joue alors le rôle de
+  # finale : TournamentStandings#final_groups y attribue déjà deux places, dont
+  # celle du perdant. Ouvrir malgré tout le nœud enfant donnerait à ce perdant une
+  # seconde place et le compterait deux fois dans le classement final.
+  #
+  # Le test est factuel : le tour source a-t-il un successeur ? S'il en a un, il
+  # n'était pas une finale, donc ses perdants attendent bien une place.
+  # Un nœud de TRANSIT (les barrages) n'attribue aucune place : ses perdants sont
+  # toujours en attente.
+  def awaits_placement?(node)
+    node.sources.all? do |source|
+      next true unless source.is_a?(CriteriumStructure::Losers)
+
+      source_node = structure.node(source.key)
+      next true if source_node.nil? || source_node.transit?
+
+      rounds_of(source_node).any? { |round| round.number > source.round }
+    end
   end
 
   # `owns_completion: false` : la finale du tableau final est souvent jouée alors
@@ -239,9 +277,13 @@ class CriteriumFlow
   #
   # `finalists` n'est nécessaire qu'au premier tour (#build!) ; #advance! dérive ses
   # entrants des vainqueurs du tour précédent.
+  #
+  # `incremental: true` : le Critérium s'étale dans le temps, un match doit donc
+  # être jouable dès que ses deux adversaires sont connus (cf. BracketBuilder).
   def builder_for(node, entrants = nil)
     BracketBuilder.new(@tournament, finalists: entrants, phase: node.phase, branch: node.branch,
-                                    persist_seeds: node.key == "ok", owns_completion: false)
+                                    persist_seeds: node.key == "ok", owns_completion: false,
+                                    incremental: true)
   end
 
   def rounds_of(node)
@@ -267,20 +309,61 @@ class CriteriumFlow
 
   # Ce tour oppose-t-il encore les bons joueurs ?
   #
-  # On compare des ENSEMBLES d'inscriptions, pas des appariements. C'est suffisant
-  # ici, et seulement ici : à l'intérieur de la phase finale, l'ordre des entrants
-  # ne dépend que du classement des poules (inchangé par cette correction) et de la
-  # position des matchs sources. Un vainqueur qui change change donc forcément
-  # QUI entre en aval, jamais seulement dans quel ordre.
+  # Premier tour d'un tableau : on compare des ENSEMBLES d'inscriptions, pas des
+  # appariements. C'est suffisant là, et seulement là : l'ordre des entrants ne
+  # dépend que du classement des poules (inchangé par cette correction), donc un
+  # vainqueur qui change change forcément QUI entre, jamais seulement dans quel ordre.
   #
   # Entrants attendus vides = sources non résolues (le tour source a été détruit,
   # ou n'est plus complet) : on ne conclut rien plutôt que de détruire à l'aveugle.
   # Ce tour-là sera de toute façon repris par le tour source, forcément plus ancien.
+  #
+  # ── Tours suivants : POSITION PAR POSITION, jamais en ensemble ───────────────
+  # Un tour construit au fur et à mesure a des TROUS (cf. BracketBuilder#advance!
+  # en mode incrémental) : la demi-finale née des quarts 1-2 existe seule, avec
+  # 2 joueurs, alors que le tour précédent en annonce 4. Une comparaison
+  # d'ensembles la déclarerait donc périmée et la détruirait — avec son score — à
+  # la moindre correction, exactement ce que #reconcile! s'interdit de faire.
+  #
+  # La règle positionnelle est de toute façon la plus juste, même sans progression
+  # anticipée : le match de position `i` du tour n+1 oppose les vainqueurs des
+  # matchs `2i` et `2i+1` du tour n. Corriger le quart 3 ne périme donc plus la
+  # demi-finale née des quarts 1 et 2.
   def stale?(node, round)
+    return stale_first_round?(node, round) if round.number == 1
+
+    winners = winners_by_position(node.key, round.number - 1)
+
+    round.tournament_matches.any? do |match|
+      expected = [winners[match.position * 2], winners[(match.position * 2) + 1]].compact.to_set
+      # Aucun vainqueur connu en amont de cette position : source détruite ou tour
+      # source redevenu incomplet. On ne conclut rien — le tour source, forcément
+      # plus ancien, reprendra la main.
+      next false if expected.empty?
+
+      expected != [match.player_a_id, match.player_b_id].compact.to_set
+    end
+  end
+
+  def stale_first_round?(node, round)
     expected = expected_entrants(node, round.number).to_set(&:id)
     return false if expected.empty?
 
     expected != participants_of(round)
+  end
+
+  # {position => id du vainqueur} pour le tour `number` d'un nœud, SANS exiger que
+  # le tour soit complet — c'est précisément ce qui permet de juger un tour aval
+  # partiel. Les matchs non décidés sont simplement absents de la table.
+  def winners_by_position(key, number)
+    node  = structure.node(key)
+    round = node && rounds_of(node).find { |r| r.number == number }
+    return {} if round.blank?
+
+    round.tournament_matches.each_with_object({}) do |match, index|
+      winner = match.winner
+      index[match.position] = winner.id if winner
+    end
   end
 
   # Round 1 : les entrants du nœud. Tours suivants : les vainqueurs du précédent —
@@ -319,13 +402,26 @@ class CriteriumFlow
     round.present? && round.complete?
   end
 
+  # ⚠️ Les joueurs déclarés forfait sont écartés ICI, à la source, et pas dans
+  # #entrants_for : ce dernier mesure `groups.first.size` pour protéger les têtes
+  # de série des 1ers de poule, un compte qui serait décalé par un filtrage plus
+  # tardif. Filtrer ici couvre d'un coup PoolQualifiers, Winners et Losers, donc
+  # #entrants_for ET #expected_entrants — la cohérence entre ce qu'on crée et ce
+  # qu'on juge périmé est ainsi garantie, sans quoi #reconcile! boucderait.
+  #
+  # Conséquence voulue : un partant n'entre dans AUCUN tableau ouvert après son
+  # forfait. Il reste là où il s'est arrêté (ses matchs déjà créés gardent leur
+  # forfait), son adversaire du tour suivant prend un bye au lieu d'une victoire
+  # par forfait, et le classement final le range en dernier faute de place jouée.
   def resolve(source)
-    case source
-    when CriteriumStructure::PoolQualifiers then qualifiers_at(source.rank)
-    when CriteriumStructure::Winners        then camp_of(source.key, source.round, :winner)
-    when CriteriumStructure::Losers         then camp_of(source.key, source.round, :loser)
-    else []
-    end
+    players = case source
+              when CriteriumStructure::PoolQualifiers then qualifiers_at(source.rank)
+              when CriteriumStructure::Winners        then camp_of(source.key, source.round, :winner)
+              when CriteriumStructure::Losers         then camp_of(source.key, source.round, :loser)
+              else []
+              end
+
+    players.reject(&:withdrawn?)
   end
 
   # Les vainqueurs (ou les perdants) du tour `number` d'un nœud, dans l'ordre des
@@ -437,8 +533,16 @@ class CriteriumFlow
 
   # Les Nes de chaque poule, toutes poules confondues, triés par force.
   # C'est PoolStandings (règlement FFTT) qui décide du rang dans la poule.
+  #
+  # ⚠️ On n'écarte PAS le partant du classement de poule lui-même (PoolStandings
+  # décide des qualifiés, et ses matchs sont joués) : on l'écarte de ceux qui
+  # ENTRENT en phase finale. Un 2e de poule parti n'est donc pas apparié aux
+  # barrages, et son adversaire y prend un bye — cf. #barrage_pairs, qui gère
+  # déjà les `nil` par `zip`.
   def qualifiers_at(rank)
-    by_strength(standings.values.filter_map { |pool| pool.qualifier(rank) })
+    qualified = standings.values.filter_map { |pool| pool.qualifier(rank) }
+
+    by_strength(qualified.reject(&:withdrawn?))
   end
 
   # Ordre de force inter-poules. Le règlement FFTT ne définit pas de classement

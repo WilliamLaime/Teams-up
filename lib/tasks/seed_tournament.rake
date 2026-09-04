@@ -189,7 +189,12 @@ namespace :tournament do
       label = round.phase == "bracket" ? "tour #{round.number} du tableau final" : "#{round.phase} #{round.number}"
       puts "  ✓ #{label} — #{round.tournament_matches.count} match(s) joué(s)"
 
-      engine.next_round! if round.reload.complete?
+      # Même règle que TournamentMatchesController#update : en phase finale d'un
+      # Critérium, le moteur tourne à chaque tour joué même partiellement, car
+      # c'est lui qui crée les matchs devenus jouables.
+      round.reload
+      eager = tournament.criterium? && Tournament::FINAL_PHASES.include?(round.phase)
+      engine.next_round! if eager || round.complete?
     end
 
     # ── Récapitulatif ─────────────────────────────────────────────────────────
