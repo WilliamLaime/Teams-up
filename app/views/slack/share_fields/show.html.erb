@@ -1,0 +1,6 @@
+<%# Réponse du frame `slack_share_field` : le vrai champ, une fois les destinations
+    Slack récupérées. Même id de frame que le squelette rendu dans la page (cf.
+    shared/_slack_share_frame), sans quoi Turbo ne saurait pas quoi remplacer. %>
+<%= turbo_frame_tag "slack_share_field" do %>
+  <%= render "shared/slack_share_field", workspaces: @slack_destinations, standalone: @standalone %>
+<% end %>

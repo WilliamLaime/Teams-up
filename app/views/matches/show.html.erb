@@ -84,7 +84,7 @@
 
     <%# ── Ligne haute : Retour (gauche) + Partager (droite) ── %>
     <div class="match-banner-topbar">
-      <%= render "shared/nav_button", url: matches_path, label: "Retour", direction: "back" %>
+      <%= render "shared/nav_button", fallback: matches_path, label: "Retour", direction: "back" %>
       <%# Bouton partage — ouvre la modale #shareModal %>
       <button class="match-banner-share-btn"
               title="Partager ce match"
@@ -397,6 +397,11 @@
     ══════════════════════════════════════════════════ %>
 <div class="match-show-wrapper">
   <div class="container">
+    <%# Fil d'Ariane rendu ICI, sous la bannière, et non via `content_for` : la
+        bannière est une photo sombre à texte blanc, où les couleurs de thème du
+        fil seraient illisibles en mode clair. `bare` car on est déjà dans le
+        .container de la page. %>
+    <%= breadcrumb_for([["Matchs", matches_path], [@match.title, nil]], bare: true) %>
     <div class="row g-4">
 
       <%# ════════════════════════════════════════
@@ -434,12 +439,9 @@
                   <%= user_avatar_link organizer, css_class: "match-organizer-avatar" if organizer %>
                   <div>
                     <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
-                      <% if organizer&.profil %>
-                        <%= [organizer.profil.first_name, organizer.profil.last_name]
-                              .compact.join(" ").presence || organizer.email %>
-                      <% else %>
-                        <%= organizer&.email || "Organisateur" %>
-                      <% end %>
+                      <%# display_name retombe sur un libellé neutre, jamais sur l'email
+                          de l'organisateur (page visible par tous les joueurs). %>
+                      <%= organizer&.display_name || "Organisateur" %>
                       <%# Icône "Ami" si on est amis avec l'organisateur %>
                       <%= render "shared/friend_badge", already_friends: @organizer_friend_status %>
                     </div>
@@ -492,12 +494,8 @@
               <%= user_avatar_tag organizer, css_class: "match-organizer-avatar" if organizer %>
               <div>
                 <div class="match-organizer-name" style="display:flex; align-items:center; gap:0.35rem;">
-                  <% if organizer&.profil %>
-                    <%= [organizer.profil.first_name, organizer.profil.last_name]
-                          .compact.join(" ").presence || organizer.email %>
-                  <% else %>
-                    <%= organizer&.email || "Organisateur" %>
-                  <% end %>
+                  <%# Idem version mobile : pas d'email d'autrui dans la page. %>
+                  <%= organizer&.display_name || "Organisateur" %>
                   <%# Icône "Ami" si on est amis avec l'organisateur (version mobile) %>
                   <%= render "shared/friend_badge", already_friends: @organizer_friend_status %>
                 </div>
@@ -693,7 +691,7 @@
                   <%# Prénom + 1ère lettre du Nom suivi d'un point
                       Ex : "Marc L." — si pas de profil, on affiche la partie avant @ %>
                   <%
-                    first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                    first       = mu.user.profil&.first_name.presence || User::FALLBACK_DISPLAY_NAME
                     last_letter = mu.user.profil&.last_name.presence&.first&.upcase
                     display     = last_letter ? "#{first} #{last_letter}." : first
                   %>
@@ -732,7 +730,7 @@
 
                 <%# Nom en jaune pour signaler l'état en attente %>
                 <%
-                  first       = mu.user.profil&.first_name.presence || mu.user.email.split("@").first
+                  first       = mu.user.profil&.first_name.presence || User::FALLBACK_DISPLAY_NAME
                   last_letter = mu.user.profil&.last_name.presence&.first&.upcase
                   display     = last_letter ? "#{first} #{last_letter}." : first
                 %>
@@ -1453,7 +1451,10 @@
 
           <%= form_with url: share_on_slack_match_path(@match), method: :post do %>
             <div style="padding: 16px 0 8px; text-align:left;">
-              <%= render "shared/slack_share_field", workspaces: @slack_destinations, standalone: true %>
+              <%# `lazy` : le champ est dans une modale — la requête ne part qu'à
+                  son ouverture. La page match n'appelle donc plus Slack du tout
+                  tant que l'organisateur ne partage pas. %>
+              <%= render "shared/slack_share_frame", standalone: true, loading: "lazy" %>
             </div>
             <div class="d-flex gap-3" style="margin-top: 20px;">
               <button type="submit"
@@ -1532,7 +1533,7 @@
         <%# 2. WhatsApp — lien universel wa.me avec texte pré-rempli %>
         <%# RGAA 13.2 — mention "nouvelle fenêtre" pour target="_blank" %>
         <a class="share-option"
-           href="https://wa.me/?text=<%= CGI.escape("Rejoins ce match sur Team Up ! #{match_url(@match)}") %>"
+           href="https://wa.me/?text=<%= CGI.escape("Rejoins ce match sur Teams-up ! #{match_url(@match)}") %>"
            target="_blank"
            rel="noopener noreferrer">
           <div class="share-option-icon share-whatsapp-icon">
@@ -1566,7 +1567,7 @@
 
         <%# 4. SMS — lien sms: natif (fonctionne sur mobile iOS et Android) %>
         <a class="share-option"
-           href="sms:?body=<%= CGI.escape("Rejoins ce match sur Team Up ! #{match_url(@match)}") %>">
+           href="sms:?body=<%= CGI.escape("Rejoins ce match sur Teams-up ! #{match_url(@match)}") %>">
           <div class="share-option-icon share-sms-icon">
             <i data-lucide="message-circle" style="width:22px;height:22px;"></i>
           </div>

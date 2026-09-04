@@ -3,6 +3,12 @@ class TeamInvitationsController < ApplicationController
   before_action :set_invitation, only: %i[update destroy review]
 
   # GET /teams/:team_id/team_invitations/search?q=lucas — autocomplete JSON (captain seulement)
+  #
+  # SÉCURITÉ (voir docs/SECURITE-RGPD.md) :
+  #   - la recherche floue ne porte que sur les prénoms/noms ; l'email est comparé en
+  #     ÉGALITÉ EXACTE. Un `ILIKE '%@gmail.com%'` sur users.email permettrait sinon
+  #     d'énumérer les comptes de l'application.
+  #   - la réponse ne contient aucun email : on renvoie un identifiant signé (sgid).
   def search
     authorize @team, :update? # seul le captain peut inviter
 
@@ -12,15 +18,13 @@ class TeamInvitationsController < ApplicationController
     # Exclut les membres déjà dans l'équipe et ceux avec une invitation en attente
     excluded_ids = @team.members.pluck(:id) + @team.team_invitations.pending.pluck(:invitee_id)
 
-    users = User.joins(:profil)
-                .where("profils.first_name ILIKE ? OR users.email ILIKE ?", "%#{q}%", "%#{q}%")
+    users = User.search_for_invite(q)
                 .where.not(id: excluded_ids)
-                .includes(:profil)
                 .limit(8)
 
     render json: users.map { |u|
       {
-        email: u.email,
+        sgid: u.invite_sgid,
         first_name: u.profil&.first_name,
         last_name: u.profil&.last_name
       }
@@ -29,8 +33,17 @@ class TeamInvitationsController < ApplicationController
 
   # POST /teams/:team_id/team_invitations — captain invite un user
   def create
-    # On cherche l'invité par email ou pseudo (first_name)
-    invitee = find_invitee(params[:invitee_query])
+    # On autorise AVANT de chercher quoi que ce soit : seul le capitaine peut inviter.
+    # Deux raisons de ne pas attendre le `authorize @invitation` plus bas :
+    #   - on ne fait aucune requête pour le compte d'un utilisateur non autorisé ;
+    #   - les guard-clauses ci-dessous sortent avant d'avoir construit l'invitation.
+    #     Sans autorisation préalable, le `verify_authorized` global d'ApplicationController
+    #     lèverait Pundit::AuthorizationNotPerformedError (erreur 500) au lieu d'afficher
+    #     le message d'erreur — cas courant si le sgid de l'autocomplete a expiré.
+    authorize @team, :update?
+
+    # On cherche l'invité par identifiant signé (autocomplete) ou, à défaut, par saisie manuelle
+    invitee = find_invitee(params[:invitee_sgid], params[:invitee_query])
 
     if invitee.nil?
       redirect_to @team, alert: "Aucun joueur trouvé avec cet email ou ce prénom."
@@ -97,7 +110,7 @@ class TeamInvitationsController < ApplicationController
       redirect_to @team, alert: "Seul un membre peut proposer un joueur." and return
     end
 
-    invitee = find_invitee(params[:invitee_query])
+    invitee = find_invitee(params[:invitee_sgid], params[:invitee_query])
 
     redirect_to @team, alert: "Aucun joueur trouvé avec cet email ou ce prénom." and return if invitee.nil?
 
@@ -186,7 +199,16 @@ class TeamInvitationsController < ApplicationController
   end
 
   # Cherche un user par email ou par prénom (via son profil)
-  def find_invitee(query)
+  # Deux façons de désigner l'invité :
+  #   1. `invitee_sgid` — rempli par l'autocomplete, c'est le cas normal. Identifiant signé,
+  #      donc aucun email ne circule dans le formulaire (voir User#invite_sgid).
+  #   2. `invitee_query` — saisie manuelle : email exact ou prénom exact. Conservé pour
+  #      l'utilisateur qui tape l'adresse d'un ami sans passer par la liste déroulante.
+  def find_invitee(sgid, query)
+    User.find_by_invite_sgid(sgid) || find_invitee_by_query(query)
+  end
+
+  def find_invitee_by_query(query)
     return nil if query.blank?
 
     User.find_by(email: query.strip.downcase) ||

@@ -29,7 +29,7 @@
         <%= user_avatar_tag other,
             css_class: "chat-avatar-img",
             style: "width:20px;height:20px;min-width:20px;border-radius:50%;object-fit:cover;overflow:hidden;flex-shrink:0;" %>
-        <%= truncate(other.display_name || other.email, length: 25) %>
+        <%= truncate(other.display_name, length: 25) %>
       </span>
     </div>
 

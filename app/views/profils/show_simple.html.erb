@@ -1,4 +1,5 @@
 <%# ── Page profil simplifiée (sans gamification) ───────────────────────────── %>
+<% content_for :breadcrumb, breadcrumb_for([["Mon profil", nil]]) %>
 
 <%# Abonnement temps réel au bouton ami — reçoit les mises à jour quand la relation change %>
 <% if user_signed_in? && current_user != @profil_user %>
@@ -17,7 +18,7 @@
 
     <%# ── Lien retour ────────────────────────────────────────────────────────── %>
     <div style="margin-bottom:1.5rem;">
-      <%= render "shared/nav_button", url: root_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
+      <%= render "shared/nav_button", fallback: root_path, label: "Retour", direction: "back", extra_class: "mb-4" %>
     </div>
 
     <%# ══════════════════════════════════════════════════════════════════════════ %>

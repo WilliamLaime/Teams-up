@@ -279,6 +279,10 @@
         .match-avatar {
           width: 26px;
           height: 26px;
+          // La ligne est un conteneur flex : sans ça, le texte « 32/32 joueurs »
+          // pourrait comprimer les avatars photo (les <img> sont compressibles)
+          // et rompre l'alignement de la pile.
+          flex-shrink: 0;
           border-radius: 50%;
           object-fit: cover;
           // bord = fond carte → effet "découpé" — s'adapte au thème

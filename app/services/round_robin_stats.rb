@@ -13,8 +13,24 @@ module RoundRobinStats
   #   • apply_state: true  → met aussi à jour `state` via `state_for` (suisse).
   #   • apply_state: false → laisse `state` inchangé (championnat / poules, où la
   #     qualification est décidée par le classement final, pas par un seuil 3 V/3 D).
-  def recompute_stats_for(phase, apply_state:)
+  #
+  # `count_byes` : un bye est clôturé avec `winner_id = player_a` (cf.
+  # TournamentMatch#resolve_bye) pour que la journée puisse se terminer, mais ce
+  # vainqueur est TECHNIQUE. Le paramètre n'a volontairement pas de valeur par
+  # défaut : la réponse dépend du format, et un défaut silencieux se propagerait
+  # au mauvais endroit.
+  #   • true  → ronde suisse UNIQUEMENT. Le bye y vaut 1 point par convention (on
+  #     ne punit pas le joueur du hasard des appariements) et le seuil de
+  #     qualification à 3 V le suppose.
+  #   • false → poules et championnat, où le bye n'est qu'un tour de repos né d'un
+  #     effectif impair. Le compter offrirait une victoire gratuite à tout joueur
+  #     d'une poule de 3 — et comme le seeding du tableau final lit ces colonnes
+  #     via Tournament#rank_key, avantagerait mécaniquement les poules impaires.
+  #     C'est déjà la règle de PoolStandings (cf. son en-tête) : les deux calculs
+  #     doivent enfin dire la même chose.
+  def recompute_stats_for(phase, apply_state:, count_byes:)
     matches = matches_in_phase(phase).to_a
+    matches = matches.reject(&:is_bye) unless count_byes
     player_scope.find_each do |tu|
       played = matches.select { |m| m.player_a_id == tu.id || m.player_b_id == tu.id }
       wins   = played.count { |m| m.winner_id == tu.id }
@@ -61,6 +77,26 @@ module RoundRobinStats
 
   # Inscriptions joueurs approuvées (relation, requêtée à frais à chaque appel).
   def player_scope = @tournament.tournament_users.players.approved
+
+  # ── Ordre STABLE des joueurs, base de tout calendrier round-robin ─────────────
+  # LeagueBuilder et PoolBuilder recalculent leur calendrier à CHAQUE appel de
+  # `next_round!` et ne persistent que la journée manquante. Ce design n'est
+  # correct que si cet ordre est TOTAL : deux lectures doivent rendre exactement la
+  # même séquence, sinon le calendrier se décale d'une journée à l'autre —
+  # certaines rencontres sont programmées deux fois, d'autres jamais, et la phase
+  # peut ne jamais se terminer.
+  #
+  # `draw_order` (le tirage au sort figé au lancement, cf.
+  # TournamentsController#assign_draw_order!) ne suffit PAS : il est nullable et
+  # n'a jamais été backfillé, donc tous les tournois lancés avant sa migration ont
+  # un draw_order nul de bout en bout. `ORDER BY draw_order` laisse alors Postgres
+  # libre de rendre les lignes dans n'importe quel ordre — et cet ordre change
+  # réellement en cours de tournoi, parce que `recompute_stats_for` réécrit le
+  # bilan de chaque joueur entre deux journées et déplace les tuples dans le heap.
+  #
+  # D'où `:id` en dernier critère : unique par construction, donc l'ordre est total
+  # même sans tirage au sort, tout en laissant `draw_order` décider quand il existe.
+  def ordered_player_scope = player_scope.order(:draw_order, :id)
 
   # Tous les matchs d'une phase de ce tournoi (requête fraîche).
   def matches_in_phase(phase)

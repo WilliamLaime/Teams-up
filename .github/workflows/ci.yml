@@ -23,7 +23,10 @@ jobs:
       
       - name: Scan for known security vulnerabilities in gems used
         run: bin/bundler-audit
-      
+
+      - name: Check personal-data declarations and JSON leaks (RGPD)
+        run: bin/pii-guard
+
   scan_js:
     runs-on: ubuntu-latest
 
@@ -100,8 +103,23 @@ jobs:
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
-          # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
+
+          # Clés de chiffrement Active Record (cf. config/initializers/
+          # active_record_encryption.rb, utilisées par SlackWorkspace#bot_token).
+          # En développement elles viennent de .env, qui n'est pas versionné —
+          # d'où leur absence ici, qui mettait 44 tests en erreur.
+          #
+          # Ces valeurs sont VOLONTAIREMENT en clair et n'ont rien de secret :
+          # la base de test est recréée à chaque run et ne contient aucune donnée
+          # réelle, donc ces clés ne protègent rien. Y mettre les vraies clés (ou
+          # la RAILS_MASTER_KEY) les exposerait à tout code exécuté par la CI, y
+          # compris celui d'une pull request extérieure — beaucoup de risque pour
+          # aucun bénéfice.
+          # ⚠️ Ne jamais réutiliser ces valeurs ailleurs qu'en CI.
+          ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ci_primary_key_not_a_secret_0001
+          ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ci_deterministic_key_not_secret1
+          ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ci_key_derivation_salt_not_sec01
         run: bin/rails db:test:prepare test
 
   system-test:
@@ -139,8 +157,15 @@ jobs:
         env:
           RAILS_ENV: test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
-          # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
+
+          # Mêmes clés jetables que le job `test` ci-dessus (voir le commentaire
+          # détaillé qui s'y trouve). Les tests système ne touchent pas encore
+          # d'attribut chiffré, mais les en priver ferait échouer le premier qui
+          # le fera — pour une raison difficile à diagnostiquer.
+          ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ci_primary_key_not_a_secret_0001
+          ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ci_deterministic_key_not_secret1
+          ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ci_key_derivation_salt_not_sec01
         run: bin/rails db:test:prepare test:system
 
       - name: Keep screenshots from failed system tests

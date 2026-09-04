@@ -35,6 +35,11 @@ port ENV.fetch("PORT", 3000)
 plugin :tmp_restart
 
 # Run the Solid Queue supervisor inside of Puma for single-server deployments.
+#
+# ⚠️ En production (Railway), cette variable ne doit PAS être définie : les jobs
+# tournent dans un service worker dédié (`railway.worker.toml`). Les héberger
+# dans Puma couple les deux : si Solid Queue perd la base, il arrête Puma avec
+# lui et tout le site tombe. Cette option reste utile en mono-serveur (Kamal).
 plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.

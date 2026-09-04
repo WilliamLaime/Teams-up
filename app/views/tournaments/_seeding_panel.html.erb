@@ -1,0 +1,66 @@
+<%# ── Constitution des poules (Lot 7) ───────────────────────────────────────────
+    Panneau réservé à l'organisation, dans l'onglet Participants, et visible
+    seulement tant que rien n'est joué (cf. TournamentPolicy#seeding?). Deux modes :
+      • tirage au sort intégral — le serpentin, aucun réglage à faire ;
+      • chapeaux — l'organisateur coche qui est tête de série, un joueur de chaque
+        chapeau atterrissant dans chaque poule.
+    Local : tournament. %>
+<%
+  players   = tournament.approved_players
+  pot_count = tournament.pot_count
+  # Le mode « chapeaux » sans aucun chapeau rempli donne exactement le même
+  # résultat que le tirage intégral : on le dit plutôt que de laisser croire que
+  # des têtes de série sont protégées.
+  potted    = players.count { |tu| tu.pot.present? }
+%>
+
+<section class="tournament-participants__section seeding-panel">
+  <h3 class="tournament-participants__title">
+    <i data-lucide="layers" aria-hidden="true"></i> Constitution des poules
+  </h3>
+
+  <%= simple_form_for tournament, url: seeding_tournament_path(tournament), method: :patch,
+                      html: { class: "seeding-panel__form" } do |f| %>
+
+    <div class="seeding-panel__settings">
+      <%= f.input :pool_seeding_mode,
+                  label: "Mode de constitution",
+                  collection: [["Tirage au sort intégral", "random"], ["Chapeaux", "pots"]],
+                  as: :radio_buttons,
+                  selected: tournament.seeding_mode,
+                  include_blank: false,
+                  wrapper_html: { class: "seeding-panel__modes" } %>
+
+      <%= f.input :seeded_pot_count,
+                  label: "Nombre de chapeaux",
+                  as: :integer,
+                  input_html: { min: 1, max: tournament.pool_size, value: pot_count },
+                  hint: "Chaque chapeau fournit un joueur à chaque poule (#{tournament.pool_count} poules prévues)." %>
+    </div>
+
+    <% if tournament.seeded_pots? && potted.zero? %>
+      <p class="seeding-panel__warning">
+        <i data-lucide="alert-triangle" aria-hidden="true"></i>
+        Aucun joueur n'est encore placé dans un chapeau : la répartition sera un tirage au sort intégral.
+      </p>
+    <% end %>
+
+    <% if players.any? %>
+      <div class="seeding-panel__grid">
+        <%= f.simple_fields_for :tournament_users, players do |pf| %>
+          <label class="seeding-panel__player">
+            <%= user_avatar_tag pf.object.user, css_class: "seeding-panel__avatar" %>
+            <span class="seeding-panel__name"><%= pf.object.display_name %></span>
+            <%= pf.input_field :pot, collection: (1..pot_count).map { |n| ["Chapeau #{n}", n] },
+                               include_blank: "Chapeau général",
+                               class: "seeding-panel__select" %>
+          </label>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="tournament-empty">Aucun joueur inscrit : rien à répartir pour le moment.</p>
+    <% end %>
+
+    <%= f.button :submit, "Enregistrer la constitution", class: "btn-cta-primary seeding-panel__submit" %>
+  <% end %>
+</section>

@@ -244,6 +244,37 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to match_path(Match.last)
   end
 
+  # ─── Retour au tournoi après « Publier le match » ───────────────────────────
+  # Une rencontre planifiée depuis une carte de tournoi doit ramener AU TOURNOI :
+  # celui qui vient de caler son créneau veut le voir apparaître dans le board et
+  # le calendrier, pas atterrir sur la page du match et refaire tout le chemin
+  # pour planifier la suivante.
+  test "POST /matches redirige vers le tournoi quand la rencontre en fait partie" do
+    sign_in @user
+    tournament = Tournament.create!(name: "Tournoi retour", sport: @sport, user: @user,
+                                    format: "poules", status: "in_progress", max_players: 8,
+                                    date: Date.tomorrow, place: "Terrain test")
+
+    assert_difference "Match.count", 1 do
+      post matches_path, params: {
+        match: {
+          title: "Rencontre de tournoi",
+          date: Date.tomorrow,
+          time: "18:00",
+          level: "Débutant",
+          players_needed: 2,
+          sport_id: @sport.id,
+          tournament_id: tournament.id,
+          visibility: "public",
+          validation_mode: "automatic",
+          genre_restriction: "tous"
+        }
+      }
+    end
+
+    assert_redirected_to tournament_path(tournament)
+  end
+
   # Cas d'erreur : des params invalides (level manquant) réaffichent le formulaire
   test "POST /matches réaffiche le formulaire (422) si params invalides" do
     sign_in @user
@@ -398,8 +429,8 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
 
   # Crée un tournoi organisé par @user avec deux joueurs approuvés et une carte
   # de match suisse prête à être « transformée » en rencontre standard.
-  def build_tournament_match(owner: @user)
-    tournament = Tournament.create!(name: "Tournoi test", sport: @sport, user: owner,
+  def build_tournament_match(owner: @user, sport: @sport)
+    tournament = Tournament.create!(name: "Tournoi test", sport: sport, user: owner,
                                     format: "ronde_suisse", status: "in_progress", max_players: 8,
                                     date: Date.tomorrow, place: "Terrain test", time: "18:00")
     player_b_user = create_test_user(email: "tplayer-#{SecureRandom.hex(3)}@example.com")
@@ -422,6 +453,88 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_match(/value="#{tournament.date}"/, response.body)
     assert_includes response.body[/<input[^>]*name="match\[time\(4i\)\]"[^>]*>/], 'value="18"'
     assert_includes response.body[/<input[^>]*name="match\[time\(5i\)\]"[^>]*>/], 'value="0"'
+  end
+
+  # ── Formulaire allégé en contexte tournoi ──────────────────────────────────
+  # Une confrontation est un 1v1 entre deux joueurs déjà connus et inscrits par
+  # le tournoi : la section « Détails du match » n'a pas lieu d'être.
+
+  test "GET /matches/new depuis une carte de tournoi masque les détails du match" do
+    sign_in @user
+    _tournament, tmatch = build_tournament_match
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    assert_no_match(/Détails du match/, response.body)
+    assert_select "[data-match-form-target='formatWrapper']", 0
+    assert_select "[data-match-form-target='levelButtons']", 0
+    assert_select "[data-match-form-target='priceInput']", 0
+  end
+
+  test "GET /matches/new depuis une carte de tournoi soumet les valeurs imposées en caché" do
+    sign_in @user
+    _tournament, tmatch = build_tournament_match
+
+    get new_match_path(tournament_match_id: tmatch.id)
+
+    # Les deux seules valeurs que le modèle exige et qui n'ont plus de champ visible.
+    assert_select "input[type=hidden][name='match[level]'][value='Tout niveau']"
+    assert_select "input[type=hidden][name='match[players_needed]'][value='2']"
+  end
+
+  # Non-régression : hors tournoi, le formulaire complet est toujours rendu.
+  test "GET /matches/new sans tournoi conserve la section Détails du match" do
+    sign_in @user
+
+    get new_match_path
+    assert_response :success
+
+    assert_match(/Détails du match/, response.body)
+    assert_select "[data-match-form-target='formatWrapper']"
+  end
+
+  # ── Bannière : une image DU SPORT du tournoi, connue dès le rendu serveur ───
+
+  test "GET /matches/new depuis un tournoi de ping-pong affiche une bannière ping-pong" do
+    sign_in @user
+    pingpong = Sport.find_by(slug: "ping-pong") ||
+               Sport.create!(name: "Ping-Pong Test", slug: "ping-pong", icon: "🏓")
+    _tournament, tmatch = build_tournament_match(sport: pingpong)
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    # Le fond est peint côté serveur (pas de clignotement au chargement du JS)…
+    banner = response.body[/<div class="match-new-banner"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, banner
+
+    # …et le champ caché soumis pointe sur exactement la même image.
+    hidden = response.body[/<input[^>]*name="match\[banner_image\]"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, hidden
+  end
+
+  test "GET /matches/new écarte une bannière de tournoi étrangère au sport" do
+    sign_in @user
+    pingpong = Sport.find_by(slug: "ping-pong") ||
+               Sport.create!(name: "Ping-Pong Test", slug: "ping-pong", icon: "🏓")
+    tournament, tmatch = build_tournament_match(sport: pingpong)
+    # Image hors de la banque du sport : le JS la remplacerait au chargement,
+    # ce qui provoquerait le clignotement. Le serveur doit déjà l'avoir écartée.
+    tournament.update!(banner_image: "https://example.com/pas-du-ping-pong.png")
+
+    get new_match_path(tournament_match_id: tmatch.id)
+
+    # Ni le champ soumis ni le fond peint ne reprennent l'image du tournoi.
+    # (Elle reste présente dans le JSON du select « Confrontation », qui décrit
+    # les tournois rattachables et ne sert pas à la bannière.)
+    hidden = response.body[/<input[^>]*name="match\[banner_image\]"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, hidden
+    assert_no_match(/pas-du-ping-pong/, hidden)
+
+    banner = response.body[/<div class="match-new-banner"[^>]*>/]
+    assert_match %r{sports/ping-pong/}, banner
+    assert_no_match(/pas-du-ping-pong/, banner)
   end
 
   test "POST /matches depuis un tournoi inscrit les deux joueurs et lie la carte" do
@@ -465,6 +578,81 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     get match_path(match)
     assert_response :success
     assert_select "p", text: /Score du tournoi : #{Regexp.escape(tmatch.score_summary)}/
+  end
+
+  # ── Planification par les JOUEURS (Lot 7) ───────────────────────────────────
+  # Un tournoi organisé par @other_user, où @user n'est qu'un joueur inscrit.
+  def build_tournament_match_as_player
+    tournament = Tournament.create!(name: "Tournoi joueur", sport: @sport, user: @other_user,
+                                    format: "poules", status: "in_progress", max_players: 8,
+                                    date: Date.tomorrow, place: "Gymnase test")
+    opponent = create_test_user(email: "opp-#{SecureRandom.hex(3)}@example.com")
+    a = tournament.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+    b = tournament.tournament_users.create!(user: opponent, role: "joueur", status: "approved")
+    round = tournament.tournament_rounds.create!(phase: "pool", number: 1, status: "in_progress")
+    [tournament, round.tournament_matches.create!(player_a: a, player_b: b, position: 0)]
+  end
+
+  test "un JOUEUR (non organisateur) peut préremplir la rencontre de sa confrontation" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_as_player
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    # Lieu et date du tournoi repris ; le titre nomme les deux adversaires.
+    assert_match(/value="Gymnase test"/, response.body)
+    assert_match(/value="#{tournament.date}"/, response.body)
+    assert_match(/#{Regexp.escape(tmatch.player_b.display_name)}/, response.body)
+    # Le tournoi apparaît dans le select : on y est inscrit, sans l'organiser.
+    assert_match(/Tournoi joueur/, response.body)
+
+    # Select « Confrontation » alimenté et présélectionné sur la carte visée.
+    assert_select "select[name='match[tournament_match_id]']" do
+      assert_select "option[selected][value=?]", tmatch.id.to_s
+    end
+  end
+
+  test "un JOUEUR peut créer la rencontre de sa confrontation" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_as_player
+
+    assert_difference "Match.count", 1 do
+      post matches_path, params: { match: {
+        title: "Ma rencontre de poule", date: Date.tomorrow,
+        'time(4i)': "20", 'time(5i)': "30", # créneau choisi par les joueurs eux-mêmes
+        players_needed: 2, level: "Tout niveau", visibility: "public",
+        validation_mode: "automatic", genre_restriction: "tous",
+        sport_id: @sport.id, tournament_id: tournament.id, tournament_match_id: tmatch.id
+      } }
+    end
+
+    match = Match.last
+    assert_equal tmatch.id, match.tournament_match_id
+    assert_equal tournament.id, match.tournament_id
+    assert_equal 20, match.time.hour, "l'heure choisie par le joueur est conservée"
+    assert_includes match.match_users.map(&:user_id), tmatch.player_b.user_id
+  end
+
+  test "une confrontation déjà rattachée ne peut pas recevoir une 2e rencontre" do
+    _tournament, tmatch = build_tournament_match_as_player
+    Match.create!(title: "Déjà planifiée", date: Date.tomorrow, time: "18:00", end_time: "19:00",
+                  players_needed: 2, level: "Tout niveau", visibility: "public",
+                  validation_mode: "automatic", genre_restriction: "tous",
+                  user: tmatch.player_b.user, sport: @sport, tournament_match: tmatch)
+
+    sign_in @user
+    post matches_path, params: { match: {
+      title: "Doublon", date: Date.tomorrow,
+      'time(4i)': "18", 'time(5i)': "00",
+      players_needed: 2, level: "Tout niveau", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous",
+      sport_id: @sport.id, tournament_match_id: tmatch.id
+    } }
+
+    # Le lien est effacé par sanitize_tournament_link : la rencontre reste créée,
+    # mais indépendante (pas de 500 sur l'index unique).
+    assert_nil Match.last.tournament_match_id
   end
 
   test "POST /matches ignore le rattachement à un tournoi qu'on n'organise pas" do

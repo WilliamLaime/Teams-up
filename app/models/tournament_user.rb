@@ -13,29 +13,47 @@ class TournamentUser < ApplicationRecord
   # (sorti par le score) ; "withdrawn" = a déclaré forfait / abandonné (Lot 5).
   STATES = %w[active qualified eliminated withdrawn].freeze
 
-  # Seuils de la ronde suisse : 3 victoires pour se qualifier, 3 défaites pour être éliminé.
+  # Seuils PAR DÉFAUT de la ronde suisse : 3 victoires pour se qualifier, 3 défaites
+  # pour être éliminé. Depuis le Lot 7 l'organisateur peut les personnaliser par
+  # tournoi (colonnes swiss_wins_to_qualify / swiss_losses_to_eliminate) : passer
+  # par Tournament#wins_to_qualify / #losses_to_eliminate, qui appliquent le réglage
+  # ou retombent sur ces constantes.
   WINS_TO_QUALIFY = 3
   LOSSES_TO_ELIMINATE = 3
 
-  # État suisse dérivé d'un bilan V/D donné (mêmes seuils que ci-dessus). Utilisé
+  # État suisse dérivé d'un bilan V/D donné, selon les seuils du tournoi. Utilisé
   # par SwissPairing pour l'état réel du joueur ET par le ruban de rondes (onglet
   # Matchs) pour colorer les pastilles de bilan par groupe en en-tête de colonne
   # — d'où la version "pure" (sans lire l'état persisté d'un joueur en particulier).
-  def self.state_for(wins, losses)
-    return "qualified" if wins >= WINS_TO_QUALIFY
-    return "eliminated" if losses >= LOSSES_TO_ELIMINATE
+  def self.state_for(wins, losses, wins_to_qualify: WINS_TO_QUALIFY, losses_to_eliminate: LOSSES_TO_ELIMINATE)
+    return "qualified" if wins >= wins_to_qualify
+    return "eliminated" if losses >= losses_to_eliminate
 
     "active"
   end
 
-  # Rôle dans le tournoi. "joueur" = participant qui occupe une place ;
-  # "co_organisateur" = co-gestionnaire (mêmes droits que l'admin sauf suppression
-  # / édition des métadonnées), sans occuper de place de joueur.
+  # Rôle dans le tournoi — il ne répond qu'à UNE question : cette inscription
+  # occupe-t-elle une place de joueur ? "joueur" = oui ; "co_organisateur" = non,
+  # c'est quelqu'un qu'on a nommé sans qu'il ait rejoint le tournoi.
+  #
+  # Les DROITS de gestion, eux, sont portés par la colonne `co_organizer` et non
+  # par le rôle : les deux sont indépendants, un joueur peut donc co-organiser le
+  # tournoi qu'il joue (cf. #co_organizer? et Tournament#organizer?).
   ROLES = %w[joueur co_organisateur].freeze
 
   validates :status, inclusion: { in: STATUSES }
   validates :role, inclusion: { in: ROLES }, allow_nil: true
   validates :state, inclusion: { in: STATES }
+  # Chapeau de constitution des poules (Lot 7) : numéroté à partir de 1.
+  # nil = chapeau général, le cas de la grande majorité des inscrits.
+  validates :pot, numericality: { only_integer: true, greater_than_or_equal_to: 1 }, allow_nil: true
+
+  # Invariant : une ligne dont le rôle est "co_organisateur" n'existe QUE pour
+  # donner les droits de gestion (elle n'occupe pas de place de joueur). Le drapeau
+  # ne peut donc pas y être faux — sinon la ligne ne servirait plus à rien, et il
+  # n'y aurait aucune raison de faire porter cette cohérence aux appelants.
+  # L'inverse n'est pas vrai : un "joueur" peut porter le drapeau ou non.
+  before_validation :flag_dedicated_co_organizer
 
   # Clôture réactive des inscriptions dès que le tournoi devient complet — même
   # pattern que Match#recompute_player_left!. Pas de hook after_destroy : quitter
@@ -45,11 +63,22 @@ class TournamentUser < ApplicationRecord
   scope :approved, -> { where(status: "approved") }
   # Uniquement les inscrits qui occupent une place de joueur.
   scope :players,  -> { where(role: "joueur") }
+  # Les gestionnaires du tournoi (hors admin, qui est `tournaments.user_id`).
+  # Volontairement indépendant de `players` : les deux scopes se recoupent.
+  scope :co_organizers, -> { where(co_organizer: true) }
   # Parcours dans la phase suisse.
   scope :active,     -> { where(state: "active") }
   scope :qualified,  -> { where(state: "qualified") }
   scope :eliminated, -> { where(state: "eliminated") }
   scope :withdrawn,  -> { where(state: "withdrawn") }
+
+  # ── Prédicats de rôle ────────────────────────────────────────────────────────
+  # Les deux sont INDÉPENDANTS, c'est tout l'intérêt de la colonne `co_organizer` :
+  # `player?` dit si l'inscription occupe une place dans le tableau, `co_organizer?`
+  # si elle donne les droits de gestion. Trois combinaisons existent — joueur seul,
+  # co-organisateur seul (nommé sans avoir rejoint), et les deux à la fois.
+  def player?         = role == "joueur"
+  def co_organizer?   = co_organizer
 
   # ── Prédicats de parcours (Lot 3, étendu Lot 5) ──────────────────────────────
   def active?     = state == "active"
@@ -76,9 +105,19 @@ class TournamentUser < ApplicationRecord
   # Nom affiché du joueur (délègue au profil de l'utilisateur).
   def display_name = user.display_name
 
+  # Version compacte « Prénom N. » pour les contextes où le nom complet ne tient
+  # pas : libellés « X vs Y » d'un <select>, listes denses. Deux noms complets
+  # dans une même option dépassent la largeur du champ et sont tronqués.
+  def short_name = user.short_name
+
   private
 
   def close_tournament_if_full
     tournament.close_registrations_if_full!
+  end
+
+  # Cf. le before_validation en tête de classe.
+  def flag_dedicated_co_organizer
+    self.co_organizer = true if role == "co_organisateur"
   end
 end

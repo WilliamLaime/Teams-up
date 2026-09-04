@@ -47,8 +47,8 @@
       <meta name="sentry-dsn" content="<%= ENV["SENTRY_DSN"] %>">
     <% end %>
 
-    <%# Non-indexation : les pages en chantier (ex. tournois) posent @noindex = true
-        pour éviter que Google les référence tant que la feature n'est pas publiée. %>
+    <%# Non-indexation : une page peut poser @noindex = true (pages légales, profils,
+        matchs privés…) pour éviter que Google la référence. %>
     <% if @noindex %>
       <meta name="robots" content="noindex, nofollow">
     <% end %>
@@ -173,6 +173,12 @@
     <%# main prend tout l'espace disponible → footer toujours en bas (flex: 1) %>
     <%# id="main-content" : cible du lien d'évitement (RGAA 12.11) %>
     <main id="main-content" tabindex="-1">
+      <%# Fil d'Ariane : posé par les vues via `content_for :breadcrumb,
+          breadcrumb_for([...])`. Rendu ici, DANS le main, pour que sa position
+          soit la même partout — une page qui l'oublie n'affiche simplement rien.
+          Le partial embarque son propre .container : le layout n'en pose aucun,
+          chaque page apportant le sien. %>
+      <%= yield :breadcrumb %>
       <%= yield %>
     </main>
 
@@ -202,6 +208,8 @@
     <%= yield :modals %>
     <%# Modale grille des niveaux — disponible sur toutes les pages via le bouton "?" %>
     <%= render "shared/level_grid_modal" %>
+    <%# Confirmation des actions `data-turbo-confirm` (remplace window.confirm) %>
+    <%= render "shared/confirm_modal" %>
 
     <%# Lucide Icons — bibliothèque d'icônes SVG légères %>
     <%# RGESN 3.4 — fichier auto-hébergé (vendor/javascript/lucide.min.js) pour éviter

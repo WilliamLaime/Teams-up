@@ -5,10 +5,13 @@
 @import "badges";
 @import "buttons";
 @import "form_legend_clear";
+@import "custom_select"; // <select> habillé au code couleur de l'app (cf. custom_select_controller.js)
+@import "confirm_modal"; // Confirmation des `data-turbo-confirm` (remplace window.confirm)
 @import "navbar";
 @import "chat";
 @import "footer"; // pied de page partagé sur toutes les pages
 @import "nav_button";
+@import "breadcrumb"; // Fil d'Ariane — navigation hiérarchique (RGAA 12.2)
 @import "match_card"; // Carte match — partagée entre home et liste des matchs
 @import "sticky_chat"; // Bouton et panneau chat sticky global (toutes les pages)
 @import "sport";       // Sélecteur de sport, badges, styles multi-sport

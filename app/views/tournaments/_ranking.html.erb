@@ -8,9 +8,14 @@
   <% end %>
 
   <% if tournament.tournament_rounds.any? %>
-    <% if tournament.format == "poules" && tournament.pools.any? %>
+    <%# Critérium : les places jouées d'abord, le bilan par poule ensuite. %>
+    <% if tournament.criterium? %>
+      <%= render "tournaments/final_standings", tournament: tournament %>
+    <% end %>
+
+    <% if Tournament::POOL_BASED_FORMATS.include?(tournament.format) && tournament.pools.any? %>
       <% tournament.ranked_pools.each do |pool_index, players| %>
-        <h3 class="tournament-ranking__pool-title">Poule <%= ("A".ord + pool_index.to_i).chr %></h3>
+        <h3 class="tournament-ranking__pool-title"><%= pool_label(pool_index) %></h3>
         <%= render "tournaments/ranking_table", players: players, tournament: tournament %>
       <% end %>
     <% else %>

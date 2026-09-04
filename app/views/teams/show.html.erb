@@ -1,4 +1,5 @@
 <%# ── Page détail d'une équipe ─────────────────────────────────────────────── %>
+<% content_for :breadcrumb, breadcrumb_for([["Mes équipes", teams_path], [@team.name, nil]]) %>
 
 <div class="teams-page">
 <div class="container py-4">
@@ -355,7 +356,10 @@
           <%= form_with url: team_team_invitations_path(@team), method: :post, local: true do |f| %>
             <%# Input + bouton côte à côte %>
             <div class="invite-search-group">
+              <%# `name` présent pour que la saisie manuelle (email ou prénom exact) reste
+                  possible sans passer par la liste déroulante — voir find_invitee. %>
               <input type="text"
+                     name="invitee_query"
                      data-invite-search-target="input"
                      data-action="input->invite-search#search"
                      placeholder="Email ou prénom…"
@@ -367,8 +371,9 @@
             <%# Dropdown des résultats %>
             <div data-invite-search-target="dropdown" class="invite-search-dropdown"></div>
 
-            <%# Champ caché soumis avec l'email de la personne sélectionnée %>
-            <%= f.hidden_field :invitee_query, data: { "invite-search-target": "hidden" } %>
+            <%# Champ caché soumis avec l'identifiant SIGNÉ de la personne sélectionnée.
+                Jamais son email : voir docs/SECURITE-RGPD.md. %>
+            <%= hidden_field_tag :invitee_sgid, "", data: { "invite-search-target": "hidden" } %>
           <% end %>
         </div>
 
@@ -407,7 +412,7 @@
                   <%# Bouton inviter — vert %>
                   <%= button_to team_team_invitations_path(@team),
                       method: :post,
-                      params: { invitee_query: friend.email },
+                      params: { invitee_sgid: friend.invite_sgid },
                       class: "btn btn-xs btn-outline-success" do %>
                     <i data-lucide="user-plus" style="width:11px;height:11px;margin-right:3px;"></i>
                     Inviter
@@ -581,7 +586,7 @@
                   <%# Bouton proposer — vert pour bien ressortir %>
                   <%= button_to propose_team_team_invitations_path(@team),
                         method: :post,
-                        params: { invitee_query: friend.email },
+                        params: { invitee_sgid: friend.invite_sgid },
                         class: "btn btn-xs btn-outline-success" do %>
                     <i data-lucide="send" style="width:11px;height:11px;margin-right:3px;"></i>
                     Proposer

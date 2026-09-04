@@ -230,4 +230,98 @@ class TeamInvitationsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to @team
   end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # GET /teams/:team_id/team_invitations/search — autocomplete
+  #
+  # Tests de non-régression sécurité (voir docs/SECURITE-RGPD.md) :
+  # l'endpoint ne doit ni renvoyer d'email, ni permettre d'énumérer les comptes.
+  # ════════════════════════════════════════════════════════════════════════════
+
+  def test_search_trouve_par_prenom_et_ne_renvoie_pas_d_email
+    sign_in @captain
+    get search_team_team_invitations_path(@team, q: "Inv"), headers: { "Accept" => "application/json" }
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @invitee },
+           "L'invité doit être trouvable par son prénom")
+    refute_includes response.body, "@example.com", "Aucun email ne doit apparaître dans la réponse"
+    body.each { |u| refute_includes u.keys, "email" }
+  end
+
+  def test_search_ne_permet_pas_d_enumerer_les_emails
+    sign_in @captain
+    get search_team_team_invitations_path(@team, q: "@example.com"), headers: { "Accept" => "application/json" }
+    assert_response :success
+    assert_equal [], JSON.parse(response.body),
+                 "Une recherche partielle sur un domaine email ne doit rien renvoyer"
+  end
+
+  def test_search_trouve_par_email_exact
+    sign_in @captain
+    get search_team_team_invitations_path(@team, q: @invitee.email), headers: { "Accept" => "application/json" }
+    body = JSON.parse(response.body)
+    assert(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @invitee },
+           "On doit pouvoir inviter quelqu'un dont on connaît l'email exact")
+  end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Invitation via identifiant signé (le chemin utilisé par l'autocomplete)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  def test_post_create_avec_invitee_sgid
+    sign_in @captain
+    assert_difference "TeamInvitation.count", 1 do
+      post team_team_invitations_path(@team), params: { invitee_sgid: @invitee.invite_sgid }
+    end
+    assert_not_nil TeamInvitation.find_by(team: @team, invitee: @invitee)
+  end
+
+  # Enchaînement complet, tel que le fait le front : on cherche un joueur, on
+  # récupère le sgid renvoyé par l'endpoint, et on l'utilise pour inviter.
+  def test_flux_complet_recherche_puis_invitation
+    sign_in @captain
+
+    get search_team_team_invitations_path(@team, q: "Inv"), headers: { "Accept" => "application/json" }
+    sgid = JSON.parse(response.body).first["sgid"]
+
+    assert_difference "TeamInvitation.count", 1 do
+      post team_team_invitations_path(@team), params: { invitee_sgid: sgid }
+    end
+    assert_not_nil TeamInvitation.find_by(team: @team, invitee: @invitee)
+  end
+
+  def test_post_create_refuse_un_sgid_forge
+    sign_in @captain
+    assert_no_difference "TeamInvitation.count" do
+      post team_team_invitations_path(@team), params: { invitee_sgid: "sgid-bidon" }
+    end
+    assert_redirected_to @team
+    assert_not_nil flash[:alert]
+  end
+
+  def test_post_create_refuse_un_sgid_expire
+    sign_in @captain
+    # Le sgid porte une durée de vie de 1 heure (User::INVITE_SGID_EXPIRY)
+    sgid = @invitee.invite_sgid
+
+    travel 2.hours do
+      assert_no_difference "TeamInvitation.count" do
+        post team_team_invitations_path(@team), params: { invitee_sgid: sgid }
+      end
+    end
+    assert_redirected_to @team
+  end
+
+  def test_post_create_refuse_un_sgid_emis_pour_un_autre_usage
+    sign_in @captain
+    # Un signed_id valide mais émis pour un autre `purpose` ne doit pas être accepté
+    other_purpose_sgid = @invitee.signed_id(purpose: :something_else, expires_in: 1.hour)
+
+    assert_no_difference "TeamInvitation.count" do
+      post team_team_invitations_path(@team), params: { invitee_sgid: other_purpose_sgid }
+    end
+    assert_redirected_to @team
+  end
 end

@@ -15,7 +15,7 @@
 #   3. destroy du match ;
 #   4. emails d'annulation asynchrones + édition des cartes Slack en « Annulé ».
 class MatchCancellationService
-  Result = Struct.new(:status, :title, keyword_init: true)
+  Result = Struct.new(:status, :title)
 
   def initialize(match:)
     @match = match
@@ -65,8 +65,8 @@ class MatchCancellationService
   def capture_slack_cards
     @match.slack_match_messages.map do |msg|
       { "workspace_id" => msg.slack_workspace_id,
-        "channel_id"   => msg.channel_id,
-        "message_ts"   => msg.message_ts }
+        "channel_id" => msg.channel_id,
+        "message_ts" => msg.message_ts }
     end
   end
 
@@ -75,9 +75,9 @@ class MatchCancellationService
   def broadcast_cancellation(participant_user)
     Turbo::StreamsChannel.broadcast_update_to(
       "user_#{participant_user.id}_notifications",
-      target:  "global_notification_container",
+      target: "global_notification_container",
       partial: "matches/match_cancelled_notification",
-      locals:  { match: @match }
+      locals: { match: @match }
     )
   end
 end

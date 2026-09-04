@@ -462,3 +462,44 @@ en mode :score, puisqu'une seule "paire" = le score final) — jamais le score r
 - [x] `bin/rails assets:precompile` (SCSS + JS compilent).
 - [ ] Vérif visuelle navigateur (thème clair + sombre) — même rappel que
   l'itération 1 : redémarrer `rails server` après précompile.
+
+
+---
+
+# Gestion des organisateurs après création d'un tournoi
+
+## Problème
+
+Le bloc « Co-organisateur » de `_form.html.erb` est conditionné à `@tournament.new_record?`
+(l. 195) et `add_co_organizer` n'est appelé que depuis `#create`. Résultat : une fois le
+tournoi créé, l'admin ne peut plus ni ajouter/retirer un co-organisateur, ni transmettre
+l'administration. (Trou déjà noté dans `docs/TOURNOI.md:243`.)
+
+## Décisions (validées)
+
+- Co-organisateurs **illimités**, gérés depuis `/tournois/:id/edit`.
+- **Seul l'admin** (`tournaments.user_id`) gère la liste — un co-org ne peut pas se coopter.
+- **Transfert d'administration** possible : l'ancien admin devient co-organisateur.
+
+## Contrainte structurante
+
+Index unique `[tournament_id, user_id]` sur `tournament_users` → un joueur inscrit ne peut
+pas avoir une 2ᵉ ligne co-org : le promouvoir = **UPDATE de son `role`**, donc il perd sa
+place de joueur. Interdit une fois le tournoi lancé (il a déjà des matchs / un classement).
+
+## Étapes
+
+- [x] `routes.rb` : 3 member actions francisées (`co-organisateurs`, `.../retrait`, `transfert-admin`)
+- [x] `TournamentPolicy` : `manage_organizers?` → `owner?` ; `transfer_ownership?` → `owner? && !completed?`
+- [x] `TournamentsController` : `add_co_organizer` / `remove_co_organizer` / `transfer_ownership`
+      (helper de création renommé `add_initial_co_organizer`) + exclusions dans `#search`
+- [x] `TournamentUser` : prédicats `player?` / `co_organizer?`
+- [x] Vue `_organizers_manager.html.erb` rendue par `edit.html.erb` **hors** du `form_with`
+      (pas de formulaire imbriqué) — réutilise `invite-search`
+- [x] SCSS dans `pages/_tournaments_form.scss`
+- [x] Tests `test/controllers/tournament_organizers_test.rb`
+
+## Vérification
+
+`bin/rails test test/controllers/tournament_organizers_test.rb` puis parcours manuel
+sur `/tournois/<slug>/edit`.

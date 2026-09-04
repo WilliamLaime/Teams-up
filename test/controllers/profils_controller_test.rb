@@ -58,6 +58,29 @@ class ProfilsControllerTest < ActionDispatch::IntegrationTest
     assert_response :redirect, "GET /users/:id/profil doit rediriger un visiteur non connecté"
   end
 
+  # Non-régression : le bouton « Retour » d'un profil doit revenir à la page
+  # précédente, pas à l'accueil. Il passait `url: root_path` (lien codé en dur) ;
+  # il passe désormais `fallback:`, donc porte le contrôleur back-link — l'accueil
+  # n'étant plus qu'un secours si l'on est arrivé directement sur la page.
+  def test_get_user_profil_bouton_retour_revient_en_arriere
+    sign_in @user
+    get user_profil_path(@other)
+    assert_select "a.nav-button--back[data-controller=?]", "back-link"
+    assert_select "a.nav-button--back[data-back-link-fallback-value=?]", root_path
+  end
+
+  # Non-régression sécurité : le profil public d'un joueur ne doit jamais contenir
+  # son email, même pour un capitaine d'équipe (le formulaire « Inviter dans mon
+  # équipe » transporte un identifiant signé). Voir docs/SECURITE-RGPD.md.
+  def test_get_user_profil_ne_contient_pas_l_email
+    Team.create!(name: "Les Inviteurs", captain: @user)
+    sign_in @user
+    get user_profil_path(@other)
+    assert_response :success
+    assert_no_match(/#{Regexp.escape(@other.email)}/, response.body,
+                    "L'email du joueur consulté ne doit pas apparaître dans le HTML")
+  end
+
   # ════════════════════════════════════════════════════════════════════════════
   # GET /profil/edit — formulaire d'édition
   # ════════════════════════════════════════════════════════════════════════════

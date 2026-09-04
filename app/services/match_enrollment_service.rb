@@ -25,7 +25,7 @@ class MatchEnrollmentService
 
   # Résultat de la tentative. `match_user` est l'inscription créée (nil pour les
   # refus en amont : déjà inscrit / genre).
-  Result = Struct.new(:status, :match_user, keyword_init: true)
+  Result = Struct.new(:status, :match_user)
 
   def initialize(match:, user:, message: nil)
     @match   = match

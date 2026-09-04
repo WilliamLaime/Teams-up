@@ -17,7 +17,11 @@ default: &default
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
-  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # `pool` est la clé reconnue par Active Record (`max_connections` était ignorée,
+  # le pool restait donc bloqué à la valeur par défaut de 5 connexions).
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # Évite qu'un thread reste bloqué indéfiniment si la base ne répond plus.
+  connect_timeout: 5
 
 
 development:
@@ -85,12 +89,12 @@ test:
 # for a full overview on how database connection configuration can be specified.
 #
 production:
+  # Tout vient de DATABASE_URL (hôte, base, identifiants), fournie par Railway.
+  # Ne pas redéclarer database/username/password ici : les valeurs de l'URL
+  # priment de toute façon, ces clés ne feraient qu'induire en erreur.
   primary: &primary_production
     <<: *default
     url: <%= ENV["DATABASE_URL"] %>
-    database: team_up_production
-    username: team_up
-    password: <%= ENV["TEAM_UP_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
     migrations_paths: db/cache_migrate

@@ -1,0 +1,73 @@
+<%# ── Pied d'une carte de match de tournoi (actions) ───────────────────────────
+    Bloc commun à TOUTES les cartes de match : _tmatch (tableau final), et
+    _tmatch_scoreline dans ses deux variantes (scoreline centrée pour le
+    championnat / la ronde suisse, empilée pour les poules et les barrages).
+    Les droits sont identiques partout — les recopier dans chaque carte, c'était
+    trois endroits à corriger le jour où une règle change.
+
+    Locals :
+      • match       — le TournamentMatch
+      • show_score  — optionnel, défaut false : affiche le score global en tête du
+        pied (tableau final uniquement ; ailleurs le score est déjà lisible sur la
+        carte elle-même, l'y répéter serait redondant)
+      • inline      — optionnel, défaut false : boutons groupés à gauche à la suite
+        plutôt qu'écartés en space-between (cartes pleine largeur)
+
+    Le partial rend son propre `if` d'ouverture : sans action ni score à montrer,
+    il ne doit produire AUCUN nœud (un pied vide laisse une bande de padding). %>
+<% can_edit = user_signed_in? && policy(match).update? %>
+<%# Création/consultation de la rencontre réelle : ouverte aux 2 joueurs du match
+    ET aux organisateurs (cf. TournamentMatchPolicy#create_match?), pour que les
+    joueurs puissent convenir eux-mêmes de la date et de l'heure. %>
+<% can_create_match = user_signed_in? && policy(match).create_match? %>
+<%# Correction après verrouillage : réservée à l'organisateur, seulement quand le
+    tour est verrouillé (sinon la saisie normale can_edit suffit). %>
+<% round_locked = match.tournament_round.status == "completed" %>
+<% can_correct = round_locked && !match.is_bye && user_signed_in? && policy(match).correct? %>
+<% show_score = local_assigns.fetch(:show_score, false) %>
+
+<% if can_edit || can_create_match || can_correct || match.match || match.score_entered? %>
+  <div class="tmatch-card__footer <%= "tmatch-card__footer--inline" if local_assigns.fetch(:inline, false) %>">
+    <% if show_score && match.score_entered? %>
+      <span class="tmatch-card__score" title="Score (<%= match.player_a.display_name %> – <%= match.player_b.display_name %>)">
+        <%= match.score_summary %>
+      </span>
+    <% end %>
+
+    <%# Le pied ne porte QUE des actions, sur une seule ligne. Le créneau, lui, est
+        remonté en tête de carte (_tmatch_when) : information de contexte, il se lit
+        avant les noms, et surtout il y est TOUJOURS affiché — tant qu'il vivait
+        ici, une carte datée poussait ses boutons à la ligne suivante quand sa
+        voisine sans date les gardait en haut, et les cartes d'une même rangée ne
+        s'alignaient plus. %>
+    <% if match.match %>
+      <%= link_to "Voir la rencontre", match_path(match.match), class: "tmatch-card__link" %>
+    <% elsif can_create_match %>
+      <%= link_to "Créer la rencontre", new_match_path(tournament_match_id: match.id), class: "tmatch-card__link" %>
+    <% end %>
+
+    <%# Un SEUL libellé, « Gérer le score », que le score soit déjà saisi ou non :
+        la modale fait les deux (saisir, corriger, effacer) et deux libellés pour
+        un même bouton obligeaient à lire l'état de la carte avant de savoir où
+        cliquer. « Détail » reste distinct : c'est la version LECTURE SEULE,
+        pour qui n'a pas le droit de saisir. %>
+    <% if can_edit %>
+      <%= score_modal_button match,
+            label: "Gérer le score",
+            editable: true,
+            url: tournament_tournament_match_path(match.tournament, match) %>
+    <% elsif match.score_entered? %>
+      <%= score_modal_button match, label: "Détail", editable: false, css_class: "tmatch-card__detail-btn" %>
+    <% end %>
+
+    <%# Correction organisateur d'un tour verrouillé : rouvre la modale en édition,
+        mais poste sur l'action `correct` (régénère l'aval si le vainqueur change). %>
+    <% if can_correct %>
+      <%= score_modal_button match,
+            label: "Corriger",
+            editable: true,
+            url: correct_tournament_tournament_match_path(match.tournament, match),
+            css_class: "tmatch-card__score-btn tmatch-card__score-btn--correct" %>
+    <% end %>
+  </div>
+<% end %>

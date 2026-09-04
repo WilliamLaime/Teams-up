@@ -6,11 +6,19 @@
   co_organizers = tournament.co_organizers
   # L'organisateur peut déclarer un forfait tant que le tournoi est en cours.
   can_manage   = user_signed_in? && policy(tournament).manage? && tournament.in_progress?
+  # La constitution des poules ne concerne que les formats qui en ont, et
+  # seulement avant le lancement (cf. TournamentPolicy#seeding?).
+  can_seed     = user_signed_in? && policy(tournament).seeding? &&
+                 Tournament::POOL_BASED_FORMATS.include?(tournament.format)
+  # Recherche : inutile tant que la grille se lit d'un coup d'œil. Le seuil
+  # correspond à peu près à deux rangées sur un écran large.
+  searchable   = players.size > 8
 %>
 
 <div class="tournament-participants">
 
-  <%# Organisateurs (n'occupent pas de place de joueur). %>
+  <%# Organisateurs. Un co-organisateur peut aussi jouer : il apparaît alors ici ET
+      dans la section « Joueurs » ci-dessous (cf. TournamentUser#co_organizer?). %>
   <section class="tournament-participants__section">
     <h3 class="tournament-participants__title">
       <i data-lucide="shield" aria-hidden="true"></i> Organisation
@@ -19,62 +27,111 @@
       <% if tournament.user %>
         <div class="participant-chip participant-chip--admin">
           <%= link_to user_profil_path(tournament.user), class: "participant-chip__link" do %>
-            <%= user_avatar_tag tournament.user, css_class: "participant-chip__avatar" %>
+            <%= user_avatar_tag tournament.user, css_class: "participant-chip__avatar", width: 34, height: 34 %>
             <span class="participant-chip__name"><%= tournament.user.display_name %></span>
           <% end %>
-          <span class="participant-chip__role">Admin</span>
+          <div class="participant-chip__meta">
+            <span class="participant-chip__role">Admin</span>
+          </div>
         </div>
       <% end %>
       <% co_organizers.each do |tu| %>
         <div class="participant-chip participant-chip--admin">
           <%= link_to user_profil_path(tu.user), class: "participant-chip__link" do %>
-            <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
+            <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar", width: 34, height: 34 %>
             <span class="participant-chip__name"><%= tu.display_name %></span>
           <% end %>
-          <span class="participant-chip__role">Co-organisateur</span>
+          <div class="participant-chip__meta">
+            <span class="participant-chip__role">Co-organisateur</span>
+          </div>
         </div>
       <% end %>
     </div>
   </section>
 
-  <%# Joueurs. %>
-  <section class="tournament-participants__section">
+  <%# Joueurs. Le filtre est purement client (aucune requête) : la liste est déjà
+      entièrement rendue, et un aller-retour serveur ferait perdre l'état du board. %>
+  <section class="tournament-participants__section"
+           <% if searchable %>data-controller="participant-filter"<% end %>>
     <h3 class="tournament-participants__title">
       <i data-lucide="users" aria-hidden="true"></i>
       Joueurs
-      <span class="tournament-participants__count"><%= players.size %></span>
+      <span class="tournament-participants__count"
+            <% if searchable %>data-participant-filter-target="count"<% end %>><%= players.size %></span>
     </h3>
+
+    <% if searchable %>
+      <div class="participant-search">
+        <i data-lucide="search" class="participant-search__icon" aria-hidden="true"></i>
+        <%# type="search" et non "text" : le navigateur offre sa croix d'effacement
+            native, et le clavier mobile affiche « rechercher ». %>
+        <input type="search" class="participant-search__input"
+               placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur"
+               autocomplete="off"
+               data-participant-filter-target="input"
+               data-action="input->participant-filter#filter search->participant-filter#filter">
+      </div>
+    <% end %>
 
     <% if players.any? %>
       <div class="tournament-participants__grid">
         <% players.each do |tu| %>
-          <div class="participant-chip">
+          <%# data-name : le nom sur lequel le filtre compare. Calculé côté serveur
+              pour que le JS n'ait pas à retrouver le nom dans le DOM (le badge
+              « Qualifié » et le bouton Forfait y sont aussi du texte). %>
+          <div class="participant-chip" data-name="<%= tu.display_name.to_s.downcase %>"
+               <% if searchable %>data-participant-filter-target="card"<% end %>>
             <%= link_to user_profil_path(tu.user), class: "participant-chip__link" do %>
-              <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar" %>
+              <%= user_avatar_tag tu.user, css_class: "participant-chip__avatar", width: 34, height: 34 %>
               <span class="participant-chip__name"><%= tu.display_name %></span>
             <% end %>
-            <% if tu.withdrawn? %>
-              <span class="participant-chip__state participant-chip__state--eliminated">Forfait</span>
-            <% elsif tu.qualified? %>
-              <span class="participant-chip__state participant-chip__state--qualified">Qualifié</span>
-            <% elsif tu.eliminated? %>
-              <span class="participant-chip__state participant-chip__state--eliminated">Éliminé</span>
-            <% end %>
 
-            <% if can_manage && !tu.withdrawn? %>
-              <%= button_to withdraw_tournament_tournament_user_path(tournament, tu),
-                            method: :patch,
-                            class: "participant-chip__forfeit",
-                            form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
-                <i data-lucide="user-x" aria-hidden="true"></i> Forfait
-              <% end %>
+            <%# État + action sur une SECONDE ligne : sur une seule ligne, les badges
+                (nowrap, non compressibles) mangeaient toute la largeur et le nom
+                tombait à « Em… ». Ici le nom dispose de la carte entière. %>
+            <% state = if tu.withdrawn? then ["Forfait", "eliminated"]
+                       elsif tu.qualified? then ["Qualifié", "qualified"]
+                       elsif tu.eliminated? then ["Éliminé", "eliminated"]
+                       end %>
+            <% if state || (can_manage && !tu.withdrawn?) %>
+              <div class="participant-chip__meta">
+                <% if state %>
+                  <span class="participant-chip__state participant-chip__state--<%= state.last %>">
+                    <%= state.first %>
+                  </span>
+                <% end %>
+
+                <% if can_manage && !tu.withdrawn? %>
+                  <%# turbo_confirm_danger / _accept : lus par notre modale de
+                      confirmation (cf. Turbo.setConfirmMethod) pour un bouton rouge
+                      et un libellé qui redit l'action plutôt qu'un « OK » muet. %>
+                  <%= button_to withdraw_tournament_tournament_user_path(tournament, tu),
+                                method: :patch,
+                                class: "participant-chip__forfeit",
+                                data: { turbo_confirm_danger: true,
+                                        turbo_confirm_accept: "Déclarer forfait" },
+                                form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
+                    <i data-lucide="user-x" aria-hidden="true"></i> Forfait
+                  <% end %>
+                <% end %>
+              </div>
             <% end %>
           </div>
         <% end %>
       </div>
+
+      <% if searchable %>
+        <p class="tournament-empty" data-participant-filter-target="empty" hidden>
+          Aucun joueur ne correspond à cette recherche.
+        </p>
+      <% end %>
     <% else %>
       <p class="tournament-empty">Aucun joueur inscrit pour le moment.</p>
     <% end %>
   </section>
+
+  <% if can_seed %>
+    <%= render "tournaments/seeding_panel", tournament: tournament %>
+  <% end %>
 
 </div>

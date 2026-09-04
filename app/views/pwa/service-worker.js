@@ -1,4 +1,4 @@
-// ── Service Worker Teams-Up ──────────────────────────────────────────────────
+// ── Service Worker Teams-up ──────────────────────────────────────────────────
 // Ce fichier est enregistré par le layout et tourne en arrière-plan dans le navigateur.
 // Il intercepte les requêtes réseau pour les mettre en cache et permettre un mode offline.
 

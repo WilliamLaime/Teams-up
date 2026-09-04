@@ -22,10 +22,22 @@ export default class extends Controller {
 
     this._outsideClick = (e) => { if (!this.element.contains(e.target)) this.close() }
     document.addEventListener("click", this._outsideClick)
+
+    // La place disponible change avec le scroll et le redimensionnement : tant que
+    // la liste est ouverte, on la replace pour qu'elle reste entièrement visible.
+    this._reposition = () => { if (this.isOpen) this.positionList() }
+    window.addEventListener("scroll", this._reposition, { passive: true })
+    window.addEventListener("resize", this._reposition)
   }
 
   disconnect() {
     document.removeEventListener("click", this._outsideClick)
+    window.removeEventListener("scroll", this._reposition)
+    window.removeEventListener("resize", this._reposition)
+  }
+
+  get isOpen() {
+    return this.hasListTarget && this.listTarget.style.display === "block"
   }
 
   // ── Résolution du workspace courant ───────────────────────────────────────────
@@ -58,12 +70,38 @@ export default class extends Controller {
     this.render(this.inputTarget.value)
     this.listTarget.style.display = "block"
     this.inputTarget.setAttribute("aria-expanded", "true")
+    this.positionList()
   }
 
   close() {
     this.listTarget.style.display = "none"
     this.inputTarget.setAttribute("aria-expanded", "false")
     this.activeIndex = -1
+  }
+
+  // ── Placement de la liste : toujours entièrement visible ────────────────────────
+  // Le champ vit en bas d'une colonne sticky : la liste, en position absolue, ne
+  // participe pas au flux et ne crée donc aucun scroll de page. Ouverte vers le bas
+  // sans place disponible, elle passait sous la ligne de flottaison, hors d'atteinte.
+  //
+  // On mesure l'espace réellement disponible de part et d'autre du champ, on ouvre
+  // du côté le plus dégagé, et on plafonne la hauteur à cet espace pour que le
+  // scroll interne de la liste (overflow-y: auto) prenne le relais.
+  positionList() {
+    const MAX_HEIGHT = 260 // hauteur confortable, cf. _slack_destination.scss
+    const MARGIN     = 12  // respiration avec le bord de l'écran
+
+    const field       = this.inputTarget.getBoundingClientRect()
+    const spaceBelow  = window.innerHeight - field.bottom - MARGIN
+    const spaceAbove  = field.top - MARGIN
+    // Vers le haut seulement si c'est franchement mieux : à espace comparable, on
+    // garde le sens de lecture naturel.
+    const dropUp      = spaceBelow < 160 && spaceAbove > spaceBelow
+
+    const available = dropUp ? spaceAbove : spaceBelow
+    this.listTarget.style.maxHeight = `${Math.max(120, Math.min(MAX_HEIGHT, available))}px`
+
+    this.listTarget.classList.toggle("slack-dest-list--up", dropUp)
   }
 
   filter() {

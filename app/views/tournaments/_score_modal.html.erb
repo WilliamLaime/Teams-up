@@ -1,7 +1,11 @@
 <%# ── Modale de score partagée (Lot 4) ────────────────────────────────────────
     Une seule modale pour tout le tableau : le contrôleur Stimulus tournament-score
-    la remplit à l'ouverture (URL PATCH du match, noms des joueurs, sets existants,
-    nombre de lignes selon le sport) et bascule entre saisie et lecture seule (Détail).
+    la remplit à l'ouverture (URL PATCH du match, noms des joueurs, sets existants)
+    et bascule entre saisie et lecture seule (Détail). Les lignes de sets sont
+    ajoutées AU FUR ET À MESURE : on part du nombre de sets à gagner (3 au ping-pong
+    en poule, 4 en phase finale) et une ligne n'apparaît que si le match n'est pas
+    encore décidé (2-1 → 4e set). Les boutons qui l'ouvrent sont générés par
+    TournamentsHelper#score_modal_button.
     Le formulaire poste deux tableaux parallèles games_a[] / games_b[] (une entrée par
     set) que le controller zippe en paires. %>
 <div class="modal fade score-modal" id="scoreModal" tabindex="-1" aria-labelledby="scoreModalTitle" aria-hidden="true"
@@ -15,8 +19,15 @@
 
       <%= form_with url: "#", method: :patch,
                     data: { tournament_score_target: "form",
-                            action: "turbo:submit-end->tournament-score#close" } do %>
+                            action: "submit->tournament-score#validateForm " \
+                                    "turbo:submit-end->tournament-score#close" } do %>
         <div class="modal-body">
+          <%# Erreurs renvoyées par le SERVEUR (TournamentMatch#sets_valid_for_sport).
+              Rempli par un Turbo Stream depuis TournamentMatchesController quand la
+              sauvegarde échoue : sans ça la modale se refermait sur un échec, ce qui
+              donnait l'impression que le score était accepté. %>
+          <div id="score_modal_errors" data-tournament-score-target="serverErrors"></div>
+
           <div class="score-modal__players">
             <span class="score-modal__player" data-tournament-score-target="nameA"></span>
             <span class="score-modal__vs">vs</span>
@@ -26,12 +37,27 @@
           <%# Le controller injecte ici une ligne d'inputs par set. %>
           <div class="score-modal__sets" data-tournament-score-target="rows"></div>
 
+          <%# Compteur de sets gagnés, tenu à jour par le contrôleur à chaque saisie.
+              Il se cale sur la MÊME grille que les lignes de sets : chaque total se
+              trouve donc exactement sous la colonne de scores du joueur concerné.
+              Masqué pour les sports à score final unique (pas de sets). %>
+          <div class="score-modal__tally" data-tournament-score-target="tally" hidden>
+            <span class="score-modal__tally-label">Score</span>
+            <span class="score-modal__tally-count" data-tournament-score-target="tallyA">0</span>
+            <span class="score-modal__tally-sep">–</span>
+            <span class="score-modal__tally-count" data-tournament-score-target="tallyB">0</span>
+          </div>
+
           <p class="score-modal__hint" data-tournament-score-target="hint"></p>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Fermer</button>
-          <button type="submit" class="btn btn-cta-primary" data-tournament-score-target="submit">
+          <%# `btn-primary` EN PLUS de `btn-cta-primary` : c'est Bootstrap qui porte
+              les couleurs ($primary mappé sur $green), btn-cta-primary ne fait
+              qu'arrondir et régler le survol. Sans lui, le bouton s'affichait sans
+              fond — c'est la convention suivie partout ailleurs dans l'app. %>
+          <button type="button" class="btn btn-cta-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="submit" class="btn btn-primary btn-cta-primary" data-tournament-score-target="submit">
             Enregistrer le score
           </button>
         </div>

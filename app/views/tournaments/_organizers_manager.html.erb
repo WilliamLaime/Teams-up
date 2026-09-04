@@ -1,0 +1,135 @@
+<%# ── Panneau « Équipe organisatrice » (page d'édition) ─────────────────────────
+    Nommer / révoquer des co-organisateurs, et transmettre l'administration.
+    Local : tournament.
+
+    Réservé à l'admin du tournoi (cf. TournamentPolicy#manage_organizers?) : un
+    co-organisateur qui pourrait coopter ou révoquer ferait perdre à l'admin le
+    contrôle de son propre tournoi.
+
+    IMPORTANT — ce panneau vit VOLONTAIREMENT en dehors de _form.html.erb : ce
+    sont des formulaires distincts (POST/DELETE/PATCH vers d'autres routes), et
+    un <form> imbriqué dans un autre est invalide en HTML — le navigateur ferme
+    le premier et les champs du tournoi partiraient dans la mauvaise requête. %>
+<%
+  co_organizers = tournament.co_organizers
+  # Le transfert n'a plus de sens sur un tournoi terminé (cf. la policy).
+  can_transfer = policy(tournament).transfer_ownership?
+%>
+
+<div class="container pb-5 tournament-organizers">
+  <div class="row">
+    <div class="col-lg-7">
+
+      <div class="match-form-section">
+        <div class="match-form-section-header">
+          <div class="match-form-step-badge"><i data-lucide="shield" aria-hidden="true"></i></div>
+          <h2 class="match-form-section-title">Équipe organisatrice</h2>
+        </div>
+
+        <p class="tournament-form-hint mb-3">
+          Les co-organisateurs gèrent le tournoi comme toi : lancer, saisir les scores,
+          déclarer un forfait, modifier les paramètres. Seul l'admin peut supprimer le
+          tournoi et composer cette équipe.
+        </p>
+
+        <%# ── Liste courante ────────────────────────────────────────────────── %>
+        <ul class="tournament-organizers__list">
+          <li class="tournament-organizers__row">
+            <%= user_avatar_tag tournament.user, css_class: "tournament-organizers__avatar", width: 34, height: 34 %>
+            <span class="tournament-organizers__name"><%= tournament.user.display_name %></span>
+            <span class="tournament-organizers__role tournament-organizers__role--admin">Admin</span>
+          </li>
+
+          <% co_organizers.each do |tu| %>
+            <li class="tournament-organizers__row">
+              <%= user_avatar_tag tu.user, css_class: "tournament-organizers__avatar", width: 34, height: 34 %>
+              <span class="tournament-organizers__name"><%= tu.display_name %></span>
+              <span class="tournament-organizers__role">Co-organisateur</span>
+              <%# turbo_confirm_danger / _accept : lus par notre modale de confirmation
+                  (cf. Turbo.setConfirmMethod) pour un bouton rouge et un libellé explicite. %>
+              <%= button_to remove_co_organizer_tournament_path(tournament, tournament_user_id: tu.id),
+                            method: :delete,
+                            class: "tournament-organizers__remove",
+                            data: { turbo_confirm_danger: true,
+                                    turbo_confirm_accept: "Retirer" },
+                            form: { data: { turbo_confirm: "Retirer #{tu.display_name} de l'organisation ? Il perdra tous ses droits de gestion sur le tournoi." } },
+                            aria: { label: "Retirer #{tu.display_name} de l'organisation" } do %>
+                <i data-lucide="x" aria-hidden="true"></i>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+
+        <%# ── Nommer un co-organisateur ─────────────────────────────────────── %>
+        <%# L'autocomplete reçoit tournament_id : les personnes déjà à l'organisation
+            ne sont pas proposées (cf. TournamentsController#excluded_search_ids). %>
+        <%= form_with url: add_co_organizer_tournament_path(tournament), method: :post,
+                      class: "tournament-organizers__form",
+                      data: { controller: "invite-search",
+                              "invite-search-url-value": search_tournaments_path(tournament_id: tournament.to_param) } do %>
+          <%= label_tag :co_organizer_sgid, "Ajouter un co-organisateur", class: "form-label" %>
+          <div class="tournament-organizers__field">
+            <div class="position-relative flex-grow-1">
+              <input type="text"
+                     class="form-control"
+                     placeholder="Rechercher un joueur (nom, ou son email exact)…"
+                     autocomplete="off"
+                     data-invite-search-target="input"
+                     data-action="input->invite-search#search">
+              <%# Identifiant SIGNÉ du joueur choisi, soumis avec le formulaire.
+                  Jamais son email : voir docs/SECURITE-RGPD.md. %>
+              <%= hidden_field_tag :co_organizer_sgid, "", data: { "invite-search-target": "hidden" } %>
+              <div class="invite-search-dropdown" data-invite-search-target="dropdown" style="display:none;"></div>
+            </div>
+            <button type="submit" class="btn-cta-primary tournament-organizers__submit">
+              <i data-lucide="user-plus" aria-hidden="true"></i> Ajouter
+            </button>
+          </div>
+          <small class="form-text tournament-form-hint">
+            Tu peux en nommer autant que nécessaire. Un joueur déjà inscrit garde sa
+            place dans le tableau : il joue et co-organise.
+          </small>
+        <% end %>
+
+        <%# ── Transfert d'administration ─────────────────────────────────────── %>
+        <% if can_transfer %>
+          <hr class="tournament-organizers__separator">
+
+          <%# Pas de tournament_id dans l'URL de recherche ici : contrairement à la
+              nomination, on veut justement pouvoir promouvoir un co-organisateur
+              déjà en place au rang d'admin. %>
+          <%= form_with url: transfer_ownership_tournament_path(tournament), method: :patch,
+                        class: "tournament-organizers__form",
+                        data: { controller: "invite-search",
+                                "invite-search-url-value": search_tournaments_path } do %>
+            <%= label_tag :new_admin_sgid, "Transmettre l'administration", class: "form-label" %>
+            <div class="tournament-organizers__field">
+              <div class="position-relative flex-grow-1">
+                <input type="text"
+                       class="form-control"
+                       placeholder="Rechercher le nouvel admin…"
+                       autocomplete="off"
+                       data-invite-search-target="input"
+                       data-action="input->invite-search#search">
+                <%= hidden_field_tag :new_admin_sgid, "", data: { "invite-search-target": "hidden" } %>
+                <div class="invite-search-dropdown" data-invite-search-target="dropdown" style="display:none;"></div>
+              </div>
+              <button type="submit"
+                      class="btn-cta-secondary tournament-organizers__submit"
+                      data-turbo-confirm-danger="true"
+                      data-turbo-confirm-accept="Transmettre"
+                      data-turbo-confirm="Transmettre l'administration de ce tournoi ? Tu deviendras simple co-organisateur et ne pourras plus le supprimer ni gérer cette équipe.">
+                <i data-lucide="crown" aria-hidden="true"></i> Transmettre
+              </button>
+            </div>
+            <small class="form-text tournament-form-hint">
+              Tu restes co-organisateur et gardes la gestion courante, mais la suppression
+              du tournoi et la composition de l'équipe passeront au nouvel admin.
+            </small>
+          <% end %>
+        <% end %>
+
+      </div>
+    </div>
+  </div>
+</div>

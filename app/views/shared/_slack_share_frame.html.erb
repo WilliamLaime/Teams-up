@@ -1,0 +1,28 @@
+<%# ── Champ de partage Slack, chargé dans un turbo-frame ──────────────────────
+    Locals (tous optionnels) :
+      standalone : mode modale de partage (cf. shared/_slack_share_field)
+      loading    : "eager" (défaut) ou "lazy" — lazy = la requête ne part que
+                   lorsque le frame devient visible (utile dans une modale).
+
+    Pourquoi un frame plutôt qu'un rendu direct : les destinations viennent de
+    l'API Slack (réseau). Les charger dans le cycle de la page retardait
+    l'affichage de tout le formulaire ; ici la page s'affiche tout de suite et le
+    champ arrive ensuite. Rien n'est rendu si l'utilisateur n'a pas lié Slack :
+    inutile de déclencher une requête pour un champ qui resterait vide.
+
+    Le frame vit À L'INTÉRIEUR du <form> : ses champs (slack_workspace_id,
+    slack_channel_id, case « Partager ») font donc partie du formulaire et sont
+    soumis normalement, comme avant. %>
+<% standalone = local_assigns.fetch(:standalone, false) %>
+<% if current_user&.slack_linked? %>
+  <%= turbo_frame_tag "slack_share_field",
+                      src: slack_share_field_path(standalone: standalone ? "1" : nil),
+                      loading: local_assigns.fetch(:loading, "eager") do %>
+    <%# aria-live : le lecteur d'écran annonce la fin du chargement quand Turbo
+        remplace ce contenu par le vrai champ. %>
+    <p class="slack-share-loading" role="status" aria-live="polite">
+      <span class="slack-share-loading__spinner" aria-hidden="true"></span>
+      Chargement des destinations Slack…
+    </p>
+  <% end %>
+<% end %>

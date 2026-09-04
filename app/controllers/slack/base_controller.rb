@@ -12,6 +12,7 @@ module Slack
     skip_forgery_protection
     # …et on la remplace par la vérification de la signature Slack sur chaque requête.
     include SlackRequestVerification
+
     before_action :verify_slack_signature!
   end
 end

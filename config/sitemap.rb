@@ -33,6 +33,11 @@ SitemapGenerator::Sitemap.create do
       priority:   0.7,
       changefreq: "monthly"
 
+  # Espace tournois — liste publique des tournois
+  add tournaments_path,
+      priority:   0.8,
+      changefreq: "daily"
+
   # Page contact — stable
   add contact_path,
       priority:   0.5,

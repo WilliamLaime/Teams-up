@@ -11,7 +11,7 @@ class WaitlistMailer < ApplicationMailer
 
     mail(
       to: email,
-      subject: "Teams-Up est lancé, crée ton compte maintenant !"
+      subject: "Teams-up est lancé, crée ton compte maintenant !"
     )
   end
 end

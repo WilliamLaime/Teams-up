@@ -10,17 +10,13 @@ class TournamentPolicy < ApplicationPolicy
     true
   end
 
-  # Page d'attente publique (feature en chantier) : accessible à tous.
-  def coming_soon?
-    true
-  end
-
   def create?
     user.present?
   end
 
-  # Autocomplete de recherche d'utilisateurs (co-organisateur) : mêmes droits que
-  # la création, puisqu'il n'est utile que dans le formulaire de création.
+  # Autocomplete de recherche d'utilisateurs (co-organisateur / transfert d'admin) :
+  # mêmes droits que la création. L'endpoint ne renvoie ni email ni id brut (voir
+  # TournamentsController#search), donc rien à restreindre au-delà du login.
   def search?
     create?
   end
@@ -51,8 +47,30 @@ class TournamentPolicy < ApplicationPolicy
     manage?
   end
 
+  # Constitution des poules (mode + chapeaux) : réservée à l'organisation, et
+  # seulement tant que rien n'est joué — une fois lancé, changer la répartition
+  # rebattrait des poules déjà en cours.
+  def seeding?
+    manage? && (record.open? || record.closed?)
+  end
+
   def manage?
     record.organizer?(user)
+  end
+
+  # Composition de l'équipe organisatrice (nommer / révoquer un co-organisateur).
+  # Réservée à l'admin, PAS ouverte à `manage?` : sinon un co-organisateur pourrait
+  # en coopter d'autres, voire révoquer celui qui l'a nommé — l'admin perdrait le
+  # contrôle de son propre tournoi sans jamais pouvoir le reprendre.
+  def manage_organizers?
+    owner?
+  end
+
+  # Transmettre l'administration. Irréversible côté ancien admin (il redevient
+  # simple co-organisateur), donc réservée à l'admin en place et sans intérêt sur
+  # un tournoi déjà terminé — plus rien ne s'y gère.
+  def transfer_ownership?
+    owner? && !record.completed?
   end
 
   private

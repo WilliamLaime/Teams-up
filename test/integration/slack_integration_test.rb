@@ -71,7 +71,13 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
                  ] }.to_json)
 
     sign_in @user
+    # Le formulaire ne porte plus que le turbo-frame : le champ lui-même est chargé
+    # à part pour ne pas faire attendre la page sur l'API Slack.
     get new_match_path
+    assert_response :success
+    assert_select "turbo-frame#slack_share_field[src]", count: 1
+
+    get slack_share_field_path
     assert_response :success
     assert_select "input#post_to_slack", count: 1
     # Workspace unique → champ caché (pas de select workspace)
@@ -102,6 +108,60 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     dest = Slack::ChannelLister.destinations(ws)
     assert_equal [["#general", "C1"]], dest["Channels"]
     assert_equal [["Bob", "U9"]], dest["Messages directs"] # le bot est exclu
+  end
+
+  # ── Pagination : Slack tronque ses listes et fournit un curseur ───────────────
+  # Sans suivre next_cursor, un workspace de plus de 200 conversations perdait
+  # silencieusement les suivantes (elles ne sont pas triées par nom côté Slack).
+  test "ChannelLister suit next_cursor pour lister tous les channels" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(
+        # 1re page : curseur non vide → il reste des channels à lire.
+        { status: 200, headers: { "Content-Type" => "application/json" },
+          body: { ok: true, channels: [{ id: "C1", name: "general" }],
+                  response_metadata: { next_cursor: "page2" } }.to_json },
+        # 2e page : curseur vide → fin du parcours.
+        { status: 200, headers: { "Content-Type" => "application/json" },
+          body: { ok: true, channels: [{ id: "C2", name: "pingpong-midi" }],
+                  response_metadata: { next_cursor: "" } }.to_json }
+      )
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, members: [] }.to_json)
+
+    dest = Slack::ChannelLister.destinations(ws)
+    assert_equal [["#general", "C1"], ["#pingpong-midi", "C2"]], dest["Channels"]
+
+    # La 2e requête doit bien transmettre le curseur reçu.
+    assert_requested :post, "https://slack.com/api/conversations.list",
+                     body: hash_including("cursor" => "page2"), times: 1
+  end
+
+  # ── Les arguments doivent VRAIMENT partir dans la requête ─────────────────────
+  # conversations.list et users.list n'acceptent pas de corps JSON : envoyés ainsi,
+  # Slack répond ok: true mais ignore tout (types, limit, cursor) et renvoie la
+  # première page des seuls channels publics. Le bug était totalement muet — d'où
+  # ce test sur la forme de la requête et pas seulement sur son résultat.
+  test "ChannelLister envoie ses arguments en form-urlencoded, pas en JSON" do
+    ws = link_slack!
+    stub_request(:post, "https://slack.com/api/conversations.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, channels: [] }.to_json)
+    stub_request(:post, "https://slack.com/api/users.list")
+      .to_return(status: 200, headers: { "Content-Type" => "application/json" },
+                 body: { ok: true, members: [] }.to_json)
+
+    Slack::ChannelLister.destinations(ws)
+
+    assert_requested :post, "https://slack.com/api/conversations.list", times: 1 do |req|
+      assert_includes req.headers["Content-Type"].to_s, "application/x-www-form-urlencoded"
+      params = Rack::Utils.parse_nested_query(req.body)
+      # Sans `types`, les channels privés ne sont jamais listés.
+      assert_equal "public_channel,private_channel", params["types"]
+      assert_equal "200", params["limit"]
+      true
+    end
   end
 
   # ── Robustesse : un appel qui échoue ne fait pas disparaître l'autre liste ─────
@@ -194,7 +254,7 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
                  body: { ok: true, members: [] }.to_json)
 
     sign_in @user
-    get new_match_path
+    get slack_share_field_path # champ chargé dans son turbo-frame
     assert_response :success
     # Le JSON embarqué doit contenir la paire favorite.
     assert_match(/#general/, response.body)

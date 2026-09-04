@@ -32,6 +32,20 @@ class SecurityLog < ApplicationRecord
   # Filtre par type d'événement
   scope :by_type, ->(type) { where(event_type: type) }
 
+  # ── Rétention (RGPD) ────────────────────────────────────────────────────────
+  #
+  # Un SecurityLog contient une adresse IP et un user-agent : ce sont des données
+  # personnelles. Le RGPD impose une durée de conservation définie ET appliquée
+  # (principe de minimisation, art. 5). La CNIL recommande 6 mois à 1 an pour des
+  # journaux techniques de sécurité : on retient 12 mois.
+  #
+  # La purge se lance avec `rake security_logs:purge` (voir lib/tasks/security_logs.rake).
+  # Durée documentée dans docs/SECURITE-RGPD.md.
+  RETENTION_PERIOD = 12.months
+
+  # Lignes dont la durée de conservation est dépassée
+  scope :purgeable, ->(period = RETENTION_PERIOD) { where(created_at: ...period.ago) }
+
   # ── Méthode de classe pour créer un log facilement ──────────────────────────
   #
   # Paramètres :

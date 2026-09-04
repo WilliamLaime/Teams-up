@@ -81,6 +81,12 @@ class Match < ApplicationRecord
   # Scope visibilité : exclut les matchs privés de l'affichage public
   scope :publicly_visible, -> { where(visibility: "public").or(where(visibility: nil)) }
 
+  # Scope "créneau fixé" : la colonne date est nullable, une rencontre peut donc
+  # exister sans être encore posée dans le temps (les joueurs d'un tournoi créent
+  # la rencontre puis conviennent de la date). Tout affichage chronologique —
+  # calendrier en tête — doit écarter ces rencontres : elles n'ont pas de case.
+  scope :scheduled, -> { where.not(date: nil) }
+
   # Scope historique : matchs terminés (débutés il y a plus d'1h)
   scope :completed, -> { where("(date + time) < ?", Time.current - 1.hour) }
 
@@ -162,6 +168,9 @@ class Match < ApplicationRecord
   validates :level, presence: true
   validate :level_valid_for_sport
 
+  # Validation : le format (taille d'équipe) doit exister pour le sport choisi.
+  validate :format_valid_for_sport
+
   # Validation : capacité cible (joueurs recherchés via l'app) obligatoire, entier, minimum 1.
   # `player_left` (places restantes) n'est plus saisi : il est DÉRIVÉ de players_needed
   # moins les joueurs confirmés (voir recompute_player_left!).
@@ -197,6 +206,12 @@ class Match < ApplicationRecord
   # Validation : l'heure de fin ne peut pas être identique à l'heure de début
   validate :end_time_differs_from_start, on: %i[create update]
 
+  # Une confrontation de tournoi n'a qu'UNE rencontre (index unique en base).
+  # Depuis le Lot 7, les deux joueurs peuvent la créer : sans cette validation, le
+  # second à valider le formulaire déclencherait une RecordNotUnique (erreur 500)
+  # au lieu d'un message lisible.
+  validates :tournament_match_id, uniqueness: { message: "a déjà une rencontre planifiée" }, allow_nil: true
+
   # Validation : le lien de réservation doit être une URL valide si renseigné
   validates :booking_link, format: {
     with: URI::DEFAULT_PARSER.make_regexp(%w[http https]),
@@ -220,6 +235,20 @@ class Match < ApplicationRecord
     # Si pas de sport sélectionné, la validation presence: true sur sport s'en charge
   end
 
+  # Vérifie que le format choisi existe bien pour le sport sélectionné.
+  # Sans elle, un match créé en volley ("3v3") puis repassé en ping-pong gardait
+  # son "3v3" : la vue l'affichait tel quel et `format_total` en déduisait
+  # 6 joueurs attendus, soit 4 joueurs "sur place" fantômes sur un 1v1.
+  # `on: :update` inclus : le sport est modifiable après coup par l'organisateur.
+  def format_valid_for_sport
+    return if format.blank? || sport.blank?
+
+    valid_labels = sport.available_formats.map { |f| f[:label] }
+    return if valid_labels.include?(format)
+
+    errors.add(:format, "n'est pas valide pour ce sport (valeurs acceptées : #{valid_labels.join(', ')})")
+  end
+
   # Retourne vrai si le format du match est "Libre" (taille d'équipe définie librement)
   def libre?
     format == "Libre"
@@ -233,6 +262,45 @@ class Match < ApplicationRecord
   # Retourne l'inscription de l'organisateur du match
   def organizer_match_user
     match_users.find_by(role: "organisateur")
+  end
+
+  # ── Rattachement tournoi : deux niveaux, deux questions différentes ─────────
+  # `tournament_linked?` : le match "fait partie" d'un tournoi, quelle que soit la
+  # façon dont il y a été rattaché (carte du tableau ou sélecteur du Descriptif).
+  # C'est ce test qui allège la carte Slack : dans les deux cas, le match n'est
+  # pas ouvert à l'inscription du tout-venant.
+  def tournament_linked?
+    tournament_id.present?
+  end
+
+  # `tournament_confrontation?` : le match matérialise une carte PRÉCISE du
+  # tableau — et là seulement on connaît nommément les deux adversaires.
+  def tournament_confrontation?
+    tournament_match_id.present?
+  end
+
+  # Les deux `User` qui s'affrontent, [] hors confrontation.
+  # TournamentMatch#players renvoie des TournamentUser → on remonte au User.
+  def confrontation_opponents
+    return [] unless tournament_confrontation?
+
+    tournament_match.players.map(&:user).compact
+  end
+
+  # Inscriptions à MONTRER (carte Slack, grid de la page match, compteurs).
+  #
+  # Sur une confrontation, l'organisateur qui a planifié la rencontre n'est pas
+  # forcément l'un des deux joueurs : un organisateur de tournoi peut créer la
+  # rencontre pour deux autres personnes (MatchCreationService l'inscrit malgré
+  # tout en "organisateur" — il en a besoin pour ses droits). Il n'a rien à faire
+  # dans les inscrits d'un 1v1, sans quoi un ping-pong affiche "3/3".
+  #
+  # On ne touche PAS au MatchUser lui-même : on l'écarte seulement de l'affichage.
+  def displayed_match_users
+    return match_users unless tournament_confrontation?
+
+    opponent_ids = confrontation_opponents.map(&:id)
+    match_users.where(user_id: opponent_ids)
   end
 
   # Nombre de joueurs CONFIRMÉS occupant une place (approved, hors organisateur).
@@ -271,8 +339,10 @@ class Match < ApplicationRecord
 
   # Joueurs occupant une place dans le grid : approuvés + organisateur.
   # `where` interroge toujours la base → valeur fraîche même en broadcast.
+  # Sur une confrontation de tournoi, `displayed_match_users` a déjà écarté
+  # l'organisateur non-joueur → un 1v1 compte bien 2 personnes, pas 3.
   def approved_including_organizer_count
-    match_users.where("status = ? OR role = ?", "approved", "organisateur").count
+    displayed_match_users.where("status = ? OR role = ?", "approved", "organisateur").count
   end
 
   # Joueurs "sur place" (sans compte app), déduits du total d'un format chiffré.
@@ -373,7 +443,7 @@ class Match < ApplicationRecord
   def resync_slack_messages
     return unless slack_match_messages.exists?
 
-    SlackMatchStatusJob.perform_later(id)     # rafraîchit le "Quand" affiché maintenant
+    SlackMatchStatusJob.perform_later(id) # rafraîchit le "Quand" affiché maintenant
     SlackMatchStatusJob.schedule_transitions(self) # rebranche les bascules En cours/Terminé
 
     # Nouvel horaire → on autorise un nouveau rappel "préparez-vous" et on le

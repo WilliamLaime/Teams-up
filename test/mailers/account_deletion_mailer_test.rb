@@ -34,7 +34,7 @@ class AccountDeletionMailerTest < ActionMailer::TestCase
 
     # Le sujet doit confirmer la suppression du compte
     assert_includes email.subject, "supprimé"
-    assert_includes email.subject, "Team-Up"
+    assert_includes email.subject, "Teams-up"
   end
 
   # ── CAS LIMITE : NOM AFFICHÉ = EMAIL (user sans prénom/nom) ──────────────────

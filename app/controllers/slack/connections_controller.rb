@@ -99,7 +99,7 @@ module Slack
 
     # Base64 URL-safe sans padding → on rétablit le padding "=" attendu par le décodeur.
     def add_padding(segment)
-      segment + "=" * ((4 - segment.length % 4) % 4)
+      segment + ("=" * ((4 - (segment.length % 4)) % 4))
     end
 
     def link_identity(workspace, claims)

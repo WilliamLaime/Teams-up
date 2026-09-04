@@ -64,3 +64,18 @@ package-lock.json
 # Réglages Claude Code personnels (machine-spécifiques, non partagés).
 # settings.json (sans .local) reste versionnable pour d'éventuels réglages d'équipe.
 .claude/settings.local.json
+
+# Graphe de connaissance graphify — entièrement LOCAL.
+#
+# Le graphe a d'abord été versionné pour que l'équipe en dispose sans rien
+# installer, en comptant sur le pilote de fusion `merge=graphify`
+# (.gitattributes) pour absorber les conflits. Ça ne marche que sur un merge
+# exécuté en local : GitHub fusionne côté serveur, où aucun pilote de fusion
+# personnalisé n'est disponible. Résultat, toute PR touchant au code
+# conflictait sur trois artefacts générés que personne ne relit.
+#
+# Le graphe est donc désormais ignoré. Il se reconstruit sans aucun appel LLM
+# (extraction AST locale, quelques secondes) et le hook .githooks/pre-commit
+# continue de le rafraîchir : chacun a le sien, à jour, sans conflit.
+# Pour le générer sur un poste neuf : `graphify update .`
+graphify-out/

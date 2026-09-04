@@ -11,6 +11,8 @@
 #   PLAYERS=32 FORMAT=poules rails tournament:seed  # autre effectif / format
 #   PROGRESS=full rails tournament:seed             # tournoi entièrement terminé (champion désigné)
 #   PROGRESS=round_robin rails tournament:seed      # phase de groupes finie, tableau final vierge
+#   PROGRESS=open FORMAT=poules rails tournament:seed  # PRÊT À LANCER : le tirage
+#                                                   #   reste à faire, on voit l'animation
 #
 # Variables d'environnement :
 #   PLAYERS   nombre de joueurs inscrits            (défaut 40)
@@ -18,7 +20,7 @@
 #   SPORT     slug du sport                          (défaut tennis)
 #   ORGANIZER email de l'organisateur                (défaut : premier compte non-démo)
 #   NAME      nom du tournoi                         (défaut « Démo <format> <PLAYERS> joueurs »)
-#   PROGRESS  final | full | round_robin             (défaut final)
+#   PROGRESS  open | final | full | round_robin      (défaut final)
 #   RESET     1 pour recréer le tournoi s'il existe déjà (le supprime)
 namespace :tournament do
   desc "Crée un tournoi de démo avec N joueurs et des matchs joués (ENV: PLAYERS, FORMAT, SPORT, PROGRESS, RESET)"
@@ -31,7 +33,7 @@ namespace :tournament do
     sport_slug    = ENV.fetch("SPORT", "tennis")
 
     abort "❌ FORMAT invalide (#{Tournament::FORMATS.join(', ')})" unless Tournament::FORMATS.include?(format)
-    abort "❌ PROGRESS invalide (final, full, round_robin)" unless %w[final full round_robin].include?(progress)
+    abort "❌ PROGRESS invalide (open, final, full, round_robin)" unless %w[open final full round_robin].include?(progress)
 
     sport = Sport.find_by(slug: sport_slug) || abort("❌ Sport « #{sport_slug} » introuvable (#{Sport.pluck(:slug).join(', ')})")
     name  = ENV.fetch("NAME", "Démo #{format.tr('_', ' ')} #{players_count} joueurs")
@@ -98,6 +100,22 @@ namespace :tournament do
     end
     puts "👥 #{players.size} joueurs inscrits (mot de passe : Demo1234!)."
 
+    # ── PROGRESS=open : on s'arrête AVANT le lancement ────────────────────────
+    # Le tirage au sort (assign_draw_order!) a lieu au clic sur « Lancer le
+    # tournoi » : le seeder ne doit surtout pas le faire à la place de
+    # l'organisateur, sinon il n'y a plus rien à voir dans l'UI. Le tournoi reste
+    # donc `open`, plateau vierge, bouton de lancement disponible.
+    if progress == "open"
+      puts ""
+      puts "✅ « #{tournament.name} » — statut : #{tournament.status} (prêt à lancer)"
+      puts "   #{tournament.approved_players_count} joueurs inscrits, aucune ronde générée."
+      puts "   Connecte-toi en #{organizer.email} puis clique « Lancer le tournoi »"
+      puts "   pour voir le tirage au sort s'animer."
+      puts ""
+      puts "🔗 http://localhost:3000/tournois/#{tournament.slug}"
+      next
+    end
+
     # ── Lancement (même chemin que TournamentsController#start) ────────────────
     ActiveRecord::Base.transaction do
       tournament.update!(status: "in_progress")
@@ -144,11 +162,13 @@ namespace :tournament do
       break if round.nil? || tournament.completed?
       # Garde-fou anti boucle infinie : le moteur n'a plus rien à générer.
       break if round.id == last_round_id
+
       last_round_id = round.id
 
       # Arrêts demandés par PROGRESS : on laisse la suite « à jouer » dans l'UI.
       break if progress == "round_robin" && round.phase == "bracket"
-      if progress == "final" && round.phase == "bracket" && round.tournament_matches.count == 1
+
+      if progress == "final" && round.phase == "bracket" && round.tournament_matches.one?
         puts "⏸  Finale laissée à jouer (PROGRESS=final)."
         break
       end
@@ -159,7 +179,10 @@ namespace :tournament do
       end
 
       if %w[swiss league pool].include?(round.phase)
-        engine.recompute_stats_for(round.phase, apply_state: round.phase == "swiss")
+        # `count_byes` suit la phase : le bye ne vaut une victoire qu'en ronde
+        # suisse (cf. RoundRobinStats#recompute_stats_for).
+        swiss = round.phase == "swiss"
+        engine.recompute_stats_for(round.phase, apply_state: swiss, count_byes: swiss)
       end
 
       played_rounds += 1

@@ -124,4 +124,26 @@ class SecurityLogTest < ActiveSupport::TestCase
     log = SecurityLog.new(valid_attrs)
     assert log.valid?, "Un log sans user doit être valide car belongs_to est optional"
   end
+
+  # ─── Rétention RGPD ──────────────────────────────────────────────────────────
+  # Un SecurityLog contient une IP et un user-agent : la durée de conservation
+  # doit être appliquée (rake security_logs:purge). Voir docs/SECURITE-RGPD.md.
+
+  test "purgeable ne retient que les logs plus vieux que la rétention" do
+    recent = SecurityLog.create!(valid_attrs)
+    old    = SecurityLog.create!(valid_attrs)
+    old.update_column(:created_at, SecurityLog::RETENTION_PERIOD.ago - 1.day)
+
+    purgeable_ids = SecurityLog.purgeable.pluck(:id)
+    assert_includes purgeable_ids, old.id
+    refute_includes purgeable_ids, recent.id
+  end
+
+  test "purgeable accepte une durée personnalisée" do
+    log = SecurityLog.create!(valid_attrs)
+    log.update_column(:created_at, 2.months.ago)
+
+    assert_includes SecurityLog.purgeable(1.month).pluck(:id), log.id
+    refute_includes SecurityLog.purgeable(6.months).pluck(:id), log.id
+  end
 end

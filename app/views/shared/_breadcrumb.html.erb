@@ -1,0 +1,56 @@
+<%#
+  Fil d'Ariane — navigation hiérarchique (RGAA 12.2)
+
+  Ne pas rendre ce partial directement : passer par le helper `breadcrumb_for`
+  (ApplicationHelper), qui ajoute l'accueil en tête et sert de point d'entrée unique.
+
+  Paramètres :
+    - crumbs : tableau de `[libellé, chemin]`, du plus général au plus précis.
+      Le DERNIER maillon est la page courante : rendu en texte, jamais en lien
+      (se lier à la page où l'on est déjà n'aide personne et brouille la lecture
+      au lecteur d'écran), et porteur d'`aria-current="page"`.
+    - bare : optionnel, défaut false. À true, le fil ne pose PAS son .container.
+      À réserver aux pages à bannière pleine largeur (détail d'un match, création
+      d'un tournoi…), où le fil s'insère dans le .container de la bannière : deux
+      .container imbriqués doubleraient les marges latérales.
+    - on_dark : optionnel, défaut false. À true, couleurs claires fixes — pour les
+      bannières sombres (photo, dégradé), sombres dans les DEUX thèmes, où les
+      tokens --theme-* rendraient le fil illisible en mode clair.
+
+  Le séparateur « / » est un caractère textuel et non une icône : il est décoratif,
+  donc `aria-hidden`, et n'impose aucune initialisation JS supplémentaire.
+
+  Les libellés sont tronqués à 40 caractères : un nom de tournoi ou un titre
+  d'article long ferait déborder le fil sur mobile.
+%>
+<% bare    = local_assigns.fetch(:bare, false) %>
+<% on_dark = local_assigns.fetch(:on_dark, false) %>
+<% classes = ["breadcrumb-trail", ("breadcrumb-trail--bare" if bare),
+              ("breadcrumb-trail--on-dark" if on_dark)].compact.join(" ") %>
+<nav class="<%= classes %>" aria-label="Fil d'Ariane">
+  <%# Le .container n'est posé que hors bannière (cf. le local `bare`). %>
+  <%= tag.div class: ("container" unless bare) do %>
+    <ol class="breadcrumb-trail__list">
+      <% crumbs.each_with_index do |(label, path), index| %>
+        <% last = index == crumbs.size - 1 %>
+        <li class="breadcrumb-trail__item">
+          <% if last || path.blank? %>
+            <span class="breadcrumb-trail__current" aria-current="<%= "page" if last %>">
+              <%= truncate(label.to_s, length: 40) %>
+            </span>
+          <% else %>
+            <%= link_to truncate(label.to_s, length: 40), path, class: "breadcrumb-trail__link" %>
+          <% end %>
+          <% unless last %>
+            <span class="breadcrumb-trail__separator" aria-hidden="true">/</span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</nav>
+
+<%# Résultats enrichis Google : le fil apparaît sous le titre dans les SERP. %>
+<script type="application/ld+json">
+  <%= raw breadcrumb_json_ld(crumbs) %>
+</script>

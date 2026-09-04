@@ -30,6 +30,17 @@
 <%# Détermine le chemin du bouton Annuler selon qu'on crée ou modifie un match %>
 <% cancel_path = @match.persisted? ? match_path(@match) : matches_path %>
 
+<%# Contexte tournoi : la rencontre est adossée à une confrontation, donc un 1v1
+    entre deux joueurs déjà connus que le tournoi inscrit lui-même. Le formulaire
+    est allégé (pas de section « Détails du match », récap réduit).
+
+    On teste l'objet et non l'id : à la création c'est
+    MatchesController#prefill_from_tournament_match qui l'associe, et au
+    ré-affichage après une erreur de validation c'est sanitize_tournament_link
+    qui l'a déjà annulé si l'utilisateur n'avait pas le droit de rattacher la
+    rencontre. On suit donc toujours la décision du serveur. %>
+<% tournament_context = @match.tournament_match.present? %>
+
 <%# form_with génère la balise <form> et la configure automatiquement :
     - @match nouveau     → action="/matches"        method="POST"
     - @match existant    → action="/matches/:id"    method="PATCH"
@@ -72,22 +83,6 @@
         </p>
 
         <%# ────────────────────────────────────────────────
-            Rattachement à un tournoi (Lot 4) — optionnel.
-            Visible seulement si l'utilisateur organise au moins un tournoi.
-            Le lien précis à une carte (tournament_match_id) est posé quand on
-            arrive via « Créer la rencontre » ; on le transmet en champ caché.
-            ──────────────────────────────────────────────── %>
-        <% if @organized_tournaments&.any? %>
-          <div class="mb-3">
-            <%= f.label :tournament_id, "Tournoi (optionnel)", class: "form-label" %>
-            <%= f.collection_select :tournament_id, @organized_tournaments, :id, :name,
-                  { include_blank: "Aucun (match indépendant)" }, class: "form-select" %>
-            <%= f.hidden_field :tournament_match_id %>
-          </div>
-        <% end %>
-
-
-        <%# ────────────────────────────────────────────────
             SECTION 1 : Descriptif
             Champs : Titre + Description
             ──────────────────────────────────────────────── %>
@@ -98,6 +93,68 @@
             <div class="match-form-step-badge">1</div>
             <h2 class="match-form-section-title">Descriptif</h2>
           </div>
+
+          <%# ────────────────────────────────────────────────
+              Rattachement à un tournoi (Lot 4, élargi Lot 7) — optionnel.
+              Visible dès que l'utilisateur organise OU est inscrit à un tournoi non
+              terminé (cf. MatchesController#linkable_tournaments_for_select).
+              Choisir un tournoi révèle ses confrontations rattachables ; en choisir
+              une préremplit le reste du formulaire (sport, titre avec l'adversaire,
+              lieu, date) — tout reste modifiable, les deux joueurs conviennent de
+              leur créneau. Le lien est aussi posé côté serveur quand on arrive via
+              « Créer la rencontre » (?tournament_match_id=X).
+              ──────────────────────────────────────────────── %>
+          <% if @linkable_tournaments&.any? %>
+            <%# Les deux sélecteurs vont de pair (choisir un tournoi révèle ses
+                confrontations) : on les met côte à côte sur ≥ md, empilés en
+                dessous. `row` gère l'empilement tout seul, aucune media query. %>
+            <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <%= f.label :tournament_id, class: "form-label" do %>Tournoi <span class="required-star">*</span><% end %>
+              <%# Le <select> reste la source de vérité (soumission, data-attributes,
+                  évènement `change`) ; custom-select ne fait que l'habiller, le menu
+                  natif étant dessiné par l'OS et impossible à mettre au code couleur
+                  de l'app. Cf. custom_select_controller.js. %>
+              <div class="custom-select" data-controller="custom-select"
+                   data-action="keydown->custom-select#keydown">
+                <%= f.collection_select :tournament_id, @linkable_tournaments, :id, :name,
+                      { include_blank: "Aucun (match indépendant)" },
+                      class: "form-select custom-select__native",
+                      data: {
+                        "custom-select-target": "native",
+                        "match-form-target": "tournamentInput",
+                        "action": "change->match-form#updateTournament",
+                        "tournament-matches": (@linkable_tournament_matches || {}).to_json,
+                        "new-match-path": new_match_path
+                      } %>
+              </div>
+            </div>
+
+            <%# Confrontation du tournoi. Les options du tournoi COURANT sont rendues
+                côté serveur (état initial, y compris à l'arrivée via « Créer la
+                rencontre ») ; le JS les remplace quand on change de tournoi. %>
+            <% current_confrontations = (@linkable_tournament_matches || {})[@match.tournament_id] || [] %>
+            <%# Stimulus bascule `style.display` entre "none" et "" sur ce wrapper :
+                une colonne Bootstrap est un simple bloc, la valeur vide restaure
+                donc bien la mise en page. %>
+            <div class="col-md-6" data-match-form-target="tournamentMatchWrapper"
+                 style="<%= 'display:none;' if current_confrontations.empty? %>">
+              <%= f.label :tournament_match_id, class: "form-label" do %>Confrontation <span class="required-star">*</span><% end %>
+              <div class="custom-select" data-controller="custom-select"
+                   data-action="keydown->custom-select#keydown">
+                <%= f.select :tournament_match_id,
+                      options_for_select(current_confrontations.map { |c| [c[:label], c[:id]] }, @match.tournament_match_id),
+                      { include_blank: "Aucune (rencontre libre)" },
+                      class: "form-select custom-select__native",
+                      data: {
+                        "custom-select-target": "native",
+                        "match-form-target": "tournamentMatchInput",
+                        "action": "change->match-form#applyTournamentMatch"
+                      } %>
+              </div>
+            </div>
+            </div><%# fin row tournoi + confrontation %>
+          <% end %>
 
           <%# Champ Sport — visible et pré-rempli avec le sport actif
               L'utilisateur peut le modifier si besoin %>
@@ -624,389 +681,20 @@
 
         <%# ────────────────────────────────────────────────
             SECTION 4 : Détails du match
-            Champs :
-              - Nombre de joueurs manquants (compteur − N +)
-              - Niveau requis (boutons radio stylisés)
-              - Validation des joueurs (toggle Manuel/Auto)
+            Format, nombre de joueurs, niveau, validation, visibilité,
+            équipe, genre, prix, lien de réservation.
+
+            Masquée en contexte tournoi : une confrontation est un 1v1
+            entre deux joueurs qui se connaissent et que le tournoi
+            inscrit lui-même — il n'y a ni place à pourvoir, ni niveau
+            à filtrer. Les valeurs qu'exige le modèle sont alors
+            envoyées en champs cachés.
             ──────────────────────────────────────────────── %>
-        <div class="match-form-section">
-
-          <div class="match-form-section-header">
-            <div class="match-form-step-badge">4</div>
-            <h2 class="match-form-section-title">Détails du match</h2>
-          </div>
-
-          <%# ── Sélecteur de format — affiché pour tous les sports (chaque sport a un format Libre) ── %>
-          <div class="mb-4" data-match-form-target="formatWrapper" style="display:none;">
-            <label class="form-label d-block">Format <span class="required-star">*</span></label>
-            <%= f.hidden_field :format, data: { "match-form-target": "formatInput" } %>
-            <div class="match-level-buttons" data-match-form-target="formatButtons"></div>
-          </div>
-
-          <%# ── Compteur standard : Nombre de joueurs manquants (caché en mode Libre) ── %>
-          <div class="mb-4"
-               data-match-form-target="standardPlayerSection"
-               style="<%= @match.libre? ? 'display:none;' : '' %>">
-            <label class="form-label d-block">Nombre de joueurs recherchés <span class="required-star">*</span></label>
-
-            <%# Input caché : sa valeur est la vraie valeur soumise avec le formulaire.
-                Le compteur visible (+/-) met à jour cet input via Stimulus.
-                On soumet players_needed (capacité cible) — player_left en est dérivé.
-                Valeur par défaut : 1 si non défini %>
-            <%= f.hidden_field :players_needed,
-                value: (@match.players_needed || 1),
-                data: { "match-form-target": "playersInput" } %>
-
-            <div class="match-player-counter">
-
-              <%# Bouton "−" : appelle decrement() dans le contrôleur Stimulus %>
-              <button type="button"
-                      class="counter-btn counter-btn-minus"
-                      data-action="click->match-form#decrement"
-                      data-match-form-target="minusBtn"
-                      aria-label="Réduire le nombre de joueurs">−</button>
-
-              <%# Chiffre affiché — mis à jour par Stimulus (target "playersCount") %>
-              <span class="counter-value"
-                    data-match-form-target="playersCount">
-                <%= @match.players_needed || 1 %>
-              </span>
-
-              <%# Bouton "+" : appelle increment() dans le contrôleur Stimulus %>
-              <button type="button"
-                      class="counter-btn"
-                      data-action="click->match-form#increment"
-                      data-match-form-target="plusBtn"
-                      aria-label="Augmenter le nombre de joueurs">+</button>
-
-            </div>
-          </div><%# fin compteur standard %>
-
-          <%# ── Section Libre : 2 compteurs (présents + manquants) — visible uniquement si format Libre ── %>
-          <div class="mb-4"
-               data-match-form-target="libreSection"
-               style="<%= @match.libre? ? '' : 'display:none;' %>">
-
-            <%# ── Deux champs numériques côte à côte ── %>
-            <div class="d-flex gap-4">
-
-              <%# Champ 1 : Joueurs déjà présents (amis hors-app, soumis via players_present) %>
-              <div>
-                <label class="form-label d-block">Déjà confirmés <span class="required-star">*</span></label>
-                <%= f.number_field :players_present,
-                    min: 1,
-                    value: (@match.players_present || 1),
-                    class: "form-control",
-                    data: {
-                      "match-form-target": "playersPresentInput",
-                      "action": "input->match-form#changePresent change->match-form#normalizePresent"
-                    } %>
-              </div>
-
-              <%# Champ 2 : Places à remplir via l'app (écrit dans playersInput = players_needed) %>
-              <div>
-                <label class="form-label d-block">Joueurs recherchés <span class="required-star">*</span></label>
-                <input type="number"
-                       min="1"
-                       value="<%= @match.players_needed || 1 %>"
-                       class="form-control"
-                       data-match-form-target="playersLibreInput"
-                       data-action="input->match-form#changeLibre change->match-form#normalizeLibre">
-              </div>
-
-            </div><%# fin flex wrapper %>
-
-            <%# Total attendu = présents + recherchés. Mis à jour en direct par Stimulus
-                (changePresent / changeLibre) et initialisé côté serveur en édition. %>
-            <p class="mt-3 mb-0" style="font-size:0.9rem; color:var(--theme-text-primary);">
-              Soit
-              <strong data-match-form-target="libreTotal"><%= (@match.players_present || 1).to_i + (@match.players_needed || 1).to_i %></strong>
-              joueur·euse·s au total sur le terrain.
-            </p>
-
-          </div><%# fin section Libre %>
-
-          <%# ── Boutons de niveau (générés dynamiquement par Stimulus selon le sport) ── %>
-          <div class="mb-4">
-            <label class="form-label d-block">
-              Niveau requis <span class="required-star">*</span>
-              <%# Bouton "?" : ouvre la modale explicative des niveaux pour le sport actif %>
-              <button type="button"
-                      style="background:none; border:1px solid rgba(255,255,255,0.25); border-radius:50%;
-                             width:18px; height:18px; font-size:0.65rem; color:rgba(255,255,255,0.5);
-                             cursor:pointer; padding:0; line-height:1; vertical-align:middle; margin-left:0.3rem;"
-                      data-bs-toggle="modal"
-                      data-bs-target="#levelGridModal"
-                      data-action="click->level-grid#preselectSport"
-                      aria-label="Voir la grille des niveaux">
-                ?
-              </button>
-            </label>
-
-            <%# Input caché : contient le niveau sélectionné.
-                Mis à jour par _applyLevel() dans Stimulus quand on clique un bouton. %>
-            <%= f.hidden_field :level,
-                value: @match.level,
-                data: { "match-form-target": "levelInput" } %>
-
-            <%# Container vide — Stimulus remplit les boutons via _renderLevelButtons()
-                lors de updateSport() au chargement et au changement de sport %>
-            <div class="match-level-buttons"
-                 data-match-form-target="levelButtons"></div>
-
-          </div><%# fin niveau %>
-
-          <%# ── Validation des joueurs : Manuel / Automatique (boutons classiques) ── %>
-          <div class="mb-0">
-            <label class="form-label d-block">
-              Validation des joueurs
-              <%# Infobulle CSS pure — même style que sur la page d'inscription %>
-              <span class="css-tooltip"
-                    data-tip="Vous avez la possibilité de valider manuellement ou automatiquement les personnes qui s'inscrivent à votre match.">
-                <i data-lucide="info" style="width:14px;height:14px;vertical-align:middle;"></i>
-              </span>
-            </label>
-
-            <%# Champ caché : source de vérité envoyée au serveur. Par défaut "automatic". %>
-            <%= f.hidden_field :validation_mode,
-                value: (@match.validation_mode || "automatic"),
-                id: "match_validation_mode" %>
-
-            <%# Groupe de boutons classiques (même style que les boutons de niveau) %>
-            <div class="match-level-buttons" style="margin-top:0.6rem;">
-              <button type="button"
-                      class="match-level-btn <%= 'active' unless @match.manual_validation? %>"
-                      data-validation-choice="automatic"
-                      data-action="click->match-form#selectValidation">
-                ⚡ Automatique
-              </button>
-              <button type="button"
-                      class="match-level-btn <%= 'active' if @match.manual_validation? %>"
-                      data-validation-choice="manual"
-                      data-action="click->match-form#selectValidation">
-                ✋ Manuel
-              </button>
-            </div>
-          </div><%# fin validation %>
-
-          <%# ── Visibilité du match : Public / Privé (boutons classiques) ── %>
-          <%# Champ caché : source de vérité. Par défaut "public". %>
-          <%= hidden_field_tag "match[visibility]", @match.visibility.presence || "public", id: "match_visibility" %>
-
-          <div class="mb-0 mt-3">
-            <label class="form-label d-block">
-              Visibilité du match
-              <span class="css-tooltip"
-                    data-tip="Un match privé n'est accessible que via le lien d'invitation. Vous pouvez l'ouvrir au public à tout moment pour compléter les places restantes.">
-                <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
-              </span>
-            </label>
-
-            <%# Groupe de boutons classiques (même style que les boutons de niveau) %>
-            <div class="match-level-buttons" style="margin-top:0.6rem;">
-              <button type="button"
-                      class="match-level-btn <%= 'active' unless @match.private? %>"
-                      data-visibility-choice="public"
-                      data-action="click->match-form#selectVisibility">
-                🌍 Public
-              </button>
-              <button type="button"
-                      class="match-level-btn <%= 'active' if @match.private? %>"
-                      data-visibility-choice="private"
-                      data-action="click->match-form#selectVisibility">
-                🔒 Privé
-              </button>
-            </div>
-          </div><%# fin visibilité %>
-
-          <%# ── Sélecteur d'équipe (optionnel, visible si l'user est capitaine d'une équipe) ── %>
-          <% if @my_captained_teams&.any? %>
-            <%# role="group" + aria-labelledby remplace fieldset/legend (même valeur RGAA 11.5)
-                sans les bugs de layout causés par Bootstrap qui applique float:left sur <legend> %>
-            <div role="group" aria-labelledby="team-section-label" class="mt-3">
-              <p id="team-section-label" class="form-label d-block mb-2">
-                Associer une équipe
-                <span class="css-tooltip" data-tip="Associez votre équipe à ce match. Les membres seront automatiquement notifiés et invités à confirmer leur place.">
-                  <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
-                </span>
-              </p>
-
-              <%# Champ hidden qui sera soumis — vide = pas d'équipe %>
-              <%= f.hidden_field :team_id, value: @match.team_id, id: "match_team_id" %>
-
-              <%# Boutons styled comme les autres choix du formulaire (Public/Privé, niveau, etc.)
-                  L'onclick met à jour :
-                    1. Le champ caché match_team_id (valeur soumise au serveur)
-                    2. Le champ caché match_visibility (équipe = match privé)
-                    3. Les classes .active sur les boutons de visibilité
-                    4. Les classes .active sur les boutons d'équipe eux-mêmes %>
-              <div class="match-level-buttons" style="margin-top:0.6rem; flex-wrap:wrap;">
-
-                <%# Bouton "Aucune équipe" — remet le match en public %>
-                <button type="button"
-                        class="match-level-btn <%= 'active' if @match.team_id.blank? %>"
-                        data-team-choice=""
-                        onclick="
-                          document.getElementById('match_team_id').value = '';
-                          document.getElementById('match_visibility').value = 'public';
-                          document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
-                            btn.classList.toggle('active', btn.dataset.visibilityChoice === 'public');
-                          });
-                          document.querySelectorAll('[data-team-choice]').forEach(function(btn) {
-                            btn.classList.toggle('active', btn.dataset.teamChoice === '');
-                          });
-                        ">
-                  Aucune équipe
-                </button>
-
-                <%# Un bouton par équipe dont l'user est capitaine %>
-                <% @my_captained_teams.each do |team| %>
-                  <button type="button"
-                          class="match-level-btn d-inline-flex align-items-center gap-2 <%= 'active' if @match.team_id == team.id %>"
-                          data-team-choice="<%= team.id %>"
-                          onclick="
-                            document.getElementById('match_team_id').value = '<%= team.id %>';
-                            document.getElementById('match_visibility').value = 'private';
-                            document.querySelectorAll('[data-visibility-choice]').forEach(function(btn) {
-                              btn.classList.toggle('active', btn.dataset.visibilityChoice === 'private');
-                            });
-                            document.querySelectorAll('[data-team-choice]').forEach(function(btn) {
-                              btn.classList.toggle('active', btn.dataset.teamChoice === '<%= team.id %>');
-                            });
-                          ">
-                    <%# Mini blason de l'équipe %>
-                    <span style="width:22px; height:22px; border-radius:4px; overflow:hidden;
-                                 display:inline-flex; align-items:center; justify-content:center;
-                                 flex-shrink:0; background:rgba(255,255,255,0.08);">
-                      <% if team.badge_image.attached? %>
-                        <%= image_tag team.badge_image, style: "width:100%; height:100%; object-fit:cover;", alt: "" %>
-                      <% elsif team.badge_svg.present? %>
-                        <%= team.badge_svg.html_safe %>
-                      <% else %>
-                        <i data-lucide="shield" style="width:12px; height:12px;"></i>
-                      <% end %>
-                    </span>
-                    <%= team.name %>
-                  </button>
-                <% end %>
-
-              </div>
-            </div><%# fin role="group" team picker %>
-          <% end %>
-
-          <%# ── Toggle : Restriction de genre Tous / Femme ── %>
-          <%# Affiché uniquement pour les utilisatrices femmes — seules elles peuvent créer un match "femme uniquement" %>
-          <% if current_user.genre == "femme" %>
-
-          <%# Champ caché mis à jour par JS selon la position du toggle %>
-          <%= f.hidden_field :genre_restriction,
-              value: (@match.genre_restriction.presence || "tous"),
-              id: "match_genre_restriction" %>
-
-          <div class="mb-0 mt-3">
-            <label class="form-label d-block">
-              Restriction de genre
-              <span class="css-tooltip"
-                    data-tip="'Tous' : tout le monde peut rejoindre. 'Féminin' : uniquement les joueuses.">
-                <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
-              </span>
-            </label>
-
-            <%# Toggle : coché = féminin, décoché = tous (par défaut) %>
-            <%# .genre-toggle-wrapper : fond/bordure gérés par _theme.scss selon le thème %>
-            <div class="genre-toggle-wrapper" style="display:inline-flex; align-items:center; gap:0.75rem; margin-top:0.6rem;
-                        border-radius:10px; padding:0.55rem 0.9rem; border:1px solid;">
-
-              <%# Label gauche : Tous — cliquable, vert si sélectionné, sinon couleur inactive thème %>
-              <span id="label_genre_tous"
-                    onclick="document.getElementById('genre_restriction_toggle').checked = false; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
-                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= (@match.genre_restriction.presence || 'tous') == 'tous' ? '#1EDD88' : 'var(--genre-inactive-color)' %>;
-                           transition:color 0.15s;">
-                🌍 Tous
-              </span>
-
-              <%# Toggle pill — décoché = tous, coché = féminin %>
-              <label class="pill-toggle" for="genre_restriction_toggle" style="flex-shrink:0;">
-                <%= check_box_tag :genre_restriction_toggle,
-                    "feminin",
-                    (@match.genre_restriction == "feminin"),
-                    class: "pill-toggle-input",
-                    id: "genre_restriction_toggle",
-                    onchange: "
-                      document.getElementById('match_genre_restriction').value        = this.checked ? 'feminin' : 'tous';
-                      document.getElementById('label_genre_tous').style.color    = this.checked ? 'var(--genre-inactive-color)' : '#1EDD88';
-                      document.getElementById('label_genre_feminin').style.color = this.checked ? '#1EDD88' : 'var(--genre-inactive-color)';
-                    " %>
-                <span class="pill-toggle-track"></span>
-              </label>
-
-              <%# Label droit : Féminin — cliquable, vert si sélectionné, sinon couleur inactive thème %>
-              <span id="label_genre_feminin"
-                    onclick="document.getElementById('genre_restriction_toggle').checked = true; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
-                    style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= @match.genre_restriction == 'feminin' ? '#1EDD88' : 'var(--genre-inactive-color)' %>;
-                           transition:color 0.15s;">
-                ♀ Femme uniquement
-              </span>
-
-            </div>
-          </div><%# fin toggle restriction de genre %>
-
-          <% end %><%# fin condition current_user.genre == "femme" %>
-
-          <%# ── Ligne séparatrice ── %>
-          <hr class="my-4">
-
-          <%# ── Prix par joueur (à titre indicatif) ── %>
-          <div class="mb-0">
-            <label class="form-label d-block" for="match_price_per_player">
-              Prix par joueur (€)
-            </label>
-
-            <%# Champ petit : max-width 100px pour ne pas prendre toute la largeur %>
-            <div style="max-width: 100px;">
-              <%= f.number_field :price_per_player,
-                  class: "form-control form-control-sm",
-                  placeholder: "0",
-                  min: 0,
-                  step: 1,
-                  value: (@match.price_per_player || 0),
-                  onfocus: "if(this.value === '0') this.value = ''",
-                  onblur:  "if(this.value === '') this.value = '0'",
-                  data: {
-                    "match-form-target": "priceInput",
-                    "action": "input->match-form#updatePrice"
-                  } %>
-            </div>
-
-            <%# Message informatif en gris semi-transparent %>
-            <p class="form-text mt-1" style="color: rgba(255, 255, 255, 0.55); font-size: 0.8rem;">
-              <i data-lucide="info" style="width:12px; height:12px; vertical-align:middle;"></i>
-              Prix indicatif.
-            </p>
-          </div><%# fin prix %>
-
-          <%# ── Lien de réservation du terrain (facultatif) ── %>
-          <div class="mt-3">
-            <label class="form-label d-block" for="match_booking_link">
-              Lien de réservation du terrain
-              <span class="ms-1" style="font-size:0.75rem; font-weight:400; color:#fff;">(facultatif)</span>
-            </label>
-
-            <%# Champ URL : les participants approuvés pourront cliquer pour payer directement %>
-            <%= f.url_field :booking_link,
-                class: "form-control form-control-sm",
-                placeholder: "https://...",
-                value: @match.booking_link %>
-
-            <p class="form-text mt-1" style="color: rgba(255, 255, 255, 0.55); font-size: 0.8rem;">
-              <i data-lucide="link" style="width:12px; height:12px; vertical-align:middle;"></i>
-              Les participants inscrits verront ce lien pour réserver et payer le terrain.
-            </p>
-          </div><%# fin booking_link %>
-
-        </div><%# fin section 4 %>
+        <% if tournament_context %>
+          <%= render "matches/tournament_hidden_fields", f: f %>
+        <% else %>
+          <%= render "matches/details_section", f: f %>
+        <% end %>
 
         <%# Lien Annuler visible uniquement sur mobile (< lg)
             Sur desktop il est dans la sidebar %>
@@ -1064,6 +752,16 @@
             </span>
           </div>
 
+          <%# ── Ligne Tournoi (contexte tournoi uniquement) ──
+              Rappelle à quel tournoi la rencontre est rattachée, à la place des
+              lignes de la section « Détails du match » qui sont masquées. %>
+          <% if tournament_context %>
+            <div class="match-recap-row">
+              <span class="recap-label">Tournoi</span>
+              <span class="recap-value"><%= @match.tournament&.name %></span>
+            </div>
+          <% end %>
+
           <%# ── Ligne Lieu ── %>
           <div class="match-recap-row">
             <span class="recap-label">Lieu</span>
@@ -1091,13 +789,21 @@
             </span>
           </div>
 
-          <%# ── Ligne Heure de fin ── %>
-          <div class="match-recap-row">
+          <%# ── Ligne Heure de fin ──
+              En contexte tournoi elle devient la dernière ligne du récap (tout
+              ce qui suit est masqué) : on lui retire alors son trait de séparation. %>
+          <div class="match-recap-row" style="<%= 'border-bottom: none;' if tournament_context %>">
             <span class="recap-label">Fin</span>
             <span class="recap-value" data-match-form-target="recapEndTime">
               <%= @match.end_time.present? ? @match.end_time.strftime("%Hh%M") : "—" %>
             </span>
           </div>
+
+          <%# ── Lignes propres à la section « Détails du match » ──
+              Masquées en contexte tournoi, où cette section n'est pas rendue :
+              afficher « Joueurs recherchés » ou « Niveau souhaité » pour une
+              confrontation 1v1 déjà pourvue induirait en erreur. %>
+          <% unless tournament_context %>
 
           <%# ── Ligne Format — masquée si sport mono-format ── %>
           <div class="match-recap-row" data-match-form-target="recapFormatRow" style="display:none;">
@@ -1150,9 +856,11 @@
             </span>
           </div>
 
+          <% end %><%# fin des lignes masquées en contexte tournoi %>
+
           <%# ── Partage Slack (création uniquement) ── %>
           <% if @match.new_record? %>
-            <%= render "shared/slack_share_field", workspaces: @slack_destinations %>
+            <%= render "shared/slack_share_frame" %>
           <% end %>
 
           <%# ── Bouton de soumission ──

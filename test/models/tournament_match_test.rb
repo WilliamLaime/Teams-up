@@ -150,8 +150,47 @@ class TournamentMatchTest < ActiveSupport::TestCase
     end
 
     assert build.call([[11, 9]]).valid?,  "11-9 doit être valide"
+    assert build.call([[11, 0]]).valid?,  "11-0 doit être valide"
     refute build.call([[11, 10]]).valid?, "11-10 (1 pt d'écart) doit être refusé"
-    assert build.call([[12, 10]]).valid?, "12-10 doit être valide"
+    refute build.call([[10, 8]]).valid?,  "10-8 : le gagnant n'a pas atteint 11"
+
+    # Prolongation : elle NE démarre qu'à 10-10 et s'arrête au premier écart de 2.
+    # Un score au-dessus de 11 avec plus de 2 points d'écart décrit donc des points
+    # joués après la fin du set — c'est ce que l'ancienne validation laissait passer.
+    assert build.call([[12, 10]]).valid?, "12-10 doit être valide (prolongation depuis 10-10)"
+    assert build.call([[15, 13]]).valid?, "15-13 doit être valide (longue prolongation)"
+    refute build.call([[12, 9]]).valid?,  "12-9 : le set était déjà fini à 11-9"
+    refute build.call([[15, 3]]).valid?,  "15-3 : impossible, le set s'arrête à 11-3"
+    refute build.call([[13, 10]]).valid?, "13-10 : le set était déjà fini à 12-10"
+
+    message = build.call([[12, 9]]).tap(&:valid?).errors[:sets].first
+    assert_includes message, "12-9", "le message doit citer le set fautif"
+    assert_includes message, "2 points d'écart", "et rappeler la règle appliquée"
+  end
+
+  # Les mêmes règles, sans cas particulier dans le code : c'est `target`, `cap` et
+  # `win_by_two` du sport qui changent, pas la validation.
+  test "la règle du set s'adapte au sport (tennis : plafond à 7)" do
+    tennis = Sport.create!(name: "Tennis", slug: "tennis", icon: "🎾")
+    tournament = Tournament.create!(name: "T", sport: tennis, format: "ronde_suisse", status: "in_progress",
+                                    max_players: 8, date: Date.tomorrow, place: "Terrain test")
+    round = tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
+    p1 = tournament.tournament_users.create!(user: create_test_user(email: "t1-#{SecureRandom.hex(3)}@t.fr"),
+                                             role: "joueur", status: "approved")
+    p2 = tournament.tournament_users.create!(user: create_test_user(email: "t2-#{SecureRandom.hex(3)}@t.fr"),
+                                             role: "joueur", status: "approved")
+
+    build = lambda do |sets|
+      m = round.tournament_matches.new(player_a: p1, player_b: p2, position: rand(1_000_000))
+      m.assign_score(sets)
+      m
+    end
+
+    assert build.call([[6, 4]]).valid?,  "6-4 doit être valide"
+    refute build.call([[6, 5]]).valid?,  "6-5 : à 5 partout on va au jeu décisif"
+    assert build.call([[7, 5]]).valid?,  "7-5 doit être valide"
+    assert build.call([[7, 6]]).valid?,  "7-6 (jeu décisif) doit être valide"
+    refute build.call([[8, 6]]).valid?,  "8-6 : le set ne peut pas dépasser 7 jeux"
   end
 
   test "ping-pong best_of 5 : il faut 3 sets pour gagner" do
@@ -174,5 +213,163 @@ class TournamentMatchTest < ActiveSupport::TestCase
     m.save!
     assert_equal p1.id, m.winner_id
     assert_equal "completed", m.status
+  end
+
+  # ── Scoring dépendant de la phase (Lot 7) ─────────────────────────────────
+  # Règlement du tennis de table : 3 sets gagnants en poule / ronde suisse,
+  # 4 en phase finale. Seule la phase de la ronde change entre les deux cas.
+  class PingPongPhaseTest < ActiveSupport::TestCase
+    def setup
+      @sport = Sport.create!(name: "Ping Pong", slug: "ping-pong", icon: "🏓")
+      @tournament = Tournament.create!(name: "PP phases", sport: @sport, format: "poules",
+                                       status: "in_progress", max_players: 8,
+                                       date: Date.tomorrow, place: "Terrain test")
+      @p1 = player("f1")
+      @p2 = player("f2")
+    end
+
+    def teardown
+      teardown_db
+    end
+
+    def player(tag)
+      @tournament.tournament_users.create!(user: create_test_user(email: "#{tag}-#{SecureRandom.hex(3)}@t.fr"),
+                                          role: "joueur", status: "approved")
+    end
+
+    # Match A vs B dans une ronde de la phase donnée.
+    def match_in(phase, sets)
+      round = @tournament.tournament_rounds.find_by(phase: phase) ||
+              @tournament.tournament_rounds.create!(phase: phase, number: 1, status: "in_progress")
+      m = round.tournament_matches.new(player_a: @p1, player_b: @p2, position: rand(1_000_000))
+      m.assign_score(sets)
+      m
+    end
+
+    test "phase de poule : best_of 5, 3 sets gagnants" do
+      m = match_in("pool", [[11, 5], [11, 6], [11, 7]])
+      assert_equal 5, m.scoring_rules[:best_of]
+      assert_equal 3, m.sets_to_win
+      m.save!
+      assert_equal @p1.id, m.winner_id, "3 sets gagnés → match gagné en poule"
+    end
+
+    test "phase finale : best_of 7, 4 sets gagnants" do
+      m = match_in("bracket", [[11, 5], [11, 6], [11, 7]])
+      assert_equal 7, m.scoring_rules[:best_of]
+      assert_equal 4, m.sets_to_win
+      m.save!
+      assert_nil m.winner_id, "3 sets ne suffisent pas en phase finale"
+      assert_equal "pending", m.status
+
+      m.assign_score([[11, 5], [11, 6], [5, 11], [11, 7], [11, 9]])
+      m.save!
+      assert_equal @p1.id, m.winner_id, "4 sets gagnés → match gagné en phase finale"
+      assert_equal "completed", m.status
+    end
+
+    test "phase de poule : un 6e set est refusé" do
+      m = match_in("pool", [[11, 0]] * 6)
+      refute m.valid?
+      assert(m.errors[:sets].any? { |msg| msg.include?("trop de sets") })
+    end
+
+    test "phase finale : jusqu'à 7 sets, le 8e est refusé" do
+      assert match_in("bracket", [[11, 0], [0, 11], [11, 0], [0, 11], [11, 0], [0, 11], [11, 0]]).valid?,
+             "7 sets sont valides en phase finale"
+      refute match_in("bracket", [[11, 0]] * 8).valid?
+    end
+
+    # ── Garde-fou : aucune phase ne doit hériter du best_of par défaut par oubli ──
+    # Le bug de fond n'est pas « telle phase se joue en 4 manches » mais « une phase
+    # nouvelle prend silencieusement les règles de poule ». Ce test est piloté par
+    # TournamentRound::PHASES : ajouter une phase sans la classer le fait échouer,
+    # au lieu de laisser un tableau se jouer au mauvais nombre de manches.
+    test "chaque phase existante est explicitement classée finale ou round-robin" do
+      round_robin = %w[swiss league pool]
+
+      TournamentRound::PHASES.each do |phase|
+        expected = Tournament::FINAL_PHASES.include?(phase) ? 4 : 3
+
+        assert_includes round_robin + Tournament::FINAL_PHASES, phase,
+                        "phase « #{phase} » non classée : elle prendrait les règles de poule par défaut"
+        assert_equal expected, match_in(phase, [[11, 5]]).sets_to_win,
+                     "phase « #{phase} » : mauvais nombre de manches gagnantes"
+      end
+    end
+
+    test "les autres sports gardent les mêmes règles à toutes les phases" do
+      tennis = Sport.create!(name: "Tennis test", slug: "tennis", icon: "🎾")
+      @tournament.update!(sport: tennis)
+
+      assert_equal 3, match_in("pool", [[6, 4]]).scoring_rules[:best_of]
+      assert_equal 3, match_in("bracket", [[6, 4]]).scoring_rules[:best_of]
+    end
+  end
+
+  # ── Rafraîchissement de la carte Slack ──────────────────────────────────────
+  # La carte postée dans un channel restait figée sur « À venir » alors que le
+  # résultat était connu sur le site. Le hook vit sur le modèle (et non dans le
+  # controller) parce que le score s'écrit par plusieurs chemins.
+  class SlackRefreshTest < ActiveSupport::TestCase
+    include ActiveJob::TestHelper
+
+    setup do
+      @sport = Sport.create!(name: "Tennis slack", slug: "tennis-#{SecureRandom.hex(4)}", icon: "🎾")
+      @tournament = Tournament.create!(name: "T slack", sport: @sport, format: "ronde_suisse",
+                                       status: "in_progress", max_players: 8,
+                                       date: Date.tomorrow, place: "Terrain test")
+      @round = @tournament.tournament_rounds.create!(phase: "swiss", number: 1, status: "in_progress")
+      @a = player("a")
+      @b = player("b")
+    end
+
+    teardown { teardown_db }
+
+    def player(tag)
+      user = create_test_user(email: "#{tag}-#{SecureRandom.hex(3)}@test.fr")
+      @tournament.tournament_users.create!(user: user, role: "joueur", status: "approved")
+    end
+
+    # La rencontre réelle rattachée à la carte : c'est ELLE qui porte les cartes
+    # Slack (slack_match_messages), la carte du tableau n'en a pas.
+    def link_match!(tmatch)
+      Match.create!(title: "Rencontre", date: Date.tomorrow, players_needed: 2,
+                    level: "Débutant", visibility: "public", validation_mode: "automatic",
+                    genre_restriction: "tous", user: create_test_user(email: "o-#{SecureRandom.hex(3)}@t.fr"),
+                    sport: @sport, tournament: @tournament, tournament_match: tmatch)
+    end
+
+    test "saisir un score planifie la mise à jour de la carte Slack" do
+      match = @round.tournament_matches.create!(player_a: @a, player_b: @b, position: 0)
+      link_match!(match)
+
+      assert_enqueued_with(job: SlackMatchStatusJob) do
+        match.assign_score([[6, 0], [6, 0]])
+        match.save!
+      end
+    end
+
+    # Un simple `touch` ne doit pas repeindre la carte : chaque appel coûte une
+    # requête chat.update à Slack, qui limite le débit.
+    test "une sauvegarde sans changement de score ne planifie rien" do
+      match = @round.tournament_matches.create!(player_a: @a, player_b: @b, position: 0)
+      link_match!(match)
+
+      assert_no_enqueued_jobs(only: SlackMatchStatusJob) do
+        match.update!(position: 7)
+      end
+    end
+
+    # Tant que personne n'a planifié de rencontre réelle, il n'y a pas de carte
+    # Slack à mettre à jour — et donc aucun job à empiler.
+    test "sans rencontre rattachée, aucun job n'est planifié" do
+      match = @round.tournament_matches.create!(player_a: @a, player_b: @b, position: 0)
+
+      assert_no_enqueued_jobs(only: SlackMatchStatusJob) do
+        match.assign_score([[6, 0], [6, 0]])
+        match.save!
+      end
+    end
   end
 end

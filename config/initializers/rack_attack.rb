@@ -148,6 +148,23 @@ class Rack::Attack
 
 
   # -----------------------------------------------------------------------
+  # THROTTLE 9 : Recherche de joueurs (autocomplete d'invitation)
+  #
+  # But : limiter le moissonnage de l'annuaire des joueurs. Ces endpoints ne
+  # renvoient plus d'email (voir docs/SECURITE-RGPD.md) mais restent le seul
+  # moyen de parcourir les prénoms/noms des inscrits.
+  # Limite : 30 requêtes / minute / utilisateur — largement au-dessus d'un usage
+  # normal (le front debounce à 300 ms et ne cherche qu'à partir de 3 caractères).
+  # Routes ciblées : GET /teams/:team_id/team_invitations/search, GET /tournois/search
+  # -----------------------------------------------------------------------
+  throttle("user_search/user", limit: 30, period: 1.minute) do |req|
+    if req.get? && (req.path.end_with?("/team_invitations/search") || req.path == "/tournois/search")
+      req.env["warden"]&.user(:user)&.id
+    end
+  end
+
+
+  # -----------------------------------------------------------------------
   # Notification Rack::Attack → SecurityLog
   #
   # Quand rack-attack bloque une requête (throttle déclenché), il publie

@@ -112,9 +112,14 @@ class Sport < ApplicationRecord
   # les tailles d'équipe d'un match). Principe : les sports de raquette se jouent
   # en ronde suisse / poules ; les sports collectifs en championnat / poules.
   # Renvoie un array de valeurs de Tournament::FORMATS.
+  # Le Critérium Fédéral est réservé au tennis de table : c'est le règlement de la
+  # FFTT (barème points-parties 2/1, barrages, consolante, matchs de classement),
+  # il n'a pas de sens pour les autres sports.
   def available_tournament_formats
     case slug
-    when "tennis", "padel", "badminton", "ping-pong"
+    when "ping-pong"
+      %w[ronde_suisse poules criterium_federal]
+    when "tennis", "padel", "badminton"
       %w[ronde_suisse poules]
     when "football", "basketball", "handball", "volleyball"
       %w[championnat poules]
@@ -130,6 +135,10 @@ class Sport < ApplicationRecord
   #     target     : score à atteindre pour remporter un set (jeux au tennis, points ailleurs)
   #     win_by_two : faut-il 2 d'écart pour conclure un set (règle du ping-pong / badminton)
   #     cap        : plafond au-delà duquel 1 point d'écart suffit (tie-break) ; nil = pas de plafond
+  #     final_best_of : best_of RENFORCÉ en phase finale (tableau à élimination directe),
+  #       comme le veut le règlement du tennis de table : 3 sets gagnants en poule /
+  #       ronde suisse, 4 en phase finale. Absent = mêmes règles à toutes les phases.
+  #       Appliqué par TournamentMatch#scoring_rules, seul endroit qui connaît la phase.
   #   :score (sports collectifs) — un seul score final saisi :
   #     allow_draw : le nul est-il un résultat possible pour ce sport
   # Le fallback (sports sans configuration) reste jouable au meilleur des 3 sets.
@@ -137,23 +146,48 @@ class Sport < ApplicationRecord
     case slug
     when "tennis", "padel" then { mode: :sets, best_of: 3, target: 6,  win_by_two: true, cap: 7,   allow_draw: false }
     when "badminton"       then { mode: :sets, best_of: 3, target: 21, win_by_two: true, cap: 30,  allow_draw: false }
-    when "ping-pong"       then { mode: :sets, best_of: 5, target: 11, win_by_two: true, cap: nil, allow_draw: false }
+    when "ping-pong"       then { mode: :sets, best_of: 5, target: 11, win_by_two: true, cap: nil, allow_draw: false, final_best_of: 7 }
     when "volleyball"      then { mode: :sets, best_of: 5, target: 25, win_by_two: true, cap: nil, allow_draw: false }
     when "football", "handball" then { mode: :score, allow_draw: true }
     when "basketball"           then { mode: :score, allow_draw: false }
-    else                         { mode: :sets, best_of: 3, target: 6, win_by_two: false, cap: nil, allow_draw: false }
+    else { mode: :sets, best_of: 3, target: 6, win_by_two: false, cap: nil, allow_draw: false }
     end
   end
 
   # Barème de points de classement V/N/D pour le championnat/poules (Lot 6). nil pour
   # les sports de raquette (ronde suisse / poules) : ils n'ont pas de barème dédié,
   # cf. TournamentUser#ranking_points qui retombe alors sur 1 point par victoire.
+  # Table de correspondance plutôt qu'un case/when : quatre branches qui ne font que
+  # renvoyer une valeur constante se lisent mieux alignées (et rubocop le signale via
+  # Style/HashLikeCase). Gelée car partagée entre tous les appels — aucun appelant ne
+  # la mute : ils font `.merge`, `.dig` ou une lecture simple.
+  RANKING_POINTS_RULES = {
+    "football" => { win: 3, draw: 1, loss: 0 }.freeze, # barème FIFA en vigueur
+    "handball" => { win: 2, draw: 1, loss: 0 }.freeze, # barème IHF historique
+    "basketball" => { win: 1, draw: 0, loss: 0 }.freeze, # pas de nul possible
+    "volleyball" => { win: 1, draw: 0, loss: 0 }.freeze # pas de nul possible
+  }.freeze
+
   def ranking_points_rules
+    RANKING_POINTS_RULES[slug]
+  end
+
+  # Barème « points-parties » d'une phase de POULES, lu UNIQUEMENT par PoolStandings.
+  #
+  # Le tennis de table compte 2 points par victoire et 1 par défaite jouée (règlement
+  # FFTT du Critérium Fédéral) — un forfait ne rapporte rien.
+  #
+  # Volontairement séparé de #ranking_points_rules, qui alimente
+  # TournamentUser#ranking_points → Tournament#rank_key → le seeding de TOUS les
+  # formats. Y injecter le 2/1 serait une régression silencieuse sur la ronde suisse :
+  # l'équivalence « 2 V / 1 D ≡ ordre par victoires » ne vaut qu'à nombre de matchs
+  # ÉGAL, ce que la ronde suisse ne garantit pas (bye, abandon, entrée tardive). Un
+  # joueur à 1 V - 0 D (2 pts) se retrouverait à égalité avec un 0 V - 2 D (2 pts),
+  # alors qu'aujourd'hui la victoire tranche.
+  def pool_points_rules
     case slug
-    when "football"   then { win: 3, draw: 1, loss: 0 } # barème FIFA en vigueur
-    when "handball"   then { win: 2, draw: 1, loss: 0 } # barème IHF historique
-    when "basketball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
-    when "volleyball" then { win: 1, draw: 0, loss: 0 } # pas de nul possible
+    when "ping-pong" then { win: 2, draw: 0, loss: 1, forfeit: 0 }
+    else (ranking_points_rules || { win: 1, draw: 0, loss: 0 }).merge(forfeit: 0)
     end
   end
 

@@ -6,6 +6,41 @@
   position: relative;
 }
 
+// ── État de chargement du champ de partage (turbo-frame) ──────────────────────
+// Le champ arrive dans un second temps (cf. shared/_slack_share_frame) : ce
+// message tient la place en attendant. Couleur theme-aware — le .text-muted de
+// Bootstrap est un gris fixe, quasi noir sur le fond sombre de l'app.
+.slack-share-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--theme-text-muted);
+}
+
+// Anneau qui tourne, en CSS pur : pas de dépendance à Lucide (chargé par CDN,
+// donc pas garanti présent au moment où le frame se rend).
+.slack-share-loading__spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid var(--theme-border);
+  border-top-color: #1edd88; // vert Slack/Teams-up : montre le sens de rotation
+  border-radius: 50%;
+  animation: slack-share-spin 0.7s linear infinite;
+}
+
+@keyframes slack-share-spin {
+  to { transform: rotate(360deg); }
+}
+
+// Respect de « réduire les animations » (RGAA / prefers-reduced-motion) : on fige
+// l'anneau plutôt que de le faire tourner, le message texte suffit alors.
+@media (prefers-reduced-motion: reduce) {
+  .slack-share-loading__spinner { animation: none; }
+}
+
 // Champ de recherche (bordure sur le groupe, comme .invite-search-group).
 .slack-dest-group {
   display: flex;
@@ -40,11 +75,15 @@
 }
 
 // Liste déroulante (positionnée au-dessus du reste du modal).
+// max-height est recalculée à l'ouverture par slack_destination_controller.js
+// (positionList) selon la place réellement disponible à l'écran ; la valeur ci-
+// dessous reste le plafond et le repli si le JS n'a pas encore tourné.
 .slack-dest-list {
   position: absolute;
   z-index: 20;
   left: 0;
   right: 0;
+  top: 100%;
   margin: 4px 0 0;
   padding: 4px;
   list-style: none;
@@ -54,6 +93,15 @@
   border: 1px solid var(--theme-border);
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+// Ouverture vers le haut, quand le champ est trop bas dans la fenêtre pour que la
+// liste tienne en dessous (cf. positionList).
+.slack-dest-list--up {
+  top: auto;
+  bottom: 100%;
+  margin: 0 0 4px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
 }
 
 // En-tête de groupe (★ Favoris / Channels / Messages directs).

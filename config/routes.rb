@@ -144,18 +144,27 @@ Rails.application.routes.draw do
   #   DELETE /tournois/:tournament_id/tournament_users/:id => quitter
   resources :tournaments, path: "tournois" do
     # GET /tournois/search => autocomplete JSON pour désigner un co-organisateur
-    # GET /tournois/bientot => page d'attente (feature tournoi en chantier)
     collection do
       get :search
-      get :coming_soon, path: "bientot"
+      # Ancienne page d'attente : la feature tournoi est lancée, on redirige
+      # définitivement (301) vers la liste pour ne pas casser les liens existants.
+      get "bientot", to: redirect("/tournois", status: 301)
     end
     # POST  /tournois/:id/start                 => lancer le tournoi (génère la ronde suisse 1)
     # PATCH /tournois/:id/toggle_registrations   => clôturer/rouvrir les inscriptions
     # PATCH /tournois/:id/finish                 => terminer le tournoi manuellement
+    # PATCH /tournois/:id/constitution           => mode de constitution + chapeaux
+    # POST   /tournois/:id/co-organisateurs         => nommer un co-organisateur
+    # DELETE /tournois/:id/co-organisateurs/retrait => le révoquer
+    # PATCH  /tournois/:id/transfert-admin          => transmettre l'administration
     member do
       post :start
       patch :toggle_registrations
       patch :finish
+      patch :seeding, path: "constitution"
+      post :add_co_organizer, path: "co-organisateurs"
+      delete :remove_co_organizer, path: "co-organisateurs/retrait"
+      patch :transfer_ownership, path: "transfert-admin"
     end
     resources :tournament_users, only: [:create, :destroy] do
       # PATCH .../tournament_users/:id/withdraw => déclarer forfait (organisateur)
@@ -208,6 +217,9 @@ Rails.application.routes.draw do
     get "connect",         to: "connections#connect"
     get "connect/callback", to: "connections#callback"
     delete "disconnect/:id", to: "connections#destroy", as: :disconnect
+    # Champ « Partager sur Slack » chargé à part (turbo-frame) : lister les
+    # destinations passe par l'API Slack, on ne fait pas attendre la page pour ça.
+    get "share_field", to: "share_fields#show"
     # Épinglage d'une destination favorite (channel/DM) — appelé en fetch depuis le combobox.
     post   "favorites", to: "favorites#create"
     delete "favorites", to: "favorites#destroy"

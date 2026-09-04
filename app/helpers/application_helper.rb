@@ -3,7 +3,51 @@ module ApplicationHelper
   # ex: pagy_bootstrap_nav(@pagy) dans les vues admin
   include Pagy::Frontend
 
-  # Génère un badge achievement avec le style exactement issu du Figma Teams-Up :
+  # ── Fil d'Ariane ──────────────────────────────────────────────────────────────
+  # Rend le fil d'Ariane d'une page ET son JSON-LD BreadcrumbList, d'un seul appel.
+  #
+  # @param crumbs [Array] maillons du fil, du plus général au plus précis, sous la
+  #   forme `[libellé, chemin]`. Le DERNIER maillon est la page courante : son
+  #   chemin est ignoré (on ne se lie pas à soi-même). L'accueil est ajouté
+  #   automatiquement en tête — il est le même sur tout le site, le répéter dans
+  #   chaque vue n'était qu'une occasion de l'écrire différemment.
+  #
+  # Les deux sorties viennent de la MÊME source : le fil affiché et le fil déclaré
+  # à Google ne peuvent plus diverger, ce qui était le risque quand chaque page les
+  # écrivait à la main (cf. l'ancien fil en dur de l'article de blog).
+  #
+  # Usage type, dans une vue :
+  #   <% content_for :breadcrumb, breadcrumb_for([["Tournois", tournaments_path],
+  #                                               [@tournament.name, nil]]) %>
+  #
+  # `bare: true` sur les pages à bannière pleine largeur : le fil est alors rendu
+  # directement dans la vue, à l'intérieur du .container de la bannière, plutôt
+  # que via `content_for` — le poser au-dessus décollerait la bannière de la navbar.
+  # `on_dark: true` en complément quand cette bannière est sombre (cf. le partial).
+  def breadcrumb_for(crumbs, bare: false, on_dark: false)
+    crumbs = [["Accueil", root_path]] + Array(crumbs)
+    render "shared/breadcrumb", crumbs: crumbs, bare: bare, on_dark: on_dark
+  end
+
+  # Le JSON-LD correspondant, appelé par le partial. `position` commence à 1
+  # (schema.org), et le dernier maillon n'a pas d'`item` : c'est la page courante.
+  #
+  # URI.join plutôt que `url_for(only_path: false)` : les vues passent des chemins
+  # déjà construits (`tournaments_path` → "/tournois"), et `url_for` rend une
+  # chaîne telle quelle, donc relative — or schema.org exige des URLs absolues et
+  # ignore silencieusement le reste.
+  def breadcrumb_json_ld(crumbs)
+    items = crumbs.each_with_index.map do |(label, path), index|
+      item = { "@type" => "ListItem", "position" => index + 1, "name" => label.to_s }
+      item["item"] = URI.join(root_url, path.to_s).to_s if path.present? && index < crumbs.size - 1
+      item
+    end
+
+    { "@context" => "https://schema.org", "@type" => "BreadcrumbList",
+      "itemListElement" => items }.to_json
+  end
+
+  # Génère un badge achievement avec le style exactement issu du Figma Teams-up :
   # — cercle plein (border-radius 9999px), fond rgba(255,255,255,0.05)
   # — glow blanc quand déverrouillé, grayscale + opacité réduite quand verrouillé
   # — emoji centré à 28px (adapté à la taille du badge dans l'armoire)

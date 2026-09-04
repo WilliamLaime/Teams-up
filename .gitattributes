@@ -7,3 +7,10 @@ db/schema.rb linguist-generated
 vendor/* linguist-vendored
 config/credentials/*.yml.enc diff=rails_credentials
 config/credentials.yml.enc diff=rails_credentials
+
+# Le graphe de code graphify n'est plus versionné (cf. .gitignore) : le pilote
+# de fusion `merge=graphify` ne s'exécutait qu'en local, jamais sur les merges
+# côté GitHub, où chaque PR conflictait donc sur ces artefacts générés.
+# `bin/setup` déclare encore le pilote — sans effet, mais sans nuisance non plus
+# pour qui aurait un vieux graphe suivi dans une branche non rebasée.
+graphify-out/GRAPH_REPORT.md -diff linguist-generated

@@ -1,3 +1,9 @@
+# Étend les listes du config par défaut au lieu de les remplacer
+# (sans ceci, AllowedNames ci-dessous écraserait `as`, `at`, `by`, `id`…).
+inherit_mode:
+  merge:
+    - AllowedNames
+
 AllCops:
   NewCops: enable
   Exclude:
@@ -87,3 +93,12 @@ Lint/ConstantDefinitionInBlock:
 # Numéros dans les identifiants (ex: sport_1) — tolérés dans les scripts de seed
 Naming/VariableNumber:
   Enabled: false
+# Deux noms courts s'ajoutent aux `id`/`db`/`io` déjà tolérés par défaut :
+#   `ts` — nom du champ dans l'API Slack elle-même (horodatage identifiant un message) ;
+#          le renommer désaccorderait notre signature de la documentation Slack ;
+#   `tu` — abréviation de TournamentUser, employée partout dans le projet.
+# Le cop reste actif pour tout le reste : c'est une exception nommée, pas une désactivation.
+Naming/MethodParameterName:
+  AllowedNames:
+    - ts
+    - tu

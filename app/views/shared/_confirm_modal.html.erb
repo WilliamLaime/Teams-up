@@ -1,0 +1,33 @@
+<%# ── Modale de confirmation globale (remplace window.confirm) ─────────────────
+    Turbo affiche par défaut le window.confirm du navigateur pour tout
+    `data-turbo-confirm` : encadré blanc, boutons système, aucun rapport avec le
+    design de l'app. Turbo.setConfirmMethod (cf. application.js) redirige tous ces
+    appels vers cette modale — une seule pour tout le site, aucun changement à
+    faire dans les vues.
+
+    Rendue dans le layout, hors de tout stacking context, comme les autres modales
+    (cf. le commentaire sur `yield :modals`). %>
+<div class="modal fade confirm-modal" id="turboConfirmModal" tabindex="-1"
+     aria-labelledby="turboConfirmTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="turboConfirmTitle" data-confirm-title>Confirmer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+
+      <div class="modal-body">
+        <%# Renseigné à l'ouverture : la partie du message qui suit la question
+            (« Ses matchs en cours seront perdus… »). Masqué s'il n'y en a pas. %>
+        <p class="confirm-modal__detail" data-confirm-detail hidden></p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Annuler</button>
+        <%# La classe et le libellé sont ajustés à l'ouverture selon l'action
+            (rouge pour un forfait, vert pour une confirmation neutre). %>
+        <button type="button" class="btn btn-primary btn-cta-primary" data-confirm-accept>Confirmer</button>
+      </div>
+    </div>
+  </div>
+</div>

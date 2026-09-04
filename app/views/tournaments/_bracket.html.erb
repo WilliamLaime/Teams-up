@@ -1,32 +1,76 @@
-<%# ── Tableau final à élimination directe ─────────────────────────────────────
-    Une colonne par tour PRÉVU (pas seulement joué) : cf. Tournament#expected_
-    bracket_round_count. Les tours déjà joués affichent leurs vrais matchs ; les
-    tours futurs affichent des cases "À déterminer" (autant que ce tour comptera
-    de places, cf. #final_size) — on voit donc la structure complète (ex.
-    huitièmes → quarts → demies → finale) dès le lancement du tableau.
+<%# ── Tableau à élimination directe ───────────────────────────────────────────
+    Une colonne par tour PRÉVU (pas seulement joué) : les tours déjà joués
+    affichent leurs vrais matchs ; les tours futurs affichent des cases "À
+    déterminer" (autant que ce tour comptera de places) — on voit donc la
+    structure complète (huitièmes → quarts → demies → finale) dès le lancement.
     Une fois le tournoi terminé, on se limite aux tours réellement joués (évite
     des colonnes fantômes si l'effectif réel a produit moins de tours que prévu,
-    cf. BracketBuilder#select_finalists). %>
-<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="bracket">
-  <h2 class="tournament-phase__title">Tableau final</h2>
+    cf. BracketBuilder#select_finalists).
+
+    ── Paramétré pour être réutilisé ────────────────────────────────────────────
+    Le Critérium Fédéral joue PLUSIEURS tableaux (tableau final, consolante,
+    mini-tableaux de classement) : ce sont tous le même objet, d'où les locals
+    plutôt qu'un partial dupliqué. Tous ont une valeur par défaut qui reproduit le
+    comportement historique — les autres formats appellent `render "bracket",
+    tournament: tournament` sans rien savoir de tout ceci.
+
+    Locals : tournament, et optionnellement
+      rounds          : les tours à afficher              (défaut : le tableau final)
+      size            : nombre de places du tableau       (défaut : final_size)
+      title           : titre de la section               (défaut : "Tableau final")
+      phase_key       : valeur data-phase du sélecteur    (défaut : "bracket")
+      expected_rounds : nombre de tours prévus            (défaut : celui du tableau final)
+
+    ⚠️ Les cases "À déterminer" se comptent sur `size`, PAS sur
+    `tournament.final_size` : ce dernier ne décrit que le tableau final, donc la
+    consolante afficherait le nombre de cases du tableau principal. %>
+<% rounds    = local_assigns.fetch(:rounds) { tournament.bracket_rounds.to_a } %>
+<% size      = local_assigns.fetch(:size)   { tournament.final_size } %>
+<% title     = local_assigns.fetch(:title, "Tableau final") %>
+<% phase_key = local_assigns.fetch(:phase_key, "bracket") %>
+<% expected  = local_assigns.fetch(:expected_rounds) { tournament.expected_bracket_round_count } %>
+
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="<%= phase_key %>"
+         <%= "hidden" if phase_section_hidden?(tournament, phase_key) %>>
+  <h2 class="tournament-phase__title"><%= title %></h2>
 
   <div class="bracket">
-    <% real_rounds = tournament.bracket_rounds.to_a %>
-    <% total = tournament.completed? ? real_rounds.size : [tournament.expected_bracket_round_count, real_rounds.size].max %>
+    <% total = tournament.completed? ? rounds.size : [expected, rounds.size].max %>
     <% total.times do |index| %>
-      <% round = real_rounds[index] %>
+      <% round = rounds[index] %>
       <div class="bracket__round">
         <div class="bracket__round-title">
           <%= bracket_stage_label(index, total) %>
         </div>
         <div class="bracket__matches">
           <% if round %>
-            <% round.tournament_matches.order(:position).each do |match| %>
-              <%= render "tournaments/tmatch", match: match, can_manage: can_manage %>
+            <%# includes(:match) : le pied de carte lit la rencontre rattachée (lien +
+                créneau) — sans préchargement, c'est une requête par match. %>
+            <% round.tournament_matches.order(:position).includes(:match).each do |match| %>
+              <%= render "tournaments/tmatch", match: match %>
             <% end %>
           <% else %>
-            <% (tournament.final_size / (2**(index + 1))).times do %>
-              <%= render "tournaments/bracket_placeholder_cell" %>
+            <%# Un joueur déjà qualifié monte d'une case sans attendre son adversaire.
+                Le tour N+1, position p, oppose les vainqueurs des matchs 2p et 2p+1
+                du tour N (cf. BracketBuilder#advance!) : c'est la seule règle à
+                connaître pour préremplir. Seule la PREMIÈRE colonne vide a un tour
+                nourricier — au-delà, il n'y a rien à lire, d'où le tableau vide. %>
+            <% feeders = index.positive? && rounds[index - 1] ? rounds[index - 1].tournament_matches.order(:position).to_a : [] %>
+            <% (size / (2**(index + 1))).times do |position| %>
+              <%# La PROVENANCE, elle, est connue même quand le tour nourricier
+                  n'existe pas encore : c'est la structure du tableau qui la fixe.
+                  On l'annonce donc toujours, ce qui permet de se projeter sans
+                  attendre le moindre résultat.
+                    • colonnes suivantes → « Vainqueur quart 3 » ;
+                    • première colonne  → les têtes de série attendues, l'ordre du
+                      premier tour étant lui aussi déterminé d'avance (seeding
+                      1 vs N). Tableau principal seulement : voir bracket_seed_labels. %>
+              <% seeds = index.zero? && phase_key == "bracket" ? bracket_seed_labels(size, position) : nil %>
+              <%= render "tournaments/bracket_placeholder_cell",
+                         player_a: feeders[position * 2]&.winner,
+                         player_b: feeders[(position * 2) + 1]&.winner,
+                         from_a: bracket_feeder_label(index, position * 2, total) || seeds&.first,
+                         from_b: bracket_feeder_label(index, (position * 2) + 1, total) || seeds&.second %>
             <% end %>
           <% end %>
         </div>

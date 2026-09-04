@@ -9,9 +9,12 @@
 
 <div class="match-create-page">
 
-  <%# Bannière d'en-tête %>
-  <div class="match-new-banner">
+  <%# Bannière d'en-tête (fond piloté par le sport, cf. tournament-form#updateBanner) %>
+  <div class="match-new-banner" id="tournament-new-banner">
     <div class="container">
+      <%= breadcrumb_for([["Tournois", tournaments_path],
+                          [@tournament.name, tournament_path(@tournament)],
+                          ["Modifier", nil]], bare: true, on_dark: true) %>
       <%= render "shared/nav_button", url: tournament_path(@tournament), label: "Retour au tournoi", direction: "back", extra_class: "mb-3" %>
 
       <h1 class="match-new-banner-title">Modifier le tournoi</h1>
@@ -23,5 +26,13 @@
 
   <%# Formulaire 2 colonnes (sections + récapitulatif sticky) %>
   <%= render "form" %>
+
+  <%# Équipe organisatrice : panneau SÉPARÉ du formulaire ci-dessus (formulaires
+      distincts vers d'autres routes — un <form> imbriqué serait invalide).
+      Visible uniquement pour l'admin, alors que la page d'édition elle-même est
+      ouverte aux co-organisateurs (cf. TournamentPolicy). %>
+  <% if policy(@tournament).manage_organizers? %>
+    <%= render "organizers_manager", tournament: @tournament %>
+  <% end %>
 
 </div>

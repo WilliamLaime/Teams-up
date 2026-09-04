@@ -57,7 +57,7 @@ class LeagueBuilder
       return BracketBuilder.new(@tournament).advance! if @tournament.bracket_started?
 
       # Recalcul du bilan V/D (sans logique suisse : le classement décide, pas 3 V/3 D).
-      recompute_stats_for("league", apply_state: false)
+      recompute_stats_for("league", apply_state: false, count_byes: false)
 
       full       = self.class.schedule(ordered_players)
       next_index = @tournament.league_rounds.count
@@ -76,11 +76,10 @@ class LeagueBuilder
 
   private
 
-  # Ordre STABLE des joueurs (par draw_order, le tirage au sort figé au lancement —
-  # cf. TournamentsController#assign_draw_order!) : garantit un calendrier
-  # reproductible d'un appel à l'autre, indépendamment des scores déjà saisis, sans
-  # pour autant reproduire l'ordre d'inscription (id).
-  def ordered_players = player_scope.order(:draw_order).to_a
+  # Ordre STABLE des joueurs : garantit un calendrier reproductible d'un appel à
+  # l'autre, indépendamment des scores déjà saisis. L'invariant (et pourquoi
+  # `draw_order` seul ne suffit pas) est documenté sur RoundRobinStats#ordered_player_scope.
+  def ordered_players = ordered_player_scope.to_a
 
   # Crée une journée (phase "league") et ses matchs (bye et forfait gérés par
   # build_match!).

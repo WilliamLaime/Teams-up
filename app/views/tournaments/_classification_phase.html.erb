@@ -1,0 +1,36 @@
+<%# ── Matchs de classement du Critérium Fédéral ───────────────────────────────
+    Les mini-tableaux qui font jouer les places au-delà du podium : 3e/4e, 5e-8e,
+    et leurs équivalents en consolante. Ils tournent EN PARALLÈLE du tableau
+    principal (le match pour la 3e place se joue pendant que la finale se joue),
+    d'où un bloc par branche plutôt qu'un ruban unique.
+
+    Un bloc = une branche = un nœud de CriteriumStructure, titré par la plage de
+    places qu'il attribue. Les colonnes ne sont titrées que s'il y a plusieurs
+    tours : pour un match unique, « Finale » serait redondant avec « Match pour la
+    3e place ». Les paliers d'ex æquo (9es ex æquo…) n'apparaissent pas ici — ils
+    ne se jouent pas, ils sont attribués au classement (cf. TournamentStandings).
+
+    Local : tournament. %>
+<section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="classification"
+         <%= "hidden" if phase_section_hidden?(tournament, "classification") %>>
+  <h2 class="tournament-phase__title">Matchs de classement</h2>
+
+  <% classification_tables(tournament).each do |node, rounds| %>
+    <h3 class="tournament-phase__subtitle"><%= node.label %></h3>
+
+    <div class="bracket">
+      <% rounds.each_with_index do |round, index| %>
+        <div class="bracket__round">
+          <% if rounds.size > 1 %>
+            <div class="bracket__round-title"><%= bracket_stage_label(index, rounds.size) %></div>
+          <% end %>
+          <div class="bracket__matches">
+            <% round.tournament_matches.order(:position).each do |match| %>
+              <%= render "tournaments/tmatch", match: match %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</section>

@@ -13,7 +13,9 @@
     <%= button_to finish_tournament_path(tournament),
                   method: :patch,
                   class: "btn-cta-secondary tournament-finish-action__btn",
-                  data: { turbo_confirm: "Terminer ce tournoi maintenant ?" } do %>
+                  data: { turbo_confirm: "Terminer ce tournoi maintenant ? " \
+                                         "Les matchs non joués resteront sans résultat.",
+                          turbo_confirm_accept: "Terminer le tournoi" } do %>
       <i data-lucide="flag" aria-hidden="true"></i>
       Terminer le tournoi
     <% end %>
@@ -30,15 +32,21 @@
   <%# data-phase="main" (ronde robin, un seul des 3 formats existe) vs "bracket" (tableau
       final) : le sélecteur de phase (_phase_nav) bascule leur visibilité une fois le
       tableau final démarré (avant ça, une seule des deux existe, rien à basculer). %>
+  <%# storage-key : la phase choisie survit au turbo_stream.update du board déclenché
+      par chaque saisie de score (sinon retour forcé à la phase la plus avancée).
+      Clé par tournoi — deux tournois ouverts dans le même onglet ne se marchent pas
+      sur les pieds. %>
   <div class="tournament-board__phases" data-controller="tournament-phase-switch"
-       data-tournament-phase-switch-default-value="<%= tournament.bracket_started? ? "bracket" : "main" %>">
+       data-tournament-phase-switch-default-value="<%= default_board_phase(tournament) %>"
+       data-tournament-phase-switch-storage-key-value="phase:<%= tournament.id %>">
     <%= render "tournaments/phase_nav", tournament: tournament %>
 
     <%# Phase suisse : une section par ronde, matchs groupés par nombre de victoires. %>
     <% if tournament.swiss_rounds.any? %>
-      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
+      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main"
+               <%= "hidden" if phase_section_hidden?(tournament, "main") %>>
         <h2 class="tournament-phase__title">Ronde Suisse</h2>
-        <%= render "tournaments/round_ribbon", rounds: tournament.swiss_rounds, can_manage: can_manage,
+        <%= render "tournaments/round_ribbon", rounds: tournament.swiss_rounds,
                     title_for: ->(round) { "Ronde #{round.number}" }, group_by_record: true,
                     extra_columns: render("tournaments/qualification_panel", tournament: tournament) %>
       </section>
@@ -46,16 +54,25 @@
 
     <%# Championnat : round-robin intégral, une section par journée. %>
     <% if tournament.league_rounds.any? %>
-      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main">
+      <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="main"
+               <%= "hidden" if phase_section_hidden?(tournament, "main") %>>
         <h2 class="tournament-phase__title">Championnat</h2>
-        <%= render "tournaments/round_ribbon", rounds: tournament.league_rounds, can_manage: can_manage,
+        <%= render "tournaments/round_ribbon", rounds: tournament.league_rounds,
                     title_for: ->(round) { "Journée #{round.number}" }, paginated: true %>
       </section>
     <% end %>
 
     <%# Poules : round-robin par poule, matchs groupés par poule dans chaque journée. %>
     <% if tournament.pool_rounds.any? %>
-      <%= render "tournaments/pool_phase", tournament: tournament, can_manage: can_manage %>
+      <%= render "tournaments/pool_phase", tournament: tournament %>
+    <% end %>
+
+    <%# Barrages (Critérium Fédéral) : palier entre les poules et le tableau final.
+        Affichés dès le lancement, comme le tableau final juste en dessous : la
+        structure est connue d'avance (une rencontre par poule), seuls les noms
+        manquent — cf. les cases « À déterminer » de _barrage_phase. %>
+    <% if (tournament.in_progress? || tournament.completed?) && tournament.barrage_expected? %>
+      <%= render "tournaments/barrage_phase", tournament: tournament %>
     <% end %>
 
     <%# Tableau final / playoffs à élimination directe (commun à tous les formats).
@@ -66,7 +83,56 @@
         Tournament#bracket_expected? (PAS juste `playoffs?`, qui n'a de sens que
         pour le championnat et peut valoir n'importe quoi pour les autres formats). %>
     <% if (tournament.in_progress? || tournament.completed?) && tournament.bracket_expected? %>
-      <%= render "tournaments/bracket", tournament: tournament, can_manage: can_manage %>
+      <%= render "tournaments/bracket", tournament: tournament %>
     <% end %>
+
+    <%# Critérium Fédéral : la consolante et les matchs de classement font jouer
+        les places au-delà du podium. Contrairement au tableau final, ils ne
+        s'affichent qu'une fois réellement ouverts — leur structure dépend des
+        perdants des tours amont, il n'y a donc rien à préfigurer avant. %>
+    <% if tournament.tournament_rounds.consolation.exists? %>
+      <%= render "tournaments/consolation_phase", tournament: tournament %>
+    <% end %>
+
+    <% if classification_tables(tournament).any? %>
+      <%= render "tournaments/classification_phase", tournament: tournament %>
+    <% end %>
+
+    <%# ── Anti-flash de phase ───────────────────────────────────────────────
+        Les sections arrivent déjà avec le bon `hidden` pour la phase par DÉFAUT
+        (cf. phase_section_hidden?), ce qui évite de toutes les empiler au
+        chargement. Mais la phase réellement affichée est celle mémorisée en
+        sessionStorage : le contrôleur Stimulus la rétablit à son connect, or les
+        modules d'importmap se chargent APRÈS le premier rendu. On voyait donc
+        une fraction de seconde la phase par défaut (les poules) avant de
+        retomber sur la sienne.
+
+        Ce script, lui, est exécuté pendant l'analyse du document — donc avant
+        que quoi que ce soit soit peint. Il ne fait que déplacer l'attribut
+        `hidden`, exactement comme le contrôleur ; ce dernier refait le même
+        calcul au connect, l'opération est idempotente. Même principe que les
+        scripts anti-flash de thème sombre.
+
+        Volontairement sans `defer` ni type=module : ces deux modes repoussent
+        l'exécution après le rendu, ce qui annulerait tout l'intérêt. %>
+    <script>
+      (function () {
+        var board = document.currentScript.parentElement;
+        var stored = null;
+        try { stored = sessionStorage.getItem("phase:<%= tournament.id %>"); } catch (e) { /* stockage refusé */ }
+        if (!stored) return;
+
+        var sections = board.querySelectorAll("[data-tournament-phase-switch-target='section']");
+        // Une phase mémorisée peut avoir disparu (score corrigé, aval détruit) :
+        // sans cette garde on masquerait toutes les sections d'un coup.
+        var exists = Array.prototype.some.call(sections, function (s) { return s.dataset.phase === stored });
+        if (!exists) return;
+
+        Array.prototype.forEach.call(sections, function (s) { s.hidden = s.dataset.phase !== stored });
+        board.querySelectorAll(".phase-nav__pill").forEach(function (pill) {
+          pill.classList.toggle("is-active", pill.dataset.phase === stored);
+        });
+      })();
+    </script>
   </div>
 <% end %>

@@ -1,4 +1,6 @@
 <%# ── Page modification du profil ──────────────────────────────────────────── %>
+<%# profil_path = GET /profil, qui rend show_simple (cf. routes.rb:190). %>
+<% content_for :breadcrumb, breadcrumb_for([["Mon profil", profil_path], ["Modifier", nil]]) %>
 <%# Même direction artistique que la page show : fond sombre, accents verts %>
 
 <%# background-color géré par .profil-page dans _profil.scss (et _theme.scss en mode clair) %>

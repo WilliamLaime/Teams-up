@@ -27,6 +27,48 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
   # Score « sec » pour player_a (2 sets à 6-0), conforme au tennis.
   def straight_win = { tournament_match: { games_a: [6, 6], games_b: [0, 0] } }
 
+  # ── Créneau de la rencontre planifiée ───────────────────────────────────────
+  # La date ne vit pas sur le TournamentMatch : elle arrive avec la rencontre
+  # (Match) que les joueurs créent pour convenir de leur créneau. Sans cet
+  # affichage, il fallait ouvrir chaque rencontre pour savoir quand on joue.
+  def schedule_match!(date:, time:)
+    Match.create!(title: "Rencontre de tournoi", date: date, time: time,
+                  players_needed: 2, level: "Débutant", visibility: "public",
+                  validation_mode: "automatic", genre_restriction: "tous",
+                  user: @admin, sport: @sport,
+                  tournament: @tournament, tournament_match: @match)
+  end
+
+  test "la carte affiche le créneau de la rencontre planifiée" do
+    schedule_match!(date: Date.tomorrow, time: Time.current.change(hour: 19, min: 0))
+
+    # Le board ne montre les cartes qu'une fois le tournoi lancé : tant qu'il est
+    # `open`, c'est le panneau de lancement qui occupe l'onglet Matchs.
+    @tournament.update!(status: "in_progress")
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".tmatch-card__when", text: /Demain à 19h/
+  end
+
+  # Une rencontre peut exister sans date (colonne nullable). Le bandeau reste
+  # AFFICHÉ et annonce « Date à définir » : c'est lui qui aligne les cartes entre
+  # elles, un bandeau conditionnel décalerait tout ce qui le suit d'une carte à
+  # l'autre dans une même rangée (cf. _tmatch_when.html.erb).
+  test "le créneau annonce « Date à définir » quand la rencontre n'a pas de date" do
+    match = schedule_match!(date: Date.tomorrow, time: nil)
+    match.update_columns(date: nil)
+
+    # Le board ne montre les cartes qu'une fois le tournoi lancé : tant qu'il est
+    # `open`, c'est le panneau de lancement qui occupe l'onglet Matchs.
+    @tournament.update!(status: "in_progress")
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".tmatch-card__when.tmatch-card__when--tbd", text: /Date à définir/
+    assert_select "a", text: "Voir la rencontre"
+  end
+
   test "l'organisateur enregistre un score, le vainqueur est dérivé" do
     sign_in @admin
     patch tournament_tournament_match_path(@tournament, @match), params: straight_win

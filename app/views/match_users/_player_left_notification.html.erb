@@ -20,7 +20,7 @@
 
       <%# Calcul du nom affiché : "Prénom N." %>
       <%
-        first       = leaving_user.profil&.first_name.presence || leaving_user.email.split("@").first
+        first       = leaving_user.profil&.first_name.presence || User::FALLBACK_DISPLAY_NAME
         last_letter = leaving_user.profil&.last_name.presence&.first&.upcase
         display     = last_letter ? "#{first} #{last_letter}." : first
       %>

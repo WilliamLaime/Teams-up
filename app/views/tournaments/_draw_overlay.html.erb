@@ -1,0 +1,48 @@
+<%# ── Overlay de tirage au sort des poules ──────────────────────────────────────
+    Mise en scène jouée UNE FOIS, au lancement d'un tournoi à poules : les poules
+    se révèlent l'une après l'autre, avec leurs joueurs.
+
+    Pourquoi un overlay plutôt qu'une animation sur le board — dans la phase de
+    poules, les poules sont des `tabpanel` dont un SEUL est affiché à la fois
+    (cf. _pool_phase + pool_selector_controller). Animer les cartes en place ne
+    montrerait donc jamais que sa propre poule, alors que c'est précisément la
+    composition de TOUTES les poules que le tirage doit révéler.
+
+    L'overlay est rendu déjà masqué et n'est animé que par tournament_draw_controller,
+    qui le retire ensuite : sans JS (ou en `prefers-reduced-motion`), il ne s'affiche
+    pas du tout et le board reste directement accessible.
+
+    Local : tournament. %>
+<% pools = tournament.ranked_pools %>
+
+<% if pools.any? %>
+  <%# aria-hidden + inert : purement décoratif et transitoire. Le contenu réel
+      (les poules) est dans le board juste derrière, déjà lisible par les
+      technologies d'assistance — l'annoncer deux fois n'apporterait rien. %>
+  <div class="draw-overlay" data-tournament-draw-target="overlay" hidden aria-hidden="true" inert>
+    <div class="draw-overlay__inner">
+      <p class="draw-overlay__kicker">Tirage au sort</p>
+
+      <div class="draw-overlay__pools">
+        <% pools.each do |index, players| %>
+          <div class="draw-overlay__pool" data-tournament-draw-target="pool">
+            <h3 class="draw-overlay__pool-title"><%= pool_label(index) %></h3>
+            <ul class="draw-overlay__players">
+              <% players.each do |player| %>
+                <li class="draw-overlay__player" data-tournament-draw-target="player">
+                  <%= player.display_name %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Toujours pouvoir sortir : une animation qu'on ne peut pas interrompre
+          bloque l'accès au contenu (RGAA 13.8). Échap fait la même chose. %>
+      <button type="button" class="draw-overlay__skip" data-action="tournament-draw#skip">
+        Passer l'animation
+      </button>
+    </div>
+  </div>
+<% end %>

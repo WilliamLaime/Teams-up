@@ -33,9 +33,6 @@ Disallow: /offline
 # Paramètres de filtre inutiles à indexer (évite le duplicate content)
 Disallow: /matches?mine=1
 
-# Espace tournois — feature en chantier, pas encore publiée (ne pas référencer)
-Disallow: /tournois
-
 # ── Sitemap ───────────────────────────────────────────────────────────────────
 # Indique l'emplacement du sitemap aux moteurs de recherche
 Sitemap: https://www.teams-up-sport.fr/sitemap.xml.gz

@@ -150,11 +150,16 @@ class User < ApplicationRecord
     end
   end
 
-  # Retourne "Prénom Nom" si renseigné, sinon l'email
+  # Libellé affiché quand un joueur n'a ni prénom ni nom renseigné.
+  # SÉCURITÉ : on ne retombe JAMAIS sur l'email — cette méthode est appelée dans des vues
+  # et des mails vus par d'autres utilisateurs, l'email d'autrui n'a rien à y faire.
+  FALLBACK_DISPLAY_NAME = "Joueur".freeze
+
+  # Retourne "Prénom Nom" si renseigné, sinon un libellé neutre
   # Utilisé partout dans les vues pour afficher l'identité d'un joueur
   def display_name
     full = [profil&.first_name, profil&.last_name].compact.join(' ').strip
-    full.present? ? full : email
+    full.present? ? full : FALLBACK_DISPLAY_NAME
   end
 
   # Retourne "Prénom N." (prénom + initiale du nom) pour les contextes compacts
@@ -167,6 +172,51 @@ class User < ApplicationRecord
     return display_name if first.blank?
 
     initial.present? ? "#{first} #{initial.upcase}." : first
+  end
+
+  # ── Recherche de joueurs à inviter ──────────────────────────────────────────
+  #
+  # Utilisée par les autocomplétions d'invitation (équipe, co-organisateur de tournoi).
+  #
+  # SÉCURITÉ : la recherche approximative (ILIKE) ne porte QUE sur le prénom et le nom.
+  # L'email, lui, est comparé en égalité exacte : on peut donc inviter quelqu'un dont on
+  # connaît déjà l'adresse, mais pas énumérer les comptes de l'application en cherchant
+  # « @gmail.com ». Voir docs/SECURITE-RGPD.md.
+  def self.search_for_invite(query)
+    q = query.to_s.strip
+    return none if q.blank?
+
+    joins(:profil)
+      .includes(:profil)
+      .where(
+        "profils.first_name ILIKE :like OR profils.last_name ILIKE :like OR users.email = :exact",
+        like: "%#{sanitize_sql_like(q)}%",
+        exact: q.downcase
+      )
+  end
+
+  # ── Identifiant public temporaire pour les invitations ──────────────────────
+  #
+  # Les autocomplétions d'invitation (équipe, co-organisateur de tournoi) doivent
+  # désigner un joueur sans faire circuler son email dans le HTML ni dans le JSON.
+  # On utilise un `signed_id` Rails : une chaîne signée par l'application, donc
+  # infalsifiable, cantonnée à un usage (`purpose`) et à une durée de vie courte.
+  #
+  # À NE PAS confondre avec un token sécurisé : un signed_id n'est pas révocable,
+  # d'où l'expiration courte.
+  INVITE_SGID_PURPOSE = :team_invite
+  INVITE_SGID_EXPIRY  = 1.hour
+
+  def invite_sgid
+    signed_id(purpose: INVITE_SGID_PURPOSE, expires_in: INVITE_SGID_EXPIRY)
+  end
+
+  # Retourne le User correspondant, ou nil si le sgid est absent, forgé, expiré
+  # ou émis pour un autre usage. Ne lève jamais d'exception (contrairement à find_signed!).
+  def self.find_by_invite_sgid(sgid)
+    return nil if sgid.blank?
+
+    find_signed(sgid, purpose: INVITE_SGID_PURPOSE)
   end
 
   # Méthode appelée lors du retour depuis Google OAuth

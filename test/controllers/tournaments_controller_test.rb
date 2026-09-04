@@ -14,12 +14,18 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
 
   teardown { teardown_db }
 
-  # ─── GET /tournois/bientot : page d'attente publique + non-indexée ──────────
-  test "GET /tournois/bientot se rend pour un visiteur non connecté et est noindex" do
-    get coming_soon_tournaments_path
+  # ─── GET /tournois/bientot : ancienne page d'attente → redirigée ────────────
+  test "GET /tournois/bientot redirige (301) vers la liste des tournois" do
+    get "/tournois/bientot"
+    assert_response :moved_permanently
+    assert_redirected_to "/tournois"
+  end
+
+  # ─── GET /tournois : la liste est publique et indexable ─────────────────────
+  test "GET /tournois se rend pour un visiteur non connecté sans noindex" do
+    get tournaments_path
     assert_response :success
-    assert_select "meta[name=?][content*=?]", "robots", "noindex"
-    assert_select ".tournament-soon__title"
+    assert_select "meta[name=?]", "robots", count: 0
   end
 
   # ─── GET /tournois : onglets + pagination (page liste) ──────────────────────
@@ -80,6 +86,28 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form"
     assert_select ".match-form-section", 4 # 4 sections numérotées
+
+    # Bannière pilotée par le sport (Lot 7) : la cible du JS et le champ persisté.
+    assert_select "#tournament-new-banner"
+    assert_select "input[name='tournament[banner_image]']"
+    assert_select "input[data-tournament-form-target='sportInput'][data-images]"
+
+    # Réglages de structure personnalisables + plus aucun champ heure de début.
+    assert_select ".tournament-advanced"
+    assert_select "input[name='tournament[players_per_pool]']"
+    assert_select "select[name='tournament[bracket_size]']"
+    assert_select "input[name='tournament[swiss_wins_to_qualify]']"
+    assert_select "input[name='tournament[swiss_losses_to_eliminate]']"
+    assert_select "input[name='tournament[time(4i)]']", 0
+
+    # Effectif : les presets, le mode Libre puis « Sans limite », dans cette
+    # rangée et dans cet ordre — le bouton ferme la ligne, après « Libre ».
+    assert_select ".tournament-capacity-buttons .tournament-unlimited-btn", text: /Sans limite/
+    buttons = css_select(".tournament-capacity-buttons button").map { |b| b["class"] }
+    assert_equal buttons.length - 1, buttons.index { |c| c.include?("tournament-unlimited-btn") },
+                 "« Sans limite » doit être le dernier bouton de la rangée"
+    assert_operator buttons.index { |c| c.include?("tournament-libre-btn") }, :<,
+                    buttons.index { |c| c.include?("tournament-unlimited-btn") }
   end
 
   test "GET /tournois/new redirige un visiteur non connecté" do
@@ -107,6 +135,98 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to tournament_path(t)
   end
 
+  # ─── Bannière + réglages de structure (Lot 7) ───────────────────────────────
+  # ── Effectif libre ──────────────────────────────────────────────────────────
+  # Le formulaire soumet une chaîne vide quand l'organisateur choisit
+  # « Sans limite » : le tournoi doit se créer sans plafond, et pas être rejeté.
+  test "POST /tournois crée un tournoi sans plafond d'effectif" do
+    sign_in @user
+
+    assert_difference "Tournament.count", 1 do
+      post tournaments_path, params: {
+        tournament: {
+          name: "Open sans limite", sport_id: @sport.id, format: "poules",
+          max_players: "", date: Date.tomorrow.to_s, place: "Club Test"
+        }
+      }
+    end
+
+    t = Tournament.last
+    assert_nil t.max_players
+    assert t.unlimited_capacity?
+    assert_redirected_to tournament_path(t)
+  end
+
+  # Sans plafond, l'inscription ne doit jamais être refusée pour cause de
+  # tournoi complet — c'est tout l'intérêt de l'option.
+  test "on peut s'inscrire à un tournoi sans plafond quel que soit l'effectif" do
+    t = Tournament.create!(name: "Sans limite", sport: @sport, user: @user, format: "poules",
+                           status: "open", date: Date.tomorrow, place: "Club Test")
+    5.times do |i|
+      t.tournament_users.create!(user: create_test_user(email: "libre#{i}@example.com"),
+                                 role: "joueur", status: "approved")
+    end
+
+    joiner = create_test_user(email: "dernier@example.com")
+    sign_in joiner
+
+    assert_difference -> { t.tournament_users.count }, 1 do
+      post tournament_tournament_users_path(t)
+    end
+    assert_equal "open", t.reload.status, "aucune clôture automatique sans plafond"
+  end
+
+  test "POST /tournois persiste la bannière choisie et les réglages de structure" do
+    sign_in @user
+    banner = "https://res.cloudinary.com/test/image/upload/pingpong.png"
+
+    post tournaments_path, params: {
+      tournament: {
+        name: "Open réglé", sport_id: @sport.id, format: "poules",
+        max_players: 16, date: Date.tomorrow.to_s, place: "Club Test",
+        banner_image: banner, players_per_pool: 8, bracket_size: 4
+      }
+    }
+
+    t = Tournament.last
+    assert_equal banner, t.banner_image, "l'image suivie du sport est enregistrée"
+    assert_equal 8, t.pool_size
+    assert_equal 4, t.final_size
+    assert_equal "2 poules de 8 + demi-finales", t.structure_summary
+  end
+
+  test "POST /tournois : un réglage vide retombe sur la recommandation" do
+    sign_in @user
+
+    post tournaments_path, params: {
+      tournament: {
+        name: "Open auto", sport_id: @sport.id, format: "poules",
+        max_players: 16, date: Date.tomorrow.to_s, place: "Club Test",
+        players_per_pool: "", bracket_size: ""
+      }
+    }
+
+    t = Tournament.last
+    assert_nil t.players_per_pool
+    assert_equal Tournament::DEFAULT_POOL_SIZE, t.pool_size
+    assert_equal "4 poules de 4 + quarts", t.structure_summary
+  end
+
+  test "POST /tournois refuse un tableau final qui n'est pas une puissance de 2" do
+    sign_in @user
+
+    assert_no_difference "Tournament.count" do
+      post tournaments_path, params: {
+        tournament: {
+          name: "Open cassé", sport_id: @sport.id, format: "poules",
+          max_players: 16, date: Date.tomorrow.to_s, place: "Club Test",
+          bracket_size: 6
+        }
+      }
+    end
+    assert_response :unprocessable_entity
+  end
+
   # ─── Co-organisateur + auto-inscription ─────────────────────────────────────
   test "POST /tournois avec co-organisateur et auto-inscription" do
     sign_in @user
@@ -116,7 +236,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
         name: "Open Test 2", sport_id: @sport.id, format: "poules",
         max_players: 8, date: Date.tomorrow.to_s, place: "Club Test"
       },
-      co_organizer_email: @co_org.email,
+      co_organizer_sgid: @co_org.invite_sgid,
       self_register: "1"
     }
 
@@ -135,8 +255,48 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     get search_tournaments_path(q: "Bob"), headers: { "Accept" => "application/json" }
     assert_response :success
     body = JSON.parse(response.body)
-    assert(body.any? { |u| u["email"] == @co_org.email })
-    refute(body.any? { |u| u["email"] == @user.email }) # s'exclut lui-même
+    # On identifie les résultats par leur sgid, jamais par leur email (voir plus bas)
+    assert(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @co_org })
+    refute(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @user }) # s'exclut lui-même
+  end
+
+  # ─── Sécurité : pas d'énumération d'emails via l'autocomplete ───────────────
+  # Un ILIKE sur users.email permettrait de lister les comptes en cherchant
+  # « @example.com ». Voir docs/SECURITE-RGPD.md.
+  test "GET /tournois/search ne permet pas d'énumérer les emails" do
+    sign_in @user
+    get search_tournaments_path(q: "@example.com"), headers: { "Accept" => "application/json" }
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)
+  end
+
+  test "GET /tournois/search trouve un joueur par son email exact" do
+    sign_in @user
+    get search_tournaments_path(q: @co_org.email), headers: { "Accept" => "application/json" }
+    body = JSON.parse(response.body)
+    assert(body.any? { |u| User.find_by_invite_sgid(u["sgid"]) == @co_org })
+  end
+
+  test "GET /tournois/search ne renvoie jamais d'email" do
+    sign_in @user
+    get search_tournaments_path(q: "Bob"), headers: { "Accept" => "application/json" }
+    refute_includes response.body, "@example.com"
+    JSON.parse(response.body).each { |u| refute_includes u.keys, "email" }
+  end
+
+  test "POST /tournois ignore un co_organizer_sgid forgé" do
+    sign_in @user
+
+    post tournaments_path, params: {
+      tournament: {
+        name: "Open Test 3", sport_id: @sport.id, format: "poules",
+        max_players: 8, date: Date.tomorrow.to_s, place: "Club Test"
+      },
+      co_organizer_sgid: "sgid-bidon"
+    }
+
+    t = Tournament.last
+    assert_empty t.tournament_users.where(role: "co_organisateur")
   end
 
   test "GET /tournois/search retourne vide sous 3 caractères" do
@@ -188,6 +348,63 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     # draw_order, mais un vrai mélange.
     ids_by_draw_order = approved.order(:draw_order).pluck(:id)
     assert_not_equal ids_by_registration_order, ids_by_draw_order
+  end
+
+  # ── Mise en scène du tirage ─────────────────────────────────────────────────
+  # Dans un tournoi à poules, les poules du board sont des onglets dont un seul
+  # est visible : sans overlay, le tirage ne montrerait jamais la composition des
+  # autres poules.
+  test "POST start rend l'overlay de tirage pour un tournoi à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t), as: :turbo_stream
+
+    assert_response :success
+    assert_includes response.body, "draw-overlay"
+    assert_includes response.body, "tournament-draw"
+  end
+
+  # Les autres formats gardent le battage des cartes du board : l'overlay ne doit
+  # pas s'y inviter.
+  test "POST start ne rend pas d'overlay hors format à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8) # ronde_suisse
+
+    post start_tournament_path(t), as: :turbo_stream
+
+    assert_response :success
+    assert_not_includes response.body, "draw-overlay"
+    assert_includes response.body, "tournament-draw"
+  end
+
+  # Chemin HTML (sans Turbo Stream) : il aboutissait à un simple flash, sans
+  # jamais montrer le tirage. `?draw=1` rebranche l'animation à l'arrivée.
+  test "POST start en HTML redirige avec le drapeau d'animation" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t)
+    assert_redirected_to tournament_path(t, draw: 1)
+
+    follow_redirect!
+    assert_select "#tournament_board[data-controller*=?]", "tournament-draw"
+    assert_select ".draw-overlay"
+  end
+
+  # Sans le drapeau (simple rechargement), l'animation ne rejoue pas.
+  test "GET show sans ?draw ne greffe pas l'animation" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+    t.update!(format: "poules")
+    post start_tournament_path(t)
+
+    get tournament_path(t)
+
+    assert_select "#tournament_board[data-controller=?]", "bracket"
+    assert_select ".draw-overlay", count: 0
   end
 
   test "POST start refuse un non-organisateur" do
@@ -312,6 +529,48 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card--placeholder", 3 # 2 places en demies + 1 en finale
   end
 
+  test "GET show : la recherche de participants apparaît au-delà de 8 joueurs" do
+    sign_in @user
+    t = open_tournament_with_players(12)
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".participant-search__input"
+    # Chaque carte est filtrable et porte le nom sur lequel comparer.
+    assert_select ".participant-chip[data-participant-filter-target=card]", 12
+    assert_select ".participant-chip[data-name=?]", t.approved_players.first.display_name.downcase
+  end
+
+  test "GET show : pas de recherche de participants sur une petite grille" do
+    sign_in @user
+    t = open_tournament_with_players(8)
+
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".participant-search", 0
+    assert_select ".participant-chip[data-participant-filter-target=card]", 0
+  end
+
+  test "GET show : un qualifié monte d'une case sans attendre son adversaire" do
+    sign_in @user
+    t = launched_tournament("ronde_suisse", 8)
+    finalists = t.tournament_users.players.approved.order(:id).first(4)
+    semis = BracketBuilder.new(t, finalists: finalists).build!
+    won = semis.tournament_matches.order(:position).first
+    won.update!(sets: [[6, 0], [6, 0]]) # 1re demie jouée, la 2e non → finale à moitié connue
+
+    get tournament_path(t)
+    assert_response :success
+    # La finale n'existe pas encore en base : sa case affiche le vainqueur connu…
+    assert_select ".tmatch-card--placeholder-known", 1
+    assert_select ".tmatch-card--placeholder-known .tmatch-card__name",
+                  text: won.reload.winner.display_name
+    # …et laisse UN seul camp en attente.
+    assert_select ".tmatch-card--placeholder-known .tmatch-card__player--pending", 1
+    # La case entièrement inconnue reste, elle, sans joueur.
+    assert_select ".tmatch-card--placeholder:not(.tmatch-card--placeholder-known)", 0
+  end
+
   test "GET show : le tableau final reste affiché même si `playoffs` vaut false sur un tournoi non-championnat" do
     # Régression : `playoffs` n'a de sens que pour le championnat (LeagueBuilder),
     # mais la colonne existe pour tous les formats — une ronde suisse/poules avec
@@ -366,15 +625,27 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".score-bracket__pip", minimum: 1
   end
 
-  test "GET show : les boutons vainqueur n'apparaissent que pour l'organisateur" do
+  # La carte ne propose plus de « bouton vainqueur » : depuis la refonte du score,
+  # tout passe par un bouton unique « Gérer le score » (`tmatch-card__score-btn`),
+  # dont le pendant en lecture seule est « Détail » (`tmatch-card__detail-btn`).
+  #
+  # Le test vérifie les DEUX côtés dans la même foulée. Une assertion « count: 0 »
+  # seule ne prouve rien : si le sélecteur devient obsolète (ce qui est arrivé ici),
+  # elle reste verte alors que n'importe qui pourrait saisir les scores.
+  test "GET show : le bouton de saisie du score n'apparaît que pour l'organisateur" do
     t = open_tournament_with_players(8)
     t.update!(status: "in_progress")
     SwissPairing.new(t).next_round!
 
-    sign_in @co_org # non-organisateur
+    sign_in @co_org # ni créateur, ni co-organisateur de CE tournoi, ni joueur
     get tournament_path(t)
     assert_select ".round-col" # les rondes sont bien affichées
-    assert_select ".tmatch-card__win-btn", 0 # mais aucun bouton vainqueur
+    assert_select ".tmatch-card__score-btn", 0, "un non-organisateur ne saisit aucun score"
+
+    # Contre-épreuve : l'organisateur, lui, doit bien l'obtenir.
+    sign_in @user
+    get tournament_path(t)
+    assert_select ".tmatch-card__score-btn", minimum: 1
   end
 
   # ─── Formats Lot 5 : rendu des nouvelles vues (les partials ERB compilent) ────
@@ -389,6 +660,41 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     t.update!(status: "in_progress")
     TournamentEngine.for(t).next_round!
     t
+  end
+
+  # Repère « moi » : sans lui, retrouver son match dans une grille de 8 poules
+  # demande de lire chaque nom. Le test vérifie surtout qu'il ne se déclenche QUE
+  # pour le joueur concerné — un repère qui s'allume pour tout le monde ne repère rien.
+  test "GET show met en avant les matchs et la ligne de classement du joueur connecté" do
+    t = launched_tournament("poules", 8)
+    me = t.tournament_users.players.approved.order(:id).first
+
+    sign_in me.user
+    get tournament_path(t)
+    assert_response :success
+    # Poule de 4 → je vois mes 3 confrontations d'emblée (règle générale : dans une
+    # poule de N, chacun affronte les N-1 autres).
+    assert_select ".tmatch-card--mine", 3
+    assert_select ".pool-switcher__chip--mine", 1
+    assert_select ".tmatch-card__me-badge"
+    # Ma ligne est repérée dans les DEUX classements : celui de ma poule (dans le
+    # panneau) et celui de l'onglet Classement.
+    assert_select ".pool-view__standings .tournament-ranking__row.is-me", 1
+    assert_select ".tournament-ranking .tournament-ranking__row.is-me", 1
+    # J'arrive DIRECTEMENT dans ma poule : c'est son onglet qui est sélectionné et
+    # son panneau qui est visible, sans un clic.
+    assert_select "#pool_tab_#{me.pool}[aria-selected=true]"
+    assert_select "#pool_panel_#{me.pool}:not([hidden])"
+
+    # L'organisateur, lui, ne joue pas : aucun repère ne doit s'allumer, et c'est
+    # la première poule qui s'ouvre.
+    sign_in @user
+    get tournament_path(t)
+    assert_response :success
+    assert_select ".tmatch-card--mine", 0
+    assert_select ".pool-switcher__chip--mine", 0
+    assert_select ".tournament-ranking__row.is-me", 0
+    assert_select "#pool_tab_0[aria-selected=true]"
   end
 
   test "GET show rend la phase championnat" do
@@ -412,7 +718,11 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".journee-picker__toggle span", text: "Journée 2" # présélection sur la journée en cours
     assert_select ".journee-picker__option", 2
-    assert_select ".journee-picker__option.is-active[data-round-number=?]", "2"
+    # Filtre multi-sélection : une case à cocher par journée, seule celle de la
+    # journée en cours est cochée au chargement.
+    assert_select ".journee-picker__option input[type=checkbox][data-round-number=?][checked]", "2"
+    assert_select ".journee-picker__option input[type=checkbox][data-round-number=?]:not([checked])", "1"
+    assert_select ".journee-picker__all input[type=checkbox]" # raccourci « toutes les journées »
     # Seule la journée en cours (2) est visible au chargement, la 1ère est masquée.
     assert_select ".round-ribbon__page[data-round-number=?][hidden]", "1"
     assert_select ".round-ribbon__page[data-round-number=?]:not([hidden])", "2"
@@ -440,13 +750,46 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card__center-score", text: "2"
   end
 
-  test "GET show rend la phase poules (matchs groupés par poule)" do
+  # La phase de poules est centrée sur LA POULE : un onglet par poule, et chaque
+  # panneau porte toutes les confrontations de sa poule (toutes journées) plus son
+  # classement — plus aucun filtre par journée ici.
+  test "GET show rend la phase poules (un onglet et un classement par poule)" do
     sign_in @user
-    t = launched_tournament("poules", 8)
+    t = launched_tournament("poules", 8) # 8 joueurs → 2 poules de 4
     get tournament_path(t)
     assert_response :success
     assert_select ".tournament-phase__title", text: "Poules"
-    assert_select ".pool-label"
+    assert_select ".pool-switcher__chip", 2
+    assert_select ".pool-switcher__chip", text: /Poule A/
+    assert_select ".pool-switcher__chip", text: /Poule B/
+    assert_select ".pool-view", 2
+    # Une seule poule visible à la fois.
+    assert_select ".pool-view:not([hidden])", 1
+    # Le classement de la poule est dans le panneau, plus seulement dans l'onglet
+    # Classement — en version compacte (# / Joueur / V / D).
+    assert_select ".pool-view__standings .tournament-ranking__table--compact", 2
+    assert_select ".pool-switcher__toggle" # bouton masquer/afficher le classement
+    # Cartes empilées (A au-dessus de B, score à droite), pas la scoreline centrée.
+    assert_select ".pool-view .tmatch-card--stacked"
+    assert_select ".pool-view .tmatch-card__scoreline", 0
+    # Le filtre par journée a disparu de la phase de poules.
+    assert_select ".pool-selector .journee-picker", 0
+  end
+
+  # Un seul libellé pour la saisie ET la modification : la modale fait les deux.
+  test "GET show : le bouton de score s'appelle toujours « Gérer le score »" do
+    sign_in @user
+    t = launched_tournament("poules", 8)
+    match = t.pool_rounds.first.tournament_matches.reject(&:is_bye).first
+
+    get tournament_path(t)
+    assert_select ".tmatch-card__score-btn", text: "Gérer le score"
+    assert_select ".tmatch-card__score-btn", text: "Saisir le score", count: 0
+
+    # Score déjà saisi : le libellé ne change pas (avant, « Modifier »).
+    win_tournament_match!(match, match.player_a)
+    get tournament_path(t)
+    assert_select ".tmatch-card__score-btn", text: "Modifier", count: 0
   end
 
   test "GET show : bouton forfait visible pour l'organisateur d'un tournoi en cours" do
@@ -570,5 +913,54 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tournament-status-badge--closed", text: /Inscriptions closes/
     assert_select ".tournament-start-panel form[action=?]", toggle_registrations_tournament_path(t)
     assert_select ".tournament-edit-link"
+  end
+
+  # ─── Onglet Calendrier ──────────────────────────────────────────────────────
+  # Le calendrier est rendu côté serveur dans des <template> groupés par jour,
+  # que Stimulus se contente ensuite de placer dans la grille. Ce test garde donc
+  # les deux bouts : l'onglet existe, et la source des vignettes est bien remplie.
+  test "GET show rend l'onglet Calendrier avec les rencontres datées en source" do
+    t = open_tournament("Avec calendrier")
+    t.update!(user: @user, status: "in_progress")
+    joueurs = 2.times.map do |i|
+      u = create_test_user(email: "cal-ctrl#{i}@example.com")
+      t.tournament_users.create!(user: u, role: "joueur", status: "approved", pool: 0)
+    end
+    round  = t.tournament_rounds.create!(phase: "pool", number: 1, branch: "main")
+    tmatch = TournamentMatch.create!(tournament_round: round, position: 0,
+                                     player_a: joueurs[0], player_b: joueurs[1])
+    Match.create!(title: "Rencontre", date: Date.current + 3,
+                  time: Time.current.change(hour: 19, min: 0),
+                  players_needed: 2, level: "Débutant", visibility: "public",
+                  validation_mode: "automatic", genre_restriction: "tous",
+                  user: @user, sport: @sport, tournament: t, tournament_match: tmatch)
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "[data-tournament-tabs-panel-param=?]", "calendrier"
+    assert_select "[data-panel=?]", "calendrier"
+    assert_select "#tournament_calendar_source template[data-date=?]", (Date.current + 3).iso8601
+    assert_select ".tcal-event__time", text: "19h"
+    assert_select ".tcal-event__group", text: "Poule A"
+  end
+
+  # Une rencontre sans créneau n'a pas de case où se poser : elle ne doit pas
+  # apparaître dans la source, sans quoi Stimulus chercherait une date nulle.
+  test "GET show n'expose pas les rencontres sans date dans le calendrier" do
+    t = open_tournament("Sans créneau")
+    t.update!(user: @user, status: "in_progress")
+    joueurs = 2.times.map do |i|
+      u = create_test_user(email: "nocal#{i}@example.com")
+      t.tournament_users.create!(user: u, role: "joueur", status: "approved")
+    end
+    round = t.tournament_rounds.create!(phase: "swiss", number: 1, branch: "main")
+    TournamentMatch.create!(tournament_round: round, position: 0,
+                            player_a: joueurs[0], player_b: joueurs[1])
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "#tournament_calendar_source template", 0
   end
 end

@@ -40,9 +40,9 @@ module Slack
         type: "modal",
         callback_id: CALLBACK_ID,
         private_metadata: { channel_id: @channel_id, response_url: @response_url, team_id: @team_id }.to_json,
-        title:  { type: "plain_text", text: "Créer un match" },
+        title: { type: "plain_text", text: "Créer un match" },
         submit: { type: "plain_text", text: "Créer" },
-        close:  { type: "plain_text", text: "Annuler" },
+        close: { type: "plain_text", text: "Annuler" },
         blocks: blocks
       }
     end

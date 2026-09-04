@@ -1,0 +1,8 @@
+<%# Constitution des poules enregistrée : on rejoue l'onglet Participants pour
+    que le panneau reflète le mode et les chapeaux réellement en base (l'avertis-
+    sement « aucun chapeau rempli » disparaît dès qu'un joueur est placé). %>
+<%= turbo_stream.replace "tournament_participants" do %>
+  <div id="tournament_participants">
+    <%= render "tournaments/participants", tournament: @tournament %>
+  </div>
+<% end %>

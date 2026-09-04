@@ -1,16 +1,16 @@
 <%# =====================================================
-    PAGE D'ACCUEIL — Team Up
+    PAGE D'ACCUEIL — Teams-up
     4 sections : Hero / Matchs / Comment ça marche / CTA
     ===================================================== %>
 
 <%# Schema.org Organization + WebSite — signaux d'autorité lus par Google et les LLMs %>
 <% content_for :head do %>
-  <%# Organization : qui est Teams-Up, avec logo et réseaux sociaux %>
+  <%# Organization : qui est Teams-up, avec logo et réseaux sociaux %>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Teams-Up",
+    "name": "Teams-up",
     "url": "<%= root_url %>",
     "logo": { "@type": "ImageObject", "url": "<%= asset_url('logo/logo_vf_1_noir.png') %>" },
     "sameAs": ["https://www.instagram.com/teams.up.sport"],
@@ -22,7 +22,7 @@
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Teams-Up",
+    "name": "Teams-up",
     "url": "<%= root_url %>"
   }
   </script>
@@ -301,7 +301,7 @@
 
     <h2 class="hiw-title">Jouez plus, organisez moins.</h2>
     <p class="hiw-subtitle">
-      Teams-Up simplifie la logistique pour que vous restiez concentré sur le terrain.
+      Teams-up simplifie la logistique pour que vous restiez concentré sur le terrain.
     </p>
 
     <div class="row justify-content-center g-4">
@@ -367,7 +367,7 @@
 
         <p class="cta-description">
           Finis les interminables fils de discussion pour organiser un simple match.
-          Teams-Up centralise les confirmations, les informations et le chat en un seul endroit.
+          Teams-up centralise les confirmations, les informations et le chat en un seul endroit.
         </p>
 
         <%# Liste des avantages avec coches vertes %>
@@ -399,7 +399,7 @@
         <%# RGESN 6.4 — lazy loading sur image below fold %>
         <picture>
           <source srcset="<%= asset_path('fenetre_dialogue_home.webp') %>" type="image/webp">
-          <%= image_tag "fenetre_dialogue_home.png", class: "cta-chat-image", alt: "Aperçu du chat Team Up", style: "width: 450px; max-width: 100%; height: auto; display: block;", loading: "lazy", width: 450, height: 400 %>
+          <%= image_tag "fenetre_dialogue_home.png", class: "cta-chat-image", alt: "Aperçu du chat Teams-up", style: "width: 450px; max-width: 100%; height: auto; display: block;", loading: "lazy", width: 450, height: 400 %>
         </picture>
       </div>
 
