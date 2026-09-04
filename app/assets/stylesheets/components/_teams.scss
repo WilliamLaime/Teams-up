@@ -954,6 +954,24 @@
   }
 }
 
+// En-tête de groupe dans le dropdown (« Inscrits au tournoi », « Tes amis »).
+// Inséré par invite_search_controller.js à chaque rupture de groupe.
+// NB : la classe .invite-search-group est déjà prise par le wrapper d'input plus
+// haut dans ce fichier — d'où ce nom distinct.
+.invite-search-heading {
+  padding: 0.4rem 0.75rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--theme-text-muted);
+  background: var(--theme-bg-subtle, transparent);
+  border-top: 1px solid var(--theme-border);
+
+  // Le premier groupe colle au haut du dropdown : pas de trait au-dessus.
+  &:first-child { border-top: none; }
+}
+
 // Motif de la ligne grisée (« déjà co-organisateur »), poussé à droite.
 .invite-search-badge {
   margin-left: auto;

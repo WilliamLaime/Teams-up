@@ -197,16 +197,17 @@
               qui doit rester HORS de ce formulaire. %>
           <% if @tournament.new_record? %>
             <div class="mb-0" data-controller="invite-search"
-                 data-invite-search-url-value="<%= search_tournaments_path %>">
+                 data-invite-search-url-value="<%= search_tournaments_path %>"
+                 data-invite-search-suggest-value="true">
               <%= label_tag :co_organizer_sgid, "Co-organisateur (facultatif)", class: "form-label" %>
               <div class="position-relative">
                 <input type="text"
                        class="form-control"
-                       placeholder="Rechercher un joueur (nom, ou son email exact)…"
+                       placeholder="Choisis un ami, ou cherche un joueur…"
                        autocomplete="off"
                        data-invite-search-target="input"
                        data-tournament-form-target="coOrgInput"
-                       data-action="input->invite-search#search input->tournament-form#updateCoOrg">
+                       data-action="input->invite-search#search input->tournament-form#updateCoOrg focus->invite-search#showSuggestions">
                 <%# Identifiant SIGNÉ du joueur choisi, soumis avec le formulaire.
                     Jamais son email : voir docs/SECURITE-RGPD.md. %>
                 <%= hidden_field_tag :co_organizer_sgid, "", data: { "invite-search-target": "hidden" } %>

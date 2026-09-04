@@ -66,16 +66,19 @@
         <%= form_with url: add_co_organizer_tournament_path(tournament), method: :post,
                       class: "tournament-organizers__form",
                       data: { controller: "invite-search",
-                              "invite-search-url-value": search_tournaments_path(tournament_id: tournament.to_param) } do %>
+                              "invite-search-url-value": search_tournaments_path(tournament_id: tournament.to_param),
+                              "invite-search-suggest-value": true } do %>
           <%= label_tag :co_organizer_sgid, "Ajouter un co-organisateur", class: "form-label" %>
           <div class="tournament-organizers__field">
             <div class="position-relative flex-grow-1">
+              <%# `focus->…#showSuggestions` : le champ s'ouvre sur les inscrits au
+                  tournoi et les amis, sans rien taper (cf. TournamentsController#search). %>
               <input type="text"
                      class="form-control"
-                     placeholder="Rechercher un joueur (nom, ou son email exact)…"
+                     placeholder="Choisis un inscrit ou un ami, ou cherche un joueur…"
                      autocomplete="off"
                      data-invite-search-target="input"
-                     data-action="input->invite-search#search">
+                     data-action="input->invite-search#search focus->invite-search#showSuggestions">
               <%# Identifiant SIGNÉ du joueur choisi, soumis avec le formulaire.
                   Jamais son email : voir docs/SECURITE-RGPD.md. %>
               <%= hidden_field_tag :co_organizer_sgid, "", data: { "invite-search-target": "hidden" } %>
@@ -95,22 +98,25 @@
         <% if can_transfer %>
           <hr class="tournament-organizers__separator">
 
-          <%# Pas de tournament_id dans l'URL de recherche ici : contrairement à la
-              nomination, on veut justement pouvoir promouvoir un co-organisateur
-              déjà en place au rang d'admin. %>
+          <%# `context: "transfer"` : l'endpoint suggère bien les membres du tournoi
+              (comme la nomination), mais ne grise PAS les co-organisateurs en place —
+              contrairement à la nomination, on veut justement pouvoir promouvoir un
+              co-organisateur déjà en place au rang d'admin.
+              Cf. TournamentsController#transfer_context?. %>
           <%= form_with url: transfer_ownership_tournament_path(tournament), method: :patch,
                         class: "tournament-organizers__form",
                         data: { controller: "invite-search",
-                                "invite-search-url-value": search_tournaments_path } do %>
+                                "invite-search-url-value": search_tournaments_path(tournament_id: tournament.to_param, context: "transfer"),
+                                "invite-search-suggest-value": true } do %>
             <%= label_tag :new_admin_sgid, "Transmettre l'administration", class: "form-label" %>
             <div class="tournament-organizers__field">
               <div class="position-relative flex-grow-1">
                 <input type="text"
                        class="form-control"
-                       placeholder="Rechercher le nouvel admin…"
+                       placeholder="Choisis un membre ou un ami, ou cherche le nouvel admin…"
                        autocomplete="off"
                        data-invite-search-target="input"
-                       data-action="input->invite-search#search">
+                       data-action="input->invite-search#search focus->invite-search#showSuggestions">
                 <%= hidden_field_tag :new_admin_sgid, "", data: { "invite-search-target": "hidden" } %>
                 <div class="invite-search-dropdown" data-invite-search-target="dropdown" style="display:none;"></div>
               </div>
