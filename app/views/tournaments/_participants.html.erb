@@ -6,6 +6,13 @@
   co_organizers = tournament.co_organizers
   # L'organisateur peut déclarer un forfait tant que le tournoi est en cours.
   can_manage   = user_signed_in? && policy(tournament).manage? && tournament.in_progress?
+  # Avant le lancement, l'organisation retire pour de bon une inscription
+  # (désinscription sèche — aucun rapport avec le forfait). Garde GROSSIÈRE ici,
+  # seulement pour éviter d'interroger la policy joueur par joueur quand personne
+  # ne peut rien retirer ; le droit fin (« qui peut retirer qui ») reste dans
+  # TournamentUserPolicy#destroy?, seul endroit où il est écrit.
+  can_remove_any = user_signed_in? && policy(tournament).manage? &&
+                   (tournament.open? || tournament.closed?)
   # La constitution des poules ne concerne que les formats qui en ont, et
   # seulement avant le lancement (cf. TournamentPolicy#seeding?).
   can_seed     = user_signed_in? && policy(tournament).seeding? &&
@@ -93,7 +100,13 @@
                        elsif tu.qualified? then ["Qualifié", "qualified"]
                        elsif tu.eliminated? then ["Éliminé", "eliminated"]
                        end %>
-            <% if state || (can_manage && !tu.withdrawn?) %>
+            <% can_forfeit = can_manage && !tu.withdrawn? %>
+            <%# Retrait sec : jamais sur soi-même (l'en-tête offre déjà « Quitter
+                le tournoi »), et jamais sur un autre organisateur — c'est la
+                policy qui le dit, pas cette vue. Les deux boutons ne coexistent
+                jamais : leurs conditions d'état s'excluent. %>
+            <% can_remove = can_remove_any && tu.user_id != current_user.id && policy(tu).destroy? %>
+            <% if state || can_forfeit || can_remove %>
               <div class="participant-chip__meta">
                 <% if state %>
                   <span class="participant-chip__state participant-chip__state--<%= state.last %>">
@@ -101,7 +114,7 @@
                   </span>
                 <% end %>
 
-                <% if can_manage && !tu.withdrawn? %>
+                <% if can_forfeit %>
                   <%# turbo_confirm_danger / _accept : lus par notre modale de
                       confirmation (cf. Turbo.setConfirmMethod) pour un bouton rouge
                       et un libellé qui redit l'action plutôt qu'un « OK » muet. %>
@@ -112,6 +125,17 @@
                                         turbo_confirm_accept: "Déclarer forfait" },
                                 form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
                     <i data-lucide="user-x" aria-hidden="true"></i> Forfait
+                  <% end %>
+                <% end %>
+
+                <% if can_remove %>
+                  <%= button_to tournament_tournament_user_path(tournament, tu),
+                                method: :delete,
+                                class: "participant-chip__remove",
+                                data: { turbo_confirm_danger: true,
+                                        turbo_confirm_accept: "Retirer" },
+                                form: { data: { turbo_confirm: "Retirer #{tu.display_name} du tournoi ? Son inscription sera supprimée." } } do %>
+                    <i data-lucide="user-minus" aria-hidden="true"></i> Retirer
                   <% end %>
                 <% end %>
               </div>

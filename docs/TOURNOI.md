@@ -314,7 +314,12 @@ calendrier général. Renversé :
 **Lots 1 à 8 livrés.** Les 4 formats (`ronde_suisse`, `championnat`, `poules`,
 `criterium_federal`) sont jouables de bout en bout via la façade `TournamentEngine`. Un organisateur peut déclarer un **forfait**
 (exclusion du joueur, victoires par forfait) et **corriger un score verrouillé** (avec
-régénération cohérente de l'aval). Depuis le Lot 6, l'organisateur **et le co-organisateur**
+régénération cohérente de l'aval). **Avant** le lancement, admin et co-organisateur peuvent
+aussi **retirer un inscrit** depuis l'onglet Participants — désinscription sèche, à ne pas
+confondre avec le forfait : la ligne `tournament_users` disparaît, ce qui n'est possible que
+tant qu'aucun match ne la référence (4 clés étrangères depuis `tournament_matches`). Un
+organisateur ne peut retirer qu'un **simple joueur**, jamais un pair ni l'admin
+(`TournamentUserPolicy#destroy?`). Depuis le Lot 6, l'organisateur **et le co-organisateur**
 peuvent aussi **éditer le tournoi**, **clôturer/rouvrir les inscriptions** et **terminer
 manuellement** un tournoi. Depuis le Lot 7, **les joueurs planifient eux-mêmes leur rencontre**
 (date et heure de leur choix) depuis leur carte de poule, le **scoring dépend de la phase**

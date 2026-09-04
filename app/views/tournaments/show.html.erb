@@ -16,20 +16,6 @@
                  else                    { label: "Inscriptions ouvertes", variant: "open" }
                  end
 
-  # Libellé du compteur de joueurs. Trois cas, et non deux :
-  #   - effectif LIBRE (aucun plafond) → "inscrits" : rien n'est "attendu", le
-  #     compteur décrit ce qu'il y a, pas ce qu'il manque ;
-  #   - preset 8/16/32 → "joueurs" (plafond ferme) ;
-  #   - nombre saisi à la main → "participants attendus".
-  plural_players = @tournament.approved_players_count > 1
-  players_word = if @tournament.unlimited_capacity?
-                    plural_players ? "inscrits" : "inscrit"
-                  elsif @tournament.preset_capacity?
-                    plural_players ? "joueurs" : "joueur"
-                  else
-                    plural_players ? "participants attendus" : "participant attendu"
-                  end
-
   # Inscription de l'utilisateur courant, si elle existe. Sert au bouton d'action
   # de l'en-tête : #player? dit s'il occupe une place de joueur, la ligne elle-même
   # est nécessaire pour construire l'URL de désinscription (DELETE).
@@ -55,11 +41,9 @@
           <% end %>
         <% end %>
       </div>
-      <p class="tournament-detail-header__subtitle">
-        <% if @tournament.sport %><%= @tournament.sport.name %> · <% end %>
-        <%= Tournament::FORMAT_LABELS[@tournament.format] %>
-        · <%= @tournament.approved_players_count %><% if @tournament.max_players %>/<%= @tournament.max_players %><% end %>
-        <%= players_word %>
+      <%# id ciblé par Turbo Stream au retrait d'un joueur (cf. le partial). %>
+      <p class="tournament-detail-header__subtitle" id="tournament_header_counts">
+        <%= render "tournaments/header_counts", tournament: @tournament %>
       </p>
 
       <%# ── Rejoindre / Quitter ──────────────────────────────────────────────

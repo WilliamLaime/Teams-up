@@ -885,6 +885,50 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".participant-chip__forfeit"
   end
 
+  # Pendant du forfait, à l'autre bout du cycle de vie : AVANT le lancement,
+  # l'organisateur retire une inscription pour de bon (désinscription sèche).
+  test "GET show : bouton retirer visible pour l'organisateur avant le lancement" do
+    sign_in @user
+    t = open_tournament("Retrait")
+    t.update!(user: @user)
+    player = create_test_user(email: "removable@example.com")
+    t.tournament_users.create!(user: player, role: "joueur", status: "approved")
+
+    get tournament_path(t)
+    assert_select ".participant-chip__remove"
+    assert_select ".participant-chip__forfeit", 0, "pas de forfait tant que rien n'est lancé"
+  end
+
+  # Une fois le tableau généré, la ligne d'inscription est référencée par quatre
+  # colonnes de `tournament_matches` : la retirer lèverait une FK violation.
+  test "GET show : le bouton retirer disparaît une fois le tournoi lancé" do
+    sign_in @user
+    t = launched_tournament("championnat", 8)
+    get tournament_path(t)
+    assert_select ".participant-chip__remove", 0
+  end
+
+  # Un organisateur ne retire pas un autre organisateur (cf. TournamentUserPolicy).
+  # Trois pastilles à l'écran, et une seule doit porter le bouton : celle du
+  # simple joueur. Sans ce joueur témoin, le test passerait même si la règle
+  # n'existait pas.
+  test "GET show : le retrait ne vise que les simples joueurs, jamais un organisateur" do
+    t = open_tournament("Retrait entre orgas")
+    t.update!(user: @user)
+    # L'admin joue son propre tournoi…
+    t.tournament_users.create!(user: @user, role: "joueur", status: "approved")
+    # …le co-organisateur connecté aussi…
+    t.tournament_users.create!(user: @co_org, role: "joueur", status: "approved")
+                      .update!(co_organizer: true)
+    # …et un simple joueur, seule cible légitime.
+    plain = create_test_user(email: "plain@example.com")
+    t.tournament_users.create!(user: plain, role: "joueur", status: "approved")
+
+    sign_in @co_org
+    get tournament_path(t)
+    assert_select ".participant-chip__remove", 1, "ni l'admin, ni le co-org lui-même"
+  end
+
   # ─── GET/PATCH édition : ouverte à l'admin ET au co-organisateur ────────────
   def tournament_with_co_org
     t = open_tournament("Éditable")

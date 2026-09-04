@@ -46,13 +46,25 @@ class TournamentUsersController < ApplicationController
   end
 
   # DELETE /tournois/:tournament_id/tournament_users/:id
+  # Désinscription SÈCHE : la ligne disparaît. Deux appelants possibles (cf.
+  # TournamentUserPolicy#destroy?) — l'inscrit lui-même, ou l'organisation qui
+  # retire quelqu'un. Impossible une fois le tournoi lancé : à partir de là, la
+  # seule sortie est le forfait (cf. #withdraw).
   def destroy
     tournament_user = @tournament.tournament_users.find(params[:id])
     authorize tournament_user
 
-    # Symétrique de TournamentsController#remove_co_organizer : quitter le tournoi
-    # ne doit retirer que la PLACE DE JOUEUR. Un co-organisateur qui se désinscrit
-    # garde ses droits de gestion, sa ligne redevient une ligne d'organisation pure.
+    # Tout lu AVANT la destruction : après, l'objet est gelé et son `user`
+    # n'est plus atteignable sans requête.
+    by_organizer = tournament_user.user_id != current_user.id
+    removed_user = tournament_user.user
+    name         = tournament_user.display_name
+
+    # Symétrique de TournamentsController#remove_co_organizer : le retrait ne
+    # touche que la PLACE DE JOUEUR. Un co-organisateur qui se désinscrit garde
+    # ses droits de gestion, sa ligne redevient une ligne d'organisation pure.
+    # Ce cas ne concerne QUE l'auto-désinscription — la policy interdit à
+    # l'organisation de retirer un autre organisateur.
     if tournament_user.co_organizer?
       tournament_user.update!(role: "co_organisateur")
       notice = "Tu n'es plus inscrit comme joueur, mais tu restes co-organisateur."
@@ -61,7 +73,27 @@ class TournamentUsersController < ApplicationController
       notice = "Tu t'es désinscrit du tournoi."
     end
 
-    redirect_to tournaments_path, notice: notice
+    return redirect_to(tournaments_path, notice: notice) unless by_organizer
+
+    notify_removed_player(removed_user)
+    @tournament.reload
+
+    # Turbo Stream, pour la même raison que #withdraw : un redirect ramènerait
+    # l'organisateur sur l'onglet « Matchs » (tournament_tabs_controller ne lit
+    # aucun paramètre d'URL) et il devrait rouvrir « Participants » après chaque
+    # retrait. L'en-tête est rafraîchi lui aussi, sinon son compteur d'inscrits
+    # continuerait d'annoncer le joueur qu'on vient de retirer.
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.update("tournament_participants", partial: "tournaments/participants", locals: { tournament: @tournament }),
+          turbo_stream.update("tournament_header_counts", partial: "tournaments/header_counts", locals: { tournament: @tournament })
+        ]
+      end
+      format.html do
+        redirect_to tournament_path(@tournament), notice: "#{name} a été retiré du tournoi."
+      end
+    end
   end
 
   # PATCH /tournois/:tournament_id/tournament_users/:id/withdraw
@@ -95,5 +127,17 @@ class TournamentUsersController < ApplicationController
 
   def set_tournament
     @tournament = Tournament.from_param(params[:tournament_id])
+  end
+
+  # Prévient la personne retirée par l'organisation : sans cela, elle verrait
+  # seulement le tournoi disparaître de sa liste, sans jamais savoir pourquoi.
+  # Même pattern que TournamentsController#notify_new_co_organizer.
+  def notify_removed_player(user)
+    Notification.create(
+      user: user,
+      actor: current_user,
+      message: "Tu as été retiré du tournoi « #{@tournament.name} ».",
+      link: tournament_path(@tournament)
+    )
   end
 end
