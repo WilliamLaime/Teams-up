@@ -351,18 +351,23 @@
                 # Lien complet avec le token — à partager aux invités
                 private_url = match_url(@match, token: @match.private_token)
               %>
-              <%# data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique %>
+              <%# Action (par opposition au badge ci-dessus, purement informatif) : on la
+                  présente donc comme un lien — souligné, en vert, sans contour.
+                  data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique.
+                  Seul le libellé est réécrit au clic, pour ne pas effacer l'icône. %>
               <button type="button"
                       data-url="<%= private_url %>"
                       onclick="
                         navigator.clipboard.writeText(this.dataset.url);
-                        this.textContent = '✓ Lien copié !';
-                        setTimeout(() => { this.textContent = '📋 Copier le lien'; }, 2000);
+                        const label = this.querySelector('[data-copy-label]');
+                        label.textContent = 'Lien copié !';
+                        setTimeout(() => { label.textContent = 'Copier le lien'; }, 2000);
                       "
-                      style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
-                             color:var(--theme-text-muted); background:var(--theme-hover-bg); border:1px solid var(--theme-border);
-                             border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
-                📋 Copier le lien
+                      style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:700;
+                             color:var(--green-readable); background:none; border:none; padding:0;
+                             text-decoration:underline; text-underline-offset:3px; cursor:pointer;">
+                <i data-lucide="copy" style="width:14px; height:14px;" aria-hidden="true"></i>
+                <span data-copy-label>Copier le lien</span>
               </button>
 
               <%# Bouton "Ouvrir au public" — ouvre la modal de confirmation %>
@@ -1535,9 +1540,11 @@
 
         <%# 1. Copier le lien — géré par Stimulus (clipboard) %>
         <button class="share-option" data-action="click->share#copy">
-          <%# Icône "lien" — visible par défaut %>
+          <%# Icône "copier" — visible par défaut. Même icône Lucide (copy) que les
+              liens "Copier le lien" des blocs privés match/tournoi, pour que
+              l'action de copie se reconnaisse partout de la même façon. %>
           <div class="share-option-icon share-copy-icon" data-share-target="copyIcon">
-            <i data-lucide="link" style="width:22px;height:22px;"></i>
+            <i data-lucide="copy" style="width:22px;height:22px;"></i>
           </div>
           <%# Icône "check" — visible après la copie (d-none par défaut) %>
           <div class="share-option-icon share-check-icon d-none" data-share-target="checkIcon">
