@@ -45,10 +45,31 @@ class Tournament < ApplicationRecord
   # piège qu'un simple déplacement de ligne rouvrirait sans bruit.
   before_destroy :destroy_rounds_before_players, prepend: true
 
+  # Token du lien privé. `before_save` et non `before_create` : le tournoi peut
+  # basculer en privé bien après sa création (c'est même le cas d'usage
+  # principal), et sans token le lien d'invitation n'ouvrirait rien.
+  # Le token n'est jamais effacé au retour en public : le lien déjà partagé
+  # reste valable si l'organisation re-privatise le tournoi.
+  before_save :generate_private_token, if: -> { private? && private_token.blank? }
+
+  # Un tournoi privé ne doit pas fuiter par ses rencontres, qui sont listées
+  # publiquement sur /matchs. Cascade à SENS UNIQUE : repasser le tournoi en
+  # public ne re-publie pas des rencontres qui ont pu être privées volontairement
+  # par leur organisateur.
+  after_update_commit :privatize_matches!, if: -> { saved_change_to_visibility? && private? }
+
   # ── Constantes métier ────────────────────────────────────────────────────────
   # État du tournoi (voir la catégorisation de la page liste dans le controller).
   # "closed" = inscriptions fermées (complet ou clôture manuelle) mais pas encore lancé.
   STATUSES = %w[open closed in_progress completed].freeze
+
+  # ── Visibilité ───────────────────────────────────────────────────────────────
+  # "public"  → listé sur /tournois et dans la recherche, inscriptions ouvertes
+  # "private" → accessible uniquement via le lien à token (l'organisation et les
+  #             inscrits y accèdent toujours sans token, cf. TournamentPolicy)
+  # Modifiable à tout moment, tournoi lancé ou terminé compris (cf.
+  # TournamentsController#tournament_params).
+  VISIBILITY_OPTIONS = %w[public private].freeze
   # Formats disponibles. La ronde suisse est le format prioritaire (cf. docs/TOURNOI.md).
   #
   # "criterium_federal" est un format À PART, et non une option de "poules" : les
@@ -144,6 +165,7 @@ class Tournament < ApplicationRecord
   validates :date, presence: true
   validates :place, presence: true
   validates :status, inclusion: { in: STATUSES }
+  validates :visibility, inclusion: { in: VISIBILITY_OPTIONS }
 
   # Réglages de structure (Lot 7) — tous facultatifs : vide = valeur recommandée.
   # Une poule se joue à 2 joueurs minimum ; il faut au moins 1 victoire pour se
@@ -175,6 +197,9 @@ class Tournament < ApplicationRecord
   validate :date_cannot_be_in_the_past, on: :create
 
   # ── Scopes ────────────────────────────────────────────────────────────────────
+  # La colonne est `null: false, default: "public"` → pas besoin de tolérer NULL
+  # (contrairement à Match, dont la colonne est arrivée après les données).
+  scope :publicly_visible,      -> { where(visibility: "public") }
   scope :open_for_registration, -> { where(status: "open") }
   scope :in_progress,           -> { where(status: "in_progress") }
   scope :not_completed,         -> { where.not(status: "completed") }
@@ -309,6 +334,15 @@ class Tournament < ApplicationRecord
   # un 0, c'est-à-dire « tiré en premier », plutôt que de casser le classement.
   def rank_key(tu)
     [-tu.ranking_points, -tu.set_average, -tu.point_average, tu.losses, tu.draw_order.to_i]
+  end
+
+  # ── Visibilité ───────────────────────────────────────────────────────────────
+  def private?
+    visibility == "private"
+  end
+
+  def public?
+    visibility == "public"
   end
 
   # Vrai si `user` organise le tournoi : soit l'admin/créateur, soit un co-organisateur.
@@ -714,6 +748,25 @@ class Tournament < ApplicationRecord
   def slug_source = name
 
   private
+
+  # Token URL-safe unique du lien privé — même mécanique que Match.
+  def generate_private_token
+    loop do
+      token = SecureRandom.urlsafe_base64(8)
+      unless Tournament.exists?(private_token: token)
+        self.private_token = token
+        break
+      end
+    end
+  end
+
+  # Passe en privé les rencontres rattachées à ce tournoi (cf. l'after_update_commit
+  # en tête de classe). On délègue à Match#privatize! plutôt que de faire un
+  # `update_all` : chaque rencontre a besoin de son propre token de partage, que
+  # son before_save génère.
+  def privatize_matches!
+    matches.where.not(visibility: "private").find_each(&:privatize!)
+  end
 
   # Cf. le before_destroy en tête de classe : les matchs référencent les inscrits,
   # ils doivent donc disparaître avant eux.

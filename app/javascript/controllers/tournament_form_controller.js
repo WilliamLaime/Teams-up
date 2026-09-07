@@ -54,7 +54,7 @@ export default class extends Controller {
     "recapName", "recapDescription", "recapSport", "recapFormat", "recapFormatRow",
     "recapDate", "recapPlace", "recapPlayers",
     "recapStructure", "recapStructureRow", "recapSelfRegister", "recapDeadline", "recapCoOrg",
-    "recapPlayoffsRow", "recapPlayoffs"
+    "recapPlayoffsRow", "recapPlayoffs", "recapVisibility"
   ]
 
   connect() {
@@ -625,6 +625,23 @@ export default class extends Controller {
     const d = new Date(iso)
     this.recapDateTarget.textContent = isNaN(d) ? iso
       : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })
+  }
+
+  // ── Clic sur un bouton Visibilité (Public / Privé) ──
+  // Miroir de match-form#selectVisibility : le champ caché est la source de
+  // vérité, les boutons ne portent que l'état actif.
+  selectVisibility(event) {
+    const choice = event.currentTarget.dataset.visibilityChoice
+    const hidden = document.getElementById("tournament_visibility")
+    if (hidden) hidden.value = choice
+
+    this.element.querySelectorAll("[data-visibility-choice]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.visibilityChoice === choice)
+    })
+
+    if (this.hasRecapVisibilityTarget) {
+      this.recapVisibilityTarget.textContent = choice === "private" ? "🔒 Privé" : "🌍 Public"
+    }
   }
 
   updateDeadline() {

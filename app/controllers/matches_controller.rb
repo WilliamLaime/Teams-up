@@ -711,6 +711,7 @@ class MatchesController < ApplicationController
       tm = TournamentMatch.find_by(id: @match.tournament_match_id)
       if tm && policy(tm).create_match?
         @match.tournament = tm.tournament
+        inherit_tournament_visibility
         # Le format et la capacité d'une confrontation ne se négocient pas : ils
         # découlent du sport du tournoi (1v1 en ping-pong). On les réimpose ici
         # plutôt que de faire confiance aux champs cachés du formulaire — sinon
@@ -725,8 +726,21 @@ class MatchesController < ApplicationController
       end
     elsif @match.tournament_id.present?
       tournament = Tournament.find_by(id: @match.tournament_id)
-      @match.tournament = nil unless tournament && linkable_tournament?(tournament)
+      if tournament && linkable_tournament?(tournament)
+        inherit_tournament_visibility
+      else
+        @match.tournament = nil
+      end
     end
+  end
+
+  # Une rencontre rattachée à un tournoi PRIVÉ naît privée : sinon le tournoi
+  # fuiterait par la liste publique des matchs. Imposé côté serveur, comme le
+  # sport et le format, plutôt que confié aux champs du formulaire.
+  # Sens unique : on ne repasse jamais une rencontre en public ici — c'est à son
+  # organisateur d'en décider (cf. Tournament#privatize_matches!, même règle).
+  def inherit_tournament_visibility
+    @match.visibility = "private" if @match.tournament&.private?
   end
 
   # L'utilisateur peut-il rattacher une rencontre à ce tournoi (sans viser une

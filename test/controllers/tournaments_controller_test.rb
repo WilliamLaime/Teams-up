@@ -1146,4 +1146,103 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "#tournament_calendar_source template", 0
   end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Mode privé (accès par lien à token)
+  # ════════════════════════════════════════════════════════════════════════════
+
+  def private_tournament(name = "Tournoi privé")
+    t = open_tournament(name)
+    t.update!(user: @user, visibility: "private")
+    t
+  end
+
+  test "GET show d'un tournoi privé redirige un visiteur sans token" do
+    t = private_tournament
+
+    get tournament_path(t)
+
+    assert_redirected_to root_path
+    assert_match(/privé/, flash[:alert])
+  end
+
+  test "GET show d'un tournoi privé s'ouvre avec le bon token, même déconnecté" do
+    t = private_tournament
+
+    get tournament_path(t, token: t.private_token)
+
+    assert_response :success
+    # Un tournoi privé ne doit pas atterrir dans Google.
+    assert_match(/<meta name="robots" content="[^"]*noindex/, response.body)
+  end
+
+  test "GET show d'un tournoi privé s'ouvre pour l'organisation et pour un inscrit" do
+    t = private_tournament
+
+    sign_in @user # admin
+    get tournament_path(t)
+    assert_response :success
+
+    joueur = create_test_user(email: "inscrit-prive@example.com")
+    t.tournament_users.create!(user: joueur, role: "joueur", status: "approved")
+    sign_in joueur
+    get tournament_path(t)
+    assert_response :success
+  end
+
+  test "GET /tournois n'expose pas un tournoi privé à un tiers" do
+    prive  = private_tournament("Tournoi confidentiel")
+    public = open_tournament("Tournoi ouvert")
+
+    sign_in @co_org # ni admin ni inscrit
+    get tournaments_path
+
+    assert_response :success
+    assert_no_match(/#{Regexp.escape(prive.name)}/, response.body)
+    assert_match(/#{Regexp.escape(public.name)}/, response.body)
+  end
+
+  test "GET edit propose le choix Public / Privé même sur un tournoi lancé" do
+    t = open_tournament("Tournoi en cours")
+    t.update!(user: @user, status: "in_progress")
+    sign_in @user
+
+    get edit_tournament_path(t)
+
+    assert_response :success
+    assert_select "input#tournament_visibility[value=?]", "public"
+    assert_select "[data-visibility-choice=?]", "private"
+  end
+
+  # La visibilité est HORS des champs structurels : elle reste modifiable même
+  # une fois le tournoi lancé, ce qui est tout l'intérêt de la demande.
+  test "PATCH update peut passer un tournoi LANCÉ en privé puis le rouvrir" do
+    t = open_tournament("Tournoi en cours")
+    t.update!(user: @user, status: "in_progress")
+    sign_in @user
+
+    patch tournament_path(t), params: { tournament: { visibility: "private" } }
+    assert t.reload.private?
+    assert t.private_token.present?
+
+    patch tournament_path(t), params: { tournament: { visibility: "public" } }
+    assert t.reload.public?
+  end
+
+  # Un tournoi privé ne doit pas fuiter par ses rencontres, listées sur /matchs.
+  test "passer un tournoi en privé privatise ses rencontres" do
+    t = open_tournament("Tournoi à fermer")
+    t.update!(user: @user)
+    rencontre = Match.create!(
+      title: "Rencontre du tournoi", date: Date.tomorrow, time: "18:00", end_time: "19:00",
+      players_needed: 2, level: "Tout niveau", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous",
+      user: @user, sport: @sport, tournament: t
+    )
+
+    t.update!(visibility: "private")
+
+    assert rencontre.reload.private?
+    assert rencontre.private_token.present?
+  end
 end

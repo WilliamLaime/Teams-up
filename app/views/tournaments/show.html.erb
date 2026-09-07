@@ -41,6 +41,37 @@
           <% end %>
         <% end %>
       </div>
+
+      <%# ── Tournoi privé : badge + lien d'invitation ────────────────────────
+          Réservé à l'organisation : c'est elle qui partage le lien. Pour ouvrir
+          le tournoi au public, on repasse par le formulaire d'édition (bouton
+          crayon ci-dessus) — pas de route dédiée à créer.
+          Décalque du bloc équivalent des matchs (matches/show.html.erb). %>
+      <% if @tournament.private? && policy(@tournament).update? %>
+        <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem;">
+
+          <span style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
+                       color:#f59e0b; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3);
+                       border-radius:999px; padding:0.2rem 0.65rem;">
+            <i data-lucide="lock" style="width:11px; height:11px;"></i>
+            Tournoi privé
+          </span>
+
+          <%# data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique %>
+          <button type="button"
+                  data-url="<%= tournament_url(@tournament, token: @tournament.private_token) %>"
+                  onclick="
+                    navigator.clipboard.writeText(this.dataset.url);
+                    this.textContent = '✓ Lien copié !';
+                    setTimeout(() => { this.textContent = '📋 Copier le lien'; }, 2000);
+                  "
+                  style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
+                         color:var(--theme-text-muted); background:var(--theme-hover-bg); border:1px solid var(--theme-border);
+                         border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
+            📋 Copier le lien
+          </button>
+        </div>
+      <% end %>
       <%# id ciblé par Turbo Stream au retrait d'un joueur (cf. le partial). %>
       <p class="tournament-detail-header__subtitle" id="tournament_header_counts">
         <%= render "tournaments/header_counts", tournament: @tournament %>

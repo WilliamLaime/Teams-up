@@ -48,7 +48,13 @@ class TournamentsController < ApplicationController
   # GET /tournois/:id
   # Affiche le tableau : rondes suisses + tableau final (Lot 3).
   def show
+    return unless private_access_granted?
+
     authorize @tournament
+
+    # Un tournoi privé ne doit pas atterrir dans Google (même patron que
+    # MatchesController#show).
+    set_meta_tags(noindex: true) if @tournament.private?
   end
 
   # POST /tournois/:id/start
@@ -341,6 +347,29 @@ class TournamentsController < ApplicationController
 
   private
 
+  # ── Contrôle d'accès des tournois privés ─────────────────────────────────────
+  # Trois portes d'entrée, comme pour un match privé (cf. MatchesController#show) :
+  #   • l'organisation (admin OU co-organisateur, cf. Tournament#organizer?) ;
+  #   • le bon token dans l'URL (?token=xxx) — y compris pour un visiteur
+  #     anonyme, `authenticate_user!` étant sauté sur `show` ;
+  #   • un inscrit, quel que soit son statut : une fois entré par le lien et
+  #     inscrit, on n'a plus besoin de conserver le token.
+  # Renvoie false après avoir répondu (redirection), pour que l'action s'arrête.
+  def private_access_granted?
+    return true if @tournament.public?
+
+    organizer   = @tournament.organizer?(current_user)
+    valid_token = params[:token].present? && params[:token] == @tournament.private_token
+    registered  = user_signed_in? && @tournament.tournament_users.exists?(user_id: current_user.id)
+
+    return true if organizer || valid_token || registered
+
+    skip_authorization
+    redirect_to root_path,
+                alert: "Ce tournoi est privé. Vous avez besoin du lien d'invitation pour y accéder."
+    false
+  end
+
   def set_tournament
     @tournament = Tournament.from_param(params[:id])
   end
@@ -428,7 +457,10 @@ class TournamentsController < ApplicationController
   ].freeze
 
   def tournament_params
-    permitted = %i[name description date time place venue_id banner_image] + STRUCTURAL_FIELDS
+    # `visibility` est délibérément HORS de STRUCTURAL_FIELDS : passer un tournoi
+    # en privé (ou le rouvrir) ne touche pas au moteur de jeu et doit rester
+    # possible à tout moment, tournoi lancé ou terminé compris.
+    permitted = %i[name description date time place venue_id banner_image visibility] + STRUCTURAL_FIELDS
     permitted -= STRUCTURAL_FIELDS if @tournament&.persisted? && (@tournament.in_progress? || @tournament.completed?)
 
     params.require(:tournament).permit(*permitted)

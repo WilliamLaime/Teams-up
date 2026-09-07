@@ -28,6 +28,9 @@ class MatchUsersController < ApplicationController
     when :gender_restricted
       redirect_to match_path(@match, **match_redirect_options),
                   alert: "Ce match est réservé aux joueuses. Seules les femmes peuvent s'inscrire."
+    when :tournament_confrontation
+      redirect_to match_path(@match, **match_redirect_options),
+                  alert: "Cette rencontre oppose les deux joueurs désignés par le tournoi : elle ne se rejoint pas."
     when :waiting
       redirect_to match_path(@match, **match_redirect_options),
                   notice: "Le match est complet. Tu as été ajouté à la file d'attente !"

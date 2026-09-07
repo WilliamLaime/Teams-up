@@ -263,4 +263,62 @@ class TournamentTest < ActiveSupport::TestCase
 
     assert_includes Tournament.not_full, t
   end
+
+  # ─── Visibilité (mode privé) ─────────────────────────────────────────────────
+  # Décalque des tests du mode privé des matchs (test/models/match_test.rb).
+
+  test "un tournoi est public par défaut" do
+    t = open_tournament
+    assert t.public?
+    refute t.private?
+    assert_nil t.private_token
+  end
+
+  test "scope publicly_visible exclut les tournois privés" do
+    public_t  = open_tournament
+    private_t = open_tournament
+    private_t.update!(visibility: "private")
+
+    assert_includes     Tournament.publicly_visible, public_t
+    assert_not_includes Tournament.publicly_visible, private_t
+  end
+
+  test "une visibilité inconnue est refusée" do
+    t = open_tournament
+    t.visibility = "secret"
+
+    refute t.valid?
+    assert t.errors[:visibility].any?
+  end
+
+  # Le token est généré par un before_save (et non un before_create) : c'est
+  # précisément le cas d'usage — un tournoi créé public que l'organisation
+  # décide de fermer plus tard, tournoi déjà lancé compris.
+  test "passer un tournoi existant en privé lui génère un token" do
+    t = open_tournament
+    assert_nil t.private_token
+
+    t.update!(visibility: "private")
+    assert t.private_token.present?
+  end
+
+  test "deux tournois privés ont des tokens différents" do
+    a = open_tournament
+    b = open_tournament
+    a.update!(visibility: "private")
+    b.update!(visibility: "private")
+
+    assert_not_equal a.private_token, b.private_token
+  end
+
+  # Le lien déjà partagé doit rester valable si l'organisation re-ferme le
+  # tournoi : on ne remet donc pas le token à zéro au retour en public.
+  test "le token survit à un retour en public" do
+    t = open_tournament
+    t.update!(visibility: "private")
+    token = t.private_token
+
+    t.update!(visibility: "public")
+    assert_equal token, t.reload.private_token
+  end
 end

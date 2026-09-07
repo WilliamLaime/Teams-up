@@ -87,6 +87,15 @@
         <% if format_label %>
           <span class="match-badge-level level-tier-1"><%= format_label %></span>
         <% end %>
+        <%# Un tournoi privé n'arrive ici que pour quelqu'un qui y a droit
+            (TournamentPolicy::Scope) : le badge lui rappelle qu'il n'est pas
+            listé publiquement. %>
+        <% if tournament.private? %>
+          <span class="match-badge-level" title="Tournoi privé, accessible par lien uniquement">
+            <i data-lucide="lock" style="width:11px;height:11px;" aria-hidden="true"></i>
+            Privé
+          </span>
+        <% end %>
       </div>
     </div>
 

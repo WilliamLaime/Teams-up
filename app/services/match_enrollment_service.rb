@@ -17,7 +17,8 @@
 #   result = MatchEnrollmentService.new(match: @match, user: current_user,
 #                                       message: params[:message].presence).call
 #   result.status # => :approved | :waiting | :pending
-#                 #    | :already_registered | :gender_restricted | :error
+#                 #    | :already_registered | :gender_restricted
+#                 #    | :tournament_confrontation | :error
 class MatchEnrollmentService
   # Les helpers de routes (match_path) ne sont pas disponibles par défaut hors
   # controller/vue → on les inclut pour construire le lien de la notification.
@@ -40,6 +41,11 @@ class MatchEnrollmentService
     # Match réservé aux joueuses : un non-femme (genre nil inclus) est bloqué.
     return Result.new(status: :gender_restricted) if gender_blocked?
 
+    # Confrontation de tournoi : l'affiche vient du tableau, elle ne se rejoint
+    # pas. Les deux adversaires légitimes sont inscrits d'office à la création de
+    # la rencontre (MatchesController#enroll_tournament_players), jamais ici.
+    return Result.new(status: :tournament_confrontation) if confrontation_intruder?
+
     @match_user = @match.match_users.new(user: @user, role: "joueur", message: @message)
     @organizer  = @match.organizer_match_user&.user
 
@@ -56,6 +62,11 @@ class MatchEnrollmentService
 
   def gender_blocked?
     @match.genre_restriction == "feminin" && @user.genre != "femme"
+  end
+
+  # Quelqu'un qui n'est ni l'un ni l'autre des deux adversaires désignés.
+  def confrontation_intruder?
+    @match.tournament_confrontation? && @match.confrontation_opponents.exclude?(@user)
   end
 
   # Cas 1 : match complet → file d'attente.
