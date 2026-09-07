@@ -15,7 +15,7 @@
           que fermer la porte aux nouveaux inscrits. %>
       <%= button_to toggle_registrations_tournament_path(tournament),
                     method: :patch,
-                    class: "btn-cta-secondary tournament-start-panel__btn" do %>
+                    class: "btn btn-cta-secondary tournament-start-panel__btn" do %>
         <% if tournament.closed? %>
           <i data-lucide="lock-open" aria-hidden="true"></i>
           Rouvrir les inscriptions

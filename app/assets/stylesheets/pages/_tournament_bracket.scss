@@ -64,19 +64,36 @@
   &__btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    // Le bouton remplit la hauteur de son <form> parent : les deux CTA font
+    // alors la même hauteur, malgré des bordures d'épaisseurs différentes
+    // (1px pour le primaire Bootstrap, 1.5px pour le secondaire).
+    height: 100%;
     i { width: 18px; height: 18px; }
   }
 
   &__actions {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    // stretch (et non center) : la plus grande hauteur est imposée aux deux
+    // boutons, sinon le plus petit apparaît décalé verticalement.
+    align-items: stretch;
     justify-content: center;
     gap: 0.75rem;
+
+    // `button_to` enveloppe chaque bouton dans un <form class="button_to"> :
+    // c'est ce form qui est l'élément flex, il doit donc relayer la hauteur.
+    .button_to {
+      display: flex;
+      margin: 0;
+    }
   }
 
   &__hint {
+    // Ce texte peut être un frère des boutons dans __actions (align-items:
+    // stretch) : on le recentre pour qu'il ne s'étire pas sur leur hauteur.
+    align-self: center;
     color: var(--theme-text-muted);
     font-size: 0.9rem;
     margin: 0;
