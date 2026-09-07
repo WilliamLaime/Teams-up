@@ -24,16 +24,27 @@
 // ── Bouton Primaire ──────────────────────────────────
 // Fond vert (Bootstrap btn-primary mappé sur le vert du thème)
 // Hover : vert légèrement assombri
+// Le fond vient de Bootstrap ($primary: $green, cf. config/_bootstrap_variables.scss),
+// réaligné sur var(--green) en mode clair dans components/_theme.scss.
 .btn-cta-primary {
-  // Les styles de couleur viennent de Bootstrap via $primary: $green,
-  // dont --bs-primary est surchargé en mode clair (config/_colors.scss)
-  // défini dans config/_bootstrap_variables.scss
+  // Bootstrap calcule un texte noir par contraste sur le vert compilé. On lui
+  // impose le token : sombre sur le vert vif, blanc sur le vert clair.
+  color: var(--on-green);
 
   &:hover {
     background-color: var(--green-d10); // vert assombri de 10% au survol
     border-color: var(--green-d10);     // bordure assortie
-    color: #111111;                        // texte sombre pour le contraste sur fond vert clair
+    color: var(--on-green);
   }
+}
+
+// Boutons Bootstrap verts utilisés directement dans les vues (sans .btn-cta-primary).
+// Importé après bootstrap → à spécificité égale, ces déclarations l'emportent.
+.btn-primary,
+.btn-success {
+  --bs-btn-color:        var(--on-green);
+  --bs-btn-hover-color:  var(--on-green);
+  --bs-btn-active-color: var(--on-green);
 }
 
 // Variante petite taille — utilisée dans des contextes compacts (ex: bandeau CTA blog)
@@ -48,7 +59,7 @@
 .btn-cta-primary--rated {
   background-color: var(--green-d10) !important;
   border-color: var(--green-d10) !important;
-  color: #111111 !important;
+  color: var(--on-green) !important;
 }
 
 

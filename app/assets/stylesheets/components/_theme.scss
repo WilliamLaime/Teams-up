@@ -153,33 +153,6 @@
   }
 
 
-  // ── 1quater. CTA PRIMAIRES — TEXTE BLANC ──────────────────────────────────
-  // En mode sombre le CTA est vert vif (#1EDD88) : Bootstrap y calcule un texte
-  // noir, seul lisible (du blanc y tomberait à 1,8:1). En mode clair le fond
-  // devient #00A44A, assez sombre pour porter du blanc — c'est le rendu voulu.
-  //
-  // On déclare `color` en direct plutôt que le seul --bs-btn-color : certains
-  // CTA du projet portent .btn-cta-primary sans .btn-primary et ne passent donc
-  // pas par les tokens de bouton Bootstrap.
-  .btn-cta-primary,
-  .btn-cta-primary--rated {
-    --bs-btn-color:        #ffffff;
-    --bs-btn-hover-color:  #ffffff;
-    --bs-btn-active-color: #ffffff;
-    color: #ffffff;
-
-    // Écrase le texte sombre posé au survol dans components/_buttons.scss
-    &:hover,
-    &:focus,
-    &:active {
-      color: #ffffff;
-    }
-  }
-
-  // L'état "noté" (star_rating_controller) force sa couleur en !important
-  .btn-cta-primary--rated { color: #ffffff !important; }
-
-
   // ── 2. BOOTSTRAP GÉNÉRIQUES ───────────────────────────────────────────────
 
   // Modales Bootstrap → fond blanc, texte sombre
@@ -380,7 +353,7 @@
 
       &.active {
         background: var(--green);
-        color: #111111;
+        color: var(--on-green);
       }
     }
   }
@@ -904,7 +877,7 @@
   // Pills de sport dans la sub-navbar et les filtres
   .sport-pill-active {
     background-color: var(--green) !important;
-    color: #111111 !important;
+    color: var(--on-green) !important;
   }
 
   // Alert Bootstrap sombre

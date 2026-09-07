@@ -329,7 +329,7 @@
   // Jour sélectionné (fond vert plein)
   &--selected {
     background: var(--green) !important;
-    color: #111 !important;
+    color: var(--on-green) !important;
     font-weight: 700;
   }
 }

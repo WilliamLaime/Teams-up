@@ -136,7 +136,7 @@
   &__btn {
     padding: 0.8rem 1.5rem;
     background-color: var(--green);
-    color: #111111;
+    color: var(--on-green);
     border: none;
     border-radius: 8px;
     font-family: $body-font;
@@ -189,7 +189,7 @@
 
   &--success {
     background-color: var(--green);
-    color: #111111;
+    color: var(--on-green);
   }
 
   &--error {

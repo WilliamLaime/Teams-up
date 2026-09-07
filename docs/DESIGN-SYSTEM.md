@@ -50,9 +50,14 @@ est résolue à la compilation : elle produit la même valeur dans les deux thè
 | `var(--green-d8 / -d10 / -d12)` | | | hovers et dégradés assombris |
 | `var(--green-l10)` | | | variante éclaircie |
 | `var(--green-readable)` | `#1EDD88` | `#007A37` | **texte** vert sur fond clair (`#00A44A` plafonne à ~3,2:1, insuffisant pour AA) |
+| `var(--on-green)` | `#111111` | `#ffffff` | **texte posé sur un fond vert** (CTA, pastille active, bulle de chat…) |
 
 Ces tokens sont générés par le mixin `green-tokens()` de `config/_colors.scss` — une seule
 source de vérité pour les deux thèmes.
+
+⚠️ **Tout fond vert doit lire son texte dans `var(--on-green)`**, jamais un `#111` en dur :
+le vert vif du mode sombre exige un texte quasi noir, le vert soutenu du mode clair porte
+du blanc. Un `color: #111` sur `background: var(--green)` est un bug en mode clair.
 
 Deux endroits dérogent volontairement et gardent `$green` :
 

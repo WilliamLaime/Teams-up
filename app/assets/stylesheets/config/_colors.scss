@@ -28,10 +28,16 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
 //   var(--green-d8 / -d10 / -d12)    → hovers et dégradés assombris
 //   var(--green-l10)                 → variante éclaircie
 //   var(--green-readable)            → texte vert lisible sur fond clair (AA)
+//   var(--on-green)                  → texte POSÉ SUR un fond vert
 //
 // $readable : vert assombri pour le texte sur fond clair. En mode sombre le vert
 // plein est déjà lisible, on passe null et la variable retombe sur $g.
-@mixin green-tokens($g, $readable: null) {
+//
+// $on : couleur du texte sur fond vert. Le vert vif du mode sombre exige un
+// texte quasi noir (du blanc y tomberait à 1,8:1) ; le vert soutenu du mode
+// clair porte du blanc. Tout fond vert doit lire son texte dans ce token.
+@mixin green-tokens($g, $readable: null, $on: #111111) {
+  --on-green:       #{$on};
   --green:          #{$g};
   --green-rgb:      #{red($g)}, #{green($g)}, #{blue($g)};
   --green-d8:       #{darken($g, 8%)};
@@ -111,7 +117,7 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
   // Vert primaire du thème — #00A44A et ses variantes.
   // #007A37 : le vert plein donne ~3,2:1 sur blanc, insuffisant pour du texte
   // courant (AA = 4,5:1) ; cette variante assombrie atteint ~5:1 sur #F4F4F4.
-  @include green-tokens($green-light, #007A37);
+  @include green-tokens($green-light, #007A37, #ffffff);
 
   // Les composants Bootstrap qui portent le vert sont réalignés sur var(--green)
   // dans components/_theme.scss (voir § BOOTSTRAP — VERT PRIMAIRE) : ce fichier

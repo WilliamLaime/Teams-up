@@ -122,7 +122,7 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   background: var(--green);
-  color: #111;
+  color: var(--on-green);
 }
 
 // Toggle d'auto-inscription : aligne la case avec son libellé
@@ -186,7 +186,7 @@
 
     &--admin {
       background: var(--green);
-      color: #111;
+      color: var(--on-green);
     }
   }
 

@@ -175,7 +175,7 @@
       text-decoration: none; // supprime le soulignement hérité des liens <a>
       background-color: var(--green);
       border-color: var(--green);
-      color: #111111;         // texte noir sur vert pour un bon contraste
+      color: var(--on-green);         // texte noir sur vert pour un bon contraste
       font-weight: 600;
       padding: 10px 28px;
       border-radius: 8px;
@@ -183,7 +183,7 @@
       &:hover {
         background-color: var(--green-d8);
         border-color: var(--green-d8);
-        color: #111111;
+        color: var(--on-green);
       }
     }
   }

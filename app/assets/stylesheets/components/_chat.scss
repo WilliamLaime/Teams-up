@@ -242,7 +242,7 @@
 
     .chat-bubble {
       background-color: var(--green);
-      color: #111;
+      color: var(--on-green);
       border-radius: 14px 0 14px 14px; // coin supérieur droit plat
     }
 
@@ -359,7 +359,7 @@
     flex-shrink: 0;
     background-color: var(--green);
     border-color: var(--green);
-    color: #111;
+    color: var(--on-green);
     padding: 0;
 
     svg { display: block; }

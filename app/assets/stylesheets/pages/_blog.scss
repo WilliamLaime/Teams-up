@@ -371,7 +371,7 @@
     // Forcer le style du bouton vert dans ce contexte sombre
     .btn-cta-primary {
       background-color: var(--green);
-      color: #111;
+      color: var(--on-green);
       font-weight: 700;
       padding: 0.6rem 1.75rem;
       border-radius: 8px;
@@ -380,7 +380,7 @@
 
       &:hover {
         background-color: var(--green-d8);
-        color: #111;
+        color: var(--on-green);
       }
     }
   }

@@ -294,7 +294,7 @@
   button[type="submit"]:not(.btn-google) {
     background-color: var(--green);
     border-color: var(--green);
-    color: #111111; // Texte sombre sur fond vert — identique dans les deux thèmes
+    color: var(--on-green); // Texte sur fond vert — sombre en dark, blanc en light
     font-weight: 700;
     width: 100%;
     padding: 0.75rem;
@@ -537,7 +537,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #111111;
+    color: var(--on-green);
     pointer-events: none;
   }
 
