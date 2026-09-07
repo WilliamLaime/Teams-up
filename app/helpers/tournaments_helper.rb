@@ -379,35 +379,68 @@ module TournamentsHelper
     end
   end
 
+  # Le FAIT quand il existe, la PRÉDICTION sinon.
+  #   - poules en cours → prédiction par le rang de poule (la table étant triée par
+  #     rang, le zonage vert/orange/rouge y est contigu et se lit d'un bloc) ;
+  #   - parcours connu  → Tournament#pool_exit_destinations, lu dans les matchs.
+  #
+  # Le repli sur la prédiction n'est PAS une politesse : les trois portes de
+  # sortie ne s'ouvrent pas en même temps. Au tirage, seuls les barrages ont des
+  # matchs — les 1ers de poule et les 4es n'entrent dans leur tableau qu'une fois
+  # les barrages joués. Sans repli, deux tiers du zonage disparaissaient pendant
+  # cette fenêtre, exactement le symptôme qu'on cherche à corriger.
   def pool_destination_for(tournament, tournament_user)
+    actual = tournament.pool_exit_destinations[tournament_user.id] if tournament.final_phase_started?
+    return actual if actual
+
     rank = tournament.pool_position_of(tournament_user)
     rank && pool_destinations(tournament)[rank]
   end
 
-  # Afficher les destinations n'a de sens que tant qu'elles sont une PRÉDICTION.
-  # `final_phase_started?` est la bonne coupure : dès que les barrages existent,
-  # les placements réels sont connus et posés en `state: "qualified"` — une
-  # prédiction contredirait alors le tableau, et deux liserés se disputeraient la
-  # même ligne.
+  # Le zonage vaut pour toute la durée du tournoi, poules en cours comme tournoi
+  # terminé : c'est la lecture « qui est parti où » d'une table de poule, et elle
+  # reste utile longtemps après le tirage (cf. #pool_destination_for pour la
+  # source, qui change, elle).
   #
   # `uniq.size > 1` retire l'indicateur du mode intégral, où tout le monde va au
-  # tableau final : un liseré vert partout n'informe de rien.
+  # tableau final : un liseré vert partout n'informe de rien. Le test porte sur la
+  # STRUCTURE (les destinations déclarées), pas sur les joueurs — il répond donc
+  # dès le lancement, avant le moindre match.
   def show_pool_destinations?(tournament)
-    tournament.criterium? && tournament.in_progress? && !tournament.final_phase_started? &&
+    tournament.criterium? && (tournament.in_progress? || tournament.completed?) &&
       pool_destinations(tournament).values.uniq.size > 1
   end
 
   # Libellé et icône d'une destination. L'icône est LITTÉRALEMENT celle de la
   # pastille de phase correspondante (cf. board_phases) : la table de poule
   # annonce ainsi la phase avec le signe qu'on retrouvera dans le board.
+  # Deux libellés par destination, un par temps grammatical : la même couleur
+  # annonce une projection avant le tirage et raconte un parcours après. Sans ça,
+  # un joueur déjà éliminé du tableau final s'entendait dire « Va au tableau
+  # final » — l'icône était juste, la phrase fausse.
   DESTINATION_META = {
-    bracket:     ["Va au tableau final", "trophy"],
-    barrage:     ["Passe par les barrages", "git-branch-plus"],
-    consolation: ["Descend en consolante", "life-buoy"]
+    bracket: {
+      predicted: "Va au tableau final",
+      actual: "Au tableau final",
+      icon: "trophy"
+    },
+    barrage: {
+      predicted: "Passe par les barrages",
+      actual: "Passé par les barrages",
+      icon: "git-branch-plus"
+    },
+    consolation: {
+      predicted: "Descend en consolante",
+      actual: "Descendu en consolante",
+      icon: "life-buoy"
+    }
   }.freeze
 
-  def destination_label(destination) = DESTINATION_META.dig(destination, 0)
-  def destination_icon(destination)  = DESTINATION_META.dig(destination, 1)
+  def destination_label(destination, predicted: true)
+    DESTINATION_META.dig(destination, predicted ? :predicted : :actual)
+  end
+
+  def destination_icon(destination) = DESTINATION_META.dig(destination, :icon)
 
   # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde
   # suisse (façon Lolesports) — matérialise le bilan du groupe EN ENTRANT dans ce

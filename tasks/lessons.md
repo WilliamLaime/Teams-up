@@ -359,3 +359,40 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   couleurs *calculées* dans un vrai navigateur — 290 verts sur la home, tous en
   `rgb(30,221,136)` en sombre et tous en `rgb(0,164,74)` en clair. Un 1:1 exact prouve à la
   fois la bascule et l'absence de résidu, ce qu'aucun grep ne pouvait établir.
+
+## 2026-09-07 — Une classe utilitaire qui ne pose pas de fond ne se voit pas seule
+
+`btn-cta-primary` ne fait qu'arrondir les coins et forcer `color: var(--on-green)` : le fond
+vert vient de `.btn-primary` de Bootstrap. Quatre boutons des vues tournoi n'avaient que
+`btn-cta-primary` → bouton natif gris, texte blanc dessus, illisible (« Lancer le tournoi »,
+« Rejoindre le tournoi », « Ajouter un co-organisateur », « Enregistrer la constitution »).
+
+- **Le symptôme se lit à l'envers de l'intuition** : un texte blanc sur gris ressemble à un
+  bouton *désactivé*, pas à une classe manquante. On cherche un `disabled` dans la vue avant
+  de penser au CSS.
+- **La convention était déjà documentée** dans `_score_modal.html.erb` (« `btn-primary` EN PLUS
+  de `btn-cta-primary` … sinon le bouton s'affichait sans fond »), et pourtant réintroduite
+  quatre fois : un commentaire local ne protège pas les autres vues. Le grep qui trouve ces
+  cas est `grep -rn "btn-cta-primary" app/views/ | grep -v "btn-primary"`.
+
+## 2026-09-07 — « Ce n'est pas comme en local » n'est pas forcément un problème de déploiement
+
+Zones vert/orange/rouge absentes des poules en production : ni asset non compilé, ni code non
+déployé. Deux causes de DONNÉES, sur deux tournois différents.
+
+- À **14 inscrits**, `criterium_mode` renvoie `:integral` (seuil 16) : tout le monde va au
+  tableau final, `pool_destinations.values.uniq.size > 1` est faux, le zonage se tait — à
+  raison.
+- À **17 inscrits**, les poules étaient terminées : `show_pool_destinations?` s'éteignait sur
+  `!final_phase_started?`. La prédiction par rang était devenue caduque, mais rien ne prenait
+  sa place, et la page perdait sa lecture la plus utile juste au moment où elle devenait
+  certaine.
+- **La preuve la moins chère a été le HTML de prod lui-même** : `curl` + `grep -o "dest-[a-z]*"`
+  (0 occurrence) et `grep -c "row--qualified"` (26) ont tranché en une commande entre « CSS
+  cassé » et « condition Ruby fausse ». Un `WebFetch` converti en markdown perd les classes,
+  et donc précisément l'information cherchée.
+- **Les trois portes de sortie ne s'ouvrent pas en même temps** : au tirage, seuls les barrages
+  ont des matchs, le tableau final et la consolante n'accueillent leurs entrants qu'après.
+  Lire la destination *réelle* dans les matchs exige donc de replier sur la prédiction pour les
+  portes encore fermées — sans ce repli, deux tiers du zonage disparaissent pendant la fenêtre.
+  C'est le test qui l'a dit (8 destinations attendues sur 16), pas la relecture du code.

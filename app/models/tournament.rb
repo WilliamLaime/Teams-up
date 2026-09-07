@@ -500,6 +500,38 @@ class Tournament < ApplicationRecord
   # Critérium démarre par les BARRAGES, avant que le tableau final n'existe.
   def final_phase_started? = tournament_rounds.final_phase.exists?
 
+  # ── Sortie de poule RÉELLE ──────────────────────────────────────────────────
+  # Par quelle phase chaque joueur a effectivement quitté les poules :
+  # { tournament_user_id => :barrage | :bracket | :consolation }.
+  #
+  # Tant que les poules décident encore, la destination est une PRÉDICTION lue
+  # dans le rang (cf. TournamentsHelper#pool_destinations). Dès le tirage, c'est
+  # ceci qu'on montre : le parcours est écrit dans les matchs, il ne se discute
+  # plus — là où le rang, lui, continue de bouger après coup (un forfait saisi
+  # tardivement redistribue le classement d'une poule déjà tirée).
+  #
+  # Seules les branches principales des trois phases d'ENTRÉE comptent. La phase
+  # "classification" (mini-tableaux de placement) est une SUITE du tableau final
+  # ou de la consolante, jamais une sortie de poule — ses tours vivent d'ailleurs
+  # sur une branche dédiée (cf. CriteriumStructure#coords).
+  POOL_EXIT_PHASES = { "barrage" => :barrage, "bracket" => :bracket, "consolation" => :consolation }.freeze
+
+  def pool_exit_destinations
+    @pool_exit_destinations ||= pool_exit_rows.each_with_object({}) do |(phase, *player_ids), index|
+      destination = POOL_EXIT_PHASES.fetch(phase)
+
+      player_ids.compact.each do |player_id|
+        # Le barrage l'emporte sur les deux autres : ses vainqueurs jouent ensuite
+        # le tableau final et ses perdants la consolante, mais tous sont SORTIS des
+        # poules par les barrages. Sans cette garde, la seconde ligne de leur
+        # parcours écraserait la première et l'orange disparaîtrait du classement.
+        next if index[player_id] == :barrage
+
+        index[player_id] = destination
+      end
+    end
+  end
+
   # Ce tournoi aura-t-il un tableau final (à un moment ou un autre) ? Ronde
   # suisse et poules en ont TOUJOURS un (cf. SwissPairing/PoolBuilder, aucun
   # test sur `playoffs`) ; seul le championnat peut s'en passer (Lot 6, réglage
@@ -748,6 +780,17 @@ class Tournament < ApplicationRecord
   def slug_source = name
 
   private
+
+  # Un tuple [phase, joueur A, joueur B] par match d'entrée en phase finale.
+  # `pluck` plutôt que des objets : on ne lit que trois colonnes, sur tous les
+  # matchs du tournoi, pour une donnée d'affichage.
+  def pool_exit_rows
+    TournamentMatch.joins(:tournament_round)
+                   .where(tournament_rounds: { tournament_id: id, branch: TournamentRound::MAIN_BRANCH,
+                                               phase: POOL_EXIT_PHASES.keys })
+                   .pluck("tournament_rounds.phase", "tournament_matches.player_a_id",
+                          "tournament_matches.player_b_id")
+  end
 
   # Token URL-safe unique du lien privé — même mécanique que Match.
   def generate_private_token

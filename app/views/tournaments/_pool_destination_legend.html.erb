@@ -4,12 +4,14 @@
     3 n'a pas de 4e, donc aucune entrée « consolante » qui ne concernerait personne.
     Local : tournament. %>
 <% destinations = pool_destinations(tournament).values.uniq %>
+<%# Même temps grammatical que les icônes des tables (cf. _ranking_table). %>
+<% predicted = !tournament.final_phase_started? %>
 
 <ul class="tournament-destination-legend">
   <% destinations.each do |destination| %>
     <li class="tournament-destination-legend__item tournament-destination-legend__item--<%= destination %>">
       <i data-lucide="<%= destination_icon(destination) %>" aria-hidden="true"></i>
-      <%= destination_label(destination) %>
+      <%= destination_label(destination, predicted: predicted) %>
     </li>
   <% end %>
 </ul>
