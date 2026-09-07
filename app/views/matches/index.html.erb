@@ -399,13 +399,24 @@
             Aucun match ne correspond à ta recherche.
           <% end %>
         </p>
-        <%# Si les préfiltres sont responsables de l'absence de résultats, proposer de les désactiver %>
-        <% if @active_prefilters&.any? %>
-          <%= link_to "Voir tous les matchs", matches_path(no_prefilter: 1), class: "btn btn-outline-secondary mt-2 me-2" %>
-        <% end %>
-        <% if user_signed_in? %>
-          <%= link_to "Créer un match", new_match_path, class: "btn btn-primary mt-2" %>
-        <% end %>
+        <%# Les deux CTA passent par les classes du design system (btn-cta-*) plutôt
+            que par les classes Bootstrap brutes : même hauteur, mêmes coins à 10px,
+            et le vert du thème au lieu du vert Bootstrap.
+            Flex + gap plutôt que me-2, pour un espacement identique même si un seul
+            des deux boutons est rendu. %>
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+          <%# Si les préfiltres sont responsables de l'absence de résultats, proposer de les désactiver %>
+          <% if @active_prefilters&.any? %>
+            <%= link_to matches_path(no_prefilter: 1), class: "btn btn-lg px-4 btn-cta-secondary" do %>
+              <i data-lucide="list" class="btn-cta-icon" aria-hidden="true"></i>Voir tous les matchs
+            <% end %>
+          <% end %>
+          <% if user_signed_in? %>
+            <%= link_to new_match_path, class: "btn btn-primary btn-lg px-4 btn-cta-primary" do %>
+              <i data-lucide="plus" class="btn-cta-icon" aria-hidden="true"></i>Créer un match
+            <% end %>
+          <% end %>
+        </div>
       </div>
 
     <% else %>

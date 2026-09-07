@@ -363,7 +363,9 @@
   // pas couvert par le bloc existant car niché différemment)
   .matches-empty-state {
     color: rgba(0, 0, 0, 0.55) !important;
-    i { color: rgba(0, 0, 0, 0.35) !important; }
+    // `> i` : la grande illustration seulement — les icônes des CTA gardent la
+    // couleur de leur bouton.
+    > i { color: rgba(0, 0, 0, 0.35) !important; }
   }
 
   // Bouton "Afficher plus" — blanc sur fond blanc → sombre

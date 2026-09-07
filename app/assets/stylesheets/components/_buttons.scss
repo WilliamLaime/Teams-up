@@ -134,7 +134,10 @@
 // Hover : légère surbrillance + bordure forte
 .btn-cta-secondary {
   background: var(--theme-bg-card);  // fond adaptatif — sombre en dark, carte en clair
-  color: var(--green);                     // texte vert
+  // --green-readable et non --green : sur fond clair le vert plein ne donne que
+  // ~3,2:1, en dessous de AA pour du texte. Le token retombe sur le vert plein
+  // en mode sombre, où il est déjà lisible — le rendu dark est donc inchangé.
+  color: var(--green-readable);
   border: 1.5px solid var(--green);        // bordure verte fine
 
   &:hover {
