@@ -93,7 +93,8 @@
           <% if @tournament.open? || @tournament.closed? %>
             <%= button_to tournament_tournament_user_path(@tournament, my_entry),
                   method: :delete,
-                  class: "btn-cta-secondary tournament-detail-header__action",
+                  class: "btn-cta-secondary tournament-detail-header__action " \
+                         "tournament-detail-header__action--danger",
                   form: { data: { turbo_confirm: "Quitter le tournoi « #{@tournament.name} » ?" } },
                   data: { turbo_confirm_danger: true, turbo_confirm_accept: "Quitter" } do %>
               <i data-lucide="user-minus" aria-hidden="true"></i> Quitter le tournoi
