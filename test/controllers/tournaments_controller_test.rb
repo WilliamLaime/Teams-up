@@ -935,7 +935,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     sign_in @user
     t = launched_tournament("championnat", 8)
     get tournament_path(t)
-    assert_select ".participant-chip__forfeit"
+    assert_select ".participant-chip__action--forfeit"
   end
 
   # Pendant du forfait, à l'autre bout du cycle de vie : AVANT le lancement,
@@ -948,8 +948,8 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     t.tournament_users.create!(user: player, role: "joueur", status: "approved")
 
     get tournament_path(t)
-    assert_select ".participant-chip__remove"
-    assert_select ".participant-chip__forfeit", 0, "pas de forfait tant que rien n'est lancé"
+    assert_select ".participant-chip__action--remove"
+    assert_select ".participant-chip__action--forfeit", 0, "pas de forfait tant que rien n'est lancé"
   end
 
   # Une fois le tableau généré, la ligne d'inscription est référencée par quatre
@@ -958,7 +958,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     sign_in @user
     t = launched_tournament("championnat", 8)
     get tournament_path(t)
-    assert_select ".participant-chip__remove", 0
+    assert_select ".participant-chip__action--remove", 0
   end
 
   # Un organisateur ne retire pas un autre organisateur (cf. TournamentUserPolicy).
@@ -979,7 +979,7 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
 
     sign_in @co_org
     get tournament_path(t)
-    assert_select ".participant-chip__remove", 1, "ni l'admin, ni le co-org lui-même"
+    assert_select ".participant-chip__action--remove", 1, "ni l'admin, ni le co-org lui-même"
   end
 
   # ─── GET/PATCH édition : ouverte à l'admin ET au co-organisateur ────────────

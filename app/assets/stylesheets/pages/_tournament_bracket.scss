@@ -1484,6 +1484,22 @@
     }
   }
 
+  // « Quitter le tournoi » : action destructive pour celui qui la déclenche (son
+  // inscription disparaît). Le vert de btn-cta-secondary la faisait passer pour
+  // une action d'engagement, à côté du CTA « Rejoindre » qu'elle remplace. Même
+  // grammaire rouge que les retraits de la grille des participants : contour au
+  // repos, plein au survol.
+  &__action--danger {
+    color: #c0392b;
+    border-color: rgba(#c0392b, 0.55);
+
+    &:hover {
+      background: #c0392b;
+      color: #fff;
+      border-color: #c0392b;
+    }
+  }
+
   // Tournoi lancé : plus de désinscription possible, seulement un rappel d'état.
   &__enrolled {
     display: inline-flex;
@@ -1577,7 +1593,10 @@
     border-bottom: 2px solid transparent;
     padding: 0.6rem 0.9rem;
     font-size: 0.9rem;
-    font-weight: 600;
+    // 500 (medium) au repos : à 600, les cinq libellés pesaient autant que les
+    // titres de la page et la barre d'onglets tirait l'œil avant le contenu.
+    // Seul l'onglet actif remonte à 600 — c'est lui qui doit ressortir.
+    font-weight: 500;
     color: var(--theme-text-muted);
     cursor: pointer;
     transition: color 0.15s ease, border-color 0.15s ease;
@@ -1587,6 +1606,7 @@
     &:hover { color: var(--theme-text-primary); }
 
     &.is-active {
+      font-weight: 600;
       color: var(--green);
       border-bottom-color: var(--green);
     }
@@ -1694,7 +1714,10 @@
     // la borne basse doit rester généreuse — c'est elle qui décide de la troncature.
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 0.6rem;
-    align-items: start;
+    // stretch (et non start) : toutes les cartes d'une rangée s'alignent sur la
+    // plus haute. Avec `start`, un joueur portant un badge d'état créait une
+    // carte plus grande que ses voisines et la grille devenait dentelée.
+    align-items: stretch;
   }
 }
 
@@ -1748,6 +1771,19 @@
   border: 1px solid var(--theme-border);
   border-radius: 12px;
   padding: 0.55rem 0.7rem;
+  // Repère du bouton d'action, posé en absolu dans le coin haut droit.
+  position: relative;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: rgba(var(--green-rgb), 0.35);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  // Réserve la gouttière du bouton UNIQUEMENT sur les cartes qui en portent un :
+  // les autres gardent toute leur largeur pour le nom. `:has` évite d'ajouter
+  // une classe modificatrice que la vue devrait tenir à jour.
+  &:has(.participant-chip__action-form) { padding-right: 2.3rem; }
 
   // Avatar + nom cliquables → profil du joueur. On ne wrappe pas toute la
   // pastille (le bouton forfait doit rester un élément indépendant du lien).
@@ -1818,32 +1854,58 @@
     background-color: rgba(#c0392b, 0.12);
   }
 
-  // Actions destructives de l'organisateur sur une pastille de joueur :
-  // « Forfait » (tournoi en cours) et « Retirer » (désinscription sèche, avant
-  // le lancement). Même geste, même poids visuel — une seule règle, deux noms
-  // sémantiques plutôt qu'une classe fourre-tout.
+  // Actions destructives de l'organisateur (« Forfait » pendant le tournoi,
+  // « Retirer » avant le lancement). Même geste, même bouton : une icône seule
+  // dans le coin de la carte, révélée au survol. Répétées sur quinze joueurs,
+  // les anciennes pastilles rouges pleine ligne saturaient la grille et
+  // dictaient la hauteur des cartes ; ici l'action ne coûte plus une ligne.
   //
-  // button_to avec un bloc applique la classe directement au <button> généré
-  // (pas au <form> englobant) : on stylise donc ce sélecteur en pastille
-  // discrète, cohérente avec le reste du design system (outline rouge, inversée
-  // au survol).
-  &__forfeit,
-  &__remove {
+  // Les modificateurs --forfeit / --remove ne changent rien à l'apparence (les
+  // deux actions ne coexistent jamais, l'icône les distingue) : ils nomment
+  // l'action dans le DOM, ce sur quoi les tests s'appuient.
+  //
+  // button_to avec un bloc applique `class:` au <button> et `form_class:` au
+  // <form> englobant : c'est ce <form> que l'on positionne.
+  &__action-form {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    margin: 0;
+  }
+
+  &__action {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    border: 1px solid rgba(#c0392b, 0.5);
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
     background: transparent;
-    color: #c0392b;
-    font-size: 0.68rem;
-    font-weight: 700;
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
+    color: var(--theme-text-muted);
     cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: opacity 0.15s ease, background-color 0.15s ease,
+                color 0.15s ease, border-color 0.15s ease;
 
-    &:hover { background: #c0392b; color: #fff; }
-    i { width: 13px; height: 13px; }
+    i { width: 14px; height: 14px; }
+
+    &:hover,
+    &:focus-visible {
+      background-color: rgba(#c0392b, 0.12);
+      border-color: rgba(#c0392b, 0.45);
+      color: #c0392b;
+    }
+  }
+
+  // À la souris seulement : l'action reste invisible tant que la carte n'est ni
+  // survolée ni parcourue au clavier. Au doigt (hover: none) il n'y a pas de
+  // survol — le bouton doit rester affiché en permanence, d'où la garde.
+  @media (hover: hover) and (pointer: fine) {
+    .participant-chip__action { opacity: 0; }
+
+    &:hover .participant-chip__action,
+    &:focus-within .participant-chip__action { opacity: 1; }
   }
 }
 
@@ -1860,6 +1922,54 @@
     gap: 1.5rem;
     align-items: flex-start;
     margin-bottom: 1rem;
+  }
+
+  // Libellés des deux réglages : même poids que les titres de section, pour que
+  // « Mode de constitution » et « Nombre de chapeaux » se lisent en paire.
+  &__settings .form-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+    margin-bottom: 0.35rem;
+  }
+
+  &__settings .form-text {
+    font-size: 0.78rem;
+    color: var(--theme-text-muted);
+  }
+
+  // Champ « Nombre de chapeaux ». Deux corrections :
+  //  1. la largeur — le champ, seul dans son conteneur flex, s'étirait sur toute
+  //     la ligne pour accueillir un nombre à un chiffre ;
+  //  2. la coche verte — simple_form décore d'un `is-valid` tout champ sans
+  //     erreur (cf. simple_form_bootstrap.rb). Le formulaire n'ayant jamais été
+  //     soumis, cette coche ne valide rien : elle promet un retour de saisie
+  //     qui n'existe pas. On neutralise le décor Bootstrap sans toucher à
+  //     `is-invalid`, qui lui reste utile.
+  &__pots {
+    // Le bloc reste large de la phrase d'aide, mais le champ lui-même se règle
+    // sur son contenu : un nombre à un chiffre.
+    width: 100%;
+    max-width: 26rem;
+    margin-bottom: 0;
+
+    .form-control {
+      max-width: 5.5rem;
+      text-align: center;
+      background-image: none;
+      padding-right: 0.75rem;
+
+      &.is-valid {
+        border-color: var(--theme-border);
+
+        &:focus {
+          border-color: var(--green);
+          box-shadow: 0 0 0 2px rgba(var(--green-rgb), 0.18);
+        }
+      }
+    }
+
+    .form-text { display: block; }
   }
 
   // simple_form empile les radios ; on les remet en ligne, le choix étant binaire.

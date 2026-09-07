@@ -93,52 +93,63 @@
               <span class="participant-chip__name"><%= tu.display_name %></span>
             <% end %>
 
-            <%# État + action sur une SECONDE ligne : sur une seule ligne, les badges
+            <%# État sur une SECONDE ligne : sur une seule ligne, les badges
                 (nowrap, non compressibles) mangeaient toute la largeur et le nom
                 tombait à « Em… ». Ici le nom dispose de la carte entière. %>
             <% state = if tu.withdrawn? then ["Forfait", "eliminated"]
                        elsif tu.qualified? then ["Qualifié", "qualified"]
                        elsif tu.eliminated? then ["Éliminé", "eliminated"]
                        end %>
+            <% if state %>
+              <div class="participant-chip__meta">
+                <span class="participant-chip__state participant-chip__state--<%= state.last %>">
+                  <%= state.first %>
+                </span>
+              </div>
+            <% end %>
+
             <% can_forfeit = can_manage && !tu.withdrawn? %>
             <%# Retrait sec : jamais sur soi-même (l'en-tête offre déjà « Quitter
                 le tournoi »), et jamais sur un autre organisateur — c'est la
                 policy qui le dit, pas cette vue. Les deux boutons ne coexistent
                 jamais : leurs conditions d'état s'excluent. %>
             <% can_remove = can_remove_any && tu.user_id != current_user.id && policy(tu).destroy? %>
-            <% if state || can_forfeit || can_remove %>
-              <div class="participant-chip__meta">
-                <% if state %>
-                  <span class="participant-chip__state participant-chip__state--<%= state.last %>">
-                    <%= state.first %>
-                  </span>
-                <% end %>
 
-                <% if can_forfeit %>
-                  <%# turbo_confirm_danger / _accept : lus par notre modale de
-                      confirmation (cf. Turbo.setConfirmMethod) pour un bouton rouge
-                      et un libellé qui redit l'action plutôt qu'un « OK » muet. %>
-                  <%= button_to withdraw_tournament_tournament_user_path(tournament, tu),
-                                method: :patch,
-                                class: "participant-chip__forfeit",
-                                data: { turbo_confirm_danger: true,
-                                        turbo_confirm_accept: "Déclarer forfait" },
-                                form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
-                    <i data-lucide="user-x" aria-hidden="true"></i> Forfait
-                  <% end %>
-                <% end %>
+            <%# L'action destructive vit dans le coin de la carte, pas dans le flux :
+                répétée sur chaque joueur, la pastille rouge pleine largeur saturait
+                la grille et rendait les hauteurs irrégulières (les joueurs
+                intouchables n'en avaient pas). Icône seule + libellé accessible,
+                révélée au survol / focus de la carte (toujours visible au doigt,
+                cf. la règle @media (hover: hover) du SCSS). %>
+            <% if can_forfeit %>
+              <%# turbo_confirm_danger / _accept : lus par notre modale de
+                  confirmation (cf. Turbo.setConfirmMethod) pour un bouton rouge
+                  et un libellé qui redit l'action plutôt qu'un « OK » muet. %>
+              <%= button_to withdraw_tournament_tournament_user_path(tournament, tu),
+                            method: :patch,
+                            class: "participant-chip__action participant-chip__action--forfeit",
+                            form_class: "participant-chip__action-form",
+                            title: "Déclarer #{tu.display_name} forfait",
+                            aria: { label: "Déclarer #{tu.display_name} forfait" },
+                            data: { turbo_confirm_danger: true,
+                                    turbo_confirm_accept: "Déclarer forfait" },
+                            form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
+                <i data-lucide="user-x" aria-hidden="true"></i>
+              <% end %>
+            <% end %>
 
-                <% if can_remove %>
-                  <%= button_to tournament_tournament_user_path(tournament, tu),
-                                method: :delete,
-                                class: "participant-chip__remove",
-                                data: { turbo_confirm_danger: true,
-                                        turbo_confirm_accept: "Retirer" },
-                                form: { data: { turbo_confirm: "Retirer #{tu.display_name} du tournoi ? Son inscription sera supprimée." } } do %>
-                    <i data-lucide="user-minus" aria-hidden="true"></i> Retirer
-                  <% end %>
-                <% end %>
-              </div>
+            <% if can_remove %>
+              <%= button_to tournament_tournament_user_path(tournament, tu),
+                            method: :delete,
+                            class: "participant-chip__action participant-chip__action--remove",
+                            form_class: "participant-chip__action-form",
+                            title: "Retirer #{tu.display_name} du tournoi",
+                            aria: { label: "Retirer #{tu.display_name} du tournoi" },
+                            data: { turbo_confirm_danger: true,
+                                    turbo_confirm_accept: "Retirer" },
+                            form: { data: { turbo_confirm: "Retirer #{tu.display_name} du tournoi ? Son inscription sera supprimée." } } do %>
+                <i data-lucide="user-minus" aria-hidden="true"></i>
+              <% end %>
             <% end %>
           </div>
         <% end %>

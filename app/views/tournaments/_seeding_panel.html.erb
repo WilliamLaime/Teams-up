@@ -35,7 +35,8 @@
                   label: "Nombre de chapeaux",
                   as: :integer,
                   input_html: { min: 1, max: tournament.pool_size, value: pot_count },
-                  hint: "Chaque chapeau fournit un joueur à chaque poule (#{tournament.pool_count} poules prévues)." %>
+                  hint: "Chaque chapeau fournit un joueur à chaque poule (#{tournament.pool_count} poules prévues).",
+                  wrapper_html: { class: "seeding-panel__pots" } %>
     </div>
 
     <% if tournament.seeded_pots? && potted.zero? %>

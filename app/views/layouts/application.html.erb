@@ -116,13 +116,18 @@
         vers Google Fonts en parallèle du téléchargement de application.css.
         preconnect : ouvre la connexion TCP/TLS dès que possible (gain ~100ms).
         Une seule requête pour Nunito + Work Sans + Bebas Neue via l'API CSS2.
+        Axe variable 400..700 et non deux graisses fixes : le CSS demande partout
+        du 500/600, absents d'un chargement 400;700 — le navigateur synthétisait
+        alors un faux gras (d'où des libellés « semibold » aussi lourds que du 700).
+        Work Sans et Nunito sont des polices variables : la plage entière tient
+        dans UN fichier woff2, moins lourd que deux statiques supplémentaires.
         display=swap : le navigateur affiche une police de secours immédiatement
         → pas de texte invisible pendant le chargement (évite le FOIT). %>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <%# Préconnexion Cloudinary — réduit la latence de chargement des images CDN (LCP) %>
     <link rel="preconnect" href="https://res.cloudinary.com">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;700&family=Work+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400..700&family=Work+Sans:wght@400..700&display=swap" rel="stylesheet">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
