@@ -261,17 +261,40 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_select "section[data-panel='matchs'] tr.tournament-ranking__row--dest-barrage", 8
   end
 
-  # La prédiction s'efface dès que les placements réels sont connus : sinon deux
-  # liserés se disputeraient la même ligne, et l'un des deux mentirait.
-  test "les destinations disparaissent une fois les barrages tirés" do
+  # Le zonage SURVIT au tirage : c'est la même lecture (« qui est parti où »), la
+  # source change seulement de nature — la prédiction par rang cède la place au
+  # parcours réel (cf. Tournament#pool_exit_destinations). Auparavant les liserés
+  # disparaissaient ici, et la page perdait sa lecture la plus utile juste au
+  # moment où elle devenait certaine.
+  test "les destinations survivent au tirage des barrages, au passé" do
     play_until_barrages!
 
     sign_in @owner
     get tournament_path(@tournament)
 
     assert_response :success
-    assert_select "tr[class*=?]", "tournament-ranking__row--dest-", 0
-    assert_select ".tournament-destination-legend", 0
+    panel = "section[data-panel='classement']"
+    assert_select "#{panel} tr.tournament-ranking__row--dest-bracket",     4
+    assert_select "#{panel} tr.tournament-ranking__row--dest-barrage",     8
+    assert_select "#{panel} tr.tournament-ranking__row--dest-consolation", 4
+    assert_select ".tournament-destination-legend", 1
+    # Les libellés passent au passé : « Descend en consolante » était faux pour un
+    # joueur qui y est déjà.
+    assert_includes response.body, "Descendu en consolante"
+    assert_not_includes response.body, "Descend en consolante"
+  end
+
+  # Le zonage reste lisible sur un tournoi terminé : une table de poule archivée
+  # raconte encore qui est parti où, et c'est souvent là qu'on la relit.
+  test "les destinations restent affichées sur un tournoi terminé" do
+    play_until_barrages!
+    @tournament.update!(status: "completed")
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select "section[data-panel='classement'] tr.tournament-ranking__row--dest-barrage", 8
   end
 
   # En intégral, tout le monde va au tableau final : un liseré vert partout

@@ -28,6 +28,10 @@
     « poules » dépendant d'un helper qui ne les concerne pas ; avec le défaut à
     false, il reste byte-identique. %>
 <% destinations = local_assigns.fetch(:destinations, false) %>
+<%# Avant le tirage des barrages, la destination est une projection ; après, un
+    fait. Seul le libellé (title / aria-label) change — le liseré et l'icône, eux,
+    sont les mêmes des deux côtés de la bascule. %>
+<% predicted_destination = !tournament.final_phase_started? %>
 <% show_draws = !compact && tournament.sport&.ranking_points_rules&.dig(:draw)&.positive? %>
 <% show_sets  = !compact && tournament.sport&.scoring_rules&.dig(:mode) == :sets %>
 <div class="tournament-ranking__scroll">
@@ -68,12 +72,15 @@
               <i data-lucide="check-circle" class="tournament-ranking__qualified-icon"
                  title="Qualifié pour le tableau final" aria-label="Qualifié pour le tableau final"></i>
             <%# `elsif` et non un second `if` : un joueur ne doit jamais porter deux
-                fois le même message. La destination est une PRÉDICTION, elle
-                s'efface donc dès que la qualification est acquise. %>
+                fois le même message. Le check-circle « qualifié » dit déjà, en
+                mieux, ce que dirait une icône « va au tableau final ». Le LISERÉ
+                de la ligne, lui, reste posé dans les deux cas — c'est ce qui garde
+                le zonage vert/orange/rouge lisible après le tirage. %>
             <% elsif destination %>
               <i data-lucide="<%= destination_icon(destination) %>"
                  class="tournament-ranking__destination-icon tournament-ranking__destination-icon--<%= destination %>"
-                 title="<%= destination_label(destination) %>" aria-label="<%= destination_label(destination) %>"></i>
+                 title="<%= destination_label(destination, predicted: predicted_destination) %>"
+                 aria-label="<%= destination_label(destination, predicted: predicted_destination) %>"></i>
             <% end %>
           </td>
           <% unless compact %><td class="is-num is-pts"><%= tu.ranking_points %></td><% end %>

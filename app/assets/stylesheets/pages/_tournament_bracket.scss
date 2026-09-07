@@ -2234,10 +2234,14 @@
 
   &__row--qualified td:first-child { box-shadow: inset 3px 0 0 var(--green); }
 
-  // ── Destinations de poule (Critérium, avant la phase finale) ──
-  // Placées APRÈS --qualified pour l'emporter à spécificité égale. En pratique
-  // les deux ne coexistent jamais : show_pool_destinations? s'éteint dès que la
-  // phase finale démarre, c'est-à-dire dès que `qualified` est posé.
+  // ── Destinations de poule (Critérium) ──
+  // Placées APRÈS --qualified pour l'emporter à spécificité égale, et cette
+  // priorité est VOULUE : les deux coexistent dès le tirage des barrages, où un
+  // 2e de poule est à la fois `qualified` (liseré vert de l'état) et sorti par les
+  // barrages (liseré orange de la destination). C'est la destination qui gagne,
+  // parce qu'elle seule produit un ZONAGE — trois couleurs contiguës qui se
+  // lisent d'un coup d'œil, là où le vert de `qualified` répète une information
+  // déjà portée par l'icône check-circle à côté du nom.
   &__row--dest-bracket     td:first-child { box-shadow: inset 3px 0 0 var(--green); }
   &__row--dest-barrage     td:first-child { box-shadow: inset 3px 0 0 $orange; }
   &__row--dest-consolation td:first-child { box-shadow: inset 3px 0 0 $red; }
