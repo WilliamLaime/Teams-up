@@ -291,3 +291,38 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
      son départ) déplace le problème vers l'aval : un nœud tombé à un seul entrant ne devait
      ni se fermer en volant sa place au survivant, ni s'ouvrir en la lui attribuant deux fois.
      Un filtre n'est jamais local quand les données alimentent une cascade.
+
+## 2026-09-07 — Deux capacités qui ne comptent pas les mêmes personnes
+- **Symptôme** : la rencontre d'une confrontation de tournoi (ping-pong, Critérium Fédéral)
+  affichait « 2/3 · 1 place libre » et la phrase d'accroche « Dernière chance ! » — alors
+  qu'une confrontation oppose exactement deux joueurs.
+- **Cause racine** : `matches_controller` forçait `players_needed = 2` sur une confrontation,
+  mais ce champ compte les joueurs **recherchés**, organisateur **exclu**
+  (`Match#confirmed_players_count`). Quand c'est l'un des deux adversaires qui planifie la
+  rencontre, il occupe la ligne « organisateur » et n'est donc pas compté : il « restait » une
+  place. Planifiée par l'admin non-joueur, la même rencontre affichait bien 2/2.
+- **Ce que le bug asymétrique disait** : quand un compteur est juste dans un cas et faux dans
+  l'autre, ce n'est pas la valeur qui est mauvaise mais l'**unité**. La capacité d'une
+  confrontation s'exprime « organisateur-joueur inclus », celle d'une annonce « organisateur
+  exclu » — deux échelles, donc deux branches explicites (`Match#remaining_places`), et non un
+  `2` corrigé en `1` à un endroit du controller.
+- **Un compteur juste ne suffisait pas** : `player_left = 0` empêche l'inscription d'un tiers
+  seulement de manière cosmétique (il part en file d'attente, puis serait promu si un
+  adversaire s'en va). Le verrou devait vivre là où la décision se prend :
+  `MatchEnrollmentService` (refus explicite) et `MatchUserPolicy#destroy?` (un adversaire ne se
+  retire pas d'une affiche décidée par le tableau).
+- **`before_create` pour un token de partage est un piège** : `Match` générait son
+  `private_token` en `before_create`. Un match créé public puis passé en privé (`:visibility`
+  est éditable) n'avait donc **jamais** de token — lien d'invitation mort, sans aucune erreur.
+  Le mode privé du tournoi, dont tout l'intérêt est de basculer *après* création, imposait un
+  `before_save` gardé par `private_token.blank?` ; corrigé du même coup côté `Match`.
+- **Leçons**
+  1. Avant de corriger un compteur, demander *qui* il compte. Deux capacités qui ne recensent
+     pas la même population ne se réconcilient pas avec une constante.
+  2. Un affichage cohérent n'est pas une règle métier : tant que la porte d'entrée
+     (service d'inscription, policy) ne dit pas non, l'invariant n'est pas tenu.
+  3. Un callback `before_create` sur une donnée dérivée d'un champ **éditable** ne couvre que
+     la moitié des cas ; `before_save` + garde d'idempotence est le défaut sûr.
+  4. Rendre un objet privé doit cascader sur ce qui le rend visible ailleurs (ici les
+     rencontres, listées sur `/matchs`), et par un chemin qui ne repasse pas par les
+     validations — un match déjà joué échoue sur « prévu 30 min à l'avance ».

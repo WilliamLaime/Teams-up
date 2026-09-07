@@ -671,4 +671,105 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_nil match.tournament_id
     assert_nil match.tournament_match_id
   end
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Une confrontation vaut 2 places, organisateur-joueur inclus
+  # ════════════════════════════════════════════════════════════════════════════
+  # `players_needed` compte les joueurs RECHERCHÉS, organisateur exclu. En le
+  # forçant à 2 sur une confrontation, la rencontre planifiée par l'un des deux
+  # adversaires affichait « 2/3 · 1 place libre » (il occupait la ligne
+  # organisateur, donc n'était pas compté) alors que la même rencontre planifiée
+  # par l'admin affichait 2/2. D'où les deux cas testés ici — cf.
+  # Match#remaining_places.
+
+  # Tournoi administré par @user, qui n'y JOUE pas : les deux adversaires sont
+  # deux tiers. C'est le cas « admin ou co-organisateur planifie pour d'autres ».
+  def build_tournament_match_for_others(owner: @user)
+    tournament = Tournament.create!(name: "Tournoi arbitre", sport: @sport, user: owner,
+                                    format: "poules", status: "in_progress", max_players: 8,
+                                    date: Date.tomorrow, place: "Gymnase test")
+    first  = create_test_user(email: "adv1-#{SecureRandom.hex(3)}@example.com")
+    second = create_test_user(email: "adv2-#{SecureRandom.hex(3)}@example.com")
+    a = tournament.tournament_users.create!(user: first,  role: "joueur", status: "approved")
+    b = tournament.tournament_users.create!(user: second, role: "joueur", status: "approved")
+    round = tournament.tournament_rounds.create!(phase: "pool", number: 1, status: "in_progress")
+    [tournament, round.tournament_matches.create!(player_a: a, player_b: b, position: 0)]
+  end
+
+  # Poste la rencontre d'une confrontation et retourne le Match créé.
+  def plan_confrontation!(tournament, tmatch)
+    post matches_path, params: { match: {
+      title: "Rencontre", date: Date.tomorrow,
+      'time(4i)': "18", 'time(5i)': "00",
+      players_needed: 2, level: "Tout niveau", visibility: "public",
+      validation_mode: "automatic", genre_restriction: "tous",
+      sport_id: @sport.id, tournament_id: tournament.id, tournament_match_id: tmatch.id
+    } }
+    Match.last
+  end
+
+  test "une confrontation planifiée par un ADVERSAIRE est complète à 2/2" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_as_player # @user est player_a
+
+    match = plan_confrontation!(tournament, tmatch).reload
+
+    assert_equal 0, match.player_left, "aucune place à pourvoir"
+    assert_equal 2, match.secured_players_count, "les deux adversaires, pas trois"
+    assert match.full?
+  end
+
+  test "une confrontation planifiée par l'ADMIN non-joueur est complète à 2/2" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_for_others
+
+    match = plan_confrontation!(tournament, tmatch).reload
+
+    assert_equal 0, match.player_left
+    assert_equal 2, match.secured_players_count,
+                 "l'organisateur non-joueur est écarté de l'affichage"
+    # Les deux adversaires sont bien inscrits, et l'organisateur reste en base
+    # (il a besoin de ses droits) sans occuper de place.
+    assert_equal 2, match.displayed_match_users.count
+    assert_equal 3, match.match_users.count
+  end
+
+  test "la page d'une confrontation annonce « Adversaires désignés » et aucun bouton Rejoindre" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_as_player
+    match = plan_confrontation!(tournament, tmatch)
+
+    get match_path(match)
+    assert_response :success
+    assert_match(/Adversaires désignés/, response.body)
+    assert_no_match(/place libre/, response.body)
+    assert_no_match(/Rejoindre le match/, response.body)
+  end
+
+  test "un tiers ne peut pas rejoindre une confrontation" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_for_others
+    match = plan_confrontation!(tournament, tmatch)
+
+    intruder = create_test_user(email: "intrus-#{SecureRandom.hex(3)}@example.com")
+    sign_in intruder
+
+    assert_no_difference "MatchUser.count" do
+      post match_match_users_path(match)
+    end
+    assert_redirected_to match_path(match)
+    assert_match(/ne se rejoint pas/, flash[:alert])
+  end
+
+  # ── Visibilité héritée du tournoi ───────────────────────────────────────────
+  test "la rencontre d'un tournoi privé naît privée" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match_as_player
+    tournament.update!(visibility: "private")
+
+    match = plan_confrontation!(tournament, tmatch)
+
+    assert match.private?, "la rencontre d'un tournoi privé ne doit pas être listée publiquement"
+    assert match.private_token.present?, "elle a besoin de son propre lien de partage"
+  end
 end

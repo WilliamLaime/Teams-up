@@ -445,7 +445,7 @@
           <% end %>
 
           <%# Clôture des inscriptions %>
-          <div class="mb-0">
+          <div class="mb-3">
             <label class="form-label d-block">Clôture des inscriptions (facultatif)</label>
             <div class="row g-3">
               <%# Date de clôture %>
@@ -516,6 +516,39 @@
               </div>
             </div>
           </div>
+
+          <%# ── Visibilité du tournoi : Public / Privé ──────────────────────
+              Volontairement HORS du wrapper grisé par `structure_locked` : ce
+              réglage ne touche pas au moteur de jeu, il reste donc modifiable
+              même une fois le tournoi lancé ou terminé (cf. tournament_params).
+              Décalque du sélecteur des matchs (matches/_details_section). %>
+          <%= hidden_field_tag "tournament[visibility]", @tournament.visibility.presence || "public",
+              id: "tournament_visibility" %>
+
+          <div class="mb-0">
+            <label class="form-label d-block">
+              Visibilité du tournoi
+              <span class="css-tooltip"
+                    data-tip="Un tournoi privé n'apparaît ni dans la liste ni dans la recherche : il n'est accessible que par son lien d'invitation. Tu peux basculer public / privé à tout moment.">
+                <i data-lucide="info" style="width:13px; height:13px; vertical-align:middle; opacity:0.5;"></i>
+              </span>
+            </label>
+
+            <div class="match-level-buttons" style="margin-top:0.6rem;">
+              <button type="button"
+                      class="match-level-btn <%= 'active' unless @tournament.private? %>"
+                      data-visibility-choice="public"
+                      data-action="click->tournament-form#selectVisibility">
+                🌍 Public
+              </button>
+              <button type="button"
+                      class="match-level-btn <%= 'active' if @tournament.private? %>"
+                      data-visibility-choice="private"
+                      data-action="click->tournament-form#selectVisibility">
+                🔒 Privé
+              </button>
+            </div>
+          </div><%# fin visibilité %>
 
         </div><%# fin section 4 %>
 
@@ -592,6 +625,13 @@
               <span class="recap-value" data-tournament-form-target="recapSelfRegister">Non</span>
             </div>
           <% end %>
+
+          <div class="match-recap-row">
+            <span class="recap-label">Visibilité</span>
+            <span class="recap-value" data-tournament-form-target="recapVisibility">
+              <%= @tournament.private? ? "🔒 Privé" : "🌍 Public" %>
+            </span>
+          </div>
 
           <div class="match-recap-row" style="<%= 'border-bottom:none;' if @tournament.persisted? %>">
             <span class="recap-label">Clôture</span>

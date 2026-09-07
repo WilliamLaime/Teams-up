@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_04_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -658,6 +658,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_140000) do
     t.integer "players_per_pool"
     t.boolean "playoffs", default: true, null: false
     t.string "pool_seeding_mode"
+    t.string "private_token"
     t.datetime "registration_deadline"
     t.integer "seeded_pot_count"
     t.string "slug", null: false
@@ -669,6 +670,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_04_140000) do
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.bigint "venue_id"
+    t.string "visibility", default: "public", null: false
+    t.index ["private_token"], name: "index_tournaments_on_private_token", unique: true
     t.index ["slug"], name: "index_tournaments_on_slug", unique: true
     t.index ["sport_id"], name: "index_tournaments_on_sport_id"
     t.index ["status"], name: "index_tournaments_on_status"

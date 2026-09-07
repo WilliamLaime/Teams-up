@@ -4,8 +4,16 @@ class MatchUserPolicy < ApplicationPolicy
     true
   end
 
-  # Un joueur peut seulement quitter sa propre inscription
+  # Un joueur peut seulement quitter sa propre inscription.
+  #
+  # Exception : une confrontation de tournoi. Son affiche est décidée par le
+  # tableau — si un adversaire pouvait s'en retirer, la rencontre resterait
+  # ouverte avec un seul joueur et la carte du tournoi n'aurait plus de sens.
+  # Le retrait légitime passe par le forfait déclaré côté tournoi, ou par la
+  # suppression de la rencontre par son organisateur.
   def destroy?
+    return false if record.match.tournament_confrontation?
+
     record.user == user
   end
 

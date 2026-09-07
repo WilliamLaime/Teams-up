@@ -141,6 +141,12 @@ class Match < ApplicationRecord
   # Modes de validation disponibles pour l'organisateur
   VALIDATION_MODES = ["automatic", "manual"].freeze
 
+  # Nombre de joueurs d'une confrontation de tournoi : une carte du tableau
+  # oppose DEUX adversaires nommés, organisateur-joueur inclus. À ne pas
+  # confondre avec `players_needed`, qui exclut l'organisateur (cf.
+  # recompute_player_left!).
+  CONFRONTATION_PLAYERS = 2
+
   # ── Visibilité ───────────────────────────────────────────────────────────────
   # "public"  → visible sur l'index, inscriptions ouvertes à tous
   # "private" → accessible uniquement via le lien avec token
@@ -151,8 +157,11 @@ class Match < ApplicationRecord
   # "feminin" → réservé aux joueuses (genre "femme")
   GENRE_RESTRICTIONS = %w[tous feminin].freeze
 
-  # Génère le token avant la création si le match est privé
-  before_create :generate_private_token, if: :private?
+  # Génère le token dès que le match est privé et n'en a pas encore.
+  # `before_save` et non `before_create` : un match créé public peut être passé
+  # en privé plus tard (`:visibility` est éditable, cf. match_params), et sans
+  # token le lien d'invitation serait inutilisable.
+  before_save :generate_private_token, if: -> { private? && private_token.blank? }
 
   # Retourne vrai si le match est privé
   def private?
@@ -162,6 +171,18 @@ class Match < ApplicationRecord
   # Retourne vrai si le match est public
   def public?
     visibility == "public" || visibility.blank?
+  end
+
+  # Passe le match en privé (token compris, via le before_save) SANS repasser par
+  # les validations : un match déjà joué échouerait sur « prévu au moins 30
+  # minutes à l'avance » (cf. match_must_be_at_least_30min_in_future) alors que
+  # sa visibilité, elle, doit pouvoir changer à tout moment.
+  # Utilisé par la cascade Tournament#privatize_matches!.
+  def privatize!
+    return if private?
+
+    self.visibility = "private"
+    save!(validate: false)
   end
 
   # Validation : le niveau est obligatoire et doit appartenir à la grille du sport
@@ -316,7 +337,30 @@ class Match < ApplicationRecord
   # et à l'édition de la cible → compteur self-healing, insensible aux dérives.
   # update_column : écriture atomique sans valider ni relancer les callbacks.
   def recompute_player_left!
-    update_column(:player_left, [players_needed.to_i - confirmed_players_count, 0].max)
+    update_column(:player_left, remaining_places)
+  end
+
+  # Places encore à pourvoir. Deux régimes, parce que les deux capacités ne
+  # comptent PAS les mêmes personnes :
+  #
+  #   • match ordinaire → `players_needed` = joueurs RECHERCHÉS, organisateur
+  #     exclu (il a déjà sa place) ; on lui retranche donc les confirmés hors
+  #     organisateur.
+  #   • confrontation de tournoi → l'affiche est décidée par le tableau : deux
+  #     adversaires nommés, organisateur-joueur COMPRIS. On compte donc les
+  #     personnes réellement affichées (`approved_including_organizer_count`
+  #     passe par `displayed_match_users`, qui écarte l'organisateur non-joueur).
+  #
+  # Sans cette distinction, une confrontation planifiée par l'un des deux
+  # adversaires affichait « 2/3 · 1 place libre » (il occupait la ligne
+  # organisateur, donc n'était pas compté), alors que la même rencontre
+  # planifiée par l'admin affichait bien 2/2.
+  def remaining_places
+    if tournament_confrontation?
+      [CONFRONTATION_PLAYERS - approved_including_organizer_count, 0].max
+    else
+      [players_needed.to_i - confirmed_players_count, 0].max
+    end
   end
 
   # Retourne vrai si le match est complet (plus de places disponibles)

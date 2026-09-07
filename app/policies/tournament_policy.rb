@@ -80,10 +80,24 @@ class TournamentPolicy < ApplicationPolicy
     record.user == user
   end
 
-  # Tournois visibles : tous, pour tout le monde (pas de tournoi privé au Lot 1).
+  # Tournois LISTABLES (index, badges de comptage, recherche) :
+  #   • tous les tournois publics ;
+  #   • plus, pour un utilisateur connecté, ceux qu'il administre et ceux où il a
+  #     une ligne d'inscription (joueur ou co-organisateur).
+  #
+  # Un tournoi privé auquel on n'appartient pas reste accessible par son lien à
+  # token — c'est la garde de TournamentsController#show qui en décide, pas ce
+  # scope, exactement comme pour les matchs (cf. MatchPolicy::Scope).
+  #
+  # Trois `where` sur le même scope : les `.or` restent structurellement
+  # compatibles (aucun `joins`, la 3e passe par une sous-requête).
   class Scope < ApplicationPolicy::Scope
     def resolve
-      scope.all
+      return scope.publicly_visible if user.blank?
+
+      scope.publicly_visible
+           .or(scope.where(user_id: user.id))
+           .or(scope.where(id: TournamentUser.where(user_id: user.id).select(:tournament_id)))
     end
   end
 end

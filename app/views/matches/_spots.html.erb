@@ -13,8 +13,16 @@
     ===================================================== %>
 <div id="match_spots_<%= match.id %>">
 
+  <%# Une confrontation de tournoi n'est pas une annonce : les deux adversaires
+      sont désignés par le tableau, il n'y a personne à recruter. On saute donc
+      les phrases d'accroche et on remplace « Complet » par un libellé qui dit
+      ce qu'il en est vraiment (cf. la branche du libellé plus bas). %>
+  <% confrontation = match.tournament_confrontation? %>
+
   <%# Phrase accrocheuse selon le nombre de places restantes %>
-  <% if match.player_left == 1 %>
+  <% if confrontation %>
+    <%# rien : aucune place à pourvoir %>
+  <% elsif match.player_left == 1 %>
     <p class="match-spots-hook match-spots-hook--urgent">Dernière chance !</p>
   <% elsif match.player_left == 2 %>
     <p class="match-spots-hook match-spots-hook--warning">Presque complet !</p>
@@ -42,6 +50,8 @@
     <div class="match-spots-label">
       <% if match.completed? %>
         <span style="color:var(--theme-text-muted);">Match terminé</span>
+      <% elsif confrontation %>
+        <span style="color:var(--theme-text-muted);">Adversaires désignés</span>
       <% elsif match.full? %>
         <span style="color:#ff6b6b;">Complet</span>
       <% else %>

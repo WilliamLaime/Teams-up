@@ -625,7 +625,10 @@
             0
           end
 
-          can_join = user_signed_in? && !@current_match_user && !@match.full?
+          # Une confrontation de tournoi ne se rejoint pas : ses deux adversaires
+          # sont désignés par le tableau (cf. MatchEnrollmentService).
+          can_join = user_signed_in? && !@current_match_user && !@match.full? &&
+                     !@match.tournament_confrontation?
 
           # Choisir aléatoirement un des deux avatars groupe
           irl_svg_images = ["avatargroup_svg/picto_groupe_1.svg", "avatargroup_svg/picto_groupe_2.svg"]
@@ -796,18 +799,23 @@
                   <i data-lucide="check-circle" style="width:14px;height:14px;"></i>
                   Tu es inscrit
                 </div>
-                <%# Bouton qui ouvre la modal de confirmation — pas de turbo_confirm natif %>
-                <button type="button"
-                        class="btn btn-outline-danger btn-sm w-100 mt-2"
-                        data-bs-toggle="modal"
-                        data-bs-target="#leaveMatchModal">
-                  Quitter le match
-                </button>
+                <%# Bouton qui ouvre la modal de confirmation — pas de turbo_confirm natif.
+                    Masqué sur une confrontation de tournoi : un adversaire ne se retire
+                    pas d'une affiche décidée par le tableau (cf. MatchUserPolicy#destroy?),
+                    le retrait passe par le forfait côté tournoi. %>
+                <% unless @match.tournament_confrontation? %>
+                  <button type="button"
+                          class="btn btn-outline-danger btn-sm w-100 mt-2"
+                          data-bs-toggle="modal"
+                          data-bs-target="#leaveMatchModal">
+                    Quitter le match
+                  </button>
 
-                <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
-                <%= form_with url: match_match_user_path(@match, @current_match_user),
-                    method: :delete,
-                    id: "leave-match-form" do %>
+                  <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+                  <%= form_with url: match_match_user_path(@match, @current_match_user),
+                      method: :delete,
+                      id: "leave-match-form" do %>
+                  <% end %>
                 <% end %>
 
               <% elsif @current_match_user.pending? %>
@@ -863,6 +871,14 @@
 
               <% end %>
 
+            <% elsif @match.tournament_confrontation? %>
+              <%# Confrontation de tournoi : rien à rejoindre, on explique juste
+                  de quoi il s'agit à celui qui tombe sur la page. %>
+              <div class="match-join-status match-join-status--waiting">
+                <i data-lucide="swords" style="width:14px;height:14px;"></i>
+                Rencontre du tournoi
+              </div>
+
             <% else %>
               <%# Pas encore inscrit → bouton ouvre la modal de confirmation %>
               <% if @match.full? %>
@@ -881,10 +897,11 @@
               <% end %>
             <% end %>
 
-          <% else %>
+          <% elsif !@match.tournament_confrontation? %>
             <%# Non connecté → vers la page de connexion.
                 Devise redirigera automatiquement vers ce match après la connexion
-                grâce au store_location_for défini dans le contrôleur. %>
+                grâce au store_location_for défini dans le contrôleur.
+                Rien à proposer, en revanche, sur une confrontation de tournoi. %>
             <%= link_to new_user_session_path, class: "btn btn-primary w-100 match-join-btn" do %>
               Rejoindre le match
             <% end %>
