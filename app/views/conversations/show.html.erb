@@ -21,7 +21,7 @@
       <span class="sticky-chat-profile-link"
             data-action="click->sticky-chat#goToProfile"
             data-url="<%= match_path(@match) %>">
-        <i data-lucide="message-circle" style="width:13px;height:13px;color:#1EDD88;"></i>
+        <i data-lucide="message-circle" style="width:13px;height:13px;color:var(--green);"></i>
         <%= truncate(@match.title, length: 30) %>
       </span>
     </div>

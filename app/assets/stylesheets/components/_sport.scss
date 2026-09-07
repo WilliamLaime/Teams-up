@@ -35,9 +35,9 @@
   font-weight: 700;
   padding: 0.3rem 0.8rem;
   border-radius: 999px;
-  background: rgba($green, 0.12);
-  color: $green;
-  border: 1px solid rgba($green, 0.35);
+  background: rgba(var(--green-rgb), 0.12);
+  color: var(--green);
+  border: 1px solid rgba(var(--green-rgb), 0.35);
 }
 
 // ── Badge sport dans la navbar (indicateur non-interactif) ───────────────
@@ -50,18 +50,18 @@
   margin-left: 1rem;
   padding: 0.3rem 0.75rem !important;
   border-radius: 999px !important;
-  background: rgba($green, 0.12) !important;
-  border: 1.5px solid rgba($green, 0.4) !important;
-  color: $green !important;
+  background: rgba(var(--green-rgb), 0.12) !important;
+  border: 1.5px solid rgba(var(--green-rgb), 0.4) !important;
+  color: var(--green) !important;
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none !important;
   transition: background 0.15s, border-color 0.15s;
 
   &:hover {
-    background: rgba($green, 0.2) !important;
-    border-color: rgba($green, 0.6) !important;
-    color: $green !important;
+    background: rgba(var(--green-rgb), 0.2) !important;
+    border-color: rgba(var(--green-rgb), 0.6) !important;
+    color: var(--green) !important;
   }
 }
 
@@ -74,10 +74,10 @@
   margin-left: 1rem; // légère marge pour l'écarter vers la droite
   padding: 0.3rem 0.75rem !important;
   border-radius: 999px !important;
-  background: rgba($green, 0.12) !important;
-  border: 1.5px solid rgba($green, 0.4) !important;
+  background: rgba(var(--green-rgb), 0.12) !important;
+  border: 1.5px solid rgba(var(--green-rgb), 0.4) !important;
   text-decoration: none !important;
-  color: $green !important;
+  color: var(--green) !important;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -89,14 +89,14 @@
   }
 
   &:hover, &:focus, &:active {
-    background: rgba($green, 0.2) !important;
-    border-color: rgba($green, 0.6) !important;
-    color: $green !important;
+    background: rgba(var(--green-rgb), 0.2) !important;
+    border-color: rgba(var(--green-rgb), 0.6) !important;
+    color: var(--green) !important;
     text-decoration: none !important;
   }
 
   &:focus-visible {
-    outline: 2px solid $green !important;
+    outline: 2px solid var(--green) !important;
     outline-offset: 2px;
   }
 
@@ -143,7 +143,7 @@
     // Focus : légère bordure verte pour indiquer l'état actif
     &:focus {
       background: var(--theme-bg-surface);
-      border-color: rgba($green, 0.5);
+      border-color: rgba(var(--green-rgb), 0.5);
       box-shadow: none;
       color: var(--theme-text-primary);
     }
@@ -167,7 +167,7 @@
 
     // Sport actif → couleur verte pour le mettre en avant
     &.sport-dropdown-item--active {
-      color: $green !important;
+      color: var(--green) !important;
       font-weight: 600;
     }
   }
@@ -207,23 +207,23 @@
 
   // Hover : fond vert translucide + bordure verte
   &:hover {
-    background: rgba($green, 0.1);
-    border-color: rgba($green, 0.4);
+    background: rgba(var(--green-rgb), 0.1);
+    border-color: rgba(var(--green-rgb), 0.4);
     transform: translateY(-1px);
 
     .sport-select-name {
-      color: $green;
+      color: var(--green);
     }
   }
 
   // État sélectionné → fond vert translucide + bordure verte
   &.sport-select-item--selected {
-    background: rgba($green, 0.12);
-    border-color: rgba($green, 0.5);
-    color: $green;
+    background: rgba(var(--green-rgb), 0.12);
+    border-color: rgba(var(--green-rgb), 0.5);
+    color: var(--green);
 
     .sport-select-name {
-      color: $green;
+      color: var(--green);
     }
   }
 
@@ -258,7 +258,7 @@
   padding: 0;
   font-size: 0.8rem;
   font-weight: 600;
-  color: $green;
+  color: var(--green);
   cursor: pointer;
   transition: opacity 0.15s;
 
@@ -281,16 +281,16 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 
   &:hover {
-    border-color: rgba($green, 0.5);
-    color: $green;
-    background: rgba($green, 0.08);
+    border-color: rgba(var(--green-rgb), 0.5);
+    color: var(--green);
+    background: rgba(var(--green-rgb), 0.08);
   }
 
   // Pill sélectionnée → fond vert translucide
   &--active {
-    background: rgba($green, 0.14);
-    border-color: rgba($green, 0.6);
-    color: $green;
+    background: rgba(var(--green-rgb), 0.14);
+    border-color: rgba(var(--green-rgb), 0.6);
+    color: var(--green);
   }
 }
 
@@ -313,7 +313,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid $green;
+    outline: 2px solid var(--green);
     outline-offset: 2px;
     box-shadow: none;
   }
@@ -363,12 +363,12 @@
 
   // Sport actuellement sélectionné → vert
   &--active {
-    background: rgba($green, 0.1);
-    color: $green !important;
+    background: rgba(var(--green-rgb), 0.1);
+    color: var(--green) !important;
 
     &:hover {
-      background: rgba($green, 0.15);
-      color: $green !important;
+      background: rgba(var(--green-rgb), 0.15);
+      color: var(--green) !important;
     }
   }
 }

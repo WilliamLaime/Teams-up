@@ -4,7 +4,8 @@ $red: #FD1015;
 $blue: #0D6EFD;
 $yellow: #FFC65A;
 $orange: #E67E22;
-$green: #1EDD88;
+$green:       #1EDD88;  // Primaire — mode sombre
+$green-light: #00A44A;  // Primaire — mode clair (plus soutenu, meilleur contraste)
 $gray: #0E0000;
 $light-gray: #F4F4F4;
 
@@ -14,6 +15,31 @@ $dark-card-bg: #1a1c1a;   // Fond des cartes sombres
 $dark-surface: #242624;   // Surface légèrement plus claire
 $dark-text: #f0f0f0;      // Texte clair sur fond sombre
 $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
+
+// ─── VERT PRIMAIRE — DÉCLINAISONS PAR THÈME ──────────────────────────────────
+// Le vert doit changer selon le thème, or une variable Sass est résolue à la
+// compilation : elle produit la même valeur dans tout le CSS final. Le vert vit
+// donc en custom properties CSS, redéfinies dans chaque bloc [data-theme].
+//
+// Les fonctions Sass (rgba, darken, lighten) ne savent pas opérer sur une var(),
+// on précalcule donc ici les variantes réellement utilisées dans l'app :
+//   var(--green)                     → la couleur pleine
+//   rgba(var(--green-rgb), 0.15)     → n'importe quelle transparence
+//   var(--green-d8 / -d10 / -d12)    → hovers et dégradés assombris
+//   var(--green-l10)                 → variante éclaircie
+//   var(--green-readable)            → texte vert lisible sur fond clair (AA)
+//
+// $readable : vert assombri pour le texte sur fond clair. En mode sombre le vert
+// plein est déjà lisible, on passe null et la variable retombe sur $g.
+@mixin green-tokens($g, $readable: null) {
+  --green:          #{$g};
+  --green-rgb:      #{red($g)}, #{green($g)}, #{blue($g)};
+  --green-d8:       #{darken($g, 8%)};
+  --green-d10:      #{darken($g, 10%)};
+  --green-d12:      #{darken($g, 12%)};
+  --green-l10:      #{lighten($g, 10%)};
+  --green-readable: #{if($readable, $readable, $g)};
+}
 
 // ─── CSS CUSTOM PROPERTIES — SYSTÈME DE THÈMES ───────────────────────────────
 // Ces variables CSS (var(--theme-*)) sont utilisées dans tous les composants.
@@ -27,6 +53,9 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
 
 // ── Mode sombre (défaut) ──────────────────────────────────────────────────────
 [data-theme="dark"] {
+  // Vert primaire du thème — #1EDD88 et ses variantes
+  @include green-tokens($green);
+
   // Fonds principaux des sections sombres (navbar, hero, footer)
   --theme-nav-bg:         #{$dark-bg};                    // #111111
   --theme-nav-border:     rgba(255, 255, 255, 0.06);
@@ -65,7 +94,7 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
 
   // Bouton icône thème dans la navbar
   --theme-icon-color:     rgba(255, 255, 255, 0.75);
-  --theme-icon-hover:     #{$green};
+  --theme-icon-hover:     var(--green);
 
   // Copyright footer
   --theme-footer-copy-bg:    #111111;
@@ -79,6 +108,15 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
 
 // ── Mode clair ────────────────────────────────────────────────────────────────
 [data-theme="light"] {
+  // Vert primaire du thème — #00A44A et ses variantes.
+  // #007A37 : le vert plein donne ~3,2:1 sur blanc, insuffisant pour du texte
+  // courant (AA = 4,5:1) ; cette variante assombrie atteint ~5:1 sur #F4F4F4.
+  @include green-tokens($green-light, #007A37);
+
+  // Les composants Bootstrap qui portent le vert sont réalignés sur var(--green)
+  // dans components/_theme.scss (voir § BOOTSTRAP — VERT PRIMAIRE) : ce fichier
+  // est importé AVANT bootstrap, ses --bs-* y seraient écrasés.
+
   // Fonds principaux
   --theme-nav-bg:         #ffffff;
   --theme-nav-border:     rgba(0, 0, 0, 0.08);
@@ -116,7 +154,7 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
 
   // Bouton icône thème dans la navbar
   --theme-icon-color:     rgba(0, 0, 0, 0.6);
-  --theme-icon-hover:     #{$green};
+  --theme-icon-hover:     var(--green);
 
   // Copyright footer
   --theme-footer-copy-bg:    #e9ecef;

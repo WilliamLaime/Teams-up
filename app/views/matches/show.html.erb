@@ -118,12 +118,12 @@
             <% if %w[padel tennis badminton].include?(@match.sport&.slug) %>
               <%# Bouton visible uniquement pour padel, tennis et badminton qui ont une grille officielle %>
               <button type="button"
-                      style="background:rgba(30,221,136,0.12); border:1.5px solid rgba(30,221,136,0.5);
+                      style="background:rgba(var(--green-rgb), 0.12); border:1.5px solid rgba(var(--green-rgb), 0.5);
                              border-radius:50%; width:18px; height:18px; font-size:0.65rem;
-                             color:#1EDD88; cursor:pointer; padding:0; line-height:1;
+                             color:var(--green); cursor:pointer; padding:0; line-height:1;
                              flex-shrink:0; font-weight:700; transition:all 0.15s;"
-                      onmouseover="this.style.background='rgba(30,221,136,0.25)'; this.style.borderColor='#1EDD88';"
-                      onmouseout="this.style.background='rgba(30,221,136,0.12)'; this.style.borderColor='rgba(30,221,136,0.5)';"
+                      onmouseover="this.style.background='rgba(var(--green-rgb), 0.25)'; this.style.borderColor='var(--green)';"
+                      onmouseout="this.style.background='rgba(var(--green-rgb), 0.12)'; this.style.borderColor='rgba(var(--green-rgb), 0.5)';"
                       data-bs-toggle="modal"
                       data-bs-target="#levelGridModal"
                       data-sport-id="<%= @match.sport_id %>"
@@ -370,7 +370,7 @@
                       data-bs-toggle="modal"
                       data-bs-target="#makePublicModal"
                       style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
-                             color:#1EDD88; background:rgba(30,221,136,0.1); border:1px solid rgba(30,221,136,0.3);
+                             color:var(--green); background:rgba(var(--green-rgb), 0.1); border:1px solid rgba(var(--green-rgb), 0.3);
                              border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
                 <i data-lucide="globe" style="width:11px; height:11px;"></i>
                 Ouvrir au public
@@ -590,7 +590,7 @@
             </div>
             <%# Info équipe %>
             <div>
-              <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#1EDD88; margin-bottom:2px;">
+              <div style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--green); margin-bottom:2px;">
                 Match d'équipe
               </div>
               <div style="font-size:0.95rem; font-weight:700; color:var(--theme-text-strong);">
@@ -983,7 +983,7 @@
           <%# En-tête %>
           <div class="match-chat-header">
             <div class="d-flex align-items-center gap-2">
-              <i data-lucide="message-circle" style="width:16px;height:16px;color:#1EDD88;"></i>
+              <i data-lucide="message-circle" style="width:16px;height:16px;color:var(--green);"></i>
               <strong style="color:var(--theme-text-strong);">Match Chat</strong>
             </div>
             <% if is_participant %>
@@ -1397,8 +1397,8 @@
 
         <%# Icône %>
         <div style="display:flex; justify-content:center; padding-top:8px; padding-bottom:16px;">
-          <div class="pending-modal-icon" style="background:rgba(30,221,136,0.12);">
-            <i data-lucide="globe" style="width:22px;height:22px; color:#1EDD88;"></i>
+          <div class="pending-modal-icon" style="background:rgba(var(--green-rgb), 0.12);">
+            <i data-lucide="globe" style="width:22px;height:22px; color:var(--green);"></i>
           </div>
         </div>
 
@@ -1421,7 +1421,7 @@
           <button type="submit"
                   form="make-public-form"
                   class="btn btn-sm flex-fill"
-                  style="background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);">
+                  style="background:rgba(var(--green-rgb), 0.12); color:var(--green); border:1px solid rgba(var(--green-rgb), 0.35);">
             Oui, ouvrir au public
           </button>
           <%# Annuler → ferme la modal %>
@@ -1476,7 +1476,7 @@
             <div class="d-flex gap-3" style="margin-top: 20px;">
               <button type="submit"
                       class="btn btn-sm flex-fill"
-                      style="background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.35);">
+                      style="background:rgba(var(--green-rgb), 0.12); color:var(--green); border:1px solid rgba(var(--green-rgb), 0.35);">
                 <i data-lucide="send" style="width:14px;height:14px; vertical-align:-2px;"></i>
                 Partager
               </button>

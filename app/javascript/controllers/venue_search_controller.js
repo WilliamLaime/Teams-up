@@ -177,7 +177,7 @@ export default class extends Controller {
 
       return `
         <div style="padding:0.5rem; cursor:pointer; border-radius:6px; transition:background 0.15s; font-size:0.85rem;"
-             onmouseover="this.style.background='rgba(30,221,136,0.1)'"
+             onmouseover="this.style.background='rgba(var(--green-rgb), 0.1)'"
              onmouseout="this.style.background='transparent'"
              data-action="click->venue-search#addVenue"
              data-venue-id="${venue.id || ""}"
@@ -303,8 +303,8 @@ export default class extends Controller {
     const badge = document.createElement("div")
     badge.className = "badge"
     badge.style.cssText = `
-      background-color: rgba(30, 221, 136, 0.2);
-      color: #1EDD88;
+      background-color: rgba(var(--green-rgb), 0.2);
+      color: var(--green);
       padding: 0.5rem 0.75rem;
       margin: 0.25rem;
       display: inline-flex;
@@ -317,7 +317,7 @@ export default class extends Controller {
       <span style="color:var(--theme-text-muted);">(${this.escapeHtml(venueCity)})</span>
       <button type="button"
               class="venue-remove-btn"
-              style="background:none; border:none; color:#1EDD88; cursor:pointer; padding:0; font-weight:bold;"
+              style="background:none; border:none; color:var(--green); cursor:pointer; padding:0; font-weight:bold;"
               data-action="click->venue-search#removeVenue"
               data-venue-id="${venueId}">
         ✕

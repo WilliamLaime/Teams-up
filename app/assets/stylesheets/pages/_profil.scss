@@ -20,7 +20,7 @@
     left: -120px;
     width: 520px;
     height: 520px;
-    background: radial-gradient(circle, rgba($green, 0.13) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(var(--green-rgb), 0.13) 0%, transparent 65%);
     pointer-events: none;
     z-index: 0;
   }
@@ -45,7 +45,7 @@
     height: 82px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid $green;
+    border: 3px solid var(--green);
     display: block;
   }
 
@@ -86,7 +86,7 @@
     line-height: 1.2;
   }
 
-  .profil-verified-icon { color: $green; flex-shrink: 0; }
+  .profil-verified-icon { color: var(--green); flex-shrink: 0; }
 
   // Ligne rôle / localisation / badge
   .profil-meta-row {
@@ -437,7 +437,7 @@
   .profil-link-green {
     font-size: 0.8rem;
     font-weight: 600;
-    color: $green;
+    color: var(--green);
     text-decoration: none;
 
     &:hover { text-decoration: underline; }
@@ -499,14 +499,14 @@
     // Focus : bordure verte + halo vert léger
     &:focus {
       background-color: var(--theme-bg-surface) !important;
-      border-color: $green !important;
-      box-shadow: 0 0 0 3px rgba($green, 0.14) !important;
+      border-color: var(--green) !important;
+      box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.14) !important;
       color: var(--theme-text-primary) !important;  // adaptatif de mode-clair
       outline: 2px solid transparent;               // WCAG de master
     }
 
     &:focus-visible {
-      outline: 2px solid $green !important;
+      outline: 2px solid var(--green) !important;
       outline-offset: 2px;
     }
 
@@ -685,7 +685,7 @@
 
 // XP en vert
 .achievement-hover-tip__xp {
-  color: #1EDD88;
+  color: var(--green);
 }
 
 // ── Modal Achievement — carte RONDE avec tilt 3D + shine + flottement ────────
@@ -867,12 +867,12 @@
 
 // ── VERSO ─────────────────────────────────────────────────────────────────────
 .achievement-modal-back {
-  background: radial-gradient(circle at 60% 65%, rgba(30,221,136,0.08), rgba(10,10,10,0.97));
-  border: 1px solid rgba(30, 221, 136, 0.2);
+  background: radial-gradient(circle at 60% 65%, rgba(var(--green-rgb), 0.08), rgba(10,10,10,0.97));
+  border: 1px solid rgba(var(--green-rgb), 0.2);
   box-shadow:
-    0 0 0 6px rgba(30,221,136,0.04),
+    0 0 0 6px rgba(var(--green-rgb), 0.04),
     0 20px 60px rgba(0,0,0,0.6),
-    inset 0 1px 0 rgba(30,221,136,0.1);
+    inset 0 1px 0 rgba(var(--green-rgb), 0.1);
   transform: rotateY(180deg);
   padding: 2rem;
   text-align: center;
@@ -901,8 +901,8 @@
 .achievement-modal-back-xp {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #1EDD88;
-  text-shadow: 0 0 16px rgba(30, 221, 136, 0.5);
+  color: var(--green);
+  text-shadow: 0 0 16px rgba(var(--green-rgb), 0.5);
 }
 
 // ── Reflet lumineux qui suit la souris ────────────────────────────────────────
@@ -935,20 +935,20 @@
 }
 
 .achievement-modal-unlocked {
-  color: #1EDD88;
-  background: rgba(30, 221, 136, 0.1);
-  border: 1px solid rgba(30, 221, 136, 0.3);
+  color: var(--green);
+  background: rgba(var(--green-rgb), 0.1);
+  border: 1px solid rgba(var(--green-rgb), 0.3);
 }
 
 // ── Bordure verte lumineuse quand déverrouillé ────────────────────────────────
 .achievement-modal-card.is-unlocked {
   .achievement-modal-front,
   .achievement-modal-back {
-    border: 2px solid #1EDD88;
+    border: 2px solid var(--green);
     box-shadow:
-      0 0 0 4px rgba(30, 221, 136, 0.18),   // halo intérieur
-      0 0 30px rgba(30, 221, 136, 0.45),     // glow moyen
-      0 0 70px rgba(30, 221, 136, 0.2),      // glow large
+      0 0 0 4px rgba(var(--green-rgb), 0.18),   // halo intérieur
+      0 0 30px rgba(var(--green-rgb), 0.45),     // glow moyen
+      0 0 70px rgba(var(--green-rgb), 0.2),      // glow large
       0 20px 60px rgba(0, 0, 0, 0.6);
   }
 }

@@ -81,7 +81,7 @@ export default class extends Controller {
       if (response.ok && data.success) {
         // ✅ Succès : remplace la card par un message "Noté ✓"
         card.innerHTML = `
-          <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.75rem; color:#1EDD88;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.75rem; color:var(--green);">
             <span style="font-size:1rem;">★</span>
             <span style="font-size:0.85rem; font-weight:600;">Avis envoyé !</span>
           </div>
@@ -249,7 +249,7 @@ export default class extends Controller {
     if (remaining === 0) {
       // Tous les joueurs de ce match ont été notés
       label.textContent = "Tous les joueurs ont été notés ✓"
-      label.style.color = "#1EDD88"
+      label.style.color = "var(--green)"
     } else {
       label.textContent = `encore ${remaining} ${remaining > 1 ? "joueurs" : "joueur"} à noter`
       label.style.color = ""

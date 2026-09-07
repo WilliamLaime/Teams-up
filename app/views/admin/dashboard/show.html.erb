@@ -7,9 +7,9 @@
 
   <%# ── En-tête ──────────────────────────────────────────────────────────── %>
   <div class="d-flex align-items-center gap-2 mb-4">
-    <i data-lucide="layout-dashboard" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <i data-lucide="layout-dashboard" style="width:22px; height:22px; color:var(--green);"></i>
     <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
-      Espace <span style="color:#1EDD88;">Admin</span>
+      Espace <span style="color:var(--green);">Admin</span>
     </h1>
   </div>
 
@@ -21,8 +21,8 @@
   <%# ══════════════════════════════════════════════════════════════════════ %>
 
   <div class="d-flex align-items-center gap-2 mb-3">
-    <i data-lucide="users" style="width:15px; height:15px; color:#1EDD88;"></i>
-    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+    <i data-lucide="users" style="width:15px; height:15px; color:var(--green);"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
       Utilisateurs
     </span>
   </div>
@@ -32,7 +32,7 @@
     <%# Card — Total utilisateurs %>
     <div class="col-6 col-md-3">
       <div class="match-block h-100 text-center">
-        <div style="font-size:2rem; font-weight:800; color:#1EDD88;"><%= @total_users %></div>
+        <div style="font-size:2rem; font-weight:800; color:var(--green);"><%= @total_users %></div>
         <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Inscrits au total</div>
       </div>
     </div>
@@ -53,7 +53,7 @@
         </div>
         <div class="d-flex flex-wrap gap-2">
           <% @users_by_genre.each do |genre, count| %>
-            <span class="badge" style="background:rgba(30,221,136,0.15); color:#1EDD88; font-size:0.8rem; padding:0.4rem 0.7rem; border-radius:6px;">
+            <span class="badge" style="background:rgba(var(--green-rgb), 0.15); color:var(--green); font-size:0.8rem; padding:0.4rem 0.7rem; border-radius:6px;">
               <%= genre.presence || "Non renseigné" %> — <%= count %>
             </span>
           <% end %>
@@ -68,8 +68,8 @@
   <%# ══════════════════════════════════════════════════════════════════════ %>
 
   <div class="d-flex align-items-center gap-2 mb-3">
-    <i data-lucide="trophy" style="width:15px; height:15px; color:#1EDD88;"></i>
-    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+    <i data-lucide="trophy" style="width:15px; height:15px; color:var(--green);"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
       Matchs
     </span>
   </div>
@@ -79,7 +79,7 @@
     <%# Card — Total matchs %>
     <div class="col-6 col-md-3">
       <div class="match-block h-100 text-center">
-        <div style="font-size:2rem; font-weight:800; color:#1EDD88;"><%= @total_matches %></div>
+        <div style="font-size:2rem; font-weight:800; color:var(--green);"><%= @total_matches %></div>
         <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Matchs créés</div>
       </div>
     </div>
@@ -110,7 +110,7 @@
           <% @matches_by_sport.sort_by { |_, v| -v }.each do |sport, count| %>
             <div class="d-flex justify-content-between align-items-center" style="font-size:0.82rem; margin-bottom:0.3rem;">
               <span style="color:rgba(255,255,255,0.7);"><%= sport %></span>
-              <span style="font-weight:700; color:#1EDD88;"><%= count %></span>
+              <span style="font-weight:700; color:var(--green);"><%= count %></span>
             </div>
           <% end %>
         <% else %>
@@ -126,8 +126,8 @@
   <%# ══════════════════════════════════════════════════════════════════════ %>
 
   <div class="d-flex align-items-center gap-2 mb-3">
-    <i data-lucide="star" style="width:15px; height:15px; color:#1EDD88;"></i>
-    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+    <i data-lucide="star" style="width:15px; height:15px; color:var(--green);"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
       Avis
     </span>
   </div>
@@ -137,7 +137,7 @@
     <%# Card — Total avis %>
     <div class="col-6 col-md-3">
       <div class="match-block h-100 text-center">
-        <div style="font-size:2rem; font-weight:800; color:#1EDD88;"><%= @total_avis %></div>
+        <div style="font-size:2rem; font-weight:800; color:var(--green);"><%= @total_avis %></div>
         <div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Avis laissés</div>
       </div>
     </div>
@@ -159,8 +159,8 @@
   <%# ══════════════════════════════════════════════════════════════════════ %>
 
   <div class="d-flex align-items-center gap-2 mb-3">
-    <i data-lucide="medal" style="width:15px; height:15px; color:#1EDD88;"></i>
-    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+    <i data-lucide="medal" style="width:15px; height:15px; color:var(--green);"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
       Top 5 joueurs
     </span>
   </div>
@@ -192,7 +192,7 @@
                   <%= profil.first_name %> <%= profil.last_name %>
                 <% end %>
               </td>
-              <td style="border-color:rgba(255,255,255,0.07); color:#1EDD88; font-weight:700; padding: 0.6rem 1rem;">
+              <td style="border-color:rgba(255,255,255,0.07); color:var(--green); font-weight:700; padding: 0.6rem 1rem;">
                 <%= profil.average_rating&.round(2) %> ★
               </td>
               <td style="border-color:rgba(255,255,255,0.07); color:rgba(255,255,255,0.6); padding: 0.6rem 1rem;">
@@ -217,8 +217,8 @@
   <%# ══════════════════════════════════════════════════════════════════════ %>
 
   <div class="d-flex align-items-center gap-2 mb-3">
-    <i data-lucide="user-plus" style="width:15px; height:15px; color:#1EDD88;"></i>
-    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+    <i data-lucide="user-plus" style="width:15px; height:15px; color:var(--green);"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
       Derniers inscrits
     </span>
   </div>

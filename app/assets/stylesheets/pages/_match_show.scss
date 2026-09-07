@@ -148,10 +148,10 @@
     justify-content: center;
     width: 38px;
     height: 38px;
-    background: rgba($green, 0.15);
-    border: 1px solid rgba($green, 0.35);
+    background: rgba(var(--green-rgb), 0.15);
+    border: 1px solid rgba(var(--green-rgb), 0.35);
     border-radius: 10px;
-    color: $green;
+    color: var(--green);
     flex-shrink: 0; // ne se réduit pas si le texte est long
   }
 
@@ -199,8 +199,8 @@
   gap: 0.35rem;
   padding: 0.35rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid rgba($green, 0.4);
-  background: rgba($green, 0.08);
+  border: 1px solid rgba(var(--green-rgb), 0.4);
+  background: rgba(var(--green-rgb), 0.08);
   color: rgba(255,255,255,0.75);
   font-size: 0.78rem;
   font-weight: 500;
@@ -209,13 +209,13 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 
   &:hover, &:focus {
-    background: rgba($green, 0.18);
-    border-color: rgba($green, 0.7);
+    background: rgba(var(--green-rgb), 0.18);
+    border-color: rgba(var(--green-rgb), 0.7);
     color: #fff;
   }
 
   &:focus-visible {
-    outline: 2px solid $green;
+    outline: 2px solid var(--green);
     outline-offset: 2px;
   }
 }
@@ -241,7 +241,7 @@
   transition: background 0.12s, color 0.12s;
 
   &:hover, &:focus {
-    background: rgba($green, 0.12);
+    background: rgba(var(--green-rgb), 0.12);
     color: #fff;
   }
 
@@ -258,8 +258,8 @@
   height: 40px;
   border-radius: 4px;
   background: $dark-surface;
-  border: 1px solid $green;
-  color: $green;
+  border: 1px solid var(--green);
+  color: var(--green);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,13 +290,13 @@
   cursor: pointer;
   transition: background 0.15s;
   text-decoration: none;
-  border: 1px solid $green;         // Bordure verte par défaut
+  border: 1px solid var(--green);         // Bordure verte par défaut
   background: $dark-surface;        // Fond sombre comme le bouton partage
-  color: $green;                    // Texte et icône verts
+  color: var(--green);                    // Texte et icône verts
 
   &:hover {
     background: rgba(255, 255, 255, 0.12);
-    color: $green;
+    color: var(--green);
   }
 
   // Variante danger (Supprimer) — bordure et texte rouges
@@ -360,7 +360,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: $green;
+    color: var(--green);
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
@@ -394,8 +394,8 @@
 // Bouton "Voir profil" — outline discret
 .match-profile-btn {
   font-size: 0.78rem;
-  color: $green !important;
-  border: 1px solid $green !important;
+  color: var(--green) !important;
+  border: 1px solid var(--green) !important;
   border-radius: 999px !important;
   padding: 0.3rem 0.85rem !important;
   display: inline-flex;
@@ -429,7 +429,7 @@
 .match-map-venue-name {
   font-size: 0.8rem;
   font-weight: 600;
-  color: $green;
+  color: var(--green);
   text-align: right;
   max-width: 160px;       // évite que le texte écrase le titre si long
   overflow: hidden;
@@ -530,15 +530,15 @@
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    color : $green;
-    border: 2px dashed $green;
+    color : var(--green);
+    border: 2px dashed var(--green);
     display: flex;
     align-items: center;
     justify-content: center;
     transition: gap 0.2s, color 0.2s;
   }
 
-  .match-player-name { color: $green; }
+  .match-player-name { color: var(--green); }
 
   &:hover {
     .match-player-avatar-empty {
@@ -608,7 +608,7 @@
 .match-block-join {
   // Fond blanc avec bordure verte — override du thème sombre
   background: #fff;
-  border: 1.5px solid $green;
+  border: 1.5px solid var(--green);
   color: #111; // texte sombre sur fond blanc
 
   // ── Phrase accrocheuse selon les places restantes ──
@@ -635,7 +635,7 @@
   .match-spots-fraction {
     font-size: 2rem;
     font-weight: 800;
-    color: $green; // vert
+    color: var(--green); // vert
     line-height: 1;
     margin-bottom: 0.25rem;
   }
@@ -680,7 +680,7 @@
   padding: 0.55rem 1rem;
   margin-bottom: 0.25rem;
 
-  &--approved   { background: rgba($green, 0.12); color: $green; }
+  &--approved   { background: rgba(var(--green-rgb), 0.12); color: var(--green); }
   &--organizer  { background: rgba($blue, 0.12); color: lighten($blue, 20%); }
   &--pending    { background: rgba($yellow, 0.12); color: $yellow; }
   &--waiting    { background: rgba($blue, 0.10); color: lighten($blue, 20%); }
@@ -721,7 +721,7 @@
   .match-chat-online-dot {
     font-size: 0.7rem;
     font-weight: 700;
-    color: $green;
+    color: var(--green);
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -730,7 +730,7 @@
       content: "";
       width: 6px;
       height: 6px;
-      background: $green;
+      background: var(--green);
       border-radius: 50%;
       display: inline-block;
     }
@@ -806,7 +806,7 @@
 .match-chat-open-btn {
   background: none;
   border: none;
-  color: $green;
+  color: var(--green);
   font-size: 0.82rem;
   font-weight: 700;
   padding: 0;
@@ -825,9 +825,9 @@
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: $green;
-  background: rgba($green, 0.12);
-  border: 1px solid rgba($green, 0.35);
+  color: var(--green);
+  background: rgba(var(--green-rgb), 0.12);
+  border: 1px solid rgba(var(--green-rgb), 0.35);
   border-radius: 999px;
   padding: 0.2rem 0.55rem;
 }
@@ -866,9 +866,9 @@
   justify-content: center;
   padding: 0.55rem 1.4rem;
   border-radius: 999px;
-  border: 1.5px solid $green;
+  border: 1.5px solid var(--green);
   background: transparent;
-  color: $green;
+  color: var(--green);
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
@@ -876,7 +876,7 @@
   transition: background 0.2s, color 0.2s;
 
   &:hover {
-    background: $green;
+    background: var(--green);
     color: $dark-bg; // texte sombre sur fond vert au survol
   }
 }
@@ -952,12 +952,12 @@
   height: 46px;
   min-width: 46px;
   border-radius: 50%;
-  background: rgba($green, 0.12);
-  border: 1px solid rgba($green, 0.3);
+  background: rgba(var(--green-rgb), 0.12);
+  border: 1px solid rgba(var(--green-rgb), 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $green;
+  color: var(--green);
 }
 
 // Titre principal de la modale
@@ -998,8 +998,8 @@
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23f0f0f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 
   &:focus {
-    border-color: $green;
-    box-shadow: 0 0 0 0.2rem rgba($green, 0.15);
+    border-color: var(--green);
+    box-shadow: 0 0 0 0.2rem rgba(var(--green-rgb), 0.15);
     background-color: var(--theme-input-focus-bg);
     color: var(--theme-input-color);
   }
@@ -1089,9 +1089,9 @@
 
   // Rôle préféré — vert discret
   &--role {
-    background: rgba($green, 0.12);
-    color: $green;
-    border: 1px solid rgba($green, 0.3);
+    background: rgba(var(--green-rgb), 0.12);
+    color: var(--green);
+    border: 1px solid rgba(var(--green-rgb), 0.3);
   }
 }
 
@@ -1112,11 +1112,11 @@
   align-items: center;
   gap: 0.3rem;
   font-size: 0.72rem;
-  color: $green;
+  color: var(--green);
   text-decoration: none;
   transition: color 0.15s;
 
-  &:hover { color: lighten($green, 10%); }
+  &:hover { color: var(--green-l10); }
 }
 
 // Boutons accepter / refuser à droite de la ligne
@@ -1145,11 +1145,11 @@
 
   // Accepter — vert
   &--approve {
-    background: rgba($green, 0.15);
-    color: $green;
-    border: 1px solid rgba($green, 0.5);
+    background: rgba(var(--green-rgb), 0.15);
+    color: var(--green);
+    border: 1px solid rgba(var(--green-rgb), 0.5);
 
-    &:hover { background: $green; color: #111; }
+    &:hover { background: var(--green); color: #111; }
   }
 
   // Refuser — rouge
@@ -1217,13 +1217,13 @@
 .join-modal-icon {
   width: 56px;
   height: 56px;
-  background: rgba($green, 0.12);
+  background: rgba(var(--green-rgb), 0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
-  color: $green;
+  color: var(--green);
 }
 
 // Titre de la modal
@@ -1260,8 +1260,8 @@
 
   &::placeholder { color: var(--theme-text-muted); }
   &:focus {
-    border-color: $green !important;
-    box-shadow: 0 0 0 2px rgba($green, 0.2) !important;
+    border-color: var(--green) !important;
+    box-shadow: 0 0 0 2px rgba(var(--green-rgb), 0.2) !important;
     background: var(--theme-input-focus-bg) !important;  // adaptatif
   }
 }
@@ -1315,13 +1315,13 @@
 .share-modal-icon {
   width: 56px;
   height: 56px;
-  background: rgba($green, 0.12);
+  background: rgba(var(--green-rgb), 0.12);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1rem;
-  color: $green;
+  color: var(--green);
 }
 
 // Titre
@@ -1380,10 +1380,10 @@
 
   // Couleurs de fond spécifiques par réseau
   &.share-copy-icon     { background: rgba(255,255,255,0.1);   color: #fff; }
-  &.share-check-icon    { background: rgba($green, 0.2);        color: $green; }
+  &.share-check-icon    { background: rgba(var(--green-rgb), 0.2);        color: var(--green); }
   &.share-whatsapp-icon { background: rgba(37,211,102,0.15); }
   &.share-messenger-icon{ background: rgba(0,153,255,0.15); }
-  &.share-sms-icon      { background: rgba($green, 0.12);       color: $green; }
+  &.share-sms-icon      { background: rgba(var(--green-rgb), 0.12);       color: var(--green); }
 }
 
 // Libellé sous l'icône
@@ -1432,9 +1432,9 @@
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  background: rgba($green, 0.15);
-  border: 2px solid rgba($green, 0.4);
-  color: $green;
+  background: rgba(var(--green-rgb), 0.15);
+  border: 2px solid rgba(var(--green-rgb), 0.4);
+  color: var(--green);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1480,7 +1480,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.7rem 1rem;
-  background: $green;
+  background: var(--green);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -1490,7 +1490,7 @@
   transition: background 0.15s;
 
   &:hover, &:focus {
-    background: darken($green, 8%);
+    background: var(--green-d8);
     color: #fff;
   }
 
@@ -1531,9 +1531,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  background: rgba($green, 0.12);
-  border: 1.5px solid rgba($green, 0.35);
-  color: $green;
+  background: rgba(var(--green-rgb), 0.12);
+  border: 1.5px solid rgba(var(--green-rgb), 0.35);
+  color: var(--green);
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.88rem;
@@ -1541,9 +1541,9 @@
   transition: background 0.2s, border-color 0.2s;
 
   &:hover {
-    background: rgba($green, 0.22);
-    border-color: rgba($green, 0.6);
-    color: $green;
+    background: rgba(var(--green-rgb), 0.22);
+    border-color: rgba(var(--green-rgb), 0.6);
+    color: var(--green);
     text-decoration: none;
   }
 }
@@ -1564,9 +1564,9 @@
   transition: all 0.2s;
 
   &:hover {
-    background: rgba($green, 0.1);
-    border-color: rgba($green, 0.3);
-    color: $green;
+    background: rgba(var(--green-rgb), 0.1);
+    border-color: rgba(var(--green-rgb), 0.3);
+    color: var(--green);
   }
 }
 
@@ -1577,9 +1577,9 @@
   gap: 0.35rem;
   font-size: 0.78rem;
   font-weight: 600;
-  color: $green;
-  background: rgba($green, 0.08);
-  border: 1px solid rgba($green, 0.2);
+  color: var(--green);
+  background: rgba(var(--green-rgb), 0.08);
+  border: 1px solid rgba(var(--green-rgb), 0.2);
   border-radius: 8px;
   padding: 0.4rem 0.75rem;
 }
@@ -1633,9 +1633,9 @@
   line-height: 1;
 
   &--paid {
-    background: rgba($green, 0.15);
-    color: $green;
-    border: 1px solid rgba($green, 0.25);
+    background: rgba(var(--green-rgb), 0.15);
+    color: var(--green);
+    border: 1px solid rgba(var(--green-rgb), 0.25);
   }
 
   &--unpaid {
@@ -1658,5 +1658,5 @@
   font-size: 0;
   transition: color 0.15s;
 
-  &:hover { color: $green; }
+  &:hover { color: var(--green); }
 }

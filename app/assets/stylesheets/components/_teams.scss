@@ -35,7 +35,7 @@
   transition: border-color 0.2s ease, transform 0.15s ease;
 
   &:hover {
-    border-color: rgba(30, 221, 136, 0.35);
+    border-color: rgba(var(--green-rgb), 0.35);
     transform: translateY(-2px);
   }
 
@@ -91,7 +91,7 @@
     border-radius: 20px;
     margin-bottom: 0.2rem;
 
-    &.captain { background: rgba(30, 221, 136, 0.15); color: #1EDD88; }
+    &.captain { background: rgba(var(--green-rgb), 0.15); color: var(--green); }
     &.member  { background: var(--theme-hover-bg); color: var(--theme-text-muted); } // adaptatif
   }
 
@@ -363,8 +363,8 @@
 
     &:focus {
       background-color: var(--theme-bg-surface) !important;
-      border-color: rgba(30, 221, 136, 0.5);
-      box-shadow: 0 0 0 0.2rem rgba(30, 221, 136, 0.15);
+      border-color: rgba(var(--green-rgb), 0.5);
+      box-shadow: 0 0 0 0.2rem rgba(var(--green-rgb), 0.15);
       color: var(--theme-text-primary) !important;
     }
   }
@@ -470,7 +470,7 @@
   border-radius: 20px;
   width: fit-content;
 
-  &.captain { background: rgba(30, 221, 136, 0.15); color: #1EDD88; }
+  &.captain { background: rgba(var(--green-rgb), 0.15); color: var(--green); }
   &.member  { background: var(--theme-hover-bg); color: var(--theme-text-muted); } // adaptatif
 }
 
@@ -559,8 +559,8 @@
 
 // Carte invitation reçue (bannière verte) — couleurs vertes intentionnelles
 .team-invitation-card {
-  background: rgba(30, 221, 136, 0.06);
-  border: 1px solid rgba(30, 221, 136, 0.2);
+  background: rgba(var(--green-rgb), 0.06);
+  border: 1px solid rgba(var(--green-rgb), 0.2);
   border-radius: 12px;
   padding: 0.85rem 1rem;
   display: flex;
@@ -597,9 +597,9 @@
   align-items: center;
 
   &.active, &:hover {
-    background: rgba(30, 221, 136, 0.12);
-    border-color: rgba(30, 221, 136, 0.35);
-    color: #1EDD88;
+    background: rgba(var(--green-rgb), 0.12);
+    border-color: rgba(var(--green-rgb), 0.35);
+    color: var(--green);
   }
 }
 
@@ -658,15 +658,15 @@
   }
 
   &:hover {
-    border-color: rgba(30, 221, 136, 0.4);
-    background: rgba(30, 221, 136, 0.08);
-    svg path, svg circle { fill: rgba(30, 221, 136, 0.35); stroke: rgba(30, 221, 136, 0.7); }
+    border-color: rgba(var(--green-rgb), 0.4);
+    background: rgba(var(--green-rgb), 0.08);
+    svg path, svg circle { fill: rgba(var(--green-rgb), 0.35); stroke: rgba(var(--green-rgb), 0.7); }
   }
 
   &.active {
-    border-color: #1EDD88;
-    background: rgba(30, 221, 136, 0.12);
-    svg path, svg circle { fill: rgba(30, 221, 136, 0.4); stroke: #1EDD88; }
+    border-color: var(--green);
+    background: rgba(var(--green-rgb), 0.12);
+    svg path, svg circle { fill: rgba(var(--green-rgb), 0.4); stroke: var(--green); }
   }
 }
 
@@ -690,7 +690,7 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
 
   &:hover  { transform: scale(1.2); }
-  &.active { border-color: #1EDD88; transform: scale(1.2); box-shadow: 0 0 0 2px rgba(30, 221, 136, 0.5); }
+  &.active { border-color: var(--green); transform: scale(1.2); box-shadow: 0 0 0 2px rgba(var(--green-rgb), 0.5); }
 }
 
 // Grille de symboles emoji — adaptatif
@@ -714,8 +714,8 @@
   justify-content: center;
   transition: all 0.15s;
 
-  &:hover  { background: rgba(30, 221, 136, 0.12); border-color: rgba(30, 221, 136, 0.3); }
-  &.active { background: rgba(30, 221, 136, 0.2);  border-color: #1EDD88; }
+  &:hover  { background: rgba(var(--green-rgb), 0.12); border-color: rgba(var(--green-rgb), 0.3); }
+  &.active { background: rgba(var(--green-rgb), 0.2);  border-color: var(--green); }
 }
 
 // ── Slider zoom bannière + slider taille logo blason — adaptatif ──────────────
@@ -746,7 +746,7 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid $green;
+    outline: 2px solid var(--green);
     outline-offset: 2px;
   }
 
@@ -757,9 +757,9 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #1EDD88;
+    background: var(--green);
     cursor: pointer;
-    box-shadow: 0 0 4px rgba(30, 221, 136, 0.5);
+    box-shadow: 0 0 4px rgba(var(--green-rgb), 0.5);
     transition: transform 0.1s;
 
     &:hover { transform: scale(1.2); }
@@ -770,10 +770,10 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #1EDD88;
+    background: var(--green);
     cursor: pointer;
     border: none;
-    box-shadow: 0 0 4px rgba(30, 221, 136, 0.5);
+    box-shadow: 0 0 4px rgba(var(--green-rgb), 0.5);
   }
 }
 
@@ -781,7 +781,7 @@
 .cover-zoom-value {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #1EDD88;
+  color: var(--green);
   min-width: 36px;
   text-align: right;
   flex-shrink: 0;
@@ -876,7 +876,7 @@
   transition: border-color 0.15s;
 
   &:focus-within {
-    border-color: rgba(30, 221, 136, 0.4); // vert au focus
+    border-color: rgba(var(--green-rgb), 0.4); // vert au focus
   }
 }
 
@@ -893,7 +893,7 @@
   &::placeholder { color: var(--theme-text-muted); } // adaptatif
 
   &:focus-visible {
-    outline: 2px solid $green;
+    outline: 2px solid var(--green);
     outline-offset: 2px;
   }
 }
@@ -901,10 +901,10 @@
 // Bouton "Inviter" intégré à droite de l'input
 .invite-search-btn {
   flex-shrink: 0;
-  background: rgba(30, 221, 136, 0.15);
+  background: rgba(var(--green-rgb), 0.15);
   border: none;
   border-left: 1px solid var(--theme-border); // était rgba(255,255,255,0.08) — adaptatif
-  color: #1EDD88;
+  color: var(--green);
   font-size: 0.82rem;
   font-weight: 700;
   padding: 0.55rem 1rem;
@@ -912,7 +912,7 @@
   transition: background 0.15s, color 0.15s;
 
   &:hover {
-    background: rgba(30, 221, 136, 0.28);
+    background: rgba(var(--green-rgb), 0.28);
     color: #fff;
   }
 }
@@ -940,7 +940,7 @@
   text-align: left;
   transition: background 0.15s;
 
-  &:hover { background: rgba(30, 221, 136, 0.08); }
+  &:hover { background: rgba(var(--green-rgb), 0.08); }
   & + & { border-top: 1px solid var(--theme-border); } // séparateur adaptatif
 
   // Personne déjà co-organisatrice du tournoi : proposée mais non sélectionnable.

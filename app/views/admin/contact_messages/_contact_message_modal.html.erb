@@ -13,7 +13,7 @@
       <%# ── En-tête de la modale ── %>
       <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.07); padding:1.25rem 1.5rem;">
         <div class="d-flex align-items-center gap-2">
-          <i data-lucide="mail" style="width:16px; height:16px; color:#1EDD88;"></i>
+          <i data-lucide="mail" style="width:16px; height:16px; color:var(--green);"></i>
           <h5 class="modal-title" id="modal-label-<%= msg.id %>"
               style="margin:0; font-size:1rem; font-weight:600; color:#fff;">
             <%= msg.sujet %>
@@ -36,7 +36,7 @@
           </div>
           <div>
             <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Email</span>
-            <%= mail_to msg.email, msg.email, style: "color:#1EDD88; font-weight:500;" %>
+            <%= mail_to msg.email, msg.email, style: "color:var(--green); font-weight:500;" %>
           </div>
           <div>
             <span style="color:rgba(255,255,255,0.4); text-transform:uppercase; font-size:0.7rem; letter-spacing:0.06em; display:block; margin-bottom:2px;">Reçu le</span>
@@ -56,7 +56,7 @@
         <%# ── Formulaire de réponse ── %>
         <div style="border-top:1px solid rgba(255,255,255,0.07); padding-top:1.25rem;">
           <div class="d-flex align-items-center gap-2 mb-3">
-            <i data-lucide="reply" style="width:14px; height:14px; color:#1EDD88;"></i>
+            <i data-lucide="reply" style="width:14px; height:14px; color:var(--green);"></i>
             <span style="color:#fff; font-size:0.9rem; font-weight:600;">Répondre à <%= msg.prenom %></span>
           </div>
 
@@ -78,7 +78,7 @@
               </button>
               <%= f.submit "Envoyer la réponse",
                   class: "btn btn-sm",
-                  style: "background:#1EDD88; color:#111; border:none; font-weight:600;" %>
+                  style: "background:var(--green); color:#111; border:none; font-weight:600;" %>
             </div>
           <% end %>
         </div>

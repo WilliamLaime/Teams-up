@@ -295,8 +295,8 @@
 
   // Variant "Amis" — vert
   &--friends {
-    color: #1EDD88;
-    border: 1px solid rgba(30, 221, 136, 0.3);
+    color: var(--green);
+    border: 1px solid rgba(var(--green-rgb), 0.3);
     background: transparent;
   }
 
@@ -322,13 +322,13 @@
 
   // Variant vert : Ajouter, Accepter
   &--add {
-    color: #1EDD88;
-    background: rgba(30, 221, 136, 0.1);
-    border: 1px solid rgba(30, 221, 136, 0.3);
+    color: var(--green);
+    background: rgba(var(--green-rgb), 0.1);
+    border: 1px solid rgba(var(--green-rgb), 0.3);
 
     &:hover {
-      background: rgba(30, 221, 136, 0.18);
-      border-color: rgba(30, 221, 136, 0.5);
+      background: rgba(var(--green-rgb), 0.18);
+      border-color: rgba(var(--green-rgb), 0.5);
     }
   }
 

@@ -116,7 +116,7 @@
     left: 50%;
     width: 0;
     height: 2px;
-    background-color: $green;
+    background-color: var(--green);
     border-radius: 2px;
     transform: translateX(-50%);
     transition: width 0.25s ease;
@@ -188,22 +188,22 @@
   }
 
   &:hover .nav-pwa-icon {
-    color: $green;
+    color: var(--green);
   }
 
   // Desktop (lg+) : style bouton secondaire — bordure verte + texte vert
   @media (min-width: 992px) {
-    border-color: $green;
-    color: $green;
+    border-color: var(--green);
+    color: var(--green);
     padding: 5px 12px;
 
     .nav-pwa-icon {
-      color: $green;
+      color: var(--green);
     }
 
     &:hover {
-      background-color: rgba($green, 0.08);
-      color: $green;
+      background-color: rgba(var(--green-rgb), 0.08);
+      color: var(--green);
     }
   }
 }
@@ -217,7 +217,7 @@
   }
 
   &:hover .notif-bell-icon {
-    color: $green;
+    color: var(--green);
   }
 }
 
@@ -281,7 +281,7 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background-color: $green;
+  background-color: var(--green);
   // Anneau qui change selon le thème pour ressortir sur n'importe quel fond
   box-shadow: 0 0 0 2px var(--theme-nav-bg);
 
@@ -363,7 +363,7 @@
     // Scrollbar discrète sur webkit (Chrome, Safari)
     &::-webkit-scrollbar { width: 4px; }
     &::-webkit-scrollbar-track { background: transparent; }
-    &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+    &::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
   }
 
   // Wrapper relatif pour positionner la croix de suppression.
@@ -375,7 +375,7 @@
 
     // Fond vert léger pour les notifs non lues — couvre toute la carte
     &.notif-unread-item {
-      background: rgba($green, 0.07);
+      background: rgba(var(--green-rgb), 0.07);
     }
 
     // Hover sur toute la carte
@@ -450,7 +450,7 @@
 
 .pwa-modal-content {
   background: #1a1c1a !important;
-  border: 1px solid rgba(30, 221, 136, 0.2) !important;
+  border: 1px solid rgba(var(--green-rgb), 0.2) !important;
   border-radius: 16px !important;
   overflow: hidden;
 }
@@ -520,7 +520,7 @@
 .review-modal-body {
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+  &::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
 }
 
 // Empêche Bootstrap d'ajouter un padding-right au body quand une modale s'ouvre.
@@ -634,7 +634,7 @@ body.modal-open {
     &::placeholder { color: var(--theme-input-placeholder); }
     &:focus {
       background-color: var(--theme-input-focus-bg);
-      border-color: $green;
+      border-color: var(--green);
       box-shadow: none;
       color: var(--theme-input-color);
     }
@@ -662,7 +662,7 @@ body.modal-open {
 
 // ── Drawer navigation mobile (offcanvas-start Bootstrap 5) ───────────────
 // Mode sombre : fond #111111. Mode clair : fond $light-gray (#F4F4F4) — pas blanc pur
-// pour garder un contraste suffisant avec les éléments clairs comme $green.
+// pour garder un contraste suffisant avec les éléments clairs comme var(--green).
 // Les composants Bootstrap offcanvas utilisent z-index: 1045 — au-dessus du sticky-top.
 .navbar-offcanvas {
   background-color: var(--theme-nav-bg) !important; // suit le thème dark/light
@@ -739,14 +739,15 @@ body.modal-open {
 
     // Lien actif (page courante) : vert + fond légèrement coloré
     &.active {
-      color: $green;
-      background: rgba($green, 0.08);
+      color: var(--green);
+      background: rgba(var(--green-rgb), 0.08);
 
-      // Mode clair : $green (#1EDD88) sur fond clair = contraste ~1.7:1 — illisible.
-      // On force un vert foncé lisible sur fond clair.
+      // Mode clair : le vert plein sur fond clair est trop peu contrasté pour du
+      // texte. --green-readable est la variante assombrie du vert du thème
+      // (#007A37, ~5:1 sur #F4F4F4) — voir green-tokens() dans config/_colors.scss.
       [data-theme="light"] & {
-        color: darken($green, 35%); // ~#0a5e38 — vert sombre, contraste > 5:1 sur #F4F4F4
-        background: rgba($green, 0.12);
+        color: var(--green-readable);
+        background: rgba(var(--green-rgb), 0.12);
       }
     }
   }

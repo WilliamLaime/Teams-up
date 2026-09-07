@@ -10,7 +10,7 @@
 
 <%# Couleur unique par utilisateur (stable, basée sur son ID) %>
 <%# Utilisée pour l'avatar fallback ET la couleur de son nom dans la bulle %>
-<% user_colors = %w[#1EDD88 #00BCD4 #9C27B0 #FF5722 #2196F3 #FF9800 #E91E63] %>
+<% user_colors = %w[var(--green) #00BCD4 #9C27B0 #FF5722 #2196F3 #FF9800 #E91E63] %>
 <% user_color = user_colors[message.user_id % user_colors.length] %>
 
 <%# Vérifie si l'utilisateur a une photo de profil Active Storage %>

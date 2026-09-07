@@ -160,9 +160,9 @@ export default class extends Controller {
     btn.style.setProperty("border-radius", "0.5rem")
     btn.style.setProperty("font-size", "0.9rem")
     btn.style.setProperty("cursor", "pointer")
-    btn.style.setProperty("border",     active ? "2px solid #1EDD88"       : "2px solid var(--theme-border-strong)", "important")
-    btn.style.setProperty("background", active ? (hover ? "rgba(30,221,136,0.08)" : "rgba(30,221,136,0.12)") : "var(--theme-hover-bg)", "important")
-    btn.style.setProperty("color",      active ? "#1EDD88"                  : "var(--theme-text-primary)", "important")
+    btn.style.setProperty("border",     active ? "2px solid var(--green)"       : "2px solid var(--theme-border-strong)", "important")
+    btn.style.setProperty("background", active ? (hover ? "rgba(var(--green-rgb), 0.08)" : "rgba(var(--green-rgb), 0.12)") : "var(--theme-hover-bg)", "important")
+    btn.style.setProperty("color",      active ? "var(--green)"                  : "var(--theme-text-primary)", "important")
   }
 
   _applyFormat(value, clickedBtn) {

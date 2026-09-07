@@ -22,15 +22,16 @@
 
 
 // ── Bouton Primaire ──────────────────────────────────
-// Fond vert (Bootstrap btn-primary mappé sur $green)
+// Fond vert (Bootstrap btn-primary mappé sur le vert du thème)
 // Hover : vert légèrement assombri
 .btn-cta-primary {
-  // Les styles de couleur viennent de Bootstrap via $primary: $green
+  // Les styles de couleur viennent de Bootstrap via $primary: $green,
+  // dont --bs-primary est surchargé en mode clair (config/_colors.scss)
   // défini dans config/_bootstrap_variables.scss
 
   &:hover {
-    background-color: darken($green, 10%); // vert assombri de 10% au survol
-    border-color: darken($green, 10%);     // bordure assortie
+    background-color: var(--green-d10); // vert assombri de 10% au survol
+    border-color: var(--green-d10);     // bordure assortie
     color: #111111;                        // texte sombre pour le contraste sur fond vert clair
   }
 }
@@ -45,8 +46,8 @@
 // État "actif" appliqué par JS (star_rating_controller) une fois les étoiles sélectionnées
 // Reprend exactement l'état hover pour signaler que le bouton est prêt à être cliqué
 .btn-cta-primary--rated {
-  background-color: darken($green, 10%) !important;
-  border-color: darken($green, 10%) !important;
+  background-color: var(--green-d10) !important;
+  border-color: var(--green-d10) !important;
   color: #111111 !important;
 }
 
@@ -57,7 +58,7 @@
 .btn-cta-link {
   background: none;
   border: none;
-  color: $green;                              // texte vert
+  color: var(--green);                              // texte vert
   font-size: 0.875rem;                        // aligné avec btn-sm
   font-weight: 500;
   text-decoration: none;
@@ -68,8 +69,8 @@
   transition: color 0.15s, background 0.15s;
 
   &:hover {
-    background: rgba($green, 0.1);           // légère teinte verte au survol
-    color: $green;
+    background: rgba(var(--green-rgb), 0.1);           // légère teinte verte au survol
+    color: var(--green);
     border-radius: 3px;
   }
 }
@@ -79,8 +80,8 @@
 // Trois états gérés par push_notification_controller.js
 .btn-push-inactive {
   background: var(--theme-bg-card);
-  color: $green;
-  border: 1.5px solid $green;
+  color: var(--green);
+  border: 1.5px solid var(--green);
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -88,13 +89,13 @@
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba($green, 0.1); }
+  &:hover { background: rgba(var(--green-rgb), 0.1); }
 }
 
 .btn-push-active {
-  background: rgba($green, 0.12);
-  color: $green;
-  border: 1.5px solid $green;
+  background: rgba(var(--green-rgb), 0.12);
+  color: var(--green);
+  border: 1.5px solid var(--green);
   border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -122,8 +123,8 @@
 // Hover : légère surbrillance + bordure forte
 .btn-cta-secondary {
   background: var(--theme-bg-card);  // fond adaptatif — sombre en dark, carte en clair
-  color: $green;                     // texte vert
-  border: 1.5px solid $green;        // bordure verte fine
+  color: var(--green);                     // texte vert
+  border: 1.5px solid var(--green);        // bordure verte fine
 
   &:hover {
     background: var(--theme-hover-bg);       // surbrillance adaptative au survol

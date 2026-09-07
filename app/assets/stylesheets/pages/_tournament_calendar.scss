@@ -72,8 +72,8 @@
   // le seul à porter une bordure pleine.
   &__view[aria-pressed="true"] {
     background-color: var(--theme-hover-bg);
-    border-color: $green;
-    color: $green;
+    border-color: var(--green);
+    color: var(--green);
   }
 
   // Note sous la grille : aucune rencontre n'a de créneau dans TOUT le tournoi.
@@ -129,10 +129,10 @@
     }
 
     &--today {
-      border-color: $green;
+      border-color: var(--green);
 
       .tcal-month__num {
-        background-color: $green;
+        background-color: var(--green);
         border-radius: 999px;
         color: #111;
         padding: 0 0.35rem;
@@ -160,7 +160,7 @@
     text-align: left;
     width: 100%;
 
-    &:hover { color: $green; }
+    &:hover { color: var(--green); }
   }
 }
 
@@ -177,7 +177,7 @@
     min-height: 220px;
     padding: 0.4rem;
 
-    &--today { border-color: $green; }
+    &--today { border-color: var(--green); }
 
     &--empty { opacity: 0.6; }
   }
@@ -218,7 +218,7 @@
     text-transform: capitalize;
   }
 
-  &__day--today .tcal-agenda__head { color: $green; }
+  &__day--today .tcal-agenda__head { color: var(--green); }
 
   &__list {
     display: flex;
@@ -233,7 +233,7 @@
 // ── Vignette d'une rencontre ───────────────────────────
 .tcal-event {
   background-color: var(--theme-surface);
-  border-left: 3px solid $green;
+  border-left: 3px solid var(--green);
   border-radius: 5px;
   color: var(--theme-text-primary);
   display: block;
@@ -253,7 +253,7 @@
 
   // « Je joue ce jour-là » : se repère sans lire les noms, même repère visuel
   // que .tmatch-card--mine sur le board.
-  &--mine { box-shadow: 0 0 0 1px rgba($green, 0.55); }
+  &--mine { box-shadow: 0 0 0 1px rgba(var(--green-rgb), 0.55); }
 
   &__line {
     align-items: baseline;

@@ -34,7 +34,7 @@ export default class extends Controller {
     const allStars = this.starsTarget.querySelectorAll("span")
     allStars.forEach((star, index) => {
       if (index < value) {
-        star.style.color = "#1EDD88"  // étoile pleine
+        star.style.color = "var(--green)"  // étoile pleine
       } else {
         star.style.color = "var(--theme-text-muted)"  // étoile vide — couleur selon le thème
       }

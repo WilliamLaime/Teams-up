@@ -64,14 +64,14 @@
   font-family: $display-font;   // Bebas Neue
   font-size: 1.4rem;
   font-weight: 400;
-  color: $green;                // #1EDD88
+  color: var(--green);
   text-decoration: none;
   letter-spacing: 0.05em;
   transition: color 0.15s ease;
   display: block;
 
   &:hover {
-    color: lighten($green, 10%);
+    color: var(--green-l10);
     text-decoration: underline;
   }
 
@@ -80,8 +80,8 @@
   }
 
   &:focus-visible {
-    color: lighten($green, 10%);
-    outline: 2px solid $green;
+    color: var(--green-l10);
+    outline: 2px solid var(--green);
     outline-offset: 3px;
     border-radius: 2px;
   }

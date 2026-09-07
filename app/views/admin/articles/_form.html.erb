@@ -4,9 +4,9 @@
 <div class="container py-4" style="max-width:860px;">
 
   <div class="d-flex align-items-center gap-2 mb-4">
-    <i data-lucide="file-text" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <i data-lucide="file-text" style="width:22px; height:22px; color:var(--green);"></i>
     <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
-      Espace <span style="color:#1EDD88;">Admin</span>
+      Espace <span style="color:var(--green);">Admin</span>
     </h1>
   </div>
 
@@ -103,7 +103,7 @@
       <%# Boutons %>
       <div class="d-flex gap-3">
         <%= f.submit article.new_record? ? "Enregistrer le brouillon" : "Mettre à jour",
-              style: "background:#1EDD88; color:#111; border:none; font-weight:700; font-size:0.9rem;
+              style: "background:var(--green); color:#111; border:none; font-weight:700; font-size:0.9rem;
                       padding:0.65rem 1.4rem; border-radius:8px; cursor:pointer;" %>
         <%= link_to "Annuler", admin_articles_path,
               style: "color:rgba(255,255,255,0.4); font-size:0.88rem; text-decoration:none; padding:0.65rem 0; display:inline-block;" %>

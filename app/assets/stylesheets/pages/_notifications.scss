@@ -23,18 +23,18 @@
   align-items: center;
   transition: color 0.2s;
 
-  &:hover { color: $green; }
+  &:hover { color: var(--green); }
 }
 
 // Badge "X non lues" à côté du titre
 .notif-page-badge {
-  background: rgba($green, 0.15);
-  color: $green;
+  background: rgba(var(--green-rgb), 0.15);
+  color: var(--green);
   font-size: 0.75rem;
   font-weight: 600;
   padding: 2px 10px;
   border-radius: 20px;
-  border: 1px solid rgba($green, 0.3);
+  border: 1px solid rgba(var(--green-rgb), 0.3);
 }
 
 // Conteneur de la liste
@@ -53,8 +53,8 @@
 
   // Non lue : léger fond vert
   &.is-unread {
-    background: rgba($green, 0.05);
-    &:hover { background: rgba($green, 0.1); }
+    background: rgba(var(--green-rgb), 0.05);
+    &:hover { background: rgba(var(--green-rgb), 0.1); }
   }
 
   // Lue : fond neutre, hover léger
@@ -98,7 +98,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: $green;
+  background: var(--green);
   flex-shrink: 0;
   align-self: center;   // centré verticalement plutôt que collé en haut
   margin-right: 1.5rem; // laisse la place au bouton poubelle (≈ 23px + marge)

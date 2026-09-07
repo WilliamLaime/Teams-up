@@ -64,7 +64,7 @@
         cliqué sur "Marquer comme vu". Efface les points navbar + carte équipe. %>
     <% if @team.has_new_members_for_captain?(current_user) %>
       <div id="team-new-members-banner" class="team-new-members-banner"
-           style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:12px 0; padding:10px 16px; border-radius:12px; background:rgba(30,221,136,0.12); border:1px solid rgba(30,221,136,0.35); color:var(--theme-text-primary); font-weight:600;">
+           style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:12px 0; padding:10px 16px; border-radius:12px; background:rgba(var(--green-rgb), 0.12); border:1px solid rgba(var(--green-rgb), 0.35); color:var(--theme-text-primary); font-weight:600;">
         <span>
           <i data-lucide="user-plus" style="width:15px;height:15px;vertical-align:middle;"></i>
           <%= @team.new_members_count_for_captain(current_user) %>
@@ -624,7 +624,7 @@
               <%= link_to match_path(match), style: "display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.75rem; border-radius:8px; background:var(--theme-hover-bg); border:1px solid var(--theme-border); text-decoration:none; transition:background 0.15s;", data: { turbo_frame: "_top" } do %>
 
                 <%# Icône sport %>
-                <div style="flex-shrink:0; width:34px; height:34px; border-radius:6px; background:rgba(30,221,136,0.1); display:flex; align-items:center; justify-content:center;">
+                <div style="flex-shrink:0; width:34px; height:34px; border-radius:6px; background:rgba(var(--green-rgb), 0.1); display:flex; align-items:center; justify-content:center;">
                   <span style="font-size:1rem;line-height:1;"><%= match.sport&.icon.presence || "🏃" %></span>
                 </div>
 
@@ -645,7 +645,7 @@
                     <i data-lucide="lock" style="width:9px;height:9px;margin-right:2px;"></i>Privé
                   </span>
                 <% else %>
-                  <span style="font-size:0.68rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:20px; background:rgba(30,221,136,0.15); color:#1EDD88;">
+                  <span style="font-size:0.68rem; font-weight:600; padding:0.15rem 0.5rem; border-radius:20px; background:rgba(var(--green-rgb), 0.15); color:var(--green);">
                     <i data-lucide="globe" style="width:9px;height:9px;margin-right:2px;"></i>Public
                   </span>
                 <% end %>
@@ -657,7 +657,7 @@
           <p style="color:var(--theme-text-muted); font-size:0.85rem; margin:0;">
             Aucun match pour cette équipe.
             <% if @team.captain?(current_user) %>
-              <%= link_to "Créer le premier !", new_match_path(team_id: @team.id), style: "color:#1EDD88;", data: { turbo_frame: "_top" } %>
+              <%= link_to "Créer le premier !", new_match_path(team_id: @team.id), style: "color:var(--green);", data: { turbo_frame: "_top" } %>
             <% end %>
           </p>
         <% end %>

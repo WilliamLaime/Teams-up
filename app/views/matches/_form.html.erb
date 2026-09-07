@@ -368,7 +368,7 @@
               <%# En-tête de la modale %>
               <div class="modal-header map-picker-modal-header">
                 <h5 class="modal-title" id="mapPickerModalLabel">
-                  <i data-lucide="map-pin" style="width:16px; height:16px; color:#1EDD88; margin-right:6px;"></i>
+                  <i data-lucide="map-pin" style="width:16px; height:16px; color:var(--green); margin-right:6px;"></i>
                   Choisir un lieu sur la carte
                 </h5>
                 <button type="button"
@@ -419,7 +419,7 @@
                 <%# Zone d'affichage de l'adresse reverse-géocodée
                     Remplie par Stimulus après le clic sur la carte %>
                 <div class="map-picker-address-wrap">
-                  <i data-lucide="map-pin" style="width:14px; height:14px; color:#1EDD88; flex-shrink:0;"></i>
+                  <i data-lucide="map-pin" style="width:14px; height:14px; color:var(--green); flex-shrink:0;"></i>
                   <span data-map-picker-target="addressDisplay"
                         class="map-picker-address-text">
                     Clique sur la carte pour choisir un lieu
@@ -542,7 +542,7 @@
                           La couleur du texte est gérée par .time-picker-item { color: var(--theme-text-muted) } %>
                       <button type="button"
                               class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.hour == h %>"
-                              style="background:<%= @match.time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              style="background:<%= @match.time&.hour == h ? 'rgba(var(--green-rgb), 0.12)' : 'transparent' %> !important;"
                               data-time-picker-item
                               data-action="click->time-picker#select"
                               data-value="<%= h %>"
@@ -580,7 +580,7 @@
                       <%# Background dynamique en inline, couleur texte via CSS %>
                       <button type="button"
                               class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.time&.min == val %>"
-                              style="background:<%= @match.time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              style="background:<%= @match.time&.min == val ? 'rgba(var(--green-rgb), 0.12)' : 'transparent' %> !important;"
                               data-time-picker-item
                               data-action="click->time-picker#select"
                               data-value="<%= val %>"
@@ -626,7 +626,7 @@
                     <% (0..23).each do |h| %>
                       <button type="button"
                               class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.end_time&.hour == h %>"
-                              style="background:<%= @match.end_time&.hour == h ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              style="background:<%= @match.end_time&.hour == h ? 'rgba(var(--green-rgb), 0.12)' : 'transparent' %> !important;"
                               data-time-picker-item
                               data-action="click->time-picker#select"
                               data-value="<%= h %>"
@@ -660,7 +660,7 @@
                     <% [[0, "00"], [15, "15"], [30, "30"], [45, "45"]].each do |val, lbl| %>
                       <button type="button"
                               class="time-picker-item w-100 <%= 'time-picker-item--active' if @match.end_time&.min == val %>"
-                              style="background:<%= @match.end_time&.min == val ? 'rgba(30,221,136,0.12)' : 'transparent' %> !important;"
+                              style="background:<%= @match.end_time&.min == val ? 'rgba(var(--green-rgb), 0.12)' : 'transparent' %> !important;"
                               data-time-picker-item
                               data-action="click->time-picker#select"
                               data-value="<%= val %>"
