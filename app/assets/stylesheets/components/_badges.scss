@@ -93,3 +93,24 @@
   // Clignotement discret
   animation: blink-urgent 1.2s ease-in-out infinite;
 }
+
+// ── Badge "privé" : information (match ou tournoi non listé publiquement) ─
+// Purement informatif — à distinguer du lien "Copier le lien" qui l'accompagne
+// et qui, lui, est une action.
+//
+// Accessibilité : la couleur du texte passe par --amber-readable plutôt que par
+// l'ambre vif #f59e0b. Sur le fond ambré translucide en mode clair, ce dernier
+// ne donnait que ~2:1 (AA exige 4,5:1 à cette taille de texte) ; le token
+// bascule sur un ambre assombri en mode clair et atteint ~6:1.
+.private-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;           // aligné avec .match-badge-level
+  font-weight: 700;
+  color: var(--amber-readable);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+}

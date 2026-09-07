@@ -242,8 +242,10 @@
     padding: 5rem 0;
     color: $dark-muted;
 
-    i { opacity: 0.4; }
-    p  { font-size: 1rem; }
+    // `> i` et non `i` : sinon les icônes des CTA en dessous héritent aussi de
+    // l'atténuation réservée à la grande illustration.
+    > i { opacity: 0.4; }
+    p   { font-size: 1rem; }
   }
 
   // ── Bouton "Afficher plus" ────────────────────────

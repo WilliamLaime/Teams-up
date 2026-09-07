@@ -62,6 +62,10 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
   // Vert primaire du thème — #1EDD88 et ses variantes
   @include green-tokens($green);
 
+  // Ambre lisible — texte des badges "privé" sur leur fond ambré translucide.
+  // Sur fond sombre l'ambre vif passe largement AA (~7:1), on le garde tel quel.
+  --amber-readable: #f59e0b;
+
   // Fonds principaux des sections sombres (navbar, hero, footer)
   --theme-nav-bg:         #{$dark-bg};                    // #111111
   --theme-nav-border:     rgba(255, 255, 255, 0.06);
@@ -118,6 +122,10 @@ $dark-muted: rgba(255,255,255,0.55); // Texte secondaire sur fond sombre
   // #007A37 : le vert plein donne ~3,2:1 sur blanc, insuffisant pour du texte
   // courant (AA = 4,5:1) ; cette variante assombrie atteint ~5:1 sur #F4F4F4.
   @include green-tokens($green-light, #007A37, #ffffff);
+
+  // Ambre lisible — #f59e0b ne donne que ~2:1 sur le fond ambré clair du badge
+  // "privé" : très en dessous de AA. Cette variante assombrie atteint ~6:1.
+  --amber-readable: #92400e;
 
   // Les composants Bootstrap qui portent le vert sont réalignés sur var(--green)
   // dans components/_theme.scss (voir § BOOTSTRAP — VERT PRIMAIRE) : ce fichier
