@@ -57,18 +57,23 @@
             Tournoi privé
           </span>
 
-          <%# data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique %>
+          <%# Action (par opposition au badge ci-dessus, purement informatif) : on la
+              présente donc comme un lien — souligné, en vert, sans contour.
+              data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique.
+              Seul le <span> du libellé est réécrit au clic, pour ne pas effacer l'icône. %>
           <button type="button"
                   data-url="<%= tournament_url(@tournament, token: @tournament.private_token) %>"
                   onclick="
                     navigator.clipboard.writeText(this.dataset.url);
-                    this.textContent = '✓ Lien copié !';
-                    setTimeout(() => { this.textContent = '📋 Copier le lien'; }, 2000);
+                    const label = this.querySelector('[data-copy-label]');
+                    label.textContent = 'Lien copié !';
+                    setTimeout(() => { label.textContent = 'Copier le lien'; }, 2000);
                   "
-                  style="display:inline-flex; align-items:center; gap:0.3rem; font-size:0.72rem; font-weight:700;
-                         color:var(--theme-text-muted); background:var(--theme-hover-bg); border:1px solid var(--theme-border);
-                         border-radius:999px; padding:0.2rem 0.65rem; cursor:pointer;">
-            📋 Copier le lien
+                  style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:700;
+                         color:var(--green-readable); background:none; border:none; padding:0;
+                         text-decoration:underline; text-underline-offset:3px; cursor:pointer;">
+            <i data-lucide="copy" style="width:14px; height:14px;" aria-hidden="true"></i>
+            <span data-copy-label>Copier le lien</span>
           </button>
         </div>
       <% end %>
