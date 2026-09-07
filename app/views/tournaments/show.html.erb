@@ -106,11 +106,11 @@
           <% if user_signed_in? %>
             <%= button_to tournament_tournament_users_path(@tournament),
                   method: :post,
-                  class: "btn-cta-primary tournament-detail-header__action" do %>
+                  class: "btn btn-primary btn-cta-primary tournament-detail-header__action" do %>
               <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
             <% end %>
           <% else %>
-            <%= link_to new_user_session_path, class: "btn-cta-primary tournament-detail-header__action" do %>
+            <%= link_to new_user_session_path, class: "btn btn-primary btn-cta-primary tournament-detail-header__action" do %>
               <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
             <% end %>
           <% end %>

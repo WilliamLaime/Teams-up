@@ -28,7 +28,7 @@
       <% if tournament.startable? %>
         <%# Le bouton porte les appariements de la 1re ronde pour l'animation de tirage. %>
         <%= button_to start_tournament_path(tournament),
-                      class: "btn-cta-primary tournament-start-panel__btn",
+                      class: "btn btn-primary btn-cta-primary tournament-start-panel__btn",
                       data: { turbo: true } do %>
           <i data-lucide="shuffle" aria-hidden="true"></i>
           Lancer le tournoi & tirer au sort
