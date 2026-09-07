@@ -2,7 +2,7 @@
 
 .onboarding-modal-content {
   background: var(--theme-bg-card); // fond adaptatif — sombre en dark, carte en clair
-  border: 1px solid rgba(30, 221, 136, 0.2); // bordure verte intentionnelle (branding)
+  border: 1px solid rgba(var(--green-rgb), 0.2); // bordure verte intentionnelle (branding)
   border-radius: 16px;
   overflow: hidden;
 }
@@ -19,8 +19,8 @@
   justify-content: center;
   width: 56px;
   height: 56px;
-  background: rgba(30, 221, 136, 0.1);
-  border: 1.5px solid rgba(30, 221, 136, 0.3);
+  background: rgba(var(--green-rgb), 0.1);
+  border: 1.5px solid rgba(var(--green-rgb), 0.3);
   border-radius: 50%;
   margin-bottom: 1rem;
 }
@@ -93,8 +93,8 @@
     flex-shrink: 0;
     width: 32px;
     height: 32px;
-    background: rgba(30, 221, 136, 0.1);
-    border: 1px solid rgba(30, 221, 136, 0.25);
+    background: rgba(var(--green-rgb), 0.1);
+    border: 1px solid rgba(var(--green-rgb), 0.25);
     border-radius: 50%;
   }
 
@@ -109,7 +109,7 @@
   &__hook {
     font-size: 0.8rem;
     font-weight: 600;
-    color: $green;
+    color: var(--green);
     margin-bottom: 0.15rem;
   }
 
@@ -144,7 +144,7 @@
 
 .profile-reminder-banner {
   background: var(--theme-bg-card); // fond adaptatif
-  border-bottom: 1px solid rgba(30, 221, 136, 0.25); // bordure verte intentionnelle (branding)
+  border-bottom: 1px solid rgba(var(--green-rgb), 0.25); // bordure verte intentionnelle (branding)
   padding: 0.65rem 1rem;
   position: relative;
   z-index: 10;
@@ -184,17 +184,17 @@
 .profile-reminder-banner__cta {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #1EDD88;
+  color: var(--green);
   text-decoration: none;
-  border: 1px solid rgba(30, 221, 136, 0.4);
+  border: 1px solid rgba(var(--green-rgb), 0.4);
   padding: 0.3rem 0.8rem;
   border-radius: 6px;
   white-space: nowrap;
   transition: all 0.15s ease;
 
   &:hover {
-    background: rgba(30, 221, 136, 0.1);
-    color: #1EDD88;
+    background: rgba(var(--green-rgb), 0.1);
+    color: var(--green);
     text-decoration: none;
   }
 

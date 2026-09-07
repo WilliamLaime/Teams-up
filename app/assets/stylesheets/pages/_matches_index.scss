@@ -57,9 +57,9 @@
 
         // Onglet actif : fond vert signature
         &.active {
-          background: $primary;
-          border-color: $primary;
-          color: #111;
+          background: var(--green);
+          border-color: var(--green);
+          color: var(--on-green);
         }
       }
     }
@@ -107,7 +107,7 @@
     transition: border-color 0.15s;
 
     &:focus-within {
-      border-color: $green;
+      border-color: var(--green);
       color: var(--theme-text-strong); // texte fort au focus
     }
 
@@ -122,7 +122,7 @@
       cursor: pointer;
 
       &:focus-visible {
-        outline: 2px solid $green;
+        outline: 2px solid var(--green);
         outline-offset: 2px;
       }
 
@@ -153,12 +153,12 @@
     cursor: pointer;
 
     &:hover {
-      border-color: $green;
+      border-color: var(--green);
       color: var(--theme-text-primary);
     }
 
     &:focus-visible {
-      outline: 2px solid $green;
+      outline: 2px solid var(--green);
       outline-offset: 2px;
     }
   }
@@ -176,7 +176,7 @@
 
     // RGAA 10.7 — focus visible pour la navigation clavier
     &:focus-visible {
-      outline: 2px solid $green;
+      outline: 2px solid var(--green);
       outline-offset: 2px;
     }
   }
@@ -227,10 +227,10 @@
 
       &::placeholder { color: var(--theme-text-muted); } // placeholder adaptatif
 
-      &:focus { border-color: $green; }
+      &:focus { border-color: var(--green); }
 
       &:focus-visible {
-        outline: 2px solid $green;
+        outline: 2px solid var(--green);
         outline-offset: 2px;
       }
     }
@@ -263,8 +263,8 @@
     transition: all 0.2s;
 
     &:hover {
-      border-color: $green;
-      color: $green;
+      border-color: var(--green);
+      color: var(--green);
     }
   }
 }

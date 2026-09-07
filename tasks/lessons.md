@@ -326,3 +326,36 @@ Un sport est **piloté par la base** (table `sports` : `name`, `icon`, `slug`) m
   4. Rendre un objet privé doit cascader sur ce qui le rend visible ailleurs (ici les
      rencontres, listées sur `/matchs`), et par un chemin qui ne repasse pas par les
      validations — un match déjà joué échoue sur « prévu 30 min à l'avance ».
+
+
+## Vert primaire différencié par thème (7 septembre 2026)
+
+- **Une variable Sass ne peut pas être thémée.** `$green: #1EDD88` était la source unique du
+  vert, et c'était précisément le problème : Sass résout à la compilation, le thème se décide
+  au runtime (`data-theme` sur `<html>`). Une couleur de marque destinée à varier selon le
+  thème doit vivre en **custom property CSS dès le départ** ; sinon la dette se paie en une
+  passe sur ~800 occurrences dans 90 fichiers.
+- **Les fonctions couleur Sass sont l'obstacle réel**, pas la substitution elle-même :
+  `rgba($green, 0.15)` et `darken($green, 8%)` n'acceptent pas une `var()`. La sortie est de
+  précalculer les variantes par thème (mixin `green-tokens()`) et d'exposer le vert aussi en
+  triplet décimal `--green-rgb`, pour que `rgba(var(--green-rgb), α)` couvre les 140 alphas
+  distincts sans en déclarer un token par valeur.
+- **Attention à `darken()` sur une couleur déjà sombre** : `darken(#00A44A, 35%)` donne du
+  noir (luminosité HSL de départ 32 %). Le contournement de contraste du navbar, écrit pour
+  `#1EDD88`, ne se transposait donc pas — d'où un token explicite `--green-readable` (#007A37,
+  ~5:1 sur `#F4F4F4`) plutôt qu'une dérivée calculée.
+- **L'ordre d'import décide de qui gagne.** Les surcharges `--bs-primary` posées dans
+  `config/_colors.scss` étaient silencieusement écrasées : `config/` est importé *avant*
+  bootstrap, et le bloc `:root` de Bootstrap a la même spécificité qu'un `[data-theme]`
+  → le dernier déclaré gagne. Elles ont dû migrer dans `components/_theme.scss`, importé
+  en dernier. Corollaire : Bootstrap 5.3 fixe ses couleurs de composants en dur
+  (`.btn-primary { --bs-btn-bg: #1EDD88 }`), donc surcharger `--bs-primary` seul ne suffit pas.
+- **Piège de mesure, pas de code** : lire `getComputedStyle` juste après un `setAttribute`
+  dans le même tick JS renvoyait l'ancienne valeur pour les propriétés à double indirection
+  `var()` (`background-color: var(--bs-btn-bg)` où `--bs-btn-bg: var(--green)`). Quatre
+  fausses régressions diagnostiquées avant de comprendre que le recalcul était simplement
+  paresseux. Vérifier une bascule de thème demande un reflow (page neuve, ou attente).
+- **Leçon de méthode** : la preuve utile n'a pas été la compilation SCSS mais le comptage des
+  couleurs *calculées* dans un vrai navigateur — 290 verts sur la home, tous en
+  `rgb(30,221,136)` en sombre et tous en `rgb(0,164,74)` en clair. Un 1:1 exact prouve à la
+  fois la bascule et l'absence de résidu, ce qu'aucun grep ne pouvait établir.

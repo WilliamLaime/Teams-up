@@ -29,7 +29,7 @@ export default class extends Controller {
       style.textContent = `
         .time-picker-dropdown::-webkit-scrollbar { width: 4px !important; }
         .time-picker-dropdown::-webkit-scrollbar-track { background: transparent !important; }
-        .time-picker-dropdown::-webkit-scrollbar-thumb { background: #1EDD88 !important; border-radius: 2px !important; }
+        .time-picker-dropdown::-webkit-scrollbar-thumb { background: var(--green) !important; border-radius: 2px !important; }
       `
       document.head.appendChild(style)
     }
@@ -38,8 +38,8 @@ export default class extends Controller {
     this.element.querySelectorAll("[data-time-picker-item]").forEach(item => {
       item.addEventListener("mouseover", () => {
         if (!item.classList.contains("time-picker-item--active")) {
-          item.style.setProperty("background", "rgba(30,221,136,0.12)", "important")
-          item.style.color = "#1EDD88"
+          item.style.setProperty("background", "rgba(var(--green-rgb), 0.12)", "important")
+          item.style.color = "var(--green)"
         }
       })
       item.addEventListener("mouseout", () => {
@@ -100,8 +100,8 @@ export default class extends Controller {
       const isActive = item === btn
       item.classList.toggle("time-picker-item--active", isActive)
       // Inline background uniquement — on ne touche pas à la couleur du texte
-      item.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "transparent", "important")
-      item.style.color = isActive ? "#1EDD88" : "" // "" = retire l'inline, laisse le CSS (var(--theme-text-muted))
+      item.style.setProperty("background", isActive ? "rgba(var(--green-rgb), 0.12)" : "transparent", "important")
+      item.style.color = isActive ? "var(--green)" : "" // "" = retire l'inline, laisse le CSS (var(--theme-text-muted))
       item.style.fontWeight = isActive ? "700" : "500"
     })
 

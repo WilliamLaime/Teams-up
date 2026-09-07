@@ -31,7 +31,7 @@
       <div class="col-lg-4">
 
         <%# ── Titre "Profil" — EN DEHORS de la card ────────────────────────────── %>
-        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+        <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.75rem;">
           <i data-lucide="user" style="width:14px; height:14px;"></i>
           Profil
         </div>
@@ -54,7 +54,7 @@
             <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
               <div>
                 <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
-                            text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.25rem;">
+                            text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.25rem;">
                   <i data-lucide="bell" style="width:14px; height:14px;"></i>
                   Alertes matchs
                 </div>
@@ -81,7 +81,7 @@
             <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
               <div>
                 <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
-                            text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.25rem;">
+                            text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.25rem;">
                   <%= render "shared/slack_logo", size: 15 %>
                   Slack
                 </div>
@@ -114,12 +114,12 @@
 
         <%# ── Mes matchs ──────────────────────────────────────────────────────── %>
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
             <i data-lucide="calendar" style="width:14px; height:14px;"></i>
             <%= current_user == @profil_user ? "Mes matchs" : "Matchs de #{@profil_user.display_name}" %>
           </div>
           <% if current_user == @profil_user %>
-            <%= link_to "Voir tout", matches_path(mine: true), style: "font-size:0.8rem; font-weight:600; color:#1EDD88; text-decoration:none;" %>
+            <%= link_to "Voir tout", matches_path(mine: true), style: "font-size:0.8rem; font-weight:600; color:var(--green); text-decoration:none;" %>
           <% end %>
         </div>
 
@@ -224,8 +224,8 @@
                       <%= button_to accept_user_friendship_path(friendship.user), method: :patch,
                             data: { turbo_frame: "_top" },
                             style: "display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem;
-                                    font-weight:700; color:#1EDD88; background:rgba(30,221,136,0.1);
-                                    border:1px solid rgba(30,221,136,0.3); border-radius:999px;
+                                    font-weight:700; color:var(--green); background:rgba(var(--green-rgb), 0.1);
+                                    border:1px solid rgba(var(--green-rgb), 0.3); border-radius:999px;
                                     padding:0.2rem 0.6rem; cursor:pointer;" do %>
                         <i data-lucide="check" style="width:10px; height:10px;"></i>
                         Accepter
@@ -270,7 +270,7 @@
 
         <%# ── Avis des joueurs ────────────────────────────────────────────────── %>
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:1.5rem; margin-bottom:0.75rem;">
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
             <i data-lucide="star" style="width:14px; height:14px;"></i>
             Avis des joueurs
           </div>
@@ -279,7 +279,7 @@
             <button type="button"
                     data-bs-toggle="modal"
                     data-bs-target="#modal-avis-<%= @profil_user.id %>"
-                    style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; font-weight:600; color:#1EDD88; background:rgba(30,221,136,0.1); border:1px solid rgba(30,221,136,0.3); border-radius:999px; padding:0.3rem 0.9rem; cursor:pointer; white-space:nowrap;">
+                    style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.75rem; font-weight:600; color:var(--green); background:rgba(var(--green-rgb), 0.1); border:1px solid rgba(var(--green-rgb), 0.3); border-radius:999px; padding:0.3rem 0.9rem; cursor:pointer; white-space:nowrap;">
               <i data-lucide="star" style="width:11px; height:11px; flex-shrink:0;"></i>
               Laisser un avis
             </button>
@@ -288,11 +288,11 @@
 
         <%# Hint : avis en attente (visible sur son propre profil) %>
         <% if current_user == @profil_user && @pending_avis_count.to_i > 0 %>
-          <div style="padding:0.75rem 0.9rem; margin-bottom:0.75rem; background:rgba(30,221,136,0.07); border:1px solid rgba(30,221,136,0.2); border-radius:8px;">
+          <div style="padding:0.75rem 0.9rem; margin-bottom:0.75rem; background:rgba(var(--green-rgb), 0.07); border:1px solid rgba(var(--green-rgb), 0.2); border-radius:8px;">
             <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem;">
-              <i data-lucide="lock" style="width:14px; height:14px; color:#1EDD88; flex-shrink:0;"></i>
+              <i data-lucide="lock" style="width:14px; height:14px; color:var(--green); flex-shrink:0;"></i>
               <p style="margin:0; font-size:0.78rem; color:var(--theme-text-muted); line-height:1.4;">
-                <strong style="color:#1EDD88;"><%= @pending_avis_count %> avis</strong>
+                <strong style="color:var(--green);"><%= @pending_avis_count %> avis</strong>
                 <%= @pending_avis_count > 1 ? "vous attendent" : "vous attend" %> —
                 notez vos coéquipiers pour les débloquer.
               </p>
@@ -306,7 +306,7 @@
               <div style="display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center;">
                 <% visible.each do |reviewer| %>
                   <%= link_to user_profil_path(reviewer),
-                      style: "display:inline-flex; align-items:center; gap:0.4rem; padding:0.3rem 0.7rem; background:rgba(30,221,136,0.12); border:1px solid rgba(30,221,136,0.35); border-radius:999px; text-decoration:none;" do %>
+                      style: "display:inline-flex; align-items:center; gap:0.4rem; padding:0.3rem 0.7rem; background:rgba(var(--green-rgb), 0.12); border:1px solid rgba(var(--green-rgb), 0.35); border-radius:999px; text-decoration:none;" do %>
                     <% if reviewer.profil&.avatar&.attached? %>
                       <%= image_tag reviewer.profil.avatar,
                           style: "width:20px; height:20px; border-radius:50%; object-fit:cover; flex-shrink:0;",
@@ -316,14 +316,14 @@
                         <%= reviewer.display_name.first.upcase %>
                       </span>
                     <% end %>
-                    <span style="font-size:0.74rem; font-weight:600; color:#1EDD88; white-space:nowrap;">
+                    <span style="font-size:0.74rem; font-weight:600; color:var(--green); white-space:nowrap;">
                       <%= reviewer.display_name %>
                     </span>
-                    <i data-lucide="star" style="width:11px; height:11px; color:#1EDD88; flex-shrink:0;"></i>
+                    <i data-lucide="star" style="width:11px; height:11px; color:var(--green); flex-shrink:0;"></i>
                   <% end %>
                 <% end %>
                 <% if hidden_count > 0 %>
-                  <span style="font-size:0.72rem; font-weight:600; color:rgba(30,221,136,0.6); padding:0.3rem 0.5rem; white-space:nowrap;">
+                  <span style="font-size:0.72rem; font-weight:600; color:rgba(var(--green-rgb), 0.6); padding:0.3rem 0.5rem; white-space:nowrap;">
                     + <%= hidden_count %> autre<%= hidden_count > 1 ? "s" : "" %>
                   </span>
                 <% end %>
@@ -383,7 +383,7 @@
                       <%= avis.reviewer.display_name %>
                     </div>
                     <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
-                      <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:var(--theme-text-muted); opacity:0.4;"><%= "★" * (5 - avis.rating) %></span>
+                      <span style="color:var(--green);"><%= "★" * avis.rating %></span><span style="color:var(--theme-text-muted); opacity:0.4;"><%= "★" * (5 - avis.rating) %></span>
                     </div>
                   </div>
                 </div>
@@ -415,7 +415,7 @@
                           <%= avis.reviewer.display_name %>
                         </div>
                         <div style="font-size:0.75rem; line-height:1; margin-top:0.15rem;">
-                          <span style="color:#1EDD88;"><%= "★" * avis.rating %></span><span style="color:var(--theme-text-muted); opacity:0.4;"><%= "★" * (5 - avis.rating) %></span>
+                          <span style="color:var(--green);"><%= "★" * avis.rating %></span><span style="color:var(--theme-text-muted); opacity:0.4;"><%= "★" * (5 - avis.rating) %></span>
                         </div>
                       </div>
                     </div>

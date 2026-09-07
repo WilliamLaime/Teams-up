@@ -53,7 +53,7 @@
           <%# SECTION 1 : Adresse email ────────────────────────────────────── %>
           <%# ════════════════════════════════════════════════════════════════ %>
 
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.75rem;">
             <i data-lucide="mail" style="width:14px; height:14px;"></i>
             Adresse email
           </div>
@@ -72,7 +72,7 @@
 
             <%# Champ email %>
             <label class="edit-form-label">
-              Email <span style="color:#1EDD88; font-weight:700;">*</span>
+              Email <span style="color:var(--green); font-weight:700;">*</span>
             </label>
             <%= f.input :email,
                 required: true,
@@ -93,7 +93,7 @@
           <%# SECTION 2 : Changer le mot de passe ──────────────────────────── %>
           <%# ════════════════════════════════════════════════════════════════ %>
 
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.75rem;">
             <i data-lucide="lock" style="width:14px; height:14px;"></i>
             Changer le mot de passe
           </div>
@@ -137,15 +137,15 @@
           <%# SECTION 3 : Confirmation — mot de passe actuel obligatoire ───── %>
           <%# ════════════════════════════════════════════════════════════════ %>
 
-          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.75rem;">
             <i data-lucide="shield-check" style="width:14px; height:14px;"></i>
             Confirmation
           </div>
 
           <div class="match-block mb-4">
 
-            <div style="display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.75rem; background:rgba(30,221,136,0.06); border:1px solid rgba(30,221,136,0.15); border-radius:8px; margin-bottom:1rem;">
-              <i data-lucide="info" style="width:13px; height:13px; color:#1EDD88; flex-shrink:0;"></i>
+            <div style="display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.75rem; background:rgba(var(--green-rgb), 0.06); border:1px solid rgba(var(--green-rgb), 0.15); border-radius:8px; margin-bottom:1rem;">
+              <i data-lucide="info" style="width:13px; height:13px; color:var(--green); flex-shrink:0;"></i>
               <%# .edit-block-hint : couleur gérée par _theme.scss en light mode %>
               <span class="edit-block-hint" style="font-size:0.75rem; color:rgba(255,255,255,0.5);">
                 Ton mot de passe actuel est requis pour valider les modifications.
@@ -154,7 +154,7 @@
 
             <%# Mot de passe actuel — obligatoire pour confirmer les changements %>
             <label class="edit-form-label">
-              Mot de passe actuel <span style="color:#1EDD88; font-weight:700;">*</span>
+              Mot de passe actuel <span style="color:var(--green); font-weight:700;">*</span>
             </label>
             <%= f.input :current_password,
                 required: true,
@@ -287,7 +287,7 @@
 
           <%# Validation d'identité pour OAuth (Google) %>
           <% if resource.provider.present? %>
-            <div style="background:rgba(30,221,136,0.06); border:1px solid rgba(30,221,136,0.15); border-radius:8px; padding:0.75rem; margin-bottom:1rem;">
+            <div style="background:rgba(var(--green-rgb), 0.06); border:1px solid rgba(var(--green-rgb), 0.15); border-radius:8px; padding:0.75rem; margin-bottom:1rem;">
               <label class="form-check" style="font-size:0.85rem; color:rgba(255,255,255,0.8); margin:0; display:flex; align-items:flex-start; gap:0.5rem; cursor:pointer;">
                 <input type="checkbox"
                        name="delete_confirmation"
@@ -306,7 +306,7 @@
           <% else %>
             <div style="margin-bottom:1rem;">
               <label class="form-label" style="font-size:0.8rem; font-weight:600; text-transform:uppercase; color:rgba(255,255,255,0.55); margin-bottom:0.5rem;">
-                Mot de passe actuel <span style="color:#1EDD88;">*</span>
+                Mot de passe actuel <span style="color:var(--green);">*</span>
               </label>
               <input type="password"
                      name="current_password_for_deletion"

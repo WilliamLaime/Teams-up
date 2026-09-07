@@ -117,12 +117,12 @@
 
   // Variante verte (action principale)
   &--primary {
-    background-color: $green;    // #1EDD88
+    background-color: var(--green);
     color: $dark-bg;
-    border-color: $green;
+    border-color: var(--green);
 
     &:hover {
-      background-color: darken($green, 8%);
+      background-color: var(--green-d8);
       color: $dark-bg;
     }
   }
@@ -157,7 +157,7 @@
   font-size: 0.9rem;
   font-weight: 600;
 
-  &--success { color: $green; }
+  &--success { color: var(--green); }
   &--warning { color: $yellow; }
   &--info    { color: #17a2b8; }
   &--danger  { color: $red; }
@@ -265,8 +265,8 @@
   transition: color 0.15s, background 0.15s;
 
   &:hover {
-    color: #1EDD88;
-    background: rgba(30, 221, 136, 0.1);
+    color: var(--green);
+    background: rgba(var(--green-rgb), 0.1);
   }
 }
 
@@ -307,8 +307,8 @@
   transition: background 0.12s, color 0.12s;
 
   &:hover:not(:disabled):not(.dp-day--selected) {
-    background: rgba(30, 221, 136, 0.1);
-    color: #1EDD88;
+    background: rgba(var(--green-rgb), 0.1);
+    color: var(--green);
   }
 
   // Dates passées (désactivées)
@@ -321,15 +321,15 @@
 
   // Aujourd'hui (anneau vert discret)
   &--today:not(.dp-day--selected) {
-    color: #1EDD88;
+    color: var(--green);
     font-weight: 700;
-    box-shadow: inset 0 0 0 1px rgba(30, 221, 136, 0.4);
+    box-shadow: inset 0 0 0 1px rgba(var(--green-rgb), 0.4);
   }
 
   // Jour sélectionné (fond vert plein)
   &--selected {
-    background: #1EDD88 !important;
-    color: #111 !important;
+    background: var(--green) !important;
+    color: var(--on-green) !important;
     font-weight: 700;
   }
 }
@@ -344,14 +344,14 @@
 //   $dark-surface   → #242624  (fond des inputs)
 //   $dark-text      → #f0f0f0  (texte principal clair)
 //   $dark-muted     → rgba(255,255,255,0.55) (texte secondaire)
-//   $green          → #1EDD88  (couleur principale verte)
+//   var(--green)    → vert primaire du thème (#1EDD88 sombre / #00A44A clair)
 // ══════════════════════════════════════════════════════════════
 
 
 // ── Astérisque champ obligatoire ───────────────────────────
 // Petit * vert affiché après les labels des champs obligatoires
 .required-star {
-  color: $green;       // Vert de l'app
+  color: var(--green);       // Vert de l'app
   font-weight: 700;
   margin-left: 2px;
 }
@@ -400,7 +400,7 @@
   width: 36px;
   height: 36px;
   min-width: 36px;            // Empêche le badge de rétrécir si le titre est long
-  background-color: $green;   // #1EDD88 → vert de l'app
+  background-color: var(--green);   // vert primaire du thème
   border-radius: 50%;         // Cercle parfait
   display: flex;
   align-items: center;
@@ -451,9 +451,9 @@
     // Quand le champ est sélectionné : bordure verte + halo vert
     &:focus {
       background-color: var(--theme-bg-surface) !important;
-      border-color: $green;
+      border-color: var(--green);
       color: var(--theme-text-primary) !important;
-      box-shadow: 0 0 0 3px rgba($green, 0.18);
+      box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.18);
     }
 
     // Options des <select> — utilisent le fond de surface du thème courant
@@ -489,7 +489,7 @@
 
       &:hover,
       &:focus {
-        background-color: rgba($green, 0.1);
+        background-color: rgba(var(--green-rgb), 0.1);
         color: var(--theme-text-primary);
       }
     }
@@ -513,7 +513,7 @@
   // Scrollbar fine verte — identique aux notifications
   &::-webkit-scrollbar       { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: $green; border-radius: 2px; }
+  &::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
 }
 
 // Chaque ligne heure — reset complet des styles bouton natifs
@@ -533,20 +533,20 @@
   box-shadow: none !important;
 
   &:focus-visible {
-    outline: 2px solid $green;
+    outline: 2px solid var(--green);
     outline-offset: 2px;
   }
 
   &:hover {
-    background: rgba($green, 0.12) !important;
-    color: $green;
+    background: rgba(var(--green-rgb), 0.12) !important;
+    color: var(--green);
   }
 
   // Item actuellement sélectionné
   &--active {
-    color: $green !important;
+    color: var(--green) !important;
     font-weight: 700;
-    background: rgba($green, 0.1) !important;
+    background: rgba(var(--green-rgb), 0.1) !important;
   }
 }
 
@@ -587,14 +587,14 @@
 
     // Au survol : bordure et texte verts (sauf si désactivé)
     &:hover:not(.is-disabled) {
-      border-color: $green;
-      color: $green;
+      border-color: var(--green);
+      color: var(--green);
     }
 
     // État actif (vert) — géré dynamiquement par Stimulus
     &.is-active {
-      border-color: $green;
-      color: $green;
+      border-color: var(--green);
+      color: var(--green);
     }
 
     // État désactivé (gris) — limite min ou max atteinte
@@ -632,16 +632,16 @@
 
   // Au survol : vert comme l'état actif
   &:hover {
-    border-color: $green;
-    color: $green;
-    background-color: rgba($green, 0.08);
+    border-color: var(--green);
+    color: var(--green);
+    background-color: rgba(var(--green-rgb), 0.08);
   }
 
   // Quand ce niveau est sélectionné (classe .active ajoutée par Stimulus)
   &.active {
-    border-color: $green;
-    background-color: rgba($green, 0.12); // Fond vert très transparent
-    color: $green;
+    border-color: var(--green);
+    background-color: rgba(var(--green-rgb), 0.12); // Fond vert très transparent
+    color: var(--green);
     font-weight: 600;
   }
 }
@@ -671,7 +671,7 @@
   transition: color 0.15s ease;
 
   &.active-label {
-    color: $green;             // Vert quand actif
+    color: var(--green);             // Vert quand actif
     font-weight: 600;
   }
 }
@@ -718,7 +718,7 @@
 
   // Quand coché (Manuel) : fond vert + boule glisse à droite
   .pill-toggle-input:checked + .pill-toggle-track {
-    background: $green;
+    background: var(--green);
 
     &::after {
       transform: translateX(24px); // 52 - 22 - 3×2 = 24px
@@ -756,7 +756,7 @@
 
   // Icône à gauche (Lucide) en vert
   svg {
-    color: $green;
+    color: var(--green);
     flex-shrink: 0;
   }
 }
@@ -804,7 +804,7 @@
 
   // Valeur à droite (ex: "4Padel") → vert (inchangé)
   .recap-value {
-    color: $green;
+    color: var(--green);
     font-weight: 600;
     font-size: 0.875rem;
     text-align: right;
@@ -850,7 +850,7 @@
   display: block;
   width: 100%;
   padding: 1rem;
-  background-color: $green;    // Fond vert
+  background-color: var(--green);    // Fond vert
   color: $dark-bg !important;  // Texte sombre sur fond vert
   border: none;
   border-radius: 0.75rem;
@@ -865,7 +865,7 @@
   text-decoration: none; // Si c'est un <a>
 
   &:hover {
-    background-color: darken($green, 8%); // Vert un peu plus foncé au survol
+    background-color: var(--green-d8); // Vert un peu plus foncé au survol
     transform: translateY(-1px);           // Léger effet de soulèvement
     color: $dark-bg !important;
   }
@@ -907,13 +907,13 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba($green, 0.08);           // Fond vert très léger
-  border: 1px solid rgba($green, 0.45);     // Contour vert semi-transparent
+  background: rgba(var(--green-rgb), 0.08);           // Fond vert très léger
+  border: 1px solid rgba(var(--green-rgb), 0.45);     // Contour vert semi-transparent
   border-radius: 6px;
   padding: 0.32rem 0.8rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: $green;                            // Texte vert — visible sans être agressif
+  color: var(--green);                            // Texte vert — visible sans être agressif
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
   text-decoration: none;
@@ -922,12 +922,12 @@
   // Lucide remplace <i> par <svg> au chargement → on cible les deux
   i, svg {
     flex-shrink: 0;
-    color: $green;
+    color: var(--green);
   }
 
   &:hover {
-    background: rgba($green, 0.15);
-    border-color: $green;
+    background: rgba(var(--green-rgb), 0.15);
+    border-color: var(--green);
   }
 }
 
@@ -993,7 +993,7 @@
   }
 
   &:focus {
-    border-color: $green; // Bordure verte au focus — cohérent avec le design system
+    border-color: var(--green); // Bordure verte au focus — cohérent avec le design system
   }
 
   &:disabled {
@@ -1011,14 +1011,14 @@
   padding: 0.4rem 0.8rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: $green;         // Vert pour attirer l'œil sans écraser le CTA principal
+  color: var(--green);         // Vert pour attirer l'œil sans écraser le CTA principal
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
   white-space: nowrap;
 
   &:hover {
-    background-color: rgba($green, 0.1); // Fond vert très léger au survol
-    border-color: $green;
+    background-color: rgba(var(--green-rgb), 0.1); // Fond vert très léger au survol
+    border-color: var(--green);
   }
 }
 
@@ -1091,7 +1091,7 @@
 // ── Bouton "Confirmer ce lieu" ─────────────────────────────────
 .map-picker-confirm-btn {
   flex-shrink: 0;
-  background-color: $green;    // Vert principal
+  background-color: var(--green);    // Vert principal
   color: $dark-bg;             // Texte sombre sur fond vert
   border: none;
   border-radius: 8px;
@@ -1102,7 +1102,7 @@
   transition: background-color 0.15s, opacity 0.15s;
 
   &:hover:not(:disabled) {
-    background-color: darken($green, 8%);
+    background-color: var(--green-d8);
   }
 
   // État désactivé (avant qu'un lieu soit choisi)

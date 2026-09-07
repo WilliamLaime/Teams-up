@@ -145,7 +145,7 @@ export default class extends Controller {
                value="${lvl.label}"
                data-level-filter-target="checkbox"
                data-action="change->level-filter#change"
-               style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:#1EDD88;"
+               style="width:15px; height:15px; margin:0; padding:0; flex-shrink:0; cursor:pointer; accent-color:var(--green);"
                ${selected.has(lvl.label) ? "checked" : ""}>
         <span class="match-badge-level ${lvl.css}"
               style="font-size:0.72rem; padding:0.2rem 0.6rem; line-height:1; margin:0;">

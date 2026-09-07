@@ -7,9 +7,9 @@
 
   <%# ── En-tête ──────────────────────────────────────────────────────────── %>
   <div class="d-flex align-items-center gap-2 mb-4">
-    <i data-lucide="layout-dashboard" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <i data-lucide="layout-dashboard" style="width:22px; height:22px; color:var(--green);"></i>
     <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
-      Espace <span style="color:#1EDD88;">Admin</span>
+      Espace <span style="color:var(--green);">Admin</span>
     </h1>
   </div>
 
@@ -21,8 +21,8 @@
   <%# ══════════════════════════════════════════════════════════════════════ %>
 
   <div class="d-flex align-items-center gap-2 mb-3">
-    <i data-lucide="gauge" style="width:15px; height:15px; color:#1EDD88;"></i>
-    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+    <i data-lucide="gauge" style="width:15px; height:15px; color:var(--green);"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
       Quota Sightengine
     </span>
   </div>
@@ -33,7 +33,7 @@
       <div class="match-block h-100">
         <div class="d-flex justify-content-between align-items-end mb-2">
           <div>
-            <div style="font-size:2rem; font-weight:800; color:<%= @quota_alert ? '#E67E22' : '#1EDD88' %>;">
+            <div style="font-size:2rem; font-weight:800; color:<%= @quota_alert ? '#E67E22' : 'var(--green)' %>;">
               <%= @quota_used %>
             </div>
             <div style="font-size:0.78rem; color:rgba(255,255,255,0.5);">
@@ -48,7 +48,7 @@
         <div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
           <% pct = [(@quota_used.to_f / @quota_total * 100).round(1), 100].min %>
           <div style="width:<%= pct %>%; height:100%; border-radius:3px;
-                       background:<%= @quota_alert ? '#E67E22' : '#1EDD88' %>;
+                       background:<%= @quota_alert ? '#E67E22' : 'var(--green)' %>;
                        transition: width 0.3s ease;"></div>
         </div>
         <% if @quota_alert %>
@@ -85,8 +85,8 @@
   <%# ══════════════════════════════════════════════════════════════════════ %>
 
   <div class="d-flex align-items-center gap-2 mb-3">
-    <i data-lucide="bar-chart-3" style="width:15px; height:15px; color:#1EDD88;"></i>
-    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+    <i data-lucide="bar-chart-3" style="width:15px; height:15px; color:var(--green);"></i>
+    <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
       Répartition
     </span>
   </div>
@@ -95,7 +95,7 @@
     <%# Card — Total %>
     <div class="col-6 col-lg">
       <div class="match-block h-100 text-center">
-        <div style="font-size:1.6rem; font-weight:800; color:#1EDD88;"><%= @count_total %></div>
+        <div style="font-size:1.6rem; font-weight:800; color:var(--green);"><%= @count_total %></div>
         <div style="font-size:0.72rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Total</div>
       </div>
     </div>
@@ -103,7 +103,7 @@
     <div class="col-6 col-lg">
       <%= link_to admin_image_moderations_path(status: "approved"), style: "text-decoration:none;" do %>
         <div class="match-block h-100 text-center">
-          <div style="font-size:1.6rem; font-weight:800; color:#1EDD88;"><%= @count_approved %></div>
+          <div style="font-size:1.6rem; font-weight:800; color:var(--green);"><%= @count_approved %></div>
           <div style="font-size:0.72rem; color:rgba(255,255,255,0.5); margin-top:0.2rem;">Approuvées</div>
         </div>
       <% end %>
@@ -143,8 +143,8 @@
 
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div class="d-flex align-items-center gap-2">
-      <i data-lucide="list" style="width:15px; height:15px; color:#1EDD88;"></i>
-      <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88;">
+      <i data-lucide="list" style="width:15px; height:15px; color:var(--green);"></i>
+      <span style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green);">
         Historique
       </span>
     </div>
@@ -154,18 +154,18 @@
       <%= link_to "Tous", admin_image_moderations_path,
           class: "badge",
           style: "font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:4px; text-decoration:none;
-                  background:#{params[:status].blank? && params[:type].blank? ? 'rgba(30,221,136,0.25)' : 'rgba(255,255,255,0.08)'};
-                  color:#{params[:status].blank? && params[:type].blank? ? '#1EDD88' : 'rgba(255,255,255,0.5)'};" %>
+                  background:#{params[:status].blank? && params[:type].blank? ? 'rgba(var(--green-rgb), 0.25)' : 'rgba(255,255,255,0.08)'};
+                  color:#{params[:status].blank? && params[:type].blank? ? 'var(--green)' : 'rgba(255,255,255,0.5)'};" %>
       <%= link_to "Profils", admin_image_moderations_path(type: "Profil", status: params[:status]),
           class: "badge",
           style: "font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:4px; text-decoration:none;
-                  background:#{params[:type] == 'Profil' ? 'rgba(30,221,136,0.25)' : 'rgba(255,255,255,0.08)'};
-                  color:#{params[:type] == 'Profil' ? '#1EDD88' : 'rgba(255,255,255,0.5)'};" %>
+                  background:#{params[:type] == 'Profil' ? 'rgba(var(--green-rgb), 0.25)' : 'rgba(255,255,255,0.08)'};
+                  color:#{params[:type] == 'Profil' ? 'var(--green)' : 'rgba(255,255,255,0.5)'};" %>
       <%= link_to "Teams", admin_image_moderations_path(type: "Team", status: params[:status]),
           class: "badge",
           style: "font-size:0.72rem; padding:0.3rem 0.6rem; border-radius:4px; text-decoration:none;
-                  background:#{params[:type] == 'Team' ? 'rgba(30,221,136,0.25)' : 'rgba(255,255,255,0.08)'};
-                  color:#{params[:type] == 'Team' ? '#1EDD88' : 'rgba(255,255,255,0.5)'};" %>
+                  background:#{params[:type] == 'Team' ? 'rgba(var(--green-rgb), 0.25)' : 'rgba(255,255,255,0.08)'};
+                  color:#{params[:type] == 'Team' ? 'var(--green)' : 'rgba(255,255,255,0.5)'};" %>
     </div>
   </div>
 
@@ -190,7 +190,7 @@
             <tr>
               <%# Statut — badge coloré selon le verdict %>
               <td style="border-color:rgba(255,255,255,0.07); padding:0.6rem 1rem;">
-                <% status_colors = { "approved" => "#1EDD88", "rejected" => "#FD1015", "pending" => "#FFC65A", "errored" => "#E67E22" } %>
+                <% status_colors = { "approved" => "var(--green)", "rejected" => "#FD1015", "pending" => "#FFC65A", "errored" => "#E67E22" } %>
                 <% status_labels = { "approved" => "Approuvée", "rejected" => "Rejetée", "pending" => "En attente", "errored" => "Erreur" } %>
                 <span class="badge" style="background:rgba(255,255,255,0.1); color:<%= status_colors[mod.status] %>; font-size:0.72rem; font-weight:700;">
                   <%= status_labels[mod.status] %>

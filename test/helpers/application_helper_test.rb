@@ -60,8 +60,10 @@ class ApplicationHelperTest < ActionView::TestCase
   test "achievement_badge débloqué contient la bordure verte" do
     achievement = make_achievement
     html        = achievement_badge(achievement, is_unlocked: true)
-    # Le badge débloqué a une bordure verte (#1EDD88)
-    assert_includes html, "#1EDD88",
+    # Le badge débloqué a une bordure verte. On assertionne le token de thème
+    # var(--green) et non un hex : le vert primaire diffère selon le thème
+    # (#1EDD88 en sombre, #00A44A en clair) — voir config/_colors.scss.
+    assert_includes html, "border:2px solid var(--green)",
                     "Le badge débloqué doit avoir une bordure verte"
   end
 

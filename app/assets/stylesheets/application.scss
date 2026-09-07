@@ -100,7 +100,7 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid $green !important;
+  outline: 2px solid var(--green) !important;
   outline-offset: 2px;
 }
 

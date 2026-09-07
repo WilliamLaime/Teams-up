@@ -120,14 +120,14 @@
 
 // Onglet actif — fond vert translucide + bordure verte
 .admin-nav-tab--active {
-  background: rgba($green, 0.14);
-  border-color: rgba($green, 0.45);
-  color: $green;
+  background: rgba(var(--green-rgb), 0.14);
+  border-color: rgba(var(--green-rgb), 0.45);
+  color: var(--green);
   font-weight: 600;
 
   &:hover {
-    color: $green;
-    background: rgba($green, 0.18);
+    color: var(--green);
+    background: rgba(var(--green-rgb), 0.18);
   }
 }
 
@@ -140,8 +140,8 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: $green;
-  color: #111;
+  background: var(--green);
+  color: var(--on-green);
   font-size: 0.68rem;
   font-weight: 700;
   line-height: 1;

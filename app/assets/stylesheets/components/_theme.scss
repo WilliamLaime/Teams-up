@@ -61,6 +61,98 @@
   }
 
 
+  // ── 1ter. BOOTSTRAP — VERT PRIMAIRE ───────────────────────────────────────
+  // Bootstrap compile $primary / $success (= $green, le vert sombre) en valeurs
+  // littérales : ses composants verts ne suivent donc pas le thème tout seuls.
+  // On les réaligne sur var(--green) — qui vaut #00A44A ici — en redéfinissant
+  // les custom properties que Bootstrap 5.3 lit à l'exécution.
+  //
+  // Ces déclarations DOIVENT vivre dans ce fichier : il est importé en dernier
+  // (application.scss), donc après le bloc :root de Bootstrap qui les définit.
+
+  // Tokens globaux — utilisés par .text-primary, .text-success, .link-primary,
+  // les états de validation de formulaire, l'anneau de focus…
+  --bs-green:                   var(--green);
+  --bs-primary:                 var(--green);
+  --bs-primary-rgb:             var(--green-rgb);
+  --bs-success:                 var(--green);
+  --bs-success-rgb:             var(--green-rgb);
+  --bs-link-color:              var(--green);
+  --bs-link-color-rgb:          var(--green-rgb);
+  --bs-focus-ring-color:        rgba(var(--green-rgb), 0.25);
+  --bs-form-valid-color:        var(--green);
+  --bs-form-valid-border-color: var(--green);
+
+  // Composants dont Bootstrap fixe la couleur au niveau de la classe
+  .btn-primary,
+  .btn-success {
+    --bs-btn-bg:                    var(--green);
+    --bs-btn-border-color:          var(--green);
+    --bs-btn-hover-bg:              var(--green-d8);
+    --bs-btn-hover-border-color:    var(--green-d10);
+    --bs-btn-active-bg:             var(--green-d10);
+    --bs-btn-active-border-color:   var(--green-d12);
+    --bs-btn-disabled-bg:           var(--green);
+    --bs-btn-disabled-border-color: var(--green);
+    --bs-btn-focus-shadow-rgb:      var(--green-rgb);
+  }
+
+  .btn-outline-primary,
+  .btn-outline-success {
+    --bs-btn-color:                 var(--green-readable);
+    --bs-btn-border-color:          var(--green);
+    --bs-btn-hover-bg:              var(--green);
+    --bs-btn-hover-border-color:    var(--green);
+    --bs-btn-active-bg:             var(--green);
+    --bs-btn-active-border-color:   var(--green);
+    --bs-btn-disabled-color:        var(--green-readable);
+    --bs-btn-disabled-border-color: var(--green);
+    --bs-btn-focus-shadow-rgb:      var(--green-rgb);
+  }
+
+  .dropdown-menu { --bs-dropdown-link-active-bg: var(--green); }
+  .nav-pills     { --bs-nav-pills-link-active-bg: var(--green); }
+  .progress,
+  .progress-stacked { --bs-progress-bar-bg: var(--green); }
+  .list-group {
+    --bs-list-group-active-bg:           var(--green);
+    --bs-list-group-active-border-color: var(--green);
+  }
+  .pagination {
+    --bs-pagination-active-bg:           var(--green);
+    --bs-pagination-active-border-color: var(--green);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(var(--green-rgb), 0.25);
+  }
+  .accordion {
+    --bs-accordion-btn-focus-box-shadow: 0 0 0 0.25rem rgba(var(--green-rgb), 0.25);
+  }
+  .btn-close {
+    --bs-btn-close-focus-shadow: 0 0 0 0.25rem rgba(var(--green-rgb), 0.25);
+  }
+
+  // Contrôles de formulaire : Bootstrap y écrit la couleur en dur, pas via
+  // une custom property → il faut redéclarer les propriétés elles-mêmes.
+  .form-check-input:checked,
+  .form-check-input[type="checkbox"]:indeterminate {
+    background-color: var(--green);
+    border-color: var(--green);
+  }
+  .form-control:focus,
+  .form-select:focus,
+  .form-check-input:focus,
+  .nav-link:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(var(--green-rgb), 0.25);
+  }
+  .form-range::-webkit-slider-thumb { background-color: var(--green); }
+  .form-range::-moz-range-thumb     { background-color: var(--green); }
+  .form-range:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 1px $light-gray, 0 0 0 0.25rem rgba(var(--green-rgb), 0.25);
+  }
+  .form-range:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 1px $light-gray, 0 0 0 0.25rem rgba(var(--green-rgb), 0.25);
+  }
+
+
   // ── 2. BOOTSTRAP GÉNÉRIQUES ───────────────────────────────────────────────
 
   // Modales Bootstrap → fond blanc, texte sombre
@@ -93,8 +185,8 @@
     color: $gray;
     &::placeholder { color: rgba(0, 0, 0, 0.35); }
     &:focus {
-      border-color: $green;
-      box-shadow: 0 0 0 0.2rem rgba($green, 0.15);
+      border-color: var(--green);
+      box-shadow: 0 0 0 0.2rem rgba(var(--green-rgb), 0.15);
       background-color: #ffffff;
       color: $gray;
     }
@@ -137,7 +229,7 @@
 
     // Le gradient vert passe plus visible sur fond clair
     &::before {
-      background: radial-gradient(circle, rgba($green, 0.1) 0%, transparent 65%);
+      background: radial-gradient(circle, rgba(var(--green-rgb), 0.1) 0%, transparent 65%);
     }
 
     // Titre principal → sombre, accent vert garde sa couleur
@@ -155,7 +247,7 @@
     // Carte "match urgente" flottante sur l'image
     .hero-match-card {
       background: rgba(255, 255, 255, 0.96);
-      border: 1px solid $green;
+      border: 1px solid var(--green);
       color: $gray;
 
       &:hover { color: $gray; }
@@ -207,7 +299,7 @@
       color: rgba(0, 0, 0, 0.75);
 
       .cta-check {
-        background: rgba($green, 0.12);
+        background: rgba(var(--green-rgb), 0.12);
         // icône garde sa couleur verte
       }
     }
@@ -260,8 +352,8 @@
       color: $gray;
 
       &.active {
-        background: $green;
-        color: #111111;
+        background: var(--green);
+        color: var(--on-green);
       }
     }
   }
@@ -280,8 +372,8 @@
     color: rgba(0, 0, 0, 0.55) !important;
 
     &:hover {
-      border-color: $green !important;
-      color: $green !important;
+      border-color: var(--green) !important;
+      color: var(--green) !important;
     }
   }
 
@@ -329,7 +421,7 @@
 
     // Gradient vert adapté au fond clair (plus subtil)
     &::before {
-      background: radial-gradient(circle, rgba($green, 0.08) 0%, transparent 65%);
+      background: radial-gradient(circle, rgba(var(--green-rgb), 0.08) 0%, transparent 65%);
     }
 
     // Nom du profil
@@ -401,8 +493,8 @@
     .player-card {
       border-color: rgba(0, 0, 0, 0.1);
       // Redéfinit les CSS vars de la carte pour le thème clair
-      --c-accent: #{$green};
-      --c-star:   #{$green};
+      --c-accent: #{var(--green)};
+      --c-star:   #{var(--green)};
 
       .player-card__inner {
         background: linear-gradient(160deg, #ffffff 0%, #f8fdf8 60%, #f4f4f4 100%);
@@ -462,7 +554,7 @@
       // Étoiles de notation
       .player-card__stars {
         .star { color: rgba(0, 0, 0, 0.15) !important; }
-        .star.filled { color: $green !important; }
+        .star.filled { color: var(--green) !important; }
       }
       .player-card__rating-label { color: rgba(0, 0, 0, 0.5) !important; }
 
@@ -497,7 +589,7 @@
   // ── Bouton de navigation (Retour / Tout voir) ────────────────────────────
   // En dark : hover blanc (#fff) sur fond sombre → lisible.
   // En clair : hover blanc serait illisible → on passe à un vert plus soutenu.
-  .nav-button:hover { color: darken($green, 12%) !important; }
+  .nav-button:hover { color: var(--green-d12) !important; }
 
   // ── Page About ────────────────────────────────────────────────────────────
   // La page "Qui sommes-nous ?" est intentionnellement 100% dark (design marketing).
@@ -661,7 +753,7 @@
 
   // Quand coché, la track passe en vert (inchangé, reste lisible en light)
   .pill-toggle .pill-toggle-input:checked + .pill-toggle-track {
-    background: $green !important;
+    background: var(--green) !important;
   }
 
 
@@ -784,8 +876,8 @@
 
   // Pills de sport dans la sub-navbar et les filtres
   .sport-pill-active {
-    background-color: $green !important;
-    color: #111111 !important;
+    background-color: var(--green) !important;
+    color: var(--on-green) !important;
   }
 
   // Alert Bootstrap sombre
@@ -835,16 +927,16 @@
     color: rgba(0, 0, 0, 0.55) !important;
 
     &:hover {
-      border-color: rgba($green, 0.5) !important;
-      color: $green !important;
-      background: rgba($green, 0.08) !important;
+      border-color: rgba(var(--green-rgb), 0.5) !important;
+      color: var(--green) !important;
+      background: rgba(var(--green-rgb), 0.08) !important;
     }
 
     // Pill sélectionnée → reste verte (déjà lisible en light)
     &.level-pill--active {
-      background: rgba($green, 0.12) !important;
-      border-color: rgba($green, 0.55) !important;
-      color: $green !important;
+      background: rgba(var(--green-rgb), 0.12) !important;
+      border-color: rgba(var(--green-rgb), 0.55) !important;
+      color: var(--green) !important;
     }
   }
 
@@ -876,20 +968,20 @@
       color: rgba(0, 0, 0, 0.7) !important;
     }
 
-    // Hover : reste vert (déjà ok car rgba($green,...) fonctionne en light)
+    // Hover : reste vert — rgba(var(--green-rgb), …) suit déjà le thème
     &:hover {
-      background: rgba($green, 0.08) !important;
-      border-color: rgba($green, 0.45) !important;
+      background: rgba(var(--green-rgb), 0.08) !important;
+      border-color: rgba(var(--green-rgb), 0.45) !important;
 
-      .sport-select-name { color: $green !important; }
+      .sport-select-name { color: var(--green) !important; }
     }
 
     // Sélectionné : vert (inchangé, déjà lisible)
     &.sport-select-item--selected {
-      background: rgba($green, 0.1) !important;
-      border-color: rgba($green, 0.5) !important;
+      background: rgba(var(--green-rgb), 0.1) !important;
+      border-color: rgba(var(--green-rgb), 0.5) !important;
 
-      .sport-select-name { color: $green !important; }
+      .sport-select-name { color: var(--green) !important; }
     }
   }
 }

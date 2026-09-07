@@ -115,7 +115,7 @@
     color: var(--theme-text-muted);
     transition: color 0.15s;
 
-    &:hover { color: $green; }
+    &:hover { color: var(--green); }
   }
 }
 

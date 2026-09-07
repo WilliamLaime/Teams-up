@@ -22,7 +22,7 @@
           <div style="display:flex; align-items:center; justify-content:space-between;">
             <%# RGAA 9.1 : h3 dans la modale — évite le saut h1→h2→h5 %>
             <h3 style="color:var(--theme-text-strong); font-size:1rem; font-weight:700; margin:0;">
-              <i data-lucide="star" style="width:16px; height:16px; color:#1EDD88; display:inline; vertical-align:middle; margin-right:0.4rem;"></i>
+              <i data-lucide="star" style="width:16px; height:16px; color:var(--green); display:inline; vertical-align:middle; margin-right:0.4rem;"></i>
               Notez vos coéquipiers
             </h3>
             <%# Indicateur "1 / 3" mis à jour par JS (data-step-indicator) %>
@@ -60,7 +60,7 @@
                style="<%= index == 0 ? '' : 'display:none;' %>">
 
             <%# Titre du match (sport + date) %>
-            <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#1EDD88; margin-bottom:0.75rem;">
+            <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--green); margin-bottom:0.75rem;">
               <i data-lucide="calendar" style="width:11px; height:11px; display:inline; vertical-align:middle;"></i>
               <%= item[:match].title %> — <%= item[:match].date&.strftime("%d/%m/%Y") %>
             </div>
@@ -209,7 +209,7 @@
           <button type="button"
                   data-action="click->review-modal#nextStep"
                   data-next-btn
-                  style="font-size:0.78rem; font-weight:600; color:#1EDD88; background:rgba(30,221,136,0.08); border:1px solid rgba(30,221,136,0.25); border-radius:7px; cursor:pointer; padding:0.35rem 0.9rem; transition:all 0.15s;">
+                  style="font-size:0.78rem; font-weight:600; color:var(--green); background:rgba(var(--green-rgb), 0.08); border:1px solid rgba(var(--green-rgb), 0.25); border-radius:7px; cursor:pointer; padding:0.35rem 0.9rem; transition:all 0.15s;">
             Match suivant →
           </button>
         <% end %>

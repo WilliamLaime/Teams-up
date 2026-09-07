@@ -50,7 +50,7 @@
 .landing-title {
   font-family: $display-font;
   font-size: 5rem;
-  color: $green;
+  color: var(--green);
   letter-spacing: 0.04em;
   line-height: 1;
   margin: 0;
@@ -74,7 +74,7 @@
 .landing-cta {
   width: 100%;
   background-color: $dark-surface;
-  border: 1px solid rgba(30, 221, 136, 0.2);
+  border: 1px solid rgba(var(--green-rgb), 0.2);
   border-radius: 12px;
   padding: 1.75rem;
 
@@ -126,17 +126,17 @@
 
     &:focus {
       outline: none;
-      border-color: $green;
+      border-color: var(--green);
       // Halo vert léger — cohérent avec les inputs du site
-      box-shadow: 0 0 0 3px rgba(30, 221, 136, 0.15);
+      box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.15);
     }
   }
 
   // Bouton CTA — même style que .btn-cta-primary du design system
   &__btn {
     padding: 0.8rem 1.5rem;
-    background-color: $green;
-    color: #111111;
+    background-color: var(--green);
+    color: var(--on-green);
     border: none;
     border-radius: 8px;
     font-family: $body-font;
@@ -188,8 +188,8 @@
   animation: landing-flash-in 0.3s ease, landing-flash-out 0.5s ease 4s forwards;
 
   &--success {
-    background-color: $green;
-    color: #111111;
+    background-color: var(--green);
+    color: var(--on-green);
   }
 
   &--error {

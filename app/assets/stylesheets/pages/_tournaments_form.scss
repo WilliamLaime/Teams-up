@@ -5,7 +5,7 @@
 //   • aperçu de structure
 //   • propositions du mode "Libre"
 //   • réglages de structure personnalisables (bloc dépliant)
-// Tokens de thème var(--theme-*) + accent $green.
+// Tokens de thème var(--theme-*) + accent var(--green).
 // =====================================================
 
 // ── Réglages de structure personnalisables (Lot 7) ──
@@ -28,7 +28,7 @@
     transition: border-color 0.15s, color 0.15s;
 
     &:hover {
-      border-color: $green;
+      border-color: var(--green);
       color: var(--theme-text-primary);
     }
 
@@ -36,7 +36,7 @@
 
     &[aria-expanded="true"] {
       border-style: solid;
-      border-color: rgba(30, 221, 136, 0.4);
+      border-color: rgba(var(--green-rgb), 0.4);
       color: var(--theme-text-primary);
     }
   }
@@ -58,12 +58,12 @@
   margin: 0.25rem 0 1rem;
   padding: 0.55rem 0.8rem;
   border-radius: 0.5rem;
-  background: rgba(30, 221, 136, 0.08);
-  border: 1px solid rgba(30, 221, 136, 0.25);
+  background: rgba(var(--green-rgb), 0.08);
+  border: 1px solid rgba(var(--green-rgb), 0.25);
   font-size: 0.85rem;
   color: var(--theme-text-primary);
 
-  i { color: $green; flex-shrink: 0; }
+  i { color: var(--green); flex-shrink: 0; }
 }
 
 // ── Mode Libre : liste de propositions ──
@@ -88,15 +88,15 @@
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 
-  &:hover { border-color: $green; }
+  &:hover { border-color: var(--green); }
 
   // Proposition recommandée (1re de la liste) : accent vert discret
-  &.recommended { border-color: rgba(30, 221, 136, 0.5); }
+  &.recommended { border-color: rgba(var(--green-rgb), 0.5); }
 
   // Proposition choisie par l'utilisateur
   &.selected {
-    border-color: $green;
-    background: rgba(30, 221, 136, 0.12);
+    border-color: var(--green);
+    background: rgba(var(--green-rgb), 0.12);
   }
 
   .tournament-proposal-head {
@@ -121,13 +121,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  background: $green;
-  color: #111;
+  background: var(--green);
+  color: var(--on-green);
 }
 
 // Toggle d'auto-inscription : aligne la case avec son libellé
 .tournament-self-register {
-  .form-check-input:checked { background-color: $green; border-color: $green; }
+  .form-check-input:checked { background-color: var(--green); border-color: var(--green); }
   .form-check-label { color: var(--theme-text-primary); font-weight: 600; }
 }
 
@@ -185,8 +185,8 @@
     color: var(--theme-text-muted);
 
     &--admin {
-      background: $green;
-      color: #111;
+      background: var(--green);
+      color: var(--on-green);
     }
   }
 

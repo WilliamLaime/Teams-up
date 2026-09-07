@@ -5,9 +5,9 @@
 
   <%# ── En-tête ── %>
   <div class="d-flex align-items-center gap-2 mb-4">
-    <i data-lucide="file-text" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <i data-lucide="file-text" style="width:22px; height:22px; color:var(--green);"></i>
     <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
-      Espace <span style="color:#1EDD88;">Admin</span>
+      Espace <span style="color:var(--green);">Admin</span>
     </h1>
   </div>
 
@@ -17,11 +17,11 @@
   <%# ── Barre d'actions ── %>
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div class="d-flex align-items-center gap-2">
-      <span style="font-size:2rem; font-weight:700; color:#1EDD88;"><%= @articles.count %></span>
+      <span style="font-size:2rem; font-weight:700; color:var(--green);"><%= @articles.count %></span>
       <span style="color:rgba(255,255,255,0.6); font-size:0.95rem;">article<%= @articles.count > 1 ? "s" : "" %></span>
     </div>
     <%= link_to new_admin_article_path,
-          style: "background:#1EDD88; color:#111; border:none; font-weight:700; font-size:0.88rem;
+          style: "background:var(--green); color:#111; border:none; font-weight:700; font-size:0.88rem;
                   padding:0.55rem 1.2rem; border-radius:8px; display:inline-flex; align-items:center; gap:0.4rem;
                   text-decoration:none;" do %>
       <i data-lucide="plus" style="width:15px; height:15px;"></i>
@@ -50,7 +50,7 @@
                 <% if article.published? %>
                   <%= link_to "↗", article_path(article.slug),
                         target: "_blank",
-                        style: "color:#1EDD88; font-size:0.8rem; margin-left:6px;" %>
+                        style: "color:var(--green); font-size:0.8rem; margin-left:6px;" %>
                 <% end %>
               </td>
 
@@ -61,7 +61,7 @@
               <%# Badge statut : publié (vert) ou brouillon (jaune) %>
               <td>
                 <% if article.published? %>
-                  <span style="background:rgba(30,221,136,0.15); color:#1EDD88; border:1px solid rgba(30,221,136,0.3);
+                  <span style="background:rgba(var(--green-rgb), 0.15); color:var(--green); border:1px solid rgba(var(--green-rgb), 0.3);
                                font-size:0.75rem; font-weight:600; padding:0.2rem 0.6rem; border-radius:20px;">
                     Publié
                   </span>
@@ -96,7 +96,7 @@
                   <% else %>
                     <%= button_to publish_admin_article_path(article), method: :patch,
                           data: { turbo: false },
-                          style: "background:none; border:none; padding:0; cursor:pointer; color:#1EDD88;" do %>
+                          style: "background:none; border:none; padding:0; cursor:pointer; color:var(--green);" do %>
                       <i data-lucide="eye" style="width:14px; height:14px;"></i>
                     <% end %>
                   <% end %>
@@ -117,7 +117,7 @@
   <% else %>
     <div class="text-center py-5" style="color:rgba(255,255,255,0.4);">
       <i data-lucide="file-text" style="width:40px; height:40px; margin-bottom:1rem;"></i>
-      <p style="margin:0;">Aucun article. <%= link_to "Créer le premier →", new_admin_article_path, style: "color:#1EDD88;" %></p>
+      <p style="margin:0;">Aucun article. <%= link_to "Créer le premier →", new_admin_article_path, style: "color:var(--green);" %></p>
     </div>
   <% end %>
 

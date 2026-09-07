@@ -49,7 +49,7 @@ body:has(.error-404-page) footer {
   font-size: clamp(6rem, 20vw, 10rem); // Responsive : grand sur desktop, raisonnable sur mobile
   font-weight: 900;
   line-height: 1;
-  color: $green;              // Vert de l'app
+  color: var(--green);              // Vert de l'app
   opacity: 0.15;              // Très transparent → effet "watermark" en arrière-plan
   margin-bottom: -1rem;       // Tire vers le haut pour superposer l'icône
   pointer-events: none;       // Pas cliquable
@@ -63,7 +63,7 @@ body:has(.error-404-page) footer {
   i {
     width: 64px;
     height: 64px;
-    color: $green;            // Vert pour rester dans le thème
+    color: var(--green);            // Vert pour rester dans le thème
     opacity: 0.8;
   }
 }

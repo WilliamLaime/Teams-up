@@ -8,8 +8,8 @@
   left: 1rem;
   z-index: 9999;
   padding: 0.75rem 1.5rem;
-  background: $green;
-  color: #111111;
+  background: var(--green);
+  color: var(--on-green);
   font-weight: 700;
   border-radius: 0 0 8px 8px;
   text-decoration: none;
@@ -19,6 +19,6 @@
     top: 0;
     outline: 3px solid #111111;
     outline-offset: 2px;
-    color: #111111;
+    color: var(--on-green);
   }
 }

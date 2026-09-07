@@ -114,9 +114,9 @@ export default class extends Controller {
       willChange:     "transform, opacity",
       // Fond et bordure identiques au badge (verts si déverrouillé)
       background:     isUnlocked ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.03)",
-      border:         isUnlocked ? "2px solid #1EDD88"      : "1px solid rgba(255,255,255,0.08)",
+      border:         isUnlocked ? "2px solid var(--green)"      : "1px solid rgba(255,255,255,0.08)",
       boxShadow:      isUnlocked
-        ? "0 0 0 4px rgba(30,221,136,0.18), 0 0 30px rgba(30,221,136,0.45), 0 0 70px rgba(30,221,136,0.2)"
+        ? "0 0 0 4px rgba(var(--green-rgb), 0.18), 0 0 30px rgba(var(--green-rgb), 0.45), 0 0 70px rgba(var(--green-rgb), 0.2)"
         : "none"
     })
     document.body.appendChild(flyer)

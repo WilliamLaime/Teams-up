@@ -43,7 +43,7 @@
 
     &:hover,
     &:focus-visible {
-      color: $green;
+      color: var(--green);
       text-decoration: underline;
     }
   }
@@ -75,7 +75,7 @@
 
     .breadcrumb-trail__link:hover,
     .breadcrumb-trail__link:focus-visible {
-      color: $green;
+      color: var(--green);
     }
   }
 }

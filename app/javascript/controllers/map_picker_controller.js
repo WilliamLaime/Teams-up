@@ -170,7 +170,7 @@ export default class extends Controller {
     const icon = L.divIcon({
       html: `<div style="
         width: 20px; height: 20px;
-        background: #1EDD88;
+        background: var(--green);
         border-radius: 50%;
         border: 3px solid #fff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.45);

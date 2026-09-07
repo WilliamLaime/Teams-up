@@ -35,11 +35,11 @@
     cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
-    &:hover { border-color: $green; }
+    &:hover { border-color: var(--green); }
 
     &[aria-expanded="true"] {
-      border-color: $green;
-      box-shadow: 0 0 0 3px rgba($green, 0.15);
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.15);
     }
 
     // Option vide sélectionnée (« Aucun… ») : c'est un texte d'invite, pas une valeur.
@@ -107,7 +107,7 @@
 
     &.is-active {
       color: #fff;
-      background-color: $green;
+      background-color: var(--green);
     }
   }
 }

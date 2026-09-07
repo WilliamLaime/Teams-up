@@ -85,11 +85,11 @@
 
   // Liens dans le texte
   a {
-    color: $green;
+    color: var(--green);
     text-decoration: underline;
 
     &:hover {
-      color: lighten($green, 10%);
+      color: var(--green-l10);
     }
   }
 
@@ -116,7 +116,7 @@
     color: $dark-muted;
     border-collapse: separate;     // nécessaire pour border-radius sur le tableau
     border-spacing: 0;             // pas d'espace entre les cellules
-    border: 1px solid rgba($green, 0.35);   // bordure externe légèrement verte
+    border: 1px solid rgba(var(--green-rgb), 0.35);   // bordure externe légèrement verte
     border-radius: 8px;            // coins arrondis sur l'ensemble du tableau
     overflow: hidden;              // masque les coins des cellules qui dépassent
 
@@ -124,8 +124,8 @@
       background-color: #0a0a0a;   // noir profond pour l'en-tête
       color: $dark-text;
       font-weight: 600;
-      border-bottom: 1px solid rgba($green, 0.4); // séparation verte entre header et body
-      border-right: 1px solid rgba($green, 0.2);  // séparation entre colonnes
+      border-bottom: 1px solid rgba(var(--green-rgb), 0.4); // séparation verte entre header et body
+      border-right: 1px solid rgba(var(--green-rgb), 0.2);  // séparation entre colonnes
 
       &:last-child {
         border-right: none; // pas de bordure sur la dernière colonne
@@ -135,8 +135,8 @@
     td {
       background-color: #111111;   // fond noir légèrement plus clair que l'en-tête
       padding: 14px 18px;
-      border-bottom: 1px solid rgba($green, 0.15); // lignes horizontales vertes subtiles
-      border-right: 1px solid rgba($green, 0.15);  // séparation verticale entre colonnes
+      border-bottom: 1px solid rgba(var(--green-rgb), 0.15); // lignes horizontales vertes subtiles
+      border-right: 1px solid rgba(var(--green-rgb), 0.15);  // séparation verticale entre colonnes
 
       &:last-child {
         border-right: none;
@@ -152,7 +152,7 @@
     }
 
     tbody tr:hover td {
-      background-color: rgba($green, 0.04); // léger highlight vert au survol
+      background-color: rgba(var(--green-rgb), 0.04); // léger highlight vert au survol
     }
   }
 
@@ -173,17 +173,17 @@
     // Bouton vert avec texte noir — bien lisible sur fond sombre
     .btn-primary {
       text-decoration: none; // supprime le soulignement hérité des liens <a>
-      background-color: $green;
-      border-color: $green;
-      color: #111111;         // texte noir sur vert pour un bon contraste
+      background-color: var(--green);
+      border-color: var(--green);
+      color: var(--on-green);         // texte noir sur vert pour un bon contraste
       font-weight: 600;
       padding: 10px 28px;
       border-radius: 8px;
 
       &:hover {
-        background-color: darken($green, 8%);
-        border-color: darken($green, 8%);
-        color: #111111;
+        background-color: var(--green-d8);
+        border-color: var(--green-d8);
+        color: var(--on-green);
       }
     }
   }

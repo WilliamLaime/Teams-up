@@ -1,6 +1,6 @@
 // =====================================================
 // TOURNAMENT BRACKET — Board d'un tournoi (/tournois/:id)
-// Rondes suisses + tableau final. Tokens de thème var(--theme-*) + accent $green.
+// Rondes suisses + tableau final. Tokens de thème var(--theme-*) + accent var(--green).
 // =====================================================
 
 .tournament-board {
@@ -57,7 +57,7 @@
     color: var(--theme-text-primary);
     font-size: 1.05rem;
 
-    i { width: 20px; height: 20px; color: $green; }
+    i { width: 20px; height: 20px; color: var(--green); }
     strong { color: var(--theme-text-strong); }
   }
 
@@ -91,23 +91,23 @@
   gap: 0.25rem;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, rgba($green, 0.12), transparent);
-  border: 1px solid rgba($green, 0.4);
+  background: linear-gradient(135deg, rgba(var(--green-rgb), 0.12), transparent);
+  border: 1px solid rgba(var(--green-rgb), 0.4);
   border-radius: 16px;
 
-  i { width: 36px; height: 36px; color: $green; }
+  i { width: 36px; height: 36px; color: var(--green); }
   &__label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--theme-text-muted); }
   &__name { font-size: 1.4rem; font-family: $display-font; color: var(--theme-text-strong); }
 }
 
 // ── Podium à 3 marches (Critérium) ───────────────────
-// Reprend volontairement le cadre du bandeau vainqueur (dégradé $green, bordure,
+// Reprend volontairement le cadre du bandeau vainqueur (dégradé vert, bordure,
 // rayon) : c'est le même composant « voici le résultat », en plus détaillé.
 .tournament-podium {
   padding: 1.5rem 1rem 0;
   margin-bottom: 1.5rem;
-  background: linear-gradient(135deg, rgba($green, 0.12), transparent);
-  border: 1px solid rgba($green, 0.4);
+  background: linear-gradient(135deg, rgba(var(--green-rgb), 0.12), transparent);
+  border: 1px solid rgba(var(--green-rgb), 0.4);
   border-radius: 16px;
 
   &__steps {
@@ -178,7 +178,7 @@
   &__place { font-family: $display-font; font-size: 1.6rem; line-height: 1; }
   &__tie   { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; }
 
-  &__step--1 &__base { height: 96px; background: $yellow; border: 2px solid $green; border-bottom: 0; }
+  &__step--1 &__base { height: 96px; background: $yellow; border: 2px solid var(--green); border-bottom: 0; }
   &__step--2 &__base { height: 68px; background: #B9C2C7; }
   &__step--3 &__base { height: 52px; background: #CD7F32; }
 
@@ -201,7 +201,7 @@
     color: var(--theme-text-strong);
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid $green;
+    border-bottom: 2px solid var(--green);
   }
 
   // Titre d'un sous-tableau à l'intérieur d'une phase : les branches de classement
@@ -248,8 +248,8 @@
 
     &.is-active {
       color: #fff;
-      background-color: $green;
-      border-color: $green;
+      background-color: var(--green);
+      border-color: var(--green);
     }
 
     i { width: 16px; height: 16px; }
@@ -327,11 +327,11 @@
     cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
-    &:hover { border-color: $green; }
+    &:hover { border-color: var(--green); }
 
     &[aria-expanded="true"] {
-      border-color: $green;
-      box-shadow: 0 0 0 3px rgba($green, 0.15);
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.15);
     }
 
     i { width: 16px; height: 16px; transition: transform 0.15s ease; }
@@ -398,7 +398,7 @@
     width: 15px;
     height: 15px;
     margin: 0;
-    accent-color: $green;
+    accent-color: var(--green);
     cursor: pointer;
   }
 }
@@ -415,7 +415,7 @@
     gap: 0.5rem;
     margin-bottom: 0.75rem;
     padding-bottom: 0.4rem;
-    border-bottom: 2px solid $green;
+    border-bottom: 2px solid var(--green);
   }
 
   &__title {
@@ -432,7 +432,7 @@
     border-radius: 999px;
     white-space: nowrap;
 
-    &--completed { color: $green; background: rgba($green, 0.12); }
+    &--completed { color: var(--green); background: rgba(var(--green-rgb), 0.12); }
     &--in_progress { color: var(--theme-text-muted); background: var(--theme-hover-bg); }
   }
 
@@ -486,7 +486,7 @@
     border-radius: 2px;
   }
 
-  &__pip--win { background-color: $green; }
+  &__pip--win { background-color: var(--green); }
   &__pip--loss { background-color: #c0392b; }
   // theme-border-strong (rgba blanc 10% en sombre) est pensé pour une bordure
   // fine, pas un aplat : en plein sur un carré il devient quasi invisible sur
@@ -563,8 +563,8 @@
   // identiques, c'est ce qu'on repère avant même de lire un nom. La bordure
   // écrase délibérément celle de --done, qui n'est qu'une nuance de gris.
   &--mine {
-    border-color: $green;
-    box-shadow: 0 0 0 1px rgba($green, 0.35);
+    border-color: var(--green);
+    box-shadow: 0 0 0 1px rgba(var(--green-rgb), 0.35);
   }
 
   // Tour futur pas encore joué (Lot 7) : même gabarit que la carte d'un vrai
@@ -613,7 +613,7 @@
     // un exempt n'a rien gagné, et c'est ce qui permet à sa carte de rester
     // pleine largeur sans virer à l'aplat vert.
     &--winner {
-      background: rgba($green, 0.12);
+      background: rgba(var(--green-rgb), 0.12);
       .tmatch-card__name { color: var(--theme-text-strong); font-weight: 700; }
     }
 
@@ -660,7 +660,7 @@
     text-overflow: ellipsis;
   }
 
-  &__win-icon { width: 18px; height: 18px; color: $green; flex: 0 0 auto; }
+  &__win-icon { width: 18px; height: 18px; color: var(--green); flex: 0 0 auto; }
 
   &__bye-badge {
     font-size: 0.75rem;
@@ -671,9 +671,9 @@
   // Bouton « Vainqueur » (button_to → form). On neutralise le style form.
   &__win-btn {
     flex: 0 0 auto;
-    border: 1px solid $green;
+    border: 1px solid var(--green);
     background: transparent;
-    color: $green;
+    color: var(--green);
     font-size: 0.72rem;
     font-weight: 600;
     padding: 0.2rem 0.6rem;
@@ -681,7 +681,7 @@
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
 
-    &:hover { background: $green; color: #fff; }
+    &:hover { background: var(--green); color: #fff; }
   }
 
   // ── Animation de tirage au sort (contrôleur tournament-draw) ──
@@ -728,7 +728,7 @@
     font-size: clamp(1.6rem, 5vw, 2.6rem);
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: $green;
+    color: var(--green);
     margin-bottom: 1.5rem;
   }
 
@@ -788,7 +788,7 @@
     cursor: pointer;
 
     &:hover,
-    &:focus-visible { color: $green; border-color: $green; }
+    &:focus-visible { color: var(--green); border-color: var(--green); }
   }
 }
 
@@ -800,8 +800,8 @@
   flex: 0 0 auto;
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  background-color: rgba($green, 0.18);
-  color: $green;
+  background-color: rgba(var(--green-rgb), 0.18);
+  color: var(--green);
   font-size: 0.65rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -878,8 +878,8 @@
   color: var(--theme-text-strong);
 
   &.is-winner {
-    color: $green;
-    border-bottom: 2px solid $green;
+    color: var(--green);
+    border-bottom: 2px solid var(--green);
   }
 }
 
@@ -949,8 +949,8 @@
   // Même code couleur que la scoreline centrée : le vert sur le SEUL score du
   // vainqueur suffit à le désigner, sans aplat plein cadre ni nom barré.
   &.is-winner {
-    color: $green;
-    border-bottom: 2px solid $green;
+    color: var(--green);
+    border-bottom: 2px solid var(--green);
   }
 
   &--pending {
@@ -988,8 +988,8 @@
   // Même code couleur que le score d'un match joué : vert pour qui gagne, muted
   // pour qui perd. Un joueur lit sa carte de la même façon dans les deux cas.
   &.is-winner {
-    color: $green;
-    border-bottom: 2px solid $green;
+    color: var(--green);
+    border-bottom: 2px solid var(--green);
   }
 
   &.is-loser {
@@ -1100,11 +1100,11 @@
 }
 
 .tmatch-card__score-btn {
-  border: 1px solid $green;
+  border: 1px solid var(--green);
   background: transparent;
-  color: $green;
+  color: var(--green);
 
-  &:hover { background: $green; color: #fff; }
+  &:hover { background: var(--green); color: #fff; }
 }
 
 // Correction d'un score verrouillé (organisateur) : teinte ambrée pour la
@@ -1155,10 +1155,10 @@
 // secondaires. C'est le SEUL signal de non-lu de ce chat — il n'apparaît ni dans
 // la sidebar globale, ni en notification.
 .tmatch-card__chat-btn--unread {
-  border-color: $green;
-  color: $green;
+  border-color: var(--green);
+  color: var(--green);
 
-  &:hover { background: $green; color: #fff; }
+  &:hover { background: var(--green); color: #fff; }
 }
 
 // Point de notification, posé à cheval sur le bord de la bulle. `box-shadow`
@@ -1171,7 +1171,7 @@
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 50%;
-  background: $green;
+  background: var(--green);
   box-shadow: 0 0 0 2px var(--theme-bg-card);
 }
 
@@ -1291,7 +1291,7 @@
     overflow: hidden;
 
     // Le focus se voit sur le bloc entier, pas seulement sur l'input intérieur.
-    &:focus-within { border-color: $green; }
+    &:focus-within { border-color: var(--green); }
   }
 
   &__step {
@@ -1307,11 +1307,11 @@
 
     &:hover {
       background-color: var(--theme-hover-bg);
-      color: $green;
+      color: var(--green);
     }
 
     // Pas d'`active` collant sur mobile : le retour visuel vient du survol/pression.
-    &:active { background-color: rgba($green, 0.18); }
+    &:active { background-color: rgba(var(--green-rgb), 0.18); }
   }
 
   &__input {
@@ -1391,7 +1391,7 @@
 
     // Le joueur en tête ressort : c'est l'information qu'on vient chercher d'un
     // coup d'œil.
-    &.is-leading { color: $green; }
+    &.is-leading { color: var(--green); }
   }
 
   &__tally-sep {
@@ -1506,8 +1506,8 @@
   letter-spacing: 0.04em;
 
   &--live {
-    background-color: rgba($green, 0.15);
-    color: $green;
+    background-color: rgba(var(--green-rgb), 0.15);
+    color: var(--green);
   }
 
   &--done {
@@ -1516,8 +1516,8 @@
   }
 
   &--open {
-    background-color: rgba($green, 0.12);
-    color: $green;
+    background-color: rgba(var(--green-rgb), 0.12);
+    color: var(--green);
   }
 
   &--closed {
@@ -1570,8 +1570,8 @@
     &:hover { color: var(--theme-text-primary); }
 
     &.is-active {
-      color: $green;
-      border-bottom-color: $green;
+      color: var(--green);
+      border-bottom-color: var(--green);
     }
   }
 
@@ -1606,7 +1606,7 @@
       color: var(--theme-text-muted);
       margin-bottom: 0.35rem;
 
-      i { width: 15px; height: 15px; color: $green; }
+      i { width: 15px; height: 15px; color: var(--green); }
     }
 
     dd {
@@ -1657,7 +1657,7 @@
     color: var(--theme-text-strong);
     margin-bottom: 0.85rem;
 
-    i { width: 18px; height: 18px; color: $green; }
+    i { width: 18px; height: 18px; color: var(--green); }
   }
 
   &__count {
@@ -1713,8 +1713,8 @@
 
     &:focus {
       outline: none;
-      border-color: $green;
-      box-shadow: 0 0 0 2px rgba($green, 0.18);
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(var(--green-rgb), 0.18);
     }
   }
 }
@@ -1789,11 +1789,11 @@
     background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.06));
   }
 
-  &--admin { border-color: rgba($green, 0.4); }
+  &--admin { border-color: rgba(var(--green-rgb), 0.4); }
 
   &__state--qualified {
-    color: $green;
-    background-color: rgba($green, 0.14);
+    color: var(--green);
+    background-color: rgba(var(--green-rgb), 0.14);
   }
 
   &__state--eliminated {
@@ -1931,8 +1931,8 @@
     margin-left: 0.4rem;
     padding: 0.05rem 0.4rem;
     border-radius: 999px;
-    background-color: rgba($green, 0.18);
-    color: $green;
+    background-color: rgba(var(--green-rgb), 0.18);
+    color: var(--green);
     font-size: 0.65rem;
     font-weight: 800;
   }
@@ -1980,8 +1980,8 @@
 
     &[aria-selected="true"] {
       color: #fff;
-      background-color: $green;
-      border-color: $green;
+      background-color: var(--green);
+      border-color: var(--green);
 
       // Sur fond vert plein, la pastille « ta poule » doit s'inverser : sa teinte
       // verte translucide y devient invisible.
@@ -2161,7 +2161,7 @@
     thead .is-player { display: table-cell; }
 
     .is-num { font-variant-numeric: tabular-nums; color: var(--theme-text-primary); }
-    .is-win { font-weight: 700; color: $green; }
+    .is-win { font-weight: 700; color: var(--green); }
     .is-pts { font-weight: 700; color: var(--theme-text-strong); }
 
     // Variante compacte (colonne latérale du sélecteur de poules) : quatre
@@ -2204,7 +2204,7 @@
   &__qualified-icon {
     width: 15px;
     height: 15px;
-    color: $green;
+    color: var(--green);
     flex: 0 0 auto;
   }
 
@@ -2232,13 +2232,13 @@
     text-decoration: none;
   }
 
-  &__row--qualified td:first-child { box-shadow: inset 3px 0 0 $green; }
+  &__row--qualified td:first-child { box-shadow: inset 3px 0 0 var(--green); }
 
   // ── Destinations de poule (Critérium, avant la phase finale) ──
   // Placées APRÈS --qualified pour l'emporter à spécificité égale. En pratique
   // les deux ne coexistent jamais : show_pool_destinations? s'éteint dès que la
   // phase finale démarre, c'est-à-dire dès que `qualified` est posé.
-  &__row--dest-bracket     td:first-child { box-shadow: inset 3px 0 0 $green; }
+  &__row--dest-bracket     td:first-child { box-shadow: inset 3px 0 0 var(--green); }
   &__row--dest-barrage     td:first-child { box-shadow: inset 3px 0 0 $orange; }
   &__row--dest-consolation td:first-child { box-shadow: inset 3px 0 0 $red; }
 
@@ -2250,7 +2250,7 @@
     height: 15px;
     flex: 0 0 auto;
 
-    &--bracket     { color: $green; }
+    &--bracket     { color: var(--green); }
     &--barrage     { color: $orange; }
     &--consolation { color: #c0392b; }
   }
@@ -2259,7 +2259,7 @@
   // TEINTE et non un liseré — le liseré de gauche est déjà pris par « qualifié »,
   // et les deux états se cumulent (on peut être soi-même ET qualifié).
   &__row.is-me td {
-    background-color: rgba($green, 0.1);
+    background-color: rgba(var(--green-rgb), 0.1);
     font-weight: 700;
 
     // Un éliminé reste lisible s'il s'agit de moi : c'est justement la ligne
@@ -2299,7 +2299,7 @@
 
     i { width: 18px; height: 18px; }
 
-    &--qualified { color: $green; }
+    &--qualified { color: var(--green); }
     &--eliminated { color: #c0392b; }
   }
 
@@ -2402,8 +2402,8 @@
 
     &.is-active {
       color: #fff;
-      background-color: $green;
-      border-color: $green;
+      background-color: var(--green);
+      border-color: var(--green);
     }
   }
 
@@ -2426,12 +2426,12 @@
     line-height: 1;
     cursor: pointer;
 
-    &:hover { border-color: $green; color: $green; }
+    &:hover { border-color: var(--green); color: var(--green); }
   }
 
   &__slider {
     width: 96px;
-    accent-color: $green;
+    accent-color: var(--green);
     cursor: pointer;
   }
 
@@ -2461,7 +2461,7 @@
     gap: 0.5em;
     margin-bottom: 0.75em;
     padding-bottom: 0.4em;
-    border-bottom: 2px solid $green;
+    border-bottom: 2px solid var(--green);
   }
 
   &__label {
@@ -2480,7 +2480,7 @@
     padding: 0.12em 0.5em;
     border-radius: 999px;
 
-    &--completed { color: $green; background-color: rgba($green, 0.14); }
+    &--completed { color: var(--green); background-color: rgba(var(--green-rgb), 0.14); }
     &--in_progress,
     &--pending { color: var(--theme-text-muted); background-color: var(--theme-bg-subtle, rgba(0, 0, 0, 0.06)); }
   }
@@ -2512,7 +2512,7 @@
     gap: 0.5em;
 
     &--winner { .bracket-cell__name { color: var(--theme-text-strong); font-weight: 700; } }
-    &--winner .bracket-cell__score { color: $green; }
+    &--winner .bracket-cell__score { color: var(--green); }
     &--loser { opacity: 0.6; }
   }
 
@@ -2588,7 +2588,7 @@
 
   i { width: 15px; height: 15px; flex: 0 0 auto; }
 
-  &__item--bracket i     { color: $green; }
+  &__item--bracket i     { color: var(--green); }
   &__item--barrage i     { color: $orange; }
   &__item--consolation i { color: #c0392b; }
 }

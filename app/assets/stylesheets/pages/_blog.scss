@@ -19,7 +19,7 @@
   }
 
   &__label {
-    color: $green;
+    color: var(--green);
     font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -68,9 +68,9 @@
 
 // Bandeau CTA sous le hero — visible uniquement aux visiteurs non connectés
 .blog-cta-banner {
-  background: rgba(30, 221, 136, 0.07);
-  border-top: 1px solid rgba(30, 221, 136, 0.2);
-  border-bottom: 1px solid rgba(30, 221, 136, 0.2);
+  background: rgba(var(--green-rgb), 0.07);
+  border-top: 1px solid rgba(var(--green-rgb), 0.2);
+  border-bottom: 1px solid rgba(var(--green-rgb), 0.2);
   padding: 0.9rem 0;
 
   &__inner {
@@ -86,7 +86,7 @@
     font-size: 0.9rem;
 
     strong {
-      color: $green;
+      color: var(--green);
       margin-right: 0.3rem;
     }
   }
@@ -106,14 +106,14 @@
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: $green;
-    color: $green;
+    border-color: var(--green);
+    color: var(--green);
   }
 
   &--active {
-    background: rgba(30, 221, 136, 0.12);
-    border-color: rgba(30, 221, 136, 0.4);
-    color: $green;
+    background: rgba(var(--green-rgb), 0.12);
+    border-color: rgba(var(--green-rgb), 0.4);
+    color: var(--green);
   }
 }
 
@@ -129,7 +129,7 @@
   transition: border-color 0.2s ease, transform 0.2s ease;
 
   &:hover {
-    border-color: rgba(30, 221, 136, 0.3);
+    border-color: rgba(var(--green-rgb), 0.3);
     transform: translateY(-2px);
   }
 
@@ -166,8 +166,8 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: $green;
-    background: rgba(30, 221, 136, 0.1);
+    color: var(--green);
+    background: rgba(var(--green-rgb), 0.1);
     padding: 0.2rem 0.55rem;
     border-radius: 4px;
   }
@@ -190,7 +190,7 @@
       color: $dark-text;
       text-decoration: none;
 
-      &:hover { color: $green; }
+      &:hover { color: var(--green); }
     }
   }
 
@@ -217,7 +217,7 @@
   &__link {
     font-size: 0.82rem;
     font-weight: 600;
-    color: $green;
+    color: var(--green);
     text-decoration: none;
 
     &:hover { text-decoration: underline; }
@@ -257,13 +257,13 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: $green;
-    background: rgba(30, 221, 136, 0.1);
+    color: var(--green);
+    background: rgba(var(--green-rgb), 0.1);
     padding: 0.25rem 0.65rem;
     border-radius: 4px;
     text-decoration: none;
 
-    &:hover { background: rgba(30, 221, 136, 0.2); }
+    &:hover { background: rgba(var(--green-rgb), 0.2); }
   }
 
   &__reading-time {
@@ -306,7 +306,7 @@
     strong { color: $dark-text; }
 
     a {
-      color: $green;
+      color: var(--green);
       text-decoration: underline;
       text-underline-offset: 3px;
     }
@@ -350,14 +350,14 @@
     text-decoration: none;
     font-size: 0.88rem;
 
-    &:hover { color: $green; }
+    &:hover { color: var(--green); }
   }
 
   // CTA inscription en bas d'article
   &__cta {
     text-align: center;
-    background: rgba(30, 221, 136, 0.08);
-    border: 1px solid rgba(30, 221, 136, 0.35);
+    background: rgba(var(--green-rgb), 0.08);
+    border: 1px solid rgba(var(--green-rgb), 0.35);
     border-radius: 12px;
     padding: 1.5rem 2rem;
     width: 100%;
@@ -370,8 +370,8 @@
 
     // Forcer le style du bouton vert dans ce contexte sombre
     .btn-cta-primary {
-      background-color: $green;
-      color: #111;
+      background-color: var(--green);
+      color: var(--on-green);
       font-weight: 700;
       padding: 0.6rem 1.75rem;
       border-radius: 8px;
@@ -379,8 +379,8 @@
       display: inline-block;
 
       &:hover {
-        background-color: darken($green, 8%);
-        color: #111;
+        background-color: var(--green-d8);
+        color: var(--on-green);
       }
     }
   }

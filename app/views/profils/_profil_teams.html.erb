@@ -13,7 +13,7 @@
   <%# ── En-tête — même titre "Équipes" pour son propre profil ou celui d'un autre ── %>
   <% teams_title = "Équipes" %>
   <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700;
-              text-transform:uppercase; letter-spacing:0.08em; color:#1EDD88; margin-bottom:0.75rem;">
+              text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.75rem;">
     <i data-lucide="shield" style="width:14px; height:14px;"></i>
     <%= teams_title %> (<%= @profil_teams.length %>)
   </div>
@@ -48,7 +48,7 @@
                 <%= team.name %>
               </div>
               <%# Badge rôle : vert pour capitaine, gris adaptatif pour membre %>
-              <span style="display:inline-block; font-size:0.68rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:20px; <%= is_captain ? 'background:rgba(30,221,136,0.15); color:#1EDD88;' : 'background:var(--theme-hover-bg); color:var(--theme-text-muted);' %>">
+              <span style="display:inline-block; font-size:0.68rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:20px; <%= is_captain ? 'background:rgba(var(--green-rgb), 0.15); color:var(--green);' : 'background:var(--theme-hover-bg); color:var(--theme-text-muted);' %>">
                 <%= is_captain ? "👑 Capitaine" : "Membre" %>
               </span>
             </div>
@@ -116,7 +116,7 @@
                          data-profil-invite-target="select"
                          data-action="change->profil-invite#update"
                          <%= i == 0 ? "checked" : "" %>
-                         style="accent-color:#1EDD88;">
+                         style="accent-color:var(--green);">
                 </label>
               <% end %>
             </div>

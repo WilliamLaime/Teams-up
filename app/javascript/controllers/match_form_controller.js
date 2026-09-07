@@ -306,15 +306,15 @@ export default class extends Controller {
       btn.style.setProperty("border-radius", "0.5rem")
       btn.style.setProperty("font-size", "0.9rem")
       btn.style.setProperty("cursor", "pointer")
-      btn.style.setProperty("border",      isFirst ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
-      btn.style.setProperty("background",  isFirst ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)", "important")
-      btn.style.setProperty("color",       isFirst ? "#1EDD88"                   : "var(--theme-text-primary)", "important")
+      btn.style.setProperty("border",      isFirst ? "2px solid var(--green)"         : "2px solid var(--theme-border-strong)", "important")
+      btn.style.setProperty("background",  isFirst ? "rgba(var(--green-rgb), 0.12)"     : "var(--theme-hover-bg)", "important")
+      btn.style.setProperty("color",       isFirst ? "var(--green)"                   : "var(--theme-text-primary)", "important")
       // Hover : vert au survol si non actif, retour aux CSS variables en partant
       btn.addEventListener("mouseover", () => {
         if (!btn.classList.contains("active")) {
-          btn.style.setProperty("border",     "2px solid #1EDD88",           "important")
-          btn.style.setProperty("background", "rgba(30,221,136,0.08)",       "important")
-          btn.style.setProperty("color",      "#1EDD88",                     "important")
+          btn.style.setProperty("border",     "2px solid var(--green)",           "important")
+          btn.style.setProperty("background", "rgba(var(--green-rgb), 0.08)",       "important")
+          btn.style.setProperty("color",      "var(--green)",                     "important")
         }
       })
       btn.addEventListener("mouseout", () => {
@@ -401,9 +401,9 @@ export default class extends Controller {
       this.formatButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
         const isActive = b === clickedBtn
         b.classList.toggle("active", isActive)
-        b.style.setProperty("border",      isActive ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
-        b.style.setProperty("background",  isActive ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)",               "important")
-        b.style.setProperty("color",       isActive ? "#1EDD88"                   : "var(--theme-text-primary)",           "important")
+        b.style.setProperty("border",      isActive ? "2px solid var(--green)"         : "2px solid var(--theme-border-strong)", "important")
+        b.style.setProperty("background",  isActive ? "rgba(var(--green-rgb), 0.12)"     : "var(--theme-hover-bg)",               "important")
+        b.style.setProperty("color",       isActive ? "var(--green)"                   : "var(--theme-text-primary)",           "important")
       })
     }
   }
@@ -551,8 +551,8 @@ export default class extends Controller {
       picker.querySelectorAll("[data-time-picker-item]").forEach(item => {
         const isActive = item.dataset.value === String(value)
         item.classList.toggle("time-picker-item--active", isActive)
-        item.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)" : "transparent", "important")
-        item.style.color = isActive ? "#1EDD88" : ""
+        item.style.setProperty("background", isActive ? "rgba(var(--green-rgb), 0.12)" : "transparent", "important")
+        item.style.color = isActive ? "var(--green)" : ""
         item.style.fontWeight = isActive ? "700" : "500"
       })
     }
@@ -711,14 +711,14 @@ export default class extends Controller {
       btn.style.setProperty("font-size", "0.9rem")
       btn.style.setProperty("cursor", "pointer")
       // CSS variables pour les inactifs — se résolvent selon le thème courant (clair/sombre)
-      btn.style.setProperty("border",      isActive ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
-      btn.style.setProperty("background",  isActive ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)",               "important")
-      btn.style.setProperty("color",       isActive ? "#1EDD88"                   : "var(--theme-text-primary)",           "important")
+      btn.style.setProperty("border",      isActive ? "2px solid var(--green)"         : "2px solid var(--theme-border-strong)", "important")
+      btn.style.setProperty("background",  isActive ? "rgba(var(--green-rgb), 0.12)"     : "var(--theme-hover-bg)",               "important")
+      btn.style.setProperty("color",       isActive ? "var(--green)"                   : "var(--theme-text-primary)",           "important")
       btn.addEventListener("mouseover", () => {
         if (!btn.classList.contains("active")) {
-          btn.style.setProperty("border",     "2px solid #1EDD88",           "important")
-          btn.style.setProperty("background", "rgba(30,221,136,0.08)",       "important")
-          btn.style.setProperty("color",      "#1EDD88",                     "important")
+          btn.style.setProperty("border",     "2px solid var(--green)",           "important")
+          btn.style.setProperty("background", "rgba(var(--green-rgb), 0.08)",       "important")
+          btn.style.setProperty("color",      "var(--green)",                     "important")
         }
       })
       btn.addEventListener("mouseout", () => {
@@ -744,9 +744,9 @@ export default class extends Controller {
     this.levelButtonsTarget.querySelectorAll(".match-level-btn").forEach(b => {
       const isActive = b === clickedBtn
       b.classList.toggle("active", isActive)
-      b.style.setProperty("border",     isActive ? "2px solid #1EDD88"         : "2px solid var(--theme-border-strong)", "important")
-      b.style.setProperty("background", isActive ? "rgba(30,221,136,0.12)"     : "var(--theme-hover-bg)",               "important")
-      b.style.setProperty("color",      isActive ? "#1EDD88"                   : "var(--theme-text-primary)",           "important")
+      b.style.setProperty("border",     isActive ? "2px solid var(--green)"         : "2px solid var(--theme-border-strong)", "important")
+      b.style.setProperty("background", isActive ? "rgba(var(--green-rgb), 0.12)"     : "var(--theme-hover-bg)",               "important")
+      b.style.setProperty("color",      isActive ? "var(--green)"                   : "var(--theme-text-primary)",           "important")
     })
   }
 

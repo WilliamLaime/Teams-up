@@ -230,8 +230,8 @@ $fc-fold:   rgba(0, 0, 0, 0.25);          // ligne de pliage centrale (subtile)
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #1EDD88;
-    box-shadow: 0 0 8px #1EDD88;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
     margin-right: 0.45rem;
     animation: pulse-dot 1.2s ease-in-out infinite;
   }
@@ -239,7 +239,7 @@ $fc-fold:   rgba(0, 0, 0, 0.25);          // ligne de pliage centrale (subtile)
   span {
     font-size: 0.85rem;
     font-weight: 700;
-    color: #1EDD88;
+    color: var(--green);
   }
 }
 

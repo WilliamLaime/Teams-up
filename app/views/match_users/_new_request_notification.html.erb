@@ -78,9 +78,9 @@
                 <%# Lien vers le profil complet %>
                 <%= link_to user_profil_path(mu.user, from_match: match.id),
                     class: "pending-modal-profile-link",
-                    style: "color:#1EDD88;",
+                    style: "color:var(--green);",
                     target: "_blank" do %>
-                  <i data-lucide="external-link" style="width:11px;height:11px; color:#1EDD88;"></i>
+                  <i data-lucide="external-link" style="width:11px;height:11px; color:var(--green);"></i>
                   Voir le profil complet
                 <% end %>
               </div>

@@ -314,7 +314,7 @@
               <span id="label_genre_tous"
                     onclick="document.getElementById('genre_restriction_toggle').checked = false; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
                     style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= (@match.genre_restriction.presence || 'tous') == 'tous' ? '#1EDD88' : 'var(--genre-inactive-color)' %>;
+                           color:<%= (@match.genre_restriction.presence || 'tous') == 'tous' ? 'var(--green)' : 'var(--genre-inactive-color)' %>;
                            transition:color 0.15s;">
                 🌍 Tous
               </span>
@@ -328,8 +328,8 @@
                     id: "genre_restriction_toggle",
                     onchange: "
                       document.getElementById('match_genre_restriction').value        = this.checked ? 'feminin' : 'tous';
-                      document.getElementById('label_genre_tous').style.color    = this.checked ? 'var(--genre-inactive-color)' : '#1EDD88';
-                      document.getElementById('label_genre_feminin').style.color = this.checked ? '#1EDD88' : 'var(--genre-inactive-color)';
+                      document.getElementById('label_genre_tous').style.color    = this.checked ? 'var(--genre-inactive-color)' : 'var(--green)';
+                      document.getElementById('label_genre_feminin').style.color = this.checked ? 'var(--green)' : 'var(--genre-inactive-color)';
                     " %>
                 <span class="pill-toggle-track"></span>
               </label>
@@ -338,7 +338,7 @@
               <span id="label_genre_feminin"
                     onclick="document.getElementById('genre_restriction_toggle').checked = true; document.getElementById('genre_restriction_toggle').dispatchEvent(new Event('change'));"
                     style="font-size:0.82rem; font-weight:700; white-space:nowrap; cursor:pointer;
-                           color:<%= @match.genre_restriction == 'feminin' ? '#1EDD88' : 'var(--genre-inactive-color)' %>;
+                           color:<%= @match.genre_restriction == 'feminin' ? 'var(--green)' : 'var(--genre-inactive-color)' %>;
                            transition:color 0.15s;">
                 ♀ Femme uniquement
               </span>

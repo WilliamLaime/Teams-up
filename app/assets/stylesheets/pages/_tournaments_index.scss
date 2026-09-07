@@ -2,7 +2,7 @@
 // TOURNAMENTS INDEX — Page "Tournois" (/tournois)
 // Réutilise les composants de la carte match (.match-card*) ; on ne style
 // ici que le layout de page, l'en-tête, la barre de filtres et les sections.
-// Tokens de thème var(--theme-*) + accent $green (cohérent avec matches_index).
+// Tokens de thème var(--theme-*) + accent var(--green) (cohérent avec matches_index).
 // =====================================================
 
 .tournaments-index-page {
@@ -68,9 +68,9 @@
         transition: border-color 0.15s;
 
         &::placeholder { color: var(--theme-text-muted); }
-        &:focus { border-color: $green; }
+        &:focus { border-color: var(--green); }
         &:focus-visible {
-          outline: 2px solid $green;
+          outline: 2px solid var(--green);
           outline-offset: 2px;
         }
       }
@@ -100,14 +100,14 @@
 
       &:hover {
         color: var(--theme-text-primary);
-        border-color: $green;
+        border-color: var(--green);
       }
 
       // Pill actif : fond vert signature
       &.active {
-        background: $primary;
-        border-color: $primary;
-        color: #111;
+        background: var(--green);
+        border-color: var(--green);
+        color: var(--on-green);
       }
     }
   }
@@ -135,13 +135,13 @@
       color: var(--theme-text-muted);
       transition: color 0.15s ease, border-color 0.15s ease;
 
-      i { width: 16px; height: 16px; color: $green; }
+      i { width: 16px; height: 16px; color: var(--green); }
 
       &:hover { color: var(--theme-text-primary); }
 
       &.is-active {
-        color: $green;
-        border-bottom-color: $green;
+        color: var(--green);
+        border-bottom-color: var(--green);
       }
     }
 
@@ -175,7 +175,7 @@
     border-radius: 16px;
     color: var(--theme-text-muted);
 
-    i { color: $green; opacity: 0.7; margin-bottom: 1rem; }
+    i { color: var(--green); opacity: 0.7; margin-bottom: 1rem; }
     p {
       font-size: 1.1rem;
       font-weight: 700;
@@ -204,7 +204,7 @@
     font-weight: 600;
 
     i {
-      color: $green;
+      color: var(--green);
       opacity: 1;
     }
   }
@@ -230,7 +230,7 @@
   // `outline` et non `box-shadow` : la carte a `overflow: hidden`, qui rognerait
   // une ombre.
   &:focus-within {
-    outline: 2px solid $green;
+    outline: 2px solid var(--green);
     outline-offset: 2px;
   }
 }

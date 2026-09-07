@@ -22,9 +22,9 @@
   // ── Système de tiers (1→7) : spectre du débutant à l'expert ──
   // Tier 1 — Débutant (vert)
   &.level-tier-1 {
-    background: rgba($green, 0.15);
-    color: $green;
-    border: 1px solid rgba($green, 0.40);
+    background: rgba(var(--green-rgb), 0.15);
+    color: var(--green);
+    border: 1px solid rgba(var(--green-rgb), 0.40);
   }
   // Tier 2 — Petit niveau (teal)
   &.level-tier-2 {

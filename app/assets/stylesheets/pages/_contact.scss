@@ -64,7 +64,7 @@
       flex-shrink: 0;
       width: 22px;
       height: 22px;
-      stroke: $green; // Lucide utilise stroke pour la couleur
+      stroke: var(--green); // Lucide utilise stroke pour la couleur
       margin-top: 2px; // léger offset pour aligner avec le texte
     }
 
@@ -98,7 +98,7 @@
     transition: color 0.2s ease;
 
     &:hover {
-      color: $green;
+      color: var(--green);
     }
   }
 
@@ -116,7 +116,7 @@
 
   // Étoile verte — indicateur visuel de champ obligatoire
   .contact-required {
-    color: $green;
+    color: var(--green);
     margin-left: 2px;
   }
 
@@ -156,13 +156,13 @@
 
     // Focus : bordure verte + léger glow + outline visible en High Contrast Mode
     &:focus {
-      border-color: $green;
-      box-shadow: 0 0 0 3px rgba(30, 221, 136, 0.15);
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.15);
       outline: 2px solid transparent;
     }
 
     &:focus-visible {
-      outline: 2px solid $green !important;
+      outline: 2px solid var(--green) !important;
       outline-offset: 2px;
     }
 

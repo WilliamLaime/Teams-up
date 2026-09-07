@@ -28,7 +28,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: $green;              // vert cohérent avec les autres badges
+  background-color: var(--green);              // vert cohérent avec les autres badges
   border: 2px solid #121212;             // bordure sombre → effet de détachement
   animation: unread-pulse 2s ease-in-out infinite;
 }
@@ -61,7 +61,7 @@
 
   &.active {
     color: var(--theme-text-primary);     // texte fort adaptatif sur l'onglet actif
-    border-bottom-color: $green;          // trait vert sous l'onglet actif
+    border-bottom-color: var(--green);          // trait vert sous l'onglet actif
   }
 
   &:hover:not(.active) {
@@ -75,7 +75,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: $green;
+  background-color: var(--green);
   position: absolute;
   top: 6px;
   right: 4px;
@@ -216,7 +216,7 @@
   // Conversation active (sélectionnée) — fond légèrement distinct + trait vert
   &--active {
     background-color: var(--theme-hover-bg); // fond actif adaptatif
-    border-left: 2px solid $green;
+    border-left: 2px solid var(--green);
   }
 }
 
@@ -274,7 +274,7 @@
   height: 7px;
   min-width: 7px;
   border-radius: 50%;
-  background-color: $green;
+  background-color: var(--green);
   display: inline-block;
   flex-shrink: 0;
   animation: unread-pulse 2s ease-in-out infinite;
@@ -305,9 +305,9 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: $green;
-  background: rgba(30, 221, 136, 0.12);
-  border: 1px solid rgba(30, 221, 136, 0.25);
+  color: var(--green);
+  background: rgba(var(--green-rgb), 0.12);
+  border: 1px solid rgba(var(--green-rgb), 0.25);
   border-radius: 20px;
   padding: 1px 5px;
   flex-shrink: 0;

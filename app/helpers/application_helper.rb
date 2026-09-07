@@ -59,8 +59,8 @@ module ApplicationHelper
     # aussi la tooltip enfant. On met opacity + filter uniquement sur l'emoji span.
     if is_unlocked
       bg           = "rgba(255,255,255,0.07)"
-      border       = "2px solid #1EDD88"
-      shadow       = "0 0 0 3px rgba(30,221,136,0.15), 0 0 14px rgba(30,221,136,0.4)"
+      border       = "2px solid var(--green)"
+      shadow       = "0 0 0 3px rgba(var(--green-rgb),0.15), 0 0 14px rgba(var(--green-rgb),0.4)"
       emoji_style  = "" # aucun filtre — emoji plein
     else
       bg           = "rgba(255,255,255,0.03)"
@@ -100,7 +100,7 @@ module ApplicationHelper
       # Tooltip au survol : nom, description, XP et statut
       xp_label     = is_unlocked ? "+#{achievement.xp_reward} XP" : "#{achievement.xp_reward} XP"
       status_label = is_unlocked ? "✓ Débloqué" : "✕ Verrouillé"
-      status_color = is_unlocked ? "#1EDD88" : "#ff4d4d" # vert si débloqué, rouge si verrouillé
+      status_color = is_unlocked ? "var(--green)" : "#ff4d4d" # vert si débloqué, rouge si verrouillé
 
       tooltip = content_tag(:div, class: "achievement-hover-tip") do
         content_tag(:div, emoji, class: "achievement-hover-tip__emoji") +

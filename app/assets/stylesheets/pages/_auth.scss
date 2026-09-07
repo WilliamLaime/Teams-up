@@ -31,8 +31,8 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: rgba(30, 221, 136, 0.1);
-  border: 1.5px solid rgba(30, 221, 136, 0.3);
+  background: rgba(var(--green-rgb), 0.1);
+  border: 1.5px solid rgba(var(--green-rgb), 0.3);
   border-radius: 50%;
   margin-bottom: 1.25rem;
 }
@@ -53,7 +53,7 @@
 }
 
 .email-confirmation-address {
-  color: #1EDD88; // Vert — identique dans les deux thèmes
+  color: var(--green); // Vert — identique dans les deux thèmes
   word-break: break-all;
 }
 
@@ -184,7 +184,7 @@
     font-size: 1.75rem;
     margin-bottom: 1.75rem;
 
-    .accent { color: $green; }
+    .accent { color: var(--green); }
   }
 
   // ── Labels des champs ────────────────────────────
@@ -211,13 +211,13 @@
 
     // Focus : bordure verte + halo vert subtil + outline visible en High Contrast Mode
     &:focus {
-      border-color: $green !important;
-      box-shadow: 0 0 0 3px rgba($green, 0.15) !important;
+      border-color: var(--green) !important;
+      box-shadow: 0 0 0 3px rgba(var(--green-rgb), 0.15) !important;
       outline: 2px solid transparent;
     }
 
     &:focus-visible {
-      outline: 2px solid $green !important;
+      outline: 2px solid var(--green) !important;
       outline-offset: 2px;
     }
 
@@ -283,8 +283,8 @@
   }
 
   .form-check-input:checked {
-    background-color: $green;
-    border-color: $green;
+    background-color: var(--green);
+    border-color: var(--green);
   }
 
   // ── Bouton principal "Se connecter / S'inscrire" ─
@@ -292,9 +292,9 @@
   .btn-primary,
   input[type="submit"],
   button[type="submit"]:not(.btn-google) {
-    background-color: $green;
-    border-color: $green;
-    color: #111111; // Texte sombre sur fond vert — identique dans les deux thèmes
+    background-color: var(--green);
+    border-color: var(--green);
+    color: var(--on-green); // Texte sur fond vert — sombre en dark, blanc en light
     font-weight: 700;
     width: 100%;
     padding: 0.75rem;
@@ -305,8 +305,8 @@
     letter-spacing: 0.02em;
 
     &:hover {
-      background-color: darken($green, 8%);
-      border-color: darken($green, 8%);
+      background-color: var(--green-d8);
+      border-color: var(--green-d8);
       color: #111111;
       transform: translateY(-1px);
     }
@@ -405,14 +405,14 @@
     }
 
     a {
-      color: $green;
+      color: var(--green);
       font-size: 0.875rem;
       text-decoration: none;
       font-weight: 500;
       transition: color 0.15s;
 
       &:hover {
-        color: lighten($green, 10%);
+        color: var(--green-l10);
         text-decoration: underline;
       }
     }
@@ -463,9 +463,9 @@
 
   // Onglet actif : fond vert
   .auth-tab-active {
-    background-color: rgba($green, 0.15);
-    border-color: $green;
-    color: $green;
+    background-color: rgba(var(--green-rgb), 0.15);
+    border-color: var(--green);
+    color: var(--green);
   }
 
   // ── Panneau centré (commun aux 2 panneaux) ───────────
@@ -498,7 +498,7 @@
     transition: border-color 0.2s ease;
 
     &:hover {
-      border-color: $green;
+      border-color: var(--green);
 
       .avatar-placeholder-icon { color: var(--theme-text-primary); }
     }
@@ -531,13 +531,13 @@
     right: 2px;
     width: 26px;
     height: 26px;
-    background-color: $green;
+    background-color: var(--green);
     border-radius: 50%;
     border: 2px solid var(--theme-bg-card); // Contour qui suit le fond de la carte
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #111111;
+    color: var(--on-green);
     pointer-events: none;
   }
 
@@ -591,15 +591,15 @@
     aspect-ratio: 1;
 
     &:hover {
-      border-color: rgba($green, 0.5);
+      border-color: rgba(var(--green-rgb), 0.5);
       transform: scale(1.08);
     }
   }
 
   // Avatar sélectionné : bordure verte pleine
   .avatar-item-selected {
-    border-color: $green;
-    box-shadow: 0 0 0 2px rgba($green, 0.3);
+    border-color: var(--green);
+    box-shadow: 0 0 0 2px rgba(var(--green-rgb), 0.3);
     transform: scale(1.08);
   }
 
@@ -647,7 +647,7 @@
 .auth-card abbr[title="required"],
 .auth-card abbr[title="obligatoire"],
 .auth-card .required-star {
-  color: $green !important;
+  color: var(--green) !important;
   text-decoration: none !important;
   font-weight: 700;
 }
@@ -662,7 +662,7 @@
   vertical-align: middle;
 
   // Icône info en vert
-  i { color: $green !important; }
+  i { color: var(--green) !important; }
 
   // Bulle de texte — construite depuis l'attribut data-tip
   &::after {
@@ -673,7 +673,7 @@
     transform: translateY(-50%);
     background-color: var(--theme-bg-card); // Fond bulle selon le thème
     color: var(--theme-text-primary);
-    border: 1px solid $green;
+    border: 1px solid var(--green);
     font-size: 0.78rem;
     font-weight: 500;
     line-height: 1.45;
@@ -696,7 +696,7 @@
     top: 50%;
     transform: translateY(-50%);
     border: 5px solid transparent;
-    border-right-color: $green;
+    border-right-color: var(--green);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.18s ease;
@@ -725,9 +725,9 @@
 
   // État actif (genre sélectionné)
   &[data-active="true"] {
-    border-color: $green;
-    background: rgba(30, 221, 136, 0.12);
-    color: $green;
+    border-color: var(--green);
+    background: rgba(var(--green-rgb), 0.12);
+    color: var(--green);
   }
 
   // Override light mode — les rgba blancs sont invisibles sur fond clair
@@ -737,9 +737,9 @@
     color: rgba(0, 0, 0, 0.7);
 
     &[data-active="true"] {
-      border-color: $green;
-      background: rgba(30, 221, 136, 0.12);
-      color: darken($green, 8%);
+      border-color: var(--green);
+      background: rgba(var(--green-rgb), 0.12);
+      color: var(--green-d8);
     }
   }
 }

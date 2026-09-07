@@ -43,7 +43,7 @@ export default class extends Controller {
   connect() {
     // Valeurs par défaut
     this.selectedShape = "shield"
-    this.selectedColor = "#1EDD88"
+    this.selectedColor = "var(--green)"
     this.selectedEmoji = "⚽"
     this.selectedLogoDataUrl = null  // null = utilise l'emoji, sinon Data URL base64
 

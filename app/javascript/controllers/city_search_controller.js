@@ -125,7 +125,7 @@ export default class extends Controller {
 
       return `
         <div style="padding:0.5rem 0.75rem; cursor:pointer; border-radius:6px; transition:background 0.15s; font-size:0.85rem;"
-             onmouseover="this.style.background='rgba(30,221,136,0.1)'"
+             onmouseover="this.style.background='rgba(var(--green-rgb), 0.1)'"
              onmouseout="this.style.background='transparent'"
              data-action="click->city-search#selectCity"
              data-city-name="${this.escapeAttr(name)}">

@@ -25,7 +25,7 @@
     left: -120px;
     width: 520px;
     height: 520px;
-    background: radial-gradient(circle, rgba($green, 0.13) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(var(--green-rgb), 0.13) 0%, transparent 65%);
     pointer-events: none; // ne bloque pas les clics
     z-index: 0;
   }
@@ -41,7 +41,7 @@
     transform: translateY(-50%); // ajustement vertical précis
     width: 26%;            // un peu plus petit
     opacity: 0.12;         // légèrement plus visible pour le glow
-    filter: blur(3px) drop-shadow(0 0 60px rgba($green, 0.9)) drop-shadow(0 0 120px rgba($green, 0.6)); // flou + double glow vert intense
+    filter: blur(3px) drop-shadow(0 0 60px rgba(var(--green-rgb), 0.9)) drop-shadow(0 0 120px rgba(var(--green-rgb), 0.6)); // flou + double glow vert intense
     pointer-events: none;  // ne bloque pas les interactions
     z-index: 0;            // derrière le contenu
     user-select: none;
@@ -52,9 +52,9 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    background: rgba($green, 0.15);
-    color: $green;
-    border: 1px solid rgba($green, 0.3);
+    background: rgba(var(--green-rgb), 0.15);
+    color: var(--green);
+    border: 1px solid rgba(var(--green-rgb), 0.3);
     border-radius: 999px;
     padding: 0.3rem 0.85rem;
     font-size: 0.78rem;
@@ -67,7 +67,7 @@
     .hero-badge-dot {
       width: 7px;
       height: 7px;
-      background: $green;
+      background: var(--green);
       border-radius: 50%;
       animation: pulse-dot 2s infinite;
     }
@@ -84,7 +84,7 @@
 
     // La partie verte du titre
     .hero-title-accent {
-      color: $green;
+      color: var(--green);
     }
   }
 
@@ -160,7 +160,7 @@
     // Fond de la carte : variable CSS → sombre en dark mode, blanc en light mode
     background: var(--theme-bg-card);
     backdrop-filter: blur(14px);
-    border: 1px solid $green;
+    border: 1px solid var(--green);
     border-radius: 8px;
     padding: 0.85rem 1rem;
     z-index: 2;
@@ -230,7 +230,7 @@
     .hero-match-spots {
       font-size: 0.78rem;
       font-weight: 700;
-      color: $green;
+      color: var(--green);
     }
 
     // Variante encart vide : icône verte + pas de hover animé
@@ -239,8 +239,8 @@
       &:hover { transform: none; box-shadow: none; }
 
       .hero-match-icon {
-        background: rgba($green, 0.15);
-        i { color: $green; }
+        background: rgba(var(--green-rgb), 0.15);
+        i { color: var(--green); }
       }
     }
 
@@ -248,12 +248,12 @@
     .hero-match-cta-link {
       font-size: 0.78rem;
       font-weight: 600;
-      color: $green;
+      color: var(--green);
       text-decoration: none;
       display: flex;
       align-items: center;
       gap: 0.3rem;
-      &:hover { color: lighten($green, 10%); }
+      &:hover { color: var(--green-l10); }
     }
   }
 }
@@ -329,14 +329,14 @@
       width: 76px;
       height: 76px;
       background: var(--theme-bg-surface);         // était $dark-surface
-      color : $green;
+      color : var(--green);
       border-radius: 20%;
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 1.25rem;
 
-      i { color: $green; }
+      i { color: var(--green); }
     }
 
     .hiw-item-title {
@@ -407,14 +407,14 @@
         width: 20px;
         height: 20px;
         min-width: 20px;
-        color: $green;
-        background: rgba($green, 0.15);
+        color: var(--green);
+        background: rgba(var(--green-rgb), 0.15);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-top: 1px;
-        i { color: $green; }
+        i { color: var(--green); }
       }
     }
   }
@@ -458,12 +458,12 @@
       .chat-group-icon {
         width: 36px;
         height: 36px;
-        background: rgba($green, 0.15);
+        background: rgba(var(--green-rgb), 0.15);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        i { color: $green; }
+        i { color: var(--green); }
       }
 
       .chat-group-name {
@@ -561,7 +561,7 @@
       }
 
       &.outgoing {
-        background: $green;
+        background: var(--green);
         color: $dark-bg;
         font-weight: 400; // texte normal, sans gras
         border-radius: 12px 0px 12px 12px; // coin sup droit plat = base de la queue
@@ -576,7 +576,7 @@
           right: -7px;
           width: 0;
           height: 0;
-          border-top: 7px solid $green;
+          border-top: 7px solid var(--green);
           border-right: 7px solid transparent;
         }
 
@@ -585,14 +585,14 @@
       }
 
       &.notification {
-        background: rgba($green, 0.12);
-        color: $green;
+        background: rgba(var(--green-rgb), 0.12);
+        color: var(--green);
         border-radius: 8px;
         text-align: center;
         font-size: 0.78rem;
         margin: 1rem auto;
         max-width: 100%;
-        border: 1px solid rgba($green, 0.25);
+        border: 1px solid rgba(var(--green-rgb), 0.25);
       }
     }
 
@@ -619,7 +619,7 @@
         width: 30px;
         height: 30px;
         min-width: 30px;
-        background: $green;
+        background: var(--green);
         color: black;
         border: none;
         border-radius: 8px;
@@ -738,15 +738,15 @@
   .contact-cta-card--user {
 
     // Au survol, la bordure prend la couleur verte
-    &:hover { border-color: rgba($green, 0.5); }
+    &:hover { border-color: rgba(var(--green-rgb), 0.5); }
 
     // Fond vert très transparent pour le cercle icône
     .contact-cta-icon--user {
-      background: rgba($green, 0.15);
-      i { color: $green; }
+      background: rgba(var(--green-rgb), 0.15);
+      i { color: var(--green); }
     }
 
     // Lien en vert
-    .contact-cta-card-link { color: $green; }
+    .contact-cta-card-link { color: var(--green); }
   }
 }

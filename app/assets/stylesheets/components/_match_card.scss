@@ -101,7 +101,7 @@
     color: #fff;
 
     // Inscrit → vert translucide
-    &--inscrit  { background: rgba(#1EDD88, 0.55); }
+    &--inscrit  { background: rgba(var(--green-rgb), 0.55); }
 
     // En attente du capitaine → orange translucide
     &--pending  { background: rgba(#E67E22, 0.60); }
@@ -223,8 +223,8 @@
 
       // Icône (calendrier / horloge) en vert accent
       i, svg {
-        color: $green;
-        stroke: $green;          // Lucide dessine en stroke via currentColor
+        color: var(--green);
+        stroke: var(--green);          // Lucide dessine en stroke via currentColor
         flex-shrink: 0;
       }
     }

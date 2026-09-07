@@ -7,9 +7,9 @@
 
   <%# ── En-tête ── %>
   <div class="d-flex align-items-center gap-2 mb-4">
-    <i data-lucide="shield-alert" style="width:22px; height:22px; color:#1EDD88;"></i>
+    <i data-lucide="shield-alert" style="width:22px; height:22px; color:var(--green);"></i>
     <h1 style="font-size:1.4rem; font-weight:700; margin:0; color:#fff;">
-      Espace <span style="color:#1EDD88;">Admin</span>
+      Espace <span style="color:var(--green);">Admin</span>
     </h1>
   </div>
 
@@ -52,7 +52,7 @@
         <%# Bouton filtrer %>
         <%= f.submit "Filtrer",
                      class: "btn btn-sm",
-                     style: "background:rgba(30,221,136,0.12); color:#1EDD88; border:1px solid rgba(30,221,136,0.3); white-space:nowrap;" %>
+                     style: "background:rgba(var(--green-rgb), 0.12); color:var(--green); border:1px solid rgba(var(--green-rgb), 0.3); white-space:nowrap;" %>
 
         <%# Lien "Réinitialiser" — efface tous les filtres %>
         <%= link_to "Réinitialiser", admin_security_logs_path,
@@ -105,7 +105,7 @@
                   <%
                     # Couleur selon la nature de l'événement
                     badge_color = case log.event_type
-                                  when "login_success", "signup", "google_login" then "#1EDD88"  # vert
+                                  when "login_success", "signup", "google_login" then "var(--green)"  # vert
                                   when "login_failure", "rack_attack_throttle"   then "#ff6b6b"  # rouge
                                   else "#ffd166"                                                 # jaune
                                   end

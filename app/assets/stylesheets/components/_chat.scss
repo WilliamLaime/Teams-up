@@ -25,7 +25,7 @@
 // Lien "Accéder au chat complet"
 .chat-preview-open {
   font-size: 0.85rem;
-  color: $green !important;
+  color: var(--green) !important;
   text-decoration: none;
   font-weight: 600;
 
@@ -104,7 +104,7 @@
   // Pied de page (zone de saisie)
   .modal-footer {
     background-color: var(--theme-bg-surface); // fond adaptatif
-    border-color: $green;
+    border-color: var(--green);
     padding: 10px 14px;
   }
 }
@@ -124,7 +124,7 @@
 
 .chat-typing-name {
   font-weight: 700;
-  color: $green;
+  color: var(--green);
 }
 
 // Les trois points animés (style iMessage/WhatsApp)
@@ -136,7 +136,7 @@
   span {
     width: 6px;
     height: 6px;
-    background-color: $green;
+    background-color: var(--green);
     border-radius: 50%;
     animation: typing-bounce 1.2s infinite ease-in-out;
 
@@ -180,7 +180,7 @@
 
   .chat-header-subtitle {
     font-size: 0.75rem;
-    color: $green; // vert pour indiquer "actif"
+    color: var(--green); // vert pour indiquer "actif"
     font-weight: 500;
   }
 }
@@ -241,8 +241,8 @@
     .chat-avatar { display: none; } // pas d'avatar pour mes propres messages
 
     .chat-bubble {
-      background-color: $green;
-      color: #111;
+      background-color: var(--green);
+      color: var(--on-green);
       border-radius: 14px 0 14px 14px; // coin supérieur droit plat
     }
 
@@ -341,9 +341,9 @@
 
     &:focus {
       background-color: var(--theme-bg-surface); // fond conservé au focus
-      border-color: $green;
+      border-color: var(--green);
       color: var(--theme-text-primary);          // texte adaptatif au focus
-      box-shadow: 0 0 0 0.2rem rgba(30, 221, 136, 0.2);
+      box-shadow: 0 0 0 0.2rem rgba(var(--green-rgb), 0.2);
     }
   }
 
@@ -357,16 +357,16 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background-color: $green;
-    border-color: $green;
-    color: #111;
+    background-color: var(--green);
+    border-color: var(--green);
+    color: var(--on-green);
     padding: 0;
 
     svg { display: block; }
 
     &:hover {
-      background-color: darken($green, 8%);
-      border-color: darken($green, 8%);
+      background-color: var(--green-d8);
+      border-color: var(--green-d8);
     }
   }
 }

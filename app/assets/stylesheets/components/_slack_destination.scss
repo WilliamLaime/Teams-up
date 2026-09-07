@@ -26,7 +26,7 @@
   height: 14px;
   flex-shrink: 0;
   border: 2px solid var(--theme-border);
-  border-top-color: #1edd88; // vert Slack/Teams-up : montre le sens de rotation
+  border-top-color: var(--green); // vert Slack/Teams-up : montre le sens de rotation
   border-radius: 50%;
   animation: slack-share-spin 0.7s linear infinite;
 }
@@ -52,7 +52,7 @@
   padding-left: 0.7rem;
   transition: border-color 0.15s;
 
-  &:focus-within { border-color: rgba(30, 221, 136, 0.45); }
+  &:focus-within { border-color: rgba(var(--green-rgb), 0.45); }
 }
 
 .slack-dest-search-icon {
@@ -71,7 +71,7 @@
   padding: 0.55rem 0.75rem 0.55rem 0.4rem;
 
   &::placeholder { color: var(--theme-input-placeholder); }
-  &:focus-visible { outline: 2px solid $green; outline-offset: 2px; }
+  &:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 }
 
 // Liste déroulante (positionnée au-dessus du reste du modal).
@@ -126,7 +126,7 @@
 
   &:hover,
   &.is-active {
-    background: rgba(30, 221, 136, 0.10);
+    background: rgba(var(--green-rgb), 0.10);
   }
 }
 
@@ -155,10 +155,10 @@
   &:hover { opacity: 1; transform: scale(1.15); }
 
   &.is-fav {
-    color: $green;
+    color: var(--green);
     opacity: 1;
     // Remplit l'étoile Lucide (par défaut en trait seul).
-    :where(svg) { fill: $green; }
+    :where(svg) { fill: var(--green); }
   }
 }
 

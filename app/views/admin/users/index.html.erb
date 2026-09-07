@@ -76,7 +76,7 @@
                 <%# Statut de confirmation %>
                 <td>
                   <% if user.confirmed? %>
-                    <span style="background: rgba(30,221,136,0.15); color: #1EDD88; font-size:0.72rem; font-weight:700; padding: 0.2rem 0.55rem; border-radius: 20px;">
+                    <span style="background: rgba(var(--green-rgb), 0.15); color: var(--green); font-size:0.72rem; font-weight:700; padding: 0.2rem 0.55rem; border-radius: 20px;">
                       Confirmé
                     </span>
                   <% else %>
@@ -96,7 +96,7 @@
                           method: :patch,
                           data: { turbo: false, confirm: "Confirmer manuellement #{user.email} ?" },
                           class: "btn btn-sm",
-                          style: "background:#1EDD88; color:#111; border:none; font-weight:700; font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px;" %>
+                          style: "background:var(--green); color:#111; border:none; font-weight:700; font-size:0.78rem; padding:0.25rem 0.65rem; border-radius:6px;" %>
 
                       <%# Renvoie l'email de confirmation Devise %>
                       <%= button_to "📧 Renvoyer email",
