@@ -7,8 +7,18 @@
 
 .tournaments-index-page {
   background-color: var(--theme-page-bg);
-  min-height: calc(100vh - 130px);
   padding: 2.5rem 0 4rem;
+
+  // Pas de `min-height: calc(100vh - 130px)` ici — c'était un doublon nuisible.
+  // Le footer collé en bas est déjà assuré par `body { display: flex }` +
+  // `main { flex: 1 }` (cf. application.scss § Sticky footer), qui étire le main
+  // à l'espace RÉELLEMENT libre. Le calc, lui, devinait la hauteur du chrome
+  // (130px) : la navbar + le fil d'Ariane + le footer en font davantage, donc sur
+  // une page courte — un tournoi pas encore lancé, dont l'onglet Matchs n'affiche
+  // qu'une carte — la page dépassait la fenêtre et le footer passait sous la ligne
+  // de flottaison alors qu'il avait la place au-dessus.
+  // Ce min-height servait à peindre le fond de page sur toute la hauteur ; c'est
+  // désormais le `background-color` du body qui s'en charge (même token).
 
   // ── En-tête ──────────────────────────────────────
   .tournaments-index-header {

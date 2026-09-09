@@ -794,6 +794,16 @@
     &--revealed { animation: tmatch-reveal 0.35s ease forwards; }
   }
 
+  // Les deux boutons occupent le même emplacement, l'un après l'autre : min-height
+  // fige la hauteur du bloc pour que la permutation ne fasse pas sauter les poules.
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+  }
+
+  // Pendant l'animation : sortie discrète, elle ne doit pas concurrencer le tirage.
   &__skip {
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 999px;
@@ -806,6 +816,36 @@
 
     &:hover,
     &:focus-visible { color: var(--green); border-color: var(--green); }
+  }
+
+  // Après l'animation : le seul chemin vers le board, donc traité en CTA plein.
+  // Pas .btn-cta-primary : ce bouton vit sur le fond noir de l'overlay, pas sur une
+  // surface de thème. Le texte lit var(--on-green) — un #111 en dur serait illisible
+  // sur le vert soutenu du mode clair (cf. docs/DESIGN-SYSTEM.md).
+  &__continue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem 1.6rem;
+    background-color: var(--green);
+    color: var(--on-green);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    animation: tmatch-reveal 0.3s ease forwards;
+
+    // Flèche en CSS plutôt qu'une icône Lucide : l'overlay arrive par Turbo Stream,
+    // que le ré-init de application.js n'écoute pas (cf. le partial).
+    &::after { content: "→"; font-weight: 700; }
+
+    &:hover { background-color: var(--green-d8); }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
   }
 }
 
@@ -1428,8 +1468,39 @@
 // =====================================================
 
 // ── En-tête ──────────────────────────────────────────
+// Deux colonnes : __main empile le contenu comme avant, __illu tient l'illustration
+// d'état en face. Un flex plutôt qu'une grille : `grid-row: 1 / -1` ne s'étend pas
+// sur des lignes implicites (le -1 compte depuis la fin de la grille EXPLICITE, qui
+// n'existe pas ici), l'illustration ne couvrirait donc qu'une seule ligne.
 .tournament-detail-header {
   margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+
+  &__main {
+    flex: 1 1 auto;
+    min-width: 0; // sans quoi un titre long pousse l'illustration hors du conteneur
+  }
+
+  // Largeur fluide bornée. Au ratio 3:2 du visuel, 340px donnent ~227px de haut :
+  // l'illustration mène donc la hauteur de l'en-tête, plus haute que le bloc
+  // titre + compteurs + CTA (~90px). C'est assumé — en dessous de ~280px les deux
+  // joueurs et la balle ne se lisent plus.
+  &__illu {
+    flex: 0 0 auto;
+    width: clamp(220px, 26vw, 340px);
+
+    // Aucune couleur ni cadre à poser : le WebP est détouré (fond alpha), il se
+    // pose donc sur les deux thèmes sans rectangle parasite. C'est aussi pourquoi
+    // ce slot n'a plus de tokens de recoloration, contrairement au SVG inline qu'il
+    // remplace.
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  }
 
   &__top {
     display: flex;
@@ -1516,6 +1587,16 @@
   }
 
   @media (max-width: 768px) {
+    // Retour à l'empilement d'origine : sans 2e colonne, le flex n'a plus de
+    // raison d'être et `display: block` évite tout effet de bord sur __main.
+    display: block;
+
+    // Illustration purement décorative : la place manque, et le CTA « Lancer le
+    // tournoi » doit rester visible sans défiler.
+    &__illu {
+      display: none;
+    }
+
     &__action {
       width: 100%;
       justify-content: center;
