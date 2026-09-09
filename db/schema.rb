@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_09_095811) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -660,6 +660,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_120000) do
     t.string "pool_seeding_mode"
     t.string "private_token"
     t.datetime "registration_deadline"
+    t.integer "requested_pool_count"
     t.integer "seeded_pot_count"
     t.string "slug", null: false
     t.bigint "sport_id"

@@ -9,13 +9,31 @@
   // Masqué SANS display:none ni visibility:hidden : le champ doit rester
   // focalisable et lisible par les outils qui inspectent le formulaire, et
   // certains navigateurs refusent de soumettre un contrôle réellement retiré du
-  // rendu. Taille nulle + opacité 0 le fait disparaître sans le neutraliser.
+  // rendu. Taille nulle + découpe + opacité 0 le fait disparaître sans le
+  // neutraliser.
+  //
+  // Le masquage ne repose PAS sur la seule opacité, et ce n'est pas de la
+  // ceinture-bretelles : le reboot de Bootstrap contient
+  // `select:disabled { opacity: 1 }` (« undo the opacity change from Chrome »),
+  // de spécificité 0-1-1 — il gagne donc contre cette classe, 0-1-0. Un select
+  // habillé DÉSACTIVÉ (cf. la modale de découpage des poules, où le champ ne
+  // compte que si l'on choisit « Je choisis le découpage ») réapparaissait
+  // ainsi en petite pilule de 50 px, chevron de fond Bootstrap compris, à côté
+  // de son propre habillage. D'où les deux parades : `clip-path`, indépendant
+  // de l'opacité, et le `&:disabled` ci-dessous qui reprend la main sur le
+  // reboot.
   &__native {
     position: absolute;
     width: 1px;
     height: 1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
     opacity: 0;
     pointer-events: none;
+
+    &:disabled { opacity: 0; }
   }
 
   &__toggle {

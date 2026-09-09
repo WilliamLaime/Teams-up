@@ -505,6 +505,169 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "tournament-draw"
   end
 
+  # ── Découpage des poules choisi au lancement ────────────────────────────────
+  # L'organisation choisit le découpage dans la modale de lancement, une fois
+  # l'effectif réel connu. Le paramètre est appliqué AVANT le tirage, donc les
+  # poules réellement créées doivent suivre le choix, pas la valeur recommandée.
+  test "POST start applique le découpage des poules demandé" do
+    sign_in @user
+    t = open_tournament_with_players(20)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t), params: { tournament: { requested_pool_count: 4 } }
+
+    t.reload
+    assert_equal 4, t.requested_pool_count
+    assert_equal 4, t.pool_count
+    # 4 poules de 5, et pas les 5 poules de 4 de la valeur recommandée.
+    assert_equal [0, 1, 2, 3], t.tournament_users.players.approved.map(&:pool).uniq.sort
+    assert_equal [5, 5, 5, 5], t.tournament_users.players.approved.group_by(&:pool).values.map(&:size)
+  end
+
+  # Le découpage demandé peut être INEXPRIMABLE par une taille de poule : 25 joueurs
+  # en 8 poules (une de 4, sept de 3) est réglementaire au Critérium, alors que
+  # ⌈25/4⌉ = 7 et ⌈25/3⌉ = 9. C'est la raison d'être de requested_pool_count.
+  test "POST start applique un découpage qu'aucune taille de poule ne produit" do
+    sign_in @user
+    t = open_tournament_with_players(25)
+    t.update!(format: "criterium_federal")
+
+    post start_tournament_path(t), params: { tournament: { requested_pool_count: 8 } }
+
+    t.reload
+    assert_equal 8, t.pool_count
+    assert_equal [4, 3, 3, 3, 3, 3, 3, 3],
+                 t.tournament_users.players.approved.group_by(&:pool).values.map(&:size).sort.reverse
+  end
+
+  # Non-régression du tirage automatique : sans paramètre (mode « Tirage
+  # automatique », où le <select> désactivé n'est pas soumis), rien n'est écrit et
+  # le tournoi retombe sur le découpage recommandé.
+  test "POST start sans découpage laisse requested_pool_count vide" do
+    sign_in @user
+    t = open_tournament_with_players(20)
+    t.update!(format: "poules")
+
+    post start_tournament_path(t)
+
+    t.reload
+    assert_nil t.requested_pool_count
+    assert_equal 5, t.pool_count # 20 joueurs / DEFAULT_POOL_SIZE
+  end
+
+  # Un découpage hors règlement ne doit RIEN lancer : le Critérium n'admet que des
+  # poules de 3 ou 4 (règlement FFTT), donc pas 4 poules de 5.
+  test "POST start refuse un découpage invalide sans lancer le tournoi" do
+    sign_in @user
+    t = open_tournament_with_players(20)
+    t.update!(format: "criterium_federal")
+
+    post start_tournament_path(t), params: { tournament: { requested_pool_count: 4 } }
+
+    assert_redirected_to tournament_path(t)
+    t.reload
+    # `startable?` plutôt que status == "open" : l'effectif étant plein, le tournoi
+    # est déjà passé en "closed" — ce qui compte est qu'il reste LANÇABLE.
+    assert_predicate t, :startable?
+    assert_nil t.requested_pool_count
+    assert_empty t.tournament_rounds
+  end
+
+  # Requête forgée : le nombre de poules est valide POUR LE MODÈLE (>= 1) mais
+  # impossible pour cet effectif — 25 joueurs en 13 poules donnent [2×12, 1], et ce
+  # joueur seul « gagnerait » sa poule sans jamais jouer. Seul le controller connaît
+  # le nombre d'inscrits : c'est donc lui qui doit refuser.
+  test "POST start refuse un découpage absent des options proposées" do
+    sign_in @user
+    t = open_tournament_with_players(25)
+    t.update!(format: "poules")
+    probe = Tournament.new(format: "poules", requested_pool_count: 13)
+    probe.valid?
+    assert_empty probe.errors[:requested_pool_count], "le modèle seul accepte 13 poules"
+
+    post start_tournament_path(t), params: { tournament: { requested_pool_count: 13 } }
+
+    assert_redirected_to tournament_path(t)
+    t.reload
+    assert_predicate t, :startable?
+    assert_nil t.requested_pool_count
+    assert_empty t.tournament_rounds
+  end
+
+  # Le paramètre n'a aucun sens hors des formats à poules : il doit être ignoré
+  # plutôt que d'écrire un réglage que le moteur ne lira jamais.
+  test "POST start ignore le découpage hors format à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8) # ronde_suisse
+
+    post start_tournament_path(t), params: { tournament: { requested_pool_count: 3 } }
+
+    t.reload
+    assert_equal "in_progress", t.status
+    assert_nil t.requested_pool_count
+  end
+
+  # La modale n'existe que pour les formats à poules, et seulement pour
+  # l'organisation : ailleurs, le bouton poste directement vers #start.
+  test "le panneau de lancement ouvre la modale de découpage pour un format à poules" do
+    sign_in @user
+    t = open_tournament_with_players(20)
+    t.update!(format: "poules")
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "button[data-bs-target=?]", "#poolDrawModal"
+    # Le libellé ne doit pas promettre le lancement : ce bouton ouvre une étape de
+    # réglage, seul celui de la modale poste vers #start.
+    assert_select "button[data-bs-target=?]", "#poolDrawModal", text: /Tirage au sort des poules/
+    # `disabled` au rendu : c'est le <select> lui-même qui porte le mode
+    # automatique — non soumis, donc aucun découpage écrit (cf. #apply_pool_sizing).
+    assert_select "#poolDrawModal select[name=?][disabled]", "tournament[requested_pool_count]"
+    assert_select "#poolDrawModal .pool-sizing__preview", text: /5 poules de 4/
+  end
+
+  # Le Critérium doit offrir une alternative dès qu'il en existe une : 25 joueurs se
+  # découpent en 7 poules (4 de 4 + 3 de 3, le découpage du règlement par défaut) ou
+  # en 8 (1 de 4 + 7 de 3). Le second n'est atteignable que par le nombre de poules.
+  test "la modale propose les découpages alternatifs du Critérium" do
+    sign_in @user
+    t = open_tournament_with_players(25)
+    t.update!(format: "criterium_federal")
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "#poolDrawModal .pool-sizing__preview", text: /7 poules : 4 de 4 et 3 de 3/
+    assert_select "#poolDrawModal option[value=?]", "8", text: /8 poules : 1 de 4 et 7 de 3/
+  end
+
+  # Effectif n'admettant AUCUNE alternative : la modale s'ouvre quand même (le
+  # lancement passe par elle) mais énonce le découpage au lieu d'offrir un faux
+  # choix. En Critérium à 6 joueurs, le règlement ne prévoit aucune phase finale :
+  # la poule unique est le tournoi entier.
+  test "la modale énonce le découpage quand il n'y a pas d'alternative" do
+    sign_in @user
+    t = open_tournament_with_players(6)
+    t.update!(format: "criterium_federal")
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "#poolDrawModal .pool-sizing__only", text: /1 poule de 6/
+    assert_select "#poolDrawModal select[name=?]", "tournament[requested_pool_count]", count: 0
+  end
+
+  test "le panneau de lancement ne rend pas de modale hors format à poules" do
+    sign_in @user
+    t = open_tournament_with_players(8) # ronde_suisse
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_select "#poolDrawModal", count: 0
+  end
+
   # Les autres formats gardent le battage des cartes du board : l'overlay ne doit
   # pas s'y inviter.
   test "POST start ne rend pas d'overlay hors format à poules" do

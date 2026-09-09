@@ -100,6 +100,184 @@
   }
 }
 
+// ── Modale de découpage des poules (avant le tirage) ─
+// Deux options exclusives présentées comme des cartes cliquables : le <label>
+// entier est la cible, pas seulement le petit radio.
+.pool-draw-modal {
+  // 500 px (défaut Bootstrap) coupait le libellé du découpage (« 7 poules : 4 de 4
+  // et 3 de 3 ») et le rappel de constitution sur deux lignes chacun. Juste assez
+  // large pour qu'ils tiennent, pas une modale de contenu.
+  .modal-dialog { max-width: 580px; }
+
+  .modal-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--theme-text-strong);
+    font-size: 1.1rem;
+
+    i { width: 19px; height: 19px; color: var(--green); }
+  }
+
+  // Le composant met par défaut un fond --theme-bg-card, qui est AUSSI celui de
+  // .modal-content : le champ se fondrait dans la modale au lieu de se lire comme
+  // un champ. Même correctif que dans .match-form-section.
+  .custom-select__toggle {
+    background-color: var(--theme-bg-surface);
+
+    // Mode automatique : le <select> doublé est désactivé (c'est lui qui porte le
+    // mode, cf. pool_sizing_controller.js) et custom-select répercute l'état ici.
+    // On le montre en retrait plutôt que de le masquer, pour que l'organisation
+    // voie qu'un choix existe.
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+
+      &:hover { border-color: var(--theme-border); }
+    }
+  }
+}
+
+.pool-sizing {
+  &__count {
+    color: var(--theme-text-primary);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+
+    strong { color: var(--theme-text-strong); }
+  }
+
+  // La CARTE d'une option : le bouton radio et son libellé (__choice), plus,
+  // pour l'option « Je choisis », le select habillé — qui vit HORS du <label>
+  // (cf. le commentaire de la vue).
+  &__option {
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.75rem;
+    background-color: var(--theme-bg-body);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover { border-color: rgba(var(--green-rgb), 0.5); }
+
+    // Option retenue : mise en avant via :has() sur le radio coché — aucun JS à
+    // écrire pour ça, le contrôleur pool-sizing ne gère que l'état du <select>.
+    &:has(input:checked) {
+      border-color: var(--green);
+      background-color: rgba(var(--green-rgb), 0.06);
+    }
+  }
+
+  // Zone cliquable : tout le libellé coche l'option, pas seulement le petit radio.
+  &__choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0;
+    cursor: pointer;
+
+    input[type="radio"] {
+      // Aligné sur la première ligne de texte du libellé, pas sur le bloc entier
+      // (qui contient aussi l'aperçu du découpage).
+      margin-top: 0.15rem;
+      flex-shrink: 0;
+      accent-color: var(--green);
+    }
+  }
+
+  // Rangée qui se replie : le titre de l'option et son badge « recommandé »
+  // restent COTE À COTE sur la première ligne, tandis que l'aperçu du découpage
+  // et le select (flex-basis: 100%) passent chacun à la ligne suivante. En
+  // colonne, le badge tombait sous le titre.
+  &__label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+    flex: 1;
+    min-width: 0;
+    color: var(--theme-text-strong);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  &__badge {
+    padding: 0.1rem 0.45rem;
+    background-color: rgba(var(--green-rgb), 0.15);
+    color: var(--green);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  // Découpage qui sera appliqué en mode automatique : une information, pas un
+  // titre — d'où le poids normal malgré le libellé en gras au-dessus.
+  &__preview {
+    flex-basis: 100%;
+    color: var(--theme-text-muted);
+    font-weight: 400;
+    font-size: 0.85rem;
+  }
+
+  // Le select habillé occupe toute la largeur du libellé : un menu de découpages
+  // (« 8 poules : 1 de 4 et 7 de 3 ») ne tient pas dans une pilule étroite.
+  // Aligné sous le texte du libellé, pas sous le bouton radio : le retrait vaut
+  // la largeur du radio plus le gap de __choice.
+  &__select {
+    margin: 0.6rem 0 0 1.75rem;
+    font-weight: 400;
+  }
+
+  // Effectif n'admettant qu'un seul découpage : un constat, pas un choix.
+  //
+  // Pas de `display: flex` ici (ni sur __hint) : un conteneur flex fait de CHAQUE
+  // nœud de texte un élément de la grille, donc « Découpage : » et le libellé en
+  // gras devenaient deux colonnes qui se coupaient chacune sur deux lignes. Une
+  // phrase se compose en flux normal, l'icône alignée en inline.
+  &__only {
+    margin: 0;
+    padding: 0.9rem 1rem;
+    background-color: var(--theme-bg-body);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    color: var(--theme-text-primary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+
+    i {
+      width: 16px;
+      height: 16px;
+      margin-right: 0.35rem;
+      vertical-align: -3px;
+      color: var(--green);
+    }
+
+    strong { color: var(--theme-text-strong); }
+
+    // L'explication passe à la ligne : c'est une seconde phrase, pas la fin de la
+    // première.
+    .pool-sizing__preview { display: block; }
+  }
+
+  &__hint {
+    margin: 1rem 0 0;
+    color: var(--theme-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+
+    i {
+      width: 15px;
+      height: 15px;
+      margin-right: 0.35rem;
+      vertical-align: -2px;
+    }
+
+    strong { color: var(--theme-text-primary); }
+  }
+}
+
 // ── Vainqueur (tournoi terminé) ──────────────────────
 .tournament-champion {
   display: flex;
@@ -1243,7 +1421,12 @@
 }
 
 // ── Modale de saisie du score ────────────────────────
-.score-modal {
+// ── Habillage commun des modales du tournoi ──────────
+// Bootstrap peint la modale en blanc en dur et sa croix de fermeture est un SVG
+// noir : illisibles sur la carte sombre. Mutualisé ici pour que toute modale du
+// tournoi hérite du thème sans recopier ce bloc.
+.score-modal,
+.pool-draw-modal {
   .modal-content {
     background-color: var(--theme-bg-card);
     border: 1px solid var(--theme-border);
@@ -1266,7 +1449,9 @@
   }
 
   [data-theme="light"] & .btn-close { filter: none; }
+}
 
+.score-modal {
   // Grille commune à l'en-tête (noms) et aux lignes de sets : chaque nom se place
   // ainsi EXACTEMENT au-dessus de la colonne de scores qui lui appartient, et le
   // « vs » au-dessus des « – ». La colonne du séparateur est de largeur FIXE (et

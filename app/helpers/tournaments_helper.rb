@@ -466,6 +466,29 @@ module TournamentsHelper
     "Poule #{('A'.ord + pool_index.to_i).chr}"
   end
 
+  # Libellé d'un plan de poules (cf. Tournament#pool_plan, qui renvoie la taille de
+  # chaque poule par ordre décroissant) :
+  #   [5, 5, 5, 5]       => "4 poules de 5"
+  #   [4, 4, 4, 3, 3]    => "5 poules : 3 de 4 et 2 de 3"
+  #
+  # Écrit une seule fois ici parce que le même libellé sert à deux endroits qui
+  # doivent annoncer EXACTEMENT le même découpage : le résumé du mode automatique et
+  # chaque option de la liste, dans la modale de lancement (_start_panel).
+  def pool_plan_label(plan)
+    plan = Array(plan)
+    return "aucune poule" if plan.empty?
+
+    # Pluriel EXPLICITE : la locale par défaut est :fr et aucune inflexion française
+    # n'est déclarée, donc `pluralize(7, "poule")` rendrait « 7 poule ».
+    pools = pluralize(plan.size, "poule", "poules")
+    # `tally` conserve l'ordre de première apparition : les grandes poules d'abord,
+    # comme le plan lui-même — on lit "3 de 4 et 2 de 3", jamais l'inverse.
+    sizes = plan.tally
+    return "#{pools} de #{plan.first}" if sizes.size == 1
+
+    "#{pools} : #{to_sentence(sizes.map { |size, n| "#{n} de #{size}" }, two_words_connector: ' et ', last_word_connector: ' et ')}"
+  end
+
   # Index de MA poule dans ce tournoi, ou nil si je n'y suis pas inscrit.
   #
   # Lu depuis l'INSCRIPTION et non depuis les matchs affichés : dans une poule de

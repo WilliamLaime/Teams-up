@@ -43,6 +43,8 @@ fr:
       tournament:
         max_players: "Nombre de joueurs"
         place: "Lieu"
+        players_per_pool: "Joueurs par poule"
+        requested_pool_count: "Le découpage demandé"
 
   # Formats de date utilisés avec I18n.l(date, format: :xxx)
   date:

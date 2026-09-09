@@ -1,4 +1,12 @@
-<%# ── Panneau de lancement (tournoi encore "open" ou "closed") ─────────────────── %>
+<%# ── Panneau de lancement (tournoi encore "open" ou "closed") ───────────────────
+    Locals : tournament, can_manage. %>
+<%
+  # Les formats à poules passent par une modale : l'organisation y choisit le
+  # découpage AVANT le tirage, quand l'effectif réel est enfin connu (à la création,
+  # en effectif libre, personne ne sait combien de joueurs s'inscriront). Les autres
+  # formats n'ont pas de poules à découper et gardent le bouton direct.
+  pooled = Tournament::POOL_BASED_FORMATS.include?(tournament.format)
+%>
 <div class="tournament-start-panel">
   <div class="tournament-start-panel__info">
     <i data-lucide="users" aria-hidden="true"></i>
@@ -26,12 +34,28 @@
       <% end %>
 
       <% if tournament.startable? %>
-        <%# Le bouton porte les appariements de la 1re ronde pour l'animation de tirage. %>
-        <%= button_to start_tournament_path(tournament),
-                      class: "btn btn-primary btn-cta-primary tournament-start-panel__btn",
-                      data: { turbo: true } do %>
-          <i data-lucide="shuffle" aria-hidden="true"></i>
-          Lancer le tournoi & tirer au sort
+        <% if pooled %>
+          <%# Ouvre la modale de découpage : c'est ELLE qui poste vers #start, et
+              qui porte le libellé « Lancer & tirer au sort ».
+
+              Le libellé ne dit donc PAS « Lancer » — ce bouton ne lance rien — et
+              reprend MOT POUR MOT le titre de la modale qu'il ouvre : l'organisation
+              retrouve exactement ce qu'elle a demandé, et les points de suspension
+              sont la convention pour « ceci ouvre une boîte de dialogue ». %>
+          <button type="button"
+                  class="btn btn-primary btn-cta-primary tournament-start-panel__btn"
+                  data-bs-toggle="modal" data-bs-target="#poolDrawModal">
+            <i data-lucide="shuffle" aria-hidden="true"></i>
+            Tirage au sort des poules…
+          </button>
+        <% else %>
+          <%# Le bouton porte les appariements de la 1re ronde pour l'animation de tirage. %>
+          <%= button_to start_tournament_path(tournament),
+                        class: "btn btn-primary btn-cta-primary tournament-start-panel__btn",
+                        data: { turbo: true } do %>
+            <i data-lucide="shuffle" aria-hidden="true"></i>
+            Lancer le tournoi & tirer au sort
+          <% end %>
         <% end %>
       <% else %>
         <p class="tournament-start-panel__hint">
@@ -43,3 +67,7 @@
     <p class="tournament-start-panel__hint">Le tournoi n'a pas encore été lancé par l'organisateur.</p>
   <% end %>
 </div>
+
+<% if can_manage && pooled && tournament.startable? %>
+  <%= render "tournaments/pool_draw_modal", tournament: tournament %>
+<% end %>

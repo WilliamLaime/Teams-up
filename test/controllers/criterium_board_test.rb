@@ -235,6 +235,53 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card--bye .tmatch-card__when", count: 0
   end
 
+  # ── Découpage choisi au lancement (modale de tirage) ────────────────────────
+  # L'organisation peut désormais imposer un découpage avant le tirage. En 8 poules
+  # sur 24 joueurs (donc de 3), la structure diverge du défaut (6 poules de 4) sur
+  # TOUTE la phase finale : barrages, tableau et consolante se dimensionnent sur le
+  # nombre de poules. On vérifie que la mécanique tient jusqu'au barrage — c'est là
+  # que le découpage se paie, pas dans les poules.
+  test "un découpage choisi en poules de 3 construit barrages, tableau et consolante" do
+    t = Tournament.create!(name: "Critérium poules de 3", sport: @sport, user: @owner,
+                           format: "criterium_federal", status: "in_progress", max_players: 24,
+                           requested_pool_count: 8,
+                           date: Date.tomorrow, place: "Salle test")
+    24.times do |i|
+      user = create_test_user(email: "p3_#{i}@example.com")
+      t.tournament_users.create!(user: user, role: "joueur", status: "approved")
+    end
+    t.tournament_users.players.approved.order(:id).each_with_index { |tu, i| tu.update_column(:draw_order, i) }
+
+    TournamentEngine.for(t).next_round!
+
+    # 8 poules de 3 : le découpage demandé, pas les 6 poules de 4 du règlement par
+    # défaut pour cet effectif.
+    assert_equal 8, t.pool_count
+    assert_equal [3] * 8, t.tournament_users.players.approved.group_by(&:pool).values.map(&:size)
+
+    30.times do
+      break if t.barrage_rounds.exists?
+
+      TournamentMatch.joins(:tournament_round)
+                     .where(tournament_rounds: { tournament_id: t.id })
+                     .where(status: "pending", is_bye: false)
+                     .to_a
+                     .each { |match| win_tournament_match!(match, match.player_a) }
+      TournamentEngine.for(t).next_round!
+    end
+
+    assert t.barrage_rounds.exists?, "les barrages doivent se générer sur un découpage choisi"
+    # Aucun joueur perdu : 8 poules de 3 font entrer les 24 inscrits en phase
+    # finale (16 par le tableau, 8 par la consolante).
+    structure = t.criterium_structure
+    assert_equal 16, structure.node("ok").size
+    assert_equal 8,  structure.node("ko").size
+
+    sign_in @owner
+    get tournament_path(t)
+    assert_response :success
+  end
+
   # ── Destinations de poule (étape 5c) ────────────────────────────────────────
   # Le classement de poule ne disait pas où chacun allait ensuite. Les liserés
   # sont DÉRIVÉS de CriteriumStructure, pas codés en dur.

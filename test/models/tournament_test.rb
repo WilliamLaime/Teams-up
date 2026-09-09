@@ -138,6 +138,130 @@ class TournamentTest < ActiveSupport::TestCase
     assert_equal 4, t.planned_final_size
   end
 
+  # ── #pool_split_options : les découpages proposés dans la modale de lancement ─
+  # Chaque option est un NOMBRE DE POULES stockable dans requested_pool_count, et
+  # le plan qui l'accompagne est exactement celui qui sera joué : la modale montre
+  # le résultat, l'organisation ne fait aucun calcul.
+  test "pool_split_options décrit exactement le découpage joué" do
+    t = Tournament.new(format: "poules")
+    options = t.pool_split_options(25)
+
+    assert options.any?
+    options.each do |pools, plan|
+      assert_equal pools, plan.size, "le nombre de poules annoncé doit être celui du plan"
+      assert_equal 25, plan.sum, "le plan doit répartir tout l'effectif"
+      assert_operator plan.min, :>=, Tournament::MIN_POOL_SIZE, "aucune poule sous MIN_POOL_SIZE"
+      assert_equal plan, t.pool_plan(25) if pools == t.pool_plan(25).size
+    end
+    # Du moins de poules au plus : la liste se lit comme un curseur.
+    assert_equal options.map(&:first).sort, options.map(&:first)
+  end
+
+  # Un nombre de poules valide peut engendrer une poule d'un seul joueur (5 joueurs
+  # en 3 poules → [2, 2, 1]) : ce découpage ne doit pas être proposé, un joueur
+  # seul n'ayant personne à affronter.
+  test "pool_split_options écarte les découpages laissant une poule d'un joueur" do
+    t = Tournament.new(format: "poules")
+
+    refute_includes t.pool_split_options(5).map(&:first), 3
+    assert_empty t.pool_split_options(1)
+  end
+
+  # Critérium Fédéral : le règlement ne connaît que les poules de 3 ou 4.
+  test "pool_split_options suit le règlement du Critérium Fédéral" do
+    t = Tournament.new(format: "criterium_federal")
+
+    # 24 joueurs : 6 poules de 4, 7 poules (3 de 4 + 4 de 3), 8 poules de 3.
+    assert_equal [6, 7, 8], t.pool_split_options(24).map(&:first)
+    t.pool_split_options(24).each do |_pools, plan|
+      assert_equal [], plan.uniq - Tournament::CRITERIUM_POOL_SIZES
+    end
+
+    # 25 joueurs : 7 poules (le découpage du règlement par défaut) ET 8 poules
+    # (1 de 4 + 7 de 3). Ce second découpage est la raison d'être de
+    # requested_pool_count : aucune TAILLE ne le produit, ⌈25/4⌉ valant 7 et
+    # ⌈25/3⌉ valant 9.
+    assert_equal [7, 8], t.pool_split_options(25).map(&:first)
+    assert_equal [4, 3, 3, 3, 3, 3, 3, 3], t.pool_split_options(25).to_h[8]
+    assert_equal t.pool_plan(25), t.pool_split_options(25).to_h[7]
+
+    # 17 joueurs : 6 poules donneraient [3×5, 2], hors règlement — rien à proposer
+    # au-delà du découpage automatique.
+    assert_equal [5], t.pool_split_options(17).map(&:first)
+  end
+
+  # Une poule unique ne qualifie rien : le tableau final se réduirait à un match
+  # rejouant une rencontre déjà jouée dans la poule.
+  test "pool_split_options n'offre jamais une poule unique en format poules" do
+    t = Tournament.new(format: "poules")
+
+    assert(t.pool_split_options(25).none? { |pools, _plan| pools < 2 })
+    # 4 joueurs : le seul découpage à 2 poules qualifierait tout le monde — il ne
+    # reste donc rien à proposer, et le tirage automatique garde la main.
+    assert_empty t.pool_split_options(4)
+  end
+
+  # Le tableau final prend 2 sortants par poule : un découpage où ça suffit à
+  # reprendre tout l'effectif ne trie personne.
+  test "pool_split_options écarte les découpages qui ne trient personne" do
+    t = Tournament.new(format: "poules")
+
+    # 24 joueurs en 12 poules de 2 → 24 qualifiés sur 24.
+    refute_includes t.pool_split_options(24).map(&:first), 12
+    t.pool_split_options(24).each do |_pools, plan|
+      assert_operator plan.size * 2, :<, plan.sum
+    end
+  end
+
+  # Un round-robin grandit en n² : une poule de 13 demande 78 matchs.
+  test "pool_split_options plafonne la taille des poules" do
+    t = Tournament.new(format: "poules")
+
+    assert(t.pool_split_options(40).all? { |_pools, plan| plan.max <= Tournament::MAX_POOL_SIZE })
+  end
+
+  # Le piège du Critérium : `criterium_mode` dépend de l'EFFECTIF, pas du
+  # découpage. Jusqu'à 7 joueurs la variante est :none — CriteriumStructure ne
+  # déclare alors aucun nœud de phase finale, et un découpage en 2 poules
+  # terminerait le tournoi sur deux 1ers de poule ex æquo, sans les faire jouer.
+  test "pool_split_options n'offre qu'une poule unique en Critérium sans phase finale" do
+    t = Tournament.new(format: "criterium_federal")
+
+    [4, 6, 7].each do |count|
+      assert_equal :none, t.criterium_mode(count)
+      assert(t.pool_split_options(count).all? { |pools, _plan| pools == 1 },
+             "#{count} joueurs : un découpage en plusieurs poules n'aurait aucune phase finale")
+    end
+  end
+
+  # Le nombre de poules demandé au lancement pilote TOUTE la structure : c'est lui
+  # que lisent PoolBuilder (#pool_count) et CriteriumStructure (#pool_size).
+  test "requested_pool_count pilote la structure des poules" do
+    t = open_tournament(max_players: 25)
+    t.update!(format: "criterium_federal", requested_pool_count: 8)
+
+    assert_equal [4, 3, 3, 3, 3, 3, 3, 3], t.pool_plan(25)
+    assert_equal 8, t.pool_plan(25).size
+    # La taille se déduit du plan : celle de la plus grande poule, comme sans
+    # réglage explicite en Critérium.
+    assert_equal 4, t.pool_plan(25).max
+
+    # Il prime sur la taille saisie à la création, qui, elle, ignore l'effectif réel :
+    # des poules de 8 donneraient ⌈25/8⌉ = 4 poules, pas les 5 demandées.
+    t.update!(format: "poules", players_per_pool: 8, requested_pool_count: 5)
+    assert_equal [5, 5, 5, 5, 5], t.pool_plan(25)
+  end
+
+  # Après un forfait, un nombre de poules plus grand que l'effectif restant
+  # produirait des poules vides.
+  test "requested_pool_count est borné par l'effectif" do
+    t = open_tournament(max_players: 25)
+    t.update!(format: "poules", requested_pool_count: 8)
+
+    assert_equal [1, 1, 1], t.pool_plan(3)
+    assert_equal [], t.pool_plan(0)
+  end
+
   test "bracket_size doit être une puissance de 2" do
     t = open_tournament(max_players: 8)
     t.bracket_size = 6
