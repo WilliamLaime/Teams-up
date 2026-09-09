@@ -24,7 +24,13 @@ export default class extends Controller {
 
     this.boundClose = this.closeOnOutsideClick.bind(this)
     this.observer = new MutationObserver(() => this.render())
-    this.observer.observe(this.nativeTarget, { childList: true, subtree: true })
+    // `attributes` en plus du contenu : un <select> peut être désactivé par un
+    // autre contrôleur (cf. pool-sizing, où le champ ne compte que si l'on choisit
+    // « Je choisis le découpage »). L'habillage doit suivre, sinon il resterait
+    // cliquable sur un champ qui ne sera pas soumis.
+    this.observer.observe(this.nativeTarget, {
+      childList: true, subtree: true, attributes: true, attributeFilter: ["disabled"]
+    })
     // Une valeur changée par ailleurs (préremplissage serveur, autre contrôleur)
     // doit se voir dans le libellé.
     this.nativeTarget.addEventListener("change", () => this.renderLabel())
@@ -33,11 +39,22 @@ export default class extends Controller {
   disconnect() {
     this.observer?.disconnect()
     document.removeEventListener("click", this.boundClose)
+    // L'habillage est du DOM créé en JS : il n'a rien à faire dans le cache de
+    // Turbo, qui le restituerait en double au retour sur la page.
+    this.toggle_?.remove()
+    this.menu?.remove()
   }
 
   // ── Construction ────────────────────────────────────────────────────────────
 
   buildShell() {
+    // Idempotent : un contrôleur Stimulus peut se rebrancher sur le MÊME élément
+    // (restauration de page Turbo, nœud déplacé par une modale). Sans cette purge,
+    // un second habillage s'ajouterait à côté du premier — et comme `render()` ne
+    // connaît que le dernier, le premier resterait là en pilule vide.
+    this.element.querySelectorAll(".custom-select__toggle, .custom-select__menu")
+        .forEach((node) => node.remove())
+
     this.toggle_ = document.createElement("button")
     this.toggle_.type = "button" // sans ça, un <button> dans un <form> le soumet
     this.toggle_.className = "custom-select__toggle"
@@ -71,6 +88,7 @@ export default class extends Controller {
       this.menu.append(item)
     })
     this.renderLabel()
+    this.toggle_.disabled = this.nativeTarget.disabled
     // Les icônes Lucide sont injectées après coup : ce menu naît en JS, il n'est
     // donc pas couvert par les ré-initialisations de application.js.
     window.lucide?.createIcons({ nameAttr: "data-lucide" })

@@ -471,3 +471,65 @@ footer tombait sous la ligne de flottaison alors qu'il avait la place au-dessus.
 - **Le motif est encore présent ailleurs** : `_matches_index.scss`, `_profil.scss`,
   `_auth.scss` (×2), `_teams.scss`. Même symptôme dès que la page est courte. Non traité ici
   faute de constat visuel sur chacune, mais c'est la même correction.
+
+## 2026-09-09 — Une TAILLE de poule ne sait pas exprimer tous les découpages
+
+La modale de lancement devait laisser l'organisation choisir son découpage de poules. Premier
+jet : stocker la taille voulue dans `players_per_pool` (la colonne existait déjà) et déduire
+le nombre de poules par ⌈effectif / taille⌉. Résultat : à 25 joueurs, un Critérium Fédéral
+n'avait **aucun choix** — alors que le règlement en autorise deux.
+
+- **Le nombre de poules n'est pas une fonction inversible de la taille.** 25 joueurs en
+  8 poules (une de 4, sept de 3) est réglementaire, mais ⌈25/4⌉ = 7 et ⌈25/3⌉ = 9 : aucune
+  taille ne produit 8 poules. L'énumération par tailles ne pouvait donc pas proposer ce
+  découpage, et le seul autre (poules de 3 → [3×7, 2, 2]) était hors règlement. La liste se
+  réduisait à un élément, que la vue masquait — d'où « je n'ai pas le choix ».
+- **Corrigé en stockant ce que l'utilisateur a en tête** : `requested_pool_count`, le nombre
+  de poules. Il décrit n'importe quel découpage équilibré sans ambiguïté (`balanced_plan`),
+  la taille s'en déduit (`pool_plan.max`), et la liste proposée passe de 1 à 2 options en
+  Critérium, de 4 à 9 en format « poules ». `players_per_pool` reste le réglage du formulaire
+  de création — antérieur aux inscriptions, donc à l'aveugle.
+- **Leçon générale** : avant de réutiliser une colonne existante, vérifier qu'elle peut
+  *représenter* toutes les valeurs du nouveau domaine. Ici la contrainte n'était pas une
+  validation mais une perte d'information à la dérivation, invisible tant qu'on ne regardait
+  pas un effectif non divisible.
+
+## 2026-09-09 — `display: flex` sur un `<p>` : chaque nœud de texte devient une colonne
+
+Dans la modale de découpage, « Constitution : **tirage au sort intégral** — se règle dans
+l'onglet Participants. » s'affichait sur trois colonnes qui se coupaient chacune sur deux
+lignes. Le `<p>` était un conteneur flex (pratique pour aligner l'icône Lucide), ce qui fait
+de **chaque nœud de texte** un élément de la grille — pas seulement des balises.
+
+Une phrase se compose en flux normal : icône en inline avec `vertical-align`, et
+`display: block` sur la partie qui doit vraiment passer à la ligne. Le flex reste bon pour
+aligner des blocs, jamais pour aligner l'icône d'une phrase.
+
+## 2026-09-09 — `select:disabled { opacity: 1 }` du reboot Bootstrap perce les selects masqués
+
+Un `<select>` habillé par `custom-select` réapparaissait en petite pilule de 50 × 14 px
+(avec le chevron de fond Bootstrap) dès qu'il était **désactivé** — cas du mode
+automatique dans la modale de découpage des poules.
+
+Cause racine : le composant masque le `<select>` natif avec `.custom-select__native
+{ width: 1px; height: 1px; opacity: 0 }`, spécificité `0,1,0`. Or le reboot de Bootstrap
+contient `select:disabled { opacity: 1 }` (« undo the opacity change from Chrome »),
+spécificité `0,1,1` — il gagne. Le champ redevenait donc visible, réduit à ses paddings
+(`.form-select` : 2,25 rem + 0,75 rem = 48 px, plus la bordure → les 50 px observés).
+
+Deux leçons :
+1. Un masquage qui repose sur la seule `opacity` est fragile face à une règle tierce
+   portant un pseudo-état. Ajouter `clip-path: inset(50%)` (indépendant de l'opacité) et
+   la parade explicite `&:disabled { opacity: 0 }`.
+2. **Diagnostiquer, pas deviner.** Deux tentatives de correction à l'aveugle depuis une
+   capture d'écran n'ont rien changé. Une sonde jetable en test système Selenium
+   (`driven_by :selenium, using: :headless_chrome`, connexion via `Warden::Test::Helpers`,
+   puis parcours de `document.styleSheets` pour lister les règles qui `matches()`
+   l'élément) a donné la réponse en une exécution.
+
+## 2026-09-09 — `public/assets` précompilé masque les sources en développement
+
+Une modification SCSS n'apparaissait ni dans le navigateur ni dans la sonde : ce dépôt
+a des assets **précompilés commités dans `public/assets/`**, que Sprockets sert en
+priorité. Toute retouche de SCSS ou de JS demande donc `rails assets:precompile` pour
+être visible — sinon on débogue l'ancienne feuille de style.

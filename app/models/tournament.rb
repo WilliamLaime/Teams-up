@@ -131,6 +131,25 @@ class Tournament < ApplicationRecord
   POOL_SEEDING_MODES = %w[random pots].freeze
   DEFAULT_POT_COUNT  = 2
 
+  # ── Bornes d'une poule ───────────────────────────────────────────────────────
+  # Déclarées ici, et non près de DEFAULT_POOL_SIZE avec les autres réglages de
+  # structure : les validations ci-dessous les lisent, et le corps d'une classe
+  # s'exécute de haut en bas.
+  #
+  # Une poule se joue à 2 joueurs minimum : à 1, le round-robin n'a aucun adversaire
+  # à proposer.
+  MIN_POOL_SIZE = 2
+
+  # Plafond des poules PROPOSÉES au lancement (#pool_split_options). Ce n'est pas une
+  # validation : un tournoi créé avec une poule plus grande reste valide. Mais un
+  # round-robin grandit en n², et au-delà de 8 la poule devient un tournoi à elle
+  # seule — 8 joueurs = 7 matchs chacun, 13 joueurs = 78 matchs dans la poule.
+  MAX_POOL_SIZE = 8
+
+  # Le Critérium Fédéral ne connaît que les poules de 3 ou de 4 : c'est la taille qui
+  # détermine les sortants (cf. #criterium_pool_size_is_three_or_four).
+  CRITERIUM_POOL_SIZES = [3, 4].freeze
+
   # Presets rapides du nombre de joueurs proposés dans le formulaire de création.
   # Ce n'est PAS une contrainte : le mode "Libre" autorise n'importe quel entier.
   PLAYER_COUNTS = [8, 16, 32].freeze
@@ -170,7 +189,15 @@ class Tournament < ApplicationRecord
   # Réglages de structure (Lot 7) — tous facultatifs : vide = valeur recommandée.
   # Une poule se joue à 2 joueurs minimum ; il faut au moins 1 victoire pour se
   # qualifier et 1 défaite pour être éliminé (sinon la ronde suisse ne finirait jamais).
-  validates :players_per_pool, numericality: { only_integer: true, greater_than_or_equal_to: 2 }, allow_nil: true
+  validates :players_per_pool,
+            numericality: { only_integer: true, greater_than_or_equal_to: MIN_POOL_SIZE }, allow_nil: true
+  # Nombre de poules choisi dans la modale de lancement (cf. #pool_split_options).
+  # La validation reste GROSSIÈRE — une seule poule est un découpage valide en soi
+  # (Critérium à 7 joueurs) : c'est le controller qui vérifie que le nombre demandé
+  # fait bien partie des découpages proposés pour l'effectif inscrit, seul endroit
+  # qui connaisse cet effectif.
+  validates :requested_pool_count,
+            numericality: { only_integer: true, greater_than_or_equal_to: 1 }, allow_nil: true
   validates :swiss_wins_to_qualify, :swiss_losses_to_eliminate,
             numericality: { only_integer: true, greater_than_or_equal_to: 1 }, allow_nil: true
   # Le tableau final se joue par élimination directe : sa taille doit être une
@@ -667,6 +694,10 @@ class Tournament < ApplicationRecord
   # elle qui détermine jusqu'à quel rang un joueur peut sortir de sa poule, donc
   # combien de rangs CriteriumStructure doit savoir faire entrer en phase finale.
   def pool_size
+    # Un nombre de poules demandé décrit le découpage à lui seul : la taille en
+    # découle, et c'est celle de la plus grande poule. Prime donc sur
+    # `players_per_pool`, saisi à la création — donc avant de connaître l'effectif.
+    return pool_plan.max || DEFAULT_POOL_SIZE if requested_pool_count.present?
     return players_per_pool if players_per_pool.present?
     return pool_plan.max || DEFAULT_POOL_SIZE if criterium?
 
@@ -677,7 +708,7 @@ class Tournament < ApplicationRecord
   # réutilisé par PoolBuilder pour la répartition ET ici pour dimensionner le
   # tableau final (cf. #final_size).
   def pool_count
-    return [pool_plan.size, 1].max if criterium?
+    return [pool_plan.size, 1].max if criterium? || requested_pool_count.present?
 
     [(approved_players_count / pool_size.to_f).ceil, 1].max
   end
@@ -698,6 +729,29 @@ class Tournament < ApplicationRecord
     return [] if count < 1
 
     balanced_plan(count, planned_pool_count_for(count))
+  end
+
+  # ── Découpages proposables à l'organisation (modale de lancement) ────────────
+  # Les découpages en poules jouables pour un effectif donné, sous la forme
+  # [[nombre_de_poules, plan], …], du moins de poules au plus.
+  #
+  # On énumère les NOMBRES de poules, et non les tailles, parce qu'une taille ne
+  # sait pas exprimer tous les découpages : le nombre de poules s'en déduirait par
+  # ⌈effectif / taille⌉, et certains découpages n'ont aucune taille qui les
+  # produise. 25 joueurs en 8 poules (une de 4, sept de 3) est réglementaire au
+  # Critérium, mais ⌈25/4⌉ = 7 et ⌈25/3⌉ = 9 : aucune taille ne donne 8. C'est
+  # aussi le nombre de poules que l'organisation a en tête (« je veux 5 poules »),
+  # d'où la colonne `requested_pool_count` qui le stocke tel quel.
+  #
+  # Toutes les bornes de jouabilité vivent dans #poolable_plan?, et nulle part
+  # ailleurs.
+  def pool_split_options(count = approved_players_count)
+    count = count.to_i
+
+    (1..count).filter_map do |pools|
+      plan = balanced_plan(count, pools)
+      [pools, plan] if poolable_plan?(plan)
+    end
   end
 
   # Variante de phase finale effectivement appliquée (cf. CRITERIUM_MODES).
@@ -821,6 +875,10 @@ class Tournament < ApplicationRecord
   # Un réglage explicite de l'organisateur gagne toujours. Sinon, en Critérium,
   # ce sont les seuils du règlement FFTT ; ailleurs, la règle générique.
   def planned_pool_count_for(count)
+    # Borné par l'effectif : après un forfait, un nombre de poules demandé plus
+    # grand que le nombre de joueurs restants produirait des poules vides.
+    return requested_pool_count.clamp(1, [count, 1].max) if requested_pool_count.present?
+
     size = players_per_pool.presence
     return [(count / size.to_f).ceil, 1].max if size
     return criterium_pool_count_for(count) if criterium?
@@ -838,6 +896,56 @@ class Tournament < ApplicationRecord
     return 4 if count <= CRITERIUM_INTEGRAL_MAX
 
     [(count / DEFAULT_POOL_SIZE.to_f).ceil, 1].max
+  end
+
+  # Un découpage est-il proposable à l'organisation ? Toutes les bornes de
+  # #pool_size_options sont ici, et nulle part ailleurs.
+  #
+  # Tout se lit sur le `plan` — la liste des tailles de poule : c'est lui qu'on
+  # jouera, alors qu'un nombre de poules demandé ne dit rien de ce qu'il produit
+  # (5 joueurs en 3 poules donnent [2, 2, 1], et une poule de 1 n'a personne à
+  # faire jouer).
+  def poolable_plan?(plan)
+    return false if plan.empty? || plan.min < MIN_POOL_SIZE
+    return false if plan.max > MAX_POOL_SIZE
+    return criterium_poolable_plan?(plan) if criterium?
+
+    # Une poule unique n'a rien à qualifier : le tableau final se réduit à un seul
+    # match (⌈2/1⌉ place), qui rejoue une rencontre déjà jouée dans la poule.
+    return false if plan.size < 2
+
+    # Une phase de poules doit TRIER. Le tableau final prend 2 sortants par poule
+    # (cf. #recommended_final_size) : si ça suffit à reprendre tout l'effectif,
+    # elle n'élimine personne et ne sert qu'à faire jouer des matchs.
+    # Ex. 24 joueurs en 12 poules de 2 → 24 qualifiés sur 24.
+    plan.size * 2 < plan.sum
+  end
+
+  # Bornes propres au Critérium Fédéral. Le règlement ne connaît que les poules de
+  # 3 ou 4 (même liste que la validation de players_per_pool) : un découpage qui
+  # produit une poule d'une autre taille est exclu, poule de 2 comprise — le
+  # règlement ne sait pas en faire sortir un joueur.
+  #
+  # La contrainte suivante est la moins évidente et la plus importante : le nombre
+  # de poules doit être COHÉRENT AVEC LA VARIANTE DE PHASE FINALE (cf. #criterium_mode,
+  # dont les seuils dépendent de l'effectif, pas du découpage).
+  def criterium_poolable_plan?(plan)
+    return false unless plan.all? { |size| CRITERIUM_POOL_SIZES.include?(size) }
+
+    case criterium_mode(plan.sum)
+    # Poule unique sans phase finale : le classement final EST celui de la poule
+    # (cf. #criterium_pools_only?). Avec plusieurs poules, CriteriumStructure ne
+    # déclare AUCUN nœud — le tournoi se terminerait sur deux 1ers de poule ex
+    # æquo, sans jamais jouer la moindre rencontre entre eux.
+    when :none then plan.size == 1
+    # Barrages + tableau + consolante : le barrage oppose des joueurs de poules
+    # DIFFÉRENTES (cf. CriteriumFlow#avoid_same_pool, qui ne sait le garantir qu'à
+    # partir de 2 poules).
+    when :standard then plan.size >= 2
+    # :integral — tableau unique, tout le monde dedans : aucun couplage au nombre
+    # de poules.
+    else true
+    end
   end
 
   # Répartit `count` joueurs en `pools` poules aussi égales que possible, les plus
@@ -901,7 +1009,7 @@ class Tournament < ApplicationRecord
   # autorisé : c'est le mode « recommandé », où #pool_plan choisit la taille.
   def criterium_pool_size_is_three_or_four
     return unless criterium?
-    return if players_per_pool.blank? || [3, 4].include?(players_per_pool)
+    return if players_per_pool.blank? || CRITERIUM_POOL_SIZES.include?(players_per_pool)
 
     errors.add(:players_per_pool, "doit être 3 ou 4 pour un Critérium Fédéral")
   end

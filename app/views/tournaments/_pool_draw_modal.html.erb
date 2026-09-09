@@ -1,0 +1,135 @@
+<%# ── Modale « Lancer le tournoi & tirer au sort » ───────────────────────────────
+    Dernière étape avant le tirage, réservée à l'organisation : choisir le découpage
+    des poules maintenant que l'effectif réel est connu.
+
+    Hissée par `content_for :modals` — même raison qu'ailleurs dans l'app : un
+    ancêtre transformé créerait un contexte de stacking et le backdrop passerait
+    par-dessus la modale. Sûr ici parce que ce partial n'est rendu qu'en rendu de
+    page complet (`start.turbo_stream.erb` remplace le board une fois le tournoi
+    lancé, donc sans panneau de lancement).
+
+    Le `dispose()` Bootstrap sur `turbo:before-render` est déjà assuré globalement
+    (application.js) : ne rien redéclarer ici.
+
+    Local : tournament. %>
+<%
+  auto_plan = tournament.pool_plan
+  # On retire le découpage que le mode automatique donnerait déjà : le proposer une
+  # seconde fois dans la liste ferait croire à deux choix différents. S'il ne reste
+  # aucune alternative — Critérium à moins de 8 joueurs, où le règlement ne prévoit
+  # qu'une poule unique — la liste disparaît (cf. `choices.any?` plus bas).
+  choices = tournament.pool_split_options.reject { |_pools, plan| plan == auto_plan }
+%>
+<% content_for :modals do %>
+  <div class="modal fade pool-draw-modal" id="poolDrawModal" tabindex="-1"
+       aria-labelledby="poolDrawModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <%= form_with url: start_tournament_path(tournament), method: :post,
+                      data: { controller: "pool-sizing",
+                              action: "turbo:submit-end->pool-sizing#close" } do %>
+
+          <div class="modal-header">
+            <h2 class="modal-title" id="poolDrawModalTitle">
+              <i data-lucide="shuffle" aria-hidden="true"></i>
+              Tirage au sort des poules
+            </h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+
+          <div class="modal-body pool-sizing">
+            <p class="pool-sizing__count">
+              <strong><%= pluralize(tournament.approved_players_count, "joueur", "joueurs") %></strong> à répartir.
+            </p>
+
+            <% if choices.any? %>
+              <%# Mode automatique : le <select> plus bas est désactivé, donc PAS
+                  soumis — `requested_pool_count` n'arrive pas dans les params et le
+                  tournoi garde son réglage (cf. TournamentsController#apply_pool_sizing).
+                  C'est ce qui permet de se passer de tout paramètre virtuel. %>
+              <div class="pool-sizing__option">
+                <label class="pool-sizing__choice">
+                  <input type="radio" name="pool_sizing" value="auto" checked
+                         data-action="change->pool-sizing#choose">
+                  <span class="pool-sizing__label">
+                    Tirage automatique
+                    <span class="pool-sizing__badge">recommandé</span>
+                    <span class="pool-sizing__preview"><%= pool_plan_label(auto_plan) %></span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="pool-sizing__option">
+                <label class="pool-sizing__choice">
+                  <input type="radio" name="pool_sizing" value="custom"
+                         data-action="change->pool-sizing#choose">
+                  <span class="pool-sizing__label">Je choisis le découpage</span>
+                </label>
+
+                <%# HORS du <label>, et pas seulement pour la validité HTML (un
+                    <label> ne peut contenir que du contenu de phrase, donc pas la
+                    <div> du select habillé) : à l'intérieur, un clic sur le menu
+                    remontait au <label>, qui réactivait le bouton radio.
+
+                    Le <select> natif reste la source de vérité (c'est lui qui est
+                    soumis) ; custom-select ne fait que l'habiller, le menu natif
+                    étant dessiné par l'OS et impossible à mettre au code couleur
+                    de l'app. Même composant que les selects du formulaire de match.
+
+                    `disabled` au rendu : le mode automatique est coché par défaut,
+                    et sans JS on reste donc sur le comportement historique. %>
+                <div class="custom-select pool-sizing__select" data-controller="custom-select"
+                     data-action="keydown->custom-select#keydown">
+                  <select name="tournament[requested_pool_count]"
+                          class="form-select custom-select__native"
+                          data-custom-select-target="native"
+                          data-pool-sizing-target="select" disabled
+                          aria-label="Découpage des poules">
+                    <%# Libellé sur UNE ligne, sans espaces autour : custom-select
+                        recopie `option.textContent` tel quel dans son bouton. %>
+                    <% choices.each do |pools, plan| %>
+                      <option value="<%= pools %>"><%= pool_plan_label(plan) %></option>
+                    <% end %>
+                  </select>
+                </div>
+              </div>
+            <% else %>
+              <%# Aucune alternative jouable pour cet effectif : un bouton radio seul
+                  ferait croire à un choix. On énonce le découpage, et le formulaire
+                  ne poste alors aucun nombre de poules. Cas du Critérium à moins de
+                  8 joueurs, où le règlement ne prévoit qu'une poule unique. %>
+              <p class="pool-sizing__only">
+                <i data-lucide="git-branch" aria-hidden="true"></i>
+                Découpage : <strong><%= pool_plan_label(auto_plan) %></strong>
+                <span class="pool-sizing__preview">
+                  <%= tournament.criterium? ? "seul découpage autorisé par le règlement pour cet effectif." : "seul découpage jouable pour cet effectif." %>
+                </span>
+              </p>
+            <% end %>
+
+            <%# Le mode de constitution (tirage intégral / chapeaux) est l'AUTRE
+                réglage du tirage, et il se règle ailleurs : le rappeler ici évite
+                de lancer en croyant que les chapeaux sont pris en compte — ou
+                l'inverse. %>
+            <p class="pool-sizing__hint">
+              <i data-lucide="layers" aria-hidden="true"></i>
+              Constitution :
+              <strong><%= tournament.seeded_pots? ? "chapeaux" : "tirage au sort intégral" %></strong>
+              — se règle dans l'onglet Participants.
+            </p>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-cta-secondary" data-bs-dismiss="modal">
+              Annuler
+            </button>
+            <button type="submit" class="btn btn-primary btn-cta-primary">
+              <i data-lucide="shuffle" aria-hidden="true"></i>
+              Lancer &amp; tirer au sort
+            </button>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

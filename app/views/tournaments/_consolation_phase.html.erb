@@ -22,7 +22,11 @@
     cf. CriteriumStructure#ko_nodes). %>
 <% note = if rounds.any?
             nil
-          elsif tournament.players_per_pool.to_i >= 4
+          # pool_size, et non players_per_pool : la colonne vaut NULL dès que le
+          # découpage n'a pas été saisi à la main, et la note annonçait alors
+          # l'absence de 4es de poule même en poules de 4. #pool_size est la source
+          # de vérité de la structure, c'est elle que reçoit CriteriumStructure.
+          elsif tournament.pool_size >= 4
             "La consolante se remplira à la fin des barrages : les 4es de poule y " \
             "rejoindront les perdants de barrage. Chacune de ses places se joue, " \
             "jusqu'à la dernière."

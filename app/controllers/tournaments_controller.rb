@@ -69,6 +69,17 @@ class TournamentsController < ApplicationController
       return
     end
 
+    # Découpage des poules choisi dans la modale de lancement. Paramètre absent =
+    # tirage automatique : `requested_pool_count` reste NULL et #pool_count applique
+    # le découpage recommandé, exactement comme avant l'existence de cette modale.
+    #
+    # Écrit AVANT la transaction, tant que le tournoi est encore "open"/"closed" :
+    # un découpage refusé doit échouer AVANT que quoi que ce soit soit lancé.
+    unless apply_pool_sizing
+      redirect_to tournament_path(@tournament), alert: @tournament.errors.full_messages.to_sentence
+      return
+    end
+
     ActiveRecord::Base.transaction do
       @tournament.update!(status: "in_progress")
       # Vrai tirage au sort : mélange l'ordre des joueurs une fois pour toutes, AVANT
@@ -378,6 +389,35 @@ class TournamentsController < ApplicationController
   # une seule fois, au moment du lancement. Cet ordre remplace ensuite l'id
   # (ordre d'inscription) partout où SwissPairing/LeagueBuilder/PoolBuilder/
   # Tournament#rank_key avaient besoin d'un départage neutre.
+  # Applique le découpage en poules demandé au lancement. Renvoie false (et laisse
+  # les erreurs sur le tournoi) si le découpage est refusé.
+  #
+  # Volontairement HORS de #tournament_params : STRUCTURAL_FIELDS y retire les
+  # réglages de structure dès que le tournoi est lancé, et ce verrou doit rester
+  # intact — ici, le tournoi ne l'est pas encore.
+  def apply_pool_sizing
+    return true unless Tournament::POOL_BASED_FORMATS.include?(@tournament.format)
+
+    pools = params.dig(:tournament, :requested_pool_count)
+    # Le <select> de la modale est désactivé en mode automatique : il n'est alors
+    # pas soumis du tout. Rien à écrire, et surtout pas d'effacement d'un réglage
+    # déjà choisi à la création du tournoi.
+    return true if pools.blank?
+
+    # Le découpage doit faire partie de ceux PROPOSÉS pour cet effectif. C'est le
+    # seul contrôle qui connaisse le nombre d'inscrits : la validation du modèle,
+    # elle, ne voit que le nombre de poules (`>= 1`) et laisserait passer une
+    # requête forgée qui produit une poule d'un joueur — 25 inscrits en 13 poules
+    # donnent [2×12, 1], et ce joueur seul « gagnerait » sa poule sans jouer.
+    unless @tournament.pool_split_options.any? { |option_pools, _plan| option_pools == pools.to_i }
+      @tournament.errors.add(:requested_pool_count,
+                             "ne permet pas de découper #{@tournament.approved_players_count} joueurs en poules jouables")
+      return false
+    end
+
+    @tournament.update(requested_pool_count: pools)
+  end
+
   def assign_draw_order!
     @tournament.tournament_users.players.approved.to_a.shuffle.each_with_index do |tu, index|
       tu.update_column(:draw_order, index)
