@@ -396,3 +396,78 @@ déployé. Deux causes de DONNÉES, sur deux tournois différents.
   Lire la destination *réelle* dans les matchs exige donc de replier sur la prédiction pour les
   portes encore fermées — sans ce repli, deux tiers du zonage disparaissent pendant la fenêtre.
   C'est le test qui l'a dit (8 destinations attendues sur 16), pas la relecture du code.
+
+## 2026-09-08 — Illustration thématisée : le SVG inline, et deux pièges de mise en page
+
+Ajout d'une illustration undraw à droite du titre d'un tournoi non lancé
+(`shared/_illu_tournoi_prep`), recolorée dans les deux thèmes.
+
+- **Un `<img>` ne voit pas `data-theme`.** Un `image_tag` vers un `.svg` est une ressource
+  externe : le CSS de la page ne l'atteint pas. Pour qu'une illustration suive le thème il
+  faut le SVG **inline** (un partial ERB), chaque `fill="#hex"` devenant un token
+  `var(--illu-*)`. Le projet avait jusqu'ici contourné le problème en dupliquant les fichiers
+  (`logo_..._blanc.svg` / `_noir.svg`) — acceptable pour un logo bicolore, intenable pour une
+  illustration à 8 couleurs. Le SVG s'y prêtait : 72 attributs `fill`, aucun `stroke`, aucun
+  dégradé, aucune image embarquée.
+- **`grid-row: 1 / -1` ne s'étend PAS sur des lignes implicites.** Le `-1` compte depuis la
+  fin de la grille *explicite* ; sans `grid-template-rows`, celle-ci n'existe pas et l'élément
+  ne couvre qu'une ligne. La grille semblait pourtant l'approche élégante ici (elle évitait
+  d'enrober 90 lignes d'ERB dans un `__main`) — c'était une fausse économie. Le flex avec
+  conteneur d'enrobage est la solution correcte.
+- **Inverser la polarité d'une illustration ≠ tout passer en blanc.** Premier essai en dark :
+  `--illu-line: #ffffff` sur les vêtements (cheveux, legging, chaussures) écrasait toute la
+  composition et jurait avec les carnations, laissées en dur. Ce qui se transpose d'un thème à
+  l'autre est la **hiérarchie de contraste**, pas les valeurs : les cadres du tableau restent
+  l'élément le plus marqué (0.92), l'écran en dessous (0.75), les vêtements encore en dessous
+  (0.62), le mobilier en surface discrète (0.15). Réglé en rendant le SVG seul sur les deux
+  fonds, côte à côte — pas en raisonnant sur les hex.
+- **Le vert ne s'écrit pas.** `var(--green)` résout déjà en `#00A44A` / `#1EDD88` : les
+  7 formes d'accent suivent le thème sans un seul jeu de valeurs à maintenir.
+
+## 2026-09-08 — L'overlay de tirage attend un clic, et `inert` tuait son bouton
+
+L'animation de tirage au sort se fermait d'elle-même à la fin (`#closeOverlay` sur minuteur) :
+on n'avait pas le temps de lire les poules, alors que l'overlay est le **seul** écran qui les
+montre toutes à la fois (dans le board, elles sont des onglets exclusifs).
+
+- **Une mise en scène qui révèle une information ne doit pas s'escamoter.** Le minuteur final
+  ne ferme plus rien : il permute « Passer l'animation » (discret, pendant) en « Voir les
+  poules » (CTA, après). La fermeture devient une décision — clic ou Échap.
+- **`inert` neutralisait le bouton « Passer ».** L'overlay était marqué
+  `aria-hidden="true" inert` au motif qu'il est décoratif et transitoire — mais `inert`
+  désactive *tout* ce qu'il contient : le bouton n'était pas cliquable et le `focus()` du
+  contrôleur ne prenait pas. Personne ne l'avait vu parce que l'overlay disparaissait de
+  lui-même avant qu'on pense à cliquer. Dès qu'un overlay contient une commande, il est un
+  dialogue : `role="dialog" aria-modal="true" aria-label=…`, et `aria-modal` règle seul le
+  problème de la double annonce (le board derrière sort de la restitution).
+- **« Passer » saute le suspense, pas le résultat.** Le bouton révèle tout d'un coup et laisse
+  l'overlay ouvert. Fermer sans avoir rien lu n'a d'intérêt pour personne — c'est le rôle d'Échap.
+- **Pas d'icône Lucide dans un fragment de Turbo Stream.** `application.js` reconvertit les
+  `<i data-lucide>` sur `turbo:render` et `turbo:frame-render` — pas sur un rendu de stream, par
+  lequel l'overlay arrive justement. La flèche du CTA est un `::after { content: "→" }`.
+
+> **Suite (2026-09-09)** — l'illustration undraw a finalement été remplacée par un visuel
+> ping-pong fourni par le client (`app/assets/images/illu_tournoi_prep.webp`), **détouré** :
+> un fond alpha rend toute la mécanique de tokens ci-dessous inutile, et le partial redevient
+> un simple `image_tag`. La leçon reste valable pour le cas où une illustration doit vraiment
+> suivre le thème — mais la question à poser d'abord est : « ce visuel a-t-il seulement besoin
+> d'être recoloré ? » Un dessin détouré aux couleurs de la marque tient sur les deux fonds.
+
+## 2026-09-09 — `min-height: calc(100vh - 130px)` sabote le sticky footer
+
+Sur un tournoi pas encore lancé (page courte : en-tête + une carte « pas encore lancé »), le
+footer tombait sous la ligne de flottaison alors qu'il avait la place au-dessus.
+
+- **Deux mécanismes de sticky footer se marchaient dessus.** Le bon vit dans
+  `application.scss` : `body { min-height: 100vh; display: flex; flex-direction: column }` +
+  `main { flex: 1 }` — il étire le main à l'espace réellement libre, sans rien deviner.
+  Par-dessus, `.tournaments-index-page` posait `min-height: calc(100vh - 130px)`, une
+  estimation du chrome. Or navbar + fil d'Ariane + footer dépassent 130px : le contenu se
+  retrouvait plus haut que la fenêtre, donc le footer dessous.
+- **Ce `min-height` était un vestige.** Il servait à peindre le fond de page sur toute la
+  hauteur, du temps où le body n'avait aucun `background-color` (cf. le commentaire du bloc
+  `body` dans `application.scss`, ajouté depuis avec le même token). Un correctif de fond a
+  rendu obsolète un contournement de hauteur — sans que personne relie les deux.
+- **Le motif est encore présent ailleurs** : `_matches_index.scss`, `_profil.scss`,
+  `_auth.scss` (×2), `_teams.scss`. Même symptôme dès que la page est courte. Non traité ici
+  faute de constat visuel sur chacune, mais c'est la même correction.

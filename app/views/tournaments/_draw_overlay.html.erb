@@ -8,18 +8,25 @@
     montrerait donc jamais que sa propre poule, alors que c'est précisément la
     composition de TOUTES les poules que le tirage doit révéler.
 
-    L'overlay est rendu déjà masqué et n'est animé que par tournament_draw_controller,
-    qui le retire ensuite : sans JS (ou en `prefers-reduced-motion`), il ne s'affiche
-    pas du tout et le board reste directement accessible.
+    L'overlay est rendu déjà masqué et n'est animé que par tournament_draw_controller.
+    Il ne se ferme JAMAIS tout seul : une fois la dernière poule révélée, le bouton
+    « Passer l'animation » laisse place à « Voir les poules » et c'est l'organisateur
+    qui décide de passer au board. Un tirage qui s'escamote de lui-même ne laisse pas
+    le temps de lire les poules — et c'est le seul moment où on les voit toutes.
+    Sans JS (ou en `prefers-reduced-motion`), il ne s'affiche pas du tout et le board
+    reste directement accessible.
 
     Local : tournament. %>
 <% pools = tournament.ranked_pools %>
 
 <% if pools.any? %>
-  <%# aria-hidden + inert : purement décoratif et transitoire. Le contenu réel
-      (les poules) est dans le board juste derrière, déjà lisible par les
-      technologies d'assistance — l'annoncer deux fois n'apporterait rien. %>
-  <div class="draw-overlay" data-tournament-draw-target="overlay" hidden aria-hidden="true" inert>
+  <%# Vraie boîte de dialogue : l'overlay attend une action pour se fermer, ses
+      boutons doivent donc être cliquables et atteignables au clavier. D'où le retrait
+      de `inert`/`aria-hidden`, qui neutralisaient l'un et masquaient l'autre. Le
+      contenu réel (les poules) est répété dans le board derrière, mais `aria-modal`
+      le retire de la restitution le temps du tirage : pas de double annonce. %>
+  <div class="draw-overlay" data-tournament-draw-target="overlay" hidden
+       role="dialog" aria-modal="true" aria-label="Tirage au sort des poules">
     <div class="draw-overlay__inner">
       <p class="draw-overlay__kicker">Tirage au sort</p>
 
@@ -38,11 +45,27 @@
         <% end %>
       </div>
 
-      <%# Toujours pouvoir sortir : une animation qu'on ne peut pas interrompre
-          bloque l'accès au contenu (RGAA 13.8). Échap fait la même chose. %>
-      <button type="button" class="draw-overlay__skip" data-action="tournament-draw#skip">
-        Passer l'animation
-      </button>
+      <%# Deux états d'un même emplacement, permutés par le contrôleur.
+          Pendant : sortie discrète — une animation qu'on ne peut pas interrompre
+          bloque l'accès au contenu (RGAA 13.8), Échap fait la même chose.
+          Après : le CTA qui emmène au board, seule façon de fermer l'overlay. %>
+      <div class="draw-overlay__actions">
+        <button type="button" class="draw-overlay__skip"
+                data-tournament-draw-target="skip"
+                data-action="tournament-draw#skip">
+          Passer l'animation
+        </button>
+
+        <button type="button" class="draw-overlay__continue"
+                data-tournament-draw-target="continue"
+                data-action="tournament-draw#close" hidden>
+          <%# Pas d'icône Lucide ici : l'overlay arrive par Turbo Stream, qui ne
+              déclenche ni turbo:render ni turbo:frame-render — les deux seuls
+              moments où application.js reconvertit les <i data-lucide>. La flèche
+              est donc dessinée en CSS (::after). %>
+          Voir les poules
+        </button>
+      </div>
     </div>
   </div>
 <% end %>

@@ -30,96 +30,115 @@
 
     <%# ── En-tête ─────────────────────────────────────────────────────────── %>
     <header class="tournament-detail-header">
-      <div class="tournament-detail-header__top">
-        <h1 class="tournament-detail-header__title"><%= @tournament.name %></h1>
-        <span class="tournament-status-badge tournament-status-badge--<%= status_badge[:variant] %>">
-          <%= status_badge[:label] %>
-        </span>
-        <% if policy(@tournament).update? %>
-          <%= link_to edit_tournament_path(@tournament), class: "tournament-edit-link", title: "Modifier le tournoi" do %>
-            <i data-lucide="pencil" style="width:16px;height:16px;" aria-hidden="true"></i>
+      <%# Colonne de gauche : titre, badges, compteurs et actions. Enrobés pour
+          que l'illustration puisse se placer en face, sur toute leur hauteur. %>
+      <div class="tournament-detail-header__main">
+        <div class="tournament-detail-header__top">
+          <h1 class="tournament-detail-header__title"><%= @tournament.name %></h1>
+          <span class="tournament-status-badge tournament-status-badge--<%= status_badge[:variant] %>">
+            <%= status_badge[:label] %>
+          </span>
+          <% if policy(@tournament).update? %>
+            <%= link_to edit_tournament_path(@tournament), class: "tournament-edit-link", title: "Modifier le tournoi" do %>
+              <i data-lucide="pencil" style="width:16px;height:16px;" aria-hidden="true"></i>
+            <% end %>
           <% end %>
+        </div>
+
+        <%# ── Tournoi privé : badge + lien d'invitation ────────────────────────
+            Réservé à l'organisation : c'est elle qui partage le lien. Pour ouvrir
+            le tournoi au public, on repasse par le formulaire d'édition (bouton
+            crayon ci-dessus) — pas de route dédiée à créer.
+            Décalque du bloc équivalent des matchs (matches/show.html.erb). %>
+        <% if @tournament.private? && policy(@tournament).update? %>
+          <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem;">
+
+            <span class="private-badge">
+              <i data-lucide="lock" style="width:12px; height:12px;" aria-hidden="true"></i>
+              Tournoi privé
+            </span>
+
+            <%# Action (par opposition au badge ci-dessus, purement informatif) : on la
+                présente donc comme un lien — souligné, en vert, sans contour.
+                data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique.
+                Seul le <span> du libellé est réécrit au clic, pour ne pas effacer l'icône. %>
+            <button type="button"
+                    data-url="<%= tournament_url(@tournament, token: @tournament.private_token) %>"
+                    onclick="
+                      navigator.clipboard.writeText(this.dataset.url);
+                      const label = this.querySelector('[data-copy-label]');
+                      label.textContent = 'Lien copié !';
+                      setTimeout(() => { label.textContent = 'Copier le lien'; }, 2000);
+                    "
+                    style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:700;
+                           color:var(--green-readable); background:none; border:none; padding:0;
+                           text-decoration:underline; text-underline-offset:3px; cursor:pointer;">
+              <i data-lucide="copy" style="width:14px; height:14px;" aria-hidden="true"></i>
+              <span data-copy-label>Copier le lien</span>
+            </button>
+          </div>
         <% end %>
+        <%# id ciblé par Turbo Stream au retrait d'un joueur (cf. le partial). %>
+        <p class="tournament-detail-header__subtitle" id="tournament_header_counts">
+          <%= render "tournaments/header_counts", tournament: @tournament %>
+        </p>
+
+        <%# ── Rejoindre / Quitter ──────────────────────────────────────────────
+            SEUL point d'entrée de l'inscription : les cartes de l'index mènent
+            désormais ici plutôt que d'inscrire d'un clic (cf.
+            shared/_tournament_card). On voit donc toujours le tournoi avant de s'y
+            engager. %>
+        <div class="tournament-detail-header__actions">
+          <% if @tournament.player?(current_user) %>
+            <%# Une fois le tournoi lancé, on ne se désinscrit plus : le retrait passe
+                par le forfait déclaré par l'organisateur (cf. WithdrawPlayer), sinon
+                les matchs déjà générés se retrouveraient sans adversaire. %>
+            <% if @tournament.open? || @tournament.closed? %>
+              <%= button_to tournament_tournament_user_path(@tournament, my_entry),
+                    method: :delete,
+                    class: "btn-cta-secondary tournament-detail-header__action " \
+                           "tournament-detail-header__action--danger",
+                    form: { data: { turbo_confirm: "Quitter le tournoi « #{@tournament.name} » ?" } },
+                    data: { turbo_confirm_danger: true, turbo_confirm_accept: "Quitter" } do %>
+                <i data-lucide="user-minus" aria-hidden="true"></i> Quitter le tournoi
+              <% end %>
+            <% else %>
+              <span class="tournament-detail-header__enrolled">
+                <i data-lucide="check" aria-hidden="true"></i> Tu joues ce tournoi
+              </span>
+            <% end %>
+          <% elsif @tournament.registration_open? && !@tournament.full? %>
+            <%# Vaut aussi pour un co-organisateur nommé sans être inscrit : il garde
+                ses droits de gestion en rejoignant (cf. TournamentUsersController#create). %>
+            <% if user_signed_in? %>
+              <%= button_to tournament_tournament_users_path(@tournament),
+                    method: :post,
+                    class: "btn btn-primary btn-cta-primary tournament-detail-header__action" do %>
+                <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
+              <% end %>
+            <% else %>
+              <%= link_to new_user_session_path, class: "btn btn-primary btn-cta-primary tournament-detail-header__action" do %>
+                <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
       </div>
 
-      <%# ── Tournoi privé : badge + lien d'invitation ────────────────────────
-          Réservé à l'organisation : c'est elle qui partage le lien. Pour ouvrir
-          le tournoi au public, on repasse par le formulaire d'édition (bouton
-          crayon ci-dessus) — pas de route dédiée à créer.
-          Décalque du bloc équivalent des matchs (matches/show.html.erb). %>
-      <% if @tournament.private? && policy(@tournament).update? %>
-        <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem;">
-
-          <span class="private-badge">
-            <i data-lucide="lock" style="width:12px; height:12px;" aria-hidden="true"></i>
-            Tournoi privé
-          </span>
-
-          <%# Action (par opposition au badge ci-dessus, purement informatif) : on la
-              présente donc comme un lien — souligné, en vert, sans contour.
-              data-url évite d'interpoler l'URL dans du JS — pas d'échappement problématique.
-              Seul le <span> du libellé est réécrit au clic, pour ne pas effacer l'icône. %>
-          <button type="button"
-                  data-url="<%= tournament_url(@tournament, token: @tournament.private_token) %>"
-                  onclick="
-                    navigator.clipboard.writeText(this.dataset.url);
-                    const label = this.querySelector('[data-copy-label]');
-                    label.textContent = 'Lien copié !';
-                    setTimeout(() => { label.textContent = 'Copier le lien'; }, 2000);
-                  "
-                  style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.8rem; font-weight:700;
-                         color:var(--green-readable); background:none; border:none; padding:0;
-                         text-decoration:underline; text-underline-offset:3px; cursor:pointer;">
-            <i data-lucide="copy" style="width:14px; height:14px;" aria-hidden="true"></i>
-            <span data-copy-label>Copier le lien</span>
-          </button>
+      <%# ── Illustration d'état ───────────────────────────────────────────────
+          Tant que le tournoi n'est pas lancé, la moitié droite du header est vide
+          et la page n'a encore ni bracket ni matchs à montrer : une illustration y
+          installe l'idée d'un tournoi en cours de constitution. Même condition que
+          _board.html.erb, qui rend _start_panel plutôt que les phases.
+          Placée en 2e colonne du flex de l'en-tête (cf. _tournament_bracket.scss),
+          donc sans toucher à l'empilement des blocs ci-dessus. Masquée en mobile.
+          Le jour où un tournoi lancé aura sa propre illustration, seul le nom du
+          partial changera ici — le conteneur et son CSS restent. %>
+      <% if @tournament.open? || @tournament.closed? %>
+        <div class="tournament-detail-header__illu">
+          <%= render "shared/illu_tournoi_prep" %>
         </div>
       <% end %>
-      <%# id ciblé par Turbo Stream au retrait d'un joueur (cf. le partial). %>
-      <p class="tournament-detail-header__subtitle" id="tournament_header_counts">
-        <%= render "tournaments/header_counts", tournament: @tournament %>
-      </p>
-
-      <%# ── Rejoindre / Quitter ──────────────────────────────────────────────
-          SEUL point d'entrée de l'inscription : les cartes de l'index mènent
-          désormais ici plutôt que d'inscrire d'un clic (cf.
-          shared/_tournament_card). On voit donc toujours le tournoi avant de s'y
-          engager. %>
-      <div class="tournament-detail-header__actions">
-        <% if @tournament.player?(current_user) %>
-          <%# Une fois le tournoi lancé, on ne se désinscrit plus : le retrait passe
-              par le forfait déclaré par l'organisateur (cf. WithdrawPlayer), sinon
-              les matchs déjà générés se retrouveraient sans adversaire. %>
-          <% if @tournament.open? || @tournament.closed? %>
-            <%= button_to tournament_tournament_user_path(@tournament, my_entry),
-                  method: :delete,
-                  class: "btn-cta-secondary tournament-detail-header__action " \
-                         "tournament-detail-header__action--danger",
-                  form: { data: { turbo_confirm: "Quitter le tournoi « #{@tournament.name} » ?" } },
-                  data: { turbo_confirm_danger: true, turbo_confirm_accept: "Quitter" } do %>
-              <i data-lucide="user-minus" aria-hidden="true"></i> Quitter le tournoi
-            <% end %>
-          <% else %>
-            <span class="tournament-detail-header__enrolled">
-              <i data-lucide="check" aria-hidden="true"></i> Tu joues ce tournoi
-            </span>
-          <% end %>
-        <% elsif @tournament.registration_open? && !@tournament.full? %>
-          <%# Vaut aussi pour un co-organisateur nommé sans être inscrit : il garde
-              ses droits de gestion en rejoignant (cf. TournamentUsersController#create). %>
-          <% if user_signed_in? %>
-            <%= button_to tournament_tournament_users_path(@tournament),
-                  method: :post,
-                  class: "btn btn-primary btn-cta-primary tournament-detail-header__action" do %>
-              <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
-            <% end %>
-          <% else %>
-            <%= link_to new_user_session_path, class: "btn btn-primary btn-cta-primary tournament-detail-header__action" do %>
-              <i data-lucide="user-plus" aria-hidden="true"></i> Rejoindre le tournoi
-            <% end %>
-          <% end %>
-        <% end %>
-      </div>
     </header>
 
     <%# ── Onglets ───────────────────────────────────────────────────────────

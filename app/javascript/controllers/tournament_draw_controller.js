@@ -9,11 +9,13 @@ import { Controller } from "@hotwired/stimulus"
 //   • un overlay de poules est présent (formats à poules) → on révèle les poules
 //     l'une après l'autre, avec leurs joueurs. Sur le board, les poules sont des
 //     onglets dont une seule est visible : les animer en place ne montrerait
-//     jamais la composition des autres.
+//     jamais la composition des autres. L'overlay ne se ferme PAS de lui-même à la
+//     fin : il attend un clic sur « Voir les poules ». C'est le seul écran qui
+//     montre la composition complète du tirage, on laisse donc le temps de la lire.
 //   • sinon → on « bat les cartes » de la première ronde puis on les révèle en
 //     cascade (comportement historique, inchangé).
 export default class extends Controller {
-  static targets = ["overlay", "pool", "player"]
+  static targets = ["overlay", "pool", "player", "skip", "continue"]
 
   connect() {
     this.timers = []
@@ -42,9 +44,23 @@ export default class extends Controller {
     this.#clearTimers()
   }
 
-  // Sortie immédiate : bouton « Passer » et touche Échap. Une animation qu'on ne
-  // peut pas interrompre bloquerait l'accès au contenu (RGAA 13.8).
+  // « Passer l'animation » : on saute le SUSPENSE, pas le résultat. Tout se révèle
+  // d'un coup et l'overlay reste ouvert sur le tirage complet — sortir d'ici, c'est
+  // le rôle du CTA et d'Échap. Une animation qu'on ne peut pas abréger bloquerait
+  // l'accès au contenu (RGAA 13.8).
   skip(event) {
+    event?.preventDefault()
+    if (this.closed) return
+
+    this.#clearTimers()
+    this.poolTargets.forEach((pool) => pool.classList.add("draw-overlay__pool--revealed"))
+    this.playerTargets.forEach((player) => player.classList.add("draw-overlay__player--revealed"))
+    this.#finish()
+  }
+
+  // Bouton « Voir les poules », affiché quand l'animation est terminée. Même effet
+  // que `skip` — deux noms parce que l'intention n'est pas la même côté vue.
+  close(event) {
     event?.preventDefault()
     this.#closeOverlay()
   }
@@ -55,8 +71,9 @@ export default class extends Controller {
     overlay.hidden = false
     // Le focus part sur « Passer » : sans cela, il resterait sur le bouton de
     // lancement, désormais retiré du DOM, et se perdrait sur le <body>.
-    this.#defer(() => overlay.querySelector(".draw-overlay__skip")?.focus(), 0)
+    this.#defer(() => { if (this.hasSkipTarget) this.skipTarget.focus() }, 0)
 
+    // Échap ferme pour de bon : c'est la sortie de secours attendue d'un dialogue.
     this.escapeHandler = (event) => {
       if (event.key === "Escape") this.#closeOverlay()
     }
@@ -82,7 +99,21 @@ export default class extends Controller {
       elapsed += POOL_DELAY + players.length * PLAYER_DELAY
     })
 
-    this.#defer(() => this.#closeOverlay(), elapsed + 700)
+    // Fin de l'animation : on permute les boutons au lieu de fermer. La fermeture
+    // devient une décision de l'utilisateur (ou Échap).
+    this.#defer(() => this.#finish(), elapsed + 400)
+  }
+
+  // Le bouton « Passer » n'a plus rien à passer : il laisse la place au CTA, qui
+  // reçoit le focus (il était sur « Passer », qu'on masque).
+  #finish() {
+    if (this.closed) return
+
+    if (this.hasSkipTarget) this.skipTarget.hidden = true
+    if (this.hasContinueTarget) {
+      this.continueTarget.hidden = false
+      this.continueTarget.focus()
+    }
   }
 
   #closeOverlay() {
