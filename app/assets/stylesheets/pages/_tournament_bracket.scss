@@ -1654,11 +1654,11 @@
 
 // ── En-tête ──────────────────────────────────────────
 // Deux colonnes : __main empile le contenu comme avant, __illu tient l'illustration
-// d'état en face. Un flex plutôt qu'une grille : `grid-row: 1 / -1` ne s'étend pas
+// en face. Un flex plutôt qu'une grille : `grid-row: 1 / -1` ne s'étend pas
 // sur des lignes implicites (le -1 compte depuis la fin de la grille EXPLICITE, qui
 // n'existe pas ici), l'illustration ne couvrirait donc qu'une seule ligne.
 .tournament-detail-header {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   gap: 2rem;
@@ -1668,13 +1668,18 @@
     min-width: 0; // sans quoi un titre long pousse l'illustration hors du conteneur
   }
 
-  // Largeur fluide bornée. Au ratio 3:2 du visuel, 340px donnent ~227px de haut :
-  // l'illustration mène donc la hauteur de l'en-tête, plus haute que le bloc
-  // titre + compteurs + CTA (~90px). C'est assumé — en dessous de ~280px les deux
-  // joueurs et la balle ne se lisent plus.
+  // Largeur fluide bornée — et volontairement basse. C'est l'illustration qui mène
+  // la hauteur de l'en-tête, et `align-items: center` répartit tout excédent en
+  // deux bandes vides autour du titre : chaque pixel de trop ici se paie deux fois,
+  // une fois sous le fil d'Ariane, une fois au-dessus des onglets.
+  // Le cas dimensionnant est le tournoi LANCÉ : son bloc de gauche n'a plus de CTA
+  // (« Rejoindre » / « Quitter » disparaissent), il tombe à ~90px — contre ~145px
+  // tant que les inscriptions sont ouvertes. Au ratio ~1,85 du visuel recadré,
+  // 230px donnent ~124px : l'écart résiduel tient en ~17px de part et d'autre.
+  // Ne pas remonter la borne haute sans revérifier CE cas-là.
   &__illu {
     flex: 0 0 auto;
-    width: clamp(220px, 26vw, 340px);
+    width: clamp(170px, 18vw, 230px);
 
     // Aucune couleur ni cadre à poser : le WebP est détouré (fond alpha), il se
     // pose donc sur les deux thèmes sans rectangle parasite. C'est aussi pourquoi

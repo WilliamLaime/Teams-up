@@ -1,0 +1,26 @@
+<%# ── Illustration tournoi ──────────────────────────────────────────────────────
+    Affichée à droite du titre sur /tournois/:id, quel que soit l'état du tournoi
+    (cf. tournaments/show.html.erb). Purement décorative : alt vide, donc ignorée
+    des lecteurs d'écran — elle ne porte aucune information que la page ne dise
+    déjà (sport, format, statut sont dans le sous-titre et le badge).
+
+    L'image est détourée (fond alpha) : elle tient donc telle quelle sur les deux
+    thèmes, sans variante ni recoloration — d'où le remplacement du SVG inline
+    tokenisé qui occupait cet emplacement, devenu inutilement compliqué.
+
+    L'original (1536 × 1024) est d'abord recadré sur les joueurs : il portait ~19%
+    de transparent en haut et en bas, qui se traduisait en pixels vides dans
+    l'en-tête. Le résultat est réduit à 680px de large — plus du double de la
+    largeur d'affichage maximale (300px), pour rester net en écran Retina — et
+    converti en WebP : 46 Ko au lieu de 271 Ko en PNG, sur une image purement
+    ornementale (RGESN 4.x). Pas de repli PNG : WebP est reconnu par tous les
+    navigateurs que l'app cible, et une décoration absente ne casse rien.
+
+    width/height sont posés pour réserver la place avant chargement (pas de
+    saut de mise en page), loading: "lazy" parce qu'elle n'est jamais l'élément
+    principal de la page. %>
+<%= image_tag "illu_tournoi.webp",
+      alt: "",
+      class: "tournament-illu",
+      width: 680, height: 368,
+      loading: "lazy", decoding: "async" %>
