@@ -23,10 +23,10 @@
   my_entry = current_user && @tournament.tournament_users.find { |tu| tu.user_id == current_user.id }
 %>
 
-<div class="tournaments-index-page">
+<div class="tournaments-index-page tournaments-index-page--detail">
   <div class="container">
 
-    <%= render "shared/nav_button", url: tournaments_path, label: "Retour aux tournois", direction: "back", extra_class: "mb-3" %>
+    <%= render "shared/nav_button", url: tournaments_path, label: "Retour aux tournois", direction: "back", extra_class: "mb-2" %>
 
     <%# ── En-tête ─────────────────────────────────────────────────────────── %>
     <header class="tournament-detail-header">
@@ -125,20 +125,16 @@
         </div>
       </div>
 
-      <%# ── Illustration d'état ───────────────────────────────────────────────
-          Tant que le tournoi n'est pas lancé, la moitié droite du header est vide
-          et la page n'a encore ni bracket ni matchs à montrer : une illustration y
-          installe l'idée d'un tournoi en cours de constitution. Même condition que
-          _board.html.erb, qui rend _start_panel plutôt que les phases.
+      <%# ── Illustration ──────────────────────────────────────────────────────
+          Affichée quel que soit l'état du tournoi : elle habille la moitié droite
+          de l'en-tête, vide sinon, et donne son identité visuelle à la page — pas
+          seulement avant le lancement, où elle était d'abord cantonnée.
           Placée en 2e colonne du flex de l'en-tête (cf. _tournament_bracket.scss),
-          donc sans toucher à l'empilement des blocs ci-dessus. Masquée en mobile.
-          Le jour où un tournoi lancé aura sa propre illustration, seul le nom du
-          partial changera ici — le conteneur et son CSS restent. %>
-      <% if @tournament.open? || @tournament.closed? %>
-        <div class="tournament-detail-header__illu">
-          <%= render "shared/illu_tournoi_prep" %>
-        </div>
-      <% end %>
+          donc sans toucher à l'empilement des blocs ci-dessus. Masquée en mobile,
+          où la place manque et où le CTA doit rester visible sans défiler. %>
+      <div class="tournament-detail-header__illu">
+        <%= render "shared/illu_tournoi" %>
+      </div>
     </header>
 
     <%# ── Onglets ───────────────────────────────────────────────────────────
