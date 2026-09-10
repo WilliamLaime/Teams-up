@@ -12,9 +12,10 @@
   // Le détail d'un tournoi (/tournois/:id) démarre plus haut que l'index : entre
   // le fil d'Ariane et le titre s'intercalent déjà le bouton « Retour aux tournois »
   // et la marge de l'en-tête, si bien que les 2,5rem d'origine se lisaient comme un
-  // trou. L'index, lui, attaque directement sur son titre et les garde.
+  // trou — sans pour autant pouvoir descendre trop bas : le titre a besoin d'air
+  // sous le bouton de retour. L'index, lui, attaque directement sur son titre.
   &--detail {
-    padding-top: 1.25rem;
+    padding-top: 2rem;
   }
 
   // Pas de `min-height: calc(100vh - 130px)` ici — c'était un doublon nuisible.

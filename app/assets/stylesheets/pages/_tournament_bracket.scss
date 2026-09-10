@@ -1658,7 +1658,10 @@
 // sur des lignes implicites (le -1 compte depuis la fin de la grille EXPLICITE, qui
 // n'existe pas ici), l'illustration ne couvrirait donc qu'une seule ligne.
 .tournament-detail-header {
-  margin-bottom: 0.75rem;
+  // Sépare le dernier CTA de l'en-tête (« Quitter le tournoi ») de la barre
+  // d'onglets qui suit : en dessous de ~1.5rem les deux se lisaient comme un
+  // même bloc cliquable.
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 2rem;
@@ -1668,18 +1671,19 @@
     min-width: 0; // sans quoi un titre long pousse l'illustration hors du conteneur
   }
 
-  // Largeur fluide bornée — et volontairement basse. C'est l'illustration qui mène
-  // la hauteur de l'en-tête, et `align-items: center` répartit tout excédent en
-  // deux bandes vides autour du titre : chaque pixel de trop ici se paie deux fois,
-  // une fois sous le fil d'Ariane, une fois au-dessus des onglets.
-  // Le cas dimensionnant est le tournoi LANCÉ : son bloc de gauche n'a plus de CTA
-  // (« Rejoindre » / « Quitter » disparaissent), il tombe à ~90px — contre ~145px
-  // tant que les inscriptions sont ouvertes. Au ratio ~1,85 du visuel recadré,
-  // 230px donnent ~124px : l'écart résiduel tient en ~17px de part et d'autre.
-  // Ne pas remonter la borne haute sans revérifier CE cas-là.
+  // Largeur fluide bornée. C'est l'illustration qui mène la hauteur de l'en-tête,
+  // et `align-items: center` répartit tout excédent en deux bandes vides autour du
+  // titre — mais elles sont désormais assumées : elles font respirer l'en-tête
+  // entre le bouton « Retour aux tournois » et les onglets.
+  // Le cas dimensionnant reste le tournoi LANCÉ : son bloc de gauche n'a plus de
+  // CTA (« Rejoindre » / « Quitter » disparaissent), il tombe à ~90px — contre
+  // ~145px tant que les inscriptions sont ouvertes. Au ratio ~1,85 du visuel
+  // recadré, 300px donnent ~162px, soit ~36px de bande de part et d'autre dans ce
+  // cas. Au-delà, l'en-tête prend plus de place que le premier onglet : revérifier
+  // CE cas-là avant de remonter la borne haute.
   &__illu {
     flex: 0 0 auto;
-    width: clamp(170px, 18vw, 230px);
+    width: clamp(200px, 24vw, 300px);
 
     // Aucune couleur ni cadre à poser : le WebP est détouré (fond alpha), il se
     // pose donc sur les deux thèmes sans rectangle parasite. C'est aussi pourquoi
