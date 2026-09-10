@@ -533,3 +533,29 @@ Une modification SCSS n'apparaissait ni dans le navigateur ni dans la sonde : ce
 a des assets **précompilés commités dans `public/assets/`**, que Sprockets sert en
 priorité. Toute retouche de SCSS ou de JS demande donc `rails assets:precompile` pour
 être visible — sinon on débogue l'ancienne feuille de style.
+
+## 2026-09-10 — L'hébergement est Railway, pas Heroku : le remote `heroku` est un vestige
+
+En proposant un déploiement après un push, j'ai lu `git remote -v`, vu
+`heroku https://git.heroku.com/team-up-wagon.git` et conclu que la production tournait
+sur Heroku. C'est faux : **le projet est hébergé sur Railway.**
+
+Ce que dit réellement le dépôt, et qui fait foi :
+
+- `railway.toml` — service **web** (`builder = "dockerfile"`, healthcheck `/up`,
+  `restartPolicyType = "always"`)
+- `railway.worker.toml` — service **worker** Solid Queue (`startCommand = "./bin/jobs"`,
+  pas de healthcheck car il n'expose aucun port)
+- Déploiement par **Dockerfile**, pas par buildpack : ni `Procfile`, ni `app.json`
+
+Le remote `heroku` pointe sur un déploiement abandonné — `heroku/master` est figé au
+20 avril 2026 (`6e6217a`), soit des mois avant `origin/master`. Y pousser ne déploierait
+rien d'utile et réveillerait une vieille app.
+
+Deux règles à en tirer :
+
+1. **Un remote git ne prouve pas où tourne la production.** La source de vérité est la
+   configuration de déploiement versionnée (`railway.toml`, `Dockerfile`,
+   `bin/docker-entrypoint`), pas la liste des remotes — qui accumule les vestiges.
+2. Après un `git push`, ne proposer qu'`origin` (et la PR). Le déploiement Railway est
+   déclenché depuis la plateforme sur `master`, il n'y a **aucun push manuel** à faire.
