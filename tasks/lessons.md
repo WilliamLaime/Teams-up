@@ -529,10 +529,16 @@ Deux leçons :
 
 ## 2026-09-09 — `public/assets` précompilé masque les sources en développement
 
-Une modification SCSS n'apparaissait ni dans le navigateur ni dans la sonde : ce dépôt
-a des assets **précompilés commités dans `public/assets/`**, que Sprockets sert en
-priorité. Toute retouche de SCSS ou de JS demande donc `rails assets:precompile` pour
-être visible — sinon on débogue l'ancienne feuille de style.
+Une modification SCSS n'apparaissait ni dans le navigateur ni dans la sonde : un
+`rails assets:precompile` lancé en local avait laissé `public/assets/` (**ignoré par
+git**, donc invisible dans `git status`). Dès qu'un `.sprockets-manifest-*.json` y
+existe, sprockets-rails met `:manifest` en tête de `config.assets.resolve_with` :
+`stylesheet_link_tag` pointe vers le CSS figé et les SCSS modifiés ne sont plus servis.
+
+Correctif (mis à jour le 2026-09-23, le piège s'est reproduit) : **`bin/rails
+assets:clobber`**, pas un nouveau precompile — reprécompiler ne fait que refiger la
+feuille jusqu'à la prochaine retouche. Réflexe : style « qui ne prend pas » en dev →
+`ls public/assets` avant de soupçonner la spécificité CSS.
 
 ## 2026-09-23 — Un état serveur juste ne suffit pas : la pastille vit dans le DOM
 
@@ -569,3 +575,18 @@ Deux points à retenir :
    le width/height inline du helper, donc il l'emporte.
 2. Une boîte carrée sans `object-fit: cover` **étire** la photo (`fill` par défaut).
    `.tmatch-card__avatar` était la seule règle d'avatar du fichier à l'oublier.
+
+## 2026-09-23 — Un remplacement par bornes `index()` a supprimé 170 lignes de SCSS
+
+Pour remplacer un bloc de `_match_form.scss`, un script découpait le fichier entre
+deux commentaires repères trouvés par `str.index()`. Le repère de début
+(`// Bouton "← Retour aux matchs"`) existait **deux fois** (page show ET page new) :
+le premier trouvé était le mauvais, et tout ce qui le séparait du repère de fin a
+disparu — styles `.match-show-*` et padding du bandeau de création compris. Le SCSS
+compilait sans erreur, seul le rendu trahissait la perte.
+
+À retenir :
+1. Borner un remplacement sur un repère **unique** (le sélecteur visé, ex.
+   `.match-new-back-btn {`), et affirmer la taille attendue de la zone coupée.
+2. Après toute édition scriptée : `git diff --stat` — un « 179 deletions » pour une
+   retouche de 10 lignes doit alerter immédiatement.

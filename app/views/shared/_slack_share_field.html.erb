@@ -57,11 +57,19 @@
             <%# Couleur theme-aware (pas le .text-muted fixe de Bootstrap, illisible sur fond sombre) %>
             <%= label_tag :slack_workspace_id, "Espace Slack",
                   class: "form-label small", style: "color: var(--theme-text-muted);" %>
-            <%= select_tag :slack_workspace_id,
-                  options_for_select(workspaces.map { |w| [w[:name], w[:id]] }),
-                  class: "form-select",
-                  data: { slack_destination_target: "workspace",
-                          action: "slack-destination#workspaceChanged" } %>
+            <%# Habillé par custom-select (menu HTML au lieu du menu natif de l'OS),
+                restylé comme le combobox destination (.slack-share-field .custom-select).
+                Le <select> reste la source de vérité : custom-select y redéclenche
+                `change`, donc slack-destination#workspaceChanged marche tel quel. %>
+            <div class="custom-select" data-controller="custom-select"
+                 data-action="keydown->custom-select#keydown">
+              <%= select_tag :slack_workspace_id,
+                    options_for_select(workspaces.map { |w| [w[:name], w[:id]] }),
+                    class: "form-select custom-select__native",
+                    data: { slack_destination_target: "workspace",
+                            custom_select_target: "native",
+                            action: "slack-destination#workspaceChanged" } %>
+            </div>
           </div>
         <% else %>
           <%# Un seul workspace → pas de choix, on le transmet en champ caché. %>
