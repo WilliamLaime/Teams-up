@@ -1291,6 +1291,23 @@ class TournamentsControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tcal-event__group", text: "Poule A"
   end
 
+  # Le calendrier sert à TOUS les inscrits (savoir quand on joue, quels créneaux
+  # sont déjà pris) — pas seulement aux organisateurs.
+  test "GET show affiche l'onglet Calendrier à un joueur inscrit non organisateur" do
+    t = open_tournament("Calendrier joueur")
+    t.update!(user: @user, status: "in_progress")
+    joueur = create_test_user(email: "cal-joueur@example.com")
+    t.tournament_users.create!(user: joueur, role: "joueur", status: "approved")
+    sign_in joueur
+
+    get tournament_path(t)
+
+    assert_response :success
+    assert_not t.organizer?(joueur)
+    assert_select "[data-tournament-tabs-panel-param=?]", "calendrier"
+    assert_select "[data-panel=?] [data-controller=?]", "calendrier", "tournament-calendar"
+  end
+
   # Une rencontre sans créneau n'a pas de case où se poser : elle ne doit pas
   # apparaître dans la source, sans quoi Stimulus chercherait une date nulle.
   test "GET show n'expose pas les rencontres sans date dans le calendrier" do

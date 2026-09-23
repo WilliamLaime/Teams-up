@@ -75,6 +75,26 @@ class ChatEmailDigestJobTest < ActiveSupport::TestCase
     end
   end
 
+  # Un organisateur qui n'a pas écrit dans le chat de la confrontation n'en est
+  # pas destinataire : même une ligne de digest créée pour lui (ex. il était
+  # destinataire avant le changement de règle) ne doit pas produire de mail.
+  test "aucun mail pour un organisateur de tournoi resté silencieux dans le chat" do
+    admin = create_test_user(email: "digest-admin@example.com")
+    sport = Sport.create!(name: "Ping Digest", slug: "ping-digest", icon: "🏓")
+    tournament = Tournament.create!(name: "Open ping", sport: sport, user: admin, format: "ronde_suisse",
+                                    status: "in_progress", max_players: 8, date: Date.tomorrow, place: "Club")
+    round = tournament.tournament_rounds.create!(phase: "swiss", number: 1)
+    player_a = tournament.tournament_users.create!(user: @alice, role: "joueur", status: "approved")
+    player_b = tournament.tournament_users.create!(user: @bob, role: "joueur", status: "approved")
+    tmatch = round.tournament_matches.create!(player_a: player_a, player_b: player_b, position: 0)
+    tmatch.messages.create!(user: @alice, content: "Samedi 10h ?")
+    digest = ChatEmailDigest.create!(user: admin, chattable: tmatch, pending_since: Time.current)
+
+    assert_no_emails do
+      ChatEmailDigestJob.perform_now(digest.id)
+    end
+  end
+
   test "la fenêtre se referme et le message suivant en rouvre une" do
     send_messages("Salut")
     digest = digest_for(@bob)
