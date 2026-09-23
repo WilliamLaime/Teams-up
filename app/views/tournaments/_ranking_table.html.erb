@@ -57,7 +57,8 @@
           <td class="is-rank"><%= index + 1 %></td>
           <td class="is-player">
             <%= link_to user_profil_path(tu.user), class: "tournament-ranking__player-link" do %>
-              <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar" %>
+              <%= user_avatar_tag tu.user, css_class: "tournament-ranking__avatar",
+                                           width: 28, height: 28 %>
               <span><%= tu.display_name %></span>
             <% end %>
             <%# Repère « moi » : dans un classement à 32 lignes, retrouver sa place

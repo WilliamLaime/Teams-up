@@ -31,6 +31,19 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     teardown_db
   end
 
+  # Force la présence (ou l'absence) des secrets Slack le temps d'un bloc.
+  # `Slack.configured?` lit ENV à chaque appel : pas besoin de gem de mock, et le
+  # test ne dépend plus du .env de la machine qui l'exécute.
+  SLACK_SECRET_KEYS = %w[SLACK_CLIENT_ID SLACK_CLIENT_SECRET SLACK_SIGNING_SECRET].freeze
+
+  def with_slack_configured(present)
+    previous = SLACK_SECRET_KEYS.index_with { |k| ENV[k] }
+    SLACK_SECRET_KEYS.each { |k| ENV[k] = present ? "test-value" : nil }
+    yield
+  ensure
+    previous.each { |k, v| ENV[k] = v }
+  end
+
   # Relie @user à un workspace Slack de test.
   def link_slack!
     ws = SlackWorkspace.create!(team_id: "T_TEST", team_name: "Acme", bot_token: "xoxb-test")
@@ -53,6 +66,38 @@ class SlackIntegrationTest < ActionDispatch::IntegrationTest
     get new_match_path
     assert_response :success
     assert_select "input#post_to_slack", count: 0
+  end
+
+  # ── Compte NON lié : invitation à lier, et surtout AUCUN appel à l'API Slack ──
+  # Le frame est rendu sans `src` : il sert seulement de cible au lien « J'ai lié
+  # mon compte ». WebMock ferait échouer le test si une requête partait quand même.
+  test "GET /matches/new sans Slack lié propose de lier son compte" do
+    sign_in @user
+    with_slack_configured(true) { get new_match_path }
+    assert_response :success
+
+    assert_select "turbo-frame#slack_share_field", count: 1
+    assert_select "turbo-frame#slack_share_field[src]", count: 0
+    # Nouvel onglet : le formulaire en cours de saisie ne doit pas être perdu.
+    assert_select "a[href=?][target=_blank]", slack_connect_path, count: 1
+  end
+
+  # Le lien « J'ai lié mon compte » recharge le frame. Tant que le compte ne l'est
+  # pas, la réponse doit REPROPOSER la liaison — et non renvoyer un frame vide.
+  test "le rechargement du frame sans Slack lié renvoie l'invitation, pas du vide" do
+    sign_in @user
+    with_slack_configured(true) { get slack_share_field_path }
+    assert_response :success
+    assert_select "a[href=?]", slack_connect_path, count: 1
+    assert_select "input#post_to_slack", count: 0
+  end
+
+  # Secrets Slack absents (déploiement sans intégration) : aucun bouton mort.
+  test "sans secrets Slack configurés aucune invitation n'est affichée" do
+    sign_in @user
+    with_slack_configured(false) { get new_match_path }
+    assert_response :success
+    assert_select "a[href=?]", slack_connect_path, count: 0
   end
 
   # ── Formulaire de création : compte lié → champ Slack + destinations embarquées ──

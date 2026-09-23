@@ -533,3 +533,39 @@ Une modification SCSS n'apparaissait ni dans le navigateur ni dans la sonde : ce
 a des assets **précompilés commités dans `public/assets/`**, que Sprockets sert en
 priorité. Toute retouche de SCSS ou de JS demande donc `rails assets:precompile` pour
 être visible — sinon on débogue l'ancienne feuille de style.
+
+## 2026-09-23 — Un état serveur juste ne suffit pas : la pastille vit dans le DOM
+
+La pastille non-lu du tchat de tournoi restait allumée après avoir répondu. Réflexe
+naturel — et faux — : suspecter la requête de non-lu ou un marquage manquant. Les
+deux étaient déjà corrects, et même testés (`mark_read!` à l'ouverture ET à l'envoi,
+`where.not(user_id: current_user.id)` dans `unread_tmatch_chat_ids`).
+
+Cause racine : la pastille n'est rendue qu'au **chargement du tableau**, or la
+réponse Turbo Stream d'un envoi ne met à jour que `#tmatch-chat-form`. Base à jour,
+DOM périmé — l'écart ne se voyait qu'au rechargement suivant.
+
+La leçon : quand un indicateur est calculé au rendu d'une page qu'on ne re-rend pas,
+vérifier d'abord **qui repeint le pixel**, avant de relire la requête qui le calcule.
+Le projet avait déjà la réponse pour la sidebar (`sticky_chat_controller.js` éteint
+le point côté client) ; il manquait l'équivalent côté tournoi.
+
+## 2026-09-23 — `user_avatar_tag` : l'inline du fallback bat le CSS
+
+Le helper émet la taille de deux façons de poids CSS **opposés** : attributs HTML
+`width`/`height` sur la photo (priorité la plus basse, tout SCSS les bat) mais
+`style="width:40px;height:40px"` sur l'avatar à initiales (priorité maximale). Un
+appel qui ne passe pas `width:`/`height:` donne donc une photo à la taille CSS et
+des initiales figées à 40px — visiblement plus grosses.
+
+Le piège était déjà connu et commenté au podium et dans la carte de tournoi, mais
+six vues de tournoi l'avaient oublié : un contournement documenté ponctuellement ne
+protège pas les appels suivants.
+
+Deux points à retenir :
+1. Tout nouvel appel à `user_avatar_tag` doit passer la taille du CSS correspondant.
+   En contexte em-based (le `bracket-viewer` et son `--bracket-zoom`), passer
+   `style: "width:1.8em;height:1.8em;"` : le paramètre `style` est concaténé APRÈS
+   le width/height inline du helper, donc il l'emporte.
+2. Une boîte carrée sans `object-fit: cover` **étire** la photo (`fill` par défaut).
+   `.tmatch-card__avatar` était la seule règle d'avatar du fichier à l'oublier.

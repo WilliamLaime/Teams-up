@@ -7,8 +7,13 @@
     Pourquoi un frame plutôt qu'un rendu direct : les destinations viennent de
     l'API Slack (réseau). Les charger dans le cycle de la page retardait
     l'affichage de tout le formulaire ; ici la page s'affiche tout de suite et le
-    champ arrive ensuite. Rien n'est rendu si l'utilisateur n'a pas lié Slack :
-    inutile de déclencher une requête pour un champ qui resterait vide.
+    champ arrive ensuite.
+
+    Compte NON lié : on rend le même frame, mais sans `src` (aucune destination à
+    aller chercher) et garni d'une invitation à lier son compte. Avant, la zone
+    était totalement absente et rien ne disait à l'utilisateur qu'il pouvait
+    partager sur Slack. Le frame reste présent pour servir de cible au lien
+    « J'ai lié mon compte » de l'invitation.
 
     Le frame vit À L'INTÉRIEUR du <form> : ses champs (slack_workspace_id,
     slack_channel_id, case « Partager ») font donc partie du formulaire et sont
@@ -24,5 +29,9 @@
       <span class="slack-share-loading__spinner" aria-hidden="true"></span>
       Chargement des destinations Slack…
     </p>
+  <% end %>
+<% elsif current_user && Slack.configured? %>
+  <%= turbo_frame_tag "slack_share_field" do %>
+    <%= render "shared/slack_link_invite", standalone: standalone %>
   <% end %>
 <% end %>

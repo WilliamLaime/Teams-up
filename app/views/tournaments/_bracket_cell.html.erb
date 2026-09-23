@@ -10,7 +10,12 @@
   <% if match.is_bye %>
     <div class="bracket-cell__player bracket-cell__player--winner">
       <%= link_to user_profil_path(match.player_a.user), class: "bracket-cell__player-link" do %>
-        <%= user_avatar_tag match.player_a.user, css_class: "bracket-cell__avatar" %>
+        <%# style en `em` et non width/height en px : tout le bracket-viewer est
+            em-based pour suivre --bracket-zoom. Le style passé ici est concaténé
+            APRÈS le width/height inline du helper, donc il l'emporte — sans quoi
+            l'avatar à initiales resterait figé à 40px, plus gros que les photos. %>
+        <%= user_avatar_tag match.player_a.user, css_class: "bracket-cell__avatar",
+                                                 style: "width:1.8em;height:1.8em;" %>
         <span class="bracket-cell__name"><%= match.player_a.display_name %></span>
       <% end %>
       <span class="bracket-cell__bye">Exempt</span>
@@ -20,7 +25,8 @@
       <% is_winner = match.decided? && match.winner_id == player.id %>
       <div class="bracket-cell__player <%= "bracket-cell__player--winner" if is_winner %> <%= "bracket-cell__player--loser" if match.decided? && !is_winner %>">
         <%= link_to user_profil_path(player.user), class: "bracket-cell__player-link" do %>
-          <%= user_avatar_tag player.user, css_class: "bracket-cell__avatar" %>
+          <%= user_avatar_tag player.user, css_class: "bracket-cell__avatar",
+                                           style: "width:1.8em;height:1.8em;" %>
           <span class="bracket-cell__name <%= "is-withdrawn" if player.withdrawn? %>"><%= player.display_name %></span>
         <% end %>
         <%# Marque de forfait POSÉE HORS DU LIEN, comme le score : le lien ne

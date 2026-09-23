@@ -182,3 +182,39 @@
     color: var(--theme-text-primary);
   }
 }
+
+// ── Invitation à lier son compte Slack ───────────────────────────────────────
+// Prend la place du champ de partage quand le compte n'est pas encore lié. Cadre
+// discret (pas d'alerte colorée) : c'est une possibilité offerte, pas un problème
+// à régler — elle ne doit pas concurrencer le bouton de publication juste en dessous.
+.slack-link-invite {
+  padding: 0.75rem;
+  border: 1px dashed var(--theme-border);
+  border-radius: 0.6rem;
+}
+
+.slack-link-invite__text {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--theme-text-muted);
+}
+
+.slack-link-invite__actions {
+  display: flex;
+  flex-wrap: wrap;      // étroit (colonne récap sur mobile) : le second lien passe dessous
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// Action secondaire assumée : le geste principal est « Lier mon compte », celui-ci
+// ne sert qu'au retour de l'autre onglet.
+.slack-link-invite__refresh {
+  font-size: 0.8rem;
+  color: var(--theme-text-muted);
+  text-decoration: underline;
+
+  &:hover { color: var(--green-readable); }
+}

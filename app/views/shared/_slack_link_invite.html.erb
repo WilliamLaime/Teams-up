@@ -1,0 +1,39 @@
+<%# ── Invitation à lier son compte Slack ───────────────────────────────────────
+    Affichée à la place du champ de partage quand l'utilisateur n'a PAS encore lié
+    son compte : sans elle, la zone Slack était simplement absente du récapitulatif
+    et rien n'indiquait qu'un partage était possible.
+
+    Pourquoi un NOUVEL ONGLET : la liaison part en OAuth chez Slack et revient sur
+    la page Intégrations (Slack::ConnectionsController#callback y redirige en dur,
+    il n'y a pas de return_to). Dans le même onglet, l'utilisateur perdrait le match
+    qu'il est en train de saisir.
+
+    Le lien « J'ai lié mon compte » recharge le turbo-frame `slack_share_field` :
+    au retour de l'autre onglet, le vrai champ de partage remplace cette invitation
+    sans recharger la page — et donc sans rien perdre du formulaire.
+
+    Locals : standalone — cf. shared/_slack_share_field. %>
+<% standalone = local_assigns.fetch(:standalone, false) %>
+<div class="slack-link-invite <%= "mb-4" unless standalone %>">
+  <p class="slack-link-invite__text">
+    <%= render "shared/slack_logo", size: 16 %>
+    Lie ton compte Slack pour publier tes matchs dans un channel.
+  </p>
+
+  <div class="slack-link-invite__actions">
+    <%= link_to slack_connect_path,
+          target: "_blank",
+          rel: "noopener",
+          class: "btn btn-sm btn-cta-secondary" do %>
+      <i data-lucide="link" class="btn-cta-icon"
+         style="width:15px; height:15px; vertical-align:-3px;"></i>
+      Lier mon compte Slack
+    <% end %>
+
+    <%# Recharge le frame plutôt que la page : le formulaire en cours est préservé. %>
+    <%= link_to "J'ai lié mon compte",
+          slack_share_field_path(standalone: standalone ? "1" : nil),
+          data: { turbo_frame: "slack_share_field" },
+          class: "slack-link-invite__refresh" %>
+  </div>
+</div>

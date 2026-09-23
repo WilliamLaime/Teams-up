@@ -31,7 +31,8 @@
       <% if player %>
         <div class="tmatch-card__player <%= "tmatch-card__player--me" if my_player?(player) %>">
           <%= link_to user_profil_path(player.user), class: "tmatch-card__player-link" do %>
-            <%= user_avatar_tag player.user, css_class: "tmatch-card__avatar" %>
+            <%= user_avatar_tag player.user, css_class: "tmatch-card__avatar",
+                                             width: 32, height: 32 %>
             <span class="tmatch-card__name"><%= player.display_name %></span>
           <% end %>
           <%= me_badge if my_player?(player) %>

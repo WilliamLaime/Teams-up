@@ -843,6 +843,10 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
+    // Sans object-fit, la valeur par défaut `fill` étire la photo pour remplir le
+    // carré : les portraits non carrés (le cas courant) sortaient écrasés, et le
+    // border-radius accentuait la déformation.
+    object-fit: cover;
     flex: 0 0 auto;
   }
 
@@ -1299,15 +1303,17 @@
 // que deux cartes voisines ont la même hauteur, qu'une rencontre soit datée ou non.
 // Le trait du bas répond à celui du pied (border-top) : la carte se lit en trois
 // zones — quand, qui, quoi faire.
-// Discret volontairement : information de contexte, les noms et le score restent
-// les éléments saillants.
+// Créneau FIXÉ = en vert : savoir quand on joue est l'information qu'on vient
+// chercher sur une carte datée, elle mérite de ressortir. --green-readable et non
+// --green : à 0.72rem il faut un contraste AA, que le vert primaire ne tient pas.
+// L'icône suit sans rien de plus, Lucide rendant un SVG en `currentColor`.
 .tmatch-card__when {
   display: flex;
   align-items: center;
   gap: 0.25rem;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--theme-text-muted);
+  color: var(--green-readable);
   white-space: nowrap;
   overflow: hidden;      // cartes étroites du tableau final : jamais de débordement
   text-overflow: ellipsis;
@@ -1317,9 +1323,12 @@
 
 // Aucune date fixée : état VIDE, pas une information. L'italique et l'opacité
 // réduite le disent sans ajouter un badge de plus sur une carte déjà chargée.
+// Le gris est REPOSÉ ici : sans lui, « Date à définir » hériterait du vert de
+// l'état daté et annoncerait en couleur une information qui n'existe pas encore.
 .tmatch-card__when--tbd {
   font-style: italic;
   font-weight: 500;
+  color: var(--theme-text-muted);
   opacity: 0.75;
 }
 

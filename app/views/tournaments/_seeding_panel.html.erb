@@ -50,7 +50,8 @@
       <div class="seeding-panel__grid">
         <%= f.simple_fields_for :tournament_users, players do |pf| %>
           <label class="seeding-panel__player">
-            <%= user_avatar_tag pf.object.user, css_class: "seeding-panel__avatar" %>
+            <%= user_avatar_tag pf.object.user, css_class: "seeding-panel__avatar",
+                                                width: 34, height: 34 %>
             <span class="seeding-panel__name"><%= pf.object.display_name %></span>
             <%= pf.input_field :pot, collection: (1..pot_count).map { |n| ["Chapeau #{n}", n] },
                                include_blank: "Chapeau général",
