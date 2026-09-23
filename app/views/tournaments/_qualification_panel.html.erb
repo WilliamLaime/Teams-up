@@ -22,7 +22,8 @@
         <ul class="qualification-col__list">
           <% qualified.each do |tu| %>
             <li class="qualification-col__player">
-              <%= user_avatar_tag tu.user, css_class: "qualification-col__avatar" %>
+              <%= user_avatar_tag tu.user, css_class: "qualification-col__avatar",
+                                           width: 30, height: 30 %>
               <span class="qualification-col__name"><%= tu.display_name %></span>
               <span class="qualification-col__record"><%= tu.wins %>V-<%= tu.losses %>D</span>
             </li>
@@ -42,7 +43,8 @@
         <ul class="qualification-col__list">
           <% eliminated.each do |tu| %>
             <li class="qualification-col__player">
-              <%= user_avatar_tag tu.user, css_class: "qualification-col__avatar" %>
+              <%= user_avatar_tag tu.user, css_class: "qualification-col__avatar",
+                                           width: 30, height: 30 %>
               <span class="qualification-col__name"><%= tu.display_name %></span>
               <span class="qualification-col__record"><%= tu.wins %>V-<%= tu.losses %>D</span>
             </li>

@@ -843,6 +843,10 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
+    // Sans object-fit, la valeur par défaut `fill` étire la photo pour remplir le
+    // carré : les portraits non carrés (le cas courant) sortaient écrasés, et le
+    // border-radius accentuait la déformation.
+    object-fit: cover;
     flex: 0 0 auto;
   }
 
