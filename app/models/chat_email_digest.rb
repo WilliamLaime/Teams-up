@@ -25,10 +25,12 @@ class ChatEmailDigest < ApplicationRecord
 
   # ── Qui reçoit les messages d'une conversation ─────────────────────────────
   # Renvoie les ids de TOUS les participants (l'expéditeur compris — c'est à
-  # l'appelant de l'exclure). Les filtres sont les mêmes que les droits d'accès
-  # au chat (MessagesController#set_context_and_check_access,
-  # TournamentMatchPolicy#chat?) : on ne notifie jamais quelqu'un qui ne pourrait
-  # pas lire la conversation.
+  # l'appelant de l'exclure). Les filtres reprennent les droits d'accès au chat
+  # (MessagesController#set_context_and_check_access, TournamentMatchPolicy#chat?) :
+  # on ne notifie jamais quelqu'un qui ne pourrait pas lire la conversation.
+  # Seule exception, VOLONTAIRE : le chat de tournoi, où les organisateurs ont
+  # accès à tout mais ne sont notifiés que des discussions où ils ont écrit
+  # (cf. tournament_match_participant_ids).
   def self.participant_ids_for(chattable)
     case chattable
     when PrivateConversation
@@ -46,15 +48,27 @@ class ChatEmailDigest < ApplicationRecord
     end
   end
 
-  # Joueurs de la confrontation + créateur et co-organisateurs du tournoi.
+  # Joueurs de la confrontation + organisateurs QUI ONT DÉJÀ ÉCRIT dans ce chat.
+  #
+  # Les organisateurs (créateur + co-organisateurs) peuvent lire et écrire dans
+  # TOUS les chats du tournoi, pour arbitrer. Mais les notifier de chacun, c'est
+  # recevoir les messages de toutes les confrontations — du bruit. On ne les
+  # notifie donc que des discussions où ils sont intervenus : s'ils ont écrit,
+  # les réponses leur sont (au moins en partie) adressées.
+  # Un organisateur qui JOUE la confrontation est notifié comme joueur.
+  #
+  # Cette liste sert aussi à `accessible?` au moment d'envoyer le mail : un
+  # organisateur resté silencieux ne reçoit donc ni cloche ni mail.
+  #
   # Un bye n'a pas d'adversaire, donc pas de chat (cf. TournamentMatchPolicy#chat?).
   def self.tournament_match_participant_ids(tournament_match)
     return [] if tournament_match.is_bye
 
     tournament = tournament_match.tournament
+    organizer_ids = [tournament.user_id] + tournament.tournament_users.co_organizers.pluck(:user_id)
+
     ids = tournament_match.players.map(&:user_id)
-    ids << tournament.user_id
-    ids.concat(tournament.tournament_users.where(co_organizer: true).pluck(:user_id))
+    ids.concat(tournament_match.messages.where(user_id: organizer_ids.compact).distinct.pluck(:user_id))
     ids.compact.uniq
   end
 

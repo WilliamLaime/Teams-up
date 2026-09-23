@@ -118,30 +118,56 @@ class ChatMessageNotifierTest < ActiveSupport::TestCase
 
   # ── Chat de match de tournoi ───────────────────────────────────────────────
 
-  test "chat de match de tournoi : notifie l'adversaire et les organisateurs, pas les autres inscrits" do
-    admin = create_test_user(email: "notif-admin@example.com")
+  # Crée un tournoi (admin = créateur) avec une confrontation Alice – Bob,
+  # un co-organisateur et un autre inscrit, hors de la confrontation.
+  def setup_tournament_match(co_org_plays: false)
+    @admin = create_test_user(email: "notif-admin@example.com")
     sport = Sport.create!(name: "Padel Notif", slug: "padel-notif", icon: "🎾")
-    tournament = Tournament.create!(name: "Open de padel", sport: sport, user: admin, format: "ronde_suisse",
-                                    status: "in_progress", max_players: 8, date: Date.tomorrow, place: "Club")
-    round = tournament.tournament_rounds.create!(phase: "swiss", number: 1)
+    @tournament = Tournament.create!(name: "Open de padel", sport: sport, user: @admin, format: "ronde_suisse",
+                                     status: "in_progress", max_players: 8, date: Date.tomorrow, place: "Club")
+    round = @tournament.tournament_rounds.create!(phase: "swiss", number: 1)
     enroll = lambda do |user, co_organizer: false|
-      tournament.tournament_users.create!(user: user, role: "joueur", status: "approved", co_organizer: co_organizer)
+      @tournament.tournament_users.create!(user: user, role: "joueur", status: "approved", co_organizer: co_organizer)
     end
     player_a = enroll.call(@alice)
-    player_b = enroll.call(@bob)
-    co_org   = create_test_user(email: "notif-coorg@example.com")
-    enroll.call(co_org, co_organizer: true)
-    other = create_test_user(email: "notif-other@example.com")
-    enroll.call(other)
-    tmatch = round.tournament_matches.create!(player_a: player_a, player_b: player_b, position: 0)
+    player_b = enroll.call(@bob, co_organizer: co_org_plays)
+    @co_org = create_test_user(email: "notif-coorg@example.com")
+    enroll.call(@co_org, co_organizer: true)
+    @other = create_test_user(email: "notif-other@example.com")
+    enroll.call(@other)
+    round.tournament_matches.create!(player_a: player_a, player_b: player_b, position: 0)
+  end
+
+  test "chat de match de tournoi : notifie l'adversaire, pas les organisateurs restés silencieux" do
+    tmatch = setup_tournament_match
 
     tmatch.messages.create!(user: @alice, content: "Samedi 10h ?")
 
-    [@bob, admin, co_org].each do |user|
-      assert_equal 1, chat_notifications_for(user).count, "#{user.email} doit être notifié"
+    assert_equal 1, chat_notifications_for(@bob).count, "L'adversaire doit être notifié"
+    [@admin, @co_org].each do |user|
+      assert_equal 0, chat_notifications_for(user).count,
+                   "#{user.email} n'a pas écrit dans ce chat : il ne doit pas être notifié"
     end
-    assert_equal 0, chat_notifications_for(other).count, "Un joueur d'un autre match n'a pas accès à ce chat"
-    assert_equal "/tournois/#{tournament.to_param}?tmatch_chat=#{tmatch.id}",
+    assert_equal 0, chat_notifications_for(@other).count, "Un joueur d'un autre match n'a pas accès à ce chat"
+    assert_equal "/tournois/#{@tournament.to_param}?tmatch_chat=#{tmatch.id}",
                  chat_notifications_for(@bob).first.link
+  end
+
+  test "chat de match de tournoi : un organisateur qui a écrit est notifié des réponses" do
+    tmatch = setup_tournament_match
+
+    tmatch.messages.create!(user: @admin, content: "Vous avez fixé une date ?")
+    tmatch.messages.create!(user: @alice, content: "Samedi 10h")
+
+    assert_equal 1, chat_notifications_for(@admin).count, "L'admin est entré dans la discussion"
+    assert_equal 0, chat_notifications_for(@co_org).count, "Le co-organisateur, lui, n'a rien écrit"
+  end
+
+  test "chat de match de tournoi : un co-organisateur qui joue la confrontation est notifié comme joueur" do
+    tmatch = setup_tournament_match(co_org_plays: true)
+
+    tmatch.messages.create!(user: @alice, content: "Samedi 10h ?")
+
+    assert_equal 1, chat_notifications_for(@bob).count
   end
 end
