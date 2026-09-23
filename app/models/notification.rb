@@ -17,7 +17,15 @@ class Notification < ApplicationRecord
   #
   # Canal personnalisé par utilisateur : "notifications_user_42" (ex pour user id=42)
   # La navbar s'abonne avec : <%= turbo_stream_from current_user, :notifications %>
-  after_create_commit :broadcast_notification_bell
+  #
+  # Même rafraîchissement quand une notification passe à « lue » hors d'un clic
+  # (ex. ChatEmailDigestJob : le message a été lu dans le chat) — sinon la
+  # pastille resterait allumée jusqu'au prochain chargement de page.
+  # ⚠️ Un seul after_commit avec `on:` : déclarer after_create_commit ET
+  # after_update_commit sur la même méthode n'en garde que le dernier (piège Rails).
+  after_commit :broadcast_notification_bell,
+               on: %i[create update],
+               if: -> { previously_new_record? || saved_change_to_read? }
 
   private
 

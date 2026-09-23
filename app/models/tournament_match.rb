@@ -28,6 +28,8 @@ class TournamentMatch < ApplicationRecord
   # destroy : le fil n'a aucun sens hors de sa carte — le régénérer d'un tour
   # laisserait des messages orphelins invisibles.
   has_many :messages, dependent: :destroy
+  # Fenêtres de regroupement des mails de chat (cf. ChatEmailDigest)
+  has_many :chat_email_digests, as: :chattable, dependent: :delete_all
   has_many :chat_reads, class_name: "TournamentMatchChatRead", dependent: :destroy
 
   STATUSES = %w[pending completed].freeze

@@ -6,6 +6,8 @@ class PrivateConversation < ApplicationRecord
 
   # Une conversation privée a plusieurs messages
   has_many :messages, dependent: :destroy
+  # Fenêtres de regroupement des mails de chat (cf. ChatEmailDigest)
+  has_many :chat_email_digests, as: :chattable, dependent: :delete_all
 
   # ── Trouver ou créer une conversation entre deux utilisateurs ─────────────
   # L'ordre n'a pas d'importance : entre(A, B) == entre(B, A)

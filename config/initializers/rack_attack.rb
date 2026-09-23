@@ -165,6 +165,19 @@ class Rack::Attack
 
 
   # -----------------------------------------------------------------------
+  # THROTTLE 10 : Désinscription des mails de chat
+  #
+  # But : route publique (lien présent dans les mails) protégée par un token
+  # signé infalsifiable — ce throttle n'est qu'un filet contre le bourrinage.
+  # Limite : 20 requêtes / 5 minutes / IP, largement assez pour un humain.
+  # Route ciblée : GET|POST /notifications-email/desinscription/:token
+  # -----------------------------------------------------------------------
+  throttle("chat_email_unsubscribe/ip", limit: 20, period: 5.minutes) do |req|
+    req.ip if req.path.start_with?("/notifications-email/desinscription/")
+  end
+
+
+  # -----------------------------------------------------------------------
   # Notification Rack::Attack → SecurityLog
   #
   # Quand rack-attack bloque une requête (throttle déclenché), il publie

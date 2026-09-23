@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_09_095811) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_23_090100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -86,6 +86,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_095811) do
     t.index ["reviewed_user_id"], name: "index_avis_on_reviewed_user_id"
     t.index ["reviewer_id", "reviewed_user_id", "match_id"], name: "index_avis_on_reviewer_id_and_reviewed_user_id_and_match_id", unique: true
     t.index ["reviewer_id"], name: "index_avis_on_reviewer_id"
+  end
+
+  create_table "chat_email_digests", force: :cascade do |t|
+    t.bigint "chattable_id", null: false
+    t.string "chattable_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "last_sent_at"
+    t.datetime "pending_since"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["chattable_type", "chattable_id"], name: "index_chat_email_digests_on_chattable"
+    t.index ["user_id", "chattable_type", "chattable_id"], name: "index_chat_email_digests_on_user_and_chattable", unique: true
   end
 
   create_table "contact_messages", force: :cascade do |t|
@@ -265,6 +277,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_095811) do
     t.integer "attr_teamwork", default: 0, null: false
     t.float "average_rating", default: 0.0
     t.integer "avis_count", default: 0
+    t.boolean "chat_email_notifications", default: true, null: false
     t.datetime "created_at", null: false
     t.string "description"
     t.string "first_name"
@@ -752,6 +765,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_09_095811) do
   add_foreign_key "avis", "matches"
   add_foreign_key "avis", "users", column: "reviewed_user_id"
   add_foreign_key "avis", "users", column: "reviewer_id"
+  add_foreign_key "chat_email_digests", "users"
   add_foreign_key "friendships", "users"
   add_foreign_key "friendships", "users", column: "friend_id"
   add_foreign_key "match_users", "matches"

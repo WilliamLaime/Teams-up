@@ -81,8 +81,9 @@
             aria: { label: unread ? "Discussion : nouveau message" : "Discuter pour organiser le match" },
             data: { turbo_frame: "tmatch-chat-frame", action: "tmatch-chat#open" } do %>
         <i data-lucide="message-circle" aria-hidden="true"></i>
-        <%# Point non-lu. Le chat n'apparaissant nulle part ailleurs (ni sidebar,
-            ni notification), c'est le SEUL signal qu'un message attend. %>
+        <%# Point non-lu. Le chat n'a pas d'entrée dans la sidebar : hormis la
+            notification de la cloche et le mail (cf. ChatMessageNotifier),
+            c'est le seul signal sur la page qu'un message attend. %>
         <% if unread %>
           <span class="tmatch-card__chat-dot" aria-hidden="true"></span>
         <% end %>

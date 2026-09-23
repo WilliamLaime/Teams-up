@@ -144,7 +144,14 @@
         classer, _ranking.html.erb n'y affiche qu'un message d'attente.
         Aucune persistance côté JS (cf. tournament_tabs_controller) : le panneau
         actif vient uniquement du HTML rendu ici. %>
-    <% active_panel = @tournament.completed? && @tournament.tournament_rounds.any? ? "classement" : "matchs" %>
+    <%# ?tmatch_chat=:id (lien d'un mail ou d'une notification de chat) : le chat
+        vit dans l'onglet Matchs, on l'ouvre donc sur cet onglet. Seulement si le
+        match appartient à CE tournoi et que l'utilisateur a accès à son chat. %>
+    <% autoopen_tmatch = params[:tmatch_chat].present? &&
+                         @tournament.tournament_matches.find_by(id: params[:tmatch_chat]) %>
+    <% autoopen_tmatch = nil unless autoopen_tmatch && policy(autoopen_tmatch).chat? %>
+    <% show_ranking = @tournament.completed? && @tournament.tournament_rounds.any? && !autoopen_tmatch %>
+    <% active_panel = show_ranking ? "classement" : "matchs" %>
     <% tabs = [["overview", "info", "Vue d'ensemble"], ["matchs", "swords", "Matchs"],
                ["participants", "users", "Participants"], ["classement", "list-ordered", "Classement"],
                ["calendrier", "calendar-days", "Calendrier"]] %>
@@ -214,6 +221,13 @@
         <%# Même raison que la modale de score : rendue ICI, hors de
             #tournament_board, pour survivre à ses remplacements Turbo Stream. %>
         <%= render "tournaments/tmatch_chat_modal" %>
+        <% if autoopen_tmatch %>
+          <div hidden data-controller="modal-autoopen"
+               data-modal-autoopen-modal-value="tmatchChatModal"
+               data-modal-autoopen-param-value="tmatch_chat"
+               data-modal-autoopen-frame-id-value="tmatch-chat-frame"
+               data-modal-autoopen-frame-src-value="<%= tournament_match_conversation_path(autoopen_tmatch) %>"></div>
+        <% end %>
       </div>
     </div>
 

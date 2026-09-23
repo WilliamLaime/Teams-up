@@ -123,6 +123,13 @@ class ApplicationController < ActionController::Base
     )
   end
 
+  # Lien d'un mail ou d'une notification de chat vers une page publique (match,
+  # tournoi) : le chat n'y est visible qu'une fois connecté. Devise mémorise l'URL
+  # demandée et y renvoie après la connexion — on atterrit bien dans la discussion.
+  def require_login_for_chat_link
+    authenticate_user! if params[:open_chat].present? || params[:tmatch_chat].present?
+  end
+
   # Redirige l'utilisateur non autorisé avec un message d'alerte
   def user_not_authorized
     flash[:alert] = "Vous n'êtes pas autorisé à effectuer cette action."

@@ -3,6 +3,9 @@ class TournamentsController < ApplicationController
 
   # Liste et détail accessibles aux visiteurs non connectés (comme les matchs).
   skip_before_action :authenticate_user!, only: %i[index show]
+  # …sauf en arrivant par le lien d'un mail/d'une notification de chat
+  # (?tmatch_chat=:id) : le chat est réservé aux joueurs et aux organisateurs.
+  before_action :require_login_for_chat_link, only: :show
 
   before_action :set_tournament, only: %i[show start edit update toggle_registrations finish seeding
                                           add_co_organizer remove_co_organizer transfer_ownership]

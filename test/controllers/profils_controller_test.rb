@@ -115,6 +115,16 @@ class ProfilsControllerTest < ActionDispatch::IntegrationTest
                  "La description du profil doit être mise à jour en base"
   end
 
+  # La case « Recevoir un mail quand on m'écrit » du formulaire est bien enregistrée
+  def test_patch_profil_desactive_les_mails_de_chat
+    sign_in @user
+    patch profil_path, params: { profil: { chat_email_notifications: "0" } }
+
+    assert_redirected_to profil_path
+    assert_not @user.profil.reload.chat_email_notifications?,
+               "Décocher la case doit désactiver les mails de chat"
+  end
+
   # ════════════════════════════════════════════════════════════════════════════
   # POST /profil/dismiss_onboarding — fermer la modale d'onboarding
   # ════════════════════════════════════════════════════════════════════════════

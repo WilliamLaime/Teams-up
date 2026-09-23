@@ -1224,6 +1224,14 @@
     MODAL CHAT COMPLET — participants et organisateur
     ══════════════════════════════════════════════════ %>
 <% if is_participant %>
+  <%# ?open_chat=1 : lien d'un mail ou d'une notification de chat — ouvre la
+      modale dès l'arrivée (cf. modal_autoopen_controller.js). %>
+  <% if params[:open_chat].present? %>
+    <div hidden data-controller="modal-autoopen"
+         data-modal-autoopen-modal-value="chatModal"
+         data-modal-autoopen-param-value="open_chat"></div>
+  <% end %>
+
   <%# Le data-controller est ICI sur le modal pour que Stimulus ait accès
       aux targets messages/input/typing ET que onModalOpen se déclenche
       quand Bootstrap ouvre le modal (shown.bs.modal) %>
