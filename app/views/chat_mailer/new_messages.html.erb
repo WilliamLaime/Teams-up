@@ -1,0 +1,83 @@
+<%# ── Email : nouveaux messages dans une conversation ──────────────────────── %>
+<%# Envoyé 3 min après le 1er message non lu (cf. ChatEmailDigestJob).         %>
+<%# Inline CSS obligatoire — les clients mail ignorent les feuilles de style externes %>
+<%# Sécurité : le contenu des messages est échappé par h() AVANT simple_format, qui %>
+<%# n'ajoute que des <p>/<br> pour les retours à la ligne — comme dans le chat, aucune %>
+<%# balise écrite par un joueur n'est interprétée. %>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: transparent; padding: 0 20px 40px; min-height: 100vh;">
+
+  <%# Carte centrale %>
+  <div style="max-width: 520px; margin: 0 auto; background-color: #1a1c1a; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;">
+
+    <%# Corps %>
+    <div style="padding: 36px 40px;">
+
+      <%# Icône %>
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="display: inline-block; background-color: rgba(30, 221, 136, 0.12); border-radius: 50%; width: 64px; height: 64px; line-height: 64px; font-size: 28px;">
+          💬
+        </div>
+      </div>
+
+      <%# Titre %>
+      <h1 style="color: #f0f0f0; font-size: 1.4rem; font-weight: 700; text-align: center; margin: 0 0 8px 0;">
+        <% if @senders.size == 1 %>
+          <%= @senders.first.display_name %> t'a écrit
+        <% else %>
+          Tu as de nouveaux messages
+        <% end %>
+      </h1>
+
+      <%# Sous-titre : la conversation concernée (sauf en privé, où c'est la personne) %>
+      <% if @digest.chat_title.present? %>
+        <p style="color: rgba(255,255,255,0.45); font-size: 0.9rem; text-align: center; margin: 0 0 28px 0;">
+          Discussion : <strong style="color: rgba(255,255,255,0.7);"><%= @digest.chat_title %></strong>
+        </p>
+      <% else %>
+        <div style="height: 20px;"></div>
+      <% end %>
+
+      <%# Messages (les plus récents, dans l'ordre d'envoi) %>
+      <div style="background-color: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 20px; margin-bottom: 28px;">
+        <% if @hidden_count.positive? %>
+          <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin: 0 0 12px 0;">
+            + <%= @hidden_count %> message<%= "s" if @hidden_count > 1 %> plus ancien<%= "s" if @hidden_count > 1 %>
+          </p>
+        <% end %>
+
+        <% @messages.each_with_index do |message, index| %>
+          <div style="<%= "border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; margin-top: 12px;" if index.positive? %>">
+            <p style="color: rgba(255,255,255,0.45); font-size: 0.75rem; margin: 0 0 4px 0;">
+              <strong style="color: #1EDD88;"><%= message.user.display_name %></strong>
+              · <%= I18n.l(message.created_at, format: "%d/%m à %Hh%M") %>
+            </p>
+            <div style="color: #f0f0f0; font-size: 0.95rem; line-height: 1.5; word-break: break-word;">
+              <%= simple_format(h(message.content), { style: "margin: 0;" }, wrapper_tag: "p") %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Bouton CTA : ouvre directement la conversation %>
+      <div style="text-align: center; margin: 20px 0 12px 0;">
+        <%= link_to @chat_url,
+            style: "display: inline-block; background-color: #1EDD88; color: #111111; font-weight: 700; font-size: 1rem; padding: 14px 36px; border-radius: 50px; text-decoration: none; letter-spacing: 0.3px;" do %>
+          Répondre dans la discussion
+        <% end %>
+      </div>
+
+    </div>
+
+    <%# Pied de page : désinscription %>
+    <div style="background-color: #111111; padding: 20px 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="color: rgba(255,255,255,0.35); font-size: 0.78rem; margin: 0 0 8px 0;">
+        Tu reçois ce mail car quelqu'un t'a écrit sur Teams-up.
+        <%= link_to "Ne plus recevoir ces mails", @unsubscribe_url, style: "color: rgba(255,255,255,0.55); text-decoration: underline;" %>
+      </p>
+      <p style="color: rgba(255,255,255,0.25); font-size: 0.78rem; margin: 0;">
+        © <%= Date.today.year %> Teams-up — Tous droits réservés.
+      </p>
+    </div>
+
+  </div>
+</div>

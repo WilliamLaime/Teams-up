@@ -20,6 +20,8 @@ class Team < ApplicationRecord
 
   # Messages du chat d'équipe
   has_many :messages, dependent: :destroy
+  # Fenêtres de regroupement des mails de chat (cf. ChatEmailDigest)
+  has_many :chat_email_digests, as: :chattable, dependent: :delete_all
 
   # Blason uploadé via Active Storage (alternative au SVG généré)
   has_one_attached :badge_image

@@ -1,3 +1,18 @@
+# Notifications de chat : cloche immédiate + mail regroupé sur 3 min
+
+Branche `mail-notification-messages` — plan validé le 23 septembre 2026.
+
+- [x] Migrations : table `chat_email_digests` (fenêtre de 3 min par destinataire × conversation) + `profils.chat_email_notifications`
+- [x] `ChatEmailDigest` : destinataires, dernière lecture, lien direct pour les 4 types de chat
+- [x] `ChatMessageNotifier` (callback `Message#notify_recipients`) : notification `chat_message` immédiate, sans doublon + job à +3 min
+- [x] `ChatEmailDigestJob` + `ChatMailer#new_messages` (html + text, contenu échappé, lien direct, désinscription + List-Unsubscribe)
+- [x] Liens directs : `modal_autoopen_controller.js` sur match / équipe / tournoi (+ connexion forcée sur les pages publiques)
+- [x] Désinscription : case dans le profil + `ChatEmailUnsubscribesController` (token signé, Rack::Attack)
+- [x] Tests : service, job, mailer, désinscription, liens directs, profil — suite complète verte (1402 runs)
+- [ ] Recette manuelle à 2 navigateurs (cloche, mail à +3 min, lien, lecture avant 3 min = pas de mail)
+
+---
+
 # Fix : colonnes fantômes dans db/schema.rb (`matches`)
 
 ## Constat (vérifié le 4 septembre 2026)

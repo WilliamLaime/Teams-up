@@ -87,3 +87,14 @@ Détail complet dans `docs/TOURNOI.md`. Carte rapide :
 - `Match` diffuse via `broadcasts_to` (callbacks) — messages de chat et mises à jour live de la page match.
 - Les vues s'abonnent via `turbo_stream_from`.
 - Toute modale Bootstrap doit être `dispose()` sur `turbo:before-render` (voir pièges Turbo dans `CLAUDE.md`).
+
+## Notifications de chat (cloche + mail regroupé)
+
+Chaque `Message` (4 contextes : privé, match, équipe, match de tournoi) déclenche `ChatMessageNotifier` via `after_create_commit :notify_recipients`.
+
+- **Fenêtre de 3 min par (destinataire, conversation)** — table `chat_email_digests` (`ChatEmailDigest`). Le 1er message ouvre la fenêtre (`pending_since`, UPDATE conditionnel atomique) : notification `chat_message` **immédiate** dans la cloche + `ChatEmailDigestJob` programmé à +3 min. Les messages suivants de la fenêtre ne déclenchent rien : 3 lignes d'affilée = 1 notif + 1 mail.
+- **Fin de fenêtre** (`ChatEmailDigestJob`) : un seul `ChatMailer#new_messages` avec les messages encore non lus. Aucun mail si tout a été lu dans l'app (la notif passe alors à « lue »), si le destinataire n'a plus accès, ou si `profils.chat_email_notifications` est à `false`.
+- **Qui reçoit / dernière lecture / lien direct** : tout ce qui dépend du type de chat est dans `ChatEmailDigest` (`participant_ids_for`, `last_read_at`, `chat_path`). Un 5e type de chat = compléter ces 3 `case`.
+- **Liens directs** : `?open_chat=` (profil, match, équipe) ou `?tmatch_chat=:id` (tournoi) → `modal_autoopen_controller.js` ouvre la modale. Sur les pages publiques (match, tournoi), `require_login_for_chat_link` fait d'abord se connecter.
+- **Désinscription** : case dans le formulaire profil, ou lien de chaque mail (`ChatEmailUnsubscribesController`, token `signed_id`, en-têtes `List-Unsubscribe` one-click). La cloche reste active.
+- ⚠️ Lire un chat depuis la modale de la page match/équipe ne met pas à jour `last_read_at` (seuls la sidebar et l'envoi d'un message le font) : le mail peut partir quand même dans ce cas.

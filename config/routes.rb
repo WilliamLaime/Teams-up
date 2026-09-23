@@ -255,6 +255,13 @@ Rails.application.routes.draw do
     end
   end
 
+  # Désinscription des mails de chat (lien de chaque mail, sans connexion)
+  # GET  /notifications-email/desinscription/:token => page de confirmation
+  # POST /notifications-email/desinscription/:token => désactive les mails
+  get  "notifications-email/desinscription/:token", to: "chat_email_unsubscribes#show",
+                                                    as: :chat_email_unsubscribe
+  post "notifications-email/desinscription/:token", to: "chat_email_unsubscribes#create"
+
   # Routes pour les notifications
   # GET   /notifications               => liste des notifications
   # PATCH /notifications/:id/mark_read => marquer une notif comme lue

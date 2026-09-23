@@ -72,6 +72,8 @@ class User < ApplicationRecord
   # compte tant qu'un accusé subsiste.
   has_many :tournament_match_chat_reads, dependent: :destroy
   has_many :notifications, dependent: :destroy
+  # Fenêtres de regroupement des mails de chat reçus (cf. ChatEmailDigest)
+  has_many :chat_email_digests, dependent: :delete_all
   # Subscriptions Web Push : un user peut avoir plusieurs appareils/navigateurs enregistrés
   has_many :push_subscriptions, dependent: :destroy
   # Identités Slack liées (une par workspace) — permet de poster/s'inscrire depuis Slack

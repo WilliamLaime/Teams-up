@@ -1,0 +1,34 @@
+<%# ── Désinscription des mails de chat (lien présent dans chaque mail) ──────── %>
+<%# Même structure visuelle que les pages auth (auth-page / auth-card) %>
+<% content_for :title, "Mails de messages — Teams-up" %>
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <i data-lucide="<%= @unsubscribed ? "mail-check" : "mail-x" %>" style="width:20px;height:20px;color:var(--green, #3ddc84);" aria-hidden="true"></i>
+      <%# RGAA 9.1 — h1 obligatoire sur chaque page, class h2 pour garder le style %>
+      <h1 class="h2 mb-0"><span class="accent">Mails</span> de messages</h1>
+    </div>
+
+    <% if @unsubscribed || !@profil.chat_email_notifications? %>
+      <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-bottom:1.5rem;" role="status">
+        C'est fait : tu ne recevras plus de mail quand on t'écrit.
+        Les nouveaux messages restent signalés dans la cloche de notifications.
+      </p>
+      <p style="color:rgba(255,255,255,0.45); font-size:0.85rem; margin-bottom:0;">
+        Tu peux les réactiver à tout moment depuis
+        <%= link_to "ton profil", edit_profil_path, class: "accent" %>.
+      </p>
+    <% else %>
+      <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-bottom:1.5rem;">
+        Tu reçois un mail quand un joueur t'écrit (messages privés, matchs, équipes, tournois).
+        Veux-tu arrêter ces mails ?
+      </p>
+      <%= button_to "Ne plus recevoir ces mails",
+                    chat_email_unsubscribe_path(token: params[:token]),
+                    method: :post,
+                    class: "btn btn-primary btn-cta-primary w-100" %>
+    <% end %>
+
+  </div>
+</div>

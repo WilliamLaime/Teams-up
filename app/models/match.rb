@@ -49,6 +49,8 @@ class Match < ApplicationRecord
   has_one :profil, through: :user
   # Un match a plusieurs messages dans son chat de groupe
   has_many :messages, dependent: :destroy
+  # Fenêtres de regroupement des mails de chat (cf. ChatEmailDigest)
+  has_many :chat_email_digests, as: :chattable, dependent: :delete_all
 
   # Votes "homme du match" pour ce match
   has_many :match_votes, dependent: :destroy

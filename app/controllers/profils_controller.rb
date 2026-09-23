@@ -544,6 +544,7 @@ class ProfilsController < ApplicationController
       :first_name, :last_name, :address, :description,
       :level, :phone, :role, :localisation, :time_available, :avatar,
       :preferred_city, # Ville préférée pour les pré-filtres
+      :chat_email_notifications, # Mail quand on reçoit un message (cf. ChatMailer)
       favorite_venue_ids: [] # Lieux favoris (multi-select)
     )
   end

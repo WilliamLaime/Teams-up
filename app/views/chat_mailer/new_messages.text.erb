@@ -1,0 +1,26 @@
+TEAMS-UP
+========
+
+<% if @senders.size == 1 %>
+<%= @senders.first.display_name %> t'a écrit
+<% else %>
+Tu as de nouveaux messages
+<% end %>
+<% if @digest.chat_title.present? %>
+Discussion : <%= @digest.chat_title %>
+<% end %>
+
+<% if @hidden_count.positive? %>
++ <%= @hidden_count %> message(s) plus ancien(s)
+
+<% end %>
+<% @messages.each do |message| %>
+<%= message.user.display_name %> (<%= I18n.l(message.created_at, format: "%d/%m à %Hh%M") %>) :
+<%= message.content %>
+
+<% end %>
+Répondre dans la discussion : <%= @chat_url %>
+
+--
+Ne plus recevoir ces mails : <%= @unsubscribe_url %>
+© <%= Date.today.year %> Teams-up — Tous droits réservés.

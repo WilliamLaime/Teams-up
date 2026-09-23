@@ -696,6 +696,15 @@
       </div>
     </div>
 
+    <%# ?open_chat=1 : lien d'un mail ou d'une notification de chat — ouvre la
+        modale dès l'arrivée (cf. modal_autoopen_controller.js). Déjà dans le
+        bloc réservé aux membres. %>
+    <% if params[:open_chat].present? %>
+      <div hidden data-controller="modal-autoopen"
+           data-modal-autoopen-modal-value="teamChatModal"
+           data-modal-autoopen-param-value="open_chat"></div>
+    <% end %>
+
     <%# ── Modale chat d'équipe ─────────────────────────────────────────────────
         Structure identique à la modale chat du match show.
         data-controller="chat" : auto-scroll, style "mine", Entrée pour envoyer

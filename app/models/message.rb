@@ -27,6 +27,10 @@ class Message < ApplicationRecord
   # Callback pour les messages privés (réactive la conversation si elle était masquée)
   after_create_commit :reactivate_dismissed_private_conversation, if: :private_conversation_id?
 
+  # Prévient les destinataires : notification immédiate dans la cloche + mail
+  # regroupé 3 min plus tard (cf. ChatMessageNotifier).
+  after_create_commit :notify_recipients
+
   private
 
   # ── Validation : un des quatre contextes doit être présent ───────────────────
@@ -158,6 +162,15 @@ class Message < ApplicationRecord
     else
       private_conversation.update_column(:recipient_dismissed_at, nil)
     end
+  end
+
+  # ── Notifie les destinataires (cloche + mail regroupé) ──────────────────
+  # Une erreur ici ne doit pas faire échouer l'envoi du message, déjà enregistré
+  # et diffusé : on la logue sans la propager.
+  def notify_recipients
+    ChatMessageNotifier.call(self)
+  rescue StandardError => e
+    Rails.logger.error("[Message] Notification des destinataires échouée (message #{id}) : #{e.class} — #{e.message}")
   end
 
   # ── Diffuse le message en temps réel dans la zone de chat ─────────────────

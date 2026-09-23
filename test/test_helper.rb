@@ -65,6 +65,8 @@ module ActiveSupport
       # match de tournoi
       Message.delete_all
       Notification.delete_all
+      # Fenêtres de regroupement des mails de chat : FK user_id vers users
+      ChatEmailDigest.delete_all
       MatchUser.delete_all
       Match.delete_all
       # Tournois : les matchs référencent les inscriptions (player_a/b/winner) et

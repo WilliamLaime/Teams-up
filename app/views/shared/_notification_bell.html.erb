@@ -77,9 +77,11 @@
             class: "w-100 text-start border-0 p-0 notif-item",
             data: { turbo_frame: "_top" } do %>
           <div class="d-flex align-items-start gap-2 px-3 py-2">
-            <%# Icône : shield-alert rouge pour modération, check grisé si lue, cloche verte si non lue %>
+            <%# Icône : shield-alert rouge pour modération, bulle verte pour un message non lu, check grisé si lue, cloche verte si non lue %>
             <% if notif.notif_type == "image_rejected" %>
               <i data-lucide="shield-alert" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;color:#E67E22;" aria-hidden="true"></i>
+            <% elsif notif.notif_type == "chat_message" && !notif.read? %>
+              <i data-lucide="message-circle" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" class="text-primary" aria-hidden="true"></i>
             <% elsif notif.read? %>
               <i data-lucide="check-circle" class="notif-read-icon" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;" aria-hidden="true"></i>
             <% else %>

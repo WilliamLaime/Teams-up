@@ -1,7 +1,7 @@
 {
   "ignored_warnings": [
     {
-      "fingerprint": "d13996cdccdb80714eea4562016b72a9c524e5191fbe35967f4c98b63cc4900f",
+      "fingerprint": "2d2a1b89fc7720fd722f47eb4e76bd218669e6d99c110dfa039afc0ede2ff9b2",
       "note": "Faux positif : :role est le poste sportif du joueur (ex: attaquant, gardien), pas un rôle système ou admin. Aucun risque de mass assignment sur des attributs sensibles."
     },
     {

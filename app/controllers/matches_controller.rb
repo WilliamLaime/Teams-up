@@ -6,6 +6,9 @@ class MatchesController < ApplicationController
   # Permet aux visiteurs non connectés de voir la liste et le détail d'un match.
   # Les autres actions (créer, rejoindre, etc.) restent protégées par authenticate_user!
   skip_before_action :authenticate_user!, only: %i[index show]
+  # …sauf en arrivant par le lien d'un mail/d'une notification de chat (?open_chat=1) :
+  # le chat est réservé aux participants, on fait donc d'abord se connecter.
+  before_action :require_login_for_chat_link, only: :show
 
   # Retrouver le match avant les actions qui en ont besoin
   before_action :set_match, only: %i[show edit update destroy calendar make_public share_on_slack]

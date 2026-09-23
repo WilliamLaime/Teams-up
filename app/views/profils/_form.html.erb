@@ -566,6 +566,29 @@
 
 
       <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# SECTION 5 : Notifications ─────────────────────────────────────── %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+
+      <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:0.75rem;">
+        <i data-lucide="mail" style="width:14px; height:14px;"></i>
+        Notifications
+      </div>
+
+      <div class="match-block mb-4">
+        <%# Mail récapitulatif des messages reçus (cf. ChatEmailDigestJob) —
+            la notification dans la cloche reste envoyée même décochée. %>
+        <div class="form-check form-switch mb-0">
+          <%= f.check_box :chat_email_notifications, class: "form-check-input", role: "switch" %>
+          <%= f.label :chat_email_notifications, "Recevoir un mail quand on m'écrit", class: "form-check-label" %>
+        </div>
+        <p style="font-size:0.72rem; color:var(--theme-text-muted); margin:0.4rem 0 0;">
+          Messages privés, chats de match, d'équipe et de tournoi. Au plus un mail toutes les 3 minutes par discussion.
+        </p>
+      </div>
+      <%# / notifications %>
+
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
       <%# BOUTONS D'ACTION ──────────────────────────────────────────────── %>
       <%# ─────────────────────────────────────────────────────────────────── %>
 
