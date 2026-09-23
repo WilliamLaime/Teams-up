@@ -169,17 +169,46 @@
   text-align: center;
 }
 
-// Cohérence du <select> d'espace Slack en thème sombre (le .form-select natif reste
-// blanc par défaut — même correctif que .pending-modal-content .form-select).
-[data-theme="dark"] .slack-share-field .form-select {
-  background-color: var(--theme-input-bg);
-  color: var(--theme-input-color);
-  border-color: var(--theme-border);
-  color-scheme: dark;
+// ── Sélecteur d'espace Slack ──────────────────────────────────────────────────
+// Habillé par custom-select (le menu natif, dessiné par l'OS, ne se stylise pas).
+// On aligne son rendu sur le combobox destination juste en dessous, pour que les
+// deux champs se lisent comme une même famille : fond de champ, bordure fine,
+// graisse normale, survol / sélection en vert très léger (cf. .slack-dest-*).
+.slack-share-field .custom-select {
+  .custom-select__toggle {
+    background-color: var(--theme-input-bg);
+    color: var(--theme-input-color);
+    font-weight: 400;
+    padding: 0.55rem 0.75rem;
 
-  option, optgroup {
-    background-color: var(--theme-bg-card);
-    color: var(--theme-text-primary);
+    &:hover { border-color: var(--theme-border); }
+
+    &[aria-expanded="true"],
+    &:focus-visible {
+      border-color: rgba(var(--green-rgb), 0.45);
+      box-shadow: none;
+    }
+
+    &:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  }
+
+  .custom-select__menu {
+    top: calc(100% + 4px);
+    padding: 4px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .custom-select__option {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.88rem;
+    font-weight: 400;
+
+    &:hover,
+    &.is-active {
+      color: var(--theme-text-primary);
+      background-color: rgba(var(--green-rgb), 0.10);
+    }
   }
 }
 

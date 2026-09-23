@@ -185,21 +185,19 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-// Bouton "← Retour aux matchs"
-// Note : ce bouton est sur fond d'image sombre (banner avec overlay noir),
-// donc on garde blanc/gris clair pour la lisibilité
-.match-new-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: rgba(255, 255, 255, 0.6); // Gris clair sur fond image sombre
-  font-size: 0.85rem;
-  text-decoration: none;
-  margin-bottom: 1.25rem;
-  transition: color 0.15s ease;
+// Bouton « ← Retour » (composant partagé shared/_nav_button) dans la bannière.
+// Le vert par défaut du composant manque de contraste sur cette image sombre :
+// on le passe en BLANC, texte et flèche (l'icône Lucide suit `currentColor`).
+// Bannière commune aux pages de création de match, de rencontre de tournoi et
+// de tournoi. Survol : soulignement plutôt qu'un changement de couleur — le
+// survol vert-foncé du mode clair (_theme.scss) y est neutralisé, cf. là-bas.
+.match-new-banner .nav-button {
+  color: #fff;
 
   &:hover {
-    color: #fff; // Blanc au survol
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 }
 
@@ -873,6 +871,18 @@
   &:active {
     transform: translateY(0); // Revient en place au clic
   }
+}
+
+// Mode clair : texte BLANC sur le vert (choix produit). Le texte sombre reste
+// en mode sombre, où le vert est plus lumineux. Même règle pour les autres
+// éléments verts pleins des formulaires de création (match ET tournoi, qui
+// partagent ces classes) : badge d'étape et « Confirmer ce lieu ».
+[data-theme="light"] {
+  .match-publish-btn,
+  .match-publish-btn:hover { color: #fff !important; }
+
+  .match-form-step-badge,
+  .map-picker-confirm-btn { color: #fff; }
 }
 
 // Lien "Annuler" — hover discret avec underline et légère opacité

@@ -592,6 +592,9 @@
   // En dark : hover blanc (#fff) sur fond sombre → lisible.
   // En clair : hover blanc serait illisible → on passe à un vert plus soutenu.
   .nav-button:hover { color: var(--green-d12) !important; }
+  // Exception : la bannière des pages de création reste sombre (image + aplat
+  // noir) quel que soit le thème → le bouton y garde son blanc au survol.
+  .match-new-banner .nav-button:hover { color: #fff !important; }
 
   // ── Page About ────────────────────────────────────────────────────────────
   // La page "Qui sommes-nous ?" est intentionnellement 100% dark (design marketing).
