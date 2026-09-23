@@ -7,7 +7,9 @@
     standalone : (optionnel, défaut false) mode modale de partage manuel — on omet
                  la case « Partager sur Slack » (le partage est l'intention explicite)
                  et la destination reste toujours visible.
-  N'affiche rien si l'utilisateur n'a pas lié Slack.
+  Si l'utilisateur n'a PAS lié Slack : invitation à le faire (shared/_slack_link_invite),
+  et non plus le vide — ce partial étant aussi la réponse du frame, l'invitation doit
+  survivre à un rechargement de celui-ci.
 
   Sélection en DEUX temps :
     1. le workspace Slack (masqué s'il n'y en a qu'un → champ caché)
@@ -99,4 +101,6 @@
       <p class="text-muted small mb-0">Le match sera posté dans ta destination Slack par défaut.</p>
     <% end %>
   </div>
+<% elsif Slack.configured? %>
+  <%= render "shared/slack_link_invite", standalone: standalone %>
 <% end %>
