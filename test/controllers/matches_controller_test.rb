@@ -455,6 +455,105 @@ class MatchesControllerTest < ActionDispatch::IntegrationTest
     assert_includes response.body[/<input[^>]*name="match\[time\(5i\)\]"[^>]*>/], 'value="0"'
   end
 
+  # Non-régression : `tournaments.date` est la date de DÉBUT. Un tournoi sur
+  # plusieurs jours (critérium…) déjà commencé ne doit pas proposer une date passée.
+  test "GET /matches/new depuis un tournoi déjà commencé propose la date du jour" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match
+    tournament.update_column(:date, Date.yesterday) # contourne d'éventuelles validations de date
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    assert_match(/value="#{Date.current}"/, response.body)
+    assert_no_match(/value="#{Date.yesterday}"/, response.body)
+  end
+
+  test "GET /matches/new depuis un tournoi commencé aujourd'hui garde l'heure par défaut" do
+    sign_in @user
+    tournament, tmatch = build_tournament_match
+    tournament.update_columns(date: Date.current, time: "06:00")
+
+    get new_match_path(tournament_match_id: tmatch.id)
+    assert_response :success
+
+    assert_match(/value="#{Date.current}"/, response.body)
+    # 06:00 serait l'heure du tournoi, souvent déjà passée : on ne la reprend pas.
+    refute_includes response.body[/<input[^>]*name="match\[time\(4i\)\]"[^>]*>/], 'value="6"'
+  end
+
+  # ── Droits de l'admin et des co-organisateurs sur une rencontre de tournoi ──
+  # La rencontre est créée par un JOUEUR ; l'organisation du tournoi doit
+  # pouvoir la modifier (date) ou la supprimer depuis « Voir la rencontre ».
+
+  def build_player_created_encounter
+    tournament, tmatch = build_tournament_match
+    player = tmatch.player_b.user
+    encounter = Match.create!(title: "Rencontre", date: Date.tomorrow,
+                              time: Time.current.change(hour: 18, min: 0),
+                              players_needed: 2, level: "Tout niveau", visibility: "public",
+                              validation_mode: "automatic", genre_restriction: "tous",
+                              user: player, sport: @sport,
+                              tournament: tournament, tournament_match: tmatch)
+    encounter.match_users.create!(user: player, role: "organisateur", status: "approved")
+    co_org = create_test_user(email: "co-org-#{SecureRandom.hex(3)}@example.com")
+    tournament.tournament_users.create!(user: co_org, role: "joueur", status: "approved",
+                                        co_organizer: true)
+    [tournament, tmatch, encounter, co_org]
+  end
+
+  test "l'admin et le co-organisateur voient Modifier / Supprimer sur la rencontre" do
+    _tournament, _tmatch, encounter, co_org = build_player_created_encounter
+
+    [@user, co_org].each do |organizer|
+      sign_in organizer
+      get match_path(encounter)
+      assert_response :success
+      assert_select "a[href='#{edit_match_path(encounter)}']"
+      assert_select "#delete-match-form"
+      assert_select "#deleteMatchModal"
+      sign_out organizer
+    end
+  end
+
+  test "un joueur tiers du tournoi ne voit ni Modifier ni Supprimer" do
+    tournament, _tmatch, encounter, _co_org = build_player_created_encounter
+    outsider = create_test_user(email: "outsider-#{SecureRandom.hex(3)}@example.com")
+    tournament.tournament_users.create!(user: outsider, role: "joueur", status: "approved")
+
+    sign_in outsider
+    get match_path(encounter)
+    assert_response :success
+    assert_select "a[href='#{edit_match_path(encounter)}']", 0
+    assert_select "#delete-match-form", 0
+  end
+
+  test "le co-organisateur peut modifier la date d'une rencontre créée par un joueur" do
+    _tournament, _tmatch, encounter, co_org = build_player_created_encounter
+    sign_in co_org
+
+    get edit_match_path(encounter)
+    assert_response :success
+
+    new_date = Date.current + 3
+    patch match_path(encounter), params: { match: { date: new_date } }
+
+    assert_redirected_to match_path(encounter)
+    assert_equal new_date, encounter.reload.date
+  end
+
+  test "l'admin supprime la rencontre et revient au tournoi, la carte est libérée" do
+    tournament, tmatch, encounter, _co_org = build_player_created_encounter
+    sign_in @user
+
+    assert_difference -> { Match.count }, -1 do
+      delete match_path(encounter)
+    end
+
+    assert_redirected_to tournament_path(tournament)
+    assert_nil tmatch.reload.match
+  end
+
   # ── Formulaire allégé en contexte tournoi ──────────────────────────────────
   # Une confrontation est un 1v1 entre deux joueurs déjà connus et inscrits par
   # le tournoi : la section « Détails du match » n'a pas lieu d'être.

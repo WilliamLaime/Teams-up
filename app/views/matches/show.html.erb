@@ -281,14 +281,25 @@
           </div>
         <% end %>
 
-        <%# Boutons Modifier / Supprimer en dessous — uniquement pour l'organisateur %>
-        <% if @current_match_user&.role == "organisateur" %>
-          <%
-            # Calcul des demandes en attente pour le badge dans la bannière
-            banner_pending_count = @match_users.count(&:pending?)
-          %>
+        <%#
+          Actions de gestion en dessous de la bannière.
+          - Demandes en attente, Slack, lien privé : organisateur du match seul.
+          - Modifier / Supprimer : décidés par MatchPolicy — l'organisateur, mais aussi
+            l'admin et les co-organisateurs du tournoi pour une rencontre de tournoi.
+        %>
+        <%
+          is_match_organizer = @current_match_user&.role == "organisateur"
+          can_edit_match     = policy(@match).update?
+          can_delete_match   = policy(@match).destroy?
+        %>
+        <% if is_match_organizer || can_edit_match || can_delete_match %>
           <div class="match-banner-organizer-actions">
 
+            <% if is_match_organizer %>
+            <%
+              # Calcul des demandes en attente pour le badge dans la bannière
+              banner_pending_count = @match_users.count(&:pending?)
+            %>
             <%# Bouton "en attente" — ouvre la modale de gestion des demandes %>
             <button class="match-banner-action-btn match-banner-action-btn--pending"
                     data-bs-toggle="modal"
@@ -301,15 +312,18 @@
                 Demandes
               <% end %>
             </button>
+            <% end %>
 
-            <%= link_to edit_match_path(@match), class: "match-banner-action-btn" do %>
-              <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
-              Modifier
+            <% if can_edit_match %>
+              <%= link_to edit_match_path(@match), class: "match-banner-action-btn" do %>
+                <i data-lucide="edit-2" style="width:14px;height:14px;"></i>
+                Modifier
+              <% end %>
             <% end %>
 
             <%# Partage Slack — visible seulement si l'organisateur a lié son compte.
                 Ouvre la modale de choix de destination (#slackShareModal). %>
-            <% if current_user&.slack_linked? %>
+            <% if is_match_organizer && current_user&.slack_linked? %>
               <button type="button"
                       class="match-banner-action-btn"
                       data-bs-toggle="modal"
@@ -320,19 +334,24 @@
               </button>
             <% end %>
 
-            <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
-            <button type="button"
-                    class="match-banner-action-btn match-banner-action-btn--danger"
-                    data-bs-toggle="modal"
-                    data-bs-target="#deleteMatchModal">
-              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-              Supprimer
-            </button>
+            <% if can_delete_match %>
+              <%# Bouton "Supprimer" → ouvre la modal de confirmation au lieu de supprimer directement %>
+              <button type="button"
+                      class="match-banner-action-btn match-banner-action-btn--danger"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteMatchModal">
+                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                Supprimer
+              </button>
 
-            <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
-            <%= form_with url: match_path(@match), method: :delete, id: "delete-match-form" do %>
+              <%# Formulaire DELETE caché — soumis uniquement depuis la modal de confirmation %>
+              <%= form_with url: match_path(@match), method: :delete, id: "delete-match-form" do %>
+              <% end %>
             <% end %>
           </div>
+        <% end %>
+
+        <% if is_match_organizer %>
 
           <%# ── Bloc lien privé — affiché uniquement si le match est privé ── %>
           <% if @match.private? %>
@@ -1329,8 +1348,12 @@
     </div>
   </div>
 
+<% end %>
+
+<% if policy(@match).destroy? %>
   <%# ══════════════════════════════════════════════════
-      MODAL "SUPPRIMER CE MATCH ?" — organisateur uniquement
+      MODAL "SUPPRIMER CE MATCH ?" — mêmes ayants droit que MatchPolicy#destroy?
+      (organisateur du match, admin et co-organisateurs de son tournoi)
       Même style que la modal "Quitter ce match".
       Déclenché par le bouton "Supprimer" dans la bannière.
       Le bouton "Confirmer" soumet le formulaire caché #delete-match-form.
@@ -1388,7 +1411,9 @@
       </div>
     </div>
   </div>
+<% end %>
 
+<% if @current_match_user&.role == "organisateur" %>
   <%# ══════════════════════════════════════════════════
       MODAL "OUVRIR AU PUBLIC ?" — organisateur uniquement
       Confirmation avant de rendre le match visible sur l'index.
