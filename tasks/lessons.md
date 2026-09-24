@@ -590,3 +590,15 @@ compilait sans erreur, seul le rendu trahissait la perte.
    `.match-new-back-btn {`), et affirmer la taille attendue de la zone coupée.
 2. Après toute édition scriptée : `git diff --stat` — un « 179 deletions » pour une
    retouche de 10 lignes doit alerter immédiatement.
+
+## 2026-09-24 — « Créer la rencontre » proposait la date d'hier
+
+`prefill_from_tournament_match` recopiait `tournaments.date` dans la rencontre. Or
+c'est la date de **début** du tournoi : un critérium qui s'étale sur plusieurs jours
+la dépasse dès le lendemain, et le formulaire proposait une date passée.
+
+À retenir :
+1. `tournaments.date` n'est jamais une date de rencontre par défaut : ne la reprendre
+   que si le tournoi n'a pas commencé (`> Date.current`).
+2. `Date.current` (fuseau de l'app, Paris) et jamais `Date.today` (fuseau du serveur,
+   UTC sur Railway) : entre 0 h et 2 h, `Date.today` renvoie la veille.

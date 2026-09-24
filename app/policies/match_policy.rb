@@ -12,12 +12,16 @@ class MatchPolicy < ApplicationPolicy
     true
   end
 
+  # Modifier / supprimer : le créateur du match, mais aussi l'admin et les
+  # co-organisateurs du tournoi auquel il est rattaché (rencontre de tournoi),
+  # pour qu'ils puissent corriger une date ou retirer une rencontre sans
+  # dépendre du joueur qui l'a créée.
   def update?
-    owner?
+    owner? || tournament_organizer?
   end
 
   def destroy?
-    owner?
+    owner? || tournament_organizer?
   end
 
   # Seul l'organisateur peut passer son match privé en public
@@ -35,6 +39,12 @@ class MatchPolicy < ApplicationPolicy
   # Vérifie que l'utilisateur connecté est le créateur du match
   def owner?
     record.user == user
+  end
+
+  # L'utilisateur organise-t-il (admin ou co-organisateur) le tournoi du match ?
+  # Faux pour un match indépendant (sans tournoi).
+  def tournament_organizer?
+    record.tournament.present? && record.tournament.organizer?(user)
   end
 
   class Scope < ApplicationPolicy::Scope

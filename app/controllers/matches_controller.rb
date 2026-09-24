@@ -172,7 +172,7 @@ class MatchesController < ApplicationController
     authorize @match
 
     # Valeurs par défaut explicites
-    @match.date            = Date.today        # Date : aujourd'hui
+    @match.date            = Date.current      # Date : aujourd'hui (fuseau de l'app, pas celui du serveur)
     @match.players_needed  = 4                 # Joueurs recherchés : 4 par défaut
     @match.validation_mode = "automatic"       # Validation : automatique par défaut
     @match.time            = default_match_time # Heure : +30 min arrondie au quart d'heure
@@ -319,9 +319,18 @@ class MatchesController < ApplicationController
   def destroy
     authorize @match
 
+    # Capturé AVANT la suppression : une rencontre de tournoi (supprimée par un
+    # joueur ou par un organisateur) renvoie au tournoi, où la carte repasse à
+    # « Créer la rencontre » (has_one :match, dependent: :nullify).
+    tournament = @match.tournament
+
     MatchCancellationService.new(match: @match).call
 
-    redirect_to matches_path, notice: "Match supprimé."
+    if tournament
+      redirect_to tournament_path(tournament), notice: "Rencontre supprimée."
+    else
+      redirect_to matches_path, notice: "Match supprimé."
+    end
   end
 
   # PATCH /matches/:id/make_public
@@ -670,10 +679,18 @@ class MatchesController < ApplicationController
     # leur créneau (un tournoi n'a d'ailleurs plus d'heure de début, cf. Lot 7).
     @match.venue_id = tm.tournament.venue_id if tm.tournament.venue_id.present?
     @match.place    = tm.tournament.place    if tm.tournament.place.present?
-    @match.date     = tm.tournament.date     if tm.tournament.date.present?
-    if tm.tournament.time.present?
-      @match.time     = tm.tournament.time
-      @match.end_time = @match.time + 1.hour # le défaut posé dans `new` (basé sur l'heure courante) ne vaut plus une fois `time` écrasée
+    #
+    # ⚠️  `tournaments.date` est la date de DÉBUT du tournoi. Un tournoi qui s'étale
+    # sur plusieurs jours (critérium fédéral, championnat…) la dépasse vite : la
+    # recopier proposerait une date passée. On ne reprend donc la date et l'heure
+    # du tournoi que s'il n'a pas encore commencé ; sinon on garde les défauts
+    # posés dans `new` (aujourd'hui, prochain quart d'heure).
+    if tm.tournament.date.present? && tm.tournament.date > Date.current
+      @match.date = tm.tournament.date
+      if tm.tournament.time.present?
+        @match.time     = tm.tournament.time
+        @match.end_time = @match.time + 1.hour # le défaut posé dans `new` (basé sur l'heure courante) ne vaut plus une fois `time` écrasée
+      end
     end
     @match.banner_image = tournament_banner_image(tm)
   end
