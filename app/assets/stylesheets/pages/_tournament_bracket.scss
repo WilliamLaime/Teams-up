@@ -2583,6 +2583,36 @@
 
       th, td { padding: 0.4rem 0.45rem; }
       .is-rank { width: 1.9rem; }
+
+      // Le nom passe à la ligne plutôt que d'élargir la table : sans ça, nom +
+      // pastille « Toi » + icône de destination poussaient V / D hors du cadre et
+      // déclenchaient un scroll horizontal. `table-layout: fixed` fige les
+      // colonnes #, V et D ; la colonne Joueur prend le reste, pas davantage.
+      table-layout: fixed;
+
+      th:not(.is-rank):not(.is-player) { width: 2rem; }
+
+      // Espacements resserrés : quelques pixels rendus au nom, pour qu'un prénom
+      // tienne en entier sur un téléphone de 320 px.
+      .is-player { gap: 0.35rem; }
+
+      .tournament-ranking__player-link {
+        flex: 0 1 auto;
+        min-width: 0;
+        gap: 0.4rem;
+      }
+
+      // Le <span> du NOM seulement : les pastilles (« Toi », forfait) et les
+      // icônes restent entières (flex: 0 0 auto). Retour à la ligne plutôt
+      // qu'une troncature « … » : sur mobile il ne restait parfois qu'une
+      // lettre du nom. `overflow-wrap: break-word` ne casse qu'en dernier recours un
+      // nom d'un seul mot trop long pour la colonne.
+      .tournament-ranking__player-link span {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: break-word;
+        line-height: 1.2;
+      }
     }
   }
 
