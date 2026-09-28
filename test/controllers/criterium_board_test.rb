@@ -159,13 +159,31 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_select ".phase-nav__pill", 5
   end
 
-  test "l'onglet Classement se rend avec le barème points-parties du règlement" do
+  test "l'onglet Classement affiche les points-parties FFTT, pas le nombre de victoires" do
     play_until_barrages!
+    # Poules de 4 terminées : 3 matchs chacun, donc Pts = 2 V + 1 D = V + 3.
+    # Avec l'ancien affichage (ranking_points = victoires), Pts valait V.
+    expected = @tournament.reload.pool_standings.values.flat_map(&:rows).map(&:points)
 
     sign_in @owner
     get tournament_path(@tournament, tab: "ranking")
 
     assert_response :success
+    shown = css_select(".tournament-ranking .is-pts").map { |td| td.text.strip.to_i }
+    assert_equal expected.sort, shown.sort
+    assert(shown.all? { |pts| pts >= 3 }, "3 matchs joués = au moins 3 points-parties")
+    assert_select ".tournament-ranking__rules", text: /Victoire 2 pts · défaite 1 pt · forfait 0 pt/
+  end
+
+  test "la table compacte d'une poule en cours affiche Pts et annonce un classement provisoire" do
+    TournamentEngine.for(@tournament).next_round!
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select ".tournament-ranking__table--compact th", text: "Pts"
+    assert_select ".pool-view__standings .tournament-ranking__rules", text: /classement provisoire/
   end
 
   test "l'onglet Classement affiche les places finales une fois le tournoi terminé" do
@@ -197,7 +215,7 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
   test "la carte d'un joueur exempt garde le gabarit d'une carte de rencontre" do
     odd = Tournament.create!(name: "Critérium impair", sport: @sport, user: @owner,
                              format: "criterium_federal", status: "in_progress", max_players: 17,
-                             players_per_pool: 3, final_phase_mode: "standard",
+                             final_phase_mode: "standard",
                              date: Date.tomorrow, place: "Salle test")
     17.times do |i|
       user = create_test_user(email: "odd#{i}@example.com")
@@ -207,9 +225,12 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
 
     # Jusqu'aux barrages : c'est là que la carte d'un exempt est visible. En phase de
     # poules, le bye n'est pas affiché du tout (TournamentsHelper#pool_matches les
-    # écarte) — 6 poules dont une de 2, donc un 2e sans 3e à affronter, qui monte au
-    # tableau final d'office.
+    # écarte). 17 joueurs → [4, 4, 3, 3, 3] ; un joueur d'une poule de 3 abandonne
+    # le tournoi d'emblée : il finit 3e, est écarté des barrages, et un 2e se
+    # retrouve sans 3e à affronter — il monte au tableau final d'office.
     TournamentEngine.for(odd).next_round!
+    leaver = odd.tournament_users.players.approved.group_by(&:pool).values.find { |members| members.size == 3 }.first
+    WithdrawPlayer.new(odd, leaver).call!
     20.times do
       break if odd.barrage_rounds.exists?
 
@@ -222,7 +243,7 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     end
 
     bye = odd.barrage_rounds.first.tournament_matches.find_by(is_bye: true)
-    assert bye, "la poule de 2 doit produire un exempt au tour de barrages"
+    assert bye, "le 3e parti doit laisser un exempt au tour de barrages"
 
     sign_in @owner
     get tournament_path(odd)
@@ -418,4 +439,27 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".phase-nav__pill[data-phase=?]", "classification", text: /Matchs de classement/
   end
+
+  # En poule, le forfait ne vaut que pour le match : le joueur reste en lice.
+  test "forfait sur un match de poule : le joueur reste actif et la modale l'annonce" do
+    TournamentEngine.for(@tournament).next_round!
+    match = @tournament.tournament_matches.joins(:tournament_round)
+                       .where(tournament_rounds: { phase: "pool" }, is_bye: false).first
+
+    sign_in @owner
+    get tournament_path(@tournament)
+    assert_select "#tmatch_#{match.id} [data-tournament-score-forfeit-scope-param*=?]", "pour ce match"
+
+    patch forfeit_tournament_tournament_match_path(@tournament, match),
+          params: { tournament_match: { retired_player_id: match.player_b_id,
+                                        games_a: [11, 6], games_b: [3, 4] } },
+          as: :turbo_stream
+
+    assert_response :success
+    match.reload
+    assert_equal [[11, 3], [11, 4], [11, 0]], match.sets
+    assert_equal match.player_a_id, match.winner_id
+    assert_equal "active", match.player_b.reload.state
+  end
+
 end

@@ -1,5 +1,9 @@
 # ── Service WithdrawPlayer ────────────────────────────────────────────────────
-# Déclare le forfait / l'abandon d'un joueur (Lot 5) :
+# Déclare le forfait d'un joueur pour TOUT LE RESTE du tournoi (Lot 5). Le forfait
+# sur UN seul match de poule, qui laisse le joueur disputer la suite, est porté
+# par ForfeitMatch — qui délègue ici pour un forfait en phase finale.
+#
+# Étapes :
 #   1. passe son inscription en state "withdrawn" ;
 #   2. transforme ses matchs NON décidés (présents, tous formats confondus) en
 #      victoires par forfait pour l'adversaire (cf. TournamentMatch#derive_winner_from_sets) ;

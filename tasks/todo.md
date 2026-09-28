@@ -1,3 +1,32 @@
+# Critérium Fédéral : fiabiliser les règles (classement, forfaits, phase finale)
+
+Branche `fix-criterium-regles` — plan validé le 28 septembre 2026.
+
+- [x] 1. Départage provisoire : ex-æquo non rencontrés → quotients sur toute la poule (`PoolStandings`)
+- [x] 2. Table de classement Critérium alimentée par `PoolStandings` (Pts 2/1/0, visible aussi en compact, légende)
+- [x] 3. Barrage : un 2e forfait ne fait plus disparaître le meilleur 3e (`avoid_same_pool`)
+- [x] 4. `qualified` remis à `active` quand un joueur sort du tableau après une correction
+- [x] 5. Scores de forfait : 11-0 par manche, et complétion d'un match interrompu (11-3 6-4 → 11-3 11-4 11-0)
+- [x] 5 bis. Forfait sur UN match de poule, sans bloquer la suite ; forfait en phase finale = reste du tournoi
+- [x] 6. Taille des poules : une taille demandée donne toujours un découpage conforme (3 ou 4, jamais de poule de 2)
+- [x] 7. Consolante des poules de tailles mixtes : tailles et libellés d'après les entrants réels
+- [x] 8. Queue du classement final en quotients (même clé que `CriteriumFlow#by_strength`)
+- [x] 9. Refuser une manche saisie après la fin du match
+- [x] 10. Leçon dans `tasks/lessons.md`, doc `docs/TOURNOI.md`
+- [x] Tests : suite complète verte (1441 runs), rubocop au niveau de master
+- [ ] Recette navigateur : modale de forfait (poule / phase finale), table compacte avec Pts et légende
+- [ ] Prod : `railway ssh --service Teams-up bin/rails tournaments:backfill_forfeit_scores` (simulation, puis APPLY=1)
+
+À trancher plus tard (hors périmètre) :
+- [ ] Joueurs d'une même poule dans des moitiés de tableau opposées (aujourd'hui, seul le 1er tour est protégé)
+- [ ] `bracket_size` proposé dans le formulaire du Critérium mais ignoré par le moteur : le masquer ?
+- [ ] Phase finale au meilleur des 7 ou des 5 manches : confirmer avec le règlement
+- [ ] Classement d'un joueur qui abandonne le tournoi pendant les poules (dernier ?)
+- [ ] Re-seeding des vainqueurs de barrage ; consolante qui mélange 4es et perdants de barrage
+- [ ] Serpentin sur le classement officiel plutôt que sur le tirage au sort
+
+---
+
 # Notifications de chat : cloche immédiate + mail regroupé sur 3 min
 
 Branche `mail-notification-messages` — plan validé le 23 septembre 2026.

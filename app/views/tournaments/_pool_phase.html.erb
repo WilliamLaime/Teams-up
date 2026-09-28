@@ -90,7 +90,8 @@
                 le sens ; la légende, elle, ne tiendrait pas dans ~300px. %>
             <%= render "tournaments/ranking_table", players: players, tournament: tournament,
                                                     compact: true,
-                                                    destinations: show_pool_destinations?(tournament) %>
+                                                    destinations: show_pool_destinations?(tournament),
+                                                    standings: (tournament.pool_standings[index] if tournament.criterium?) %>
           </aside>
         </div>
       <% end %>

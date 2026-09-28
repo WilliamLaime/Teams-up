@@ -33,6 +33,7 @@
             contient qu'avatar + nom (cf. l'en-tête du fichier). Le score reste
             affiché quand il existe — un forfait n'en a pas. %>
         <% if match.score_entered? %>
+          <%= forfeit_flag_tag(match, player) %>
           <span class="bracket-cell__score"><%= match.display_score_for(player) %></span>
         <% else %>
           <span class="bracket-cell__score"><%= forfeit_mark_tag(match, player) || "–" %></span>

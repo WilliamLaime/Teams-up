@@ -880,10 +880,25 @@ class Tournament < ApplicationRecord
     return requested_pool_count.clamp(1, [count, 1].max) if requested_pool_count.present?
 
     size = players_per_pool.presence
+    return criterium_pool_count_for_size(count, size) if size && criterium?
     return [(count / size.to_f).ceil, 1].max if size
     return criterium_pool_count_for(count) if criterium?
 
     [(count / DEFAULT_POOL_SIZE.to_f).ceil, 1].max
+  end
+
+  # Critérium avec une taille de poule demandée : le simple arrondi supérieur
+  # produit des découpages que le règlement interdit — 17 joueurs par 3 donnent
+  # [3, 3, 3, 3, 3, 2] (une poule de 2), 7 par 3 donnent [3, 2, 2] (trois poules
+  # sans aucune phase finale). On retient donc le nombre de poules le plus proche
+  # de la taille demandée QUI DONNE UN DÉCOUPAGE CONFORME (cf.
+  # #criterium_poolable_plan?) : arrondi supérieur d'abord (poules de `size` ou
+  # moins), inférieur ensuite (poules de `size` ou plus) — 17 par 3 → [4, 4, 3, 3, 3].
+  # Aucun des deux ne convient → les paliers du règlement.
+  def criterium_pool_count_for_size(count, size)
+    candidates = [(count / size.to_f).ceil, (count / size.to_f).floor].select(&:positive?).uniq
+    candidates.find { |pools| criterium_poolable_plan?(balanced_plan(count, pools)) } ||
+      criterium_pool_count_for(count)
   end
 
   # Les seuils du document de référence. Volontairement écrits en clair plutôt que

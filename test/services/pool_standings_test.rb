@@ -219,6 +219,53 @@ class PoolStandingsTest < ActiveSupport::TestCase
                  "déterminisme : indispensable pour qu'une correction de score rebâtisse le même classement"
   end
 
+  # ── Classement provisoire : ex-æquo qui ne se sont pas encore rencontrés ────
+  # Cas réel (poule C) : sans confrontation directe, le sous-groupe restreint est
+  # VIDE — tous les quotients y valent 0.0 et l'ancien code tombait sur le tirage
+  # au sort, c'est-à-dire l'ordre d'inscription dans la poule.
+
+  test "provisoire : ex-æquo non rencontrés → quotient de manches sur toute la poule" do
+    a, b, c = players(3)
+    # b (draw_order 1) passerait devant c (draw_order 2) au tirage : le test ne
+    # passe que si le quotient de manches est réellement appliqué.
+    beat!(a, b, SWEEP)                                     # b : 0 manche gagnée, 3 perdues
+    beat!(a, c, [[11, 5], [5, 11], [11, 5], [11, 5]])      # c : 1 manche gagnée, 3 perdues
+
+    standing = standings([a, b, c])
+    rows = standing.rows.index_by { |row| row.player.id }
+    assert_equal [1, 1], [rows[b.id].points, rows[c.id].points], "une défaite jouée chacun"
+
+    assert_equal [a.id, c.id, b.id], standing.ordered.map(&:id),
+                 "c (1/3) devant b (0/3) : le tirage au sort ne doit pas trancher"
+  end
+
+  test "provisoire : ex-æquo non rencontrés, manches égales → quotient de points sur toute la poule" do
+    a, b, c = players(3)
+    beat!(a, b, SWEEP)   # b : 0 point marqué
+    beat!(a, c, NARROW)  # c : 27 points marqués, manches identiques (0-3)
+
+    assert_equal [a.id, c.id, b.id], standings([a, b, c]).ordered.map(&:id),
+                 "c a marqué plus de points que b pour le même 0-3"
+  end
+
+  test "provisoire : ex-æquo déjà rencontrés → la confrontation directe prime sur le global" do
+    # `c` reçoit draw_order 1 et `b` draw_order 2 : au tirage, c passerait devant.
+    a, c, b, d = players(4)
+    beat!(b, c, NARROW)  # b bat c : c'est lui qui doit passer devant
+    beat!(c, d, SWEEP)   # c écrase d → meilleur quotient de points GLOBAL que b
+    beat!(d, b, NARROW)
+    beat!(a, d, SWEEP)
+
+    standing = standings([a, b, c, d])
+    rows = standing.rows.index_by { |row| row.player.id }
+    assert_equal [3, 3], [rows[b.id].points, rows[c.id].points], "b et c : 1 V - 1 D chacun"
+    assert rows[c.id].points_won.fdiv(rows[c.id].points_lost) >
+           rows[b.id].points_won.fdiv(rows[b.id].points_lost),
+           "le quotient global donnerait l'ordre inverse"
+
+    assert_equal [d.id, b.id, c.id, a.id], standing.ordered.map(&:id)
+  end
+
   # ── Quotients : cas limites ─────────────────────────────────────────────────
 
   test "quotient : aucune manche concédée = avantage maximal, 0/0 = neutre" do

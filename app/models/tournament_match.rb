@@ -41,6 +41,9 @@ class TournamentMatch < ApplicationRecord
 
   # Un bye est gagné d'office par player_a dès sa création.
   before_validation :resolve_bye, on: :create
+  # Un forfait reçoit un score complet AVANT la validation : une manche entamée
+  # (6-4) serait sinon refusée comme « score invalide ».
+  before_validation :complete_forfeit_sets
   # Le vainqueur découle du score : recalculé avant chaque sauvegarde.
   before_save :derive_winner_from_sets
   # …et la carte Slack de la rencontre suit le score. Posé ICI, sur le modèle, et
@@ -243,6 +246,53 @@ class TournamentMatch < ApplicationRecord
     self.status = "pending"
   end
 
+  # ── Score d'un forfait (mode :sets) ───────────────────────────────────────────
+  # Règle du Critérium, confirmée par l'organisateur :
+  #   • forfait AVANT le match → `target`-0 à chaque manche (11-0 au ping-pong),
+  #     jusqu'au nombre de manches gagnantes : 3-0 en poule, 4-0 au meilleur des 7 ;
+  #   • forfait PENDANT le match → le score en cours est conservé, la manche
+  #     entamée est terminée au profit de l'adversaire, puis `target`-0 jusqu'au
+  #     bout. Ex. 11-3, 6-4 puis forfait → 11-3, 11-4, 11-0.
+  # Les manches déjà gagnées par le joueur forfait restent à son crédit.
+  #
+  # Idempotent (un score complet n'est plus touché) et sans effet hors forfait,
+  # sur un bye, ou quand le joueur forfait n'est pas identifié (aucun vainqueur à
+  # créditer). Un score aberrant (15-3) n'est pas « complété » : il reste refusé.
+  def complete_forfeit_sets
+    return unless forfeit && !is_bye && forfeit_winner_id.present?
+
+    rules = scoring_rules
+    return unless rules[:mode] == :sets && sets_to_win
+
+    side  = forfeit_winner_id == player_a_id ? 0 : 1
+    games = normalized_sets.map { |pair| side.zero? ? pair : pair.reverse } # [vainqueur, forfait]
+    games[-1] = finish_set(*games.last, rules) if games.any? && unfinished_set?(*games.last, rules)
+    games << [rules[:target], 0] while games.count { |won, lost| won > lost } < sets_to_win
+
+    self.sets = games.map { |pair| side.zero? ? pair : pair.reverse }
+  end
+
+  # Manche entamée mais pas terminée : personne n'a encore atteint la cible avec
+  # l'écart requis, et elle pouvait encore se jouer (plafond non atteint).
+  def unfinished_set?(won, lost, rules)
+    return false if valid_set?(won, lost, rules)
+
+    hi = [won, lost].max
+    return false if rules[:cap] && hi >= rules[:cap]
+    return hi < rules[:target] unless rules[:win_by_two]
+
+    hi < rules[:target] || (hi - [won, lost].min) < 2
+  end
+
+  # Termine une manche entamée au profit du vainqueur : il atteint la cible, ou
+  # dépasse d'un écart suffisant le score du forfait (10-10 → 12-10), sans jamais
+  # franchir le plafond (tennis 6-6 → 7-6).
+  def finish_set(_won, lost, rules)
+    points = [rules[:target], lost + (rules[:win_by_two] ? 2 : 1)].max
+    points = [points, rules[:cap]].min if rules[:cap]
+    [points, lost]
+  end
+
   # Vainqueur d'un forfait : l'adversaire du joueur ayant abandonné. Si le joueur
   # abandonnaire n'est pas identifié, on ne décide rien (winner nil).
   def forfeit_winner_id
@@ -294,6 +344,25 @@ class TournamentMatch < ApplicationRecord
       elsif !valid_set?(a, b, rules)
         errors.add(:sets, "set #{index + 1} : score invalide (#{a}-#{b}) — #{rule_reminder_for_set(rules)}")
       end
+    end
+
+    validate_no_set_after_end
+  end
+
+  # Le match s'arrête dès qu'un joueur a ses manches gagnantes : un 3-0 suivi d'un
+  # 0-11 n'a pas pu se jouer. Le vainqueur n'en change pas, mais ce set fantôme
+  # fausserait les quotients de manches et de points (départage des poules).
+  def validate_no_set_after_end
+    needed = sets_to_win
+    return if needed.nil?
+
+    won = [0, 0]
+    normalized_sets.each_with_index do |(a, b), index|
+      if won.max >= needed
+        errors.add(:sets, "set #{index + 1} : saisi après la fin du match (#{won.max} manches gagnées suffisaient)")
+        return
+      end
+      won[a > b ? 0 : 1] += 1 if a != b
     end
   end
 

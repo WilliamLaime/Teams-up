@@ -49,6 +49,38 @@
           </div>
 
           <p class="score-modal__hint" data-tournament-score-target="hint"></p>
+
+          <%# Forfait (organisateur, match à trancher) : affiché par le contrôleur
+              quand la carte fournit une URL de forfait (cf. score_modal_button).
+              Choisir un joueur bascule le formulaire vers
+              TournamentMatchesController#forfeit : le score saisi est celui du
+              moment de l'arrêt — vide = forfait avant le match — et le serveur le
+              complète (cf. TournamentMatch#complete_forfeit_sets). La portée du
+              forfait (ce match ou le reste du tournoi) est annoncée AVANT validation. %>
+          <fieldset class="score-modal__forfeit" data-tournament-score-target="forfeit" hidden>
+            <legend class="score-modal__forfeit-legend">Forfait</legend>
+            <div class="score-modal__forfeit-options">
+              <label class="score-modal__forfeit-option">
+                <input type="radio" name="tournament_match[retired_player_id]" value="" checked
+                       data-tournament-score-target="forfeitNone"
+                       data-action="change->tournament-score#toggleForfeit">
+                Aucun
+              </label>
+              <label class="score-modal__forfeit-option">
+                <input type="radio" name="tournament_match[retired_player_id]"
+                       data-tournament-score-target="forfeitA"
+                       data-action="change->tournament-score#toggleForfeit">
+                <span data-tournament-score-target="forfeitNameA"></span>
+              </label>
+              <label class="score-modal__forfeit-option">
+                <input type="radio" name="tournament_match[retired_player_id]"
+                       data-tournament-score-target="forfeitB"
+                       data-action="change->tournament-score#toggleForfeit">
+                <span data-tournament-score-target="forfeitNameB"></span>
+              </label>
+            </div>
+            <p class="score-modal__forfeit-hint" data-tournament-score-target="forfeitHint"></p>
+          </fieldset>
         </div>
 
         <div class="modal-footer">

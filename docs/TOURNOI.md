@@ -207,6 +207,12 @@ règlement est que **chaque place se joue** — pas seulement la première.
       `ranking_points_rules`, que la ronde suisse utilise à nombre de matchs inégal). Départage
       **restreint au sous-groupe d'ex æquo** et récursif : confrontation directe → **quotient**
       de manches → quotient de points → `draw_order`. Quotients, pas différences.
+      **Classement provisoire** : tant que les ex æquo ne se sont pas tous rencontrés, le
+      sous-groupe restreint est vide ou incomplet — on saute la confrontation directe et les
+      quotients portent sur **toute la poule**. Une poule terminée reste classée strictement au
+      règlement. La table de classement du Critérium lit **ses chiffres dans `PoolStandings`**
+      (Pts = points-parties, visibles aussi en vue compacte ; manches/points en « gagnés-perdus »)
+      avec le barème en légende : l'ordre et les chiffres affichés viennent de la même source.
 - [x] **Déclaration de structure** (`CriteriumStructure`) : pur Ruby, aucune base. Une seule
       récursion produit tous les chiffres du règlement — pour un tableau de `size` places dont
       la première est `offset`, les perdants du tour `r` sont `size / 2**r` joueurs qui se
@@ -215,8 +221,8 @@ règlement est que **chaque place se joue** — pas seulement la première.
       disputent les places 9-16 dans un vrai tableau de 8, qui reclasse lui-même ses perdants
       en 13-16 puis 15-16, exactement comme les 2 perdants de demi-finale disputent la 3e place.
       Il n'y a donc **jamais d'ex æquo** ; le seul rang partagé possible vient de
-      `TournamentStandings#tail_groups` (joueurs qu'aucun tableau ne classe), départagé au
-      quotient de manches puis de points comme partout ailleurs (`Tournament#rank_key`).
+      `TournamentStandings#tail_groups` (joueurs qu'aucun tableau ne classe), ordonné avec la
+      clé du seeding (`CriteriumFlow#rank_by_strength` : points-parties par match, puis quotients).
       À 32 joueurs (8 poules de 4) : **17 nœuds** et **120 matchs** (48 en poules, 8 barrages,
       32 par côté) — soit 4 matchs de tableau par joueur, `n/2 × log2(n)` matchs pour n places.
 - [x] **Moteur** (`CriteriumFlow`) : un **réconciliateur**, pas une machine à états. Chaque appel
@@ -231,7 +237,11 @@ règlement est que **chaque place se joue** — pas seulement la première.
 - [x] **Variantes par effectif** (`Tournament#criterium_mode`, colonne `final_phase_mode` = simple
       échappatoire) : ≤ 7 → poule unique, le classement final **est** celui de la poule ;
       8-16 → « classement intégral », un tableau unique, sans barrage ni consolante ;
-      ≥ 17 → barrages + tableau + consolante. Le mode ne change que l'ENTRÉE dans le tableau :
+      ≥ 17 → barrages + tableau + consolante. Poules de **3 ou 4 uniquement** : une taille de
+      poule demandée retient le nombre de poules le plus proche qui donne un découpage conforme
+      (17 par 3 → 4-4-3-3-3, jamais de poule de 2 ; `Tournament#criterium_pool_count_for_size`).
+      La consolante est dimensionnée sur ses entrants réels (perdants de barrage + 4es des seules
+      poules de 4). Le mode ne change que l'ENTRÉE dans le tableau :
       l'arbre de classement d'un tableau de 16 est le même dans les deux cas. `pool_plan` décrit la taille de chaque poule
       (11 joueurs → 4-4-3) et devient la source unique de `pool_count`, du dimensionnement du
       tableau et de `structure_summary` (miroir JS compris).
@@ -246,6 +256,19 @@ règlement est que **chaque place se joue** — pas seulement la première.
       bons et ne détruit qu'à partir de lui — `id` croissant **est** l'ordre causal. Les scores
       d'une branche voisine (consolante) survivent. Un abandon en phase finale pose un forfait et
       les tours suivants naissent quand même (`build_match!`), sinon la branche resterait ouverte.
+      L'état `qualified` est **dérivé** à chaque avancée des joueurs du 1er tour du tableau final
+      (`CriteriumFlow#sync_qualified!`) : une reconstruction ne laisse plus d'icône « Qualifié »
+      périmée. Un 2e de poule parti laisse un **bye** au 3e le plus fort (il n'est plus perdu).
+- [x] **Forfaits** (règle confirmée par l'organisateur) : déclarés depuis la modale de score
+      (`ForfeitMatch`, `PATCH …/tournament_matches/:id/forfeit`, organisation seulement).
+      En **poule**, le forfait ne vaut que pour **ce match** : le joueur dispute tous ses matchs
+      suivants, reste classé (0 pt) et garde son accès au barrage / tableau / consolante. En
+      **phase finale**, forfait pour le reste du tournoi, matchs de classement compris
+      (`WithdrawPlayer`). Score : avant le match 11-0 à chaque manche (3-0, 4-0 au meilleur des 7) ;
+      pendant le match, score conservé, manche entamée terminée pour l'adversaire, puis 11-0
+      (11-3 6-4 → 11-3 11-4 11-0) — `TournamentMatch#complete_forfeit_sets`. Les forfaits
+      antérieurs (0-0) se rattrapent avec `rails tournaments:backfill_forfeit_scores` (dry-run
+      par défaut). Une manche saisie après la fin du match est refusée.
 
 ### ✅ Refonte UI (post-Lot 8) — phase de poules centrée sur la poule `[FAIT]`
 La phase de poules était organisée **par journée** (`_round_ribbon` paginé → `_round_column`

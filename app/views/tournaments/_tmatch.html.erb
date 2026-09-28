@@ -45,6 +45,7 @@
         <%# display_score_for (pas sets_won_by) : en mode :score (sports co), affiche
             le vrai score marqué, pas juste 0/1 "set" gagné. %>
         <% if match.score_entered? %>
+          <%= forfeit_flag_tag(match, player) %>
           <span class="tmatch-card__sets"><%= match.display_score_for(player) %></span>
         <% else %>
           <%# Forfait : aucun set à afficher, mais le match est bien tranché.

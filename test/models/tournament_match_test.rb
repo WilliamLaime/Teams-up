@@ -274,6 +274,18 @@ class TournamentMatchTest < ActiveSupport::TestCase
       assert(m.errors[:sets].any? { |msg| msg.include?("trop de sets") })
     end
 
+    # Un match s'arrête dès qu'un joueur a ses manches gagnantes : un 3-0 suivi
+    # d'un 0-11 n'a pas pu se jouer, et ce set fantôme faussait les quotients de
+    # départage (manches et points) sans changer le vainqueur.
+    test "une manche saisie après la fin du match est refusée" do
+      m = match_in("pool", [[11, 5], [11, 6], [11, 7], [0, 11]])
+      refute m.valid?
+      assert(m.errors[:sets].any? { |msg| msg.include?("après la fin du match") })
+
+      assert match_in("pool", [[11, 5], [5, 11], [11, 7], [11, 9]]).valid?,
+             "3-1 : la 4e manche est bien celle qui conclut"
+    end
+
     test "phase finale : jusqu'à 7 sets, le 8e est refusé" do
       assert match_in("bracket", [[11, 0], [0, 11], [11, 0], [0, 11], [11, 0], [0, 11], [11, 0]]).valid?,
              "7 sets sont valides en phase finale"
@@ -371,5 +383,106 @@ class TournamentMatchTest < ActiveSupport::TestCase
         match.save!
       end
     end
+  end
+end
+
+# ── Score d'un forfait (règle confirmée par l'organisateur, Critérium FFTT) ─────
+#   • forfait AVANT le match : 11-0 à chaque manche, jusqu'au nombre de manches
+#     gagnantes (3-0 en poule, 4-0 en phase finale au meilleur des 7) ;
+#   • forfait PENDANT le match : le score en cours est conservé, la manche
+#     entamée est terminée au profit de l'adversaire, puis 11-0 jusqu'au bout.
+#     Ex. 11-3, 6-4 puis forfait → 11-3, 11-4, 11-0.
+# Sans cela, un forfait valait 0-0 : aucune manche, aucun point, et les quotients
+# de départage ignoraient purement et simplement la partie.
+class TournamentMatchForfeitScoreTest < ActiveSupport::TestCase
+  def setup
+    @sport = Sport.create!(name: "Ping Pong", slug: "ping-pong", icon: "🏓")
+    @tournament = Tournament.create!(name: "PP forfait", sport: @sport, format: "poules",
+                                     status: "in_progress", max_players: 8,
+                                     date: Date.tomorrow, place: "Salle test")
+    @a = player("fa")
+    @b = player("fb")
+  end
+
+  def teardown
+    teardown_db
+  end
+
+  def player(tag)
+    @tournament.tournament_users.create!(user: create_test_user(email: "#{tag}-#{SecureRandom.hex(3)}@t.fr"),
+                                        role: "joueur", status: "approved")
+  end
+
+  def forfeit_match(phase: "pool", sets: [], retired: @b)
+    round = @tournament.tournament_rounds.create!(phase: phase, number: 1, status: "in_progress")
+    match = round.tournament_matches.new(player_a: @a, player_b: @b, position: 0,
+                                         forfeit: true, retired_player: retired)
+    match.assign_score(sets)
+    match.save!
+    match
+  end
+
+  test "forfait avant le match, en poule : 11-0 11-0 11-0" do
+    match = forfeit_match
+
+    assert_equal [[11, 0], [11, 0], [11, 0]], match.sets
+    assert_equal @a.id, match.winner_id
+    assert_equal "completed", match.status
+  end
+
+  test "forfait avant le match, côté A : les manches sont orientées vers B" do
+    match = forfeit_match(retired: @a)
+
+    assert_equal [[0, 11], [0, 11], [0, 11]], match.sets
+    assert_equal @b.id, match.winner_id
+  end
+
+  test "forfait avant le match, en phase finale (meilleur des 7) : quatre manches à 11-0" do
+    assert_equal [[11, 0]] * 4, forfeit_match(phase: "bracket").sets
+  end
+
+  test "forfait pendant le match : score conservé, manche entamée terminée, puis 11-0" do
+    match = forfeit_match(sets: [[11, 3], [6, 4]])
+
+    assert_equal [[11, 3], [11, 4], [11, 0]], match.sets
+  end
+
+  test "forfait pendant le match : les manches gagnées par le forfait restent à son crédit" do
+    # b mène 2 manches à 0, puis déclare forfait : a gagne la partie 3-2.
+    match = forfeit_match(sets: [[3, 11], [5, 11], [2, 1]])
+
+    assert_equal [[3, 11], [5, 11], [11, 1], [11, 0], [11, 0]], match.sets
+    assert_equal @a.id, match.winner_id
+  end
+
+  test "forfait pendant le match : manche entamée à 10-10 → terminée à 12-10" do
+    assert_equal [[12, 10], [11, 0], [11, 0]], forfeit_match(sets: [[10, 10]]).sets
+  end
+
+  test "forfait pendant le match : manche entamée menée par le forfait → terminée pour l'adversaire" do
+    assert_equal [[11, 8], [11, 0], [11, 0]], forfeit_match(sets: [[3, 8]]).sets
+  end
+
+  test "complétion idempotente : re-sauvegarder un forfait ne rajoute aucune manche" do
+    match = forfeit_match(sets: [[11, 3], [6, 4]])
+    match.save!
+
+    assert_equal [[11, 3], [11, 4], [11, 0]], match.reload.sets
+  end
+
+  test "un score aberrant n'est pas « complété » : il reste refusé" do
+    round = @tournament.tournament_rounds.create!(phase: "pool", number: 1, status: "in_progress")
+    match = round.tournament_matches.new(player_a: @a, player_b: @b, position: 0,
+                                         forfeit: true, retired_player: @b)
+    match.assign_score([[15, 3]])
+
+    refute match.valid?
+  end
+
+  test "les manches du forfait comptent dans les quotients : 3-0 et 33-0" do
+    match = forfeit_match
+
+    assert_equal [3, 0], [match.sets_won_by(@a), match.sets_won_by(@b)]
+    assert_equal [33, 0], [match.points_won_by(@a), match.points_won_by(@b)]
   end
 end
