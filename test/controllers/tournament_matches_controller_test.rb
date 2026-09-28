@@ -54,15 +54,13 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     assert_select ".tmatch-card__when", text: /#{Regexp.escape(attendu)}/
   end
 
-  # ── Forfait : V / F sur la carte ────────────────────────────────────────────
-  # Un forfait n'a AUCUN set saisi : la carte tombait donc dans la branche « pas
-  # encore joué » et n'affichait qu'un tiret, alors que le classement de la poule
-  # était déjà recalculé. Le vainqueur apprenait sa victoire ailleurs que sur la
-  # carte de son propre match.
+  # ── Forfait : score complet + F sur la carte ────────────────────────────────
+  # Un forfait reçoit un score complet (cf. TournamentMatch#complete_forfeit_sets) :
+  # la carte l'affiche comme un score ordinaire, le vert désignant le vainqueur.
   #
   # Le joueur qui a déclaré forfait porte « F », pas « D » : il ne s'est pas
   # présenté, il n'a pas perdu au score, et son nom est barré.
-  test "la carte d'un match par forfait affiche V et F" do
+  test "la carte d'un match par forfait affiche le score et F" do
     @match.update!(forfeit: true, retired_player: @match.player_b)
     @match.player_b.update!(state: "withdrawn")
     @tournament.update!(status: "in_progress")
@@ -70,8 +68,10 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     get tournament_path(@tournament)
 
     assert_response :success
-    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-winner",  text: "V"
+    assert_equal [[6, 0], [6, 0]], @match.reload.sets, "tennis : 6-0 à chaque set, 2 sets gagnants"
     assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-forfeit", text: "F"
+    assert_select "#tmatch_#{@match.id} .tmatch-card__forfeit-mark.is-winner", count: 0
+    assert_select "#tmatch_#{@match.id} .tmatch-card__center-status", text: "Forfait"
     assert_select "#tmatch_#{@match.id} .tmatch-card__name.is-withdrawn",
                   text: @match.player_b.display_name
   end
@@ -240,4 +240,52 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :redirect
     assert_equal original, @match.reload.winner_id
   end
+
+  # ── Forfait sur un match (cf. ForfeitMatch) ─────────────────────────────────
+  def forfeit_params(retired, games_a: [], games_b: [])
+    { tournament_match: { retired_player_id: retired&.id, games_a: games_a, games_b: games_b } }
+  end
+
+  test "forfait : réservé à l'organisateur, un joueur ne déclare pas le forfait de son adversaire" do
+    sign_in @match.player_a.user
+    patch forfeit_tournament_tournament_match_path(@tournament, @match), params: forfeit_params(@match.player_b)
+
+    assert_response :redirect
+    refute @match.reload.forfeit?
+  end
+
+  test "forfait : sans joueur désigné, rien n'est enregistré et la modale affiche l'erreur" do
+    sign_in @admin
+    patch forfeit_tournament_tournament_match_path(@tournament, @match),
+          params: forfeit_params(nil), as: :turbo_stream
+
+    assert_response :unprocessable_entity
+    refute @match.reload.forfeit?
+  end
+
+  test "forfait hors poule (ronde suisse) : le joueur est forfait pour le reste du tournoi" do
+    sign_in @admin
+    patch forfeit_tournament_tournament_match_path(@tournament, @match),
+          params: forfeit_params(@match.player_b, games_a: [6, 3], games_b: [2, 1]), as: :turbo_stream
+
+    assert_response :success
+    @match.reload
+    assert @match.forfeit?
+    assert_equal [[6, 2], [6, 1]], @match.sets, "score conservé, set entamé terminé pour l'adversaire"
+    assert @match.player_b.reload.withdrawn?
+  end
+
+  test "la modale propose le forfait à l'organisateur seulement" do
+    @tournament.update!(status: "in_progress")
+
+    sign_in @admin
+    get tournament_path(@tournament)
+    assert_select "#tmatch_#{@match.id} [data-tournament-score-forfeit-url-param]"
+    assert_select "#tmatch_#{@match.id} [data-tournament-score-forfeit-scope-param=?]", "pour le reste du tournoi"
+
+    sign_in @match.player_a.user
+    get tournament_path(@tournament)
+    assert_select "#tmatch_#{@match.id} [data-tournament-score-forfeit-url-param]", count: 0
+  end
+
 end

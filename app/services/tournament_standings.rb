@@ -127,11 +127,12 @@ class TournamentStandings
            .map { |_position, group| by_strength(group) }
   end
 
-  # Clé locale, et surtout PAS un préfixe posé sur Tournament#rank_key : ce dernier
-  # sert le classement affiché de la ronde suisse et du championnat, ainsi que le
-  # seeding des tableaux — y reléguer les partants sortirait du périmètre.
+  # Même clé que le seeding des tableaux (CriteriumFlow#rank_by_strength :
+  # points-parties par match, puis QUOTIENTS de manches et de points), et non
+  # Tournament#rank_key, qui compare des différentiels — le règlement départage au
+  # quotient. Les partants sont déjà écartés en amont (cf. #tail_groups).
   def by_strength(players)
-    players.sort_by { |player| [player.withdrawn? ? 1 : 0, *@tournament.rank_key(player)] }
+    CriteriumFlow.new(@tournament).rank_by_strength(players)
   end
 
   # ── Compaction ──────────────────────────────────────────────────────────────

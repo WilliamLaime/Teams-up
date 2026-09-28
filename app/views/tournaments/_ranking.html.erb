@@ -28,8 +28,11 @@
       <% end %>
       <% tournament.ranked_pools.each do |pool_index, players| %>
         <h3 class="tournament-ranking__pool-title"><%= pool_label(pool_index) %></h3>
+        <%# Critérium : la table lit les chiffres de PoolStandings, la source qui a
+            produit l'ordre (cf. l'en-tête de _ranking_table). %>
         <%= render "tournaments/ranking_table", players: players, tournament: tournament,
-                                                destinations: destinations %>
+                                                destinations: destinations,
+                                                standings: (tournament.pool_standings[pool_index] if tournament.criterium?) %>
       <% end %>
     <% else %>
       <%= render "tournaments/ranking_table", players: tournament.ranked_players, tournament: tournament %>

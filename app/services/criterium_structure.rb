@@ -129,14 +129,10 @@ class CriteriumStructure
                    size: ok_size, offset: 1, entrants: @pool_count * 2)
   end
 
-  # Consolante : les perdants de barrage, plus les 4es de poule quand les poules
-  # sont à 4 (en poules de 3 il n'y a pas de 4e). Places ok_size + 1 et suivantes.
+  # Consolante : les perdants de barrage, plus les 4es des poules de 4 (une poule
+  # de 3 n'a pas de 4e). Places ok_size + 1 et suivantes.
   def ko_nodes
-    sources = if @players_per_pool >= 4
-                [PoolQualifiers[4], Losers["barrage", 1]]
-              else
-                [Losers["barrage", 1]]
-              end
+    sources = fourths.positive? ? [PoolQualifiers[4], Losers["barrage", 1]] : [Losers["barrage", 1]]
 
     placement_tree(prefix: "ko", key: "ko", label: "Consolante",
                    sources: sources, pairing: :seeded,
@@ -147,7 +143,20 @@ class CriteriumStructure
   # n 1ers de poule + n vainqueurs de barrage, arrondi à la puissance de 2.
   def ok_size = next_power_of_two(@pool_count * 2)
 
-  def ko_entrants = @players_per_pool >= 4 ? @pool_count * 2 : @pool_count
+  # Un perdant de barrage par poule, plus un 4e par poule de 4.
+  def ko_entrants = @pool_count + fourths
+
+  # Nombre de poules de 4. Les poules du Critérium ne font que 3 ou 4 joueurs
+  # (cf. Tournament#criterium_poolable_plan?) : chaque joueur au-delà de 3 par
+  # poule est donc un 4e — 17 joueurs en 5 poules → [4, 4, 3, 3, 3], 2 quatrièmes.
+  # Déduit de l'effectif RÉEL et non de `players_per_pool` (la plus grande poule) :
+  # sinon des poules mixtes déclaraient une consolante de 16 places pour 7
+  # entrants, avec des libellés « places 17 à 32 » et une colonne fantôme.
+  def fourths
+    return 0 if @players_per_pool < 4
+
+    (@player_count - (3 * @pool_count)).clamp(0, @pool_count)
+  end
 
   # ── Mode intégral : un seul tableau, aucun barrage ───────────────────────────
   # Tout le monde entre dans le même tableau, classé par POSITION DE POULE : les

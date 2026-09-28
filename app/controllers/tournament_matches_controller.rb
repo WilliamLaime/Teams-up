@@ -71,6 +71,30 @@ class TournamentMatchesController < ApplicationController
     end
   end
 
+  # PATCH /tournois/:tournament_id/tournament_matches/:id/forfeit
+  # Forfait d'un joueur sur CE match, avec le score au moment de l'arrêt (vide =
+  # avant le match). En poule, le joueur continue ; en phase finale, il est forfait
+  # pour le reste du tournoi (cf. ForfeitMatch, qui porte la règle).
+  def forfeit
+    @match = @tournament.tournament_matches.find(params[:id])
+    authorize @match, :forfeit?
+
+    retired = @match.players.find { |player| player.id.to_s == params.dig(:tournament_match, :retired_player_id).to_s }
+    if retired.nil?
+      @match.errors.add(:base, "Choisis le joueur qui déclare forfait")
+    elsif ForfeitMatch.new(@tournament, @match, retired, sets: sets_param).call!
+      return respond_to do |format|
+        format.turbo_stream { render_board }
+        format.html { redirect_to tournament_path(@tournament), notice: "Forfait enregistré." }
+      end
+    end
+
+    respond_to do |format|
+      format.turbo_stream { render_score_errors }
+      format.html { redirect_to tournament_path(@tournament), alert: @match.errors.full_messages.to_sentence }
+    end
+  end
+
   private
 
   def set_tournament

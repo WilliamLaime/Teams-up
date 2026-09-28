@@ -62,7 +62,8 @@
       <%= score_modal_button match,
             label: "Gérer le score",
             editable: true,
-            url: tournament_tournament_match_path(match.tournament, match) %>
+            url: tournament_tournament_match_path(match.tournament, match),
+            forfeit_url: (forfeit_tournament_tournament_match_path(match.tournament, match) if policy(match).forfeit?) %>
     <% elsif match.score_entered? %>
       <%= score_modal_button match, label: "Détail", editable: false, css_class: "tmatch-card__detail-btn" %>
     <% end %>

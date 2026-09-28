@@ -129,11 +129,12 @@
                             method: :patch,
                             class: "participant-chip__action participant-chip__action--forfeit",
                             form_class: "participant-chip__action-form",
-                            title: "Déclarer #{tu.display_name} forfait",
-                            aria: { label: "Déclarer #{tu.display_name} forfait" },
+                            title: "Déclarer #{tu.display_name} forfait pour tout le tournoi",
+                            aria: { label: "Déclarer #{tu.display_name} forfait pour tout le tournoi" },
                             data: { turbo_confirm_danger: true,
-                                    turbo_confirm_accept: "Déclarer forfait" },
-                            form: { data: { turbo_confirm: "Déclarer #{tu.display_name} forfait ? Ses matchs en cours seront perdus par forfait." } } do %>
+                                    turbo_confirm_accept: "Retirer du tournoi" },
+                            form: { data: { turbo_confirm: "Retirer #{tu.display_name} du tournoi ? Tous ses matchs restants seront perdus par forfait. " \
+                                                           "Pour un forfait sur un seul match de poule, passe par « Gérer le score » sur la carte du match." } } do %>
                 <i data-lucide="user-x" aria-hidden="true"></i>
               <% end %>
             <% end %>

@@ -52,6 +52,16 @@ class TournamentMatchPolicy < ApplicationPolicy
     user.present? && record.tournament.organizer?(user)
   end
 
+  # Déclarer le forfait d'un joueur sur ce match (cf. ForfeitMatch). Réservé à
+  # l'organisateur — un joueur ne déclare pas le forfait de son adversaire — et à
+  # un match encore à trancher : sur un match décidé, c'est une correction.
+  def forfeit?
+    return false if user.blank?
+    return false if record.is_bye || record.decided?
+
+    record.tournament.organizer?(user)
+  end
+
   private
 
   # L'utilisateur courant est-il l'un des deux joueurs de ce match ?

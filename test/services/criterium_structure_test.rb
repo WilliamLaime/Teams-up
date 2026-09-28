@@ -287,6 +287,29 @@ class CriteriumStructureTest < ActiveSupport::TestCase
 
   private
 
+  # Poules de tailles MIXTES : 17 joueurs → [4, 4, 3, 3, 3]. Seules 2 poules ont un
+  # 4e : la consolante reçoit 5 perdants de barrage + 2 quatrièmes = 7 joueurs,
+  # donc un tableau de 8 (places 17-24). L'ancienne formule (pool_count × 2 dès que
+  # la taille de poule valait 4) en déclarait 10, soit un tableau de 16 annoncé
+  # « places 17 à 32 » et une colonne fantôme.
+  test "poules mixtes : la consolante est dimensionnée sur ses entrants réels" do
+    s = structure(pool_count: 5, players_per_pool: 4, player_count: 17)
+    ko = s.node("ko")
+
+    assert_equal 7, ko.entrants
+    assert_equal 8, ko.size
+    assert_equal [17, 24], ko.places
+    assert_equal 17, s.final_phase_entrants, "aucun joueur perdu, aucun en double"
+    assert_includes ko.sources, CriteriumStructure::PoolQualifiers[4], "les 4es des poules de 4 y descendent"
+  end
+
+  test "poules de 3 uniquement : aucun 4e à attendre en consolante" do
+    ko = structure(pool_count: 5, players_per_pool: 3, player_count: 15).node("ko")
+
+    assert_equal 5, ko.entrants
+    assert_not_includes ko.sources, CriteriumStructure::PoolQualifiers[4]
+  end
+
   def structure(**params) = CriteriumStructure.new(**params)
 
   def coords(node) = [node.phase, node.branch]

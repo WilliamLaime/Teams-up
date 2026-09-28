@@ -50,6 +50,7 @@ class CriteriumFlow
       close_finished_rounds!
 
       created = [ensure_barrage!, *sync_nodes!].compact
+      sync_qualified!
       complete_if_finished!(created)
 
       created.last || current_final_round
@@ -83,6 +84,13 @@ class CriteriumFlow
       advance!
     end
   end
+
+  # Ordre de force inter-poules (cf. #by_strength), exposé pour le classement
+  # final (TournamentStandings#tail_groups) : un joueur qu'aucun tableau ne classe
+  # doit être ordonné selon la MÊME clé que celle qui a seedé les tableaux —
+  # points-parties par match, puis quotients — et non selon Tournament#rank_key,
+  # qui compare des différentiels.
+  def rank_by_strength(players) = by_strength(players)
 
   private
 
@@ -147,9 +155,12 @@ class CriteriumFlow
   # CROISSANTE : le meilleur 2e affronte le plus faible 3e, ce qui récompense le
   # classement de poule. Puis réparation des collisions « même poule ».
   #
-  # `zip` complète avec nil quand une poule n'a pas de 3e (poule de 2, effectif
-  # « Libre ») : build_match! en fait un bye, et ce 2e monte au tableau final
-  # d'office. C'est le comportement voulu, et il ne demande aucun cas particulier.
+  # Les deux listes n'ont pas toujours la même longueur, et le camp en surnombre
+  # prend alors un bye (build_match! le fait monter au tableau final d'office) :
+  #   • moins de 3es — une poule n'en a pas (poule de 2, effectif « Libre ») ;
+  #   • moins de 2es — un 2e a abandonné le tournoi (cf. #qualifiers_at). Le bye
+  #     revient au 3e le plus FORT, dernier de la liste croissante : c'est lui qui
+  #     aurait affronté le 2e le plus faible.
   def barrage_pairs
     seconds = qualifiers_at(2)
     thirds  = qualifiers_at(3).reverse # déjà triés par force décroissante → croissante
@@ -162,7 +173,12 @@ class CriteriumFlow
   # qu'un 2e et qu'un 3e), et le balayage est déterministe — pas d'aléa, donc
   # reproductible à l'identique après correction.
   def avoid_same_pool(seconds, thirds)
-    thirds = seconds.zip(thirds).map(&:last) # aligne les longueurs (nil = bye)
+    # Aligne les longueurs en complétant la liste la plus COURTE avec des nil
+    # (= bye). Surtout ne pas tronquer la plus longue : `seconds.zip(thirds)`
+    # faisait disparaître du tournoi le 3e le plus fort quand un 2e était parti.
+    size = [seconds.size, thirds.size].max
+    seconds += [nil] * (size - seconds.size)
+    thirds += [nil] * (size - thirds.size)
 
     seconds.each_index do |i|
       next unless same_pool?(seconds[i], thirds[i])
@@ -235,11 +251,6 @@ class CriteriumFlow
     return nil if entrants.empty?
     return nil if entrants.size == 1 && !awaits_placement?(node)
 
-    # Les entrants du tableau final sont les qualifiés du tournoi. Les perdants de
-    # barrage ne sont PAS éliminés : ils rejoignent la consolante, donc ils restent
-    # `active` — c'est le tableau final, et lui seul, qui qualifie.
-    entrants.each { |tu| tu.update!(state: "qualified") } if node.key == "ok"
-
     builder_for(node, entrants).build!
   end
 
@@ -284,6 +295,28 @@ class CriteriumFlow
     BracketBuilder.new(@tournament, finalists: entrants, phase: node.phase, branch: node.branch,
                                     persist_seeds: node.key == "ok", owns_completion: false,
                                     incremental: true)
+  end
+
+  # ── État « qualifié » ───────────────────────────────────────────────────────
+  # Les qualifiés du tournoi sont les joueurs du 1er tour du tableau final, et
+  # EUX SEULS. Les perdants de barrage ne sont PAS éliminés : ils rejoignent la
+  # consolante, donc ils restent `active`.
+  #
+  # Dérivé à chaque #advance! depuis les tours RÉELLEMENT en base, et non posé une
+  # fois à l'ouverture du tableau : une correction de score détruit puis
+  # reconstruit la phase finale (cf. #reconcile!, TournamentMatchesController), et
+  # un joueur qui n'y entre plus garderait sinon son icône « Qualifié ».
+  # `withdrawn` est terminal : jamais écrasé, dans un sens comme dans l'autre.
+  def sync_qualified!
+    node = structure.node("ok")
+    return if node.blank?
+
+    first_round = rounds_of(node).first
+    ids = first_round ? first_round.tournament_matches.flat_map { |m| [m.player_a_id, m.player_b_id] }.compact : []
+    players = @tournament.tournament_users.players
+
+    players.qualified.where.not(id: ids).update_all(state: "active")
+    players.where(id: ids).where(state: "active").update_all(state: "qualified")
   end
 
   def rounds_of(node)
@@ -345,12 +378,19 @@ class CriteriumFlow
     end
   end
 
+  # ⚠️ Les joueurs partis sont ignorés DES DEUX CÔTÉS. #resolve les écarte des
+  # entrants attendus — c'est juste pour OUVRIR un tableau, pas pour juger un
+  # tableau déjà tiré : un joueur qui abandonne APRÈS le tirage y figure
+  # légitimement. Sans cette symétrie, son départ rendait le tour « périmé », et la
+  # correction suivante d'un barrage détruisait le tableau final et tous ses scores.
   def stale_first_round?(node, round)
     expected = expected_entrants(node, round.number).to_set(&:id)
     return false if expected.empty?
 
-    expected != participants_of(round)
+    expected != participants_of(round) - withdrawn_ids
   end
+
+  def withdrawn_ids = @tournament.tournament_users.withdrawn.pluck(:id).to_set
 
   # {position => id du vainqueur} pour le tour `number` d'un nœud, SANS exiger que
   # le tour soit complet — c'est précisément ce qui permet de juger un tour aval

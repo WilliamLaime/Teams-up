@@ -1655,6 +1655,44 @@
     font-size: 0.75rem;
     color: var(--theme-text-muted);
   }
+
+  // Bloc « Forfait » (organisateur) : séparé du score par un filet, pour qu'on
+  // ne le coche pas par mégarde en saisissant les manches.
+  &__forfeit {
+    margin: 0.85rem 0 0;
+    padding: 0.75rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--theme-border);
+  }
+
+  &__forfeit-legend {
+    margin-bottom: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--theme-text-strong);
+  }
+
+  &__forfeit-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+  }
+
+  &__forfeit-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  &__forfeit-hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.75rem;
+    color: var(--theme-text-muted);
+
+    &:empty { display: none; }
+  }
 }
 
 // =====================================================
@@ -2506,6 +2544,14 @@
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--theme-text-strong);
+  }
+
+  // Barème des points-parties sous une table de poule du Critérium (cf.
+  // _ranking_table) : ce qui rend lisible un 1V-1D classé devant un 1V-0D.
+  &__rules {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: var(--theme-text-muted);
   }
 
   // Badge « ex æquo » du classement final d'un Critérium : plusieurs joueurs

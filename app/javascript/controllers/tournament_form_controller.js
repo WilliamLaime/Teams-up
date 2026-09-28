@@ -448,7 +448,12 @@ export default class extends Controller {
   // Tournament#criterium_pool_count_for. Un réglage explicite de taille de poule
   // gagne, comme côté serveur.
   _criteriumPoolCount(players, explicitPoolSize) {
-    if (explicitPoolSize) return this._poolCount(players, explicitPoolSize)
+    if (explicitPoolSize) {
+      const found = this._criteriumCountsForSize(players, explicitPoolSize)
+        .find(pools => this._criteriumPoolablePlan(players, this._balancedPlan(players, pools)))
+      if (found) return found
+      return this._criteriumPoolCount(players, null)
+    }
     if (players <= CRITERIUM_POOLS_ONLY_MAX) return 1
     if (players <= 10) return 2
     if (players === 11) return 3
@@ -456,12 +461,35 @@ export default class extends Controller {
     return this._poolCount(players, DEFAULTS.poolSize)
   }
 
-  // Tournament#pool_plan : la taille de chaque poule, les plus grandes d'abord.
-  _criteriumPoolPlan(players, explicitPoolSize) {
-    const pools = this._criteriumPoolCount(players, explicitPoolSize)
+  // Tournament#criterium_pool_count_for_size : arrondi supérieur puis inférieur,
+  // le premier qui donne un découpage conforme (17 par 3 → [4, 4, 3, 3, 3], jamais
+  // de poule de 2).
+  _criteriumCountsForSize(players, size) {
+    const counts = [Math.ceil(players / size), Math.floor(players / size)].filter(count => count > 0)
+    return [...new Set(counts)]
+  }
+
+  // Tournament#criterium_poolable_plan? : poules de 3 ou 4 uniquement, et un nombre
+  // de poules cohérent avec la variante de phase finale.
+  _criteriumPoolablePlan(players, plan) {
+    if (!plan.every(size => size === 3 || size === 4)) return false
+
+    const mode = this._criteriumMode(players)
+    if (mode === "none") return plan.length === 1
+    if (mode === "standard") return plan.length >= 2
+    return true
+  }
+
+  // Tournament#balanced_plan : la taille de chaque poule, les plus grandes d'abord.
+  _balancedPlan(players, pools) {
     const base  = Math.floor(players / pools)
     const extra = players % pools
     return Array.from({ length: pools }, (_, i) => base + (i < extra ? 1 : 0))
+  }
+
+  // Tournament#pool_plan.
+  _criteriumPoolPlan(players, explicitPoolSize) {
+    return this._balancedPlan(players, this._criteriumPoolCount(players, explicitPoolSize))
   }
 
   // Tournament#criterium_mode : la variante déduite de l'effectif.

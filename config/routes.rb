@@ -172,8 +172,12 @@ Rails.application.routes.draw do
     end
     # PATCH /tournois/:tournament_id/tournament_matches/:id => saisir le score
     # PATCH .../tournament_matches/:id/correct => corriger un score verrouillé
+    # PATCH .../tournament_matches/:id/forfeit => forfait d'un joueur sur CE match
     resources :tournament_matches, only: [:update] do
-      member { patch :correct }
+      member do
+        patch :correct
+        patch :forfeit
+      end
     end
   end
 

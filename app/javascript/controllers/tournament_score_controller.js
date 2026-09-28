@@ -26,7 +26,8 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "modal", "form", "rows", "title", "nameA", "nameB", "hint", "submit",
-    "tally", "tallyA", "tallyB", "serverErrors"
+    "tally", "tallyA", "tallyB", "serverErrors",
+    "forfeit", "forfeitNone", "forfeitA", "forfeitB", "forfeitNameA", "forfeitNameB", "forfeitHint"
   ]
 
   connect() {
@@ -48,7 +49,10 @@ export default class extends Controller {
 
   // Ouvre la modale à partir des données de la carte (data-tournament-score-*-param).
   open(event) {
-    const { url, mode, allowDraw, bestOf, setsToWin, target, winByTwo, cap, sets, nameA, nameB, editable } = event.params
+    const {
+      url, mode, allowDraw, bestOf, setsToWin, target, winByTwo, cap, sets, nameA, nameB, editable,
+      forfeitUrl, forfeitScope, playerAId, playerBId
+    } = event.params
     const existing = Array.isArray(sets) ? sets : []
 
     // Contexte de la carte courante, relu par refreshRows() à chaque frappe.
@@ -62,6 +66,7 @@ export default class extends Controller {
     // invalide ; ce contrôle-ci ne fait que le dire tout de suite.
     this.rules = { target, winByTwo, cap, allowDraw }
 
+    this.scoreUrl = url
     if (url) this.formTarget.action = url
     this.nameATarget.textContent = nameA || "Joueur A"
     this.nameBTarget.textContent = nameB || "Joueur B"
@@ -76,6 +81,8 @@ export default class extends Controller {
 
     // Erreurs serveur d'une saisie précédente : elles ne concernent pas ce match.
     this.serverErrorsTarget.innerHTML = ""
+
+    this.setupForfeit({ forfeitUrl, forfeitScope, playerAId, playerBId, nameA, nameB })
 
     this.resetRows(existing)
     this.modal.show()
@@ -95,6 +102,40 @@ export default class extends Controller {
     if (cap) parts.push(`${cap} points maximum (tie-break)`)
 
     return `${parts.join(" · ")}.`
+  }
+
+  // ── Forfait ─────────────────────────────────────────────────────────────────
+  // Bloc « Forfait » : affiché seulement si la carte fournit une URL de forfait
+  // (organisateur, match à trancher — cf. TournamentMatchPolicy#forfeit?). Remis à
+  // « Aucun » à chaque ouverture : un forfait coché pour une autre carte ne doit
+  // jamais être envoyé pour celle-ci.
+  setupForfeit({ forfeitUrl, forfeitScope, playerAId, playerBId, nameA, nameB }) {
+    this.forfeitUrl = forfeitUrl
+    this.forfeitScope = forfeitScope
+    if (!this.hasForfeitTarget) return
+
+    this.forfeitTarget.hidden = !(this.editable && forfeitUrl)
+    this.forfeitATarget.value = playerAId ?? ""
+    this.forfeitBTarget.value = playerBId ?? ""
+    this.forfeitNameATarget.textContent = nameA || "Joueur A"
+    this.forfeitNameBTarget.textContent = nameB || "Joueur B"
+    this.forfeitNoneTarget.checked = true
+    this.toggleForfeit()
+  }
+
+  // Un joueur coché → le formulaire part vers l'action forfeit, et la conséquence
+  // est annoncée avant validation. « Aucun » → saisie de score ordinaire.
+  toggleForfeit() {
+    const retired = [this.forfeitATarget, this.forfeitBTarget].find((input) => input.checked)
+    this.forfeiting = Boolean(retired && this.forfeitUrl)
+
+    this.formTarget.action = this.forfeiting ? this.forfeitUrl : this.scoreUrl
+    this.submitTarget.textContent = this.forfeiting ? "Déclarer le forfait" : "Enregistrer le score"
+    this.forfeitHintTarget.textContent = this.forfeiting
+      ? `Forfait de ${retired.parentElement.textContent.trim()} ${this.forfeitScope}. ` +
+        "Saisis le score au moment de l'arrêt (vide si le match n'a pas commencé) : " +
+        "la manche entamée et les suivantes sont complétées pour l'adversaire."
+      : ""
   }
 
   // Ferme la modale uniquement si l'enregistrement a réussi.
@@ -365,6 +406,11 @@ export default class extends Controller {
   // Dernier filet avant l'envoi : un set peut être invalide sans avoir jamais été
   // quitté (validation au blur), typiquement si on clique droit sur « Enregistrer ».
   validateForm(event) {
+    // Forfait : la dernière manche est souvent INACHEVÉE (6-4 au moment de
+    // l'arrêt), ce que la validation d'un set refuserait. Le serveur la complète
+    // puis valide le tout (cf. TournamentMatch#complete_forfeit_sets).
+    if (this.forfeiting) return
+
     const rows = Array.from(this.rowsTarget.querySelectorAll(".score-modal__set"))
     const invalid = rows.map((row) => this.showError(row)).some(Boolean)
     if (invalid) event.preventDefault()

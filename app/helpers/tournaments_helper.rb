@@ -66,6 +66,18 @@ module TournamentsHelper
              aria: { label: label }
   end
 
+  # Marque « F » SEULE, à côté d'un score : un forfait porte désormais un score
+  # complet (11-0 par manche, cf. TournamentMatch#complete_forfeit_sets), que la
+  # carte affiche comme n'importe quel score — le vert désigne déjà le vainqueur.
+  # Reste à dire que ce 3-0 n'a pas été joué : le « F » du joueur forfait le fait,
+  # et c'est la seule lecture possible pour un forfait sur UN match de poule, où le
+  # nom n'est pas barré (le joueur continue le tournoi). nil hors forfait.
+  def forfeit_flag_tag(match, player, extra_class: nil)
+    return unless match.forfeit? && player.present? && match.retired_player_id == player.id
+
+    forfeit_mark_tag(match, player, extra_class: extra_class)
+  end
+
   # ── Chat d'organisation : pastille non-lu ────────────────────────────────────
   # Ids des matchs de ce tournoi où un message d'un AUTRE joueur attend d'être lu.
   #
@@ -389,7 +401,14 @@ module TournamentsHelper
   # matchs — les 1ers de poule et les 4es n'entrent dans leur tableau qu'une fois
   # les barrages joués. Sans repli, deux tiers du zonage disparaissaient pendant
   # cette fenêtre, exactement le symptôme qu'on cherche à corriger.
+  #
+  # Un joueur qui a abandonné le tournoi (`withdrawn`) ne va nulle part : lui
+  # annoncer « Va au tableau final » parce qu'il occupe encore sa place de poule
+  # serait faux. Un simple forfait SUR UN MATCH de poule ne change pas son state,
+  # il garde donc sa destination.
   def pool_destination_for(tournament, tournament_user)
+    return nil if tournament_user.withdrawn?
+
     actual = tournament.pool_exit_destinations[tournament_user.id] if tournament.final_phase_started?
     return actual if actual
 
@@ -441,6 +460,19 @@ module TournamentsHelper
   end
 
   def destination_icon(destination) = DESTINATION_META.dig(destination, :icon)
+
+  # Barème des points-parties de poule, en clair (« Victoire 2 pts · défaite 1 pt
+  # · forfait 0 pt »). Lu depuis Sport#pool_points_rules, la même source que
+  # PoolStandings : la légende ne peut pas contredire le calcul.
+  def pool_points_legend(tournament)
+    rules = tournament.sport&.pool_points_rules || { win: 1, loss: 0, forfeit: 0 }
+    ["Victoire #{points_label(rules[:win])}", "défaite #{points_label(rules[:loss])}",
+     "forfait #{points_label(rules[:forfeit])}"].join(" · ")
+  end
+
+  # « 0 pt », « 1 pt », « 2 pts » — `pluralize` ne connaît pas l'abréviation
+  # dans la locale fr.
+  def points_label(count) = "#{count} pt#{'s' if count > 1}"
 
   # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde
   # suisse (façon Lolesports) — matérialise le bilan du groupe EN ENTRANT dans ce
@@ -585,8 +617,13 @@ module TournamentsHelper
   # IMPORTANT : les règles viennent de `match.scoring_rules` (et NON de
   # `match.tournament.sport.scoring_rules`), seule source qui tient compte de la
   # phase — au ping-pong, 3 sets gagnants en poule mais 4 en phase finale.
-  def score_modal_button(match, label:, editable:, url: nil, css_class: "tmatch-card__score-btn")
+  #
+  # `forfeit_url` (optionnel) : ajoute le bloc « Forfait » à la modale — l'appelant
+  # ne le passe que si TournamentMatchPolicy#forfeit? l'autorise. La portée annoncée
+  # vient de ForfeitMatch, qui porte la règle : la modale ne peut pas la contredire.
+  def score_modal_button(match, label:, editable:, url: nil, forfeit_url: nil, css_class: "tmatch-card__score-btn")
     rules = match.scoring_rules
+    forfeit_scope = ForfeitMatch.match_only?(match) ? "pour ce match (il dispute la suite de la poule)" : "pour le reste du tournoi" if forfeit_url
 
     button_tag type: "button", class: css_class, data: {
       action: "tournament-score#open",
@@ -601,7 +638,11 @@ module TournamentsHelper
       tournament_score_sets_param: match.sets.to_json,
       tournament_score_name_a_param: match.player_a.display_name,
       tournament_score_name_b_param: match.player_b.display_name,
-      tournament_score_editable_param: editable
+      tournament_score_editable_param: editable,
+      tournament_score_forfeit_url_param: forfeit_url,
+      tournament_score_forfeit_scope_param: forfeit_scope,
+      tournament_score_player_a_id_param: (match.player_a_id if forfeit_url),
+      tournament_score_player_b_id_param: (match.player_b_id if forfeit_url)
     }.compact do # compact : `cap: nil` (pas de plafond) ne doit pas devenir la chaîne ""
       label
     end

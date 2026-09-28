@@ -602,3 +602,16 @@ la dépasse dès le lendemain, et le formulaire proposait une date passée.
    que si le tournoi n'a pas commencé (`> Date.current`).
 2. `Date.current` (fuseau de l'app, Paris) et jamais `Date.today` (fuseau du serveur,
    UTC sur Railway) : entre 0 h et 2 h, `Date.today` renvoie la veille.
+
+## 2026-09-28 — Critérium : classement de poule « faux » alors que le moteur était juste
+
+- **Symptôme** : poule C, deux joueurs à 1 défaite chacun, 0-3 et 1-3 en manches : le 0-3 était classé devant. Poules F/G : un 1V-1D devant un 1V-0D, que tout le monde prenait pour un bug.
+- **Cause racine** (deux, cumulées) :
+  1. le départage FFTT est **restreint aux matchs entre ex æquo**. Tant qu'ils ne se sont pas rencontrés, ce sous-ensemble est **vide** : tous les quotients valent 0/0, et le tri retombait sur le tirage, donc l'ordre d'inscription ;
+  2. la table affichait les colonnes de `TournamentUser` (« Pts » = nombre de victoires, différentiels) alors que l'ordre venait de `PoolStandings` (points-parties 2/1/0, quotients). Le 1V-1D était bien à 3 pts contre 2, mais l'écran ne le montrait nulle part.
+- **Correctif** : si les ex æquo ne se sont pas tous rencontrés, les quotients portent sur toute la poule (classement provisoire, `PoolStandings#ordered_group`) ; la table du Critérium lit ses chiffres dans `PoolStandings`, avec le barème en légende.
+
+À retenir :
+1. Un classement ne doit **jamais** afficher des chiffres venant d'une autre source que celle qui a produit l'ordre. Si l'ordre vient d'un service, les colonnes aussi.
+2. Tout critère « restreint à un sous-ensemble » doit traiter le cas du sous-ensemble **vide ou incomplet**, sinon il tombe silencieusement sur le dernier recours.
+3. Un audit de règles trouve aussi des faux positifs : ici, le passage au passé des destinations au moment du tirage était voulu, et un test existant le disait. Lire le test avant de « corriger ».

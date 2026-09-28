@@ -8,6 +8,13 @@
 #       (b) QUOTIENT de manches (gagnées / perdues) sur ces mêmes matchs
 #       (c) QUOTIENT de points  (gagnés  / perdus)  sur ces mêmes matchs
 #       (d) draw_order — le tirage au sort figé au lancement du tournoi
+#   • Classement PROVISOIRE (poule en cours) : si les ex-æquo ne se sont pas encore
+#     TOUS rencontrés, le sous-groupe restreint est vide ou incomplet — ses
+#     quotients ne veulent rien dire (0/0 partout, d'où un départage au tirage,
+#     c'est-à-dire à l'ordre d'inscription). On saute alors (a) et on calcule (b)
+#     et (c) sur TOUS les matchs de poule des joueurs concernés. Dès que la
+#     rencontre est jouée, le règlement restreint reprend la main : une poule
+#     terminée est donc toujours classée strictement au règlement FFTT.
 #
 # Pourquoi un service et pas Tournament#rank_key : `rank_key` est une clé de tri
 # PLATE, elle ne peut pas exprimer « restreint au sous-groupe d'ex-æquo ». Les deux
@@ -103,10 +110,12 @@ class PoolStandings
     # de la « poule restreinte » du règlement.
     sub = matches_between(group)
     # La confrontation directe n'est significative que si tous les ex-æquo se sont
-    # rencontrés. Sinon (poule en cours, forfait) on saute le critère (a).
+    # rencontrés. Sinon (poule en cours) on saute le critère (a), et les quotients
+    # portent sur toute la poule : c'est le classement provisoire (cf. en-tête).
     direct = round_robin_complete?(group, sub)
+    basis  = direct ? sub : @matches
 
-    buckets = group.group_by { |player| tiebreak_key(player, sub, direct: direct) }
+    buckets = group.group_by { |player| tiebreak_key(player, basis, direct: direct) }
                    .sort_by(&:first)
     # Aucun critère ne sépare le groupe → (d) tirage au sort. C'est aussi ce qui
     # TERMINE la récursion : sans cette garde, un groupe inséparable bouclerait.
@@ -116,13 +125,15 @@ class PoolStandings
   end
 
   # Clé de tri CROISSANTE (d'où les négations : plus haut = mieux classé).
-  def tiebreak_key(player, sub, direct:)
+  # `basis` : les matchs sur lesquels on calcule — le sous-groupe restreint, ou
+  # toute la poule quand les ex-æquo ne se sont pas tous rencontrés.
+  def tiebreak_key(player, basis, direct:)
     [
-      direct ? -points_in(player, sub) : 0,
-      -quotient(sum(sub, player) { |m| m.sets_won_by(player) },
-                sum(sub, player) { |m| m.sets_won_by(m.opponent_of(player)) }),
-      -quotient(sum(sub, player) { |m| m.points_won_by(player) },
-                sum(sub, player) { |m| m.points_lost_by(player) })
+      direct ? -points_in(player, basis) : 0,
+      -quotient(sum(basis, player) { |m| m.sets_won_by(player) },
+                sum(basis, player) { |m| m.sets_won_by(m.opponent_of(player)) }),
+      -quotient(sum(basis, player) { |m| m.points_won_by(player) },
+                sum(basis, player) { |m| m.points_lost_by(player) })
     ]
   end
 

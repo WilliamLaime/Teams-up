@@ -49,8 +49,14 @@ class CriteriumThresholdsTest < ActiveSupport::TestCase
 
   test "un réglage explicite de taille de poule remplace les seuils" do
     assert_equal [3, 3, 3, 3], planner(players_per_pool: 3).pool_plan(12)
-    # 11 en poules de 3 : 4 poules, la dernière à 2 — l'organisateur a tranché.
-    assert_equal [3, 3, 3, 2], planner(players_per_pool: 3).pool_plan(11)
+    # 11 en poules de 3 : l'arrondi supérieur donnerait [3, 3, 3, 2], mais le
+    # Critérium ne connaît pas la poule de 2 — le découpage conforme le plus proche
+    # de la taille demandée est [4, 4, 3] (cf. Tournament#criterium_pool_count_for_size).
+    assert_equal [4, 4, 3], planner(players_per_pool: 3).pool_plan(11)
+    assert_equal [4, 4, 3, 3, 3], planner(players_per_pool: 3).pool_plan(17)
+    # 7 par 3 donnerait [3, 2, 2] : trois poules sans phase finale. Aucun
+    # découpage en poules de 3/4 ne convient → palier du règlement, poule unique.
+    assert_equal [7], planner(players_per_pool: 3).pool_plan(7)
   end
 
   test "la variante de phase finale est déduite de l'effectif" do

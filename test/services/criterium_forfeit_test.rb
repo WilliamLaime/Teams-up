@@ -83,6 +83,29 @@ class CriteriumForfeitTest < ActiveSupport::TestCase
     assert_equal 16, tiers.sum { |tier| tier.players.size }, "un joueur a disparu du classement"
   end
 
+  # Bug trouvé sur le tournoi de démo : un joueur qui abandonne APRÈS le tirage du
+  # tableau final en était écarté des entrants « attendus » (CriteriumFlow#resolve
+  # ignore les `withdrawn`), alors qu'il figure légitimement dans le 1er tour déjà
+  # tiré. Le tour paraissait donc périmé, et la moindre correction de score en phase
+  # finale (#reconcile!) détruisait le tableau ET tous les scores en aval.
+  test "un abandon après le tirage ne rend pas le tableau final périmé" do
+    play_until_bracket_round!(2)
+    first_round = bracket_round(1)
+    played = first_round.tournament_matches.order(:position).map { |m| [m.id, m.sets] }
+    quitter = bracket_round(2).tournament_matches.order(:position).first.player_a
+
+    WithdrawPlayer.new(@tournament, quitter).call!
+    # Même chemin qu'une correction de score de BARRAGE (sans changement de
+    # vainqueur ici) : #reconcile! examine alors tous les tours postérieurs, dont
+    # le 1er tour du tableau final.
+    barrage = @tournament.barrage_rounds.first
+    CriteriumFlow.new(Tournament.find(@tournament.id)).reconcile!(from: barrage)
+
+    assert TournamentRound.exists?(first_round.id), "le 1er tour du tableau final a été détruit"
+    assert_equal played, first_round.reload.tournament_matches.order(:position).map { |m| [m.id, m.sets] },
+                 "les scores déjà joués doivent survivre"
+  end
+
   private
 
   def bracket_rounds = @tournament.tournament_rounds.bracket.main_branch.ordered.to_a

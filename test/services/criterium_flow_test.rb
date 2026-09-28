@@ -111,6 +111,29 @@ class CriteriumFlowTest < ActiveSupport::TestCase
                  "seuls les 2es et 3es de poule jouent les barrages"
   end
 
+  # Un 2e de poule qui a ABANDONNÉ le tournoi est écarté des barrages (cf.
+  # CriteriumFlow#qualifiers_at) : il y a alors un 2e de moins que de 3es. L'ancien
+  # alignement `seconds.zip(thirds)` coupait la liste des 3es à la longueur de celle
+  # des 2es — le dernier 3e, le PLUS FORT, disparaissait du tournoi sans bruit.
+  test "un 2e parti ne fait disparaître aucun 3e : le plus fort prend le bye" do
+    tournament = build_tournament(16)
+    players = tournament.tournament_users.players.approved.order(:draw_order).to_a
+    players.each_with_index { |tu, i| tu.update_column(:pool, i % 4) }
+    # 2es des poules 0, 1, 2 (celui de la poule 3 est parti) ; 3es des 4 poules,
+    # par force croissante, comme les fournit #barrage_pairs.
+    seconds = players.first(3)
+    thirds  = players.last(4)
+
+    pairs = CriteriumFlow.new(tournament).send(:avoid_same_pool, seconds, thirds)
+
+    assert_equal 4, pairs.size, "un barrage (ou bye) par 3e"
+    assert_equal thirds.map(&:id).sort, pairs.map(&:last).compact.map(&:id).sort,
+                 "chaque 3e a sa place"
+    assert_equal [nil, thirds.last], pairs.find { |second, _| second.nil? },
+                 "le 3e le plus fort prend le bye du 2e manquant"
+    assert(pairs.none? { |a, b| a && b && a.pool == b.pool }, "aucun barrage intra-poule")
+  end
+
   test "les 1ers de poule ne jouent pas les barrages" do
     tournament = build_tournament(16)
     play_pools!(tournament)
@@ -209,6 +232,42 @@ class CriteriumFlowTest < ActiveSupport::TestCase
     # Les perdants de barrage NE SONT PAS éliminés : ils descendent en consolante
     # (Lot 5). Aucun joueur ne doit être marqué "eliminated" à ce stade.
     assert_equal 0, tournament.tournament_users.players.where(state: "eliminated").count
+  end
+
+  # Une correction de score peut sortir du tableau final un joueur qui y était :
+  # l'ancien code le qualifiait à l'ouverture du tableau et ne le « dé-qualifiait »
+  # jamais — il gardait l'icône « Qualifié » alors qu'il jouait la consolante.
+  test "après une reconstruction de la phase finale, seuls les entrants réels restent qualifiés" do
+    tournament = build_tournament(16)
+    play_pools!(tournament)
+    resolve_all_pending!(tournament)
+    advance!(tournament)
+    assert_equal 8, tournament.tournament_users.qualified.count
+
+    # Simule un joueur qualifié à tort par un ancien état : un 4e de poule, qui
+    # n'entre jamais au tableau final.
+    fourth = standings_of(tournament).values.first.qualifier(4)
+    fourth.update!(state: "qualified")
+    # Même chose que TournamentMatchesController après une correction en poule.
+    tournament.tournament_rounds.final_phase.destroy_all
+    play_pools!(tournament)
+    resolve_all_pending!(tournament)
+    advance!(tournament)
+
+    assert_equal "active", fourth.reload.state
+    assert_equal 8, tournament.tournament_users.qualified.count
+  end
+
+  test "tant que le tableau final n'existe plus, personne n'est qualifié" do
+    tournament = build_tournament(16)
+    play_pools!(tournament)
+    resolve_all_pending!(tournament)
+    advance!(tournament)
+
+    tournament.tournament_rounds.final_phase.destroy_all
+    advance!(tournament) # recrée les barrages, pas encore le tableau
+
+    assert_equal 0, tournament.tournament_users.qualified.count
   end
 
   test "bracket_rounds ne contient que le tableau final, jamais les barrages" do
@@ -351,34 +410,34 @@ class CriteriumFlowTest < ActiveSupport::TestCase
     play_pools!(tournament)
 
     pools = standings_of(tournament)
-    assert_equal 6, pools.size, "17 joueurs en poules de 3 doivent donner [3, 3, 3, 3, 3, 2]"
+    # Poules de 3 demandées, mais [3, 3, 3, 3, 3, 2] contiendrait une poule de 2,
+    # interdite au Critérium : le découpage conforme le plus proche est [4, 4, 3, 3, 3].
+    assert_equal [4, 4, 3, 3, 3], pools.values.map { |pool| pool.rows.size }.sort.reverse
 
-    small = pools.values.find { |pool| pool.rows.size == 2 }
-    big   = pools.values.find { |pool| pool.rows.size == 3 }
-    assert small, "il doit exister une poule de 2"
+    small = pools.values.find { |pool| pool.rows.size == 3 }
+    big   = pools.values.find { |pool| pool.rows.size == 4 }
 
     small_first = small.qualifier(1)
     big_first   = big.qualifier(1)
 
     # Les deux sont invaincus, mais sur un nombre de matchs différent.
-    assert_equal [1, 2], [small.row_for(small_first).played, big.row_for(big_first).played]
-    assert_equal [2, 4], [small.row_for(small_first).points, big.row_for(big_first).points]
+    assert_equal [2, 3], [small.row_for(small_first).played, big.row_for(big_first).played]
+    assert_equal [4, 6], [small.row_for(small_first).points, big.row_for(big_first).points]
 
     flow = CriteriumFlow.new(Tournament.find(tournament.id))
 
-    # Le défaut : sur les totaux, le 1er de la poule de 2 est DERRIÈRE, et le tri
-    # global le relègue au dernier rang des 1ers de poule.
+    # Le défaut : sur les totaux, le 1er d'une poule de 3 est DERRIÈRE ceux des
+    # poules de 4, et le tri global le relègue parmi les derniers des 1ers.
     fresh = Tournament.find(tournament.id)
     assert_operator fresh.rank_key(small_first).first, :>, fresh.rank_key(big_first).first,
-                    "c'est bien le total brut qui pénalise la poule de 2"
-    firsts_by_total = (1..6).filter_map { |i| pools[i - 1]&.qualifier(1) }
-                            .sort_by { |tu| fresh.rank_key(tu) }
-    assert_equal small_first.id, firsts_by_total.last.id,
-                 "au total brut, le 1er de la poule de 2 est toujours le dernier des 1ers"
+                    "c'est bien le total brut qui pénalise la petite poule"
+    firsts_by_total = pools.values.map { |pool| pool.qualifier(1) }.sort_by { |tu| fresh.rank_key(tu) }
+    assert_equal 3, pools[firsts_by_total.last.pool].rows.size,
+                 "au total brut, le dernier des 1ers vient toujours d'une poule de 3"
 
     # La correction : à performance PAR MATCH égale, les deux pèsent pareil.
     assert_equal flow.send(:pool_strength_key, small_first).first,
                  flow.send(:pool_strength_key, big_first).first,
-                 "2 points en 1 match et 4 points en 2 matchs, c'est le même rendement"
+                 "4 points en 2 matchs et 6 points en 3 matchs, c'est le même rendement"
   end
 end
