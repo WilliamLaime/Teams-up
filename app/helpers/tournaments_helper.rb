@@ -474,6 +474,10 @@ module TournamentsHelper
   # dans la locale fr.
   def points_label(count) = "#{count} pt#{'s' if count > 1}"
 
+  # Différence affichée avec son signe : « +10 », « -5 », « 0 ». Le « + » explicite
+  # se lit d'un coup d'œil dans une colonne de classement.
+  def signed_number(number) = number.positive? ? "+#{number}" : number.to_s
+
   # Pastilles carrées de bilan V/D en en-tête d'un « bracket de score » de ronde
   # suisse (façon Lolesports) — matérialise le bilan du groupe EN ENTRANT dans ce
   # tour (cf. Tournament#swiss_entering_records) : carrés verts = victoires, rouges
