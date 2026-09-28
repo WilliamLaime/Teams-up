@@ -2474,9 +2474,11 @@
 // Colonne de classement à largeur FIXE (pas un fr) : elle contient un tableau de
 // 4 colonnes dont la largeur naturelle ne varie pas, autant donner toute
 // l'élasticité restante aux cartes de match.
+// 340px et non 300px : la colonne Pts (points-parties du Critérium) a pris ~45px
+// au nom, qui finissait haché au milieu du mot (« Willia / m »).
 .pool-view {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 1.5rem;
   align-items: start;
   margin-bottom: 1.75rem;
@@ -2640,7 +2642,13 @@
 
       // Espacements resserrés : quelques pixels rendus au nom, pour qu'un prénom
       // tienne en entier sur un téléphone de 320 px.
-      .is-player { gap: 0.35rem; }
+      // `flex-wrap: wrap` : quand nom + pastille « Toi » + icône ne tiennent pas sur
+      // une ligne, ce sont la pastille et l'icône qui descendent, pas le nom qui se
+      // fait hacher. Le nom, lui, ne se coupe plus qu'entre deux mots.
+      .is-player {
+        gap: 0.2rem 0.35rem;
+        flex-wrap: wrap;
+      }
 
       .tournament-ranking__player-link {
         flex: 0 1 auto;

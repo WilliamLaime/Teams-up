@@ -175,6 +175,23 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_select ".tournament-ranking__rules", text: /Victoire 2 pts · défaite 1 pt · forfait 0 pt/
   end
 
+  test "l'onglet Classement affiche la différence de points signée, détail au survol" do
+    play_until_barrages!
+    rows = @tournament.reload.pool_standings.values.flat_map(&:rows)
+    expected = rows.map { |row| row.points_won - row.points_lost }
+
+    sign_in @owner
+    get tournament_path(@tournament, tab: "ranking")
+
+    assert_response :success
+    cells = css_select(".tournament-ranking tbody tr td:last-child")
+    shown = cells.map { |td| td.text.strip }
+    assert(shown.all? { |text| text.match?(/\A[+-]?\d+\z/) }, "différence signée, plus de « a-b » : #{shown.inspect}")
+    assert_equal expected.sort, shown.map(&:to_i).sort
+    assert(shown.select { |text| text.to_i.positive? }.all? { |text| text.start_with?("+") })
+    assert_match(/\A\d+ marqués · \d+ encaissés\z/, cells.first["title"])
+  end
+
   test "la table compacte d'une poule en cours affiche Pts et annonce un classement provisoire" do
     TournamentEngine.for(@tournament).next_round!
 
