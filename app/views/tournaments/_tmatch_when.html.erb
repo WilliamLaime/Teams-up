@@ -13,9 +13,24 @@
     `tournament_match_schedule` renvoie nil tant qu'aucune date n'est fixée (pas
     de rencontre rattachée, ou rencontre sans date) : c'est l'état « à définir ».
 
+    À droite, un tag « Terminé » sur les matchs clos : on repère d'un coup d'œil
+    ce qui reste à jouer dans une poule ou une journée. Il vit ICI (et pas dans
+    chaque carte) car ce bandeau est commun à toutes les cartes de match.
+    Test sur `status == "completed"` plutôt que `decided?` : un match nul est
+    terminé sans avoir de vainqueur, et un score saisi mais pas encore validé
+    (« En cours ») ne doit pas s'afficher comme terminé.
+
     Locals : match — le TournamentMatch. %>
 <% schedule = tournament_match_schedule(match) %>
 <div class="tmatch-card__when <%= "tmatch-card__when--tbd" unless schedule %>">
   <i data-lucide="calendar-clock" style="width:13px;height:13px;" aria-hidden="true"></i>
-  <span><%= schedule || "Date à définir" %></span>
+  <%# Le libellé porte l'ellipse (et pas le bandeau entier) : sur les cartes
+      étroites du tableau final, c'est la date qui se tronque, jamais le tag. %>
+  <span class="tmatch-card__when-label"><%= schedule || "Date à définir" %></span>
+  <% if match.status == "completed" %>
+    <span class="tmatch-card__done-badge">
+      <i data-lucide="check" style="width:11px;height:11px;" aria-hidden="true"></i>
+      Terminé
+    </span>
+  <% end %>
 </div>

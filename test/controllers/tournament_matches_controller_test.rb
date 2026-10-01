@@ -147,6 +147,20 @@ class TournamentMatchesControllerTest < ActionDispatch::IntegrationTest
     assert_select "a", text: "Voir la rencontre"
   end
 
+  # ── Tag « Terminé » ─────────────────────────────────────────────────────────
+  # Repère visuel en haut à droite de la carte (cf. _tmatch_when.html.erb) : ce
+  # qui reste à jouer se lit d'un coup d'œil, sans déchiffrer les scores.
+  test "la carte d'un match terminé porte le tag « Terminé », pas les autres" do
+    @tournament.update!(status: "in_progress")
+    @match.update_columns(status: "completed", winner_id: @match.player_a_id)
+    get tournament_path(@tournament)
+
+    assert_response :success
+    assert_select "#tmatch_#{@match.id} .tmatch-card__done-badge", text: /Terminé/
+    other = @tournament.current_round.tournament_matches.where(is_bye: false).where.not(id: @match.id).first
+    assert_select "#tmatch_#{other.id} .tmatch-card__done-badge", count: 0
+  end
+
   test "l'organisateur enregistre un score, le vainqueur est dérivé" do
     sign_in @admin
     patch tournament_tournament_match_path(@tournament, @match), params: straight_win

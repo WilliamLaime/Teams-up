@@ -1321,6 +1321,33 @@
   border-bottom: 1px solid var(--theme-border);
 }
 
+.tmatch-card__when-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Tag « Terminé » poussé à droite du bandeau (margin-left: auto). Même pastille
+// que .tmatch-card__pool / __me-badge, mais en NEUTRE : le vert est déjà pris par
+// « Toi » et le score gagnant, le tag ne doit pas leur voler l'attention.
+.tmatch-card__done-badge {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background-color: var(--theme-hover-bg);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text-muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  font-style: normal;     // annule l'italique de --tbd (terminé sans date)
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 // Aucune date fixée : état VIDE, pas une information. L'italique et l'opacité
 // réduite le disent sans ajouter un badge de plus sur une carte déjà chargée.
 // Le gris est REPOSÉ ici : sans lui, « Date à définir » hériterait du vert de
@@ -1329,7 +1356,10 @@
   font-style: italic;
   font-weight: 500;
   color: var(--theme-text-muted);
-  opacity: 0.75;
+
+  // Opacité sur le contenu seulement (pas sur le bandeau) : le tag « Terminé »
+  // d'un match clos sans date garde ainsi son contraste normal.
+  > :not(.tmatch-card__done-badge) { opacity: 0.75; }
 }
 
 .tmatch-card__score-btn,
