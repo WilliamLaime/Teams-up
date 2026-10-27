@@ -22,6 +22,8 @@
       phase_key       : valeur data-phase du sélecteur    (défaut : "bracket")
       expected_rounds : nombre de tours prévus            (défaut : celui du tableau final)
       note            : phrase sous le tableau            (défaut : aucune)
+      first_round_slots : cases réservées du 1er tour       (défaut : celles du tableau
+                          final du Critérium, cf. criterium_first_round_slots)
 
     `note` sert aux tableaux préfigurés dont la première colonne n’annonce aucune
     provenance : sans elle, une consolante pas encore ouverte n’est qu’une grille
@@ -36,6 +38,12 @@
 <% phase_key = local_assigns.fetch(:phase_key, "bracket") %>
 <% expected  = local_assigns.fetch(:expected_rounds) { tournament.expected_bracket_round_count } %>
 <% note      = local_assigns[:note] %>
+<%# Critérium : le 1er tour est réservé dès la fin des poules et se remplit au fil
+    des barrages. Ses cases vides annoncent alors leur occupant (« 1er de poule »
+    déjà nommé) ou leur provenance (« Vainqueur Dupont / Martin »). %>
+<% first_round_slots = local_assigns.fetch(:first_round_slots) do
+     phase_key == "bracket" ? criterium_first_round_slots(tournament, "ok") : nil
+   end %>
 
 <section class="tournament-phase" data-tournament-phase-switch-target="section" data-phase="<%= phase_key %>"
          <%= "hidden" if phase_section_hidden?(tournament, phase_key) %>>
@@ -85,12 +93,22 @@
                     • première colonne  → les têtes de série attendues, l'ordre du
                       premier tour étant lui aussi déterminé d'avance (seeding
                       1 vs N). Tableau principal seulement : voir bracket_seed_labels. %>
-              <% seeds = index.zero? && phase_key == "bracket" ? bracket_seed_labels(size, position) : nil %>
-              <%= render "tournaments/bracket_placeholder_cell",
-                         player_a: feeders[position * 2]&.winner,
-                         player_b: feeders[(position * 2) + 1]&.winner,
-                         from_a: bracket_feeder_label(index, position * 2, total) || seeds&.first,
-                         from_b: bracket_feeder_label(index, (position * 2) + 1, total) || seeds&.second %>
+              <% reserved = index.zero? ? first_round_slots&.dig(position) : nil %>
+              <% if reserved %>
+                <%# Case réservée (Critérium) : occupant connu, ou provenance. %>
+                <%= render "tournaments/bracket_placeholder_cell",
+                           player_a: reserved.first&.occupant,
+                           player_b: reserved.second&.occupant,
+                           from_a: bracket_slot_label(reserved.first),
+                           from_b: bracket_slot_label(reserved.second) %>
+              <% else %>
+                <% seeds = index.zero? && phase_key == "bracket" ? bracket_seed_labels(size, position) : nil %>
+                <%= render "tournaments/bracket_placeholder_cell",
+                           player_a: feeders[position * 2]&.winner,
+                           player_b: feeders[(position * 2) + 1]&.winner,
+                           from_a: bracket_feeder_label(index, position * 2, total) || seeds&.first,
+                           from_b: bracket_feeder_label(index, (position * 2) + 1, total) || seeds&.second %>
+              <% end %>
             <% end %>
           <% end %>
         </div>

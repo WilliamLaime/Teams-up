@@ -68,7 +68,9 @@ class CriteriumPlacementTest < ActiveSupport::TestCase
   def play_until_bracket!(tournament, limit: 30)
     limit.times do
       TournamentEngine.for(tournament).next_round!
-      break if tournament.reload.bracket_rounds.exists?
+      # Le tableau existe dès la fin des poules (cases réservées) : on attend la
+      # fin des barrages, qui y pose les derniers matchs.
+      break if tournament.reload.bracket_rounds.exists? && tournament.barrage_rounds.all?(&:complete?)
 
       pending_matches(tournament).each { |match| win_tournament_match!(match, match.player_a) }
     end

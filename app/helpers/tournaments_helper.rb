@@ -257,6 +257,30 @@ module TournamentsHelper
     "Vainqueur #{singular} #{number}"
   end
 
+  # Cases du premier tour d'un tableau nourri par les barrages (Critérium) :
+  # [[Slot|nil, Slot|nil], …] par position, ou nil hors de ce cas. Memoïsé par
+  # tournoi et par tableau (« ok » / « ko ») : le calcul relit les poules.
+  def criterium_first_round_slots(tournament, key)
+    return nil unless tournament.criterium?
+
+    @criterium_first_round_slots ||= {}
+    @criterium_first_round_slots.fetch([tournament.id, key]) do
+      @criterium_first_round_slots[[tournament.id, key]] = CriteriumFlow.new(tournament).first_round_slots(key)
+    end
+  end
+
+  # Provenance d'une case réservée dont le match n'existe pas encore :
+  # « Vainqueur Dupont / Martin », « Perdant Dupont / Martin », ou « Exempt »
+  # pour une case sans adversaire (tableau dont l'effectif n'est pas une
+  # puissance de 2). nil quand l'occupant est connu : la case l'affiche.
+  def bracket_slot_label(slot)
+    return "Exempt" if slot.nil?
+    return nil unless slot.pending?
+
+    names = slot.barrage.players.map(&:display_name).join(" / ")
+    "#{slot.camp == :winner ? 'Vainqueur' : 'Perdant'} #{names}"
+  end
+
   # Têtes de série attendues sur une case de la PREMIÈRE colonne du tableau final
   # (8es, quarts… selon la taille), sous la forme ["Tête de série 1", "Tête de
   # série 8"]. nil quand le tableau n'est pas seedé (voir plus bas).
@@ -298,7 +322,11 @@ module TournamentsHelper
   # matchs de classement existent : c'est là que se joue le titre, donc ce que
   # l'utilisateur vient voir. Les autres phases sont à un clic.
   def default_board_phase(tournament)
-    return "bracket" if tournament.bracket_started?
+    # Le tableau final du Critérium naît EN MÊME TEMPS que les barrages (ses
+    # matchs se posent au fil des barrages, cf. CriteriumFlow#sync_slotted_node!).
+    # Tant qu'un barrage reste à jouer, c'est pourtant lui l'actualité du tournoi.
+    barrages_running = tournament.barrage_rounds.any? { |round| !round.complete? }
+    return "bracket" if tournament.bracket_started? && !barrages_running
     # `barrage_rounds.any?` et NON `barrage_expected?` (cf. board_phases) : la
     # phase est certes préfigurée dès le lancement, mais y ATTERRIR d'emblée
     # ouvrirait une section de cases vides alors que les poules se jouent.

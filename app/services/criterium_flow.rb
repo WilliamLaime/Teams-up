@@ -31,6 +31,28 @@
 class CriteriumFlow
   include RoundRobinStats
 
+  # ── Une case du premier tour d'un tableau nourri par les barrages ───────────
+  # Le tableau final et la consolante ne s'ouvrent plus « à la fin des barrages » :
+  # leurs cases sont FIGÉES dès que les barrages existent, et chaque match naît dès
+  # que son barrage est joué (cf. #sync_slotted_node!). Une case est donc :
+  #   • un joueur déjà connu (`player`) — un 1er ou un 4e de poule ;
+  #   • ou une promesse (`barrage` + `camp`) — « le vainqueur (ou le perdant) de
+  #     tel barrage », résolue quand ce barrage est joué.
+  Slot = Data.define(:player, :barrage, :camp) do
+    def self.known(player)           = new(player: player, barrage: nil, camp: nil)
+    def self.from(barrage, camp)     = new(player: nil, barrage: barrage, camp: camp)
+
+    def pending? = player.nil? && !barrage.decided?
+
+    # Le joueur qui occupe la case (nil tant que le barrage n'est pas joué).
+    def occupant = player || (barrage.public_send(camp) unless pending?)
+
+    # TOUTES les poules dont l'occupant peut venir. Une case de barrage en porte
+    # deux : on ignore encore qui gagnera, donc l'évitement « même poule » doit
+    # tenir quel que soit le résultat — sinon la case bougerait après le barrage.
+    def pools = player ? [player.pool] : barrage.players.map(&:pool)
+  end
+
   def initialize(tournament)
     @tournament = tournament
   end
@@ -92,6 +114,17 @@ class CriteriumFlow
   # qui compare des différentiels.
   def rank_by_strength(players) = by_strength(players)
 
+  # Le premier tour d'un tableau nourri par les barrages, position par position :
+  # [[Slot|nil, Slot|nil], …] (nil = bye). Exposé pour les vues, qui annoncent
+  # « Vainqueur X / Y » sur les cases dont le match n'existe pas encore.
+  # nil si le tableau ne dépend pas des barrages, ou si ceux-ci n'existent pas.
+  def first_round_slots(key)
+    node = structure.node(key)
+    return nil unless node && slotted?(node) && @tournament.barrage_rounds.exists?
+
+    slot_pairs(ordered_slots(node))
+  end
+
   private
 
   def structure = @structure ||= @tournament.criterium_structure
@@ -101,16 +134,14 @@ class CriteriumFlow
   #
   # Renvoie [] tant que les sources ne sont pas jouées : c'est ce qui fait qu'un
   # mini-tableau ne s'ouvre pas avant l'heure, sans aucun test d'étape explicite.
+  #
+  # Le tableau final et la consolante (`:exempt_first`, `:seeded`) ne passent PAS
+  # par ici : nourris par les barrages, ils sont posés case par case (cf.
+  # #ordered_slots, #sync_slotted_node!).
   def entrants_for(node)
     groups = node.sources.map { |source| resolve(source) }
 
     case node.pairing
-    # Tableau final : les 1ers de poule (1er groupe) gardent les têtes de série
-    # hautes, les vainqueurs de barrage prennent les basses.
-    when :exempt_first then avoid_own_pool_first_round(groups.flatten, protected_count: groups.first.size)
-    # Consolante : tout le monde classé par force, puis on écarte les joueurs de
-    # même poule du premier tour (ils viennent de s'affronter).
-    when :seeded       then avoid_own_pool_first_round(by_strength(groups.flatten), protected_count: 0)
     # Mini-tableau de classement : on CONSERVE l'ordre dans lequel les joueurs ont
     # perdu (position dans le tour parent). L'appariement miroir les reprend alors
     # en moitiés opposées du tableau parent, donc deux joueurs qui s'y sont déjà
@@ -214,6 +245,7 @@ class CriteriumFlow
   # #advance! renvoie nil quand il n'a rien créé, y compris quand le tableau a
   # atteint sa finale.
   def sync_node!(node)
+    return sync_slotted_node!(node) if slotted?(node)
     return open_node!(node) if rounds_of(node).empty?
 
     builder_for(node).advance!
@@ -221,14 +253,99 @@ class CriteriumFlow
     nil
   end
 
+  # ── Tableaux nourris par les barrages : au fil de l'eau ─────────────────────
+  # Demande des joueurs : un match du tableau final (ou de la consolante) doit
+  # pouvoir se jouer dès que SON barrage est fini, sans attendre les autres.
+  #
+  # Le premier tour est donc créé en même temps que les barrages, avec toutes ses
+  # cases figées (#ordered_slots), et chaque appel y pose les matchs devenus
+  # connus. Les tours suivants avancent ensuite comme d'habitude (incrémental).
+  #
+  # ⚠️ C'est ce qui interdit de classer les entrants « par force » APRÈS les
+  # barrages, comme avant : la place d'un vainqueur de barrage ne doit dépendre
+  # ni de son identité ni de l'issue des autres barrages, sinon un match déjà posé
+  # se retrouverait à la mauvaise case quand le barrage suivant se termine.
+  def sync_slotted_node!(node)
+    return nil unless pools_complete? && @tournament.barrage_rounds.exists?
+
+    slots = ordered_slots(node)
+    return nil if slots.empty?
+
+    builder = builder_for(node)
+    first   = builder.place_first_round!(slot_pairs(slots).map { |pair| resolve_pair(pair) })
+    builder.advance! || first
+  end
+
+  # Ce tableau est-il nourri par les barrages (nœud de transit) ?
+  def slotted?(node)
+    node.sources.any? do |source|
+      !source.is_a?(CriteriumStructure::PoolQualifiers) && structure.node(source.key)&.transit?
+    end
+  end
+
+  # Les cases du premier tour, dans l'ordre de tête de série.
+  #
+  # Tableau final (`:exempt_first`) : les 1ers de poule par force gardent les têtes
+  # de série hautes, puis « vainqueur du barrage N » dans l'ordre des barrages.
+  #
+  # Consolante (`:seeded`) : « perdant du barrage N » d'abord — ce sont des 2es et
+  # des 3es, au-dessus de n'importe quel 4e —, puis les 4es par force. Un barrage
+  # sans adversaire (bye) n'a pas de perdant, il ne fournit donc aucune case.
+  #
+  # Puis réparation « même poule », calculée sur les poules POSSIBLES de chaque case.
+  #
+  # ⚠️ Les joueurs partis ne sont PAS écartés ici, contrairement à #resolve : une
+  # case ne doit jamais disparaître, sinon toutes les suivantes glisseraient d'un
+  # cran sous des matchs déjà posés. Un partant laisse sa case, et son adversaire
+  # y prend un bye (#resolve_pair).
+  def ordered_slots(node)
+    barrages = @tournament.barrage_rounds.first&.tournament_matches&.sort_by(&:position) || []
+
+    known, promised = node.sources.partition { |source| source.is_a?(CriteriumStructure::PoolQualifiers) }
+    known    = known.flat_map { |source| by_strength(pool_qualifiers(source.rank)).map { |tu| Slot.known(tu) } }
+    promised = promised.flat_map do |source|
+      camp = source.is_a?(CriteriumStructure::Winners) ? :winner : :loser
+      fed  = camp == :loser ? barrages.reject(&:is_bye) : barrages
+      fed.map { |match| Slot.from(match, camp) }
+    end
+
+    if node.pairing == :seeded
+      # Seuls les 4es bougent : déplacer une case de perdant ferait se croiser deux
+      # 4es au premier tour. Sans 4e (poules de 3), tout le monde est déplaçable.
+      avoid_own_pool_first_round(promised + known, protected_count: known.any? ? promised.size : 0)
+    else
+      avoid_own_pool_first_round(known + promised, protected_count: known.size)
+    end
+  end
+
+  # Les cases, appariées comme BracketBuilder apparie ses entrants (seeding 1 vs N).
+  # nil = bye (case au-delà de l'effectif).
+  def slot_pairs(slots)
+    BracketBuilder.seed_order(next_power_of_two(slots.size))
+                  .each_slice(2)
+                  .map { |seed_a, seed_b| [slots[seed_a - 1], slots[seed_b - 1]] }
+  end
+
+  # Les deux joueurs d'une position, ou nil si un barrage reste à jouer.
+  # Un partant est remplacé par un bye, comme BracketBuilder#pair_players le fait
+  # aux tours suivants — sauf si les DEUX sont partis : un match en forfait vaut
+  # mieux qu'une branche gelée pour toujours.
+  def resolve_pair(pair)
+    return nil if pair.compact.any?(&:pending?)
+
+    raw     = pair.map { |slot| slot&.occupant }
+    playing = raw.map { |player| player&.withdrawn? ? nil : player }
+
+    playing.compact.empty? ? raw : playing
+  end
+
   # Premier tour d'un tableau.
   #
   # ⚠️ On exige que TOUTES les sources soient jouées, pas seulement qu'il y ait
-  # assez de monde pour apparier. La consolante se nourrit des 4es de poule ET des
-  # perdants de barrage : les 4es sont connus dès la fin des poules, donc sans cette
-  # garde le tableau s'ouvrirait à 4 joueurs au lieu de 8 et les perdants de barrage
-  # n'y entreraient JAMAIS. Même piège pour le tableau final (1ers de poule connus
-  # avant les vainqueurs de barrage).
+  # assez de monde pour apparier : un mini-tableau ouvert avec une partie de ses
+  # perdants n'accueillerait JAMAIS les autres. (Le tableau final et la consolante,
+  # qui mêlent joueurs connus et barragistes, ne passent pas par ici : leurs cases
+  # sont réservées d'avance, cf. #sync_slotted_node!.)
   #
   # Un nœud SANS entrant n'est pas une erreur : un tableau de 8 à 6 entrants ne
   # produit que 2 perdants au premier tour, donc son mini-tableau des 7e/8e n'aura
@@ -285,6 +402,9 @@ class CriteriumFlow
   # `persist_seeds` UNIQUEMENT pour le tableau final : `tournament_users.seed` est
   # une colonne unique par inscription, donc un second tableau écraserait les têtes
   # de série du premier. Les autres apparient sur l'ordre reçu (cf. BracketBuilder).
+  # (Sans effet en mode standard : le tableau final y est posé case par case par
+  # #place_first_round!, qui n'écrit pas de tête de série — un vainqueur de
+  # barrage n'est pas connu au moment où sa case est réservée.)
   #
   # `finalists` n'est nécessaire qu'au premier tour (#build!) ; #advance! dérive ses
   # entrants des vainqueurs du tour précédent.
@@ -384,10 +504,30 @@ class CriteriumFlow
   # légitimement. Sans cette symétrie, son départ rendait le tour « périmé », et la
   # correction suivante d'un barrage détruisait le tableau final et tous ses scores.
   def stale_first_round?(node, round)
+    return stale_slotted_round?(node, round) if slotted?(node)
+
     expected = expected_entrants(node, round.number).to_set(&:id)
     return false if expected.empty?
 
     expected != participants_of(round) - withdrawn_ids
+  end
+
+  # Premier tour posé au fil des barrages. Il a des trous tant que des barrages
+  # restent à jouer : exiger l'égalité des ensembles le déclarerait périmé à tort.
+  # On vérifie donc l'INCLUSION — chaque joueur déjà placé a-t-il encore le droit
+  # d'être là ? Un barrage corrigé change de vainqueur : l'ancien n'est plus
+  # ayant droit au tableau final (il l'est devenu en consolante), et le tour est
+  # périmé dans les deux tableaux.
+  #
+  # ⚠️ Volontairement indépendant de la DISPOSITION des cases : un tableau tiré
+  # avant ce mode (apparié après les barrages, par force) a une autre disposition
+  # que celle que #ordered_slots produirait aujourd'hui. Le juger case par case
+  # le détruirait — avec ses scores — à la première correction venue.
+  # Partants ignorés, comme ci-dessus.
+  def stale_slotted_round?(node, round)
+    entitled = ordered_slots(node).filter_map(&:occupant).to_set(&:id)
+
+    !(participants_of(round) - withdrawn_ids).subset?(entitled)
   end
 
   def withdrawn_ids = @tournament.tournament_users.withdrawn.pluck(:id).to_set
@@ -491,12 +631,14 @@ class CriteriumFlow
   # ne déplace PAS, pour ne pas défaire le seeding des 1ers de poule. Si aucun
   # échange ne résout la collision, on la laisse : le tableau doit exister, une
   # affiche imparfaite valant mieux qu'un blocage.
+  #
+  # Les entrants sont des joueurs OU des cases (Slot) : cf. #clash?.
   def avoid_own_pool_first_round(entrants, protected_count:)
     entrants = entrants.dup
     swappable = (protected_count...entrants.size).to_a
 
     first_round_pairs(entrants.size).each do |index_a, index_b|
-      next unless same_pool?(entrants[index_a], entrants[index_b])
+      next unless clash?(entrants[index_a], entrants[index_b])
 
       # On déplace celui des deux qui n'est pas protégé.
       moving = swappable.include?(index_b) ? index_b : index_a
@@ -508,14 +650,25 @@ class CriteriumFlow
         # L'adversaire de la place visée peut être un bye (nil) : personne à heurter.
         partner = partner_of(j, entrants.size)
 
-        !same_pool?(entrants[other], entrants[j]) &&
-          (partner.nil? || !same_pool?(entrants[partner], entrants[moving]))
+        !clash?(entrants[other], entrants[j]) &&
+          (partner.nil? || !clash?(entrants[partner], entrants[moving]))
       end
       entrants[moving], entrants[target] = entrants[target], entrants[moving] if target
     end
 
     entrants
   end
+
+  # Deux entrants risquent-ils de venir de la même poule ? Un joueur n'a qu'une
+  # poule ; une case de barrage en a deux possibles (cf. Slot#pools), et la
+  # collision doit être évitée quel que soit le vainqueur.
+  def clash?(entrant_a, entrant_b)
+    return false if entrant_a.nil? || entrant_b.nil?
+
+    pools_of(entrant_a).intersect?(pools_of(entrant_b))
+  end
+
+  def pools_of(entrant) = entrant.is_a?(Slot) ? entrant.pools : [entrant.pool]
 
   # Les paires du premier tour, exprimées en INDEX dans le tableau des entrants
   # (BracketBuilder apparie sur l'index, pas sur la colonne `seed`). Les byes
@@ -580,10 +733,11 @@ class CriteriumFlow
   # barrages, et son adversaire y prend un bye — cf. #barrage_pairs, qui gère
   # déjà les `nil` par `zip`.
   def qualifiers_at(rank)
-    qualified = standings.values.filter_map { |pool| pool.qualifier(rank) }
-
-    by_strength(qualified.reject(&:withdrawn?))
+    by_strength(pool_qualifiers(rank).reject(&:withdrawn?))
   end
+
+  # Les Nes de chaque poule, partants COMPRIS (cf. #ordered_slots).
+  def pool_qualifiers(rank) = standings.values.filter_map { |pool| pool.qualifier(rank) }
 
   # Ordre de force inter-poules. Le règlement FFTT ne définit pas de classement
   # entre poules (il s'appuie sur le classement officiel des joueurs, que l'app
