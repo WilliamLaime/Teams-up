@@ -1,3 +1,21 @@
+# Critérium : tableau final et consolante au fil des barrages
+
+Branche `criterium-tableau-au-fil-des-barrages` — demande des joueurs du 27 octobre 2026 :
+« chaque match se débloque dès que son barrage est joué ».
+
+- [x] 1. Places figées dès la fin des poules (`CriteriumFlow`) : chaque case du 1er tour est un
+      joueur connu (1er / 4e de poule) ou « vainqueur / perdant du barrage N ». Ordre et
+      évitement « même poule » indépendants des résultats de barrage (une case de barrage
+      porte les DEUX poules de ses joueurs)
+- [x] 2. 1er tour créé dès la création des barrages (`expected_matches` = cases / 2), chaque
+      match posé dès que ses deux cases sont résolues (`BracketBuilder#place_first_round!`)
+- [x] 3. Correction de score : 1er tour périmé dès qu'un joueur placé n'y a plus droit (inclusion)
+- [x] 4. Affichage : cases « Vainqueur X / Y », « Perdant X / Y » sur le 1er tour, phase par
+      défaut = barrages tant qu'ils se jouent, note de la consolante
+- [x] 5. Tests (nouveaux + existants), doc `docs/TOURNOI.md`
+- [x] Suite complète verte (1453 runs), rubocop propre sur les fichiers touchés
+- [ ] Recette navigateur : cases « Vainqueur X / Y » sur le tableau et la consolante
+
 # Critérium Fédéral : fiabiliser les règles (classement, forfaits, phase finale)
 
 Branche `fix-criterium-regles` — plan validé le 28 septembre 2026.

@@ -152,7 +152,10 @@ class CriteriumIncrementalTest < ActiveSupport::TestCase
   def open_final_bracket!
     30.times do
       TournamentEngine.for(@tournament).next_round!
-      break if bracket_round(1).present?
+      # Le 1er tour existe dès la fin des poules (cases réservées) : on attend
+      # qu'il soit ENTIÈREMENT posé, c'est-à-dire que les barrages soient joués.
+      first = bracket_round(1)
+      break if first && first.tournament_matches.count == first.expected_matches
 
       resolve_pending_except_bracket!
     end

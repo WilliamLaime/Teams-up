@@ -87,6 +87,33 @@ class BracketBuilder
     round
   end
 
+  # Premier tour posé AU FIL DE L'EAU (Critérium, cf. CriteriumFlow#sync_slotted_node!).
+  #
+  # `pairs` décrit TOUT le premier tour, position par position :
+  #   • [joueur_a, joueur_b] — les deux camps sont connus (un nil = bye) ;
+  #   • nil                  — un camp attend encore son barrage.
+  # Le tour est créé d'emblée avec toutes ses positions attendues
+  # (`expected_matches`), donc il n'est pas « complet » tant qu'il a des trous
+  # (cf. TournamentRound#complete?). Seuls les matchs connus sont posés ; les
+  # autres le seront aux appels suivants, sans jamais déplacer les premiers.
+  #
+  # Renvoie le tour s'il a été créé ou complété, nil sinon — même contrat que
+  # #advance! en mode incrémental (cf. #advance_incrementally!).
+  def place_first_round!(pairs)
+    round   = rounds.find { |r| r.number == 1 }
+    created = round.nil?
+    round ||= create_round!(number: 1, expected_matches: pairs.size)
+    taken   = round.tournament_matches.pluck(:position).to_set
+
+    pairs.each_with_index do |pair, position|
+      next if pair.nil? || taken.include?(position)
+
+      created = true if place_players!(round, *pair, position)
+    end
+
+    created ? round : nil
+  end
+
   # Tour suivant. Renvoie nil quand le tableau est terminé (un seul vainqueur), et
   # clôt alors le tournoi si ce tableau en est responsable.
   def advance!
@@ -229,8 +256,12 @@ class BracketBuilder
   # concurrentes feraient perdre SILENCIEUSEMENT tout le travail de #advance!,
   # le `rescue` de CriteriumFlow#sync_node! avalant l'erreur.
   def place_match!(round, pair, position)
-    player_a, player_b = pair_players(pair)
+    place_players!(round, *pair_players(pair), position)
+  end
 
+  # Pose UN match sous savepoint (cf. #place_match!). false si une passe
+  # concurrente l'a déjà posé.
+  def place_players!(round, player_a, player_b, position)
     ActiveRecord::Base.transaction(requires_new: true) do
       build_match!(round, player_a, player_b, position)
     end

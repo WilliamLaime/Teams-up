@@ -250,6 +250,19 @@ règlement est que **chaque place se joue** — pas seulement la première.
       « chapeau général » complète. Ni serpent ni classement individuel : l'organisateur remplit
       les chapeaux à la main depuis l'onglet Participants (`PATCH /tournois/:id/constitution`,
       `TournamentPolicy#seeding?` : organisation seulement, et avant le lancement).
+- [x] **Tableau final et consolante au fil des barrages** (demande des joueurs, 27 oct. 2026) :
+      un match du 1er tour se joue dès que **son** barrage est fini, sans attendre les autres.
+      Le 1er tour des deux tableaux est créé en même temps que les barrages, avec ses cases
+      **figées** (`CriteriumFlow::Slot`) : un joueur connu (1er / 4e de poule) ou « vainqueur /
+      perdant du barrage N », posé par `BracketBuilder#place_first_round!` dès que les deux camps
+      d'une position sont connus. Conséquences voulues : (1) la case d'un barragiste ne dépend
+      plus de l'issue des barrages — l'évitement « même poule » porte sur les **deux** poules du
+      barrage, et la consolante n'est plus classée par force après coup (perdants de barrage en
+      têtes de série, 4es par force en face) ; (2) un joueur parti garde sa case, son adversaire
+      prend un bye ; (3) à la correction d'un barrage, le 1er tour est périmé dès qu'un de ses
+      joueurs n'y a plus droit (inclusion, indépendante de la disposition des cases : un tableau
+      tiré avant ce changement n'est pas détruit pour autant). Les cases vides affichent « Vainqueur X / Y » / « Perdant X / Y », et la phase
+      Barrages reste affichée par défaut tant qu'un barrage reste à jouer.
 - [x] **Correction & forfaits** : corriger en **poule** reprend toute la phase finale (le
       classement de départ a changé) ; corriger **dans** la phase finale passe par
       `CriteriumFlow#reconcile!`, qui cherche le premier tour dont les joueurs ne sont plus les

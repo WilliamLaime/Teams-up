@@ -89,10 +89,29 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_select "section[data-phase=?] .tournament-phase__title", "consolation",
                   text: /Consolante/
     assert_select "section[data-phase='consolation'] .tmatch-card:not(.tmatch-card--placeholder)", 0,
-                  "aucun match réel de consolante avant la fin des barrages"
+                  "aucun match réel de consolante avant le premier barrage joué"
     # Sans provenance à afficher sur la 1re colonne, la note dit qui viendra y jouer.
     assert_select "section[data-phase='consolation'] .tournament-empty",
                   text: /4es de poule/
+  end
+
+  # Le 1er tour se remplit au fil des barrages : ses cases vides doivent dire
+  # qui les occupera, sinon personne ne sait contre qui il jouera.
+  test "à la fin des poules, le tableau annonce les 1ers et les vainqueurs de barrage attendus" do
+    play_until_barrages!
+    barrage = @tournament.barrage_rounds.first.tournament_matches.order(:position).first
+    first   = Tournament.find(@tournament.id).pool_standings.values.first.qualifier(1)
+
+    sign_in @owner
+    get tournament_path(@tournament)
+
+    assert_response :success
+    names = "#{barrage.player_a.display_name} / #{barrage.player_b.display_name}"
+    assert_select "section[data-phase='bracket'] .tmatch-card__placeholder-label", text: "Vainqueur #{names}"
+    assert_select "section[data-phase='bracket'] .tmatch-card__name", text: first.display_name
+    assert_select "section[data-phase='consolation'] .tmatch-card__placeholder-label", text: "Perdant #{names}"
+    # Les barrages restent la phase affichée par défaut tant qu'ils se jouent.
+    assert_select "[data-tournament-phase-switch-default-value=?]", "barrage"
   end
 
   # Les effectifs réduits n'ont ni barrage ni consolante (tableau unique) : la

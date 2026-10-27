@@ -615,3 +615,15 @@ la dépasse dès le lendemain, et le formulaire proposait une date passée.
 1. Un classement ne doit **jamais** afficher des chiffres venant d'une autre source que celle qui a produit l'ordre. Si l'ordre vient d'un service, les colonnes aussi.
 2. Tout critère « restreint à un sous-ensemble » doit traiter le cas du sous-ensemble **vide ou incomplet**, sinon il tombe silencieusement sur le dernier recours.
 3. Un audit de règles trouve aussi des faux positifs : ici, le passage au passé des destinations au moment du tirage était voulu, et un test existant le disait. Lire le test avant de « corriger ».
+
+## 2026-10-27 — Critérium : tableau rempli au fil des barrages
+
+- **Demande** : jouer un match du tableau final dès que son barrage est fini, sans attendre les autres.
+- **Piège** : le tableau était apparié APRÈS les barrages, sur des critères qui dépendaient du résultat (évitement « même poule » sur le joueur réel, consolante classée par force). Poser un match tôt l'aurait mis à une case qui bouge quand le barrage suivant se termine.
+- **Solution** : réserver les cases dès la fin des poules, avec des critères qui ne dépendent d'aucun résultat (une case de barrage porte les deux poules possibles), puis poser chaque match dès que ses deux cases sont connues.
+
+À retenir :
+1. Un appariement qu'on veut construire **par morceaux** doit être une fonction de ce qui est déjà connu, jamais de ce qui reste à jouer — sinon les morceaux déjà posés deviennent faux.
+2. Une case ne doit jamais disparaître d'une liste positionnelle (ici : un joueur parti garde sa case, l'adversaire prend un bye), sinon toutes les suivantes glissent sous des matchs déjà posés.
+3. Dans un helper de test, `a&.x == b&.x` vaut `true` quand les deux sont nil : la boucle sortait avant même que le tour existe.
+

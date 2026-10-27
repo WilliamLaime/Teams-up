@@ -59,6 +59,26 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
     assert_includes participants(bracket_round(2)), loser.id
   end
 
+  # Le tableau se remplit au fil des barrages : un barrage corrigé alors que son
+  # match de tableau existe déjà doit y remplacer l'ancien vainqueur — et le
+  # perdant d'hier, qui a gagné, ne doit plus traîner en consolante.
+  test "corriger un barrage remplace son vainqueur au tableau final et en consolante" do
+    play_until_bracket_round!(1)
+    resolve_barrages_only!
+    TournamentEngine.for(@tournament).next_round!
+
+    barrage = @tournament.barrage_rounds.first.tournament_matches.order(:position).first
+    old_winner = barrage.winner
+    new_winner = other_player(barrage)
+
+    correct!(barrage, new_winner)
+
+    assert_includes participants(bracket_round(1)), new_winner.id
+    assert_not_includes participants(bracket_round(1)), old_winner.id
+    assert_includes participants(consolation_round(1)), old_winner.id
+    assert_not_includes participants(consolation_round(1)), new_winner.id
+  end
+
   test "les scores déjà saisis en consolante survivent à la correction" do
     play_until_bracket_round!(2)
     # On joue un match de consolante AVANT la correction : c'est lui qui ne doit
@@ -239,6 +259,11 @@ class CriteriumCorrectionTest < ActionDispatch::IntegrationTest
                    .where(status: "pending", is_bye: false)
                    .to_a
                    .each { |match| win_tournament_match!(match, match.player_a) }
+  end
+
+  def resolve_barrages_only!
+    @tournament.barrage_rounds.first.tournament_matches.where(status: "pending", is_bye: false)
+               .each { |match| win_tournament_match!(match, match.player_a) }
   end
 
   # Déroule le tournoi jusqu'à ce que le tableau final ait `number` tours.
