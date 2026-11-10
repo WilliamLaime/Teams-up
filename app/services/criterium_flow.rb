@@ -37,12 +37,18 @@ class CriteriumFlow
   # que son barrage est joué (cf. #sync_slotted_node!). Une case est donc :
   #   • un joueur déjà connu (`player`) — un 1er ou un 4e de poule ;
   #   • ou une promesse (`barrage` + `camp`) — « le vainqueur (ou le perdant) de
-  #     tel barrage », résolue quand ce barrage est joué.
-  Slot = Data.define(:player, :barrage, :camp) do
-    def self.known(player)           = new(player: player, barrage: nil, camp: nil)
-    def self.from(barrage, camp)     = new(player: nil, barrage: barrage, camp: camp)
+  #     tel barrage », résolue quand ce barrage est joué ;
+  #   • ou une attente (`origin`) — « le perdant du match N de tel tour », pour un
+  #     mini-tableau de classement dont le match nourricier n'est pas encore joué
+  #     (cf. #loser_slots). `origin` = Feeder, qui sert aussi au libellé de la vue.
+  #     Une case de perdant résolue redevient un `known`, qui garde son `origin`.
+  Slot = Data.define(:player, :barrage, :camp, :origin) do
+    def self.known(player, origin = nil) = new(player: player, barrage: nil, camp: nil, origin: origin)
+    def self.from(barrage, camp)         = new(player: nil, barrage: barrage, camp: camp, origin: nil)
+    def self.awaiting(origin)            = new(player: nil, barrage: nil, camp: :loser, origin: origin)
 
-    def pending? = player.nil? && !barrage.decided?
+    # Une attente n'a ni joueur ni barrage : elle est en suspens par définition.
+    def pending? = player.nil? && !barrage&.decided?
 
     # Le joueur qui occupe la case (nil tant que le barrage n'est pas joué).
     def occupant = player || (barrage.public_send(camp) unless pending?)
@@ -50,8 +56,22 @@ class CriteriumFlow
     # TOUTES les poules dont l'occupant peut venir. Une case de barrage en porte
     # deux : on ignore encore qui gagnera, donc l'évitement « même poule » doit
     # tenir quel que soit le résultat — sinon la case bougerait après le barrage.
-    def pools = player ? [player.pool] : barrage.players.map(&:pool)
+    # (Une attente n'est jamais déplacée : les mini-tableaux n'évitent pas la même
+    # poule, cf. #entrants_for — d'où la liste vide.)
+    def pools
+      return [player.pool] if player
+      return barrage.players.map(&:pool) if barrage
+
+      []
+    end
   end
+
+  # ── Provenance d'une case de mini-tableau ───────────────────────────────────
+  # « Le perdant du match `position` (0-based) du tour `round` du tableau `key` ».
+  # `round_count` = nombre de tours de ce tableau : c'est ce qui permet à la vue de
+  # dire « 8e de finale 3 » plutôt que « tour 1, match 3 » (cf.
+  # TournamentsHelper#bracket_slot_label).
+  Feeder = Data.define(:key, :round, :position, :round_count)
 
   def initialize(tournament)
     @tournament = tournament
@@ -68,6 +88,7 @@ class CriteriumFlow
       # barrages, eux, viennent d'être reconstruits sur le classement neuf.
       @tournament.reset_standings!
       @standings = nil
+      @layouts   = nil
 
       close_finished_rounds!
 
@@ -85,12 +106,23 @@ class CriteriumFlow
   # une correction en POULE, où le classement de départ change et où tout est donc
   # caduc) y effacerait des scores encore parfaitement valides.
   #
-  # On cherche donc le premier tour DEVENU FAUX — celui dont les joueurs réels ne
-  # sont plus ceux que la structure produirait aujourd'hui — et on ne détruit qu'à
-  # partir de lui. `id` croissant EST l'ordre causal : un tour n'est jamais créé
-  # avant ses sources, donc « après le tour périmé » est exactement « en aval ».
-  # #advance! reconstruit ensuite : il est déterministe, il retombe à l'identique
-  # sur tout ce que la correction n'a pas touché.
+  # On cherche donc les tours DEVENUS FAUX — ceux dont les joueurs réels ne sont
+  # plus ceux que la structure produirait aujourd'hui — et on ne détruit que leur
+  # AVAL STRUCTUREL (#destroy_downstream!) : les tours suivants du même tableau et
+  # les mini-tableaux nés de ces tours. #advance! reconstruit ensuite : il est
+  # déterministe, il retombe à l'identique sur tout ce que la correction n'a pas
+  # touché.
+  #
+  # ⚠️ Pas « tout tour d'`id` supérieur » : depuis que les mini-tableaux de
+  # classement naissent au fil de l'eau, le 5e-8e est créé AVANT les quarts.
+  # Corriger un 8e (dont le perdant change) aurait alors détruit les quarts déjà
+  # joués, qui n'ont rien à voir. `id` reste en revanche un ordre causal fiable
+  # pour filtrer `from` : un tour n'est jamais créé avant SES sources (cf.
+  # #loser_slots).
+  #
+  # Une boucle, pas une recherche unique : une correction change à la fois un
+  # vainqueur (le tour suivant devient faux) ET un perdant (le mini-tableau de
+  # classement devient faux), deux aval distincts.
   #
   # `from` = le tour corrigé lui-même : lui n'est jamais périmé (ses joueurs n'ont
   # pas changé, seul le vainqueur a changé), et l'exclure garantit qu'on ne détruit
@@ -99,9 +131,12 @@ class CriteriumFlow
     ActiveRecord::Base.transaction do
       @tournament.reset_standings!
       @standings = nil
+      @layouts   = nil
 
-      stale = first_stale_round(after: from)
-      @tournament.tournament_rounds.final_phase.where(id: stale.id..).destroy_all if stale
+      while (stale = first_stale_round(after: from))
+        destroy_downstream!(*stale)
+        @layouts = nil
+      end
 
       advance!
     end
@@ -114,15 +149,15 @@ class CriteriumFlow
   # qui compare des différentiels.
   def rank_by_strength(players) = by_strength(players)
 
-  # Le premier tour d'un tableau nourri par les barrages, position par position :
+  # Le premier tour d'un tableau posé case par case, position par position :
   # [[Slot|nil, Slot|nil], …] (nil = bye). Exposé pour les vues, qui annoncent
-  # « Vainqueur X / Y » sur les cases dont le match n'existe pas encore.
-  # nil si le tableau ne dépend pas des barrages, ou si ceux-ci n'existent pas.
+  # « Vainqueur X / Y » ou « Perdant 8e de finale 3 » sur les cases dont le match
+  # n'existe pas encore.
+  # nil si le tableau n'est pas posé case par case, ou si sa disposition n'est pas
+  # encore connue (barrages pas créés, tour source pas encore en base).
   def first_round_slots(key)
     node = structure.node(key)
-    return nil unless node && slotted?(node) && @tournament.barrage_rounds.exists?
-
-    slot_pairs(ordered_slots(node))
+    node && laid_out?(node) ? layout(node) : nil
   end
 
   private
@@ -132,28 +167,23 @@ class CriteriumFlow
   # ── Résolution des entrants d'un nœud ───────────────────────────────────────
   # Les joueurs qui entrent dans un nœud, dans l'ordre de tête de série.
   #
-  # Renvoie [] tant que les sources ne sont pas jouées : c'est ce qui fait qu'un
-  # mini-tableau ne s'ouvre pas avant l'heure, sans aucun test d'étape explicite.
+  # Renvoie [] tant que les sources ne sont pas jouées.
   #
-  # Le tableau final et la consolante (`:exempt_first`, `:seeded`) ne passent PAS
-  # par ici : nourris par les barrages, ils sont posés case par case (cf.
-  # #ordered_slots, #sync_slotted_node!).
+  # Ne sert plus qu'aux tableaux construits D'UN BLOC à partir des poules (le
+  # classement intégral). Tous les autres sont posés case par case (cf. #layout,
+  # #sync_slotted_node!) : le tableau final et la consolante au fil des barrages,
+  # les mini-tableaux de classement au fil des matchs de leur tableau parent.
   def entrants_for(node)
     groups = node.sources.map { |source| resolve(source) }
 
     case node.pairing
-    # Mini-tableau de classement : on CONSERVE l'ordre dans lequel les joueurs ont
-    # perdu (position dans le tour parent). L'appariement miroir les reprend alors
-    # en moitiés opposées du tableau parent, donc deux joueurs qui s'y sont déjà
-    # rencontrés ne se retrouvent pas immédiatement.
-    when :carry_over   then groups.flatten
     # Classement intégral : les sources sont les rangs de poule dans l'ordre (les
     # 1ers, puis les 2es…), donc `flatten` EST déjà l'ordre de tête de série voulu.
     # On protège les 1ers de poule comme dans le tableau final : l'appariement
     # miroir les place alors en moitiés opposées, et aucun ne rencontre un autre 1er
     # au premier tour.
-    when :pool_rank    then avoid_own_pool_first_round(groups.flatten, protected_count: groups.first.size)
-    else                    by_strength(groups.flatten)
+    when :pool_rank then avoid_own_pool_first_round(groups.flatten, protected_count: groups.first.size)
+    else                 by_strength(groups.flatten)
     end
   end
 
@@ -236,8 +266,12 @@ class CriteriumFlow
 
   def sync_nodes! = playable_nodes.map { |node| sync_node!(node) }
 
-  # Trois cas : le nœud n'est pas ouvert (ses sources sont-elles prêtes ?), il est
-  # ouvert et complétable, ou il est ouvert et il n'y a rien à faire.
+  # Deux familles de tableaux :
+  #   • posés CASE PAR CASE (#laid_out?) — tableau final, consolante et
+  #     mini-tableaux de classement : leur premier tour est figé d'avance et se
+  #     remplit au fil des résultats (cf. #sync_slotted_node!) ;
+  #   • construits D'UN BLOC — le tableau unique du classement intégral, ouvert
+  #     quand les poules sont finies.
   #
   # Aucune garde de complétude sur le dernier tour : c'est le builder qui décide,
   # match par match, ce qui est créable — un quart naît dès que ses deux huitièmes
@@ -245,7 +279,7 @@ class CriteriumFlow
   # #advance! renvoie nil quand il n'a rien créé, y compris quand le tableau a
   # atteint sa finale.
   def sync_node!(node)
-    return sync_slotted_node!(node) if slotted?(node)
+    return sync_slotted_node!(node) if laid_out?(node)
     return open_node!(node) if rounds_of(node).empty?
 
     builder_for(node).advance!
@@ -253,34 +287,161 @@ class CriteriumFlow
     nil
   end
 
-  # ── Tableaux nourris par les barrages : au fil de l'eau ─────────────────────
-  # Demande des joueurs : un match du tableau final (ou de la consolante) doit
-  # pouvoir se jouer dès que SON barrage est fini, sans attendre les autres.
+  # ── Tableaux posés case par case : au fil de l'eau ──────────────────────────
+  # Demande des joueurs : un match doit pouvoir se jouer dès que SES deux
+  # adversaires sont connus, sans attendre le reste du tour qui les a produits.
+  #   • tableau final / consolante : dès que SON barrage est fini ;
+  #   • mini-tableau de classement : dès que SES deux matchs nourriciers du
+  #     tableau parent sont joués (le perdant du 8e n°1 contre celui du 8e n°8).
   #
-  # Le premier tour est donc créé en même temps que les barrages, avec toutes ses
-  # cases figées (#ordered_slots), et chaque appel y pose les matchs devenus
+  # Le premier tour est donc créé dès que sa disposition est connue (#layout),
+  # avec toutes ses cases figées, et chaque appel y pose les matchs devenus
   # connus. Les tours suivants avancent ensuite comme d'habitude (incrémental).
   #
-  # ⚠️ C'est ce qui interdit de classer les entrants « par force » APRÈS les
-  # barrages, comme avant : la place d'un vainqueur de barrage ne doit dépendre
-  # ni de son identité ni de l'issue des autres barrages, sinon un match déjà posé
-  # se retrouverait à la mauvaise case quand le barrage suivant se termine.
+  # ⚠️ C'est ce qui interdit d'apparier les entrants APRÈS coup, comme avant : la
+  # place d'un joueur ne doit dépendre ni de son identité ni de l'issue des
+  # autres matchs, sinon un match déjà posé se retrouverait à la mauvaise case
+  # quand le suivant se termine.
+  #
+  # Tableau tiré AVANT ce mode (mini-tableau ouvert d'un bloc, en cours au
+  # déploiement) : toutes ses positions sont déjà posées, on n'y ajoute rien. Sa
+  # disposition peut différer de celle que #layout produirait aujourd'hui (un
+  # forfait y était resserré), et y poser des positions supplémentaires ferait
+  # jouer deux fois les mêmes joueurs.
   def sync_slotted_node!(node)
-    return nil unless pools_complete? && @tournament.barrage_rounds.exists?
-
-    slots = ordered_slots(node)
-    return nil if slots.empty?
+    pairs = layout(node)
+    return nil if pairs.nil?
 
     builder = builder_for(node)
-    first   = builder.place_first_round!(slot_pairs(slots).map { |pair| resolve_pair(pair) })
+    first   = builder.place_first_round!(pairs.map { |pair| resolve_pair(pair) }) unless first_round_full?(node)
     builder.advance! || first
   end
 
-  # Ce tableau est-il nourri par les barrages (nœud de transit) ?
-  def slotted?(node)
+  def first_round_full?(node)
+    round = rounds_of(node).first
+    return false if round.nil?
+
+    round.tournament_matches.size >= (round.expected_matches || 0)
+  end
+
+  # Ce tableau est-il posé case par case ? Structurel (la structure seule
+  # tranche), pour que le chemin choisi ne dépende pas de l'état d'avancement.
+  def laid_out?(node) = barrage_fed?(node) || losers_fed?(node)
+
+  # Nourri par les barrages (nœud de transit) : tableau final et consolante.
+  def barrage_fed?(node)
     node.sources.any? do |source|
       !source.is_a?(CriteriumStructure::PoolQualifiers) && structure.node(source.key)&.transit?
     end
+  end
+
+  # Mini-tableau de classement : les perdants d'un tour d'un tableau parent.
+  def losers_fed?(node)
+    node.pairing == :carry_over && !barrage_fed?(node) &&
+      node.sources.all?(CriteriumStructure::Losers)
+  end
+
+  # ── Disposition du premier tour ─────────────────────────────────────────────
+  # [[Slot|nil, Slot|nil], …] par position (nil = bye), ou nil tant qu'elle n'est
+  # pas connue. Memoïsée pour la passe : un mini-tableau relit la disposition de
+  # son parent, qui relit celle du sien, jusqu'au tableau final.
+  def layout(node)
+    @layouts ||= {}
+    return @layouts[node.key] if @layouts.key?(node.key)
+
+    slots = slots_of(node)
+    @layouts[node.key] = slots.present? ? slot_pairs(slots) : nil
+  end
+
+  def slots_of(node)
+    if barrage_fed?(node)
+      ordered_slots(node) if pools_complete? && @tournament.barrage_rounds.exists?
+    elsif losers_fed?(node)
+      loser_slots(node.sources.first)
+    end
+  end
+
+  # ── Cases d'un mini-tableau de classement ───────────────────────────────────
+  # Une case par match du tour source, dans l'ordre des positions — exactement
+  # l'ordre dans lequel l'ancien mode rangeait les perdants. L'appariement miroir
+  # (#slot_pairs) les reprend en moitiés opposées du tableau parent : deux joueurs
+  # qui s'y sont déjà rencontrés ne se retrouvent pas immédiatement.
+  #
+  # ⚠️ ORDRE CAUSAL : aucune case tant que le tour source n'existe pas en base.
+  # #reconcile! détruit « tout tour d'`id` ≥ le tour périmé » en supposant qu'un
+  # tour est toujours créé APRÈS ses sources. Un 5e-8e créé avant les quarts
+  # échapperait à la détection et garderait des joueurs qui n'y ont plus droit.
+  #
+  # Les byes STRUCTURELS du premier tour (case sans adversaire, effectif ≠
+  # puissance de 2) n'ont pas de perdant : ils ne fournissent aucune case, comme
+  # avant. Un bye né d'un FORFAIT, lui, garde sa case (cf. #loser_slot).
+  #
+  # Aucune case non plus quand le tour source est la FINALE du parent (un seul
+  # match) : TournamentStandings#final_groups y attribue déjà la place du perdant,
+  # le faire rejouer le compterait deux fois au classement.
+  def loser_slots(source)
+    parent = structure.node(source.key)
+    round  = parent && rounds_of(parent).find { |r| r.number == source.round }
+    width  = round && first_round_width(parent)
+    return [] if width.nil?
+
+    count = width / (2**(source.round - 1))
+    return [] if count <= 1
+
+    round_count = Integer(Math.log2(width * 2))
+    matches     = round.tournament_matches.index_by(&:position)
+    positions   = (0...count).reject { |position| source.round == 1 && structural_bye?(parent, position) }
+
+    positions.map do |position|
+      origin = Feeder[parent.key, source.round, position, round_count]
+      loser_slot(parent, matches[position], origin)
+    end
+  end
+
+  # Nombre de positions du premier tour d'un tableau : sa disposition s'il est
+  # posé case par case, sinon son premier tour en base (construit d'un bloc).
+  def first_round_width(node)
+    return layout(node)&.size if laid_out?(node)
+
+    first = rounds_of(node).first
+    first && (first.expected_matches || first.tournament_matches.size)
+  end
+
+  def structural_bye?(node, position)
+    return layout(node)[position].include?(nil) if laid_out?(node)
+
+    rounds_of(node).first.tournament_matches.find { |m| m.position == position }&.is_bye
+  end
+
+  # Le perdant d'un match nourricier, ou une attente s'il n'est pas joué.
+  #
+  # ⚠️ Bye né d'un forfait (un joueur parti AVANT que son match soit posé, cf.
+  # #resolve_pair, BracketBuilder#pair_players) : il n'y a pas de perdant, mais la
+  # case ne peut pas rester vide — deux cases vides face à face formeraient une
+  # position où aucun match n'est posable, le tour ne serait jamais complet et le
+  # tournoi ne se terminerait jamais. L'occupant est donc le PARTANT lui-même :
+  # #resolve_pair donne alors un bye à son adversaire (ou un match en forfait si
+  # les deux sont partis), la même règle que partout ailleurs.
+  def loser_slot(parent, match, origin)
+    return Slot.awaiting(origin) unless match&.status == "completed"
+    return Slot.known(match.loser, origin) if match.loser
+
+    Slot.known(absentee(parent, origin, match), origin)
+  end
+
+  # Le joueur qui aurait dû affronter le bénéficiaire d'un bye : au premier tour,
+  # l'autre occupant de la case ; au-delà, l'autre vainqueur des deux matchs
+  # nourriciers (le match `p` du tour n+1 réunit les vainqueurs de 2p et 2p+1).
+  def absentee(parent, origin, match)
+    expected =
+      if origin.round == 1
+        Array(layout(parent)&.dig(origin.position)).map { |slot| slot&.occupant }
+      else
+        feeders = rounds_of(parent).find { |r| r.number == origin.round - 1 }&.tournament_matches.to_a
+        feeders.select { |m| [origin.position * 2, (origin.position * 2) + 1].include?(m.position) }.map(&:winner)
+      end
+
+    expected.compact.find { |player| player != match.player_a }
   end
 
   # Les cases du premier tour, dans l'ordre de tête de série.
@@ -339,60 +500,15 @@ class CriteriumFlow
     playing.compact.empty? ? raw : playing
   end
 
-  # Premier tour d'un tableau.
-  #
-  # ⚠️ On exige que TOUTES les sources soient jouées, pas seulement qu'il y ait
-  # assez de monde pour apparier : un mini-tableau ouvert avec une partie de ses
-  # perdants n'accueillerait JAMAIS les autres. (Le tableau final et la consolante,
-  # qui mêlent joueurs connus et barragistes, ne passent pas par ici : leurs cases
-  # sont réservées d'avance, cf. #sync_slotted_node!.)
-  #
-  # Un nœud SANS entrant n'est pas une erreur : un tableau de 8 à 6 entrants ne
-  # produit que 2 perdants au premier tour, donc son mini-tableau des 7e/8e n'aura
-  # jamais lieu. Le nœud reste simplement vide, et la compaction des places absorbe
-  # le trou (cf. TournamentStandings).
-  #
-  # ⚠️ Un nœud à UN SEUL entrant, en revanche, s'ouvre — sous condition : #build!
-  # y pose un bye, et ce bye attribue la première place du nœud. C'est le cas
-  # fréquent depuis que les forfaits sont écartés des tableaux (cf. #resolve) — si
-  # le perdant d'une demi-finale voit l'autre perdant déclarer forfait, il reste
-  # seul à disputer la 3e place et doit l'obtenir. Le laisser dehors le renverrait
-  # dans la queue du classement (TournamentStandings#tail_groups), très loin
-  # derrière la place qu'il a réellement gagnée sur le terrain.
-  # La condition, c'est #awaits_placement? : voir ci-dessous, faute de quoi un
-  # joueur serait compté DEUX FOIS au classement.
+  # Premier tour d'un tableau construit d'un bloc (classement intégral), ouvert
+  # quand TOUTES ses sources sont jouées.
   def open_node!(node)
     return nil unless sources_ready?(node)
 
     entrants = entrants_for(node)
     return nil if entrants.empty?
-    return nil if entrants.size == 1 && !awaits_placement?(node)
 
     builder_for(node, entrants).build!
-  end
-
-  # Ce nœud attribuerait-il une place que son entrant unique n'a pas déjà ?
-  #
-  # Un nœud de classement se nourrit des PERDANTS d'un tour de son nœud source.
-  # Quand ce nœud source a moins d'entrants que de places (byes), il joue moins de
-  # tours que sa taille ne le prévoit, et son DERNIER tour joue alors le rôle de
-  # finale : TournamentStandings#final_groups y attribue déjà deux places, dont
-  # celle du perdant. Ouvrir malgré tout le nœud enfant donnerait à ce perdant une
-  # seconde place et le compterait deux fois dans le classement final.
-  #
-  # Le test est factuel : le tour source a-t-il un successeur ? S'il en a un, il
-  # n'était pas une finale, donc ses perdants attendent bien une place.
-  # Un nœud de TRANSIT (les barrages) n'attribue aucune place : ses perdants sont
-  # toujours en attente.
-  def awaits_placement?(node)
-    node.sources.all? do |source|
-      next true unless source.is_a?(CriteriumStructure::Losers)
-
-      source_node = structure.node(source.key)
-      next true if source_node.nil? || source_node.transit?
-
-      rounds_of(source_node).any? { |round| round.number > source.round }
-    end
   end
 
   # `owns_completion: false` : la finale du tableau final est souvent jouée alors
@@ -444,12 +560,34 @@ class CriteriumFlow
   end
 
   # ── Détection de l'aval périmé (cf. #reconcile!) ────────────────────────────
-  # Le premier tour, dans l'ordre causal, dont les joueurs ne sont plus les bons.
+  # Le premier tour, dans l'ordre causal, dont les joueurs ne sont plus les bons :
+  # [nœud, tour], ou nil.
   def first_stale_round(after: nil)
     rounds = final_rounds
     rounds = rounds.select { |_node, round| round.id > after.id } if after
 
-    rounds.find { |node, round| stale?(node, round) }&.last
+    rounds.find { |node, round| stale?(node, round) }
+  end
+
+  # Détruit le tour `round` d'un tableau, ses tours suivants, et récursivement
+  # tous les tableaux qui se nourrissent d'un de ces tours. La boucle de
+  # #reconcile! termine : chaque passage détruit au moins le tour périmé trouvé.
+  def destroy_downstream!(node, round)
+    rounds_of(node).where(number: round.number..).destroy_all
+
+    dependants_of(node.key, round.number).each do |child|
+      first = rounds_of(child).first
+      destroy_downstream!(child, first) if first
+    end
+  end
+
+  # Les tableaux nourris par le tour `number` (ou un suivant) du tableau `key`.
+  def dependants_of(key, number)
+    playable_nodes.select do |child|
+      child.sources.any? do |source|
+        !source.is_a?(CriteriumStructure::PoolQualifiers) && source.key == key && source.round >= number
+      end
+    end
   end
 
   # Tous les tours jouables de la phase finale, ordre causal (= ordre des `id`).
@@ -504,7 +642,7 @@ class CriteriumFlow
   # légitimement. Sans cette symétrie, son départ rendait le tour « périmé », et la
   # correction suivante d'un barrage détruisait le tableau final et tous ses scores.
   def stale_first_round?(node, round)
-    return stale_slotted_round?(node, round) if slotted?(node)
+    return stale_slotted_round?(node, round) if laid_out?(node)
 
     expected = expected_entrants(node, round.number).to_set(&:id)
     return false if expected.empty?
@@ -512,8 +650,9 @@ class CriteriumFlow
     expected != participants_of(round) - withdrawn_ids
   end
 
-  # Premier tour posé au fil des barrages. Il a des trous tant que des barrages
-  # restent à jouer : exiger l'égalité des ensembles le déclarerait périmé à tort.
+  # Premier tour posé case par case. Il a des trous tant que des barrages (ou,
+  # pour un mini-tableau, des matchs du tableau parent) restent à jouer : exiger
+  # l'égalité des ensembles le déclarerait périmé à tort.
   # On vérifie donc l'INCLUSION — chaque joueur déjà placé a-t-il encore le droit
   # d'être là ? Un barrage corrigé change de vainqueur : l'ancien n'est plus
   # ayant droit au tableau final (il l'est devenu en consolante), et le tour est
@@ -521,11 +660,16 @@ class CriteriumFlow
   #
   # ⚠️ Volontairement indépendant de la DISPOSITION des cases : un tableau tiré
   # avant ce mode (apparié après les barrages, par force) a une autre disposition
-  # que celle que #ordered_slots produirait aujourd'hui. Le juger case par case
-  # le détruirait — avec ses scores — à la première correction venue.
-  # Partants ignorés, comme ci-dessus.
+  # que celle que #layout produirait aujourd'hui — un mini-tableau ouvert d'un
+  # bloc aussi, quand un forfait y a été resserré. Le juger case par case le
+  # détruirait — avec ses scores — à la première correction venue.
+  # Partants ignorés, comme ci-dessus. Disposition inconnue (tour source
+  # détruit) : on ne conclut rien, le tour source plus ancien reprendra la main.
   def stale_slotted_round?(node, round)
-    entitled = ordered_slots(node).filter_map(&:occupant).to_set(&:id)
+    pairs = layout(node)
+    return false if pairs.nil?
+
+    entitled = pairs.flatten.compact.filter_map(&:occupant).to_set(&:id)
 
     !(participants_of(round) - withdrawn_ids).subset?(entitled)
   end

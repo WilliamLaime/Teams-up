@@ -154,10 +154,15 @@ class CriteriumBoardTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "[data-tournament-phase-switch-default-value=?]", "bracket"
     # La consolante s'ouvre EN MÊME TEMPS que le tableau final (mêmes sources : les
-    # barrages), donc quatre pastilles dès ce moment : poules, barrages, tableau,
-    # consolante. Les matchs de classement, eux, naissent des perdants du 1er tour.
+    # barrages). Les matchs de classement aussi : leurs cases sont annoncées dès
+    # que le 1er tour de leur tableau parent existe (cf. CriteriumFlow#loser_slots).
+    # Cinq pastilles dès ce moment : poules, barrages, tableau, consolante, classement.
     assert_select ".phase-nav__pill[data-phase=?]", "consolation"
-    assert_select ".phase-nav__pill", 4
+    assert_select ".phase-nav__pill[data-phase=?]", "classification"
+    assert_select ".phase-nav__pill", 5
+    # Les cases annoncent leur provenance avant que le moindre perdant soit connu.
+    assert_select "section[data-phase=?] .tmatch-card__placeholder-label", "classification",
+                  text: /\APerdant /
     assert_select "section[data-phase=?] .tournament-phase__title", "consolation"
   end
 

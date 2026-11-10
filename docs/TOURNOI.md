@@ -263,11 +263,22 @@ règlement est que **chaque place se joue** — pas seulement la première.
       joueurs n'y a plus droit (inclusion, indépendante de la disposition des cases : un tableau
       tiré avant ce changement n'est pas détruit pour autant). Les cases vides affichent « Vainqueur X / Y » / « Perdant X / Y », et la phase
       Barrages reste affichée par défaut tant qu'un barrage reste à jouer.
+- [x] **Matchs de classement au fil de l'eau** (10 nov. 2026) : un mini-tableau (5e-8e, 9e-16e…)
+      n'attend plus que son tour source soit entièrement joué. Ses cases sont figées dès que ce
+      tour **existe en base** (« perdant du match N », `CriteriumFlow#loser_slots`), et chaque
+      match naît dès que ses **deux** nourriciers sont joués (miroir : perdant du 1 contre perdant
+      du 4 dans un tour de 4). Appariement identique à l'ancien mode sans forfait ; avec forfait,
+      le partant garde sa case (un bye de forfait en amont y place le partant lui-même : jamais
+      de position vide, donc jamais de tour gelé). Pas de case pour les perdants d'un tour qui est
+      en fait la finale du parent (sinon double place). La section « Matchs de classement »
+      apparaît donc dès le 1er tour du tableau final, cases « Perdant 8e de finale 3 » comprises.
 - [x] **Correction & forfaits** : corriger en **poule** reprend toute la phase finale (le
       classement de départ a changé) ; corriger **dans** la phase finale passe par
-      `CriteriumFlow#reconcile!`, qui cherche le premier tour dont les joueurs ne sont plus les
-      bons et ne détruit qu'à partir de lui — `id` croissant **est** l'ordre causal. Les scores
-      d'une branche voisine (consolante) survivent. Un abandon en phase finale pose un forfait et
+      `CriteriumFlow#reconcile!`, qui cherche les tours dont les joueurs ne sont plus les bons
+      et ne détruit que leur **aval structurel** (tours suivants du même tableau + mini-tableaux
+      nourris par ces tours, `#destroy_downstream!`) — plus « tout `id` supérieur », depuis que
+      le 5e-8e naît avant les quarts. Les scores d'une branche voisine (consolante, quarts quand
+      on corrige le perdant d'un 8e) survivent. Un abandon en phase finale pose un forfait et
       les tours suivants naissent quand même (`build_match!`), sinon la branche resterait ouverte.
       L'état `qualified` est **dérivé** à chaque avancée des joueurs du 1er tour du tableau final
       (`CriteriumFlow#sync_qualified!`) : une reconstruction ne laisse plus d'icône « Qualifié »

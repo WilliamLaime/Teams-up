@@ -627,3 +627,15 @@ la dépasse dès le lendemain, et le formulaire proposait une date passée.
 2. Une case ne doit jamais disparaître d'une liste positionnelle (ici : un joueur parti garde sa case, l'adversaire prend un bye), sinon toutes les suivantes glissent sous des matchs déjà posés.
 3. Dans un helper de test, `a&.x == b&.x` vaut `true` quand les deux sont nil : la boucle sortait avant même que le tour existe.
 
+
+## 2026-11-10 — Critérium : matchs de classement au fil de l'eau
+
+- **Demande** : sur l'Open d'Automne-Hiver, des joueurs battus en 8e ne savaient pas quand ni contre qui ils joueraient les places 9-16. Le mini-tableau n'existait qu'une fois les 8 huitièmes joués, eux-mêmes bloqués par les derniers barrages.
+- **Solution** : même principe que le tableau au fil des barrages. Cases figées dès que le tour source existe, et un match posé dès que ses deux nourriciers sont joués.
+- **Piège n°1 (attrapé par un test existant)** : `reconcile!` détruisait « tout tour d'`id` ≥ le tour périmé », en supposant que l'ordre de création suit l'aval. Créer le 5e-8e AVANT les quarts cassait cette hypothèse : corriger le perdant d'un 8e détruisait les quarts déjà joués. La destruction suit maintenant l'aval structurel (même tableau + tableaux nourris par ces tours).
+- **Piège n°2** : un bye né d'un forfait en amont n'a pas de perdant. Deux cases vides face à face donnaient une position où aucun match n'est posable : tour jamais complet, tournoi jamais terminé. L'occupant d'une telle case est le partant lui-même.
+
+À retenir :
+1. Quand on rend une création **plus précoce**, relire tout ce qui s'appuie sur l'**ordre** de création (`id`, `created_at`). L'hypothèse « créé après = en aval » ne tient plus.
+2. Une liste positionnelle construite par morceaux ne doit avoir **aucune case qui peut rester vide pour toujours**. Chaque case doit finir par avoir un occupant, même absent.
+3. Pour vérifier qu'un test couvre vraiment une branche rare, l'instrumenter temporairement (`raise`) plutôt que de le supposer. Attention : sur ce poste, `cp` est en mode interactif (`cp -i`), et la restauration doit passer par `command cp -f`.

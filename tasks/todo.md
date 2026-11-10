@@ -1,3 +1,16 @@
+# Critérium : matchs de classement au fil de l'eau
+
+Branche `classement-au-fil-de-l-eau` — demande du 10 novembre 2026 (Open d'Automne-Hiver) :
+afficher et rendre jouables les matchs de classement sans attendre la fin du tour source.
+
+- [x] 1. `Slot.awaiting` + provenance ; `layout(node)` / `loser_slots` dans `CriteriumFlow`
+- [x] 2. Mini-tableaux posés case par case (`sync_slotted_node!` généralisé), créés seulement
+      une fois leur tour source en base (ordre causal par `id`)
+- [x] 3. Bye de forfait en amont : le partant garde sa case (pas de position morte)
+- [x] 4. Correction de score : inclusion pour le 1er tour des mini-tableaux
+- [x] 5. Vue : « Perdant 8e de finale N » + colonnes des tours futurs
+- [x] 6. Tests + `tasks/lessons.md`
+
 # Critérium : tableau final et consolante au fil des barrages
 
 Branche `criterium-tableau-au-fil-des-barrages` — demande des joueurs du 27 octobre 2026 :
