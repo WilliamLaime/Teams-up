@@ -19,30 +19,47 @@
   <% classification_tables(tournament).each do |node, rounds| %>
     <h3 class="tournament-phase__subtitle"><%= node.label %></h3>
 
+    <%# Disposition du 1er tour (cf. CriteriumFlow#layout) : chaque case y est
+        connue d'avance — joueur déjà battu dans le tableau parent, ou provenance
+        (« Perdant 8e de finale 3 »). Elle donne aussi le nombre de tours PRÉVUS :
+        comme le tableau final, on montre toutes les colonnes dès l'ouverture.
+        nil pour un mini-tableau ouvert d'un bloc (avant ce mode, ou classement
+        intégral) : on retombe sur les tours réellement créés. %>
+    <% pairs = criterium_first_round_slots(tournament, node.key) %>
+    <% planned = pairs ? Integer(Math.log2(pairs.size * 2)) : 0 %>
+    <% total = tournament.completed? ? rounds.size : [planned, rounds.size].max %>
     <div class="bracket">
-      <% rounds.each_with_index do |round, index| %>
+      <% total.times do |index| %>
+        <% round = rounds[index] %>
         <div class="bracket__round">
-          <% if rounds.size > 1 %>
-            <div class="bracket__round-title"><%= bracket_stage_label(index, rounds.size) %></div>
+          <% if total > 1 %>
+            <div class="bracket__round-title"><%= bracket_stage_label(index, total) %></div>
           <% end %>
           <%# Une case par POSITION prévue, pas par match existant : ces
               mini-tableaux se construisent au fur et à mesure comme le tableau
               final (cf. BracketBuilder en mode incrémental), donc un tour peut
               n'avoir qu'un de ses deux matchs. Sans cela la case manquante
               disparaîtrait et la colonne se désalignerait. %>
-          <% slots  = round.expected_matches || node.size / (2**(index + 1)) %>
-          <% placed = round.tournament_matches.order(:position).index_by(&:position) %>
-          <% feeders = index.positive? ? rounds[index - 1].tournament_matches.index_by(&:position) : {} %>
+          <% slots = round&.expected_matches || (pairs ? pairs.size / (2**index) : node.size / (2**(index + 1))) %>
+          <% placed = round ? round.tournament_matches.order(:position).index_by(&:position) : {} %>
+          <% feeders = index.positive? && rounds[index - 1] ? rounds[index - 1].tournament_matches.index_by(&:position) : {} %>
           <div class="bracket__matches">
             <% slots.times do |position| %>
+              <% reserved = index.zero? ? pairs&.dig(position) : nil %>
               <% if (match = placed[position]) %>
                 <%= render "tournaments/tmatch", match: match %>
+              <% elsif reserved %>
+                <%= render "tournaments/bracket_placeholder_cell",
+                           player_a: reserved.first&.occupant,
+                           player_b: reserved.second&.occupant,
+                           from_a: bracket_slot_label(reserved.first),
+                           from_b: bracket_slot_label(reserved.second) %>
               <% else %>
                 <%= render "tournaments/bracket_placeholder_cell",
                            player_a: feeders[position * 2]&.winner,
                            player_b: feeders[(position * 2) + 1]&.winner,
-                           from_a: bracket_feeder_label(index, position * 2, rounds.size),
-                           from_b: bracket_feeder_label(index, (position * 2) + 1, rounds.size) %>
+                           from_a: bracket_feeder_label(index, position * 2, total),
+                           from_b: bracket_feeder_label(index, (position * 2) + 1, total) %>
               <% end %>
             <% end %>
           </div>

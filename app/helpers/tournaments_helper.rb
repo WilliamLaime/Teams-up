@@ -247,25 +247,44 @@ module TournamentsHelper
     stage  = bracket_stage_label(round_index - 1, total_rounds)
     number = feeder_position + 1
 
+    "Vainqueur #{bracket_stage_match_name(stage, number)}"
+  end
+
+  # « 8e de finale 3 » : le match `feeder.position` du tour `feeder.round` d'un
+  # tableau de `feeder.round_count` tours (cf. CriteriumFlow::Feeder).
+  def bracket_match_name(feeder)
+    stage = bracket_stage_label(feeder.round - 1, feeder.round_count)
+    bracket_stage_match_name(stage, feeder.position + 1)
+  end
+
+  # Un match nommé par son tour et son numéro (1-based) : « quart de finale 3 ».
+  def bracket_stage_match_name(stage, number)
     singular = { "Finale" => "finale", "Demi-finales" => "demi-finale",
                  "Quarts" => "quart de finale", "8es" => "8e de finale" }[stage]
 
     # Tour lointain (« Tour 3 ») : pas de forme singulière naturelle, on nomme
     # explicitement le match pour éviter un « Vainqueur tour 3 2 » illisible.
-    return "Vainqueur match #{number} du #{stage.downcase}" if singular.nil?
+    return "match #{number} du #{stage.downcase}" if singular.nil?
 
-    "Vainqueur #{singular} #{number}"
+    "#{singular} #{number}"
   end
 
-  # Cases du premier tour d'un tableau nourri par les barrages (Critérium) :
-  # [[Slot|nil, Slot|nil], …] par position, ou nil hors de ce cas. Memoïsé par
-  # tournoi et par tableau (« ok » / « ko ») : le calcul relit les poules.
+  # Cases du premier tour d'un tableau posé case par case (Critérium : tableau
+  # final, consolante, mini-tableaux de classement) : [[Slot|nil, Slot|nil], …]
+  # par position, ou nil hors de ce cas. Memoïsé par tournoi et par tableau
+  # (« ok », « ko », « ok:9-16 »…) : le calcul relit les poules.
   def criterium_first_round_slots(tournament, key)
     return nil unless tournament.criterium?
 
+    # Un seul CriteriumFlow par tournoi : la disposition d'un mini-tableau relit
+    # celle de son parent, jusqu'au tableau final — le service la memoïse, encore
+    # faut-il réutiliser la même instance d'un tableau à l'autre.
+    @criterium_flows ||= {}
+    flow = @criterium_flows[tournament.id] ||= CriteriumFlow.new(tournament)
+
     @criterium_first_round_slots ||= {}
     @criterium_first_round_slots.fetch([tournament.id, key]) do
-      @criterium_first_round_slots[[tournament.id, key]] = CriteriumFlow.new(tournament).first_round_slots(key)
+      @criterium_first_round_slots[[tournament.id, key]] = flow.first_round_slots(key)
     end
   end
 
@@ -276,6 +295,10 @@ module TournamentsHelper
   def bracket_slot_label(slot)
     return "Exempt" if slot.nil?
     return nil unless slot.pending?
+    # Mini-tableau de classement : « Perdant 8e de finale 3 ». Le match nourricier
+    # peut ne pas exister encore (5e-8e annoncé avant les quarts) : on nomme donc
+    # sa POSITION, connue d'avance, et non ses joueurs.
+    return "Perdant #{bracket_match_name(slot.origin)}" if slot.origin
 
     names = slot.barrage.players.map(&:display_name).join(" / ")
     "#{slot.camp == :winner ? 'Vainqueur' : 'Perdant'} #{names}"
